@@ -475,7 +475,7 @@ const LeadEstimate = ({ leadid }) => {
             </Form.Item>
 
             <Form.Item label="GST number" name="gstNo">
-              <Input />
+              <Input maxLength={15} />
             </Form.Item>
 
             <Form.Item
@@ -598,7 +598,7 @@ const LeadEstimate = ({ leadid }) => {
                             label="Original phone number"
                             name="originalContact"
                           >
-                            <Input />
+                            <Input maxLength={10} />
                           </Form.Item>
                           <Form.Item
                             label="Original company address"
@@ -655,7 +655,7 @@ const LeadEstimate = ({ leadid }) => {
                             label="Original phone number"
                             name="originalContact"
                           >
-                            <Input />
+                            <Input maxLength={10} />
                           </Form.Item>
                           <Form.Item
                             label="Original company address"
