@@ -21,7 +21,6 @@ import ForgetOtpPage from "./Login/ForgetOtpPage";
 import DisplayDashboardUser from "./Main/DashBoard/DisplayDashboardUser";
 import DisplayUserTwo from "./Main/DashBoard/DisplayUserTwo";
 import SetNewPasswordPage from "./Login/SetNewPasswordPage";
-import EstimateCreatePage from "./Main/Sales/Leads/EstimateCreatePage";
 import TableScalaton from "./components/TableScalaton";
 import LeadHistory from "./Main/Sales/Leads/LeadHistory";
 import NewGetFile from "./Routes/NewGetFile";
@@ -99,6 +98,7 @@ import NewCompany from "./Main/Sales/Leads/NewCompany";
 import CompanyDetailPage from "./Main/Sales/Leads/CompanyDetailPage";
 import NewCompanyUnits from "./Main/Sales/Leads/NewCompanyUnits";
 import CompanySearch from "./Main/Accounts/CompanySearch";
+import NewCompaniesDetailedLayout from "./Main/Sales/Leads/NewCompaniesDetailedLayout";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -299,7 +299,7 @@ function App() {
                 <Route path="oppurtities" element={<Opportunities />} />
                 <Route path="company" element={<MainComanyModule />} />
                 <Route path="newcompanies" element={<NewCompany />} />
-                <Route path="newcompanies/:companyId/details" element={<CompanyDetailPage />} />
+                <Route path="newcompanies/:companyId/details" element={<NewCompaniesDetailedLayout />} />
                 <Route path="newcompanies/:companyId/details/:state/companyUnit" element={<NewCompanyUnits />} />
                 <Route path="project" element={<ProjectPage />} />
                 <Route
@@ -318,10 +318,6 @@ function App() {
                 <Route path="estimate" element={<Estimate />} />
                 <Route path="orders" element={<OrdersModule />} />
                 <Route path="leads/:leadid" element={<LeadDetailsPage />} />
-                <Route
-                  path="leads/:leadid/estimate"
-                  element={<EstimateCreatePage />}
-                />
                 <Route path="contacts" element={<ContactModule />} />
                 <Route path="leads/:leadid/history" element={<LeadHistory />} />
                 <Route path="leads" element={<LeadsModule />} />

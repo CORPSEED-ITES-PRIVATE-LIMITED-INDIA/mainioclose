@@ -3,6 +3,7 @@ import {
   Divider,
   Form,
   Input,
+  InputNumber,
   Modal,
   notification,
   Select,
@@ -50,7 +51,7 @@ const CompanyFormModal = ({
   editInfo,
   selectedFilter,
   detailView,
-  paginationData
+  paginationData,
 }) => {
   const [form] = Form.useForm();
   const dispatch = useDispatch();
@@ -88,14 +89,12 @@ const CompanyFormModal = ({
   const [formLoading, setFormLoading] = useState("");
   const [gstMand, setGstMand] = useState("");
 
-
   const handlePanNumberChange = (e) => {
     const value = e.target.value;
     const upperCaseValue = value.toUpperCase();
     const isValid = /^[A-Z0-9]+$/.test(upperCaseValue);
     form.setFieldsValue({ panNo: isValid ? upperCaseValue : value });
   };
-
 
   const handleButtonClick = useCallback(() => {
     dispatch(getAllMainIndustry());
@@ -140,13 +139,14 @@ const CompanyFormModal = ({
     if (editInfo?.id !== undefined) {
       dispatch(getAllMainIndustry());
       dispatch(getClientDesiginationList());
-      console.log('dfjshksjhkjfsdjksh', editInfo)
       dispatch(getCompanyDetailsById(editInfo?.id)).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          console.log('dfjshksjhkjfsdjksh 11', resp?.payload)
           let editData = resp?.payload;
           dispatch(getSubIndustryByIndustryId(editData?.industry?.id));
-          dispatch(getSubSubIndustryBySubIndustryId(editData?.subIndustry));
+          dispatch(getSubSubIndustryBySubIndustryId(editData?.subIndustry?.id));
+          dispatch(
+            getIndustryDataBySubSubIndustryId(editData?.subsubIndustry?.id)
+          );
           form.setFieldsValue({
             isPresent: editData?.isPresent,
             companyName: editData?.companyName,
@@ -165,6 +165,7 @@ const CompanyFormModal = ({
                 response: editData?.gstDocuments,
               },
             ],
+            isPrimaryAddress: editData?.isPrimaryAddress,
             companyAge: editData?.companyAge,
             primaryPinCode: editData?.primaryPinCode,
             secondaryPinCode: editData?.secondaryPinCode,
@@ -180,6 +181,7 @@ const CompanyFormModal = ({
             country: editData?.country,
             primaryContact: editData?.primaryContact,
             city: editData?.city,
+            isSecondaryAddress: editData?.isSecondaryAddress,
             secondaryContact: editData?.secondaryContact,
             scountry: editData?.scountry,
             saddress: editData?.saddress,
@@ -192,14 +194,14 @@ const CompanyFormModal = ({
             scontactWhatsappNo: editData?.scontactWhatsappNo,
             amount: editData?.amount,
             comment: editData?.comment,
-            secondaryDesignation: editData?.secondaryDesignation,
-            primaryDesignation: editData?.primaryDesignation,
-            primaryTitle: editData?.primaryTitle,
-            secondaryTitle: editData?.secondaryTitle,
-            industryId: editData?.industryId,
-            subIndustryId: editData?.subIndustryId,
-            subsubIndustryId: editData?.subsubIndustryId,
-            industrydataId: editData?.industrydataId,
+            secondaryDesignation: Number(editData?.secondaryDesignation),
+            primaryDesignation: Number(editData?.primaryDesignation),
+            primaryTitle: editData?.title,
+            secondaryTitle: editData?.secTitle,
+            industryId: editData?.industry?.id,
+            subIndustryId: editData?.subIndustry?.id,
+            subsubIndustryId: editData?.subsubIndustry?.id,
+            industrydataId: editData?.industryDataList?.map((item) => item?.id),
           });
         }
       });
@@ -243,79 +245,6 @@ const CompanyFormModal = ({
     }
     return e?.fileList;
   };
-
-  const handleSetFields = useCallback(
-    (checked) => {
-      if (checked) {
-        const formFieldValue = form.getFieldsValue([
-          "address",
-          "city",
-          "state",
-          "country",
-          "isUnit",
-          "secondaryContact",
-          "primaryContact",
-          "contactName",
-          "contactEmails",
-          "contactNo",
-          "contactWhatsappNo",
-          "contactId",
-        ]);
-        if (
-          !formFieldValue?.primaryContact &&
-          formFieldValue?.secondaryContact
-        ) {
-          form.setFieldsValue({
-            sContactName: contactDetail?.name,
-            sContactEmails: contactDetail?.emails,
-            sContactNo: contactDetail?.contactNo,
-            sContactWhatsappNo: contactDetail?.whatsappNo,
-          });
-        } else if (
-          formFieldValue?.primaryContact &&
-          formFieldValue?.secondaryContact
-        ) {
-          form.setFieldsValue({
-            sContactName: formFieldValue?.contactName,
-            sContactEmails: formFieldValue?.contactEmails,
-            sContactNo: formFieldValue?.contactNo,
-            sContactWhatsappNo: formFieldValue?.contactWhatsappNo,
-            sAddress: formFieldValue?.address,
-            sCity: formFieldValue?.city,
-            sState: formFieldValue?.state,
-            sCountry: formFieldValue?.country,
-          });
-        }
-
-        if (formFieldValue?.isUnit && formFieldValue?.secondaryContact) {
-          form.setFieldsValue({
-            sAddress: companyDetailByUnitId?.address,
-            sCity: companyDetailByUnitId?.city,
-            sState: companyDetailByUnitId?.state,
-            sCountry: companyDetailByUnitId?.country,
-          });
-        } else if (
-          !formFieldValue?.isUnit &&
-          formFieldValue?.secondaryContact
-        ) {
-          form.setFieldsValue({
-            sAddress: formFieldValue?.address,
-            sCity: formFieldValue?.city,
-            sState: formFieldValue?.state,
-            sCountry: formFieldValue?.country,
-          });
-        }
-      } else {
-        // form.resetFields([
-        //   "getsContactName",
-        //   "getsContactEmails",
-        //   "getsContactNo",
-        //   "getsContactWhatsappNo",
-        // ])
-      }
-    },
-    [form, contactDetail, companyDetailByUnitId]
-  );
 
   const handleFinish = useCallback(
     (values) => {
@@ -366,8 +295,8 @@ const CompanyFormModal = ({
         values.leadId = singleLeadResponseData?.parent
           ? values?.leadId
           : data?.id
-            ? data?.id
-            : data?.leadId;
+          ? data?.id
+          : data?.leadId;
         if (Object.keys(companyDetails)?.length > 0) {
           values.isPresent = true;
         } else {
@@ -377,7 +306,7 @@ const CompanyFormModal = ({
           values.companyId = companyDetails?.id;
         }
 
-        console.log('kdsjkjasgdkjgdjh', values)
+        console.log("kdsjkjasgdkjgdjh", values);
         dispatch(createCompanyForm(values))
           .then((response) => {
             if (response.meta.requestStatus === "fulfilled") {
@@ -435,6 +364,7 @@ const CompanyFormModal = ({
       <Modal
         title={edit ? "Edit company details" : "Create company"}
         centered
+        width={"70%"}
         open={openModal}
         onCancel={() => setOpenModal(false)}
         onClose={() => setOpenModal(false)}
@@ -447,320 +377,61 @@ const CompanyFormModal = ({
         <Form
           form={form}
           layout="vertical"
-          size="small"
-          style={{ maxHeight: "75vh", overflow: "auto" }}
+          style={{ maxHeight: "75vh", padding: "4px", overflow: "auto" }}
           scrollToFirstError
           onFinish={handleFinish}
           initialValues={{
             primaryContact: false,
             isUnit: false,
             secondaryContact: false,
-            // isSecondaryAddress: Object.keys(companyDetails)?.length > 0 ? false : true,
-            // isPrimaryAddress: Object.keys(companyDetails)?.length > 0 ? false : true,
             isSecondaryAddress: false,
             isPrimaryAddress: false,
           }}
         >
-          {Object.keys(companyDetails)?.length > 0 ? (
-            <Form.Item
-              label="Company name"
-              name="companyId"
-              rules={[
-                { required: true, message: "please enter the company name" },
-              ]}
-            >
-              <Input disabled />
-            </Form.Item>
-          ) : (
-            <Form.Item
-              label="Company name"
-              name="companyName"
-              rules={[
-                { required: true, message: "please enter the company name" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-          )}
-
-          <Form.Item
-            label="Company age"
-            name="companyAge"
-            rules={[{ required: true, message: "please enter company age" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          {singleLeadResponseData?.parent && (
-            <Form.Item
-              label="Select lead"
-              name="leadId"
-              rules={[{ required: true, message: "please select the lead" }]}
-            >
-              <Select
-                options={
-                  singleLeadResponseData?.childLead?.length > 0
-                    ? singleLeadResponseData?.childLead?.map((item) => ({
-                      label: item?.childLeadName,
-                      value: item?.childId,
-                    }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-          )}
-
-          <Form.Item
-            label="Gst type"
-            name="gstType"
-            rules={[{ required: true, message: "please select the gst type" }]}
-          >
-            <Select
-              showSearch
-              allowClear
-              options={[
-                { label: "Registered", value: "Registered" },
-                { label: "Unregisterded", value: "Unregistered" },
-                { label: "SE2", value: "SE2" },
-                { label: "International", value: "International" },
-              ]}
-              onChange={(e) => setGstMand(e)}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Gst number"
-            name="gstNo"
-            rules={
-              gstMand === "Registered" || gstMand === ""
-                ? [
-                  {
-                    required: true,
-                    message: "",
-                  },
-                  {
-                    validator: validateGstNumber(dispatch),
-                  },
-                ]
-                : []
-            }
-          >
-            <Input maxLength={15} />
-          </Form.Item>
-
-          <Form.Item
-            label="Select industry"
-            name="industryId"
-            rules={[{ required: true, message: "please select the industry" }]}
-          >
-            <Select
-              allowClear
-              showSearch
-              options={
-                allIndustry?.length > 0
-                  ? allIndustry?.map((item) => ({
-                    label: item?.name,
-                    value: item?.id,
-                  }))
-                  : []
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-              onChange={(e) => {
-                dispatch(getSubIndustryByIndustryId(e));
-                form.resetFields([
-                  "industrydataId",
-                  "subsubIndustryId",
-                  "subIndustryId",
-                ]);
-              }}
-            />
-          </Form.Item>
-          <Form.Item
-            label="Select sub-industry"
-            name="subIndustryId"
-            rules={[
-              { required: true, message: "please select the sub industry" },
-            ]}
-          >
-            <Select
-              allowClear
-              showSearch
-              options={
-                subIndustryListById?.length > 0
-                  ? subIndustryListById?.map((item) => ({
-                    label: item?.name,
-                    value: item?.id,
-                  }))
-                  : []
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-              onChange={(e) => {
-                dispatch(getSubSubIndustryBySubIndustryId(e));
-                form.resetFields(["industrydataId", "subsubIndustryId"]);
-              }}
-            />
-          </Form.Item>
-          <Form.Item
-            label="Select sub-sub-industry"
-            name="subsubIndustryId"
-            rules={[
-              { required: true, message: "please select the sub sub industry" },
-            ]}
-          >
-            <Select
-              allowClear
-              showSearch
-              options={
-                subSubIndustryListById?.length > 0
-                  ? subSubIndustryListById?.map((item) => ({
-                    label: item?.name,
-                    value: item?.id,
-                  }))
-                  : []
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-              onChange={(e) => {
-                dispatch(getIndustryDataBySubSubIndustryId(e));
-                form.resetFields(["industrydataId"]);
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Select industry data"
-            name="industrydataId"
-            rules={[
-              { required: true, message: "please select the industry data" },
-            ]}
-          >
-            <Select
-              allowClear
-              showSearch
-              mode="multiple"
-              maxTagCount="responsive"
-              options={
-                industryDataListById?.length > 0
-                  ? industryDataListById?.map((item) => ({
-                    label: item?.name,
-                    value: item?.id,
-                  }))
-                  : []
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Upload gst document"
-            name="gstDocuments"
-            getValueFromEvent={normFile}
-            valuePropName="fileList"
-          >
-            <Upload
-              action="/leadService/api/v1/upload/uploadimageToFileSystem"
-              listType="text"
-            >
-              <Button size="small">
-                <Icon icon="fluent:arrow-upload-20-filled" /> Upload
-              </Button>
-            </Upload>
-          </Form.Item>
-
-          {Object.keys(companyDetails)?.length > 0 && (
-            <>
+          <div className="form-grid-col-2">
+            {Object.keys(companyDetails)?.length > 0 ? (
               <Form.Item
-                label="New units"
-                name="isUnit"
-                rules={[{ required: true }]}
+                label="Company name"
+                name="companyId"
+                rules={[
+                  { required: true, message: "please enter the company name" },
+                ]}
               >
-                <Switch size="small" />
+                <Input disabled />
               </Form.Item>
-
+            ) : (
               <Form.Item
-                shouldUpdate={(prevValues, currentValues) =>
-                  prevValues.isUnit !== currentValues.isUnit
-                }
-                noStyle
+                label="Company name"
+                name="companyName"
+                rules={[
+                  { required: true, message: "please enter the company name" },
+                ]}
               >
-                {({ getFieldValue }) => (
-                  <>
-                    {getFieldValue("isUnit") ? (
-                      <Form.Item
-                        label="Select company unit"
-                        name="unitId"
-                        rules={[
-                          {
-                            required: true,
-                            message: "please select company unit",
-                          },
-                        ]}
-                      >
-                        <Select
-                          showSearch
-                          allowClear
-                          onChange={(e) => dispatch(getCompanyByUnitId(e))}
-                          options={
-                            companyUnits?.length > 0
-                              ? companyUnits?.map((item) => ({
-                                label: item?.companyName,
-                                value: item?.id,
-                              }))
-                              : []
-                          }
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-                    ) : (
-                      <Form.Item
-                        label="Enter new company unit"
-                        name="unitName"
-                        rules={[
-                          {
-                            required: true,
-                            message: "please enter the company unit",
-                          },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    )}
-                  </>
-                )}
+                <Input />
               </Form.Item>
-            </>
-          )}
+            )}
 
-          {Object.keys(companyDetails)?.length === 0 &&
-            getHighestPriorityRole(currentRoles) === "ADMIN" && (
+            <Form.Item
+              label="Company age"
+              name="companyAge"
+              rules={[{ required: true, message: "please enter company age" }]}
+            >
+              <InputNumber controls={false} style={{ width: "100%" }} />
+            </Form.Item>
+
+            {singleLeadResponseData?.parent && (
               <Form.Item
-                label="Select assignee"
-                name="assigneeId"
-                rules={[{ required: true, message: "please select assignee" }]}
+                label="Select lead"
+                name="leadId"
+                rules={[{ required: true, message: "please select the lead" }]}
               >
                 <Select
-                  showSearch
-                  allowClear
                   options={
-                    allUsers?.length > 0
-                      ? allUsers?.map((item) => ({
-                        label: item?.fullName,
-                        value: item?.id,
-                      }))
+                    singleLeadResponseData?.childLead?.length > 0
+                      ? singleLeadResponseData?.childLead?.map((item) => ({
+                          label: item?.childLeadName,
+                          value: item?.childId,
+                        }))
                       : []
                   }
                   filterOption={(input, option) =>
@@ -770,489 +441,746 @@ const CompanyFormModal = ({
               </Form.Item>
             )}
 
-          <Form.Item
-            label="Pan number"
-            name="panNo"
+            <Form.Item
+              label="Gst type"
+              name="gstType"
+              rules={[
+                { required: true, message: "please select the gst type" },
+              ]}
+            >
+              <Select
+                showSearch
+                allowClear
+                options={[
+                  { label: "Registered", value: "Registered" },
+                  { label: "Unregisterded", value: "Unregistered" },
+                  { label: "SE2", value: "SE2" },
+                  { label: "International", value: "International" },
+                ]}
+                onChange={(e) => setGstMand(e)}
+              />
+            </Form.Item>
 
-          >
-            <Input maxLength={10} onChange={handlePanNumberChange} />
-          </Form.Item>
+            <Form.Item
+              label="Gst number"
+              name="gstNo"
+              rules={
+                gstMand === "Registered" || gstMand === ""
+                  ? [
+                      {
+                        required: true,
+                        message: "",
+                      },
+                      {
+                        validator: validateGstNumber(dispatch),
+                      },
+                    ]
+                  : []
+              }
+            >
+              <Input maxLength={15} />
+            </Form.Item>
 
-          <Form.Item
-            label="Amount"
-            name="amount"
-            rules={[{ required: true, message: "please enter amount" }]}
-          >
-            <Input type="number" />
-          </Form.Item>
+            <Form.Item
+              label="Select industry"
+              name="industryId"
+              rules={[
+                { required: true, message: "please select the industry" },
+              ]}
+            >
+              <Select
+                allowClear
+                showSearch
+                options={
+                  allIndustry?.length > 0
+                    ? allIndustry?.map((item) => ({
+                        label: item?.name,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+                onChange={(e) => {
+                  dispatch(getSubIndustryByIndustryId(e));
+                  form.resetFields([
+                    "industrydataId",
+                    "subsubIndustryId",
+                    "subIndustryId",
+                  ]);
+                }}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Select sub-industry"
+              name="subIndustryId"
+              rules={[
+                { required: true, message: "please select the sub industry" },
+              ]}
+            >
+              <Select
+                allowClear
+                showSearch
+                options={
+                  subIndustryListById?.length > 0
+                    ? subIndustryListById?.map((item) => ({
+                        label: item?.name,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+                onChange={(e) => {
+                  dispatch(getSubSubIndustryBySubIndustryId(e));
+                  form.resetFields(["industrydataId", "subsubIndustryId"]);
+                }}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Select sub-sub-industry"
+              name="subsubIndustryId"
+              rules={[
+                {
+                  required: true,
+                  message: "please select the sub sub industry",
+                },
+              ]}
+            >
+              <Select
+                allowClear
+                showSearch
+                options={
+                  subSubIndustryListById?.length > 0
+                    ? subSubIndustryListById?.map((item) => ({
+                        label: item?.name,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+                onChange={(e) => {
+                  dispatch(getIndustryDataBySubSubIndustryId(e));
+                  form.resetFields(["industrydataId"]);
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Select industry data"
+              name="industrydataId"
+              rules={[
+                { required: true, message: "please select the industry data" },
+              ]}
+            >
+              <Select
+                allowClear
+                showSearch
+                mode="multiple"
+                maxTagCount="responsive"
+                options={
+                  industryDataListById?.length > 0
+                    ? industryDataListById?.map((item) => ({
+                        label: item?.name,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Upload gst document"
+              name="gstDocuments"
+              getValueFromEvent={normFile}
+              valuePropName="fileList"
+            >
+              <Upload
+                action="/leadService/api/v1/upload/uploadimageToFileSystem"
+                listType="text"
+              >
+                <Button size="small">
+                  <Icon icon="fluent:arrow-upload-20-filled" /> Upload
+                </Button>
+              </Upload>
+            </Form.Item>
+
+            {Object.keys(companyDetails)?.length > 0 && (
+              <>
+                <Form.Item
+                  label="New units"
+                  name="isUnit"
+                  rules={[{ required: true }]}
+                >
+                  <Switch size="small" />
+                </Form.Item>
+
+                <Form.Item
+                  shouldUpdate={(prevValues, currentValues) =>
+                    prevValues.isUnit !== currentValues.isUnit
+                  }
+                  noStyle
+                >
+                  {({ getFieldValue }) => (
+                    <>
+                      {getFieldValue("isUnit") ? (
+                        <Form.Item
+                          label="Select company unit"
+                          name="unitId"
+                          rules={[
+                            {
+                              required: true,
+                              message: "please select company unit",
+                            },
+                          ]}
+                        >
+                          <Select
+                            showSearch
+                            allowClear
+                            onChange={(e) => dispatch(getCompanyByUnitId(e))}
+                            options={
+                              companyUnits?.length > 0
+                                ? companyUnits?.map((item) => ({
+                                    label: item?.companyName,
+                                    value: item?.id,
+                                  }))
+                                : []
+                            }
+                            filterOption={(input, option) =>
+                              option.label
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                          />
+                        </Form.Item>
+                      ) : (
+                        <Form.Item
+                          label="Enter new company unit"
+                          name="unitName"
+                          rules={[
+                            {
+                              required: true,
+                              message: "please enter the company unit",
+                            },
+                          ]}
+                        >
+                          <Input />
+                        </Form.Item>
+                      )}
+                    </>
+                  )}
+                </Form.Item>
+              </>
+            )}
+
+            {Object.keys(companyDetails)?.length === 0 &&
+              getHighestPriorityRole(currentRoles) === "ADMIN" && (
+                <Form.Item
+                  label="Select assignee"
+                  name="assigneeId"
+                  rules={[
+                    { required: true, message: "please select assignee" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      allUsers?.length > 0
+                        ? allUsers?.map((item) => ({
+                            label: item?.fullName,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              )}
+
+            <Form.Item label="Pan number" name="panNo">
+              <Input maxLength={10} onChange={handlePanNumberChange} />
+            </Form.Item>
+
+            <Form.Item
+              label="Amount"
+              name="amount"
+              rules={[{ required: true, message: "please enter amount" }]}
+            >
+              <InputNumber style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
 
           <Divider style={{ color: "#cccccc" }} orientation="center">
             Primary details
           </Divider>
+          <div className="form-grid-col-2">
+            <Form.Item
+              label="New primary contact details"
+              name="primaryContact"
+              rules={[{ required: true }]}
+            >
+              <Switch size="small" />
+            </Form.Item>
 
-          <Form.Item
-            label="New primary contact details"
-            name="primaryContact"
-            rules={[{ required: true }]}
-          >
-            <Switch size="small" />
-          </Form.Item>
-
-          <Form.Item
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.primaryContact !== currentValues.primaryContact
-            }
-            noStyle
-          >
-            {({ getFieldValue }) => (
-              <>
-                {getFieldValue("primaryContact") ? (
-                  <>
-                    <Form.Item
-                      label="Salutation"
-                      name="primaryTitle"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please select salutation for contact name",
-                        },
-                      ]}
-                    >
-                      <Select
-                        options={[
-                          { label: "Master.", value: "master" },
-                          { label: "Mr.", value: "mr" },
-                          { label: "Mrs.", value: "mrs" },
-                          { label: "Miss.", value: "miss" },
+            <Form.Item
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.primaryContact !== currentValues.primaryContact
+              }
+              noStyle
+            >
+              {({ getFieldValue }) => (
+                <>
+                  {getFieldValue("primaryContact") ? (
+                    <>
+                      <Form.Item
+                        label="Salutation"
+                        name="primaryTitle"
+                        rules={[
+                          {
+                            required: true,
+                            message:
+                              "please select salutation for contact name",
+                          },
                         ]}
-                      />
-                    </Form.Item>
+                      >
+                        <Select
+                          options={[
+                            { label: "Master.", value: "master" },
+                            { label: "Mr.", value: "mr" },
+                            { label: "Mrs.", value: "mrs" },
+                            { label: "Miss.", value: "miss" },
+                          ]}
+                        />
+                      </Form.Item>
 
+                      <Form.Item
+                        label="Contact name"
+                        name="contactName"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter contact person name",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Desigination"
+                        name="primaryDesignation"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter desigination",
+                          },
+                        ]}
+                      >
+                        <Select
+                          allowClear
+                          showSearch
+                          options={
+                            desiginationList?.length > 0
+                              ? desiginationList?.map((item) => ({
+                                  label: item?.name,
+                                  value: item?.id,
+                                }))
+                              : []
+                          }
+                          filterOption={(input, option) =>
+                            option.label
+                              .toLowerCase()
+                              .includes(input.toLowerCase())
+                          }
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Email"
+                        name="contactEmails"
+                        rules={[
+                          {
+                            required: true,
+                            type: "email",
+                            message: "please enter the email id",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Contact number"
+                        name="contactNo"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter contact number",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Whatsapp number"
+                        name="contactWhatsappNo"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter whatsapp number",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+                    </>
+                  ) : (
                     <Form.Item
-                      label="Contact name"
-                      name="contactName"
+                      label="Select contact"
+                      name="contactId"
                       rules={[
-                        {
-                          required: true,
-                          message: "please enter contact person name",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-
-
-                    <Form.Item
-                      label="Desigination"
-                      name="primaryDesignation"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter desigination",
-                        },
+                        { required: true, message: "please select contact" },
                       ]}
                     >
                       <Select
-                        allowClear
                         showSearch
+                        allowClear
+                        onChange={(e) => dispatch(getContactById(e))}
                         options={
-                          desiginationList?.length > 0
-                            ? desiginationList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                          contactList?.length > 0
+                            ? contactList?.map((item) => ({
+                                label: `${maskEmail(
+                                  item?.emails
+                                )} || ${maskMobileNumber(item?.contactNo)} `,
+                                value: item?.id,
+                                email: item?.emails,
+                                contact: item?.contactNo,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
-                          option.label
-                            .toLowerCase()
-                            .includes(input.toLowerCase())
+                          option?.email
+                            ?.toLowerCase()
+                            ?.includes(input?.toLowerCase()) ||
+                          option?.contact
+                            ?.toLowerCase()
+                            ?.includes(input?.toLowerCase())
                         }
                       />
                     </Form.Item>
+                  )}
+                </>
+              )}
+            </Form.Item>
 
-                    <Form.Item
-                      label="Email"
-                      name="contactEmails"
-                      rules={[
-                        {
-                          required: true,
-                          type: "email",
-                          message: "please enter the email id",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
+            <Form.Item label="Add new primary address" name="isPrimaryAddress">
+              <Switch size="small" />
+            </Form.Item>
 
-                    <Form.Item
-                      label="Contact number"
-                      name="contactNo"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter contact number",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
+            <Form.Item
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.isPrimaryAddress !== currentValues.isPrimaryAddress
+              }
+              noStyle
+            >
+              {({ getFieldValue }) => (
+                <>
+                  {getFieldValue("isPrimaryAddress") ? (
+                    <>
+                      <Form.Item
+                        label="Primary address"
+                        name="address"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter the address",
+                          },
+                        ]}
+                      >
+                        <Input.TextArea />
+                      </Form.Item>
 
-                    <Form.Item
-                      label="Whatsapp number"
-                      name="contactWhatsappNo"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter whatsapp number",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-                  </>
-                ) : (
-                  <Form.Item
-                    label="Select contact"
-                    name="contactId"
-                    rules={[
-                      { required: true, message: "please select contact" },
-                    ]}
-                  >
-                    <Select
-                      showSearch
-                      allowClear
-                      onChange={(e) => dispatch(getContactById(e))}
-                      options={
-                        contactList?.length > 0
-                          ? contactList?.map((item) => ({
-                            label: `${maskEmail(
-                              item?.emails
-                            )} || ${maskMobileNumber(item?.contactNo)} `,
-                            value: item?.id,
-                            email: item?.emails,
-                            contact: item?.contactNo,
-                          }))
-                          : []
-                      }
-                      filterOption={(input, option) =>
-                        option?.email
-                          ?.toLowerCase()
-                          ?.includes(input?.toLowerCase()) ||
-                        option?.contact
-                          ?.toLowerCase()
-                          ?.includes(input?.toLowerCase())
-                      }
-                    />
-                  </Form.Item>
-                )}
-              </>
-            )}
-          </Form.Item>
+                      <Form.Item
+                        label="City"
+                        name="city"
+                        rules={[
+                          { required: true, message: "please enter the city" },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
 
-          <Form.Item label="Add new primary address" name='isPrimaryAddress'>
-            <Switch
-              size="small"
-            // disabled={Object.keys(companyDetails)?.length > 0 ? true : false}
-            />
-          </Form.Item>
+                      <Form.Item
+                        label="State"
+                        name="state"
+                        rules={[
+                          { required: true, message: "please enter the state" },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
 
-          <Form.Item
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.isPrimaryAddress !== currentValues.isPrimaryAddress
-            }
-            noStyle
-          >
-            {({ getFieldValue }) => (
-              <>
-                {getFieldValue("isPrimaryAddress") ? (
-                  <>
-                    <Form.Item
-                      label="Primary address"
-                      name="address"
-                      rules={[
-                        { required: true, message: "please enter the address" },
-                      ]}
-                    >
-                      <Input.TextArea />
-                    </Form.Item>
+                      <Form.Item
+                        label="Country"
+                        name="country"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter the country",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
 
-                    <Form.Item
-                      label="City"
-                      name="city"
-                      rules={[{ required: true, message: "please enter the city" }]}
-                    >
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="State"
-                      name="state"
-                      rules={[{ required: true, message: "please enter the state" }]}
-                    >
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="Country"
-                      name="country"
-                      rules={[
-                        { required: true, message: "please enter the country" },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="PinCode"
-                      name="primaryPinCode"
-                      rules={[{ required: true, message: "please enter pincode" }]}
-                    >
-                      <Input />
-                    </Form.Item>
-                  </>
-                ) : (
-                  null
-                )}
-              </>
-            )}
-          </Form.Item>
+                      <Form.Item
+                        label="PinCode"
+                        name="primaryPinCode"
+                        rules={[
+                          { required: true, message: "please enter pincode" },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+                    </>
+                  ) : null}
+                </>
+              )}
+            </Form.Item>
+          </div>
 
           <Divider style={{ color: "#cccccc" }} orientation="center">
             Secondary details
           </Divider>
+          <div className="form-grid-col-2">
+            <Form.Item
+              label="New secondary contact details"
+              name="secondaryContact"
+              rules={[{ required: true }]}
+            >
+              <Switch size="small" />
+            </Form.Item>
 
-          {/* 
-          <Form.Item label="Same as primary details" name="secondaryContact">
-            <Switch size="small" onChange={handleSetFields} />
-          </Form.Item> */}
-
-          <Form.Item
-            label="New secondary contact details"
-            name="secondaryContact"
-            rules={[{ required: true }]}
-          >
-            <Switch size="small" />
-          </Form.Item>
-
-          <Form.Item
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.secondaryContact !== currentValues.secondaryContact
-            }
-            noStyle
-          >
-            {({ getFieldValue }) => (
-              <>
-                {getFieldValue("secondaryContact") ? (
-                  <>
-                    <Form.Item
-                      label="Salutation"
-                      name="secondaryTitle"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please select salutation for contact name ",
-                        },
-                      ]}
-                    >
-                      <Select
-                        options={[
-                          { label: "Master.", value: "master" },
-                          { label: "Mr.", value: "mr" },
-                          { label: "Mrs.", value: "mrs" },
-                          { label: "Miss.", value: "miss" },
+            <Form.Item
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.secondaryContact !== currentValues.secondaryContact
+              }
+              noStyle
+            >
+              {({ getFieldValue }) => (
+                <>
+                  {getFieldValue("secondaryContact") ? (
+                    <>
+                      <Form.Item
+                        label="Salutation"
+                        name="secondaryTitle"
+                        rules={[
+                          {
+                            required: true,
+                            message:
+                              "please select salutation for contact name ",
+                          },
                         ]}
-                      />
-                    </Form.Item>
+                      >
+                        <Select
+                          options={[
+                            { label: "Master.", value: "master" },
+                            { label: "Mr.", value: "mr" },
+                            { label: "Mrs.", value: "mrs" },
+                            { label: "Miss.", value: "miss" },
+                          ]}
+                        />
+                      </Form.Item>
 
-                    <Form.Item
-                      label="Contact name"
-                      name="scontactName"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter contact person name",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
+                      <Form.Item
+                        label="Contact name"
+                        name="scontactName"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter contact person name",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
 
-                    {/* <Form.Item
-                      label="Desigination"
-                      name="secondaryDesignation"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter desigination",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item> */}
+                      <Form.Item
+                        label="Desigination"
+                        name="secondaryDesignation"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter desigination",
+                          },
+                        ]}
+                      >
+                        <Select
+                          allowClear
+                          showSearch
+                          options={
+                            desiginationList?.length > 0
+                              ? desiginationList?.map((item) => ({
+                                  label: item?.name,
+                                  value: item?.id,
+                                }))
+                              : []
+                          }
+                          filterOption={(input, option) =>
+                            option.label
+                              .toLowerCase()
+                              .includes(input.toLowerCase())
+                          }
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Email"
+                        name="scontactEmails"
+                        rules={[
+                          {
+                            required: true,
+                            type: "email",
+                            message: "please enter the email id",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Contact number"
+                        name="scontactNo"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter contact number",
+                          },
+                        ]}
+                      >
+                        <Input maxLength={10} />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Whatsapp number"
+                        name="scontactWhatsappNo"
+                        rules={[
+                          {
+                            required: true,
+                            message: "please enter whatsapp number",
+                          },
+                        ]}
+                      >
+                        <Input maxLength={10} />
+                      </Form.Item>
+                    </>
+                  ) : (
                     <Form.Item
-                      label="Desigination"
-                      name="secondaryDesignation"
+                      label="Select contact"
+                      name="scontactId"
                       rules={[
-                        {
-                          required: true,
-                          message: "please enter desigination",
-                        },
+                        { required: true, message: "please select contact" },
                       ]}
                     >
                       <Select
-                        allowClear
                         showSearch
+                        allowClear
+                        onChange={(e) => dispatch(getContactById(e))}
                         options={
-                          desiginationList?.length > 0
-                            ? desiginationList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                          contactList?.length > 0
+                            ? contactList?.map((item) => ({
+                                label: `${maskEmail(
+                                  item?.emails
+                                )} || ${maskMobileNumber(item?.contactNo)} `,
+                                value: item?.id,
+                                email: item?.emails,
+                                contact: item?.contactNo,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
-                          option.label
-                            .toLowerCase()
-                            .includes(input.toLowerCase())
+                          option?.email
+                            ?.toLowerCase()
+                            ?.includes(input?.toLowerCase()) ||
+                          option?.contact
+                            ?.toLowerCase()
+                            ?.includes(input?.toLowerCase())
                         }
                       />
                     </Form.Item>
-
-                    <Form.Item
-                      label="Email"
-                      name="scontactEmails"
-                      rules={[
-                        {
-                          required: true,
-                          type: "email",
-                          message: "please enter the email id",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="Contact number"
-                      name="scontactNo"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter contact number",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="Whatsapp number"
-                      name="scontactWhatsappNo"
-                      rules={[
-                        {
-                          required: true,
-                          message: "please enter whatsapp number",
-                        },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-                  </>
-                ) : (
-                  <Form.Item
-                    label="Select contact"
-                    name="scontactId"
-                    rules={[
-                      { required: true, message: "please select contact" },
-                    ]}
-                  >
-                    <Select
-                      showSearch
-                      allowClear
-                      onChange={(e) => dispatch(getContactById(e))}
-                      options={
-                        contactList?.length > 0
-                          ? contactList?.map((item) => ({
-                            label: `${maskEmail(
-                              item?.emails
-                            )} || ${maskMobileNumber(item?.contactNo)} `,
-                            value: item?.id,
-                            email: item?.emails,
-                            contact: item?.contactNo,
-                          }))
-                          : []
-                      }
-                      filterOption={(input, option) =>
-                        option?.email
-                          ?.toLowerCase()
-                          ?.includes(input?.toLowerCase()) ||
-                        option?.contact
-                          ?.toLowerCase()
-                          ?.includes(input?.toLowerCase())
-                      }
-                    />
-                  </Form.Item>
-                )}
-              </>
-            )}
-          </Form.Item>
-
-          <Form.Item label="Add new secondary address" name='isSecondaryAddress'>
-            <Switch
-              size="small"
-            // disabled={Object.keys(companyDetails)?.length > 0 ? true : false}
-            />
-          </Form.Item>
-
-
-          <Form.Item
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.isSecondaryAddress !== currentValues.isSecondaryAddress
-            }
-            noStyle
-          >
-            {({ getFieldValue }) => (
-              <>
-                {getFieldValue("isSecondaryAddress") ? (
-                  <>
-                    <Form.Item label="Address" name="saddress">
-                      <Input.TextArea />
-                    </Form.Item>
-
-                    <Form.Item label="City" name="scity">
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item label="State" name="sstate">
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item label="Country" name="scountry">
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item label="PinCode" name="secondaryPinCode">
-                      <Input />
-                    </Form.Item>
-                  </>
-                ) : (
-                  null
-                )}
-              </>
-            )}
-          </Form.Item>
-
-
-          {edit && (
-            <Form.Item
-              label="Comment"
-              name="comment"
-              rules={[{ required: true, message: "please write the comment " }]}
-            >
-              <Input.TextArea />
+                  )}
+                </>
+              )}
             </Form.Item>
-          )}
+
+            <Form.Item
+              label="Add new secondary address"
+              name="isSecondaryAddress"
+            >
+              <Switch
+                size="small"
+                // disabled={Object.keys(companyDetails)?.length > 0 ? true : false}
+              />
+            </Form.Item>
+
+            <Form.Item
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.isSecondaryAddress !==
+                currentValues.isSecondaryAddress
+              }
+              noStyle
+            >
+              {({ getFieldValue }) => (
+                <>
+                  {getFieldValue("isSecondaryAddress") ? (
+                    <>
+                      <Form.Item label="Address" name="saddress">
+                        <Input.TextArea />
+                      </Form.Item>
+
+                      <Form.Item label="City" name="scity">
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item label="State" name="sstate">
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item label="Country" name="scountry">
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item label="PinCode" name="secondaryPinCode">
+                        <Input />
+                      </Form.Item>
+                    </>
+                  ) : null}
+                </>
+              )}
+            </Form.Item>
+            {edit && (
+              <Form.Item
+                label="Comment"
+                name="comment"
+                rules={[
+                  { required: true, message: "please write the comment " },
+                ]}
+              >
+                <Input.TextArea />
+              </Form.Item>
+            )}
+          </div>
         </Form>
       </Modal>
     </>

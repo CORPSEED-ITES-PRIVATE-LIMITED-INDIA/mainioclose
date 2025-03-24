@@ -31,13 +31,11 @@ const CompanySearch = () => {
       title: "Id",
       fixed: "left",
       width: 80,
-      checked: true,
     },
     {
       dataIndex: "companyName",
       title: "Company name",
       fixed: "left",
-      checked: true,
       render: (_, props) => (
         <OverFlowText linkText={true} to={`${props?.companyId}/details`}>
           {props?.companyName}
@@ -48,66 +46,58 @@ const CompanySearch = () => {
     {
       dataIndex: "gstNo",
       title: "GST number",
-      checked: false,
       render: (_, props) => <ColComp data={props?.gstNo} />,
     },
     {
       dataIndex: "gstType",
       title: "GST type",
-      checked: false,
       render: (_, props) => <ColComp data={props?.gstType} />,
     },
     {
       dataIndex: "city",
       title: "City",
-      checked: false,
       render: (_, props) => <ColComp data={props?.city} />,
     },
     {
       dataIndex: "state",
       title: "State",
-      checked: false,
       render: (_, props) => <ColComp data={props?.state} />,
     },
 
     {
       dataIndex: "country",
       title: "Country",
-      checked: false,
       render: (_, props) => <ColComp data={props?.country} />,
     },
     {
       dataIndex: "secAddress",
       title: "Secondary address",
-      checked: false,
       render: (_, props) => <OverFlowText>{props?.secAddress}</OverFlowText>,
     },
     {
       dataIndex: "secCity",
       title: "Secondary city",
-      checked: false,
       render: (_, props) => <ColComp data={props?.secCity} />,
     },
     {
       dataIndex: "secState",
       title: "Secondary state",
-      checked: false,
       render: (_, props) => <ColComp data={props?.secState} />,
     },
     {
       dataIndex: "seCountry",
       title: "Secondary country",
-      checked: false,
       render: (_, props) => <ColComp data={props?.seCountry} />,
     },
   ];
 
   return (
     <>
-    <MainHeading
-        data={`Company search`}
-      />
-      <div className="flex-verti-center-hori-start mt-2" style={{margin:'6px 0px'}}>
+      <MainHeading data={`Company search`} />
+      <div
+        className="flex-verti-center-hori-start mt-2"
+        style={{ margin: "6px 0px" }}
+      >
         <Space.Compact>
           <Input
             placeholder="Search"

@@ -22,6 +22,7 @@ import { getClientDesiginationList } from "../../../Toolkit/Slices/SettingSlice"
 import {
   getAllContactDetails,
   getContactById,
+  getGstDetailsByCompanyId,
 } from "../../../Toolkit/Slices/LeadSlice";
 import { Icon } from "@iconify/react";
 import { maskEmail, maskMobileNumber } from "../../Common/Commons";
@@ -87,8 +88,9 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Company created successfully" });
-          setOpenModal(true);
+          setOpenModal(false);
           form.resetFields();
+          dispatch(getGstDetailsByCompanyId(companyId));
         } else {
           notification.error({ message: "Something went wrong !." });
         }
@@ -117,7 +119,12 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
           layout="vertical"
           form={form}
           onFinish={handleFinish}
-          initialValues={{}}
+          initialValues={{
+            primaryContact: false,
+            isPrimaryAddress: false,
+            secondaryContact: false,
+            isSecondaryAddress: false,
+          }}
           style={{ maxHeight: "60vh", padding: 4, overflow: "auto" }}
         >
           <div className="grid-container-2-col">
@@ -494,10 +501,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
             </Form.Item>
 
             <Form.Item label="Add new primary address" name="isPrimaryAddress">
-              <Switch
-                size="small"
-                // disabled={Object.keys(companyDetails)?.length > 0 ? true : false}
-              />
+              <Switch size="small" />
             </Form.Item>
 
             <Form.Item
@@ -670,7 +674,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
 
                       <Form.Item
                         label="Contact name"
-                        name="scontactName"
+                        name="secondaryContactName"
                         rules={[
                           {
                             required: true,
@@ -712,7 +716,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
 
                       <Form.Item
                         label="Email"
-                        name="scontactEmails"
+                        name="secondaryContactEmails"
                         rules={[
                           {
                             required: true,
@@ -726,7 +730,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
 
                       <Form.Item
                         label="Contact number"
-                        name="scontactNo"
+                        name="secondaryContactNo"
                         rules={[
                           {
                             required: true,
@@ -739,7 +743,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
 
                       <Form.Item
                         label="Whatsapp number"
-                        name="scontactWhatsappNo"
+                        name="secondaryContactWhatsappNo"
                         rules={[
                           {
                             required: true,
@@ -753,7 +757,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                   ) : (
                     <Form.Item
                       label="Select contact"
-                      name="scontactId"
+                      name="secondaryContactId"
                       rules={[
                         { required: true, message: "please select contact" },
                       ]}

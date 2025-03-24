@@ -52,6 +52,7 @@ const CompanyForm = () => {
   const currentUserDetail = useSelector(
     (state) => state.auth.getDepartmentDetail
   );
+  const adminRole = currentRoles.includes("ADMIN");
   const [selectedFilter, setSelectedFilter] = useState("initiated");
   const [openModal, setOpenModal] = useState(false);
   const [formId, setFormId] = useState(null);
@@ -178,29 +179,38 @@ const CompanyForm = () => {
     {
       title: "Contact number",
       dataIndex: "contactNo",
-      render: (_, data) => (
-        <Tooltip title={`${data?.contactNo}`}>
+      render: (_, data) =>
+        adminRole ? (
+          <Tooltip title={`${data?.contactNo}`}>
+            <Text>{maskMobileNumber(data?.contactNo) || "NA"}</Text>
+          </Tooltip>
+        ) : (
           <Text>{maskMobileNumber(data?.contactNo) || "NA"}</Text>
-        </Tooltip>
-      ),
+        ),
     },
     {
       title: "Contact whatsapp",
       dataIndex: "contactWhatsappNo",
-      render: (_, data) => (
-        <Tooltip title={`${data?.contactWhatsappNo}`}>
+      render: (_, data) =>
+        adminRole ? (
+          <Tooltip title={`${data?.contactWhatsappNo}`}>
+            <Text>{maskMobileNumber(data?.contactWhatsappNo) || "NA"}</Text>
+          </Tooltip>
+        ) : (
           <Text>{maskMobileNumber(data?.contactWhatsappNo) || "NA"}</Text>
-        </Tooltip>
-      ),
+        ),
     },
     {
       title: "Contact email",
       dataIndex: "contactEmails",
-      render: (_, data) => (
-        <Tooltip title={`${data?.contactEmails}`}>
+      render: (_, data) =>
+        adminRole ? (
+          <Tooltip title={`${data?.contactEmails}`}>
+            <Text>{maskEmail(data?.contactEmails) || "NA"}</Text>
+          </Tooltip>
+        ) : (
           <Text>{maskEmail(data?.contactEmails) || "NA"}</Text>
-        </Tooltip>
-      ),
+        ),
     },
     {
       title: "Address",
@@ -240,31 +250,42 @@ const CompanyForm = () => {
     {
       title: "SContact number",
       dataIndex: "secondaryContactNo",
-      render: (_, data) => (
-        <Tooltip title={`${data?.secondaryContactNo}`}>
+      render: (_, data) =>
+        adminRole ? (
+          <Tooltip title={`${data?.secondaryContactNo}`}>
+            <Text>{maskMobileNumber(data?.secondaryContactNo) || "NA"}</Text>
+          </Tooltip>
+        ) : (
           <Text>{maskMobileNumber(data?.secondaryContactNo) || "NA"}</Text>
-        </Tooltip>
-      ),
+        ),
     },
     {
       title: "SContact whatsapp",
       dataIndex: "secondaryContactWhatsappNo",
-      render: (_, data) => (
-        <Tooltip title={`${data?.secondaryContactWhatsappNo}`}>
+      render: (_, data) =>
+        adminRole ? (
+          <Tooltip title={`${data?.secondaryContactWhatsappNo}`}>
+            <Text>
+              {maskMobileNumber(data?.secondaryContactWhatsappNo) || "NA"}
+            </Text>
+          </Tooltip>
+        ) : (
           <Text>
             {maskMobileNumber(data?.secondaryContactWhatsappNo) || "NA"}
           </Text>
-        </Tooltip>
-      ),
+        ),
     },
     {
       title: "SContact email",
       dataIndex: "secondaryContactEmails",
-      render: (_, data) => (
-        <Tooltip title={`${data?.secondaryContactEmails}`}>
+      render: (_, data) =>
+        adminRole ? (
+          <Tooltip title={`${data?.secondaryContactEmails}`}>
+            <Text>{maskEmail(data?.secondaryContactEmails) || "NA"}</Text>
+          </Tooltip>
+        ) : (
           <Text>{maskEmail(data?.secondaryContactEmails) || "NA"}</Text>
-        </Tooltip>
-      ),
+        ),
     },
     {
       title: "Secondary address",
@@ -351,6 +372,7 @@ const CompanyForm = () => {
               <CompanyFormModal
                 editInfo={records}
                 edit={true}
+                totalCount={leadCompanyList?.[0]?.totalLeadFor}
                 selectedFilter={selectedFilter}
                 paginationData={paginationData}
               />
@@ -367,6 +389,8 @@ const CompanyForm = () => {
                 editInfo={records}
                 edit={true}
                 selectedFilter={selectedFilter}
+                page={paginationData?.page}
+                pageSize={paginationData?.size}
               />
             ),
           },
@@ -399,7 +423,6 @@ const CompanyForm = () => {
                   >
                     Approval
                   </Button>
-                  
                 </>
               );
             },

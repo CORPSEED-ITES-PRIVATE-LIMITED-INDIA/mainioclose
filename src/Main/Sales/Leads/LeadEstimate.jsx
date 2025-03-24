@@ -32,7 +32,6 @@ import {
 } from "../../../Toolkit/Slices/LeadSlice";
 import { createContacts } from "../../../Toolkit/Slices/CommonSlice";
 import dayjs from "dayjs";
-import "./EstimateDesignPage.scss";
 import { maskEmail, maskMobileNumber } from "../../Common/Commons";
 import logo from "../../../Images/CORPSEED.webp";
 import numWords from "num-words";
@@ -72,6 +71,7 @@ const LeadEstimate = ({ leadid }) => {
     userId: userid,
     fieldSearch: "companyName",
   });
+
   const [productFees, setProductFees] = useState({
     professionalFees: 0,
     serviceCharge: 0,
@@ -258,7 +258,7 @@ const LeadEstimate = ({ leadid }) => {
   const handleFinish = useCallback(
     (values) => {
       values.leadId = leadid;
-      values.unitCompany=false
+      values.unitCompany = false;
       values.gstDocuments = values.gstDocuments?.[0]?.response;
       if (editEstimate) {
         values.id = details?.id;
@@ -386,32 +386,30 @@ const LeadEstimate = ({ leadid }) => {
                         notification.warning({
                           message: `This company is already assigned to ${resp?.payload?.assigneeName}`,
                         });
-                        form.resetFields()
-                      }
-                      else if(resp?.payload?.assigneeId == userid){
+                        form.resetFields();
+                      } else if (resp?.payload?.assigneeId == userid) {
                         form.setFieldsValue({
-                          companyName:resp?.payload?.name,
-                          gstType:resp?.payload?.gstType,
-                          gstNo:resp?.payload?.gstNo,
-                          address:resp?.payload?.address,
-                          city:resp?.payload?.city,
-                          country:resp?.payload?.country,
-                          state:resp?.payload?.state,
-                          primaryContact:resp?.payload?.primaryContact,
-                          panNo:resp?.payload?.panNo,
-                          companyAge:resp?.payload?.companyAge,
-                          primaryContact:resp?.payload?.primaryContact?.id,
-                          secondaryContact:resp?.payload?.secondaryContact?.id,
-                          assigneeId:resp?.payload?.assigneeId,
-                          primaryPinCode:resp?.payload?.primaryPinCode,
-                          secondaryAddress:resp?.payload?.sAddress,
-                          secondaryCity:resp?.payload?.sCity,
-                          secondaryState:resp?.payload?.sState,
-                          secondaryCountry:resp?.payload?.sCountry,
-                          secondaryPinCode:resp?.payload?.secondaryPinCode
-                        })
+                          companyName: resp?.payload?.name,
+                          gstType: resp?.payload?.gstType,
+                          gstNo: resp?.payload?.gstNo,
+                          address: resp?.payload?.address,
+                          city: resp?.payload?.city,
+                          country: resp?.payload?.country,
+                          state: resp?.payload?.state,
+                          primaryContact: resp?.payload?.primaryContact,
+                          panNo: resp?.payload?.panNo,
+                          companyAge: resp?.payload?.companyAge,
+                          primaryContact: resp?.payload?.primaryContact?.id,
+                          secondaryContact: resp?.payload?.secondaryContact?.id,
+                          assigneeId: resp?.payload?.assigneeId,
+                          primaryPinCode: resp?.payload?.primaryPinCode,
+                          secondaryAddress: resp?.payload?.sAddress,
+                          secondaryCity: resp?.payload?.sCity,
+                          secondaryState: resp?.payload?.sState,
+                          secondaryCountry: resp?.payload?.sCountry,
+                          secondaryPinCode: resp?.payload?.secondaryPinCode,
+                        });
                       }
-                      
                     }
                   });
                 }}

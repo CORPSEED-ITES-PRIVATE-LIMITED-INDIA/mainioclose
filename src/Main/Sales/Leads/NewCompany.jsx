@@ -265,7 +265,6 @@ const NewCompany = () => {
           <Input
             prefix={<Icon icon="fluent:search-24-regular" />}
             value={searchText}
-            size="small"
             onChange={handleSearch}
             placeholder="search"
             style={{ width: "25%" }}
