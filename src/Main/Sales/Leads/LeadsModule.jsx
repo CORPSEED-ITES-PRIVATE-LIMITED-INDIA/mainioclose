@@ -784,7 +784,7 @@ const LeadsModule = () => {
             </Popover>
           )}
 
-          <LeadCreateModel />
+          <LeadCreateModel allMultiFilterData={allMultiFilterData} />
           <Button
             type="default"
             onClick={() => setOpenNotificationDrawer(true)}

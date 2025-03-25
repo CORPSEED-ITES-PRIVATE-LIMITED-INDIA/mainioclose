@@ -78,7 +78,7 @@ const CompanyDetailPage = () => {
 
   const handleFinish = (values) => {
     values.companyId = companyId;
-    dispatch(addConsultantInGST())
+    dispatch(addConsultantInGST(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Consultant added successfully !." });

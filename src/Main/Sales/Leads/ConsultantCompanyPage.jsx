@@ -40,71 +40,23 @@ const ConsultantCompanyPage = () => {
 
   const columns = [
     {
-      dataIndex: "companyId",
+      dataIndex: "id",
       title: "Id",
       fixed: "left",
       width: 80,
     },
     {
-      dataIndex: "companyName",
+      dataIndex: "name",
       title: "Company name",
       fixed: "left",
     },
     {
-      dataIndex: "gstNo",
-      title: "GST number",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.gstNo} />,
+      dataIndex: "originalContact",
+      title: "Original contact",
     },
     {
-      dataIndex: "gstType",
-      title: "GST type",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.gstType} />,
-    },
-
-    {
-      dataIndex: "city",
-      title: "City",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.city} />,
-    },
-    {
-      dataIndex: "state",
-      title: "State",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.state} />,
-    },
-
-    {
-      dataIndex: "country",
-      title: "Country",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.country} />,
-    },
-    {
-      dataIndex: "secAddress",
-      title: "Secondary address",
-      checked: false,
-      render: (_, props) => <OverFlowText>{props?.secAddress}</OverFlowText>,
-    },
-    {
-      dataIndex: "secCity",
-      title: "Secondary city",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.secCity} />,
-    },
-    {
-      dataIndex: "secState",
-      title: "Secondary state",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.secState} />,
-    },
-    {
-      dataIndex: "seCountry",
-      title: "Secondary country",
-      checked: false,
-      render: (_, props) => <ColComp data={props?.seCountry} />,
+      dataIndex: "originalEmail",
+      title: "Original email",
     },
   ];
   return (
@@ -131,7 +83,7 @@ const ConsultantCompanyPage = () => {
           data={filteredData}
           columns={columns}
           scroll={{ y: "69vh" }}
-          rowKey={(record) => record?.parentCompanyId}
+          rowKey={(record) => record?.id}
         />
       </Flex>
     </>
