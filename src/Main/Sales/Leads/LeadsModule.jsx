@@ -702,11 +702,27 @@ const LeadsModule = () => {
     <div className="lead-module small-box-padding">
       <div className="create-user-box">
         <MainHeading data={`Leads (${totalCount})`} />
+      </div>
+      <Flex justify="space-between" align="center" className="marginBottom8px">
+        <Search
+          placeholder="Search"
+          allowClear
+          value={searchText}
+          onSearch={onSearchLead}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            if (!e.target.value && !e.target.value.trim()) {
+              dispatch(getAllLeads(allMultiFilterData));
+              setSearchText("");
+            }
+          }}
+          enterButton="search"
+          style={{ width: "20%" }}
+          prefix={<Icon icon="fluent:search-24-regular" />}
+        />
         <Flex align="center" gap={2}>
           <Link to={`allTask`}>
-            <Button size="small" type="primary">
-              All tasks
-            </Button>
+            <Button type="primary">All tasks</Button>
           </Link>
           {adminRole && (
             <CSVLink
@@ -715,7 +731,7 @@ const LeadsModule = () => {
               headers={headers}
               filename={"exported_data.csv"}
             >
-              <Button size="small">
+              <Button>
                 <Icon
                   icon="fluent:arrow-upload-16-filled"
                   height={BTN_ICON_HEIGHT}
@@ -726,10 +742,7 @@ const LeadsModule = () => {
             </CSVLink>
           )}
 
-          <Button
-            onClick={() => setHideMUltiFilter((prev) => !prev)}
-            size="small"
-          >
+          <Button onClick={() => setHideMUltiFilter((prev) => !prev)}>
             Filter data
           </Button>
 
@@ -759,7 +772,7 @@ const LeadsModule = () => {
                 </Flex>
               }
             >
-              <Button size="small" className="mr-2">
+              <Button className="mr-2">
                 {" "}
                 <Icon
                   icon="fluent:arrow-download-16-filled"
@@ -783,7 +796,7 @@ const LeadsModule = () => {
             </div>
           </Button>
         </Flex>
-      </div>
+      </Flex>
 
       {hideMUltiFilter && (
         <div className={`all-between py-2`}>
@@ -792,7 +805,6 @@ const LeadsModule = () => {
               <Select
                 mode="multiple"
                 maxTagCount="responsive"
-                size="small"
                 allowClear
                 showSearch
                 style={{ width: "45%" }}
@@ -820,7 +832,6 @@ const LeadsModule = () => {
             <Select
               mode="multiple"
               maxTagCount="responsive"
-              size="small"
               style={{ width: "45%" }}
               value={allMultiFilterData?.statusId}
               allowClear
@@ -869,35 +880,14 @@ const LeadsModule = () => {
               }}
             />
 
-            <Button size="small" type="primary" onClick={handleApplyFilter}>
+            <Button type="primary" onClick={handleApplyFilter}>
               Apply filter
             </Button>
-            <Button size="small" onClick={handleResetFilter}>
-              Reset filter
-            </Button>
+            <Button onClick={handleResetFilter}>Reset filter</Button>
           </div>
         </div>
       )}
 
-      <div className="flex-verti-center-hori-start my-2">
-        <Search
-          placeholder="search"
-          size="small"
-          allowClear
-          value={searchText}
-          onSearch={onSearchLead}
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            if (!e.target.value && !e.target.value.trim()) {
-              dispatch(getAllLeads(allMultiFilterData));
-              setSearchText("");
-            }
-          }}
-          enterButton="search"
-          style={{ width: "250px" }}
-          prefix={<Icon icon="fluent:search-24-regular" />}
-        />
-      </div>
       <div className="table-arrow">
         <Suspense fallback={<TableScalaton />}>
           <Spin
@@ -940,7 +930,6 @@ const LeadsModule = () => {
                           disabled={
                             selectedRowKeys?.length === 0 ? true : false
                           }
-                          size="small"
                         >
                           {leadDelLoading === "pending"
                             ? "Please wait..."
@@ -952,7 +941,6 @@ const LeadsModule = () => {
                         allowClear
                         showSearch
                         value={assignedLeadInfo?.statusId}
-                        size="small"
                         style={{ width: 200 }}
                         placeholder="Select status"
                         options={
@@ -980,7 +968,6 @@ const LeadsModule = () => {
                       <Select
                         showSearch
                         allowClear
-                        size="small"
                         value={assignedLeadInfo?.assigneId}
                         style={{ width: 200 }}
                         placeholder="select user"
@@ -1010,7 +997,6 @@ const LeadsModule = () => {
                         type="primary"
                         disabled={selectedRowKeys?.length === 0 ? true : false}
                         onClick={handleMultipleAssignedLeads}
-                        size="small"
                       >
                         {multibtn === "pending" ? "Loading..." : "Send"}
                       </Button>

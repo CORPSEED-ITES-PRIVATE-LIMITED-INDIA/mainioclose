@@ -97,8 +97,8 @@
 
 // export default BulkFileUploader;
 
-import React, { useCallback, useEffect, useState } from "react"
-import { Icon } from "@iconify/react"
+import React, { useCallback, useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import {
   Button,
   Flex,
@@ -108,46 +108,46 @@ import {
   Typography,
   Upload,
   notification,
-} from "antd"
-import "./BulkFileUpload.scss"
-import { useDispatch, useSelector } from "react-redux"
+} from "antd";
+import "./BulkFileUpload.scss";
+import { useDispatch, useSelector } from "react-redux";
 import {
   createRemakWithFile,
   getAllRemarkAndCommnts,
-} from "../../../Toolkit/Slices/LeadSlice"
-import { useParams } from "react-router-dom"
-import { getAllComments } from "../../../Toolkit/Slices/UserRatingSlice"
-const { Dragger } = Upload
-const { Text } = Typography
+} from "../../../Toolkit/Slices/LeadSlice";
+import { useParams } from "react-router-dom";
+import { getAllComments } from "../../../Toolkit/Slices/UserRatingSlice";
+const { Dragger } = Upload;
+const { Text } = Typography;
 
 const BulkFileUploader = ({ leadid }) => {
-  const dispatch = useDispatch()
-  const allComments = useSelector((state) => state.rating.allComments)
-  const { userid } = useParams()
-  const [files, setFiles] = useState([])
-  const [text, setText] = useState("")
-  const [flag, setFlag] = useState(null)
-  const [inputCommentText, setInputCommentText] = useState("")
-  const [apiLoading, setApiLoading] = useState("")
-  const [showUploadList,setUploadList]=useState(true)
-  const [filesToUpload,setFilesToUpload]=useState([])
+  const dispatch = useDispatch();
+  const allComments = useSelector((state) => state.rating.allComments);
+  const { userid } = useParams();
+  const [files, setFiles] = useState([]);
+  const [text, setText] = useState("");
+  const [flag, setFlag] = useState(null);
+  const [inputCommentText, setInputCommentText] = useState("");
+  const [apiLoading, setApiLoading] = useState("");
+  const [showUploadList, setUploadList] = useState(true);
+  const [filesToUpload, setFilesToUpload] = useState([]);
 
   useEffect(() => {
-    dispatch(getAllComments())
-  }, [dispatch])
-  
+    dispatch(getAllComments());
+  }, [dispatch]);
+
   const props = {
     name: "file",
     multiple: true,
     // showUploadList: showUploadList,
     action: "/leadService/api/v1/upload/uploadimageToFileSystem",
-    fileList:filesToUpload,
+    fileList: filesToUpload,
     onChange(info) {
-      setFiles(info?.fileList?.map((file) => file?.response))
-      setFilesToUpload(info?.fileList)
+      setFiles(info?.fileList?.map((file) => file?.response));
+      setFilesToUpload(info?.fileList);
     },
     onDrop(e) {},
-  }
+  };
 
   const onSubmit = useCallback(() => {
     let data = {
@@ -156,70 +156,69 @@ const BulkFileUploader = ({ leadid }) => {
       type: text === "Other" ? "Other" : "selected",
       message: text === "Other" ? inputCommentText : text,
       file: files,
-    }
+    };
     if ((text !== "" || inputCommentText !== "") && files?.length > 0) {
-      setApiLoading("pending")
+      setApiLoading("pending");
       dispatch(createRemakWithFile(data))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Remark added successfully" })
-            setFlag(true)
-            setApiLoading("success")
-            setFiles([])
-            setFilesToUpload([])
-            setText("")
-            setInputCommentText("")
-            dispatch(getAllRemarkAndCommnts(leadid))
-            setUploadList(false)
+            notification.success({ message: "Remark added successfully" });
+            setFlag(true);
+            setApiLoading("success");
+            setFiles([]);
+            setFilesToUpload([]);
+            setText("");
+            setInputCommentText("");
+            dispatch(getAllRemarkAndCommnts(leadid));
+            setUploadList(false);
           } else {
-            notification.error({ message: "Something went wrong" })
-            setApiLoading("error")
+            notification.error({ message: "Something went wrong" });
+            setApiLoading("error");
           }
         })
         .catch(() => {
-          notification.error({ message: "Something went wrong" })
-          setApiLoading("error")
-        })
+          notification.error({ message: "Something went wrong" });
+          setApiLoading("error");
+        });
     } else if (text !== "" || inputCommentText !== "") {
-      setApiLoading("pending")
+      setApiLoading("pending");
       dispatch(createRemakWithFile(data))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Remark added successfully" })
-            setFlag(true)
-            setFiles([])
-            setText("")
-            setInputCommentText("")
-            setApiLoading("success")
-            setUploadList(false)
-            dispatch(getAllRemarkAndCommnts(leadid))
+            notification.success({ message: "Remark added successfully" });
+            setFlag(true);
+            setFiles([]);
+            setText("");
+            setInputCommentText("");
+            setApiLoading("success");
+            setUploadList(false);
+            dispatch(getAllRemarkAndCommnts(leadid));
           } else {
-            notification.error({ message: "Something went wrong" })
-            setApiLoading("error")
+            notification.error({ message: "Something went wrong" });
+            setApiLoading("error");
           }
         })
         .catch(() => {
-          notification.error({ message: "Something went wrong" })
-          setApiLoading("error")
-        })
+          notification.error({ message: "Something went wrong" });
+          setApiLoading("error");
+        });
     } else {
-      setFlag(false)
+      setFlag(false);
     }
-  }, [leadid, userid, text, files, dispatch, inputCommentText])
+  }, [leadid, userid, text, files, dispatch, inputCommentText]);
 
   return (
-    <Flex vertical>
-      <Space>
-        <Text className="heading-text">Select the comment</Text>
-      </Space>
+    <Flex vertical gap={8}>
+      <Text className="heading-text">Select the comment</Text>
       <Select
         style={{ width: "100%", margin: "12px 0px" }}
-        placeholder="select comment..."
+        placeholder="Select comment..."
         value={text === "" ? null : text}
+        size='large'
         showSearch
         allowClear
         options={
-          [ { name: "Other" },...allComments]?.map((item) => ({
+          [{ name: "Other" }, ...allComments]?.map((item) => ({
             label: item?.name,
             value: item?.name,
           })) || []
@@ -228,11 +227,11 @@ const BulkFileUploader = ({ leadid }) => {
           option.label.toLowerCase().includes(input.toLowerCase())
         }
         onClear={(e) => {
-          setText(undefined)
+          setText(undefined);
         }}
         onChange={(e) => {
-          setText(e)
-          setFlag(null)
+          setText(e);
+          setFlag(null);
         }}
       />
       {text === "Other" && (
@@ -273,7 +272,7 @@ const BulkFileUploader = ({ leadid }) => {
         </Button>
       </div>
     </Flex>
-  )
-}
+  );
+};
 
-export default BulkFileUploader
+export default BulkFileUploader;

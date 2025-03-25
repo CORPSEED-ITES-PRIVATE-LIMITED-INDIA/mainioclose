@@ -69,7 +69,7 @@ const ProfileDrawer = () => {
   return (
     <>
       <div className="user-profile-container">
-        <Text className="heading-text">
+        <Text className="userName-heading">
           {currentUserProfile?.username
             ? currentUserProfile?.username
             : "UserName"}

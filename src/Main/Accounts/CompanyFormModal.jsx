@@ -18,7 +18,6 @@ import {
   getAllContactDetails,
   getCompanyByUnitId,
   getCompanyDetailsByGst,
-  getCompanyDetailsByLeadId,
   getCompanyUnitsById,
   getContactById,
 } from "../../Toolkit/Slices/LeadSlice";
@@ -26,6 +25,8 @@ import { getAllUsers } from "../../Toolkit/Slices/UsersSlice";
 import {
   getAllCompanyByStatus,
   getCompanyDetailsById,
+  getCompanyDetailsByLeadId,
+  getCompanyExistData,
   updateCompanyForm,
 } from "../../Toolkit/Slices/CompanySlice";
 import { useParams } from "react-router-dom";
@@ -56,9 +57,7 @@ const CompanyFormModal = ({
   const [form] = Form.useForm();
   const dispatch = useDispatch();
   const { userid } = useParams();
-  const companyDetails = useSelector(
-    (state) => state?.leads?.companyDetailsById
-  );
+
   const allUsers = useSelector((state) => state.user.allUsers);
   const companyUnits = useSelector((state) => state?.leads?.companyUnits);
   const companyDetailByUnitId = useSelector(
@@ -66,6 +65,9 @@ const CompanyFormModal = ({
   );
   const singleLeadResponseData = useSelector(
     (state) => state.leads.singleLeadResponseData
+  );
+  const existingCompanyList = useSelector(
+    (state) => state.company.existingCompanyList
   );
   const currentRoles = useSelector((state) => state?.auth?.roles);
   const contactList = useSelector((state) => state?.leads?.allContactList);
@@ -100,32 +102,35 @@ const CompanyFormModal = ({
     dispatch(getAllMainIndustry());
     dispatch(getClientDesiginationList());
     dispatch(getAllContactDetails());
-    dispatch(
-      getCompanyDetailsByLeadId(data?.id ? data?.id : data?.leadId)
-    ).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        if (Object.keys(resp.payload)?.length > 0) {
-          if (resp.payload.assignee?.id != userid) {
-            playWarningSound();
-            notification.warning({
-              message: `This lead is already assigned to "${resp?.payload?.assignee?.fullName}" for company id "${resp?.payload?.id}" company name " ${resp?.payload?.name}"`,
-            });
+    dispatch(getCompanyExistData(data?.id ? data?.id : data?.leadId)).then(
+      (resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          if (resp.payload?.length > 0) {
+            let sortedCompany =
+              resp?.payload?.find((item) => item.assigneeId == userid) ||
+              resp?.payload?.[0];
+            if (sortedCompany?.assigneeId != userid) {
+              playWarningSound();
+              notification.warning({
+                message: `This lead is already assigned to "${sortedCompany?.assigneeName}" for company id "${sortedCompany?.id}" company name " ${sortedCompany?.companyName}"`,
+              });
+            } else {
+              form.setFieldsValue({
+                companyId: sortedCompany?.id,
+                isUnit: false,
+              });
+              dispatch(getCompanyUnitsById(sortedCompany?.id));
+              setOpenModal(true);
+            }
           } else {
-            form.setFieldsValue({
-              companyId: resp?.payload.name,
-              isUnit: false,
-            });
-            dispatch(getCompanyUnitsById(resp?.payload?.id));
+            form.setFieldsValue({ isUnit: true });
             setOpenModal(true);
           }
         } else {
-          form.setFieldsValue({ isUnit: true });
           setOpenModal(true);
         }
-      } else {
-        setOpenModal(true);
       }
-    });
+    );
   }, [form, data, dispatch, userid]);
 
   function getFileName(file) {
@@ -134,6 +139,106 @@ const CompanyFormModal = ({
       return temp[temp?.length - 1];
     }
   }
+
+  const handleManageUnits = (e) => {
+    if (e === false) {
+      form.setFieldsValue({
+        panNo: "",
+        gstNo: "",
+        isPrimaryAddress: false,
+        companyAge: "",
+        primaryPinCode: "",
+        secondaryPinCode: "",
+        assigneeId: "",
+        updatedBy: "",
+        state: "",
+        address: "",
+        country: "",
+        primaryContact: false,
+        primaryDesignation: "",
+        primaryTitle: "",
+        contactId: "",
+        contactName: "",
+        contactEmails: "",
+        contactNo: "",
+        contactWhatsappNo: "",
+        city: "",
+        isSecondaryAddress: false,
+        scountry: "",
+        saddress: "",
+        sstate: "",
+        secondaryContact: false,
+        secondaryTitle: "",
+        scontactEmails: "",
+        scontactNo: "",
+        scontactName: "",
+        scontactWhatsappNo: "",
+        secondaryDesignation: "",
+        scontactId: "",
+        scity: "",
+        amount: "",
+        comment: "",
+        industryId: "",
+        subIndustryId: "",
+        subsubIndustryId: "",
+        industrydataId: [],
+      });
+    }
+  };
+
+  const handleSelectUnit = (e) => {
+    dispatch(getAllMainIndustry());
+    dispatch(getClientDesiginationList());
+    dispatch(getCompanyByUnitId(e)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        let unitData = resp?.payload;
+        dispatch(getSubIndustryByIndustryId(unitData?.industryId));
+        dispatch(getSubSubIndustryBySubIndustryId(unitData?.subIndustryId));
+        dispatch(getIndustryDataBySubSubIndustryId(unitData?.subSubIndustryId));
+        form.setFieldsValue({
+          panNo: unitData?.panNo,
+          gstNo: unitData?.gstNo,
+          isPrimaryAddress: true,
+          companyAge: unitData?.companyAge,
+          primaryPinCode: unitData?.primaryPinCode,
+          secondaryPinCode: unitData?.secondaryPinCode,
+          assigneeId: unitData?.assigneeId,
+          updatedBy: unitData?.updatedBy?.id,
+          state: unitData?.state,
+          address: unitData?.address,
+          country: unitData?.country,
+          primaryContact: true,
+          primaryDesignation: Number(unitData?.primaryContact?.designation),
+          primaryTitle: unitData?.primaryContact?.title,
+          contactId: unitData?.primaryContact?.contactId,
+          contactName: unitData?.primaryContact?.name,
+          contactEmails: unitData?.primaryContact?.emails,
+          contactNo: unitData?.primaryContact?.contactNo,
+          contactWhatsappNo: unitData?.primaryContact?.whatsappNo,
+          city: unitData?.city,
+          isSecondaryAddress: true,
+          scountry: unitData?.scountry,
+          saddress: unitData?.saddress,
+          sstate: unitData?.sstate,
+          secondaryContact: true,
+          secondaryTitle: unitData?.secondaryContact?.title,
+          scontactEmails: unitData?.secondaryContact?.emails,
+          scontactNo: unitData?.secondaryContact?.contactNo,
+          scontactName: unitData?.secondaryContact?.name,
+          scontactWhatsappNo: unitData?.secondaryContact?.whatsappNo,
+          secondaryDesignation: Number(unitData?.secondaryContact?.designation),
+          scontactId: unitData?.secondaryContact?.scontactId,
+          scity: unitData?.scity,
+          amount: unitData?.amount,
+          comment: unitData?.comment,
+          industryId: unitData?.industryId,
+          subIndustryId: unitData?.subIndustryId,
+          subsubIndustryId: unitData?.subSubIndustryId,
+          industrydataId: unitData?.industryData?.map((item) => item?.id),
+        });
+      }
+    });
+  };
 
   const handleEditBtnClick = useCallback(() => {
     if (editInfo?.id !== undefined) {
@@ -297,13 +402,13 @@ const CompanyFormModal = ({
           : data?.id
           ? data?.id
           : data?.leadId;
-        if (Object.keys(companyDetails)?.length > 0) {
+        if (Object.keys(companyDetail)?.length > 0) {
           values.isPresent = true;
         } else {
           values.isPresent = false;
         }
         if (formData?.companyId) {
-          values.companyId = companyDetails?.id;
+          values.companyId = companyDetail?.id;
         }
 
         console.log("kdsjkjasgdkjgdjh", values);
@@ -332,7 +437,7 @@ const CompanyFormModal = ({
       }
     },
     [
-      companyDetails,
+      companyDetail,
       dispatch,
       form,
       data,
@@ -389,15 +494,23 @@ const CompanyFormModal = ({
           }}
         >
           <div className="form-grid-col-2">
-            {Object.keys(companyDetails)?.length > 0 ? (
+            {existingCompanyList?.length > 0 ? (
               <Form.Item
                 label="Company name"
                 name="companyId"
                 rules={[
-                  { required: true, message: "please enter the company name" },
+                  { required: true, message: "please select the company name" },
                 ]}
               >
-                <Input disabled />
+                <Select
+                  showSearch
+                  options={existingCompanyList?.map((item) => ({
+                    label: item?.companyName,
+                    value: item?.id,
+                    disabled: item?.assigneeId != userid,
+                    ...item,
+                  }))}
+                />
               </Form.Item>
             ) : (
               <Form.Item
@@ -409,6 +522,74 @@ const CompanyFormModal = ({
               >
                 <Input />
               </Form.Item>
+            )}
+
+            {existingCompanyList?.length > 0 && (
+              <>
+                <Form.Item
+                  label="New units"
+                  name="isUnit"
+                  rules={[{ required: true }]}
+                >
+                  <Switch size="small" onChange={handleManageUnits} />
+                </Form.Item>
+
+                <Form.Item
+                  shouldUpdate={(prevValues, currentValues) =>
+                    prevValues.isUnit !== currentValues.isUnit
+                  }
+                  noStyle
+                >
+                  {({ getFieldValue }) => (
+                    <>
+                      {getFieldValue("isUnit") ? (
+                        <Form.Item
+                          label="Select company unit"
+                          name="unitId"
+                          rules={[
+                            {
+                              required: true,
+                              message: "please select company unit",
+                            },
+                          ]}
+                        >
+                          <Select
+                            showSearch
+                            allowClear
+                            onChange={handleSelectUnit}
+                            options={
+                              companyUnits?.length > 0
+                                ? companyUnits?.map((item) => ({
+                                    label: item?.companyName,
+                                    value: item?.id,
+                                  }))
+                                : []
+                            }
+                            filterOption={(input, option) =>
+                              option.label
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                          />
+                        </Form.Item>
+                      ) : (
+                        <Form.Item
+                          label="Enter new company unit"
+                          name="unitName"
+                          rules={[
+                            {
+                              required: true,
+                              message: "please enter the company unit",
+                            },
+                          ]}
+                        >
+                          <Input />
+                        </Form.Item>
+                      )}
+                    </>
+                  )}
+                </Form.Item>
+              </>
             )}
 
             <Form.Item
@@ -596,91 +777,7 @@ const CompanyFormModal = ({
               />
             </Form.Item>
 
-            <Form.Item
-              label="Upload gst document"
-              name="gstDocuments"
-              getValueFromEvent={normFile}
-              valuePropName="fileList"
-            >
-              <Upload
-                action="/leadService/api/v1/upload/uploadimageToFileSystem"
-                listType="text"
-              >
-                <Button size="small">
-                  <Icon icon="fluent:arrow-upload-20-filled" /> Upload
-                </Button>
-              </Upload>
-            </Form.Item>
-
-            {Object.keys(companyDetails)?.length > 0 && (
-              <>
-                <Form.Item
-                  label="New units"
-                  name="isUnit"
-                  rules={[{ required: true }]}
-                >
-                  <Switch size="small" />
-                </Form.Item>
-
-                <Form.Item
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.isUnit !== currentValues.isUnit
-                  }
-                  noStyle
-                >
-                  {({ getFieldValue }) => (
-                    <>
-                      {getFieldValue("isUnit") ? (
-                        <Form.Item
-                          label="Select company unit"
-                          name="unitId"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please select company unit",
-                            },
-                          ]}
-                        >
-                          <Select
-                            showSearch
-                            allowClear
-                            onChange={(e) => dispatch(getCompanyByUnitId(e))}
-                            options={
-                              companyUnits?.length > 0
-                                ? companyUnits?.map((item) => ({
-                                    label: item?.companyName,
-                                    value: item?.id,
-                                  }))
-                                : []
-                            }
-                            filterOption={(input, option) =>
-                              option.label
-                                .toLowerCase()
-                                .includes(input.toLowerCase())
-                            }
-                          />
-                        </Form.Item>
-                      ) : (
-                        <Form.Item
-                          label="Enter new company unit"
-                          name="unitName"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please enter the company unit",
-                            },
-                          ]}
-                        >
-                          <Input />
-                        </Form.Item>
-                      )}
-                    </>
-                  )}
-                </Form.Item>
-              </>
-            )}
-
-            {Object.keys(companyDetails)?.length === 0 &&
+            {Object.keys(companyDetail)?.length === 0 &&
               getHighestPriorityRole(currentRoles) === "ADMIN" && (
                 <Form.Item
                   label="Select assignee"
@@ -717,6 +814,22 @@ const CompanyFormModal = ({
               rules={[{ required: true, message: "please enter amount" }]}
             >
               <InputNumber style={{ width: "100%" }} />
+            </Form.Item>
+
+            <Form.Item
+              label="Upload gst document"
+              name="gstDocuments"
+              getValueFromEvent={normFile}
+              valuePropName="fileList"
+            >
+              <Upload
+                action="/leadService/api/v1/upload/uploadimageToFileSystem"
+                listType="text"
+              >
+                <Button size="small">
+                  <Icon icon="fluent:arrow-upload-20-filled" /> Upload
+                </Button>
+              </Upload>
             </Form.Item>
           </div>
 
@@ -1128,10 +1241,7 @@ const CompanyFormModal = ({
               label="Add new secondary address"
               name="isSecondaryAddress"
             >
-              <Switch
-                size="small"
-                // disabled={Object.keys(companyDetails)?.length > 0 ? true : false}
-              />
+              <Switch size="small" />
             </Form.Item>
 
             <Form.Item

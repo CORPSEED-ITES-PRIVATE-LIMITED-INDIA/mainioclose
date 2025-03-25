@@ -352,6 +352,16 @@ export const getConsultantCompanies = createAsyncThunk(
   }
 );
 
+export const getCompanyExistData = createAsyncThunk(
+  "getCompanyExistData",
+  async (leadId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/searchCompanyByLeadId?leadId=${leadId}`
+    );
+    return response.data;
+  }
+);
+
 const CompnaySlice = createSlice({
   name: "company",
   initialState: {
@@ -381,6 +391,7 @@ const CompnaySlice = createSlice({
     companyTypeList: [],
     companiesSearchListForAccTeam: [],
     consultantCompaniesList: [],
+    existingCompanyList: [],
   },
   reducers: {
     handleNextPagination: (state, action) => {
@@ -574,6 +585,18 @@ const CompnaySlice = createSlice({
     builder.addCase(searchFormCompaniesBy.rejected, (state, action) => {
       state.loading = "rejected";
       state.companyListWithServices = {};
+    });
+
+    builder.addCase(getCompanyExistData.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getCompanyExistData.fulfilled, (state, action) => {
+      state.existingCompanyList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getCompanyExistData.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.existingCompanyList = [];
     });
 
     builder.addCase(getAllTempCompanies.pending, (state, action) => {

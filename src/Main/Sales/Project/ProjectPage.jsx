@@ -1,31 +1,29 @@
-import React, { useCallback, useEffect, useState } from "react"
-import TableOutlet from "../../../components/design/TableOutlet"
-import MainHeading from "../../../components/design/MainHeading"
-import TableScalaton from "../../../components/TableScalaton"
-import SomethingWrong from "../../../components/usefulThings/SomethingWrong"
-import { useDispatch, useSelector } from "react-redux"
-import {
-  getProjectAction,
-} from "../../../Toolkit/Slices/ProjectSlice"
-import ColComp from "../../../components/small/ColComp"
-import CommonTable from "../../../components/CommonTable"
-import OverFlowText from "../../../components/OverFlowText"
-import { Icon } from "@iconify/react"
-import { Input } from "antd"
+import React, { useCallback, useEffect, useState } from "react";
+import TableOutlet from "../../../components/design/TableOutlet";
+import MainHeading from "../../../components/design/MainHeading";
+import TableScalaton from "../../../components/TableScalaton";
+import SomethingWrong from "../../../components/usefulThings/SomethingWrong";
+import { useDispatch, useSelector } from "react-redux";
+import { getProjectAction } from "../../../Toolkit/Slices/ProjectSlice";
+import ColComp from "../../../components/small/ColComp";
+import CommonTable from "../../../components/CommonTable";
+import OverFlowText from "../../../components/OverFlowText";
+import { Icon } from "@iconify/react";
+import { Flex, Input } from "antd";
 
 const ProjectPage = () => {
-  const dispatch = useDispatch()
-  const currUserId = useSelector((prev) => prev?.auth?.currentUser?.id)
+  const dispatch = useDispatch();
+  const currUserId = useSelector((prev) => prev?.auth?.currentUser?.id);
   const { allProject, loadingProject, errorProject } = useSelector(
     (prev) => prev?.project
-  )
+  );
 
-  const [searchText, setSearchText] = useState("")
-  const [filteredData, setFilteredData] = useState([])
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,
-  })
+  });
 
   useEffect(() => {
     dispatch(
@@ -34,31 +32,31 @@ const ProjectPage = () => {
         page: paginationData?.page,
         size: paginationData?.size,
       })
-    )
-  }, [currUserId, dispatch])
+    );
+  }, [currUserId, dispatch]);
 
   useEffect(() => {
-    setFilteredData(allProject)
-  }, [allProject])
+    setFilteredData(allProject);
+  }, [allProject]);
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getProjectAction({ id: currUserId, page: dataPage, size }))
-      setPaginationData({ size: size, page: dataPage })
+      dispatch(getProjectAction({ id: currUserId, page: dataPage, size }));
+      setPaginationData({ size: size, page: dataPage });
     },
     [currUserId, dispatch]
-  )
+  );
 
   const handleSearch = (e) => {
-    const value = e.target.value.trim()
-    setSearchText(value)
+    const value = e.target.value.trim();
+    setSearchText(value);
     const filtered = allProject?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
-    )
-    setFilteredData(filtered)
-  }
+    );
+    setFilteredData(filtered);
+  };
 
   const columns = [
     {
@@ -150,21 +148,20 @@ const ProjectPage = () => {
       title: "Secondary pincode",
       render: (_, record) => <OverFlowText>{record?.sPinCode}</OverFlowText>,
     },
-  ]
+  ];
 
   return (
     <TableOutlet>
       <MainHeading data={`All projects`} />
-      <div className="flex-verti-center-hori-start mt-2">
+      <Flex className="marginBottom8px">
         <Input
           value={searchText}
-          size="small"
           onChange={handleSearch}
-          style={{ width: "220px" }}
+          style={{ width: "20%" }}
           placeholder="search"
           prefix={<Icon icon="fluent:search-24-regular" />}
         />
-      </div>
+      </Flex>
       <div className="mt-3">
         {loadingProject && <TableScalaton />}
         {errorProject && <SomethingWrong />}
@@ -182,7 +179,7 @@ const ProjectPage = () => {
         )}
       </div>
     </TableOutlet>
-  )
-}
+  );
+};
 
-export default ProjectPage
+export default ProjectPage;

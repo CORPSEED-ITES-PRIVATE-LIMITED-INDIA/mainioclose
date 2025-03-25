@@ -144,7 +144,10 @@ const NewCompany = () => {
       title: "Company name",
       fixed: "left",
       render: (_, props) => (
-        <OverFlowText linkText={true} to={`/erp/${userid}/sales/newcompanies/${props?.companyId}/details`}>
+        <OverFlowText
+          linkText={true}
+          to={`/erp/${userid}/sales/newcompanies/${props?.companyId}/details`}
+        >
           {props?.companyName}
         </OverFlowText>
       ),
@@ -252,7 +255,7 @@ const NewCompany = () => {
 
   return (
     <>
-      <Flex vertical gap={12}>
+      <Flex vertical>
         <Flex className="vouchers-header">
           <Text className="heading-text">New companies</Text>
         </Flex>
@@ -260,7 +263,7 @@ const NewCompany = () => {
         <Flex
           justify="space-between"
           align="center"
-          className="vouchers-header"
+          className="marginBottom8px"
         >
           <Input
             prefix={<Icon icon="fluent:search-24-regular" />}

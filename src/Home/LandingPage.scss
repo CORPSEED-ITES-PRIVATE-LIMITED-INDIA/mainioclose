@@ -81,7 +81,7 @@ main {
 }
 h1 {
   font-size: 2em;
-  margin: 0.67em 0;
+  margin:0;
 }
 hr {
   -webkit-box-sizing: content-box;
@@ -89,10 +89,7 @@ hr {
   height: 0;
   overflow: visible;
 }
-pre {
-  font-family: monospace, monospace;
-  // font-size: 1em;
-}
+
 a {
   background-color: transparent;
 }
@@ -109,7 +106,6 @@ strong {
 code,
 kbd,
 samp {
-  font-family: monospace, monospace;
   font-size: 1em;
 }
 small {
@@ -586,9 +582,6 @@ button,
 optgroup,
 textarea {
   color: #000;
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
-  // font-size: 1rem;
   line-height: 1.5;
 }
 h1,
@@ -599,9 +592,7 @@ h5,
 h6 {
   clear: both;
   font-weight: normal;
-  margin: 0 0 1.2rem;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
+  margin: 0;
 }
 h1.mb0,
 h2.mb0,
@@ -613,8 +604,6 @@ h6.mb0 {
 }
 h1,
 h2 {
-  font-family: "Sage Headline", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   text-rendering: optimizeLegibility;
   color: #000;
   line-height: 1.15;
@@ -644,8 +633,6 @@ h1 strong,
 h2 b,
 h2 strong {
   font-weight: normal;
-  font-family: "Sage Headline", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
 }
 h1 {
   letter-spacing: -1px;
@@ -655,8 +642,6 @@ h1.title-large {
   font-size: 2.5rem;
 }
 h1.as-intro-text {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 1.375rem !important;
   letter-spacing: normal;
   color: #00d639;
@@ -685,8 +670,6 @@ h2.as-header-1.title-sequel-large {
   font-size: 2.5rem;
 }
 h2.as-intro-text {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 1.125rem;
 }
 h2.as-header-3 {
@@ -701,11 +684,9 @@ h3.h3-lg {
   font-size: 1.375rem;
 }
 h3.as-header-2 {
-  font-family: "Sage Headline", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 1.75rem;
   line-height: 1.15;
-  margin: 0 0 1.2rem;
+  margin: 0;
 }
 h4 {
   font-size: 1.125rem;
@@ -723,8 +704,6 @@ h6 {
 p.intro-text,
 ul.intro-text,
 a.intro-text {
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
   font-size: 1.125rem;
 }
 p.intro-text.intro-text-sequel,
@@ -733,8 +712,6 @@ ul.intro-text.intro-text-sequel,
 ul.intro-text.intro-text-title,
 a.intro-text.intro-text-sequel,
 a.intro-text.intro-text-title {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 1.375rem !important;
   letter-spacing: normal;
 }
@@ -763,13 +740,9 @@ ol {
 p.intro-text,
 a.intro-text,
 li.intro-text {
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
   font-size: 1.125rem;
 }
 .pre-header {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 1.125rem;
 }
 .pre-header.ttu {
@@ -777,8 +750,6 @@ li.intro-text {
 }
 b,
 strong {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-weight: normal;
 }
 figcaption {
@@ -793,8 +764,6 @@ address {
 }
 a.btn,
 .btn {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   background: #00d639;
   color: #000 !important;
   border-radius: 24px;
@@ -883,8 +852,6 @@ a.btn--coral:hover,
   color: #fff !important;
   padding: 0.85rem 2rem;
   border-radius: 24px;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   border: none !important;
 }
 .cms #ot-sdk-btn.ot-sdk-show-settings:hover {
@@ -937,8 +904,6 @@ p.border-link {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #00d639;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   display: inline-block;
 }
 a.border-link.mb0,
@@ -949,15 +914,8 @@ a.border-link--no-pad,
 p.border-link--no-pad {
   padding: 0;
 }
-a.border-link--reg,
-p.border-link--reg {
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
-}
 a.border-link--white-text-gf,
 p.border-link--white-text-gf {
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
   color: white !important;
   opacity: 0.8;
   border-color: transparent;
@@ -989,8 +947,6 @@ blockquote {
   text-align: center;
   font-size: 1.125rem;
   max-width: 50rem;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
 }
 blockquote.bq-small {
   font-size: 1.5rem !important;
@@ -1031,28 +987,19 @@ blockquote span.bp-orange {
   line-height: 1;
   color: #000;
 }
-blockquote.blockquote-gf {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
+
 address {
   margin: 0 0 1.5em;
 }
 pre {
   background: #eee;
-  font-family: "Courier 10 Pitch", courier, monospace;
   line-height: 1.6;
   margin-bottom: 1.6em;
   max-width: 100%;
   overflow: auto;
   padding: 1.6em;
 }
-code,
-kbd,
-tt,
-var {
-  font-family: monaco, consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
-}
+
 abbr,
 acronym {
   border-bottom: 1px dotted #666;
@@ -1492,15 +1439,6 @@ ul.m-checks-list {
 }
 .link-underline {
   text-decoration: none;
-}
-.fw6 {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.fw3 {
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
-  font-weight: normal;
 }
 .nowrap {
   white-space: nowrap;
@@ -2253,68 +2191,7 @@ li.submenu.hovered .sub-menu {
 .m-partner-navigation a:hover {
   color: #03153a;
 }
-.page-template-product .nav-products-link,
-.page-template-product-gf .nav-products-link,
-.page-template-product-gf-new .nav-products-link,
-.page-template-product-gf-automation .nav-products-link,
-.page-template-hyper-scalable .nav-products-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.page-template-services-implementation .nav-services-link,
-.page-template-services-training .nav-services-link,
-.page-template-services-support .nav-services-link,
-.page-template-services-success .nav-services-link,
-.page-template-services-tiers .nav-services-link,
-.page-template-flexible-infrastructure .nav-services-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.page-template-pricing .nav-pricing-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.page-template-integrations-featured .nav-integrations-link,
-.page-template-integrations-listing .nav-integrations-link,
-.page-template-integrations-detail .nav-integrations-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.page-template-who-we-serve-gf .nav-who-we-serve-link,
-.page-template-who-we-serve-gf-ecommerce .nav-who-we-serve-link,
-.page-template-who-we-serve-business .nav-who-we-serve-link,
-.page-template-who-we-serve-ecommerce .nav-who-we-serve-link,
-.page-template-who-we-serve-ecommerce-sub .nav-who-we-serve-link,
-.page-template-who-we-serve-ecommerce-sub-alt .nav-who-we-serve-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.page-template-why-brightpearl .nav-why-brightpearl-link,
-.page-template-customers-listing .nav-why-brightpearl-link,
-.single-customer-stories .nav-why-brightpearl-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.blog .nav-resources-link,
-.post-template-default .nav-resources-link,
-.page-template-resources-listing .nav-resources-link,
-.page-template-resources-detail .nav-resources-link,
-.page-template-guides-listing .nav-resources-link,
-.single-guides .nav-resources-link,
-.page-template-press-and-media .nav-resources-link,
-.page-template-press-releases-listings .nav-resources-link,
-.single-press-releases .nav-resources-link,
-.page-template-automate-campaign .nav-resources-link,
-.page-template-retales .nav-resources-link,
-.page-template-peak-season-webinars .nav-resources-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
-.blog .nav-blog-link,
-.post-template-default .nav-blog-link {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
+
 .m-hero--halves .m-hero-header-image {
   height: 100%;
   width: calc(50% + 122px);
@@ -2347,8 +2224,6 @@ li.submenu.hovered .sub-menu {
   background-position: bottom center;
 }
 .m-hero .title-sm {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 1rem;
   background: #fff;
   margin: 0 0 0.5rem;
@@ -2356,8 +2231,6 @@ li.submenu.hovered .sub-menu {
   max-width: 393px;
 }
 .m-hero .title-md {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 2.75rem;
   margin: 0 0 0.5rem;
 }
@@ -2365,8 +2238,6 @@ li.submenu.hovered .sub-menu {
   font-size: 2.2rem !important;
 }
 .m-hero .title-lg {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 2.75rem;
   line-height: 1;
   padding: 0;
@@ -2725,8 +2596,6 @@ li.submenu.hovered .sub-menu {
   -webkit-box-align: center;
   -ms-flex-align: center;
   align-items: center;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   -webkit-box-pack: center;
   -ms-flex-pack: center;
   justify-content: center;
@@ -2779,8 +2648,6 @@ li.submenu.hovered .sub-menu {
 }
 .m-sidebar-list li a.active,
 .m-sidebar-list li span.active {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   padding-left: 20px;
   position: relative;
 }
@@ -2800,17 +2667,12 @@ li.submenu.hovered .sub-menu {
 .m-sidebar-list--lg li,
 .m-sidebar-list--xl li {
   letter-spacing: 0.1em;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
 }
 .m-sidebar-list--lg li a,
 .m-sidebar-list--xl li a {
   font-weight: normal;
 }
-.m-sidebar-list--xl li {
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
-}
+
 .m-sidebar-list--xl li a,
 .m-sidebar-list--xl li span {
   font-size: 1.25rem;
@@ -2939,8 +2801,6 @@ ul.m-latest-countdown-list li b {
   box-shadow: 38px 29px 0 2px #007ccf;
 }
 .m-key-facts-pushed .link-arrow {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   color: #fff;
 }
 .m-key-facts-pushed ul,
@@ -3070,8 +2930,6 @@ ul.m-latest-countdown-list li b {
 }
 .m-resources-detail-article blockquote,
 .m-seo-flexible-article blockquote {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   text-align: left;
   border-left: 5px solid #00d639;
   padding-left: 1rem;
@@ -3199,12 +3057,7 @@ ul.m-latest-countdown-list li b {
 .m-customer-story-key-facts-content:last-child {
   border-bottom: none !important;
 }
-.m-guides-detail-text h2,
-.m-guides-detail-text h2 strong,
-.m-guides-detail-text h2 b {
-  font-family: "Sage Headline", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
-}
+
 .m-guides-detail-text ul {
   padding: 1rem 0;
   list-style: none;
@@ -3459,8 +3312,6 @@ ul.m-latest-countdown-list li b {
 }
 .m-blog-post-text h2 {
   font-size: 1.125rem;
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
   font-weight: 600;
 }
 .m-blog-post-text h2 a:hover {
@@ -3524,8 +3375,6 @@ ul.m-latest-countdown-list li b {
 .pagination .nav-links .current {
   background-color: #000;
   color: #fff;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
 }
 .pagination .nav-links .next,
 .pagination .nav-links .prev {
@@ -4129,8 +3978,6 @@ table.table-five {
   color: #000;
   cursor: pointer;
   font-size: 1.125rem;
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   text-shadow: none !important;
   -webkit-box-shadow: none !important;
   box-shadow: none !important;
@@ -4149,8 +3996,6 @@ table.table-five {
   opacity: 0.95;
 }
 .m-slide-out-form .hs-button[type="submit"] {
-  font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   background: #00d639 !important;
   border-color: #00d639 !important;
   color: #000;
@@ -4591,8 +4436,6 @@ form .hs-error-msgs.inputs-list li {
   animation-iteration-count: 1;
 }
 .m-slider-dots-list li button {
-  font-family: "Sage Headline", "Calibri", "Helvetica Neue", "Helvetica",
-    "Arial", sans-serif;
   font-size: 0.8rem;
   background: 0;
   display: block;
@@ -4650,8 +4493,6 @@ form .hs-error-msgs.inputs-list li {
 }
 .l-footer .h2-uppercase {
   font-size: 0.875rem !important;
-  font-family: "Sage Text", "Calibri", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
   text-transform: uppercase;
   font-weight: 600;
 }
@@ -6201,10 +6042,6 @@ form .hs-error-msgs.inputs-list li {
   .main-navigation .sub-menu a:hover {
     color: #00d639;
   }
-  .main-navigation .sub-menu a.active {
-    font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-      "Arial", sans-serif;
-  }
   .main-navigation .sub-menu a.icon-sm {
     padding-left: 30px;
     // background-image:url(assets/img/sage/icons/icon-inventory-black.svg);
@@ -6779,8 +6616,6 @@ form .hs-error-msgs.inputs-list li {
   .start-content-container-right {
     h1 {
       color: #00d639;
-      font-family: "Sage Text Bold", "Calibri", "Helvetica Neue", "Helvetica",
-        "Arial", sans-serif;
       font-size: 1.25rem;
       letter-spacing: 1px;
       line-height: 1.5;

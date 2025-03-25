@@ -489,12 +489,11 @@ const CompanyForm = () => {
       <div className="create-user-box">
         <MainHeading data={"Lead forms"} />
       </div>
-      <div className="mt-3">
-        <div className="flex-verti-center-hori-start">
+      <Flex vertical>
+        <Flex gap={8} className="marginBottom8px">
           <Search
-            size="small"
             onSearch={onSearchLead}
-            style={{ width: "220px" }}
+            style={{ width: "20%" }}
             placeholder="search"
             onChange={(e) =>
               !e.target.value
@@ -513,9 +512,8 @@ const CompanyForm = () => {
             prefix={<Icon icon="fluent:search-24-regular" />}
           />
           <Select
-            style={{ width: "220px" }}
+            style={{ width: "20%" }}
             showSearch
-            size="small"
             value={selectedFilter}
             options={[
               { label: "Initiated", value: "initiated" },
@@ -530,7 +528,7 @@ const CompanyForm = () => {
               });
             }}
           />
-        </div>
+        </Flex>
         <CommonTable
           data={leadCompanyList}
           columns={columns}
@@ -543,7 +541,7 @@ const CompanyForm = () => {
           totalCount={leadCompanyList?.[0]?.totalLeadFor}
           handlePagination={handlePagination}
         />
-      </div>
+      </Flex>
       <Modal
         title="Company form Status"
         onCancel={() => setOpenModal(false)}
