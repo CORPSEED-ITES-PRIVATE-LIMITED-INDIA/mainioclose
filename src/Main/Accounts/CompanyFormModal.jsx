@@ -123,7 +123,7 @@ const CompanyFormModal = ({
               setOpenModal(true);
             }
           } else {
-            form.setFieldsValue({ isUnit: true });
+            form.setFieldsValue({ isUnit: false });
             setOpenModal(true);
           }
         } else {
@@ -351,6 +351,8 @@ const CompanyFormModal = ({
     return e?.fileList;
   };
 
+  console.log("kdsjkjasgdkjgdjh ===========>  out",existingCompanyList);
+
   const handleFinish = useCallback(
     (values) => {
       values.gstDocuments = values.gstDocuments?.[0]?.response;
@@ -396,21 +398,17 @@ const CompanyFormModal = ({
             notification.error({ message: "Something went wrong !." });
           });
       } else {
-        const formData = form.getFieldsValue(["companyId", "companyName"]);
         values.leadId = singleLeadResponseData?.parent
           ? values?.leadId
           : data?.id
-          ? data?.id
-          : data?.leadId;
-        if (Object.keys(companyDetail)?.length > 0) {
+            ? data?.id
+            : data?.leadId;
+            console.log("kdsjkjasgdkjgdjh ====>1",existingCompanyList, values);
+        if (existingCompanyList?.length > 0) {
           values.isPresent = true;
         } else {
           values.isPresent = false;
         }
-        if (formData?.companyId) {
-          values.companyId = companyDetail?.id;
-        }
-
         console.log("kdsjkjasgdkjgdjh", values);
         dispatch(createCompanyForm(values))
           .then((response) => {
@@ -446,6 +444,7 @@ const CompanyFormModal = ({
       selectedFilter,
       edit,
       singleLeadResponseData,
+      existingCompanyList
     ]
   );
 
@@ -544,6 +543,19 @@ const CompanyFormModal = ({
                     <>
                       {getFieldValue("isUnit") ? (
                         <Form.Item
+                          label="Enter new company unit"
+                          name="unitName"
+                          rules={[
+                            {
+                              required: true,
+                              message: "please enter the company unit",
+                            },
+                          ]}
+                        >
+                          <Input />
+                        </Form.Item>
+                      ) : (
+                        <Form.Item
                           label="Select company unit"
                           name="unitId"
                           rules={[
@@ -560,9 +572,9 @@ const CompanyFormModal = ({
                             options={
                               companyUnits?.length > 0
                                 ? companyUnits?.map((item) => ({
-                                    label: item?.companyName,
-                                    value: item?.id,
-                                  }))
+                                  label: item?.companyName,
+                                  value: item?.id,
+                                }))
                                 : []
                             }
                             filterOption={(input, option) =>
@@ -571,19 +583,6 @@ const CompanyFormModal = ({
                                 .includes(input.toLowerCase())
                             }
                           />
-                        </Form.Item>
-                      ) : (
-                        <Form.Item
-                          label="Enter new company unit"
-                          name="unitName"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please enter the company unit",
-                            },
-                          ]}
-                        >
-                          <Input />
                         </Form.Item>
                       )}
                     </>
@@ -610,9 +609,9 @@ const CompanyFormModal = ({
                   options={
                     singleLeadResponseData?.childLead?.length > 0
                       ? singleLeadResponseData?.childLead?.map((item) => ({
-                          label: item?.childLeadName,
-                          value: item?.childId,
-                        }))
+                        label: item?.childLeadName,
+                        value: item?.childId,
+                      }))
                       : []
                   }
                   filterOption={(input, option) =>
@@ -648,14 +647,14 @@ const CompanyFormModal = ({
               rules={
                 gstMand === "Registered" || gstMand === ""
                   ? [
-                      {
-                        required: true,
-                        message: "",
-                      },
-                      {
-                        validator: validateGstNumber(dispatch),
-                      },
-                    ]
+                    {
+                      required: true,
+                      message: "",
+                    },
+                    {
+                      validator: validateGstNumber(dispatch),
+                    },
+                  ]
                   : []
               }
             >
@@ -675,9 +674,9 @@ const CompanyFormModal = ({
                 options={
                   allIndustry?.length > 0
                     ? allIndustry?.map((item) => ({
-                        label: item?.name,
-                        value: item?.id,
-                      }))
+                      label: item?.name,
+                      value: item?.id,
+                    }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -706,9 +705,9 @@ const CompanyFormModal = ({
                 options={
                   subIndustryListById?.length > 0
                     ? subIndustryListById?.map((item) => ({
-                        label: item?.name,
-                        value: item?.id,
-                      }))
+                      label: item?.name,
+                      value: item?.id,
+                    }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -736,9 +735,9 @@ const CompanyFormModal = ({
                 options={
                   subSubIndustryListById?.length > 0
                     ? subSubIndustryListById?.map((item) => ({
-                        label: item?.name,
-                        value: item?.id,
-                      }))
+                      label: item?.name,
+                      value: item?.id,
+                    }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -766,9 +765,9 @@ const CompanyFormModal = ({
                 options={
                   industryDataListById?.length > 0
                     ? industryDataListById?.map((item) => ({
-                        label: item?.name,
-                        value: item?.id,
-                      }))
+                      label: item?.name,
+                      value: item?.id,
+                    }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -792,9 +791,9 @@ const CompanyFormModal = ({
                     options={
                       allUsers?.length > 0
                         ? allUsers?.map((item) => ({
-                            label: item?.fullName,
-                            value: item?.id,
-                          }))
+                          label: item?.fullName,
+                          value: item?.id,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -905,9 +904,9 @@ const CompanyFormModal = ({
                           options={
                             desiginationList?.length > 0
                               ? desiginationList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.id,
-                                }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                               : []
                           }
                           filterOption={(input, option) =>
@@ -973,13 +972,13 @@ const CompanyFormModal = ({
                         options={
                           contactList?.length > 0
                             ? contactList?.map((item) => ({
-                                label: `${maskEmail(
-                                  item?.emails
-                                )} || ${maskMobileNumber(item?.contactNo)} `,
-                                value: item?.id,
-                                email: item?.emails,
-                                contact: item?.contactNo,
-                              }))
+                              label: `${maskEmail(
+                                item?.emails
+                              )} || ${maskMobileNumber(item?.contactNo)} `,
+                              value: item?.id,
+                              email: item?.emails,
+                              contact: item?.contactNo,
+                            }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1145,9 +1144,9 @@ const CompanyFormModal = ({
                           options={
                             desiginationList?.length > 0
                               ? desiginationList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.id,
-                                }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                               : []
                           }
                           filterOption={(input, option) =>
@@ -1213,13 +1212,13 @@ const CompanyFormModal = ({
                         options={
                           contactList?.length > 0
                             ? contactList?.map((item) => ({
-                                label: `${maskEmail(
-                                  item?.emails
-                                )} || ${maskMobileNumber(item?.contactNo)} `,
-                                value: item?.id,
-                                email: item?.emails,
-                                contact: item?.contactNo,
-                              }))
+                              label: `${maskEmail(
+                                item?.emails
+                              )} || ${maskMobileNumber(item?.contactNo)} `,
+                              value: item?.id,
+                              email: item?.emails,
+                              contact: item?.contactNo,
+                            }))
                             : []
                         }
                         filterOption={(input, option) =>
