@@ -27,6 +27,7 @@ import {
   getCompanyDetailsById,
   getCompanyDetailsByLeadId,
   getCompanyExistData,
+  handleResetExistingCompany,
   updateCompanyForm,
 } from "../../Toolkit/Slices/CompanySlice";
 import { useParams } from "react-router-dom";
@@ -252,6 +253,8 @@ const CompanyFormModal = ({
           dispatch(
             getIndustryDataBySubSubIndustryId(editData?.subsubIndustry?.id)
           );
+          dispatch(getCompanyExistData(editData?.lead?.id))
+          dispatch(getCompanyUnitsById(editData?.companyId));
           form.setFieldsValue({
             isPresent: editData?.isPresent,
             companyName: editData?.companyName,
@@ -299,8 +302,8 @@ const CompanyFormModal = ({
             scontactWhatsappNo: editData?.scontactWhatsappNo,
             amount: editData?.amount,
             comment: editData?.comment,
-            secondaryDesignation: Number(editData?.secondaryDesignation),
-            primaryDesignation: Number(editData?.primaryDesignation),
+            secondaryDesignation: Number(editData?.secondaryDesignation?.id),
+            primaryDesignation: Number(editData?.primaryDesignation?.id),
             primaryTitle: editData?.title,
             secondaryTitle: editData?.secTitle,
             industryId: editData?.industry?.id,
@@ -351,7 +354,7 @@ const CompanyFormModal = ({
     return e?.fileList;
   };
 
-  console.log("kdsjkjasgdkjgdjh ===========>  out",existingCompanyList);
+  console.log("kdsjkjasgdkjgdjh ===========>  out", existingCompanyList);
 
   const handleFinish = useCallback(
     (values) => {
@@ -384,7 +387,9 @@ const CompanyFormModal = ({
               notification.success({
                 message: "Company created successfully.",
               });
+              form.resetFields();
               setOpenModal(false);
+              dispatch(handleResetExistingCompany())
             } else {
               setFormLoading("rejected");
               playErrorSound();
@@ -403,13 +408,11 @@ const CompanyFormModal = ({
           : data?.id
             ? data?.id
             : data?.leadId;
-            console.log("kdsjkjasgdkjgdjh ====>1",existingCompanyList, values);
         if (existingCompanyList?.length > 0) {
           values.isPresent = true;
         } else {
           values.isPresent = false;
         }
-        console.log("kdsjkjasgdkjgdjh", values);
         dispatch(createCompanyForm(values))
           .then((response) => {
             if (response.meta.requestStatus === "fulfilled") {
@@ -418,9 +421,10 @@ const CompanyFormModal = ({
               notification.success({
                 message: "Company created successfully.",
               });
-              playSuccessSound();
               setOpenModal(false);
+              playSuccessSound();
               form.resetFields();
+              dispatch(handleResetExistingCompany())
             } else {
               setFormLoading("rejected");
               playErrorSound();
@@ -444,7 +448,7 @@ const CompanyFormModal = ({
       selectedFilter,
       edit,
       singleLeadResponseData,
-      existingCompanyList
+      existingCompanyList,
     ]
   );
 
@@ -996,79 +1000,63 @@ const CompanyFormModal = ({
               )}
             </Form.Item>
 
-            <Form.Item label="Add new primary address" name="isPrimaryAddress">
-              <Switch size="small" />
+
+
+
+            <Form.Item
+              label="Primary address"
+              name="address"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter the address",
+                },
+              ]}
+            >
+              <Input.TextArea />
             </Form.Item>
 
             <Form.Item
-              shouldUpdate={(prevValues, currentValues) =>
-                prevValues.isPrimaryAddress !== currentValues.isPrimaryAddress
-              }
-              noStyle
+              label="City"
+              name="city"
+              rules={[
+                { required: true, message: "please enter the city" },
+              ]}
             >
-              {({ getFieldValue }) => (
-                <>
-                  {getFieldValue("isPrimaryAddress") ? (
-                    <>
-                      <Form.Item
-                        label="Primary address"
-                        name="address"
-                        rules={[
-                          {
-                            required: true,
-                            message: "please enter the address",
-                          },
-                        ]}
-                      >
-                        <Input.TextArea />
-                      </Form.Item>
+              <Input />
+            </Form.Item>
 
-                      <Form.Item
-                        label="City"
-                        name="city"
-                        rules={[
-                          { required: true, message: "please enter the city" },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
+            <Form.Item
+              label="State"
+              name="state"
+              rules={[
+                { required: true, message: "please enter the state" },
+              ]}
+            >
+              <Input />
+            </Form.Item>
 
-                      <Form.Item
-                        label="State"
-                        name="state"
-                        rules={[
-                          { required: true, message: "please enter the state" },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
+            <Form.Item
+              label="Country"
+              name="country"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter the country",
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
 
-                      <Form.Item
-                        label="Country"
-                        name="country"
-                        rules={[
-                          {
-                            required: true,
-                            message: "please enter the country",
-                          },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-
-                      <Form.Item
-                        label="PinCode"
-                        name="primaryPinCode"
-                        rules={[
-                          { required: true, message: "please enter pincode" },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </>
-                  ) : null}
-                </>
-              )}
+            <Form.Item
+              label="PinCode"
+              name="primaryPinCode"
+              rules={[
+                { required: true, message: "please enter pincode" },
+              ]}
+            >
+              <Input />
             </Form.Item>
           </div>
 

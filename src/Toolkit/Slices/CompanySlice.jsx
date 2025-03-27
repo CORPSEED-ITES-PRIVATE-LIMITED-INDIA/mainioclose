@@ -400,6 +400,9 @@ const CompnaySlice = createSlice({
     handlePrevPagination: (state, action) => {
       state.page = state.page >= 0 ? state.page - 1 : 0;
     },
+    handleResetExistingCompany: (state, action) => {
+      state.existingCompanyList = []
+    }
   },
   extraReducers: (builder) => {
     builder.addCase(getCompanyAction.pending, (state, action) => {
@@ -682,7 +685,7 @@ const CompnaySlice = createSlice({
   },
 });
 
-export const { handleNextPagination, handlePrevPagination } =
+export const { handleNextPagination, handlePrevPagination,handleResetExistingCompany } =
   CompnaySlice.actions;
 
 export default CompnaySlice.reducer;
