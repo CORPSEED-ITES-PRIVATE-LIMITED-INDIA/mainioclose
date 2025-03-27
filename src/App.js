@@ -299,9 +299,9 @@ function App() {
                 <Route path="scalaton" element={<TableScalaton />} />
                 <Route path="oppurtities" element={<Opportunities />} />
                 <Route path="company" element={<MainComanyModule />} />
-                <Route path="newcompanies" element={<NewCompany />} />
+                {/* <Route path="newcompanies" element={<NewCompany />} />
                 <Route path="newcompanies/:companyId/details" element={<NewCompaniesDetailedLayout />} />
-                <Route path="newcompanies/:companyId/details/:state/companyUnit" element={<NewCompanyUnits />} />
+                <Route path="newcompanies/:companyId/details/:state/companyUnit" element={<NewCompanyUnits />} /> */}
                 <Route path="project" element={<ProjectPage />} />
                 <Route
                   path="vendors-request"
