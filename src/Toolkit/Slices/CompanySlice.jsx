@@ -362,6 +362,11 @@ export const getCompanyExistData = createAsyncThunk(
   }
 );
 
+export const updateCompanyName=createAsyncThunk('updateCompanyName',async({companyId,name })=>{
+  const response=await putQuery(`/leadService/api/v1/company/editCompanyName?companyId=${companyId}&name=${name}`)
+  return response.data
+})
+
 const CompnaySlice = createSlice({
   name: "company",
   initialState: {

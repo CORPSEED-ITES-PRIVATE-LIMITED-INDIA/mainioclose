@@ -8,6 +8,7 @@ import {
   getHandleSearchCompanies,
   searchCompany,
   updateCompanyAssignee,
+  updateCompanyName,
   updateMultiCompanyAssignee,
   updateMultiTempCompanyAssignee,
 } from "../../../Toolkit/Slices/CompanySlice";
@@ -24,6 +25,7 @@ import {
   Flex,
   Form,
   Input,
+  Modal,
   notification,
   Popover,
   Select,
@@ -46,6 +48,7 @@ const MainCompanyPage = () => {
   const dispatch = useDispatch();
   const { userid } = useParams();
   const [form] = Form.useForm();
+  const [companyForm] = Form.useForm();
   const currUser = useSelector((prev) => prev?.auth?.currentUser);
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
   const currentRoles = useSelector((state) => state?.auth?.roles);
@@ -62,8 +65,10 @@ const MainCompanyPage = () => {
     page: 1,
     size: 50,
   });
+  const [openModal, setOpenModal] = useState(false)
   const [filterUserId, setFilterUserId] = useState("");
   const [openPopover, setOpenPopover] = useState(false);
+  const [updatedData, setUpdatedData] = useState(null)
   const [searchDetail, setSearchDetail] = useState({
     type: "name",
     userId: userid,
@@ -164,6 +169,34 @@ const MainCompanyPage = () => {
     [paginationData, dispatch, currUser]
   );
 
+
+  const handleUpdate = (value) => {
+    companyForm.setFieldsValue({ name: value?.companyName })
+    setUpdatedData(value)
+    setOpenModal(true)
+  }
+
+  const handleUpdateCompanyName = (values) => {
+    dispatch(updateCompanyName({ companyId: updatedData?.companyId, ...values })).then((res) => {
+      if (res.meta.requestStatus === 'fulfilled') {
+        notification.success({ message: 'Company name updated successfully !.' })
+        companyForm.resetFields()
+        setUpdatedData(null)
+        setOpenModal(false)
+        dispatch(
+          getCompanyAction({
+            id: currUser?.id,
+            page: paginationData?.page,
+            size: paginationData?.size,
+            filterUserId,
+          })
+        );
+      } else {
+        notification.error({ message: 'Something went wrong !.' })
+      }
+    }).catch(() => notification.error({ message: 'Something went wrong !.' }))
+  }
+
   const columns = [
     {
       dataIndex: "companyId",
@@ -225,15 +258,15 @@ const MainCompanyPage = () => {
 
     ...(getHighestPriorityRole(currentRoles) === "ADMIN"
       ? [
-          {
-            dataIndex: "clientContactEmail",
-            title: "Client email",
-          },
-          {
-            dataIndex: "clientContactNo",
-            title: "Client contact",
-          },
-        ]
+        {
+          dataIndex: "clientContactEmail",
+          title: "Client email",
+        },
+        {
+          dataIndex: "clientContactNo",
+          title: "Client contact",
+        },
+      ]
       : []),
     {
       dataIndex: "city",
@@ -278,6 +311,14 @@ const MainCompanyPage = () => {
       checked: false,
       render: (_, props) => <ColComp data={props?.seCountry} />,
     },
+    ...(getHighestPriorityRole(currentRoles) === "ADMIN" ? ([
+      {
+        dataIndex: "update",
+        title: "Update company name",
+        render: (_, props) => <Button onClick={() => handleUpdate(props)}>Edit</Button>
+      }
+    ]) : []),
+
     {
       dataIndex: "History",
       title: "Company history",
@@ -426,9 +467,8 @@ const MainCompanyPage = () => {
   return (
     <TableOutlet>
       <MainHeading
-        data={`All company (${
-          allCompnay?.[0]?.total === undefined ? 0 : allCompnay?.[0]?.total
-        })`}
+        data={`All company (${allCompnay?.[0]?.total === undefined ? 0 : allCompnay?.[0]?.total
+          })`}
       />
       <Flex justify="space-between" align="center">
         <div className="flex-verti-center-hori-start mt-2">
@@ -485,9 +525,9 @@ const MainCompanyPage = () => {
               options={
                 allUsers?.length > 0
                   ? allUsers?.map((item) => ({
-                      label: item?.fullName,
-                      value: item?.id,
-                    }))
+                    label: item?.fullName,
+                    value: item?.id,
+                  }))
                   : []
               }
               filterOption={(input, option) =>
@@ -528,11 +568,11 @@ const MainCompanyPage = () => {
                       options={
                         allUsers?.length > 0
                           ? [{ fullName: "All", id: "all" }, ...allUsers]?.map(
-                              (item) => ({
-                                label: item?.fullName,
-                                value: item?.id,
-                              })
-                            )
+                            (item) => ({
+                              label: item?.fullName,
+                              value: item?.id,
+                            })
+                          )
                           : []
                       }
                       filterOption={(input, option) =>
@@ -611,9 +651,9 @@ const MainCompanyPage = () => {
                       options={
                         leadUserNew?.length > 0
                           ? leadUserNew?.map((ele) => ({
-                              label: ele?.fullName,
-                              value: ele?.id,
-                            }))
+                            label: ele?.fullName,
+                            value: ele?.id,
+                          }))
                           : []
                       }
                       onChange={(e) => setAssigneeId(e)}
@@ -646,9 +686,9 @@ const MainCompanyPage = () => {
                       options={
                         leadUserNew?.length > 0
                           ? leadUserNew?.map((ele) => ({
-                              label: ele?.fullName,
-                              value: ele?.id,
-                            }))
+                            label: ele?.fullName,
+                            value: ele?.id,
+                          }))
                           : []
                       }
                       onChange={(e) => setTempAssigneeId(e)}
@@ -678,6 +718,13 @@ const MainCompanyPage = () => {
             }
           />
         </Suspense>
+        <Modal open={openModal} onCancel={() => setOpenModal(false)} onClose={() => setOpenModal(false)} onOk={() => companyForm.submit()} okText='Submit' >
+          <Form form={companyForm} layout='vertical' onFinish={handleUpdateCompanyName} >
+            <Form.Item label='Company name' name='name' rules={[{ required: true, message: 'please enter company name ' }]}>
+              <Input />
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     </TableOutlet>
   );
