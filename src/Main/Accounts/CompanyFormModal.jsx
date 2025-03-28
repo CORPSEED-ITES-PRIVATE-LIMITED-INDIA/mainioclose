@@ -117,10 +117,9 @@ const CompanyFormModal = ({
               });
             } else {
               form.setFieldsValue({
-                companyId: sortedCompany?.id,
                 isUnit: false,
               });
-              dispatch(getCompanyUnitsById(sortedCompany?.id));
+
               setOpenModal(true);
             }
           } else {
@@ -133,6 +132,53 @@ const CompanyFormModal = ({
       }
     );
   }, [form, data, dispatch, userid]);
+
+
+  const handleSelectCompany = (e) => {
+    dispatch(getCompanyUnitsById(e));
+    form.resetFields(['unitId'])
+    form.setFieldsValue({
+      panNo: "",
+      gstNo: "",
+      isPrimaryAddress: false,
+      companyAge: "",
+      primaryPinCode: "",
+      secondaryPinCode: "",
+      assigneeId: "",
+      updatedBy: "",
+      state: "",
+      address: "",
+      country: "",
+      primaryContact: false,
+      primaryDesignation: "",
+      primaryTitle: "",
+      contactId: "",
+      contactName: "",
+      contactEmails: "",
+      contactNo: "",
+      contactWhatsappNo: "",
+      city: "",
+      isSecondaryAddress: false,
+      scountry: "",
+      saddress: "",
+      sstate: "",
+      secondaryContact: false,
+      secondaryTitle: "",
+      scontactEmails: "",
+      scontactNo: "",
+      scontactName: "",
+      scontactWhatsappNo: "",
+      secondaryDesignation: "",
+      scontactId: "",
+      scity: "",
+      amount: "",
+      comment: "",
+      industryId: "",
+      subIndustryId: "",
+      subsubIndustryId: "",
+      industrydataId: [],
+    });
+  }
 
   function getFileName(file) {
     if (file) {
@@ -513,6 +559,7 @@ const CompanyFormModal = ({
                     disabled: item?.assigneeId != userid,
                     ...item,
                   }))}
+                  onChange={handleSelectCompany}
                 />
               </Form.Item>
             ) : (

@@ -89,11 +89,16 @@ const LeadCreateModel = ({ leadByCompany, companyId }) => {
 
   return (
     <>
-      <div className="team-model">
-        <Button type="primary" onClick={handleOpenModal}>
-          Create lead
-        </Button>
-      </div>
+      {
+        getHighestPriorityRole(currentRoles) === "ADMIN" && (
+          <div className="team-model">
+            <Button type="primary" onClick={handleOpenModal}>
+              Create lead
+            </Button>
+          </div>
+        )
+      }
+
       <Modal
         title="Create lead"
         centered

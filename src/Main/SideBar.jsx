@@ -135,14 +135,14 @@ const SideBar = () => {
                       ),
                       key: "company",
                     },
-                    {
-                      label: (
-                        <Link to={`${userid}/sales/newcompanies`}>
-                          New company
-                        </Link>
-                      ),
-                      key: "newcompanies",
-                    },
+                    // {
+                    //   label: (
+                    //     <Link to={`${userid}/sales/newcompanies`}>
+                    //       New company
+                    //     </Link>
+                    //   ),
+                    //   key: "newcompanies",
+                    // },
                     {
                       label: (
                         <Link to={`${userid}/sales/project`}>Project</Link>
@@ -221,12 +221,12 @@ const SideBar = () => {
                 label: <Link to={`${userid}/sales/company`}>Company</Link>,
                 key: "company",
               },
-              {
-                label: (
-                  <Link to={`${userid}/sales/newcompanies`}>New company</Link>
-                ),
-                key: "newcompanies",
-              },
+              // {
+              //   label: (
+              //     <Link to={`${userid}/sales/newcompanies`}>New company</Link>
+              //   ),
+              //   key: "newcompanies",
+              // },
               {
                 label: <Link to={`${userid}/sales/project`}>Project</Link>,
                 key: "project",
