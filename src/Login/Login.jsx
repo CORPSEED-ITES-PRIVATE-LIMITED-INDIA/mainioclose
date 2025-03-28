@@ -41,6 +41,9 @@ const Login = () => {
                     }
                     if (response.payload?.department === "Human Resource") {
                       navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
+                    }
+                    if (response.payload?.department === "Accounts") {
+                      navigate(`/erp/${resp?.payload?.id}/account/companyForm`);
                     } else {
                       navigate(`/erp/${resp?.payload?.id}/sales/leads`);
                     }
