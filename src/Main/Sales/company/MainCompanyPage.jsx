@@ -46,6 +46,7 @@ import {
   getSubSubIndustryBySubIndustryId,
 } from "../../../Toolkit/Slices/IndustrySlice";
 import { getClientDesiginationList } from "../../../Toolkit/Slices/SettingSlice";
+import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
 const CommonTable = lazy(() => import("../../../components/CommonTable"));
 const { Text } = Typography;
 
@@ -195,6 +196,7 @@ const MainCompanyPage = () => {
   );
 
   const handleUpdate = (value) => {
+    dispatch(getAllUsers());
     dispatch(getAllMainIndustry());
     dispatch(getClientDesiginationList());
     dispatch(getCompanyByUnitId(value?.companyId)).then((resp) => {
@@ -262,6 +264,7 @@ const MainCompanyPage = () => {
   };
 
   const handleUpdateCompanyName = (values) => {
+    values.gstDocuments = values.gstDocuments?.[0]?.response;
     dispatch(
       updateCompanyData({
         companyId: updatedData?.companyId,
@@ -274,7 +277,7 @@ const MainCompanyPage = () => {
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
           notification.success({
-            message: "Company name updated successfully !.",
+            message: "Company  updated successfully !.",
           });
           companyForm.resetFields();
           setUpdatedData(null);
@@ -918,7 +921,7 @@ const MainCompanyPage = () => {
                   }
                   onChange={(e) => {
                     dispatch(getSubIndustryByIndustryId(e));
-                    form.resetFields([
+                    companyForm.resetFields([
                       "industrydataId",
                       "subsubIndustryId",
                       "subIndustryId",
@@ -949,7 +952,10 @@ const MainCompanyPage = () => {
                   }
                   onChange={(e) => {
                     dispatch(getSubSubIndustryBySubIndustryId(e));
-                    form.resetFields(["industrydataId", "subsubIndustryId"]);
+                    companyForm.resetFields([
+                      "industrydataId",
+                      "subsubIndustryId",
+                    ]);
                   }}
                 />
               </Form.Item>
@@ -979,7 +985,7 @@ const MainCompanyPage = () => {
                   }
                   onChange={(e) => {
                     dispatch(getIndustryDataBySubSubIndustryId(e));
-                    form.resetFields(["industrydataId"]);
+                    companyForm.resetFields(["industrydataId"]);
                   }}
                 />
               </Form.Item>
@@ -1329,16 +1335,6 @@ const MainCompanyPage = () => {
 
               <Form.Item label="Secondary pinCode" name="secondaryPinCode">
                 <Input />
-              </Form.Item>
-
-              <Form.Item
-                label="Comment"
-                name="comment"
-                rules={[
-                  { required: true, message: "please write the comment " },
-                ]}
-              >
-                <Input.TextArea />
               </Form.Item>
             </div>
           </Form>
