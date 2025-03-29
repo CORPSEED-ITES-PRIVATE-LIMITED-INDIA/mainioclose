@@ -747,7 +747,7 @@ const LeadDetailsPage = ({ leadid }) => {
                   >
                     Assign to same person
                   </Button>
-                  {/* <LeadCompany data={singleLeadResponseData} /> */}
+                  <LeadCompany data={singleLeadResponseData} />
                   <CompanyFormModal
                     detailView={true}
                     data={singleLeadResponseData}

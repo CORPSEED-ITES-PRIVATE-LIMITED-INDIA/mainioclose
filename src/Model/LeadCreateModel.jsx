@@ -32,7 +32,7 @@ const LeadCreateModel = ({ leadByCompany, companyId }) => {
   const handleOpenModal = () => {
     if (currentUserDetail?.department === "Sales") {
       notification.warning({
-        message: "Please connect with Quality team to create lead",
+        message: "Please connect with quality team to create lead",
       });
     } else {
       setOpenModal(true);
