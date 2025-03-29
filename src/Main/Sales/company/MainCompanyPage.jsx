@@ -1239,7 +1239,7 @@ const MainCompanyPage = () => {
 
               <Form.Item
                 label="Contact name"
-                name="scontactName"
+                name="secondaryContactName"
                 rules={[
                   {
                     required: true,
@@ -1279,7 +1279,7 @@ const MainCompanyPage = () => {
 
               <Form.Item
                 label="Email"
-                name="scontactEmails"
+                name="secondaryContactEmails"
                 rules={[
                   {
                     required: true,
@@ -1293,7 +1293,7 @@ const MainCompanyPage = () => {
 
               <Form.Item
                 label="Contact number"
-                name="scontactNo"
+                name="secondaryContactNo"
                 rules={[
                   {
                     required: true,
@@ -1306,7 +1306,7 @@ const MainCompanyPage = () => {
 
               <Form.Item
                 label="Whatsapp number"
-                name="scontactWhatsappNo"
+                name="secondaryContactWhatsappNo"
                 rules={[
                   {
                     required: true,
@@ -1317,19 +1317,19 @@ const MainCompanyPage = () => {
                 <Input maxLength={10} />
               </Form.Item>
 
-              <Form.Item label="Secondary address" name="saddress">
+              <Form.Item label="Secondary address" name="secondaryAddress">
                 <Input.TextArea />
               </Form.Item>
 
-              <Form.Item label="Secondary city" name="scity">
+              <Form.Item label="Secondary city" name="secondaryCity">
                 <Input />
               </Form.Item>
 
-              <Form.Item label="Secondary state" name="sstate">
+              <Form.Item label="Secondary state" name="secondaryState">
                 <Input />
               </Form.Item>
 
-              <Form.Item label="Secondary country" name="scountry">
+              <Form.Item label="Secondary country" name="secondaryCountry">
                 <Input />
               </Form.Item>
 
