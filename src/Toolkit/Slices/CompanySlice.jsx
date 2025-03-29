@@ -290,6 +290,7 @@ export const createNewCompanyInLeads = createAsyncThunk(
   }
 );
 
+
 export const getAllCompanyType = createAsyncThunk(
   "getAllCompanyType",
   async (data) => {
