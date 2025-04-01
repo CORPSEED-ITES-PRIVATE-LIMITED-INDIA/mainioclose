@@ -290,7 +290,6 @@ export const createNewCompanyInLeads = createAsyncThunk(
   }
 );
 
-
 export const getAllCompanyType = createAsyncThunk(
   "getAllCompanyType",
   async (data) => {
@@ -363,12 +362,46 @@ export const getCompanyExistData = createAsyncThunk(
   }
 );
 
-export const updateCompanyData=createAsyncThunk('updateCompanyName',async(data)=>{
-  const response=await putQuery(`/leadService/api/v1/company/editCompanyAndLeadConnection`,data)
-  return response.data
-})
+export const updateCompanyData = createAsyncThunk(
+  "updateCompanyName",
+  async (data) => {
+    const response = await putQuery(
+      `/leadService/api/v1/company/editCompanyAndLeadConnection`,
+      data
+    );
+    return response.data;
+  }
+);
 
+export const getAllConsultantCompaniesById = createAsyncThunk(
+  "getAllConsultantCompaniesById",
+  async (companyId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getAllCompanyAndServingByParentCompany?companyId=${companyId}`
+    );
+    return response.data;
+  }
+);
 
+export const getAllServingGstCompany = createAsyncThunk(
+  "getAllServingGstCompany",
+  async (companyId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getGstAndStateForServingCompany?companyId=${companyId}&companyOrConsultant=company`
+    );
+    return response.data;
+  }
+);
+
+export const getAllConsultantUnitsByStateAndId = createAsyncThunk(
+  "getAllConsultantUnitsByStateAndId",
+  async ({ companyId, companyOrConsultant, state }) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getServingAndCompanyByGstAndState?companyId=${companyId}&companyOrConsultant=${companyOrConsultant}&state=${state}`
+    );
+    return response.data;
+  }
+);
 
 const CompnaySlice = createSlice({
   name: "company",
@@ -400,6 +433,8 @@ const CompnaySlice = createSlice({
     companiesSearchListForAccTeam: [],
     consultantCompaniesList: [],
     existingCompanyList: [],
+    servingGstCompanyList: [],
+    consultantUnitsList: [],
   },
   reducers: {
     handleNextPagination: (state, action) => {
@@ -409,8 +444,8 @@ const CompnaySlice = createSlice({
       state.page = state.page >= 0 ? state.page - 1 : 0;
     },
     handleResetExistingCompany: (state, action) => {
-      state.existingCompanyList = []
-    }
+      state.existingCompanyList = [];
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(getCompanyAction.pending, (state, action) => {
@@ -690,10 +725,61 @@ const CompnaySlice = createSlice({
       state.consultantLoading = "rejected";
       state.consultantCompaniesList = [];
     });
+
+    builder.addCase(getAllConsultantCompaniesById.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(
+      getAllConsultantCompaniesById.fulfilled,
+      (state, action) => {
+        state.consultantCompaniesList = action.payload;
+        state.consultantLoading = "success";
+      }
+    );
+    builder.addCase(getAllConsultantCompaniesById.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.consultantCompaniesList = [];
+    });
+
+    builder.addCase(getAllServingGstCompany.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(getAllServingGstCompany.fulfilled, (state, action) => {
+      state.servingGstCompanyList = action.payload;
+      state.consultantLoading = "success";
+    });
+    builder.addCase(getAllServingGstCompany.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.servingGstCompanyList = [];
+    });
+
+    builder.addCase(
+      getAllConsultantUnitsByStateAndId.pending,
+      (state, action) => {
+        state.consultantLoading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllConsultantUnitsByStateAndId.fulfilled,
+      (state, action) => {
+        state.consultantUnitsList = action.payload;
+        state.consultantLoading = "success";
+      }
+    );
+    builder.addCase(
+      getAllConsultantUnitsByStateAndId.rejected,
+      (state, action) => {
+        state.consultantLoading = "rejected";
+        state.consultantUnitsList = [];
+      }
+    );
   },
 });
 
-export const { handleNextPagination, handlePrevPagination,handleResetExistingCompany } =
-  CompnaySlice.actions;
+export const {
+  handleNextPagination,
+  handlePrevPagination,
+  handleResetExistingCompany,
+} = CompnaySlice.actions;
 
 export default CompnaySlice.reducer;

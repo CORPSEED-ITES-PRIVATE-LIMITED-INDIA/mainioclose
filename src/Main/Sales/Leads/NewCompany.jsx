@@ -1,4 +1,4 @@
-import { Flex, Input, notification, Select, Typography } from "antd";
+import { Flex, Input, notification, Select } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
@@ -17,7 +17,7 @@ import {
   updateCompanyAssignee,
 } from "../../../Toolkit/Slices/CompanySlice";
 import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
-const { Text } = Typography;
+import MainHeading from "../../../components/design/MainHeading";
 
 const NewCompany = () => {
   const { userid } = useParams();
@@ -146,7 +146,11 @@ const NewCompany = () => {
       render: (_, props) => (
         <OverFlowText
           linkText={true}
-          to={`/erp/${userid}/sales/newcompanies/${props?.companyId}/details`}
+          to={
+            props?.consultantOrCompany
+              ? `/erp/${userid}/sales/newcompanies/${props?.companyId}/newConsultantCompanies`
+              : `/erp/${userid}/sales/newcompanies/${props?.companyId}/newCompaniesUnit`
+          }
         >
           {props?.companyName}
         </OverFlowText>
@@ -257,7 +261,7 @@ const NewCompany = () => {
     <>
       <Flex vertical>
         <Flex className="vouchers-header">
-          <Text className="heading-text">New companies</Text>
+          <MainHeading data={`New companies`} />
         </Flex>
 
         <Flex

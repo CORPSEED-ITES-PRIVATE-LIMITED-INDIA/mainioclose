@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getGstDetailsByCompanyId,
-} from "../../../Toolkit/Slices/LeadSlice";
+import { getGstDetailsByCompanyId } from "../../../Toolkit/Slices/LeadSlice";
 import { Link, useParams } from "react-router-dom";
 import {
   Button,
@@ -11,13 +9,12 @@ import {
   Input,
   Modal,
   notification,
-  Typography,
 } from "antd";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import AddCompanyInGstAndUnit from "./AddCompanyInGstAndUnit";
 import { addConsultantInGST } from "../../../Toolkit/Slices/CompanySlice";
-const { Text } = Typography;
+import MainHeading from "../../../components/design/MainHeading";
 
 const CompanyDetailPage = () => {
   const dispatch = useDispatch();
@@ -48,7 +45,6 @@ const CompanyDetailPage = () => {
     );
     setFilteredData(filtered);
   };
-
 
   const columns = [
     {
@@ -97,7 +93,7 @@ const CompanyDetailPage = () => {
     <>
       <Flex vertical gap={12}>
         <Flex className="vouchers-header">
-          <Text className="heading-text">Gst list</Text>
+          <MainHeading data={`Gst list`} />
         </Flex>
 
         <Flex
@@ -113,7 +109,9 @@ const CompanyDetailPage = () => {
             style={{ width: "25%" }}
           />
           <Flex gap={8}>
-            <Button type="primary" onClick={()=>setOpenModal(true)}>Add consultant</Button>
+            <Button type="primary" onClick={() => setOpenModal(true)}>
+              Add consultant
+            </Button>
             <AddCompanyInGstAndUnit gstField={true} />
           </Flex>
         </Flex>

@@ -1,61 +1,35 @@
-import { Drawer, Flex, Input, Typography } from "antd";
+import { Flex, Input } from "antd";
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import MainHeading from "../../../components/design/MainHeading";
+import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import ColComp from "../../../components/small/ColComp";
 import OverFlowText from "../../../components/OverFlowText";
-import { Icon } from "@iconify/react";
-import NewCompanyDetailsPage from "./NewCompanyDetailsPage";
-import {
-  getCompanyByUnitId,
-  getCompanyUnitsByStateAndCompanyId,
-} from "../../../Toolkit/Slices/LeadSlice";
-import {
-  getCompanyLeadsAction,
-  getCompanyProjectAction,
-} from "../../../Toolkit/Slices/CompanySlice";
-import AddCompanyInGstAndUnit from "./AddCompanyInGstAndUnit";
-import MainHeading from "../../../components/design/MainHeading";
-const { Text } = Typography;
+import { Link } from "react-router-dom";
 
-const NewCompanyUnits = () => {
+const ConsultantCompanyUnitsPage = () => {
   const dispatch = useDispatch();
-  const { state, companyId } = useParams();
-  const companyUnitList = useSelector((state) => state.leads.companyUnitList);
-  const [openDrawer, setOpenDrawer] = useState(false);
+  const consultantUnitsList = useSelector(
+    (state) => state.company.consultantUnitsList
+  );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
 
-  useEffect(() => {
-    dispatch(
-      getCompanyUnitsByStateAndCompanyId({
-        companyId: companyId,
-        state: state,
-      })
-    );
-  }, [dispatch,companyId,state]);
 
   useEffect(() => {
-    setFilteredData(companyUnitList);
-  }, [companyUnitList]);
+    setFilteredData(consultantUnitsList);
+  }, [consultantUnitsList]);
 
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = companyUnitList?.result?.filter((item) =>
+    const filtered = consultantUnitsList?.result?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
     );
     setFilteredData(filtered);
-  };
-
-  const handleOnCLick = (data) => {
-    dispatch(getCompanyByUnitId(data?.companyId));
-    dispatch(getCompanyProjectAction({ id: data?.companyId }));
-    dispatch(getCompanyLeadsAction({ id: data?.companyId }));
-    setOpenDrawer(true);
   };
 
   const columns = [
@@ -70,9 +44,7 @@ const NewCompanyUnits = () => {
       title: "Company name",
       fixed: "left",
       render: (_, props) => (
-        <Link className="link-heading" onClick={() => handleOnCLick(props)}>
-          {props?.companyName}
-        </Link>
+        <Link className="link-heading">{props?.companyName}</Link>
       ),
     },
     {
@@ -136,7 +108,7 @@ const NewCompanyUnits = () => {
     <>
       <Flex vertical gap={12}>
         <Flex className="vouchers-header">
-          <MainHeading data={`New company units`} />
+          <MainHeading data={`Consultant company units`} />
         </Flex>
 
         <Flex
@@ -152,7 +124,6 @@ const NewCompanyUnits = () => {
             placeholder="search"
             style={{ width: "25%" }}
           />
-          <AddCompanyInGstAndUnit />
         </Flex>
         <CommonTable
           data={filteredData}
@@ -161,17 +132,8 @@ const NewCompanyUnits = () => {
           rowKey={(record) => record?.parentCompanyId}
         />
       </Flex>
-
-      <Drawer
-        open={openDrawer}
-        onClose={() => setOpenDrawer(false)}
-        closeIcon={false}
-        width={"70%"}
-      >
-        <NewCompanyDetailsPage />
-      </Drawer>
     </>
   );
 };
 
-export default NewCompanyUnits;
+export default ConsultantCompanyUnitsPage;

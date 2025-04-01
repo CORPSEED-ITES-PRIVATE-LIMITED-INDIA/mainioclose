@@ -2,12 +2,17 @@ import { Flex, Input, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { getConsultantCompanies } from "../../../Toolkit/Slices/CompanySlice";
+import {
+  getAllConsultantCompaniesById,
+  getConsultantCompanies,
+} from "../../../Toolkit/Slices/CompanySlice";
 import CommonTable from "../../../components/CommonTable";
+import { Icon } from "@iconify/react";
+import MainHeading from "../../../components/design/MainHeading";
 import ColComp from "../../../components/small/ColComp";
 import OverFlowText from "../../../components/OverFlowText";
-import {Icon} from '@iconify/react'
-const {Text}=Typography
+import { getHighestPriorityRole } from "../../Common/Commons";
+const { Text } = Typography;
 
 const ConsultantCompanyPage = () => {
   const dispatch = useDispatch();
@@ -15,11 +20,12 @@ const ConsultantCompanyPage = () => {
   const consultantCompaniesList = useSelector(
     (state) => state.company.consultantCompaniesList
   );
+  const currentRoles = useSelector((state) => state?.auth?.roles);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
-    dispatch(getConsultantCompanies(companyId));
+    dispatch(getAllConsultantCompaniesById(companyId));
   }, [dispatch, companyId]);
 
   useEffect(() => {
@@ -37,33 +43,105 @@ const ConsultantCompanyPage = () => {
     setFilteredData(filtered);
   };
 
-
   const columns = [
     {
-      dataIndex: "id",
+      dataIndex: "companyId",
       title: "Id",
       fixed: "left",
       width: 80,
     },
     {
-      dataIndex: "name",
+      dataIndex: "companyName",
       title: "Company name",
       fixed: "left",
+      render: (_, props) => (
+        <OverFlowText
+          linkText={true}
+          to={`/erp/${userid}/sales/newcompanies/${companyId}/newConsultantCompanies/${props?.companyId}/consultantGst`}
+        >
+          {props?.companyName}
+        </OverFlowText>
+      ),
     },
     {
-      dataIndex: "originalContact",
-      title: "Original contact",
+      dataIndex: "assignee",
+      title: "Assignee",
+      render: (_, props) => <ColComp data={props?.assignee?.fullName} />,
     },
     {
-      dataIndex: "originalEmail",
-      title: "Original email",
+      dataIndex: "gstNo",
+      title: "GST number",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.gstNo} />,
+    },
+    {
+      dataIndex: "gstType",
+      title: "GST type",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.gstType} />,
+    },
+
+    ...(getHighestPriorityRole(currentRoles) === "ADMIN"
+      ? [
+          {
+            dataIndex: "clientContactEmail",
+            title: "Client email",
+          },
+          {
+            dataIndex: "clientContactNo",
+            title: "Client contact",
+          },
+        ]
+      : []),
+    {
+      dataIndex: "city",
+      title: "City",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.city} />,
+    },
+    {
+      dataIndex: "state",
+      title: "State",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.state} />,
+    },
+
+    {
+      dataIndex: "country",
+      title: "Country",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.country} />,
+    },
+    {
+      dataIndex: "secAddress",
+      title: "Secondary address",
+      checked: false,
+      render: (_, props) => <OverFlowText>{props?.secAddress}</OverFlowText>,
+    },
+    {
+      dataIndex: "secCity",
+      title: "Secondary city",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.secCity} />,
+    },
+    {
+      dataIndex: "secState",
+      title: "Secondary state",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.secState} />,
+    },
+    {
+      dataIndex: "seCountry",
+      title: "Secondary country",
+      checked: false,
+      render: (_, props) => <ColComp data={props?.seCountry} />,
     },
   ];
   return (
     <>
       <Flex vertical gap={12}>
         <Flex className="vouchers-header">
-          <Text className="heading-text">Consultant company list</Text>
+          <MainHeading data={`Consultant company list`} />
         </Flex>
 
         <Flex

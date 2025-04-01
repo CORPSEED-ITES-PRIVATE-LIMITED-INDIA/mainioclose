@@ -99,6 +99,9 @@ import CompanyDetailPage from "./Main/Sales/Leads/CompanyDetailPage";
 import NewCompanyUnits from "./Main/Sales/Leads/NewCompanyUnits";
 import CompanySearch from "./Main/Accounts/CompanySearch";
 import NewCompaniesDetailedLayout from "./Main/Sales/Leads/NewCompaniesDetailedLayout";
+import ConsultantCompanyPage from "./Main/Sales/Leads/ConsultantCompanyPage";
+import ConsultantCompanyGStPage from "./Main/Sales/Leads/ConsultantCompanyGStPage";
+import ConsultantCompanyUnitsPage from "./Main/Sales/Leads/ConsultantCompanyUnitsPage";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -125,7 +128,7 @@ function App() {
           },
           Typography: {
             fontSize: 13,
-            margin:0
+            margin: 0,
           },
           Button: {
             contentFontSize: 13,
@@ -300,8 +303,30 @@ function App() {
                 <Route path="oppurtities" element={<Opportunities />} />
                 <Route path="company" element={<MainComanyModule />} />
                 <Route path="newcompanies" element={<NewCompany />} />
-                <Route path="newcompanies/:companyId/details" element={<NewCompaniesDetailedLayout />} />
-                <Route path="newcompanies/:companyId/details/:state/companyUnit" element={<NewCompanyUnits />} />
+                <Route
+                  path="newcompanies/:companyId/details"
+                  element={<NewCompaniesDetailedLayout />}
+                />
+                <Route
+                  path="newcompanies/:companyId/newCompaniesUnit"
+                  element={<CompanyDetailPage />}
+                />
+                <Route
+                  path="newcompanies/:companyId/newConsultantCompanies"
+                  element={<ConsultantCompanyPage />}
+                />
+                <Route
+                  path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/consultantGst"
+                  element={<ConsultantCompanyGStPage />}
+                />
+                <Route
+                  path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/consultantGst/:consultantParentCompanyId/consultantCompanyUnits"
+                  element={<ConsultantCompanyUnitsPage />}
+                />
+                <Route
+                  path="newcompanies/:companyId/details/:state/companyUnit"
+                  element={<NewCompanyUnits />}
+                />
                 <Route path="project" element={<ProjectPage />} />
                 <Route
                   path="vendors-request"
@@ -337,10 +362,7 @@ function App() {
                   path="companyForm"
                   element={<MainCompanyFormPage role={"sales"} />}
                 />
-                <Route
-                  path="companySearch"
-                  element={<CompanySearch />}
-                />
+                <Route path="companySearch" element={<CompanySearch />} />
 
                 <Route path="organizations" element={<MainOrganizationPage />}>
                   <Route index element={<Organizations />} />

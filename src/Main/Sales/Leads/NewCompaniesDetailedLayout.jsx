@@ -4,6 +4,7 @@ import CompanyDetailPage from "./CompanyDetailPage";
 import ConsultantCompanyPage from "./ConsultantCompanyPage";
 
 const NewCompaniesDetailedLayout = () => {
+
   const items = [
     {
       label: "GST list",
@@ -16,6 +17,7 @@ const NewCompaniesDetailedLayout = () => {
       children: <ConsultantCompanyPage />,
     },
   ];
+  
   return (
     <>
       <Tabs items={items} />

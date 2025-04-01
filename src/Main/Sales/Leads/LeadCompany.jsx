@@ -202,6 +202,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
     [companyDetails, dispatch, form]
   );
 
+  
   return (
     <>
       <Button size="small" type="primary" onClick={handleButtonClick}>
@@ -326,7 +327,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                 </Form.Item>
                 <Form.Item
                   label="Company name"
-                  name="name"
+                  name="companyName"
                   rules={[
                     { required: true, message: "please enter company name" },
                   ]}
