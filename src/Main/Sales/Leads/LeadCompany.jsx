@@ -103,7 +103,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
   const [searchDetail, setSearchDetail] = useState({
     searchText: "",
     userId: userid,
-    searchField: "gstNumber",
+    searchField: "searchNameAndGSt",
   });
 
   useEffect(() => {
@@ -513,7 +513,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                 </Form.Item>
 
                 <Form.Item
-                  label="Upload gst document"
+                  label="Upload document"
                   name="gstDocuments"
                   getValueFromEvent={normFile}
                   valuePropName="fileList"
@@ -1267,7 +1267,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                     </Form.Item>
 
                     <Form.Item
-                      label="Upload gst document"
+                      label="Upload document"
                       name="servingGstDocuments"
                       getValueFromEvent={normFile}
                       valuePropName="fileList"
