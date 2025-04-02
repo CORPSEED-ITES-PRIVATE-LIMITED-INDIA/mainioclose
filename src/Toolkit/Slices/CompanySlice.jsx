@@ -385,9 +385,9 @@ export const getAllConsultantCompaniesById = createAsyncThunk(
 
 export const getAllServingGstCompany = createAsyncThunk(
   "getAllServingGstCompany",
-  async (companyId) => {
+  async ({ companyId, companyOrConsultant }) => {
     const response = await getQuery(
-      `/leadService/api/v1/company/getGstAndStateForServingCompany?companyId=${companyId}&companyOrConsultant=company`
+      `/leadService/api/v1/company/getGstAndStateForServingCompany?companyId=${companyId}&companyOrConsultant=${companyOrConsultant}`
     );
     return response.data;
   }

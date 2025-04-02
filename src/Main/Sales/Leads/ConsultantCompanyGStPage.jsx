@@ -20,10 +20,6 @@ const ConsultantCompanyGStPage = () => {
   const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
-    dispatch(getAllServingGstCompany(consultCompanyId));
-  }, [dispatch, consultCompanyId]);
-
-  useEffect(() => {
     setFilteredData(servingGstCompanyList);
   }, [servingGstCompanyList]);
 
@@ -56,7 +52,7 @@ const ConsultantCompanyGStPage = () => {
             dispatch(
               getAllConsultantUnitsByStateAndId({
                 companyId: consultCompanyId,
-                companyOrConsultant: "company",
+                companyOrConsultant: props?.companyOrConsultant,
                 state: props?.state,
               })
             )

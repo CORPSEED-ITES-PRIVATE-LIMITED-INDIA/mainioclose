@@ -163,6 +163,17 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
     }
   };
 
+  const copyBillingToShipping = () => {
+    const values = form.getFieldsValue();
+    form.setFieldsValue({
+      servingSecondaryAddress: values.servingAddress,
+      servingSecondaryCountry: values.servingCountry,
+      servingSecondaryState: values.servingState,
+      servingsecondaryCity: values.servingCity,
+      servingSecondaryPinCode: values.servingprimaryPinCode,
+    });
+  };
+
   const normFile = (e) => {
     if (Array.isArray(e)) {
       return e;
@@ -202,7 +213,6 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
     [companyDetails, dispatch, form]
   );
 
-  
   return (
     <>
       <Button size="small" type="primary" onClick={handleButtonClick}>
@@ -211,12 +221,35 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
       </Button>
 
       <Modal
-        title={edit ? "Edit company details" : "Create company"}
+        title={
+          <Flex align="center">
+            {isToggel && (
+              <Button
+                size="small"
+                type="text"
+                onClick={() => setIsToggel((prev) => !prev)}
+              >
+                <Icon
+                  icon="fluent:arrow-left-16-filled"
+                  width="16"
+                  height="16"
+                />
+              </Button>
+            )}
+            {edit ? "Edit company details" : "Create company"}
+          </Flex>
+        }
         centered
         width={"60%"}
         open={openModal}
-        onCancel={() => setOpenModal(false)}
-        onClose={() => setOpenModal(false)}
+        onCancel={() => {
+          setOpenModal(false);
+          form.resetFields();
+        }}
+        onClose={() => {
+          setOpenModal(false);
+          form.resetFields();
+        }}
         okText="Submit"
         onOk={() => form.submit()}
         okButtonProps={{
@@ -236,79 +269,85 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
             isConsultant: false,
           }}
         >
-          <Space.Compact style={{ width: "100%" }}>
-            <Form.Item style={{ width: "75%" }} label="Company search" name="">
-              <Select
-                showSearch
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearchCompanies();
+          {isToggel ? null : (
+            <Space.Compact style={{ width: "100%" }}>
+              <Form.Item
+                style={{ width: "75%" }}
+                label="Company search"
+                name=""
+              >
+                <Select
+                  showSearch
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearchCompanies();
+                    }
+                  }}
+                  onSearch={(e) =>
+                    setSearchDetail((prev) => ({
+                      ...prev,
+                      searchText: e,
+                    }))
                   }
-                }}
-                onSearch={(e) =>
-                  setSearchDetail((prev) => ({
-                    ...prev,
-                    searchText: e,
-                  }))
-                }
-                placeholder="Search companies"
-                open={openDropdown}
-                onDropdownVisibleChange={(e) => setOpenDropdown(e)}
-                dropdownRender={(menu) => (
-                  <>
-                    {menu}
-                    <div
-                      style={{
-                        padding: "8px",
-                        textAlign: "center",
-                        borderTop: "1px solid #f0f0f0",
-                      }}
-                    >
-                      <Button
-                        type="primary"
-                        onClick={() => setIsToggel((prev) => !prev)}
+                  placeholder="Search companies"
+                  open={openDropdown}
+                  onDropdownVisibleChange={(e) => setOpenDropdown(e)}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          borderTop: "1px solid #f0f0f0",
+                        }}
                       >
-                        Add new company
-                      </Button>
-                    </div>
-                  </>
-                )}
-                options={
-                  seachCompniesList?.length > 0
-                    ? seachCompniesList?.map((item) => ({
-                        label: (
-                          <Flex justify="space-between" align="center">
-                            <Text>{item?.companyName}</Text>
-                            <Button
-                              size="small"
-                              onClick={() => handleMoveToUnits(item)}
-                            >
-                              Add unit
-                            </Button>
-                          </Flex>
-                        ),
-                        value: item?.companyId,
-                      }))
-                    : []
-                }
-              />
-            </Form.Item>
-            <Form.Item label="." style={{ width: "20%" }}>
-              <Select
-                style={{ width: "100px" }}
-                value={searchDetail?.searchField}
-                onChange={(e) =>
-                  setSearchDetail((prev) => ({ ...prev, searchField: e }))
-                }
-                options={[
-                  { label: "GST", value: "gstNumber" },
-                  { label: "Name", value: "searchNameAndGSt" },
-                  { label: "Contact no.", value: "contactNumber" },
-                  { label: "Email", value: "contactEmail" },
-                ]}
-              />
-            </Form.Item>
-          </Space.Compact>
+                        <Button
+                          type="primary"
+                          onClick={() => setIsToggel((prev) => !prev)}
+                        >
+                          Add new company
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  options={
+                    seachCompniesList?.length > 0
+                      ? seachCompniesList?.map((item) => ({
+                          label: (
+                            <Flex justify="space-between" align="center">
+                              <Text>{item?.companyName}</Text>
+                              <Button
+                                size="small"
+                                onClick={() => handleMoveToUnits(item)}
+                              >
+                                Add unit
+                              </Button>
+                            </Flex>
+                          ),
+                          value: item?.companyId,
+                        }))
+                      : []
+                  }
+                />
+              </Form.Item>
+              <Form.Item label="." style={{ width: "20%" }}>
+                <Select
+                  style={{ width: "100px" }}
+                  value={searchDetail?.searchField}
+                  onChange={(e) =>
+                    setSearchDetail((prev) => ({ ...prev, searchField: e }))
+                  }
+                  options={[
+                    { label: "GST", value: "gstNumber" },
+                    { label: "Name", value: "searchNameAndGSt" },
+                    { label: "Contact no.", value: "contactNumber" },
+                    { label: "Email", value: "contactEmail" },
+                  ]}
+                />
+              </Form.Item>
+            </Space.Compact>
+          )}
           {isToggel && (
             <>
               <div className="form-grid-col-2">
@@ -536,170 +575,105 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                 Primary details
               </Divider>
 
-              <Form.Item
-                label="New primary contact details"
-                name="primaryContact"
-                rules={[{ required: true }]}
-              >
-                <Switch size="small" />
-              </Form.Item>
-
               <div className="form-grid-col-2">
                 <Form.Item
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.primaryContact !== currentValues.primaryContact
-                  }
-                  noStyle
+                  label="Salutation"
+                  name="primaryTitle"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select salutation for contact name",
+                    },
+                  ]}
                 >
-                  {({ getFieldValue }) => (
-                    <>
-                      {getFieldValue("primaryContact") ? (
-                        <>
-                          <Form.Item
-                            label="Salutation"
-                            name="primaryTitle"
-                            rules={[
-                              {
-                                required: true,
-                                message:
-                                  "please select salutation for contact name",
-                              },
-                            ]}
-                          >
-                            <Select
-                              options={[
-                                { label: "Master.", value: "master" },
-                                { label: "Mr.", value: "mr" },
-                                { label: "Mrs.", value: "mrs" },
-                                { label: "Miss.", value: "miss" },
-                              ]}
-                            />
-                          </Form.Item>
+                  <Select
+                    options={[
+                      { label: "Master.", value: "master" },
+                      { label: "Mr.", value: "mr" },
+                      { label: "Mrs.", value: "mrs" },
+                      { label: "Miss.", value: "miss" },
+                    ]}
+                  />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Contact name"
-                            name="contactName"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter contact person name",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
+                <Form.Item
+                  label="Contact name"
+                  name="contactName"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter contact person name",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Desigination"
-                            name="primaryDesignation"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter desigination",
-                              },
-                            ]}
-                          >
-                            <Select
-                              allowClear
-                              showSearch
-                              options={
-                                desiginationList?.length > 0
-                                  ? desiginationList?.map((item) => ({
-                                      label: item?.name,
-                                      value: item?.id,
-                                    }))
-                                  : []
-                              }
-                              filterOption={(input, option) =>
-                                option.label
-                                  .toLowerCase()
-                                  .includes(input.toLowerCase())
-                              }
-                            />
-                          </Form.Item>
+                <Form.Item
+                  label="Desigination"
+                  name="primaryDesignation"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter desigination",
+                    },
+                  ]}
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    options={
+                      desiginationList?.length > 0
+                        ? desiginationList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Email"
-                            name="contactEmails"
-                            rules={[
-                              {
-                                required: true,
-                                type: "email",
-                                message: "please enter the email id",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
+                <Form.Item
+                  label="Email"
+                  name="contactEmails"
+                  rules={[
+                    {
+                      required: true,
+                      type: "email",
+                      message: "please enter the email id",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Contact number"
-                            name="contactNo"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter contact number",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
+                <Form.Item
+                  label="Contact number"
+                  name="contactNo"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter contact number",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Whatsapp number"
-                            name="contactWhatsappNo"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter whatsapp number",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                        </>
-                      ) : (
-                        <Form.Item
-                          label="Select contact"
-                          name="contactId"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please select contact",
-                            },
-                          ]}
-                        >
-                          <Select
-                            showSearch
-                            allowClear
-                            onChange={(e) => dispatch(getContactById(e))}
-                            options={
-                              contactList?.length > 0
-                                ? contactList?.map((item) => ({
-                                    label: `${maskEmail(
-                                      item?.emails
-                                    )} || ${maskMobileNumber(
-                                      item?.contactNo
-                                    )} `,
-                                    value: item?.id,
-                                    email: item?.emails,
-                                    contact: item?.contactNo,
-                                  }))
-                                : []
-                            }
-                            filterOption={(input, option) =>
-                              option?.email
-                                ?.toLowerCase()
-                                ?.includes(input?.toLowerCase()) ||
-                              option?.contact
-                                ?.toLowerCase()
-                                ?.includes(input?.toLowerCase())
-                            }
-                          />
-                        </Form.Item>
-                      )}
-                    </>
-                  )}
+                <Form.Item
+                  label="Whatsapp number"
+                  name="contactWhatsappNo"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter whatsapp number",
+                    },
+                  ]}
+                >
+                  <Input />
                 </Form.Item>
               </div>
 
@@ -808,170 +782,104 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
               >
                 Secondary details
               </Divider>
-
-              <Form.Item
-                label="New secondary contact details"
-                name="secondaryContact"
-                rules={[{ required: true }]}
-              >
-                <Switch size="small" />
-              </Form.Item>
               <div className="form-grid-col-2">
                 <Form.Item
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.secondaryContact !==
-                    currentValues.secondaryContact
-                  }
-                  noStyle
+                  label="Salutation"
+                  name="secondaryTitle"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select salutation for contact name ",
+                    },
+                  ]}
                 >
-                  {({ getFieldValue }) => (
-                    <>
-                      {getFieldValue("secondaryContact") ? (
-                        <>
-                          <Form.Item
-                            label="Salutation"
-                            name="secondaryTitle"
-                            rules={[
-                              {
-                                required: true,
-                                message:
-                                  "please select salutation for contact name ",
-                              },
-                            ]}
-                          >
-                            <Select
-                              options={[
-                                { label: "Master.", value: "master" },
-                                { label: "Mr.", value: "mr" },
-                                { label: "Mrs.", value: "mrs" },
-                                { label: "Miss.", value: "miss" },
-                              ]}
-                            />
-                          </Form.Item>
+                  <Select
+                    options={[
+                      { label: "Master.", value: "master" },
+                      { label: "Mr.", value: "mr" },
+                      { label: "Mrs.", value: "mrs" },
+                      { label: "Miss.", value: "miss" },
+                    ]}
+                  />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Contact name"
-                            name="scontactName"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter contact person name",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            label="Desigination"
-                            name="secondaryDesignation"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter desigination",
-                              },
-                            ]}
-                          >
-                            <Select
-                              allowClear
-                              showSearch
-                              options={
-                                desiginationList?.length > 0
-                                  ? desiginationList?.map((item) => ({
-                                      label: item?.name,
-                                      value: item?.id,
-                                    }))
-                                  : []
-                              }
-                              filterOption={(input, option) =>
-                                option.label
-                                  .toLowerCase()
-                                  .includes(input.toLowerCase())
-                              }
-                            />
-                          </Form.Item>
+                <Form.Item
+                  label="Contact name"
+                  name="scontactName"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter contact person name",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  label="Desigination"
+                  name="secondaryDesignation"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter desigination",
+                    },
+                  ]}
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    options={
+                      desiginationList?.length > 0
+                        ? desiginationList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Email"
-                            name="scontactEmails"
-                            rules={[
-                              {
-                                required: true,
-                                type: "email",
-                                message: "please enter the email id",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
+                <Form.Item
+                  label="Email"
+                  name="scontactEmails"
+                  rules={[
+                    {
+                      required: true,
+                      type: "email",
+                      message: "please enter the email id",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Contact number"
-                            name="scontactNo"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter contact number",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
+                <Form.Item
+                  label="Contact number"
+                  name="scontactNo"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter contact number",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
 
-                          <Form.Item
-                            label="Whatsapp number"
-                            name="scontactWhatsappNo"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter whatsapp number",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                        </>
-                      ) : (
-                        <Form.Item
-                          label="Select contact"
-                          name="scontactId"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please select contact",
-                            },
-                          ]}
-                        >
-                          <Select
-                            showSearch
-                            allowClear
-                            onChange={(e) => dispatch(getContactById(e))}
-                            options={
-                              contactList?.length > 0
-                                ? contactList?.map((item) => ({
-                                    label: `${maskEmail(
-                                      item?.emails
-                                    )} || ${maskMobileNumber(
-                                      item?.contactNo
-                                    )} `,
-                                    value: item?.id,
-                                    email: item?.emails,
-                                    contact: item?.contactNo,
-                                  }))
-                                : []
-                            }
-                            filterOption={(input, option) =>
-                              option?.email
-                                ?.toLowerCase()
-                                ?.includes(input?.toLowerCase()) ||
-                              option?.contact
-                                ?.toLowerCase()
-                                ?.includes(input?.toLowerCase())
-                            }
-                          />
-                        </Form.Item>
-                      )}
-                    </>
-                  )}
+                <Form.Item
+                  label="Whatsapp number"
+                  name="scontactWhatsappNo"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter whatsapp number",
+                    },
+                  ]}
+                >
+                  <Input />
                 </Form.Item>
               </div>
               <Divider
@@ -1623,6 +1531,14 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                   >
                     Shipping address
                   </Divider>
+                  <Button
+                    type="primary"
+                    onClick={copyBillingToShipping}
+                    style={{ marginBottom: "10px" }}
+                  >
+                    Same as primary address
+                  </Button>
+
                   <div className="form-grid-col-2">
                     <Form.Item label="Address" name="servingSecondaryAddress">
                       <Input.TextArea />

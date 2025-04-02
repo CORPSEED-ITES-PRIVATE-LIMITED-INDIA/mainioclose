@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
   getAllConsultantCompaniesById,
+  getAllServingGstCompany,
   getConsultantCompanies,
 } from "../../../Toolkit/Slices/CompanySlice";
 import CommonTable from "../../../components/CommonTable";
@@ -58,6 +59,14 @@ const ConsultantCompanyPage = () => {
         <OverFlowText
           linkText={true}
           to={`/erp/${userid}/sales/newcompanies/${companyId}/newConsultantCompanies/${props?.companyId}/consultantGst`}
+          onClick={() =>
+            dispatch(
+              getAllServingGstCompany({
+                companyId: props?.companyId,
+                companyOrConsultant: props?.companyOrConsultant,
+              })
+            )
+          }
         >
           {props?.companyName}
         </OverFlowText>

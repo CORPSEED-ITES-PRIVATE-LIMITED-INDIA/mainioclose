@@ -134,17 +134,8 @@ const LeadCreateModel = ({ leadByCompany, companyId }) => {
             <Form.Item label="Client email" name="email">
               <Input />
             </Form.Item>
-            <Form.Item
-              label="Mobile number"
-              name="mobileNo"
-              rules={[
-                {
-                  required: true,
-                  message: "please enter the mobile number",
-                },
-              ]}
-            >
-              <Input maxLength={10} />
+            <Form.Item label="Mobile number" name="mobileNo">
+              <Input  />
             </Form.Item>
             <Form.Item
               label="Company"
