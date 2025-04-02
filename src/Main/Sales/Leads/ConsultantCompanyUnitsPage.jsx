@@ -1,4 +1,4 @@
-import { Flex, Input } from "antd";
+import { Drawer, Flex, Input } from "antd";
 import React, { useEffect, useState } from "react";
 import MainHeading from "../../../components/design/MainHeading";
 import { Icon } from "@iconify/react";
@@ -7,15 +7,17 @@ import { useDispatch, useSelector } from "react-redux";
 import ColComp from "../../../components/small/ColComp";
 import OverFlowText from "../../../components/OverFlowText";
 import { Link } from "react-router-dom";
+import ConsultantCompanyDetailPage from "./ConsultantCompanyDetailPage";
+import { getServingCompanyDetail } from "../../../Toolkit/Slices/CompanySlice";
 
 const ConsultantCompanyUnitsPage = () => {
   const dispatch = useDispatch();
   const consultantUnitsList = useSelector(
     (state) => state.company.consultantUnitsList
   );
+  const [openDrawer, setOpenDrawer] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
-
 
   useEffect(() => {
     setFilteredData(consultantUnitsList);
@@ -32,6 +34,12 @@ const ConsultantCompanyUnitsPage = () => {
     setFilteredData(filtered);
   };
 
+  const handleOnCLick = (data) => {
+    dispatch(getServingCompanyDetail(data?.companyId));
+
+    setOpenDrawer(true);
+  };
+
   const columns = [
     {
       dataIndex: "companyId",
@@ -44,7 +52,9 @@ const ConsultantCompanyUnitsPage = () => {
       title: "Company name",
       fixed: "left",
       render: (_, props) => (
-        <Link className="link-heading">{props?.companyName}</Link>
+        <Link className="link-heading" onClick={() => handleOnCLick(props)}>
+          {props?.companyName}
+        </Link>
       ),
     },
     {
@@ -132,6 +142,15 @@ const ConsultantCompanyUnitsPage = () => {
           rowKey={(record) => record?.parentCompanyId}
         />
       </Flex>
+
+      <Drawer
+        open={openDrawer}
+        onClose={() => setOpenDrawer(false)}
+        closeIcon={false}
+        width={"70%"}
+      >
+        <ConsultantCompanyDetailPage />
+      </Drawer>
     </>
   );
 };

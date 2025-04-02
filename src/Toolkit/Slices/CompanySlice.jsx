@@ -403,6 +403,27 @@ export const getAllConsultantUnitsByStateAndId = createAsyncThunk(
   }
 );
 
+export const getServingCompanyDetail = createAsyncThunk(
+  "getServingCompanyDetail",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getServingCompanyById?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const addServingCompanyUnit = createAsyncThunk(
+  "addServingCompanyUnit",
+  async (data) => {
+    const response = await putQuery(
+      `/leadService/api/v1/company/addServingCompany`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const CompnaySlice = createSlice({
   name: "company",
   initialState: {
@@ -435,6 +456,7 @@ const CompnaySlice = createSlice({
     existingCompanyList: [],
     servingGstCompanyList: [],
     consultantUnitsList: [],
+    servingCompanyDetail: {},
   },
   reducers: {
     handleNextPagination: (state, action) => {
@@ -773,6 +795,18 @@ const CompnaySlice = createSlice({
         state.consultantUnitsList = [];
       }
     );
+
+    builder.addCase(getServingCompanyDetail.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(getServingCompanyDetail.fulfilled, (state, action) => {
+      state.servingCompanyDetail = action.payload;
+      state.consultantLoading = "success";
+    });
+    builder.addCase(getServingCompanyDetail.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.servingCompanyDetail = {};
+    });
   },
 });
 

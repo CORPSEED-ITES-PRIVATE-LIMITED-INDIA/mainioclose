@@ -1,5 +1,6 @@
 import {
   Button,
+  DatePicker,
   Divider,
   Flex,
   Form,
@@ -51,6 +52,7 @@ import {
   getAllCountries,
   getAllStatesByCountryId,
 } from "../../../Toolkit/Slices/CommonSlice";
+import dayjs from "dayjs";
 const { Text } = Typography;
 
 const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
@@ -96,8 +98,8 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
   );
   const [isToggel, setIsToggel] = useState(false);
   const [openModal, setOpenModal] = useState(false);
-  const [formLoading, setFormLoading] = useState("");
   const [gstMand, setGstMand] = useState(false);
+  const [formLoading, setFormLoading] = useState("");
   const [createFormAs, setCreateFormAs] = useState("company");
   const [openDropdown, setOpenDropdown] = useState(false);
   const [searchDetail, setSearchDetail] = useState({
@@ -416,13 +418,21 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                 )}
 
                 <Form.Item
-                  label="Company age"
-                  name="companyAge"
+                  label="Company incorporate date"
+                  name="establishDate"
                   rules={[
-                    { required: true, message: "please enter company age" },
+                    {
+                      required: true,
+                      message: "please enter company incorporate date",
+                    },
                   ]}
                 >
-                  <Input />
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    disabledDate={(current) =>
+                      current && current > dayjs().endOf("day")
+                    }
+                  />
                 </Form.Item>
 
                 <Form.Item
@@ -901,6 +911,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                         ? countryList?.map((item) => ({
                             label: item?.name,
                             value: item?.name,
+                            id: item?.id,
                           }))
                         : []
                     }
@@ -1019,8 +1030,8 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                     </Form.Item>
 
                     <Form.Item
-                      label="Serving company age"
-                      name="servingCompanyAge"
+                      label="Serving company incorporate date"
+                      name="servingEstablishDate"
                       rules={[
                         {
                           required: true,
@@ -1028,7 +1039,12 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                         },
                       ]}
                     >
-                      <Input />
+                      <DatePicker
+                        style={{ width: "100%" }}
+                        disabledDate={(current) =>
+                          current && current > dayjs().endOf("day")
+                        }
+                      />
                     </Form.Item>
 
                     <Form.Item
