@@ -27,7 +27,7 @@ import {
   getSubSubIndustryBySubIndustryId,
 } from "../../../Toolkit/Slices/IndustrySlice";
 import { getClientDesiginationList } from "../../../Toolkit/Slices/SettingSlice";
-import { getAllContactDetails } from "../../../Toolkit/Slices/LeadSlice";
+import { getAllContactDetails, getCompanyDetailsByGst } from "../../../Toolkit/Slices/LeadSlice";
 import {
   getAllCitiesByStateId,
   getAllCountries,
