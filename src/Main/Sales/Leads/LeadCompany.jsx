@@ -128,6 +128,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
   };
 
   const handleButtonClick = useCallback(() => {
+    dispatch(getAllUsers());
     dispatch(getAllMainIndustry());
     dispatch(getClientDesiginationList());
     dispatch(getAllContactDetails());
@@ -195,7 +196,6 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
         .then((response) => {
           if (response.meta.requestStatus === "fulfilled") {
             setFormLoading("success");
-            dispatch(getAllUsers());
             notification.success({
               message: "Company created successfully.",
             });
@@ -431,6 +431,30 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                     style={{ width: "100%" }}
                     disabledDate={(current) =>
                       current && current > dayjs().endOf("day")
+                    }
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Select assignee"
+                  name="assigneeId"
+                  rules={[
+                    { required: true, message: "please select assignee" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      allUsers?.length > 0
+                        ? allUsers?.map((item) => ({
+                            label: item?.fullName,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
                     }
                   />
                 </Form.Item>

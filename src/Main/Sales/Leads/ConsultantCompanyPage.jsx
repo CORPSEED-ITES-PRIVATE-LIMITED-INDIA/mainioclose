@@ -206,6 +206,62 @@ const ConsultantCompanyPage = () => {
             dataIndex: "clientContactNo",
             title: "Client contact",
           },
+          {
+            dataIndex: "primaryContact",
+            title: "Primary contact name",
+            render: (_, props) => (
+              <ColComp data={props?.primaryContact?.name} />
+            ),
+          },
+          {
+            dataIndex: "primaryContact",
+            title: "Primary contact name",
+            render: (_, props) => (
+              <ColComp data={props?.primaryContact?.designation} />
+            ),
+          },
+          {
+            dataIndex: "primaryContact",
+            title: "Primary contact no.",
+            render: (_, props) => (
+              <ColComp data={props?.primaryContact?.contactNo} />
+            ),
+          },
+          {
+            dataIndex: "primaryContact",
+            title: "Primary contact email",
+            render: (_, props) => (
+              <ColComp data={props?.primaryContact?.emails} />
+            ),
+          },
+          {
+            dataIndex: "secondaryContact",
+            title: "Secondary contact name",
+            render: (_, props) => (
+              <ColComp data={props?.secondaryContact?.name} />
+            ),
+          },
+          {
+            dataIndex: "secondaryContact",
+            title: "Secondary contact designation",
+            render: (_, props) => (
+              <ColComp data={props?.secondaryContact?.designation} />
+            ),
+          },
+          {
+            dataIndex: "secondaryContact",
+            title: "Secondary contact no.",
+            render: (_, props) => (
+              <ColComp data={props?.secondaryContact?.contactNo} />
+            ),
+          },
+          {
+            dataIndex: "secondaryContact",
+            title: "Secondary contact email",
+            render: (_, props) => (
+              <ColComp data={props?.secondaryContact?.emails} />
+            ),
+          },
         ]
       : []),
     {
@@ -258,7 +314,7 @@ const ConsultantCompanyPage = () => {
     dispatch(getClientDesiginationList());
     dispatch(getAllContactDetails());
     dispatch(getAllCountries());
-    dispatch(getAllCompanyType())
+    dispatch(getAllCompanyType());
     setOpenModal(true);
   }, []);
 
@@ -304,7 +360,7 @@ const ConsultantCompanyPage = () => {
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "69vh" }}
+          scroll={{ y: "69vh", x: 3500 }}
           rowKey={(record) => record?.id}
         />
       </Flex>
