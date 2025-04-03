@@ -2,6 +2,7 @@ import {
   Button,
   DatePicker,
   Divider,
+  Drawer,
   Flex,
   Form,
   Input,
@@ -20,6 +21,8 @@ import {
   getAllConsultantCompaniesById,
   getAllServingGstCompany,
   getConsultantCompanies,
+  getServingCompanyData,
+  updateServingCompany,
 } from "../../../Toolkit/Slices/CompanySlice";
 import CommonTable from "../../../components/CommonTable";
 import { Icon } from "@iconify/react";
@@ -44,6 +47,7 @@ import {
   getAllStatesByCountryId,
 } from "../../../Toolkit/Slices/CommonSlice";
 import dayjs from "dayjs";
+import ServingCompanyMainDetails from "./ServingCompanyMainDetails";
 const { Text } = Typography;
 
 const ConsultantCompanyPage = () => {
@@ -75,6 +79,8 @@ const ConsultantCompanyPage = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [gstMand, setGstMand] = useState(false);
+  const [openDrawer, setOpenDrawer] = useState(false);
+  const [editData, setEditData] = useState(null);
 
   useEffect(() => {
     dispatch(getAllConsultantCompaniesById(companyId));
@@ -148,6 +154,59 @@ const ConsultantCompanyPage = () => {
       return e;
     }
     return e?.fileList;
+  };
+
+  const handleOpenDrawer = ({ companyId, companyOrConsultant }) => {
+    dispatch(getServingCompanyData({ companyId, companyOrConsultant }));
+    setOpenDrawer(true);
+  };
+
+  const handleEditData = (value) => {
+    dispatch(getAllMainIndustry());
+    dispatch(getClientDesiginationList());
+    dispatch(getAllContactDetails());
+    dispatch(getAllCountries());
+    dispatch(getAllCompanyType());
+    dispatch(getSubIndustryByIndustryId(value?.industry));
+    dispatch(getSubSubIndustryBySubIndustryId(value?.subIndustry?.id));
+    dispatch(getIndustryDataBySubSubIndustryId(value?.subSubIndustry?.id));
+    form.setFieldsValue({
+      servingName: value?.companyName,
+      servingCompanyType: value?.companyType,
+      servingGstNo: value?.gstNo,
+      servingEstablishDate: value?.establishDate
+        ? dayjs(value?.establishDate)
+        : dayjs(),
+      industries: value?.industry,
+      subIndustry: value?.subIndustry?.id,
+      subsubIndustry: value?.subSubIndustry?.id,
+      industriesData: value?.industryData?.map((item) => item?.id),
+      servingPanNo: value?.panNo,
+      servingPrimaryTitle: value?.primaryContact?.title,
+      servingContactName: value?.primaryContact?.name,
+      servingPrimaryDesignation: value?.primaryContact?.designation,
+      servingContactEmails: value?.primaryContact?.emails,
+      servingContactNo: value?.primaryContact?.contactNo,
+      servingContactWhatsappNo: value?.primaryContact?.whatsappNo,
+      servingAddress: value?.address,
+      servingCountry: value?.country,
+      servingState: value?.state,
+      servingCity: value?.city,
+      servingprimaryPinCode: value?.pinCode,
+      servingSecondaryTitle: value?.secondaryContact?.title,
+      servingSecondaryContactName: value?.secondaryContact?.name,
+      servingSecondaryDesignation: value?.secondaryContact?.designation,
+      servingSecondaryContactEmails: value?.secondaryContact?.emails,
+      servingSecondaryContactName: value?.secondaryContact?.contactNo,
+      servingSecondaryContactWhatsappNo: value?.secondaryContact?.whatsappNo,
+      servingSecondaryAddress: value?.secAddress,
+      servingSecondaryCountry: value?.seCountry,
+      servingSecondaryState: value?.secState,
+      servingsecondaryCity: value?.secCity,
+      servingSecondaryPinCode: value?.secPinCode,
+    });
+    setOpenModal(true);
+    setEditData(value);
   };
 
   const columns = [
@@ -307,6 +366,22 @@ const ConsultantCompanyPage = () => {
       checked: false,
       render: (_, props) => <ColComp data={props?.seCountry} />,
     },
+    {
+      dataIndex: "seCountry",
+      title: "View",
+      checked: false,
+      render: (_, props) => (
+        <Button onClick={() => handleOpenDrawer(props)}>View</Button>
+      ),
+    },
+    {
+      dataIndex: "edit",
+      title: "Edit",
+      checked: false,
+      render: (_, props) => (
+        <Button onClick={() => handleEditData(props)}>Edit</Button>
+      ),
+    },
   ];
 
   const handleButtonClick = useCallback(() => {
@@ -319,19 +394,48 @@ const ConsultantCompanyPage = () => {
   }, []);
 
   const handleFinish = (values) => {
-    dispatch(addServingCompanyUnit({ companyId, ...values }))
-      .then((res) => {
-        if (res.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Company unit added successfully !.",
-          });
-          setOpenModal(false);
-          form.resetFields();
-        } else {
-          notification.error({ message: "Something went wrong !." });
-        }
-      })
-      .catch(() => notification.error({ message: "Something went wrong !." }));
+    if (editData) {
+      dispatch(
+        updateServingCompany({
+          companyId,
+          servingCompanyId: editData?.companyId,
+          ...values,
+          primaryContactId: editData?.primaryContact?.id,
+          secondaryContactId: editData?.secondaryContact?.id,
+        })
+      )
+        .then((res) => {
+          if (res.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Company update added successfully !.",
+            });
+            setOpenModal(false);
+            form.resetFields();
+            setEditData(null);
+          } else {
+            notification.error({ message: "Something went wrong !." });
+          }
+        })
+        .catch(() =>
+          notification.error({ message: "Something went wrong !." })
+        );
+    } else {
+      dispatch(addServingCompanyUnit({ companyId, ...values }))
+        .then((res) => {
+          if (res.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Company unit added successfully !.",
+            });
+            setOpenModal(false);
+            form.resetFields();
+          } else {
+            notification.error({ message: "Something went wrong !." });
+          }
+        })
+        .catch(() =>
+          notification.error({ message: "Something went wrong !." })
+        );
+    }
   };
 
   return (
@@ -994,6 +1098,14 @@ const ConsultantCompanyPage = () => {
           </div>
         </Form>
       </Modal>
+      <Drawer
+        open={openDrawer}
+        onClose={() => setOpenDrawer(false)}
+        closeIcon={null}
+        width={"80%"}
+      >
+        <ServingCompanyMainDetails />
+      </Drawer>
     </>
   );
 };

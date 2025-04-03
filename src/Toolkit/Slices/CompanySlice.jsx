@@ -424,6 +424,27 @@ export const addServingCompanyUnit = createAsyncThunk(
   }
 );
 
+export const getServingCompanyData = createAsyncThunk(
+  "getServingCompanyData",
+  async ({ companyId, companyOrConsultant }) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getServingUnitByServingCompanyId?companyId=${companyId}&companyOrConsultant=${companyOrConsultant}`
+    );
+    return response.data;
+  }
+);
+
+export const updateServingCompany = createAsyncThunk(
+  "updateServingCompany",
+  async (data) => {
+    const response = await putQuery(
+      `/leadService/api/v1/company/editServingCompany`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const CompnaySlice = createSlice({
   name: "company",
   initialState: {
@@ -457,6 +478,7 @@ const CompnaySlice = createSlice({
     servingGstCompanyList: [],
     consultantUnitsList: [],
     servingCompanyDetail: {},
+    singleServingCompanyData: [],
   },
   reducers: {
     handleNextPagination: (state, action) => {
@@ -806,6 +828,18 @@ const CompnaySlice = createSlice({
     builder.addCase(getServingCompanyDetail.rejected, (state, action) => {
       state.consultantLoading = "rejected";
       state.servingCompanyDetail = {};
+    });
+
+    builder.addCase(getServingCompanyData.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(getServingCompanyData.fulfilled, (state, action) => {
+      state.singleServingCompanyData = action.payload;
+      state.consultantLoading = "success";
+    });
+    builder.addCase(getServingCompanyData.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.singleServingCompanyData = [];
     });
   },
 });
