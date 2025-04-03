@@ -22,7 +22,7 @@ const NewCompanyProjectDetails = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = compProject?.result?.filter((item) =>
+    const filtered = compProject?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )

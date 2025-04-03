@@ -26,7 +26,7 @@ const ConsultantCompanyUnitsPage = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = consultantUnitsList?.result?.filter((item) =>
+    const filtered = consultantUnitsList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
@@ -118,7 +118,7 @@ const ConsultantCompanyUnitsPage = () => {
     <>
       <Flex vertical gap={12}>
         <Flex className="vouchers-header">
-          <MainHeading data={`Consultant company units`} />
+          <MainHeading data={`Serving company units`} />
         </Flex>
 
         <Flex

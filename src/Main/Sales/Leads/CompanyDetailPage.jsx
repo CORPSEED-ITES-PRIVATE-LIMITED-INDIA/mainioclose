@@ -38,7 +38,7 @@ const CompanyDetailPage = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = companyGstDetailList?.result?.filter((item) =>
+    const filtered = companyGstDetailList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )

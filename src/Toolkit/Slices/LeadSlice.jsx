@@ -892,9 +892,9 @@ export const searchCompaniesForCompany = createAsyncThunk(
 
 export const getAllNewCompanies = createAsyncThunk(
   "getAllNewCompanies",
-  async ({ userId, filterUserId, page, size }) => {
+  async ({ userId, filterUserId, type, page, size }) => {
     const response = await getQuery(
-      `/leadService/api/v1/company/getAllParentCompanyV2?userId=${userId}&filterUserId=${filterUserId}&page=${page}&size=${size}`
+      `/leadService/api/v1/company/getAllParentCompanyV2?userId=${userId}&filterUserId=${filterUserId}&type=${type}&page=${page}&size=${size}`
     );
     return response.data;
   }
@@ -981,7 +981,7 @@ export const LeadSlice = createSlice({
     seachCompniesList: [],
     newCompaniesList: [],
     companyGstDetailList: [],
-    companyUnitList:[]
+    companyUnitList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1466,14 +1466,22 @@ export const LeadSlice = createSlice({
       state.companyGstDetailList = [];
     });
 
-
-    builder.addCase(getCompanyUnitsByStateAndCompanyId.pending, (state, action) => {});
-    builder.addCase(getCompanyUnitsByStateAndCompanyId.fulfilled, (state, action) => {
-      state.companyUnitList = action?.payload;
-    });
-    builder.addCase(getCompanyUnitsByStateAndCompanyId.rejected, (state, action) => {
-      state.companyUnitList = [];
-    });
+    builder.addCase(
+      getCompanyUnitsByStateAndCompanyId.pending,
+      (state, action) => {}
+    );
+    builder.addCase(
+      getCompanyUnitsByStateAndCompanyId.fulfilled,
+      (state, action) => {
+        state.companyUnitList = action?.payload;
+      }
+    );
+    builder.addCase(
+      getCompanyUnitsByStateAndCompanyId.rejected,
+      (state, action) => {
+        state.companyUnitList = [];
+      }
+    );
   },
 });
 export const {

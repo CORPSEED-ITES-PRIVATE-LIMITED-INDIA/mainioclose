@@ -43,7 +43,7 @@ const NewCompanyUnits = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = companyUnitList?.result?.filter((item) =>
+    const filtered = companyUnitList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )

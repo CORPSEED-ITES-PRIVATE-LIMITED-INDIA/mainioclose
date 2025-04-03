@@ -72,7 +72,7 @@ const ConsultantCompanyGStPage = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = servingGstCompanyList?.result?.filter((item) =>
+    const filtered = servingGstCompanyList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
@@ -185,7 +185,7 @@ const ConsultantCompanyGStPage = () => {
     <>
       <Flex vertical gap={12}>
         <Flex className="vouchers-header">
-          <MainHeading data={`Consultant gst list`} />
+          <MainHeading data={`Serving company gst list`} />
         </Flex>
 
         <Flex

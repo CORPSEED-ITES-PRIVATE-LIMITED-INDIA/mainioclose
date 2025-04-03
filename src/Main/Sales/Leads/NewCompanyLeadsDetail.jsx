@@ -19,7 +19,7 @@ const NewCompanyLeadsDetail = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = companyLeads?.result?.filter((item) =>
+    const filtered = companyLeads?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )

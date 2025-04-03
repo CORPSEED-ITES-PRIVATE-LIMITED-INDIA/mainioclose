@@ -5,12 +5,12 @@ const { Text, Title } = Typography;
 
 const ConsultantCompanyUnitDetail = () => {
   const companyDetailByUnitId = useSelector(
-    (state) => state.leads.servingCompanyDetail
+    (state) => state.company.servingCompanyDetail
   );
   return (
     <Flex vertical gap={8}>
       <Title level={5} style={{ margin: 0 }}>
-        {companyDetailByUnitId?.name}
+        {companyDetailByUnitId?.companyName}
       </Title>
       <Divider style={{ margin: 0 }} />
       <Flex gap={8}>
@@ -72,8 +72,8 @@ const ConsultantCompanyUnitDetail = () => {
           <Text type="secondary">Address</Text>
           <Text type="secondary">:</Text>
           <Text>
-            {companyDetailByUnitId?.sAddress
-              ? companyDetailByUnitId?.sAddress
+            {companyDetailByUnitId?.secondaryAddress
+              ? companyDetailByUnitId?.secondaryAddress
               : "NA"}
           </Text>
         </Flex>
@@ -90,15 +90,15 @@ const ConsultantCompanyUnitDetail = () => {
           <Text type="secondary">City</Text>
           <Text type="secondary">:</Text>
           <Text>
-            {companyDetailByUnitId?.sCity ? companyDetailByUnitId?.sCity : "NA"}
+            {companyDetailByUnitId?.secondaryCity ? companyDetailByUnitId?.secondaryCity : "NA"}
           </Text>
         </Flex>
         <Flex gap={8}>
           <Text type="secondary">State</Text>
           <Text type="secondary">:</Text>
           <Text>
-            {companyDetailByUnitId?.sState
-              ? companyDetailByUnitId?.sState
+            {companyDetailByUnitId?.secondaryState
+              ? companyDetailByUnitId?.secondaryState
               : "NA"}
           </Text>
         </Flex>
@@ -106,8 +106,8 @@ const ConsultantCompanyUnitDetail = () => {
           <Text type="secondary">Country</Text>
           <Text type="secondary">:</Text>
           <Text>
-            {companyDetailByUnitId?.sCountry
-              ? companyDetailByUnitId?.sCountry
+            {companyDetailByUnitId?.secondaryCountry
+              ? companyDetailByUnitId?.secondaryCountry
               : "NA"}
           </Text>
         </Flex>

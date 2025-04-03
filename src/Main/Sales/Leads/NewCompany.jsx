@@ -1,4 +1,4 @@
-import { Flex, Input, notification, Select } from "antd";
+import { Flex, Input, notification, Select, Typography } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
@@ -18,6 +18,7 @@ import {
 } from "../../../Toolkit/Slices/CompanySlice";
 import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
 import MainHeading from "../../../components/design/MainHeading";
+const {Text}=Typography
 
 const NewCompany = () => {
   const { userid } = useParams();
@@ -29,6 +30,7 @@ const NewCompany = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [filterUserId, setFilterUserId] = useState("");
+  const [typeStatus, setTypeStatus] = useState("all");
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,
@@ -52,6 +54,7 @@ const NewCompany = () => {
         userId: userid,
         page: paginationData?.page,
         size: paginationData?.size,
+        type: typeStatus,
         filterUserId,
       })
     );
@@ -73,26 +76,31 @@ const NewCompany = () => {
   );
 
   const filterCompanyBasedOnUser = useCallback(
-    (filterUserId) => {
-      if (filterUserId) {
+    (x, e) => {
+      if (e) {
         dispatch(
           getAllNewCompanies({
             userId: userid,
             page: paginationData?.page,
             size: paginationData?.size,
-            filterUserId,
+            type: x === "type" ? e : typeStatus,
+            filterUserId: x === "user" ? e : filterUserId,
           })
         );
-        setFilterUserId(filterUserId);
+        if (x === "user") {
+          setFilterUserId(e);
+        } else {
+          setTypeStatus(e);
+        }
       }
     },
-    [paginationData, dispatch]
+    [paginationData, dispatch, filterUserId, typeStatus]
   );
 
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = newCompaniesList?.result?.filter((item) =>
+    const filtered = newCompaniesList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
@@ -155,6 +163,11 @@ const NewCompany = () => {
           {props?.companyName}
         </OverFlowText>
       ),
+    },
+    {
+      dataIndex: "consultantOrCompany",
+      title: "Company type",
+      render: (info) => (info ? <Text>Consultant</Text> : <Text>Company</Text>),
     },
     {
       dataIndex: "assignee",
@@ -269,13 +282,24 @@ const NewCompany = () => {
           align="center"
           className="marginBottom8px"
         >
-          <Input
-            prefix={<Icon icon="fluent:search-24-regular" />}
-            value={searchText}
-            onChange={handleSearch}
-            placeholder="search"
-            style={{ width: "25%" }}
-          />
+          <Flex gap={8} style={{ width: "30%" }}>
+            <Input
+              prefix={<Icon icon="fluent:search-24-regular" />}
+              value={searchText}
+              onChange={handleSearch}
+              placeholder="search"
+            />
+            <Select
+              style={{ width: "40%" }}
+              options={[
+                { label: "All", value: "all" },
+                { label: "Company", value: "company" },
+                { label: "Consultant", value: "consultant" },
+              ]}
+              value={typeStatus}
+              onChange={(e) => filterCompanyBasedOnUser("type", e)}
+            />
+          </Flex>
           {getHighestPriorityRole(currentRoles) === "ADMIN" && (
             <Select
               showSearch
@@ -294,24 +318,26 @@ const NewCompany = () => {
               filterOption={(input, option) =>
                 option.label.toLowerCase().includes(input.toLowerCase())
               }
-              onChange={filterCompanyBasedOnUser}
-              onClear={() =>
+              onChange={(e) => filterCompanyBasedOnUser("user", e)}
+              onClear={() => {
                 dispatch(
                   getAllNewCompanies({
                     userId: userid,
                     page: paginationData?.page,
                     size: paginationData?.size,
+                    type: typeStatus,
                     filterUserId: "",
                   })
-                )
-              }
+                );
+                setFilterUserId("");
+              }}
             />
           )}
         </Flex>
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "69vh", x: 1800 }}
+          scroll={{ y: "69vh", x: 2000 }}
           rowKey={(record) => record?.companyId}
           pagination={true}
           page={paginationData?.page}

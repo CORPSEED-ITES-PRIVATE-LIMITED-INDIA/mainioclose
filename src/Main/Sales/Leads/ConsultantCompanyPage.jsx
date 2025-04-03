@@ -87,7 +87,7 @@ const ConsultantCompanyPage = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    const filtered = consultantCompaniesList?.result?.filter((item) =>
+    const filtered = consultantCompaniesList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
@@ -282,7 +282,7 @@ const ConsultantCompanyPage = () => {
     <>
       <Flex vertical gap={12}>
         <Flex className="vouchers-header">
-          <MainHeading data={`Consultant company list`} />
+          <MainHeading data={`Serving company list`} />
         </Flex>
 
         <Flex
@@ -298,7 +298,7 @@ const ConsultantCompanyPage = () => {
             style={{ width: "25%" }}
           />
           <Button onClick={handleButtonClick} type="primary">
-            Add consultant company
+            Add serving company
           </Button>
         </Flex>
         <CommonTable
@@ -309,7 +309,7 @@ const ConsultantCompanyPage = () => {
         />
       </Flex>
       <Modal
-        title="Add consultant units"
+        title="Add serving company"
         width={"60%"}
         open={openModal}
         onCancel={() => setOpenModal(false)}
@@ -398,7 +398,7 @@ const ConsultantCompanyPage = () => {
             </Form.Item>
 
             <Form.Item
-              label="Select industry"
+              label="Select main industry"
               name="industries"
               rules={[
                 {
@@ -463,12 +463,12 @@ const ConsultantCompanyPage = () => {
             </Form.Item>
 
             <Form.Item
-              label="Select sub-sub-industry"
+              label="Select category"
               name="subsubIndustry"
               rules={[
                 {
                   required: true,
-                  message: "please select the sub sub industry",
+                  message: "please select the category",
                 },
               ]}
             >
@@ -494,12 +494,12 @@ const ConsultantCompanyPage = () => {
             </Form.Item>
 
             <Form.Item
-              label="Select industry data"
+              label="Select business activity"
               name="industriesData"
               rules={[
                 {
                   required: true,
-                  message: "please select the industry data",
+                  message: "please select the business activiy",
                 },
               ]}
             >
