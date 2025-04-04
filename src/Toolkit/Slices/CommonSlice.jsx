@@ -51,16 +51,35 @@ export const getAllCountries = createAsyncThunk("getAllCountries", async () => {
   return response.data;
 });
 
+export const getAllStatesByCountryId = createAsyncThunk(
+  "getAllStatesByCountryId",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/country/getAllStateByCountryId?id=${id}`
+    );
+    return response.data;
+  }
+);
 
-export const getAllStatesByCountryId=createAsyncThunk('getAllStatesByCountryId',async(id)=>{
-  const response=await getQuery(`/leadService/api/v1/country/getAllStateByCountryId?id=${id}`)
-  return response.data
-})
+export const getAllCitiesByStateId = createAsyncThunk(
+  "getAllCitiesByStateId",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/state/getAllCityByStateId?id=${id}`
+    );
+    return response.data;
+  }
+);
 
-export const getAllCitiesByStateId=createAsyncThunk('getAllCitiesByStateId',async(id)=>{
-  const response=await getQuery(`/leadService/api/v1/state/getAllCityByStateId?id=${id}`)
-  return response.data
-})
+export const panNumberExistOrNot = createAsyncThunk(
+  "panNumberExistOrNot",
+  async (panNo) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getCompanyPanNo?panNo=${panNo}`
+    );
+    return response.data;
+  }
+);
 
 const CommonSlice = createSlice({
   name: "common",
@@ -69,9 +88,9 @@ const CommonSlice = createSlice({
     loading: "",
     managerListById: [],
     procurementAssigneeList: [],
-    countriesList:[],
-    statesList:[],
-    citiesList:[]
+    countriesList: [],
+    statesList: [],
+    citiesList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getDesiginationById.pending, (state, action) => {
@@ -106,7 +125,6 @@ const CommonSlice = createSlice({
       state.loading = "rejected";
     });
 
-
     builder.addCase(getAllCountries.pending, (state, action) => {
       state.loading = "pending";
     });
@@ -118,7 +136,6 @@ const CommonSlice = createSlice({
       state.loading = "rejected";
     });
 
-
     builder.addCase(getAllStatesByCountryId.pending, (state, action) => {
       state.loading = "pending";
     });
@@ -129,7 +146,6 @@ const CommonSlice = createSlice({
     builder.addCase(getAllStatesByCountryId.rejected, (state, action) => {
       state.loading = "rejected";
     });
-
 
     builder.addCase(getAllCitiesByStateId.pending, (state, action) => {
       state.loading = "pending";
@@ -143,5 +159,5 @@ const CommonSlice = createSlice({
     });
   },
 });
- 
+
 export default CommonSlice.reducer;

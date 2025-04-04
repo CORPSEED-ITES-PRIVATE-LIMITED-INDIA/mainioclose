@@ -103,7 +103,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
   return (
     <>
       <Button type="primary" onClick={() => setOpenModal(true)}>
-        Add company
+        Add unit
       </Button>
       <Modal
         title="Create company"

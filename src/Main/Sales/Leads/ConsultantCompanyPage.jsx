@@ -9,6 +9,7 @@ import {
   Modal,
   notification,
   Select,
+  Switch,
   Typography,
   Upload,
 } from "antd";
@@ -45,6 +46,7 @@ import {
   getAllCitiesByStateId,
   getAllCountries,
   getAllStatesByCountryId,
+  panNumberExistOrNot,
 } from "../../../Toolkit/Slices/CommonSlice";
 import dayjs from "dayjs";
 import ServingCompanyMainDetails from "./ServingCompanyMainDetails";
@@ -131,22 +133,46 @@ const ConsultantCompanyPage = () => {
     }
   };
 
-  const handlePanNumberChange = (e) => {
-    const value = e.target.value;
-    const upperCaseValue = value.toUpperCase();
-    const isValid = /^[A-Z0-9]+$/.test(upperCaseValue);
-    form.setFieldsValue({ panNo: isValid ? upperCaseValue : value });
+  const validatePan = (_, value) => {
+    if (!value) {
+      return Promise.reject(new Error("PAN number is required"));
+    }
+    if (!/^[A-Z0-9]+$/.test(value)) {
+      return Promise.reject(new Error("Invalid PAN format"));
+    }
+    if (value.length !== 10) {
+      return Promise.reject(new Error("PAN number must be 10 characters"));
+    }
+
+    return dispatch(panNumberExistOrNot(value))
+      .then((response) => {
+        if (response.payload === true) {
+          return Promise.reject(new Error("PAN number already exist"));
+        }
+        return Promise.resolve();
+      })
+      .catch(() => Promise.reject(new Error("Error checking PAN number")));
   };
 
-  const copyBillingToShipping = () => {
-    const values = form.getFieldsValue();
-    form.setFieldsValue({
-      servingSecondaryAddress: values.servingAddress,
-      servingSecondaryCountry: values.servingCountry,
-      servingSecondaryState: values.servingState,
-      servingsecondaryCity: values.servingCity,
-      servingSecondaryPinCode: values.servingprimaryPinCode,
-    });
+  const copyBillingToShipping = (e) => {
+    if (e) {
+      const values = form.getFieldsValue();
+      form.setFieldsValue({
+        servingSecondaryAddress: values.servingAddress,
+        servingSecondaryCountry: values.servingCountry,
+        servingSecondaryState: values.servingState,
+        servingsecondaryCity: values.servingCity,
+        servingSecondaryPinCode: values.servingprimaryPinCode,
+      });
+    } else {
+      form.resetFields([
+        "servingSecondaryAddress",
+        "servingSecondaryCountry",
+        "servingSecondaryState",
+        "servingsecondaryCity",
+        "servingSecondaryPinCode",
+      ]);
+    }
   };
 
   const normFile = (e) => {
@@ -682,8 +708,13 @@ const ConsultantCompanyPage = () => {
               />
             </Form.Item>
 
-            <Form.Item label="Serving company pan number" name="servingPanNo">
-              <Input maxLength={10} onChange={handlePanNumberChange} />
+            <Form.Item
+              label="Serving company pan number"
+              name="servingPanNo"
+              rules={[{ validator: validatePan }]}
+              validateTrigger="onBlur"
+            >
+              <Input maxLength={10} />
             </Form.Item>
 
             <Form.Item
@@ -993,7 +1024,7 @@ const ConsultantCompanyPage = () => {
 
             <Form.Item
               label="Contact number"
-              name="servingSecondaryContactName"
+              name="servingSecondaryContactNo"
               rules={[
                 {
                   required: true,
@@ -1023,14 +1054,9 @@ const ConsultantCompanyPage = () => {
           >
             Shipping address
           </Divider>
-          <Button
-            type="primary"
-            onClick={copyBillingToShipping}
-            style={{ marginBottom: "10px" }}
-          >
-            Same as primary address
-          </Button>
-
+          <Form.Item label="Same as primary address" layout="horizontal">
+            <Switch size="small" onChange={copyBillingToShipping} />
+          </Form.Item>
           <div className="form-grid-col-2">
             <Form.Item label="Address" name="servingSecondaryAddress">
               <Input.TextArea />

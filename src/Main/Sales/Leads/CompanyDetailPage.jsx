@@ -109,9 +109,9 @@ const CompanyDetailPage = () => {
             style={{ width: "25%" }}
           />
           <Flex gap={8}>
-            <Button type="primary" onClick={() => setOpenModal(true)}>
+            {/* <Button type="primary" onClick={() => setOpenModal(true)}>
               Add consultant
-            </Button>
+            </Button> */}
             <AddCompanyInGstAndUnit gstField={true} />
           </Flex>
         </Flex>
