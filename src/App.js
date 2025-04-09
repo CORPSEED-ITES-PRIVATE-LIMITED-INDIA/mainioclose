@@ -102,6 +102,7 @@ import NewCompaniesDetailedLayout from "./Main/Sales/Leads/NewCompaniesDetailedL
 import ConsultantCompanyPage from "./Main/Sales/Leads/ConsultantCompanyPage";
 import ConsultantCompanyGStPage from "./Main/Sales/Leads/ConsultantCompanyGStPage";
 import ConsultantCompanyUnitsPage from "./Main/Sales/Leads/ConsultantCompanyUnitsPage";
+import CompanyApproval from "./Main/Accounts/CompanyApproval";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -363,6 +364,7 @@ function App() {
                   element={<MainCompanyFormPage role={"sales"} />}
                 />
                 <Route path="companySearch" element={<CompanySearch />} />
+                <Route path="companyApproval" element={<CompanyApproval />} />
 
                 <Route path="organizations" element={<MainOrganizationPage />}>
                   <Route index element={<Organizations />} />

@@ -402,6 +402,15 @@ const SideBar = () => {
               // },
               {
                 label: (
+                  <Link to={`/erp/${userid}/account/companyApproval`}>
+                    {" "}
+                    Company approvals
+                  </Link>
+                ),
+                key: "companyApproval",
+              },
+              {
+                label: (
                   <Link to={`/erp/${userid}/account/companyForm`}>
                     {" "}
                     Company form
@@ -508,6 +517,15 @@ const SideBar = () => {
               //   ),
               //   key: "accountlist",
               // },
+              {
+                label: (
+                  <Link to={`/erp/${userid}/account/companyApproval`}>
+                    {" "}
+                    Company approvals
+                  </Link>
+                ),
+                key: "companyApproval",
+              },
               {
                 label: (
                   <Link to={`/erp/${userid}/account/companyForm`}>
