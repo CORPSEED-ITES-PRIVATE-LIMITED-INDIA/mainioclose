@@ -299,6 +299,29 @@ export const getAllCompanyType = createAsyncThunk(
     return response.data;
   }
 );
+// fdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddb
+export const getAllGstTypeByCompanyTypeId = createAsyncThunk(
+  "getAllGstTypeById",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/state/getGstTypeById?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getBusinessTypeByGstTypeId = createAsyncThunk(
+  "getBusinessTypeByGstTypeId",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/state/getBussinessTypeByGstTypeId?id=${id}`
+    );
+    return response.data;
+  }
+);                     
+
+
+//        kjhdisfouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 
 export const getHandleSearchCompanies = createAsyncThunk(
   "getHandleSearchCompanies",
@@ -500,6 +523,8 @@ const CompnaySlice = createSlice({
     servingCompanyDetail: {},
     singleServingCompanyData: [],
     approvalCompanyList: [],
+    gstTypeList:[],
+    businessTypeList:[]
   },
   reducers: {
     handleNextPagination: (state, action) => {
@@ -874,6 +899,36 @@ const CompnaySlice = createSlice({
       state.consultantLoading = "rejected";
       state.approvalCompanyList = [];
     });
+
+
+    
+    builder.addCase(getAllGstTypeByCompanyTypeId.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(getAllGstTypeByCompanyTypeId.fulfilled, (state, action) => {
+      state.gstTypeList = action.payload;
+      state.consultantLoading = "success";
+    });
+    builder.addCase(getAllGstTypeByCompanyTypeId.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.gstTypeList = [];
+    });
+
+
+    
+    builder.addCase(getBusinessTypeByGstTypeId.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(getBusinessTypeByGstTypeId.fulfilled, (state, action) => {
+      state.businessTypeList = action.payload;
+      state.consultantLoading = "success";
+    });
+    builder.addCase(getBusinessTypeByGstTypeId.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.businessTypeList = [];
+    });
+
+
   },
 });
 

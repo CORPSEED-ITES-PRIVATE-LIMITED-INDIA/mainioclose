@@ -36,6 +36,8 @@ import {
   createNewCompanyInLeads,
   getAllCompanyByStatus,
   getAllCompanyType,
+  getAllGstTypeByCompanyTypeId,
+  getBusinessTypeByGstTypeId,
   getCompanyDetailsById,
   updateCompanyForm,
 } from "../../../Toolkit/Slices/CompanySlice";
@@ -75,6 +77,10 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
     (state) => state.leads.singleLeadResponseData
   );
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
+  const gstTypeList = useSelector((state) => state.company.gstTypeList);
+  const businessTypeList = useSelector(
+    (state) => state.company.businessTypeList
+  );
   const currentRoles = useSelector((state) => state?.auth?.roles);
   const contactList = useSelector((state) => state?.leads?.allContactList);
   const contactDetail = useSelector((state) => state?.leads?.contactDetail);
@@ -98,7 +104,7 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
   );
   const [isToggel, setIsToggel] = useState(false);
   const [openModal, setOpenModal] = useState(false);
-  const [gstMand, setGstMand] = useState(false);
+  const [gstMand, setGstMand] = useState({ gst: false, pan: false });
   const [formLoading, setFormLoading] = useState("");
   const [createFormAs, setCreateFormAs] = useState("company");
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -380,7 +386,10 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                   label="Company structure"
                   name="companyType"
                   rules={[
-                    { required: true, message: "please select the gst type" },
+                    {
+                      required: true,
+                      message: "please select the company structure type",
+                    },
                   ]}
                 >
                   <Select
@@ -395,11 +404,72 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                           }))
                         : []
                     }
-                    onChange={(e, x) => setGstMand(x?.gstPresent)}
+                    onChange={(e, x) => {
+                      dispatch(getAllGstTypeByCompanyTypeId(e));
+                      form.resetFields(["gstType", "businessType"]);
+                      setGstMand({ pan: false, gst: false });
+                    }}
                   />
                 </Form.Item>
 
-                {gstMand && (
+                <Form.Item
+                  label="Gst type"
+                  name="gstType"
+                  rules={[
+                    { required: true, message: "please select the gst type" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      gstTypeList?.gstBussinessType?.length > 0
+                        ? gstTypeList?.gstBussinessType?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      dispatch(getBusinessTypeByGstTypeId(e));
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Business type"
+                  name="businessType"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select the business type",
+                    },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      businessTypeList?.gstTypePrice?.length > 0
+                        ? businessTypeList?.gstTypePrice?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      setGstMand((prev) => ({
+                        ...prev,
+                        gst: x?.gstPresent,
+                        pan: x?.panPresent,
+                      }));
+                    }}
+                  />
+                </Form.Item>
+
+                {gstMand?.gst && (
                   <Form.Item
                     label="Gst number"
                     name="gstNo"
@@ -414,6 +484,12 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                     ]}
                   >
                     <Input maxLength={15} />
+                  </Form.Item>
+                )}
+
+                {gstMand?.pan && (
+                  <Form.Item label="Pan number" name="panNo">
+                    <Input maxLength={10} onChange={handlePanNumberChange} />
                   </Form.Item>
                 )}
 
@@ -579,10 +655,6 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
                       option.label.toLowerCase().includes(input.toLowerCase())
                     }
                   />
-                </Form.Item>
-
-                <Form.Item label="Pan number" name="panNo">
-                  <Input maxLength={10} onChange={handlePanNumberChange} />
                 </Form.Item>
 
                 <Form.Item
