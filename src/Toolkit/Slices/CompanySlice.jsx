@@ -314,7 +314,7 @@ export const getBusinessTypeByGstTypeId = createAsyncThunk(
   "getBusinessTypeByGstTypeId",
   async (id) => {
     const response = await getQuery(
-      `/leadService/api/v1/state/getBussinessTypeByGstTypeId?id=${id}`
+      `/leadService/api/v1/state/getPriceTypeByBussinessTypeId?id=${id}`
     );
     return response.data;
   }
