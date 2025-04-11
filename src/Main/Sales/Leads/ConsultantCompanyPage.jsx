@@ -256,9 +256,14 @@ const ConsultantCompanyPage = () => {
       ),
     },
     {
+      dataIndex: "age",
+      title: "Company age",
+      render: (_, props) => <ColComp data={props?.age} />,
+    },
+    {
       dataIndex: "assignee",
       title: "Assignee",
-      render: (_, props) => <ColComp data={props?.assignee?.fullName} />,
+      render: (_, props) => <ColComp data={props?.assigneeName} />,
     },
     {
       dataIndex: "gstNo",
@@ -270,11 +275,15 @@ const ConsultantCompanyPage = () => {
       dataIndex: "gstType",
       title: "GST type",
       checked: false,
-      render: (_, props) => <ColComp data={props?.gstType} />,
+      render: (_, props) => <ColComp data={props?.gstType?.name} />,
     },
 
     ...(getHighestPriorityRole(currentRoles) === "ADMIN"
       ? [
+          {
+            dataIndex: "clientName",
+            title: "Client name",
+          },
           {
             dataIndex: "clientContactEmail",
             title: "Client email",
@@ -292,7 +301,7 @@ const ConsultantCompanyPage = () => {
           },
           {
             dataIndex: "primaryContact",
-            title: "Primary contact name",
+            title: "Primary designation",
             render: (_, props) => (
               <ColComp data={props?.primaryContact?.designation} />
             ),
@@ -482,7 +491,7 @@ const ConsultantCompanyPage = () => {
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "69vh", x: 3500 }}
+          scroll={{ y: "69vh", x: 4500 }}
           rowKey={(record) => record?.id}
         />
       </Flex>

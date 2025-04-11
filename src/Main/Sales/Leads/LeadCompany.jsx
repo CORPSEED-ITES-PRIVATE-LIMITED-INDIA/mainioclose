@@ -198,8 +198,10 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
     (values) => {
       values.gstDocuments = values.gstDocuments?.[0]?.response;
       values.leadId = data?.id;
+      values.updatedBy=userid
       dispatch(createNewCompanyInLeads(values))
         .then((response) => {
+          console.log('dhgfjghjfdgjdgfdf',response)
           if (response.meta.requestStatus === "fulfilled") {
             setFormLoading("success");
             notification.success({
@@ -213,7 +215,8 @@ const LeadCompany = ({ edit, data, editInfo, selectedFilter, detailView }) => {
             notification.error({ message: "Something went wrong !." });
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.log('dhgfjghjfdgjdgfdf   111111',err)
           setFormLoading("rejected");
           notification.error({ message: "Something went wrong !." });
         });

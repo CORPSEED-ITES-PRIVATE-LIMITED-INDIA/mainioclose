@@ -170,6 +170,10 @@ const NewCompany = () => {
       render: (info) => (info ? <Text>Consultant</Text> : <Text>Company</Text>),
     },
     {
+      dataIndex: "age",
+      title: "Company age",
+    },
+    {
       dataIndex: "assignee",
       title: "Assignee",
       render: (_, props) =>

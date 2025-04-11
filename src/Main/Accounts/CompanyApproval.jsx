@@ -208,6 +208,14 @@ const CompanyApproval = () => {
                       notification.success({
                         message: "Company disapproved successfully !.",
                       });
+                      dispatch(
+                        getAllCompaniesForApprovals({
+                          userId: userid,
+                          status: selectedFilter,
+                          page: paginationData?.page,
+                          size: paginationData?.size,
+                        })
+                      );
                     } else {
                       notification.error({
                         message: "Something went wrong !.",
