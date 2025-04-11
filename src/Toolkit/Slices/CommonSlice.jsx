@@ -92,6 +92,12 @@ const CommonSlice = createSlice({
     statesList: [],
     citiesList: [],
   },
+  reducers: {
+    handleReset: (state, action) => {
+      state.citiesList = [];
+      state.statesList = [];
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(getDesiginationById.pending, (state, action) => {
       state.loading = "pending";
@@ -159,5 +165,7 @@ const CommonSlice = createSlice({
     });
   },
 });
+
+export const { handleReset } = CommonSlice.actions;
 
 export default CommonSlice.reducer;
