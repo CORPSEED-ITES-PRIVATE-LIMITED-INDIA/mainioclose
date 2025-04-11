@@ -6,18 +6,33 @@ import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import ColComp from "../../../components/small/ColComp";
 import OverFlowText from "../../../components/OverFlowText";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import ConsultantCompanyDetailPage from "./ConsultantCompanyDetailPage";
-import { getServingCompanyDetail } from "../../../Toolkit/Slices/CompanySlice";
+import {
+  getAllConsultantUnitsByStateAndId,
+  getCompanyByUnitId,
+  getServingCompanyDetail,
+} from "../../../Toolkit/Slices/CompanySlice";
 
 const ConsultantCompanyUnitsPage = () => {
   const dispatch = useDispatch();
+  const { state, consultCompanyId, consultantParentCompanyId,consultCompanyType } = useParams();
   const consultantUnitsList = useSelector(
     (state) => state.company.consultantUnitsList
   );
   const [openDrawer, setOpenDrawer] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+
+  useEffect(() => {
+    dispatch(
+      getAllConsultantUnitsByStateAndId({
+        companyId: consultCompanyId,
+        companyOrConsultant: consultCompanyType,
+        state: state,
+      })
+    );
+  }, [consultCompanyId,consultCompanyType , state]);
 
   useEffect(() => {
     setFilteredData(consultantUnitsList);
@@ -35,8 +50,11 @@ const ConsultantCompanyUnitsPage = () => {
   };
 
   const handleOnCLick = (data) => {
-    dispatch(getServingCompanyDetail(data?.companyId));
-
+    if (data?.companyOrConsultant === "company") {
+      dispatch(getServingCompanyDetail(data?.companyId));
+    } else {
+      dispatch(getCompanyByUnitId(data?.companyId));
+    }
     setOpenDrawer(true);
   };
 

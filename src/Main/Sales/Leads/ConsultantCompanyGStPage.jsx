@@ -6,6 +6,7 @@ import {
   Form,
   Input,
   Modal,
+  notification,
   Select,
   Upload,
 } from "antd";
@@ -15,6 +16,7 @@ import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addServingUnitsForCompany,
   getAllCompanyType,
   getAllConsultantUnitsByStateAndId,
   getAllServingGstCompany,
@@ -27,7 +29,10 @@ import {
   getSubSubIndustryBySubIndustryId,
 } from "../../../Toolkit/Slices/IndustrySlice";
 import { getClientDesiginationList } from "../../../Toolkit/Slices/SettingSlice";
-import { getAllContactDetails, getCompanyDetailsByGst } from "../../../Toolkit/Slices/LeadSlice";
+import {
+  getAllContactDetails,
+  getCompanyDetailsByGst,
+} from "../../../Toolkit/Slices/LeadSlice";
 import {
   getAllCitiesByStateId,
   getAllCountries,
@@ -38,7 +43,7 @@ import dayjs from "dayjs";
 const ConsultantCompanyGStPage = () => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
-  const { userid, consultCompanyId, companyId } = useParams();
+  const { userid, consultCompanyId, companyId, companyType } = useParams();
   const servingGstCompanyList = useSelector(
     (state) => state.company.servingGstCompanyList
   );
@@ -64,6 +69,15 @@ const ConsultantCompanyGStPage = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [gstMand, setGstMand] = useState(false);
+
+  useEffect(() => {
+    dispatch(
+      getAllServingGstCompany({
+        companyId: consultCompanyId,
+        companyOrConsultant: companyType,
+      })
+    );
+  }, [consultCompanyId, companyType]);
 
   useEffect(() => {
     setFilteredData(servingGstCompanyList);
@@ -157,16 +171,7 @@ const ConsultantCompanyGStPage = () => {
       render: (_, props) => (
         <Link
           className="link-heading"
-          to={`/erp/${userid}/sales/newcompanies/${companyId}/newConsultantCompanies/${consultCompanyId}/consultantGst/${props?.parentCompanyId}/consultantCompanyUnits`}
-          onClick={() =>
-            dispatch(
-              getAllConsultantUnitsByStateAndId({
-                companyId: consultCompanyId,
-                companyOrConsultant: props?.companyOrConsultant,
-                state: props?.state,
-              })
-            )
-          }
+          to={`/erp/${userid}/sales/newcompanies/${companyId}/newConsultantCompanies/${consultCompanyId}/consultantGst/${props?.parentCompanyId}/${props?.state}/${props?.companyOrConsultant}/consultantCompanyUnits`}
         >
           {props?.state}
         </Link>
@@ -179,7 +184,28 @@ const ConsultantCompanyGStPage = () => {
     },
   ];
 
-  const handleFinish = (values) => {};
+  const handleFinish = (values) => {
+    dispatch(
+      addServingUnitsForCompany({
+        companyId: companyId,
+        servingCompanyId: consultCompanyId,
+        consultant: false,
+        ...values,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({
+            message: "Serving company unit added successfully",
+          });
+          setOpenModal(false);
+          form.resetFields();
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
 
   return (
     <>

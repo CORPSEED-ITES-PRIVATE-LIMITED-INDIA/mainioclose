@@ -249,15 +249,7 @@ const ConsultantCompanyPage = () => {
       render: (_, props) => (
         <OverFlowText
           linkText={true}
-          to={`/erp/${userid}/sales/newcompanies/${companyId}/newConsultantCompanies/${props?.companyId}/consultantGst`}
-          onClick={() =>
-            dispatch(
-              getAllServingGstCompany({
-                companyId: props?.companyId,
-                companyOrConsultant: props?.companyOrConsultant,
-              })
-            )
-          }
+          to={`/erp/${userid}/sales/newcompanies/${companyId}/newConsultantCompanies/${props?.companyId}/${props?.companyOrConsultant}/consultantGst`}
         >
           {props?.companyName}
         </OverFlowText>

@@ -317,11 +317,11 @@ function App() {
                   element={<ConsultantCompanyPage />}
                 />
                 <Route
-                  path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/consultantGst"
+                  path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/:companyType/consultantGst"
                   element={<ConsultantCompanyGStPage />}
                 />
                 <Route
-                  path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/consultantGst/:consultantParentCompanyId/consultantCompanyUnits"
+                  path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/consultantGst/:consultantParentCompanyId/:state/:consultCompanyType/consultantCompanyUnits"
                   element={<ConsultantCompanyUnitsPage />}
                 />
                 <Route
