@@ -193,13 +193,19 @@ const LeadCompany = ({ edit, data }) => {
           console.log("dhgfjghjfdgjdgfdf", response);
           if (response.meta.requestStatus === "fulfilled") {
             setFormLoading("success");
-            notification.success({
-              message: "Company created successfully.",
-            });
-            playSuccessSound();
-            setOpenModal(false);
-            form.resetFields();
-            dispatch(handleReset());
+
+            if (response?.payload?.flag) {
+              notification.success({
+                message: "Company created successfully.",
+              });
+              playSuccessSound();
+              setOpenModal(false);
+              form.resetFields();
+
+              dispatch(handleReset());
+            } else {
+              notification.error({ message: `${response?.payload?.message}` });
+            }
           } else {
             setFormLoading("rejected");
             notification.error({ message: "Something went wrong !." });
@@ -231,7 +237,7 @@ const LeadCompany = ({ edit, data }) => {
                 onClick={() => {
                   setIsToggel((prev) => !prev);
                   dispatch(handleReset());
-                  form.resetFields()
+                  form.resetFields();
                 }}
               >
                 <Icon
