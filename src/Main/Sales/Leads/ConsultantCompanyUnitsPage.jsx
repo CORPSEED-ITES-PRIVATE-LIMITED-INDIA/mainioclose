@@ -16,7 +16,7 @@ import {
 
 const ConsultantCompanyUnitsPage = () => {
   const dispatch = useDispatch();
-  const { state, consultCompanyId, consultantParentCompanyId,consultCompanyType } = useParams();
+  const { state, consultCompanyId, consultantParentCompanyId, consultCompanyType } = useParams();
   const consultantUnitsList = useSelector(
     (state) => state.company.consultantUnitsList
   );
@@ -32,7 +32,7 @@ const ConsultantCompanyUnitsPage = () => {
         state: state,
       })
     );
-  }, [consultCompanyId,consultCompanyType , state]);
+  }, [consultCompanyId, consultCompanyType, state]);
 
   useEffect(() => {
     setFilteredData(consultantUnitsList);
@@ -51,9 +51,9 @@ const ConsultantCompanyUnitsPage = () => {
 
   const handleOnCLick = (data) => {
     if (data?.companyOrConsultant === "company") {
-      dispatch(getServingCompanyDetail(data?.companyId));
-    } else {
       dispatch(getCompanyByUnitId(data?.companyId));
+    } else {
+      dispatch(getServingCompanyDetail(data?.companyId));
     }
     setOpenDrawer(true);
   };
