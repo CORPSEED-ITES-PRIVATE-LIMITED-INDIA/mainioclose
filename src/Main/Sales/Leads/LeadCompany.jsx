@@ -470,6 +470,7 @@ const LeadCompany = ({ edit, data }) => {
                         gst: x?.gstPresent,
                         pan: x?.panPresent,
                       }));
+                      form.resetFields(["gstNo", "panNo"]);
                     }}
                   />
                 </Form.Item>
