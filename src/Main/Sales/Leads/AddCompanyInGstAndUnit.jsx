@@ -106,7 +106,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
         Add unit
       </Button>
       <Modal
-        title="Create company"
+        title={gstField ? "Add GST unit " : "Add company unit"}
         open={openModal}
         width={"60%"}
         centered
@@ -263,12 +263,12 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
               />
             </Form.Item>
             <Form.Item
-              label="Select sub-sub-industry"
+              label="Select category"
               name="subsubIndustryId"
               rules={[
                 {
                   required: true,
-                  message: "please select the sub sub industry",
+                  message: "please select the category",
                 },
               ]}
             >
@@ -294,7 +294,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
             </Form.Item>
 
             <Form.Item
-              label="Select industry data"
+              label="Select business activity"
               name="industrydataId"
               rules={[
                 { required: true, message: "please select the industry data" },

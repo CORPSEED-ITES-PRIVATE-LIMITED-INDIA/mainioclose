@@ -328,7 +328,7 @@ const ConsultantCompanyGStPage = () => {
             </Form.Item>
 
             <Form.Item
-              label="Select industry"
+              label="Select main industry"
               name="industries"
               rules={[
                 {
@@ -393,12 +393,12 @@ const ConsultantCompanyGStPage = () => {
             </Form.Item>
 
             <Form.Item
-              label="Select sub-sub-industry"
+              label="Select category"
               name="subsubIndustry"
               rules={[
                 {
                   required: true,
-                  message: "please select the sub sub industry",
+                  message: "please select the category",
                 },
               ]}
             >
@@ -424,12 +424,12 @@ const ConsultantCompanyGStPage = () => {
             </Form.Item>
 
             <Form.Item
-              label="Select industry data"
+              label="Select business activity"
               name="industriesData"
               rules={[
                 {
                   required: true,
-                  message: "please select the industry data",
+                  message: "please select the business activity",
                 },
               ]}
             >
