@@ -928,7 +928,7 @@ const LeadCompany = ({ edit, data }) => {
 
                 <Form.Item
                   label="Contact name"
-                  name="scontactName"
+                  name="secondaryContactName"
                   rules={[
                     {
                       required: true,
@@ -967,7 +967,7 @@ const LeadCompany = ({ edit, data }) => {
 
                 <Form.Item
                   label="Email"
-                  name="scontactEmails"
+                  name="secondaryContactEmails"
                   rules={[
                     {
                       required: true,
@@ -981,7 +981,7 @@ const LeadCompany = ({ edit, data }) => {
 
                 <Form.Item
                   label="Contact number"
-                  name="scontactNo"
+                  name="secondaryContactNo"
                   rules={[
                     {
                       required: true,
@@ -994,7 +994,7 @@ const LeadCompany = ({ edit, data }) => {
 
                 <Form.Item
                   label="Whatsapp number"
-                  name="scontactWhatsappNo"
+                  name="secondaryContactWhatsappNo"
                   rules={[
                     {
                       required: true,
@@ -1012,11 +1012,11 @@ const LeadCompany = ({ edit, data }) => {
                 Shipping address
               </Divider>
               <div className="form-grid-col-2">
-                <Form.Item label="Address" name="saddress">
+                <Form.Item label="Address" name="secondaryAddress">
                   <Input.TextArea />
                 </Form.Item>
 
-                <Form.Item label="Country" name="scountry">
+                <Form.Item label="Country" name="secondaryCountry">
                   <Select
                     showSearch
                     options={
@@ -1037,7 +1037,7 @@ const LeadCompany = ({ edit, data }) => {
                   />
                 </Form.Item>
 
-                <Form.Item label="State" name="sstate">
+                <Form.Item label="State" name="secondaryState">
                   <Select
                     showSearch
                     options={
@@ -1056,7 +1056,7 @@ const LeadCompany = ({ edit, data }) => {
                   />
                 </Form.Item>
 
-                <Form.Item label="City" name="scity">
+                <Form.Item label="City" name="secondaryCity">
                   <Select
                     showSearch
                     options={
@@ -1234,7 +1234,7 @@ const LeadCompany = ({ edit, data }) => {
                     </Form.Item>
 
                     <Form.Item
-                      label="Select sub-sub-industry"
+                      label="Select category"
                       name="subsubIndustry"
                       rules={[
                         {
@@ -1267,7 +1267,7 @@ const LeadCompany = ({ edit, data }) => {
                     </Form.Item>
 
                     <Form.Item
-                      label="Select industry data"
+                      label="Select business activity"
                       name="industriesData"
                       rules={[
                         {
