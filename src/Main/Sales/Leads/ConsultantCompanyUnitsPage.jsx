@@ -111,25 +111,25 @@ const ConsultantCompanyUnitsPage = () => {
       dataIndex: "secAddress",
       title: "Secondary address",
       checked: false,
-      render: (_, props) => <OverFlowText>{props?.secAddress}</OverFlowText>,
+      render: (_, props) => <OverFlowText>{props?.secondaryAddress}</OverFlowText>,
     },
     {
       dataIndex: "secCity",
       title: "Secondary city",
       checked: false,
-      render: (_, props) => <ColComp data={props?.secCity} />,
+      render: (_, props) => <ColComp data={props?.secondaryCity} />,
     },
     {
       dataIndex: "secState",
       title: "Secondary state",
       checked: false,
-      render: (_, props) => <ColComp data={props?.secState} />,
+      render: (_, props) => <ColComp data={props?.secondaryState} />,
     },
     {
       dataIndex: "seCountry",
       title: "Secondary country",
       checked: false,
-      render: (_, props) => <ColComp data={props?.seCountry} />,
+      render: (_, props) => <ColComp data={props?.secondaryCountry} />,
     },
   ];
   return (

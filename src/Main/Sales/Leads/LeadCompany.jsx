@@ -610,7 +610,7 @@ const LeadCompany = ({ edit, data }) => {
                 </Form.Item>
 
                 <Form.Item
-                  label="Select sub-sub-industry"
+                  label="Select category"
                   name="subsubIndustryId"
                   rules={[
                     {
@@ -641,7 +641,7 @@ const LeadCompany = ({ edit, data }) => {
                 </Form.Item>
 
                 <Form.Item
-                  label="Select industry data"
+                  label="Select business activity"
                   name="industrydataId"
                   rules={[
                     {

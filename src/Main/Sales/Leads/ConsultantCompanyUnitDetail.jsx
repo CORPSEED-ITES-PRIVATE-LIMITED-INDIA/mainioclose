@@ -1,4 +1,4 @@
-import { Card, Col, Divider, Flex, Row, Tag, Typography } from "antd";
+import { Card, Col, Divider, Flex, Rate, Row, Tag, Typography } from "antd";
 import React from "react";
 import { useSelector } from "react-redux";
 const { Text, Title } = Typography;
@@ -7,11 +7,19 @@ const ConsultantCompanyUnitDetail = () => {
   const companyDetailByUnitId = useSelector(
     (state) => state.company.servingCompanyDetail
   );
+
+
+  console.log('djshjshdjhsjhdjk',companyDetailByUnitId)
+
+
   return (
     <Flex vertical gap={8}>
-      <Title level={5} style={{ margin: 0 }}>
+    <Flex align='center' gap={8}>
+    <Title level={2} style={{ margin: 0 }}>
         {companyDetailByUnitId?.companyName}
       </Title>
+      <Rate count={5}  value={companyDetailByUnitId?.rating} disabled />
+    </Flex>
       <Divider style={{ margin: 0 }} />
       <Flex justify="space-between">
         <Flex vertical gap={4}>
@@ -28,9 +36,7 @@ const ConsultantCompanyUnitDetail = () => {
             <Text type="secondary">Company age</Text>
             <Text type="secondary">:</Text>
             <Text>
-              {companyDetailByUnitId?.companyAge
-                ? companyDetailByUnitId?.companyAge
-                : "NA"}
+              {companyDetailByUnitId?.age}
             </Text>
           </Flex>
           <Flex gap={8}>
@@ -111,8 +117,8 @@ const ConsultantCompanyUnitDetail = () => {
             <Flex gap={4}>
               {companyDetailByUnitId?.industryData
                 ? companyDetailByUnitId?.industryData?.map((item) => (
-                    <Tag key={`${item?.id}industryData`}>{item?.name}</Tag>
-                  ))
+                  <Tag key={`${item?.id}industryData`}>{item?.name}</Tag>
+                ))
                 : "NA"}
             </Flex>
           </Flex>
@@ -237,7 +243,7 @@ const ConsultantCompanyUnitDetail = () => {
               <Flex gap={8}>
                 <Text type="secondary">Email</Text>
                 <Text type="secondary">:</Text>
-                <Text>{companyDetailByUnitId?.assigneeEmail}</Text>
+                <Text>{companyDetailByUnitId?.assignee}</Text>
               </Flex>
               <Flex gap={8}>
                 <Text type="secondary">Contact no.</Text>

@@ -771,7 +771,7 @@ const CompanyFormModal = ({
               />
             </Form.Item>
             <Form.Item
-              label="Select sub-sub-industry"
+              label="Select category"
               name="subsubIndustryId"
               rules={[
                 {
@@ -802,7 +802,7 @@ const CompanyFormModal = ({
             </Form.Item>
 
             <Form.Item
-              label="Select industry data"
+              label="Select business activity"
               name="industrydataId"
               rules={[
                 { required: true, message: "please select the industry data" },

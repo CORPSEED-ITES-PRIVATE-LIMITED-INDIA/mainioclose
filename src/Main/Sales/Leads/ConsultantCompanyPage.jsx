@@ -271,7 +271,10 @@ const ConsultantCompanyPage = () => {
     {
       dataIndex: "age",
       title: "Company age",
-      render: (_, props) => <ColComp data={props?.age} />,
+    },
+    {
+      dataIndex: "companyOrConsultant",
+      title: "Company type",
     },
     {
       dataIndex: "assignee",

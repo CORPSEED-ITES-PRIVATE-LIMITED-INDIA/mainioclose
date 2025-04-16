@@ -57,46 +57,46 @@ const ServingCompanyMainDetails = () => {
     },
     {
       dataIndex: "primaryContact",
-      title: "P. cont. name",
+      title: "Primary name",
       render: (_, props) => <ColComp data={props?.primaryContact?.name} />,
     },
     {
       dataIndex: "primaryContact",
-      title: "P. cont. designation",
+      title: "Primary designation",
       render: (_, props) => (
         <ColComp data={props?.primaryContact?.designation} />
       ),
     },
     {
       dataIndex: "primaryContact",
-      title: "P. cont. email",
+      title: "Primary email",
       render: (_, props) => <ColComp data={props?.primaryContact?.emails} />,
     },
     {
       dataIndex: "primaryContact",
-      title: "P. cont. no.",
+      title: "Primary no.",
       render: (_, props) => <ColComp data={props?.primaryContact?.contactNo} />,
     },
     {
       dataIndex: "secondaryContact",
-      title: "S. cont. name",
+      title: "Secondary name",
       render: (_, props) => <ColComp data={props?.secondaryContact?.name} />,
     },
     {
       dataIndex: "secondaryContact",
-      title: "S. cont. designation",
+      title: "Secondary designation",
       render: (_, props) => (
         <ColComp data={props?.secondaryContact?.designation} />
       ),
     },
     {
       dataIndex: "secondaryContact",
-      title: "S. cont. email",
+      title: "Secondary email",
       render: (_, props) => <ColComp data={props?.secondaryContact?.emails} />,
     },
     {
       dataIndex: "secondaryContact",
-      title: "S. cont. no.",
+      title: "Secondary no.",
       render: (_, props) => (
         <ColComp data={props?.secondaryContact?.contactNo} />
       ),
@@ -130,32 +130,32 @@ const ServingCompanyMainDetails = () => {
       dataIndex: "secAddress",
       title: "Secondary address",
       checked: false,
-      render: (_, props) => <OverFlowText>{props?.secAddress}</OverFlowText>,
+      render: (_, props) => <OverFlowText>{props?.secondaryAddress}</OverFlowText>,
     },
     {
       dataIndex: "secCity",
       title: "Secondary city",
       checked: false,
-      render: (_, props) => <ColComp data={props?.secCity} />,
+      render: (_, props) => <ColComp data={props?.secondaryCity} />,
     },
     {
       dataIndex: "secState",
       title: "Secondary state",
       checked: false,
-      render: (_, props) => <ColComp data={props?.secState} />,
+      render: (_, props) => <ColComp data={props?.secondaryState} />,
     },
     {
       dataIndex: "seCountry",
       title: "Secondary country",
       checked: false,
-      render: (_, props) => <ColComp data={props?.seCountry} />,
+      render: (_, props) => <ColComp data={props?.secondaryCountry} />,
     },
   ];
 
   return (
     <Flex vertical gap={12}>
       <Flex className="vouchers-header">
-        <MainHeading data={`Serving children company units`} />
+        <MainHeading data={`Serving company units`} />
       </Flex>
 
       <Flex justify="space-between" align="center" className="vouchers-header">
