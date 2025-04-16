@@ -1,6 +1,7 @@
 import { Card, Col, Divider, Flex, Rate, Row, Tag, Typography } from "antd";
 import React from "react";
 import { useSelector } from "react-redux";
+import { Icon } from "@iconify/react";
 const { Text, Title } = Typography;
 
 const ConsultantCompanyUnitDetail = () => {
@@ -14,12 +15,24 @@ const ConsultantCompanyUnitDetail = () => {
 
   return (
     <Flex vertical gap={8}>
-    <Flex align='center' gap={8}>
-    <Title level={2} style={{ margin: 0 }}>
-        {companyDetailByUnitId?.companyName}
-      </Title>
-      <Rate count={5}  value={companyDetailByUnitId?.rating} disabled />
-    </Flex>
+      <Flex align="center" gap={12} style={{margin:'8px 0px'}}>
+        <Title level={3} style={{ margin: 0 }}>
+          {companyDetailByUnitId?.companyName}
+        </Title>
+        <Icon
+          icon="carbon:badge"
+          width="32"
+          height="32"
+          style={{
+            color:
+              companyDetailByUnitId?.rating === "Gold"
+                ? " #FFD700"
+                : companyDetailByUnitId?.rating === "Silver"
+                ? "#C0C0C0"
+                : "#CD7F32",
+          }}
+        />
+      </Flex>
       <Divider style={{ margin: 0 }} />
       <Flex justify="space-between">
         <Flex vertical gap={4}>

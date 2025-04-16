@@ -145,6 +145,14 @@ const SideBar = () => {
                     },
                     {
                       label: (
+                        <Link to={`${userid}/sales/servingcompanies`}>
+                          Serving companies
+                        </Link>
+                      ),
+                      key: "servingcompanies",
+                    },
+                    {
+                      label: (
                         <Link to={`${userid}/sales/project`}>Project</Link>
                       ),
                       key: "project",
@@ -226,6 +234,14 @@ const SideBar = () => {
                   <Link to={`${userid}/sales/newcompanies`}>New company</Link>
                 ),
                 key: "newcompanies",
+              },
+              {
+                label: (
+                  <Link to={`${userid}/sales/servingcompanies`}>
+                    Serving companies
+                  </Link>
+                ),
+                key: "servingcompanies",
               },
               {
                 label: <Link to={`${userid}/sales/project`}>Project</Link>,

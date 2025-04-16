@@ -892,9 +892,9 @@ export const searchCompaniesForCompany = createAsyncThunk(
 
 export const getAllNewCompanies = createAsyncThunk(
   "getAllNewCompanies",
-  async ({ userId, filterUserId, type, page, size }) => {
+  async ({ userId, filterUserId, type, rating, page, size }) => {
     const response = await getQuery(
-      `/leadService/api/v1/company/getAllParentCompanyV2?userId=${userId}&filterUserId=${filterUserId}&type=${type}&page=${page}&size=${size}`
+      `/leadService/api/v1/company/getAllParentCompanyV2?userId=${userId}&filterUserId=${filterUserId}&type=${type}&rating=${rating}&page=${page}&size=${size}`
     );
     return response.data;
   }

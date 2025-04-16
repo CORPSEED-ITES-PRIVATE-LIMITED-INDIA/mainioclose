@@ -18,7 +18,7 @@ import {
 } from "../../../Toolkit/Slices/CompanySlice";
 import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
 import MainHeading from "../../../components/design/MainHeading";
-const {Text}=Typography
+const { Text } = Typography;
 
 const NewCompany = () => {
   const { userid } = useParams();
@@ -31,6 +31,7 @@ const NewCompany = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [filterUserId, setFilterUserId] = useState("");
   const [typeStatus, setTypeStatus] = useState("all");
+  const [rating, setRating] = useState("Gold");
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,
@@ -56,6 +57,7 @@ const NewCompany = () => {
         size: paginationData?.size,
         type: typeStatus,
         filterUserId,
+        rating,
       })
     );
   }, [dispatch, userid]);
@@ -85,10 +87,13 @@ const NewCompany = () => {
             size: paginationData?.size,
             type: x === "type" ? e : typeStatus,
             filterUserId: x === "user" ? e : filterUserId,
+            rating: x === "rating" ? e : rating,
           })
         );
         if (x === "user") {
           setFilterUserId(e);
+        } else if (x === "rating") {
+          setRating(e);
         } else {
           setTypeStatus(e);
         }
@@ -127,6 +132,7 @@ const NewCompany = () => {
                 page: paginationData?.page,
                 size: paginationData?.size,
                 filterUserId,
+                rating
               })
             );
           } else {
@@ -303,6 +309,17 @@ const NewCompany = () => {
               value={typeStatus}
               onChange={(e) => filterCompanyBasedOnUser("type", e)}
             />
+            <Select
+              style={{ width: "40%" }}
+              options={[
+                { label: "All", value: "all" },
+                { label: "Gold", value: "Gold" },
+                { label: "Silver", value: "Silver" },
+                { label: "Bronze", value: "Bronze" },
+              ]}
+              value={rating}
+              onChange={(e) => filterCompanyBasedOnUser("rating", e)}
+            />
           </Flex>
           {getHighestPriorityRole(currentRoles) === "ADMIN" && (
             <Select
@@ -331,6 +348,7 @@ const NewCompany = () => {
                     size: paginationData?.size,
                     type: typeStatus,
                     filterUserId: "",
+                    rating
                   })
                 );
                 setFilterUserId("");

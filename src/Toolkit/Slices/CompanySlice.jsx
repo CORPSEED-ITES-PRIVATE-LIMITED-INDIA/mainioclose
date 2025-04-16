@@ -508,6 +508,27 @@ export const addServingUnitsForCompany = createAsyncThunk(
   }
 );
 
+export const getAllServingCompanyList = createAsyncThunk(
+  "getAllServingCompanyList",
+  async ({ userId, page, size, status }) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getAllServingCompany?userId=${userId}&page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const convertServingCompanyToCompany = createAsyncThunk(
+  "convertServingCompanyToCompany",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/company/importServingIntoCompany`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const CompnaySlice = createSlice({
   name: "company",
   initialState: {
@@ -545,6 +566,7 @@ const CompnaySlice = createSlice({
     approvalCompanyList: [],
     gstTypeList: [],
     businessTypeList: [],
+    servingCompanyList: [],
   },
   reducers: {
     handleNextPagination: (state, action) => {
@@ -954,6 +976,18 @@ const CompnaySlice = createSlice({
     builder.addCase(getCompanyByUnitId.rejected, (state, action) => {
       state.consultantLoading = "rejected";
       state.servingCompanyDetail = {};
+    });
+
+    builder.addCase(getAllServingCompanyList.pending, (state, action) => {
+      state.consultantLoading = "pending";
+    });
+    builder.addCase(getAllServingCompanyList.fulfilled, (state, action) => {
+      state.servingCompanyList = action.payload;
+      state.consultantLoading = "success";
+    });
+    builder.addCase(getAllServingCompanyList.rejected, (state, action) => {
+      state.consultantLoading = "rejected";
+      state.servingCompanyList = [];
     });
   },
 });

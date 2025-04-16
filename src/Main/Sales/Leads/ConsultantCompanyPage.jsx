@@ -1229,6 +1229,7 @@ const ConsultantCompanyPage = () => {
                         ? statesList?.map((item) => ({
                             label: item?.name,
                             value: item?.name,
+                            ...item
                           }))
                         : []
                     }

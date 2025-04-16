@@ -443,6 +443,47 @@ const LeadCompany = ({ edit, data }) => {
                 </Form.Item>
 
                 <Form.Item
+                  label="Rating"
+                  name="rating"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please give rating for the company",
+                    },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={[
+                      { label: "Gold", value: "Gold" },
+                      { label: "Silver", value: "Silver" },
+                      { label: "Bronze", value: "Bronze" },
+                    ]}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Payment term"
+                  name="paymentTerm"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please give payment term for the company",
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
+
+                <Form.Item
+                  label="Aggrement"
+                  name="aggrement"
+                >
+                  <Input />
+                </Form.Item>
+
+                <Form.Item
                   label="Business type"
                   name="businessType"
                   rules={[
