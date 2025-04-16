@@ -9,13 +9,11 @@ const ConsultantCompanyUnitDetail = () => {
     (state) => state.company.servingCompanyDetail
   );
 
-
-  console.log('djshjshdjhsjhdjk',companyDetailByUnitId)
-
+  console.log("djshjshdjhsjhdjk", companyDetailByUnitId);
 
   return (
     <Flex vertical gap={8}>
-      <Flex align="center" gap={12} style={{margin:'8px 0px'}}>
+      <Flex align="center" gap={12} style={{ margin: "8px 0px" }}>
         <Title level={3} style={{ margin: 0 }}>
           {companyDetailByUnitId?.companyName}
         </Title>
@@ -26,7 +24,7 @@ const ConsultantCompanyUnitDetail = () => {
           style={{
             color:
               companyDetailByUnitId?.rating === "Gold"
-                ? " #FFD700"
+                ? "#FFD700"
                 : companyDetailByUnitId?.rating === "Silver"
                 ? "#C0C0C0"
                 : "#CD7F32",
@@ -48,9 +46,7 @@ const ConsultantCompanyUnitDetail = () => {
           <Flex gap={8}>
             <Text type="secondary">Company age</Text>
             <Text type="secondary">:</Text>
-            <Text>
-              {companyDetailByUnitId?.age}
-            </Text>
+            <Text>{companyDetailByUnitId?.age}</Text>
           </Flex>
           <Flex gap={8}>
             <Text type="secondary">Address</Text>
@@ -130,8 +126,8 @@ const ConsultantCompanyUnitDetail = () => {
             <Flex gap={4}>
               {companyDetailByUnitId?.industryData
                 ? companyDetailByUnitId?.industryData?.map((item) => (
-                  <Tag key={`${item?.id}industryData`}>{item?.name}</Tag>
-                ))
+                    <Tag key={`${item?.id}industryData`}>{item?.name}</Tag>
+                  ))
                 : "NA"}
             </Flex>
           </Flex>
