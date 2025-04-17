@@ -428,6 +428,7 @@ const ServingCompanyPage = () => {
   ];
 
   const handleFinish = (values) => {
+    values.gstDocuments = values.gstDocuments?.[0]?.response;
     dispatch(
       convertServingCompanyToCompany({
         assigneeId: userid,

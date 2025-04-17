@@ -103,7 +103,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
   return (
     <>
       <Button type="primary" onClick={() => setOpenModal(true)}>
-        Add unit
+        {gstField ? "Add Gst" : "Add company unit"}
       </Button>
       <Modal
         title={gstField ? "Add GST unit " : "Add company unit"}
@@ -128,82 +128,6 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
           style={{ maxHeight: "60vh", padding: 4, overflow: "auto" }}
         >
           <div className="grid-container-2-col">
-            <Form.Item
-              label="Pan number"
-              name="panNo"
-              rules={[{ required: true, message: "please enter pan number" }]}
-            >
-              <Input maxLength={10} />
-            </Form.Item>
-
-            <Form.Item
-              label="Company type"
-              name="companyType"
-              rules={[
-                { required: true, message: "please select the gst type" },
-              ]}
-            >
-              <Select
-                showSearch
-                allowClear
-                options={
-                  companyTypeList?.length > 0
-                    ? companyTypeList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.id,
-                        ...item,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => setGstMand(x?.gstPresent)}
-              />
-            </Form.Item>
-
-            {gstMand && gstField && (
-              <Form.Item
-                label="Gst number"
-                name="gstNo"
-                rules={[
-                  {
-                    required: true,
-                    message: "please enter gst number",
-                  },
-                ]}
-              >
-                <Input maxLength={15} />
-              </Form.Item>
-            )}
-
-            <Form.Item
-              label="Company age"
-              name="companyAge"
-              rules={[{ required: true, message: "please enter company age" }]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label="Select assignee"
-              name="assigneeId"
-              rules={[{ required: true, message: "please select assignee" }]}
-            >
-              <Select
-                showSearch
-                allowClear
-                options={
-                  allUsers?.length > 0
-                    ? allUsers?.map((item) => ({
-                        label: item?.fullName,
-                        value: item?.id,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-
             <Form.Item
               label="Select industry"
               name="industryId"
@@ -317,22 +241,6 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                   option.label.toLowerCase().includes(input.toLowerCase())
                 }
               />
-            </Form.Item>
-
-            <Form.Item
-              label="Upload gst document"
-              name="gstDocuments"
-              getValueFromEvent={normFile}
-              valuePropName="fileList"
-            >
-              <Upload
-                action="/leadService/api/v1/upload/uploadimageToFileSystem"
-                listType="text"
-              >
-                <Button size="small">
-                  <Icon icon="fluent:arrow-upload-20-filled" /> Upload
-                </Button>
-              </Upload>
             </Form.Item>
           </div>
 
@@ -500,131 +408,98 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
               )}
             </Form.Item>
 
-            <Form.Item label="Add new primary address" name="isPrimaryAddress">
-              <Switch size="small" />
+            <Form.Item
+              label="Primary address"
+              name="address"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter the address",
+                },
+              ]}
+            >
+              <Input.TextArea />
             </Form.Item>
 
             <Form.Item
-              shouldUpdate={(prevValues, currentValues) =>
-                prevValues.isPrimaryAddress !== currentValues.isPrimaryAddress
-              }
-              noStyle
+              label="Country"
+              name="country"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter the country",
+                },
+              ]}
             >
-              {({ getFieldValue }) => (
-                <>
-                  {getFieldValue("isPrimaryAddress") ? (
-                    <>
-                      <Form.Item
-                        label="Primary address"
-                        name="address"
-                        rules={[
-                          {
-                            required: true,
-                            message: "please enter the address",
-                          },
-                        ]}
-                      >
-                        <Input.TextArea />
-                      </Form.Item>
+              <Select
+                showSearch
+                options={
+                  countryList?.length > 0
+                    ? countryList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => {
+                  dispatch(getAllStatesByCountryId(x?.id));
+                }}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+            <Form.Item
+              label="State"
+              name="state"
+              rules={[{ required: true, message: "please enter the state" }]}
+            >
+              <Select
+                showSearch
+                options={
+                  statesList?.length > 0
+                    ? statesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
 
-                      <Form.Item
-                        label="Country"
-                        name="country"
-                        rules={[
-                          {
-                            required: true,
-                            message: "please enter the country",
-                          },
-                        ]}
-                      >
-                        <Select
-                          showSearch
-                          options={
-                            countryList?.length > 0
-                              ? countryList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.name,
-                                  id: item?.id,
-                                }))
-                              : []
-                          }
-                          onChange={(e, x) => {
-                            dispatch(getAllStatesByCountryId(x?.id));
-                          }}
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        label="State"
-                        name="state"
-                        rules={[
-                          { required: true, message: "please enter the state" },
-                        ]}
-                      >
-                        <Select
-                          showSearch
-                          options={
-                            statesList?.length > 0
-                              ? statesList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.name,
-                                  id: item?.id,
-                                }))
-                              : []
-                          }
-                          onChange={(e, x) =>
-                            dispatch(getAllCitiesByStateId(x?.id))
-                          }
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
+            <Form.Item
+              label="City"
+              name="city"
+              rules={[{ required: true, message: "please enter the city" }]}
+            >
+              <Select
+                showSearch
+                options={
+                  citiesList?.length > 0
+                    ? citiesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
 
-                      <Form.Item
-                        label="City"
-                        name="city"
-                        rules={[
-                          { required: true, message: "please enter the city" },
-                        ]}
-                      >
-                        <Select
-                          showSearch
-                          options={
-                            citiesList?.length > 0
-                              ? citiesList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.name,
-                                }))
-                              : []
-                          }
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-
-                      <Form.Item
-                        label="PinCode"
-                        name="primaryPinCode"
-                        rules={[
-                          { required: true, message: "please enter pincode" },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </>
-                  ) : null}
-                </>
-              )}
+            <Form.Item
+              label="PinCode"
+              name="primaryPinCode"
+              rules={[{ required: true, message: "please enter pincode" }]}
+            >
+              <Input />
             </Form.Item>
           </div>
 
@@ -793,99 +668,68 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
               )}
             </Form.Item>
 
-            <Form.Item
-              label="Add new secondary address"
-              name="isSecondaryAddress"
-            >
-              <Switch size="small" />
+            <Form.Item label="Address" name="saddress">
+              <Input.TextArea />
             </Form.Item>
 
-            <Form.Item
-              shouldUpdate={(prevValues, currentValues) =>
-                prevValues.isSecondaryAddress !==
-                currentValues.isSecondaryAddress
-              }
-              noStyle
-            >
-              {({ getFieldValue }) => (
-                <>
-                  {getFieldValue("isSecondaryAddress") ? (
-                    <>
-                      <Form.Item label="Address" name="saddress">
-                        <Input.TextArea />
-                      </Form.Item>
+            <Form.Item label="Country" name="scountry">
+              <Select
+                showSearch
+                options={
+                  countryList?.length > 0
+                    ? countryList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => {
+                  dispatch(getAllStatesByCountryId(x?.id));
+                }}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+            <Form.Item label="State" name="sstate">
+              <Select
+                showSearch
+                options={
+                  statesList?.length > 0
+                    ? statesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
 
-                      <Form.Item label="Country" name="scountry">
-                        <Select
-                          showSearch
-                          options={
-                            countryList?.length > 0
-                              ? countryList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.name,
-                                  id: item?.id,
-                                }))
-                              : []
-                          }
-                          onChange={(e, x) => {
-                            dispatch(getAllStatesByCountryId(x?.id));
-                          }}
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-                      <Form.Item label="State" name="sstate">
-                        <Select
-                          showSearch
-                          options={
-                            statesList?.length > 0
-                              ? statesList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.name,
-                                  id: item?.id,
-                                }))
-                              : []
-                          }
-                          onChange={(e, x) =>
-                            dispatch(getAllCitiesByStateId(x?.id))
-                          }
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
+            <Form.Item label="City" name="scity">
+              <Select
+                showSearch
+                options={
+                  citiesList?.length > 0
+                    ? citiesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
 
-                      <Form.Item label="City" name="scity">
-                        <Select
-                          showSearch
-                          options={
-                            citiesList?.length > 0
-                              ? citiesList?.map((item) => ({
-                                  label: item?.name,
-                                  value: item?.name,
-                                }))
-                              : []
-                          }
-                          filterOption={(input, option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-
-                      <Form.Item label="PinCode" name="secondaryPinCode">
-                        <Input />
-                      </Form.Item>
-                    </>
-                  ) : null}
-                </>
-              )}
+            <Form.Item label="PinCode" name="secondaryPinCode">
+              <Input />
             </Form.Item>
           </div>
         </Form>

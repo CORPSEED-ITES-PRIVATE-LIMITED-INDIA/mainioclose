@@ -97,6 +97,7 @@ const LeadCompany = ({ edit, data }) => {
   const [formLoading, setFormLoading] = useState("");
   const [createFormAs, setCreateFormAs] = useState("company");
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [presentAggrement, setPresentAggrement] = useState(false);
   const [searchDetail, setSearchDetail] = useState({
     searchText: "",
     userId: userid,
@@ -186,6 +187,7 @@ const LeadCompany = ({ edit, data }) => {
   const handleFinish = useCallback(
     (values) => {
       values.gstDocuments = values.gstDocuments?.[0]?.response;
+      values.aggrement = values.aggrement?.[0]?.response;
       values.leadId = data?.id;
       values.updatedBy = userid;
       dispatch(createNewCompanyInLeads(values))
@@ -473,15 +475,68 @@ const LeadCompany = ({ edit, data }) => {
                     },
                   ]}
                 >
-                  <Input />
+                  <Select
+                    showSearch
+                    options={[
+                      { label: "Net 30", value: "Net 30" },
+                      { label: "Net 60", value: "Net 60" },
+                      { label: "Net 90", value: "Net 90" },
+                      { label: "2/10 Net 30", value: "2/10 Net 30" },
+                      {
+                        label: "EOM (End of Month)",
+                        value: "EOM (End of Month)",
+                      },
+                      {
+                        label: "COD (Cash on Delivery)",
+                        value: "COD (Cash on Delivery)",
+                      },
+                      {
+                        label: "CIA (Cash in Advance)",
+                        value: "CIA (Cash in Advance)",
+                      },
+                      { label: "Installments", value: "Installments" },
+                      { label: "Milestone-based", value: "Milestone-based" },
+                      { label: "Due on Receipt", value: "Due on Receipt" },
+                    ]}
+                  />
                 </Form.Item>
 
                 <Form.Item
                   label="Aggrement"
-                  name="aggrement"
+                  name="aggrementPresent"
+                  rules={[
+                    { required: true, message: "please select aggrement" },
+                  ]}
                 >
-                  <Input />
+                  <Select
+                    options={[
+                      { label: "Yes", value: true },
+                      { label: "No", value: false },
+                    ]}
+                    onChange={(e) => setPresentAggrement(e)}
+                  />
                 </Form.Item>
+                
+                {presentAggrement && (
+                  <Form.Item
+                    label="Upload aggrement document"
+                    name="aggrement"
+                    getValueFromEvent={normFile}
+                    valuePropName="fileList"
+                    rules={[
+                      { required: true, message: "please upload document" },
+                    ]}
+                  >
+                    <Upload
+                      action="/leadService/api/v1/upload/uploadimageToFileSystem"
+                      listType="text"
+                    >
+                      <Button size="small">
+                        <Icon icon="fluent:arrow-upload-20-filled" /> Upload
+                      </Button>
+                    </Upload>
+                  </Form.Item>
+                )}
 
                 <Form.Item
                   label="Business type"

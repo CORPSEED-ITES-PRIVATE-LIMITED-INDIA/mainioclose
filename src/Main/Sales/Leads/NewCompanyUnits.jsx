@@ -67,7 +67,7 @@ const NewCompanyUnits = () => {
     },
     {
       dataIndex: "companyName",
-      title: "Company name",
+      title: "Unit name",
       fixed: "left",
       render: (_, props) => (
         <Link className="link-heading" onClick={() => handleOnCLick(props)}>

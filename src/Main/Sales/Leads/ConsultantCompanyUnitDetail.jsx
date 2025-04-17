@@ -1,4 +1,14 @@
-import { Card, Col, Divider, Flex, Rate, Row, Tag, Typography } from "antd";
+import {
+  Card,
+  Col,
+  Divider,
+  Flex,
+  Rate,
+  Row,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
 import React from "react";
 import { useSelector } from "react-redux";
 import { Icon } from "@iconify/react";
@@ -17,19 +27,21 @@ const ConsultantCompanyUnitDetail = () => {
         <Title level={3} style={{ margin: 0 }}>
           {companyDetailByUnitId?.companyName}
         </Title>
-        <Icon
-          icon="carbon:badge"
-          width="32"
-          height="32"
-          style={{
-            color:
-              companyDetailByUnitId?.rating === "Gold"
-                ? "#FFD700"
-                : companyDetailByUnitId?.rating === "Silver"
-                ? "#C0C0C0"
-                : "#CD7F32",
-          }}
-        />
+        <Tooltip title={companyDetailByUnitId?.rating}>
+          <Icon
+            icon="carbon:badge"
+            width="32"
+            height="32"
+            style={{
+              color:
+                companyDetailByUnitId?.rating === "Gold"
+                  ? "#FFD700"
+                  : companyDetailByUnitId?.rating === "Silver"
+                  ? "#C0C0C0"
+                  : "#CD7F32",
+            }}
+          />
+        </Tooltip>
       </Flex>
       <Divider style={{ margin: 0 }} />
       <Flex justify="space-between">
