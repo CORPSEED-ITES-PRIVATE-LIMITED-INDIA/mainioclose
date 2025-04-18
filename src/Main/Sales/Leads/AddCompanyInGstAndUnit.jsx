@@ -242,6 +242,19 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                 }
               />
             </Form.Item>
+
+              <Form.Item
+                label="Gst number"
+                name="gstNo"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter gst number",
+                  },
+                ]}
+              >
+                <Input maxLength={15} />
+              </Form.Item>
           </div>
 
           <Divider style={{ color: "#cccccc" }} orientation="center">
