@@ -21,6 +21,7 @@ import {
 import { getClientDesiginationList } from "../../../Toolkit/Slices/SettingSlice";
 import {
   getAllContactDetails,
+  getAllContactDetailsById,
   getContactById,
   getGstDetailsByCompanyId,
 } from "../../../Toolkit/Slices/LeadSlice";
@@ -53,6 +54,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
     (state) => state.industry.industryDataListBySubSubIndustryId
   );
   const contactList = useSelector((state) => state?.leads?.allContactList);
+  const contactListById = useSelector((state) => state?.leads?.contactListByCompanyId);
   const desiginationList = useSelector(
     (state) => state.setting.clientDesiginationList
   );
@@ -75,6 +77,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
     dispatch(getAllMainIndustry());
     dispatch(getClientDesiginationList());
     dispatch(getAllContactDetails());
+    dispatch(getAllContactDetailsById(companyId));
     dispatch(getAllCountries());
     dispatch(getAllUsers());
     dispatch(getAllCompanyType());
@@ -395,13 +398,13 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                         allowClear
                         onChange={(e) => dispatch(getContactById(e))}
                         options={
-                          contactList?.length > 0
-                            ? contactList?.map((item) => ({
+                          contactListById?.length > 0
+                            ? contactListById?.map((item) => ({
                                 label: `${maskEmail(
-                                  item?.emails
+                                  item?.email
                                 )} || ${maskMobileNumber(item?.contactNo)} `,
                                 value: item?.id,
-                                email: item?.emails,
+                                email: item?.email,
                                 contact: item?.contactNo,
                               }))
                             : []
@@ -655,13 +658,13 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                         allowClear
                         onChange={(e) => dispatch(getContactById(e))}
                         options={
-                          contactList?.length > 0
-                            ? contactList?.map((item) => ({
+                          contactListById?.length > 0
+                            ? contactListById?.map((item) => ({
                                 label: `${maskEmail(
-                                  item?.emails
+                                  item?.email
                                 )} || ${maskMobileNumber(item?.contactNo)} `,
                                 value: item?.id,
-                                email: item?.emails,
+                                email: item?.email,
                                 contact: item?.contactNo,
                               }))
                             : []

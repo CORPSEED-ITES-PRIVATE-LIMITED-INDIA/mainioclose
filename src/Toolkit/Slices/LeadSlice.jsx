@@ -299,6 +299,16 @@ export const getAllContactDetails = createAsyncThunk(
   }
 );
 
+export const getAllContactDetailsById = createAsyncThunk(
+  "getAllContactDetailsById",
+  async (companyId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`
+    );
+    return response.data;
+  }
+);
+
 export const getContactById = createAsyncThunk(`contactById`, async (id) => {
   const response = await getQuery(
     `/leadService/api/v1/contact/getContactById?id=${id}`
@@ -920,6 +930,11 @@ export const getCompanyUnitsByStateAndCompanyId = createAsyncThunk(
   }
 );
 
+export const getProductListByLeadName=createAsyncThunk('getProductListByLeadName',async(name)=>{
+  const response=await getQuery(`/leadService/api/v1/product/getProductByName?name=${name}`)
+  return response.data
+})
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -982,6 +997,8 @@ export const LeadSlice = createSlice({
     newCompaniesList: [],
     companyGstDetailList: [],
     companyUnitList: [],
+    contactListByCompanyId:[],
+    productDataByLeadName:{}
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1480,6 +1497,40 @@ export const LeadSlice = createSlice({
       getCompanyUnitsByStateAndCompanyId.rejected,
       (state, action) => {
         state.companyUnitList = [];
+      }
+    );
+
+    builder.addCase(
+      getAllContactDetailsById.pending,
+      (state, action) => {}
+    );
+    builder.addCase(
+      getAllContactDetailsById.fulfilled,
+      (state, action) => {
+        state.contactListByCompanyId = action?.payload;
+      }
+    );
+    builder.addCase(
+      getAllContactDetailsById.rejected,
+      (state, action) => {
+        state.contactListByCompanyId = [];
+      }
+    );
+
+    builder.addCase(
+      getProductListByLeadName.pending,
+      (state, action) => {}
+    );
+    builder.addCase(
+      getProductListByLeadName.fulfilled,
+      (state, action) => {
+        state.productDataByLeadName = action?.payload;
+      }
+    );
+    builder.addCase(
+      getProductListByLeadName.rejected,
+      (state, action) => {
+        state.productDataByLeadName = {};
       }
     );
   },

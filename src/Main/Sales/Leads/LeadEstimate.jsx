@@ -27,10 +27,16 @@ import {
   createEstimate,
   editLeadEstimate,
   getAllContactDetails,
+  getAllContactDetailsById,
   getCompanyByUnitId,
   searchCompaniesForEstimate,
 } from "../../../Toolkit/Slices/LeadSlice";
-import { createContacts } from "../../../Toolkit/Slices/CommonSlice";
+import {
+  createContacts,
+  getAllCitiesByStateId,
+  getAllCountries,
+  getAllStatesByCountryId,
+} from "../../../Toolkit/Slices/CommonSlice";
 import dayjs from "dayjs";
 import { maskEmail, maskMobileNumber } from "../../Common/Commons";
 import logo from "../../../Images/CORPSEED.webp";
@@ -38,6 +44,11 @@ import numWords from "num-words";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useParams } from "react-router-dom";
+import {
+  getAllCompanyType,
+  getAllCompanyUnits,
+} from "../../../Toolkit/Slices/CompanySlice";
+import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
 const { Text, Title } = Typography;
 
 const LeadEstimate = ({ leadid }) => {
@@ -46,14 +57,22 @@ const LeadEstimate = ({ leadid }) => {
   const { userid } = useParams();
   const dispatch = useDispatch();
   const pdfRef = useRef();
-  const productList = useSelector((state) => state.product.productData);
-  const contactList = useSelector((state) => state?.leads?.allContactList);
+  const productList = useSelector((state) => state.product.productList);
+  const productData = useSelector((state) => state.leads.productDataByLeadName);
+  const contactList = useSelector(
+    (state) => state?.leads?.contactListByCompanyId
+  );
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
   const companyUnits = useSelector((state) => state?.leads?.companyUnits);
   const companiesListForEstimate = useSelector(
     (state) => state?.leads?.companiesListForEstimate
   );
+  const countryList = useSelector((state) => state.common.countriesList);
+  const statesList = useSelector((state) => state.common.statesList);
+  const citiesList = useSelector((state) => state.common.citiesList);
+  const allCompanyUnits = useSelector((state) => state.company.allCompanyUnits);
   const details = useSelector((state) => state.leads.estimateDetail);
+  const companyTypeList = useSelector((state) => state.company.companyTypeList);
   const companyDetail = useSelector(
     (state) => state.leads.companyDetailByUnitId
   );
@@ -63,7 +82,6 @@ const LeadEstimate = ({ leadid }) => {
   const companyDetails = useSelector(
     (state) => state?.leads?.companyDetailsById
   );
-  const [productData, setProductData] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [editEstimate, setEditEstimate] = useState(false);
   const [seachFields, setSearchFields] = useState({
@@ -83,6 +101,11 @@ const LeadEstimate = ({ leadid }) => {
     otherGst: 0,
   });
   const [openSelectDd, setOpenSelectDd] = useState(false);
+
+  useEffect(() => {
+    dispatch(getAllCountries());
+    dispatch(getAllCompanyType());
+  }, [dispatch]);
 
   useEffect(() => {
     if (Object.keys(companyDetails) > 0) {
@@ -123,68 +146,61 @@ const LeadEstimate = ({ leadid }) => {
     }
   }
 
-  const handleGetProduct = (e) => {
-    dispatch(getSingleProductByProductId(e)).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        setProductData(resp?.payload?.productAmount);
-        const data = resp?.payload?.productAmount;
-        data?.forEach((item) => {
-          if (item?.name === "Government") {
-            form.setFieldsValue({
-              govermentfees: item?.fees,
-              govermentCode: item?.hsnNo,
-              govermentGst: item?.taxAmount,
-            });
-            setProductFees((prev) => ({
-              ...prev,
-              govermentfees: item?.fees,
-              govermentGst: item?.taxAmount,
-            }));
-          }
-          if (item?.name === "Professional fees") {
-            form.setFieldsValue({
-              professionalFees: item?.fees,
-              professionalCode: item?.hsnNo,
-              profesionalGst: item?.taxAmount,
-            });
-            setProductFees((prev) => ({
-              ...prev,
-              professionalFees: item?.fees,
-              profesionalGst: item?.taxAmount,
-            }));
-          }
-          if (item?.name === "Service charges") {
-            form.setFieldsValue({
-              serviceCharge: item?.fees,
-              serviceCode: item?.hsnNo,
-              serviceGst: item?.taxAmount,
-            });
-            setProductFees((prev) => ({
-              ...prev,
-              serviceCharge: item?.fees,
-              serviceGst: item?.taxAmount,
-            }));
-          }
-
-          if (item?.name === "Other fees") {
-            form.setFieldsValue({
-              otherFees: item?.fees,
-              otherCode: item?.hsnNo,
-              otherGst: item?.taxAmount,
-            });
-            setProductFees((prev) => ({
-              ...prev,
-              otherFees: item?.fees,
-              otherGst: item?.taxAmount,
-            }));
-          }
+  useEffect(() => {
+    productData?.productAmount?.forEach((item) => {
+      if (item?.name === "Government") {
+        form.setFieldsValue({
+          govermentfees: item?.fees,
+          govermentCode: item?.hsnNo,
+          govermentGst: item?.taxAmount,
         });
+        setProductFees((prev) => ({
+          ...prev,
+          govermentfees: item?.fees,
+          govermentGst: item?.taxAmount,
+        }));
+      }
+      if (item?.name === "Professional fees") {
+        form.setFieldsValue({
+          professionalFees: item?.fees,
+          professionalCode: item?.hsnNo,
+          profesionalGst: item?.taxAmount,
+        });
+        setProductFees((prev) => ({
+          ...prev,
+          professionalFees: item?.fees,
+          profesionalGst: item?.taxAmount,
+        }));
+      }
+      if (item?.name === "Service charges") {
+        form.setFieldsValue({
+          serviceCharge: item?.fees,
+          serviceCode: item?.hsnNo,
+          serviceGst: item?.taxAmount,
+        });
+        setProductFees((prev) => ({
+          ...prev,
+          serviceCharge: item?.fees,
+          serviceGst: item?.taxAmount,
+        }));
+      }
+
+      if (item?.name === "Other fees") {
+        form.setFieldsValue({
+          otherFees: item?.fees,
+          otherCode: item?.hsnNo,
+          otherGst: item?.taxAmount,
+        });
+        setProductFees((prev) => ({
+          ...prev,
+          otherFees: item?.fees,
+          otherGst: item?.taxAmount,
+        }));
       }
     });
-  };
+  }, [productData, form]);
 
   const handleEditEstimate = useCallback(() => {
-    handleGetProduct(details?.product?.id);
     form.setFieldsValue({
       admin: details?.primaryContact?.id,
       cc: details?.ccMail,
@@ -259,6 +275,7 @@ const LeadEstimate = ({ leadid }) => {
     (values) => {
       values.leadId = leadid;
       values.unitCompany = false;
+      values.productId = productData?.id;
       values.gstDocuments = values.gstDocuments?.[0]?.response;
       if (editEstimate) {
         values.id = details?.id;
@@ -291,7 +308,7 @@ const LeadEstimate = ({ leadid }) => {
           );
       }
     },
-    [leadid, details, editEstimate, dispatch]
+    [leadid, details, editEstimate, productData, dispatch]
   );
 
   const generatePDF = async () => {
@@ -380,38 +397,8 @@ const LeadEstimate = ({ leadid }) => {
                 }
                 onChange={(e) => {
                   setSearchFields((prev) => ({ ...prev, searchNameAndGSt: e }));
-                  dispatch(getCompanyByUnitId(e)).then((resp) => {
-                    if (resp.meta.requestStatus === "fulfilled") {
-                      if (resp?.payload?.assigneeId != userid) {
-                        notification.warning({
-                          message: `This company is already assigned to ${resp?.payload?.assigneeName}`,
-                        });
-                        form.resetFields();
-                      } else if (resp?.payload?.assigneeId == userid) {
-                        form.setFieldsValue({
-                          companyName: resp?.payload?.name,
-                          gstType: resp?.payload?.gstType,
-                          gstNo: resp?.payload?.gstNo,
-                          address: resp?.payload?.address,
-                          city: resp?.payload?.city,
-                          country: resp?.payload?.country,
-                          state: resp?.payload?.state,
-                          primaryContact: resp?.payload?.primaryContact,
-                          panNo: resp?.payload?.panNo,
-                          companyAge: resp?.payload?.companyAge,
-                          primaryContact: resp?.payload?.primaryContact?.id,
-                          secondaryContact: resp?.payload?.secondaryContact?.id,
-                          assigneeId: resp?.payload?.assigneeId,
-                          primaryPinCode: resp?.payload?.primaryPinCode,
-                          secondaryAddress: resp?.payload?.sAddress,
-                          secondaryCity: resp?.payload?.sCity,
-                          secondaryState: resp?.payload?.sState,
-                          secondaryCountry: resp?.payload?.sCountry,
-                          secondaryPinCode: resp?.payload?.secondaryPinCode,
-                        });
-                      }
-                    }
-                  });
+                  dispatch(getAllCompanyUnits(e));
+                  dispatch(getAllContactDetailsById(e));
                 }}
                 open={openSelectDd}
                 value={seachFields?.searchNameAndGSt}
@@ -450,15 +437,47 @@ const LeadEstimate = ({ leadid }) => {
             onFinish={handleFinish}
           >
             <Form.Item
-              label="Company name"
+              label="Select company unit"
               name="companyName"
               rules={[
                 { required: true, message: "please enter the company name" },
               ]}
             >
-              <Input />
+              <Select
+                showSearch
+                options={
+                  allCompanyUnits?.length > 0
+                    ? allCompanyUnits?.map((item) => ({
+                        label: item?.companyName,
+                        value: item?.id,
+                        ...item,
+                      }))
+                    : []
+                }
+                onChange={(e, compUnit) => {
+                  form.setFieldsValue({
+                    gstType: compUnit?.gstType,
+                    gstNo: compUnit?.gstNo,
+                    companyAge: compUnit?.companyAge,
+                    address: compUnit?.address,
+                    city: compUnit?.city,
+                    country: compUnit?.country,
+                    state: compUnit?.state,
+                    primaryContact: compUnit?.primaryContact,
+                    panNo: compUnit?.panNo,
+                    primaryContact: compUnit?.primaryContact?.id,
+                    secondaryContact: compUnit?.secondaryContact?.id,
+                    assigneeId: compUnit?.assignee?.id,
+                    primaryPinCode: compUnit?.primaryPinCode,
+                    secondaryAddress: compUnit?.sAddress,
+                    secondaryCity: compUnit?.sCity,
+                    secondaryState: compUnit?.sState,
+                    secondaryCountry: compUnit?.sCountry,
+                    secondaryPinCode: compUnit?.secondaryPinCode,
+                  });
+                }}
+              />
             </Form.Item>
-
             <Form.Item label="GST type" name="gstType">
               <Select
                 showSearch
@@ -471,41 +490,9 @@ const LeadEstimate = ({ leadid }) => {
                 ]}
               />
             </Form.Item>
-
             <Form.Item label="GST number" name="gstNo">
               <Input />
             </Form.Item>
-
-            <Form.Item
-              label="Select client admin"
-              name="admin"
-              rules={[
-                { required: true, message: "please select client admin" },
-              ]}
-            >
-              <Select
-                showSearch
-                options={
-                  contactList?.length > 0
-                    ? contactList?.map((item) => ({
-                        label: `${maskEmail(
-                          item?.emails
-                        )} || ${maskMobileNumber(item?.contactNo)}`,
-                        value: item?.id,
-                        email: item?.emails,
-                        contact: item?.contactNo,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option?.email
-                    ?.toLowerCase()
-                    ?.includes(input?.toLowerCase()) ||
-                  option?.contact?.toLowerCase()?.includes(input?.toLowerCase())
-                }
-              />
-            </Form.Item>
-
             <Form.List name="cc">
               {(fields, { add, remove }, { errors }) => (
                 <>
@@ -551,195 +538,11 @@ const LeadEstimate = ({ leadid }) => {
                 </>
               )}
             </Form.List>
-
-            {Object.keys(companyDetails)?.length > 0 &&
-            companyDetails?.isConsultant ? (
-              <>
-                <Form.Item
-                  label="Are you consultant ?"
-                  name="isConsultant"
-                  rules={[{ required: true }]}
-                >
-                  <Switch size="small" />
-                </Form.Item>
-
-                <Form.Item
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.isConsultant !== currentValues.isConsultant
-                  }
-                  noStyle
-                >
-                  {({ getFieldValue }) => (
-                    <>
-                      {getFieldValue("isConsultant") && (
-                        <>
-                          <Form.Item
-                            label="Original company name"
-                            name="originalCompanyName"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter company name",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-
-                          <Form.Item
-                            label="Original Company email"
-                            name="originalEmail"
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            label="Original phone number"
-                            name="originalContact"
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            label="Original company address"
-                            name="originalAddress"
-                          >
-                            <Input.TextArea />
-                          </Form.Item>
-                        </>
-                      )}
-                    </>
-                  )}
-                </Form.Item>
-              </>
-            ) : Object.keys(companyDetails)?.length === 0 ? (
-              <>
-                <Form.Item
-                  label="Are you consultant ?"
-                  name="isConsultant"
-                  rules={[{ required: true }]}
-                >
-                  <Switch size="small" />
-                </Form.Item>
-
-                <Form.Item
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.isConsultant !== currentValues.isConsultant
-                  }
-                  noStyle
-                >
-                  {({ getFieldValue }) => (
-                    <>
-                      {getFieldValue("isConsultant") && (
-                        <>
-                          <Form.Item
-                            label="Original company name"
-                            name="originalCompanyName"
-                            rules={[
-                              {
-                                required: true,
-                                message: "please enter company name",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-
-                          <Form.Item
-                            label="Original Company email"
-                            name="originalEmail"
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            label="Original phone number"
-                            name="originalContact"
-                          >
-                            <Input />
-                          </Form.Item>
-                          <Form.Item
-                            label="Original company address"
-                            name="originalAddress"
-                          >
-                            <Input.TextArea />
-                          </Form.Item>
-                        </>
-                      )}
-                    </>
-                  )}
-                </Form.Item>
-              </>
-            ) : (
-              ""
-            )}
-
-            {Object.keys(companyDetails)?.length > 0 && (
-              <>
-                <Form.Item
-                  label="New units"
-                  name="isUnit"
-                  rules={[{ required: true }]}
-                >
-                  <Switch size="small" />
-                </Form.Item>
-
-                <Form.Item
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.isUnit !== currentValues.isUnit
-                  }
-                  noStyle
-                >
-                  {({ getFieldValue }) => (
-                    <>
-                      {getFieldValue("isUnit") ? (
-                        <Form.Item
-                          label="Select company unit"
-                          name="unitId"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please select company unit",
-                            },
-                          ]}
-                        >
-                          <Select
-                            showSearch
-                            allowClear
-                            // onChange={(e) => dispatch(getCompanyByUnitId(e))}
-                            options={
-                              companyUnits?.length > 0
-                                ? companyUnits?.map((item) => ({
-                                    label: item?.companyName,
-                                    value: item?.id,
-                                  }))
-                                : []
-                            }
-                            filterOption={(input, option) =>
-                              option.label
-                                .toLowerCase()
-                                .includes(input.toLowerCase())
-                            }
-                          />
-                        </Form.Item>
-                      ) : (
-                        <Form.Item
-                          label="Enter new company unit"
-                          name="unitName"
-                          rules={[
-                            {
-                              required: true,
-                              message: "please enter the company unit",
-                            },
-                          ]}
-                        >
-                          <Input />
-                        </Form.Item>
-                      )}
-                    </>
-                  )}
-                </Form.Item>
-              </>
-            )}
-
-            <Form.Item label="Pan number" name="panNo">
+            <Form.Item
+              label="Pan number"
+              name="panNo"
+              rules={[{ required: true, message: "please enter pan number" }]}
+            >
               <Input maxLength={10} />
             </Form.Item>
             <Row>
@@ -769,18 +572,6 @@ const LeadEstimate = ({ leadid }) => {
                 </Form.Item>
               </Col>
             </Row>
-
-            <Form.Item
-              label="Sales type"
-              name="salesType"
-              rules={[{ required: true, message: "please select sales type" }]}
-            >
-              <Radio.Group>
-                <Radio value={"Non-Consulting Sale"}>Non-Consulting Sale</Radio>
-                <Radio value={"Consulting Sale"}>Consulting Sale</Radio>
-              </Radio.Group>
-            </Form.Item>
-
             <Flex vertical style={{ width: "100%" }}>
               <Flex justify="space-between">
                 <Text className="heading-text">Contacts</Text>
@@ -801,10 +592,10 @@ const LeadEstimate = ({ leadid }) => {
                     contactList?.length > 0
                       ? contactList?.map((item) => ({
                           label: `${maskEmail(
-                            item?.emails
+                            item?.email
                           )} || ${maskMobileNumber(item?.contactNo)} `,
                           value: item?.id,
-                          email: item?.emails,
+                          email: item?.email,
                           contact: item?.contactNo,
                         }))
                       : []
@@ -835,10 +626,10 @@ const LeadEstimate = ({ leadid }) => {
                     contactList?.length > 0
                       ? contactList?.map((item) => ({
                           label: `${maskEmail(
-                            item?.emails
+                            item?.email
                           )} || ${maskMobileNumber(item?.contactNo)} `,
                           value: item?.id,
-                          email: item?.emails,
+                          email: item?.email,
                           contact: item?.contactNo,
                         }))
                       : []
@@ -854,50 +645,24 @@ const LeadEstimate = ({ leadid }) => {
                 />
               </Form.Item>
             </Flex>
-
-            <Form.Item
-              label="Product name"
-              name="productId"
-              rules={[{ required: true, message: "please select product" }]}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "46% 25% 25%",
+                gridTemplateRows: "repeat(4, auto)", 
+                gap: "16px", 
+                width: "100%",
+              }}
             >
-              <Select
-                showSearch
-                options={
-                  productList?.length > 0
-                    ? productList?.map((item) => ({
-                        label: item?.productName,
-                        value: item?.id,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-                onChange={handleGetProduct}
-              />
-            </Form.Item>
-
-            <Row>
-              {/* <Flex gap={30} align="center">
-                <Form.Item layout="horizontal" label="Select jurisdiction">
-                  <Input />
-                </Form.Item>
-                <Form.Item layout="horizontal">
-                  <Radio.Group>
-                    <Radio value="One time">One time</Radio>
-                    <Radio value="Renewal">Renewal</Radio>
-                  </Radio.Group>
-                </Form.Item>
-              </Flex> */}
-
-              {productData?.map((ele) => {
-                return ele?.name === "Professional fees" ? (
-                  <Row>
-                    <Flex gap={30} align="center">
+              {productData?.productAmount?.map((ele) => {
+                if (ele?.name === "Professional fees") {
+                  return (
+                    <>
                       <Form.Item
-                        layout="horizontal"
+                        style={{ width: "100%" }}
                         label="Professional fees"
                         name="professionalFees"
+                        layout="horizontal"
                         rules={[
                           {
                             required: true,
@@ -911,6 +676,7 @@ const LeadEstimate = ({ leadid }) => {
                         <Input />
                       </Form.Item>
                       <Form.Item
+                        style={{ width: "100%" }}
                         name="professionalCode"
                         rules={[
                           {
@@ -921,7 +687,10 @@ const LeadEstimate = ({ leadid }) => {
                       >
                         <Input placeholder="Hsn number" />
                       </Form.Item>
-                      <Form.Item name="profesionalGst">
+                      <Form.Item
+                        name="profesionalGst"
+                        style={{ width: "100%" }}
+                      >
                         <Input
                           placeholder="Gst %"
                           disabled={
@@ -929,15 +698,17 @@ const LeadEstimate = ({ leadid }) => {
                           }
                         />
                       </Form.Item>
-                    </Flex>
-                  </Row>
-                ) : ele?.name === "Service charges" ? (
-                  <Row>
-                    <Flex gap={30} align="center">
+                    </>
+                  );
+                }
+
+                if (ele?.name === "Service charges") {
+                  return (
+                    <>
                       <Form.Item
-                        layout="horizontal"
                         label="Service charges"
                         name="serviceCharge"
+                        layout="horizontal"
                         rules={[
                           {
                             required: true,
@@ -966,15 +737,17 @@ const LeadEstimate = ({ leadid }) => {
                           }
                         />
                       </Form.Item>
-                    </Flex>
-                  </Row>
-                ) : ele?.name === "Government" ? (
-                  <Row>
-                    <Flex gap={30} align="center">
+                    </>
+                  );
+                }
+
+                if (ele?.name === "Government") {
+                  return (
+                    <>
                       <Form.Item
-                        layout="horizontal"
                         label="Government fees"
                         name="govermentfees"
+                        layout="horizontal"
                         rules={[
                           { required: true, message: "please give govt. fees" },
                           validateGreaterThanOrEqual(
@@ -1000,15 +773,17 @@ const LeadEstimate = ({ leadid }) => {
                           }
                         />
                       </Form.Item>
-                    </Flex>
-                  </Row>
-                ) : ele?.name === "Other fees" ? (
-                  <Row>
-                    <Flex gap={30} align="center">
+                    </>
+                  );
+                }
+
+                if (ele?.name === "Other fees") {
+                  return (
+                    <>
                       <Form.Item
-                        layout="horizontal"
                         label="Other fees"
                         name="otherFees"
+                        layout="horizontal"
                         rules={[
                           {
                             required: true,
@@ -1033,12 +808,13 @@ const LeadEstimate = ({ leadid }) => {
                           disabled={productFees?.otherGst === 0 ? false : true}
                         />
                       </Form.Item>
-                    </Flex>
-                  </Row>
-                ) : null;
-              })}
-            </Row>
+                    </>
+                  );
+                }
 
+                return null;
+              })}
+            </div>
             <Form.Item
               label="Select sales person name"
               name="assigneeId"
@@ -1060,7 +836,6 @@ const LeadEstimate = ({ leadid }) => {
                 }
               />
             </Form.Item>
-
             <Row>
               <Flex gap={30} align="center" justify="space-between">
                 <Form.Item
@@ -1082,7 +857,6 @@ const LeadEstimate = ({ leadid }) => {
                 </Form.Item>
               </Flex>
             </Row>
-
             <Form.Item
               label="Invoice notes"
               name="invoiceNote"
@@ -1099,7 +873,6 @@ const LeadEstimate = ({ leadid }) => {
             >
               <Input.TextArea />
             </Form.Item>
-
             <Form.Item
               label="Address"
               name="address"
@@ -1107,28 +880,60 @@ const LeadEstimate = ({ leadid }) => {
             >
               <Input.TextArea />
             </Form.Item>
-
-            <Form.Item
-              label="City"
-              name="city"
-              rules={[{ required: true, message: "please city name" }]}
-            >
-              <Input />
+            <Form.Item label="Country" name="country">
+              <Select
+                showSearch
+                options={
+                  countryList?.length > 0
+                    ? countryList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => {
+                  dispatch(getAllStatesByCountryId(x?.id));
+                }}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
             </Form.Item>
-            <Form.Item
-              label="State"
-              name="state"
-              rules={[{ required: true, message: "please enter state" }]}
-            >
-              <Input />
+            <Form.Item label="State" name="state">
+              <Select
+                showSearch
+                options={
+                  statesList?.length > 0
+                    ? statesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
             </Form.Item>
-            <Form.Item
-              label="Country"
-              name="country"
-              rules={[{ required: true, message: "please enter country" }]}
-            >
-              <Input />
-            </Form.Item>
+            <Form.Item label="City" name="city">
+              <Select
+                showSearch
+                options={
+                  citiesList?.length > 0
+                    ? citiesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>{" "}
             <Form.Item
               label="Pin code"
               name="primaryPinCode"
@@ -1136,7 +941,6 @@ const LeadEstimate = ({ leadid }) => {
             >
               <Input />
             </Form.Item>
-
             <Form.Item
               label="Secondary address"
               name="secondaryAddress"
@@ -1146,39 +950,62 @@ const LeadEstimate = ({ leadid }) => {
             >
               <Input.TextArea />
             </Form.Item>
-
-            <Form.Item
-              label="Secondary add. city"
-              name="secondaryCity"
-              rules={[
-                { required: true, message: "please enter secondary city" },
-              ]}
-            >
-              <Input />
+            <Form.Item label="Country" name="secondaryCountry">
+              <Select
+                showSearch
+                options={
+                  countryList?.length > 0
+                    ? countryList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => {
+                  dispatch(getAllStatesByCountryId(x?.id));
+                }}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+            <Form.Item label="State" name="secondaryState">
+              <Select
+                showSearch
+                options={
+                  statesList?.length > 0
+                    ? statesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+            <Form.Item label="City" name="secondaryCity">
+              <Select
+                showSearch
+                options={
+                  citiesList?.length > 0
+                    ? citiesList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
             </Form.Item>
             <Form.Item
-              label="Secondary add. state"
-              name="secondaryState"
-              rules={[
-                { required: true, message: "please enter secondary state" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Secondary add. country"
-              name="secondaryCountry"
-              rules={[
-                {
-                  required: true,
-                  message: "please enter secondary address country",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Secondary add. pincode"
+              label="Secondary address pincode"
               name="secondaryPinCode"
               rules={[
                 { required: true, message: "please enter secondary pincode" },
@@ -1186,7 +1013,6 @@ const LeadEstimate = ({ leadid }) => {
             >
               <Input />
             </Form.Item>
-
             <Form.Item>
               <Button htmlType="submit" type="primary">
                 Submit

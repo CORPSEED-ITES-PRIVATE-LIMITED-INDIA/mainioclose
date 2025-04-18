@@ -31,7 +31,7 @@ const NewCompany = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [filterUserId, setFilterUserId] = useState("");
   const [typeStatus, setTypeStatus] = useState("all");
-  const [rating, setRating] = useState("Gold");
+  const [rating, setRating] = useState("all");
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,

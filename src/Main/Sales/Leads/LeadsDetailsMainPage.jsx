@@ -10,6 +10,7 @@ import {
   getCompanyUnitsById,
   getDocumentsByLeadName,
   getEstimateByLeadId,
+  getProductListByLeadName,
   getProposalByLeadId,
   getVendorDetailList,
   handleViewHistory,
@@ -122,6 +123,7 @@ const LeadsDetailsMainPage = ({
       }
       if (e === "estimate") {
         dispatch(getAllProductData());
+        dispatch(getProductListByLeadName((singleLeadResponseData?.originalName)))
         dispatch(getAllContactDetails());
         dispatch(
           getCompanyDetailsByLeadId(data?.id ? data?.id : data?.leadId)
