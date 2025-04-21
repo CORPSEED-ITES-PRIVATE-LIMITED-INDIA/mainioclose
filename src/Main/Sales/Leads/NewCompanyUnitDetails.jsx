@@ -1,6 +1,7 @@
-import { Card, Col, Divider, Flex, Row, Tag, Typography } from "antd";
+import { Card, Col, Divider, Flex, Row, Tag, Tooltip, Typography } from "antd";
 import React from "react";
 import { useSelector } from "react-redux";
+import { Icon } from '@iconify/react'
 const { Text, Title } = Typography;
 
 const NewCompanyUnitDetails = () => {
@@ -9,9 +10,27 @@ const NewCompanyUnitDetails = () => {
   );
   return (
     <Flex vertical gap={8}>
-      <Title level={5} style={{ margin: 0 }}>
-        {companyDetailByUnitId?.name}
-      </Title>
+      <Flex align="center" gap={12} style={{ margin: "8px 0px" }}>
+        <Title level={3} style={{ margin: 0 }}>
+          {companyDetailByUnitId?.companyName}
+        </Title>
+        <Tooltip title={companyDetailByUnitId?.rating}>
+          <Icon
+            icon="carbon:badge"
+            width="32"
+            height="32"
+            style={{
+              color:
+                companyDetailByUnitId?.rating === "Gold"
+                  ? "#FFD700"
+                  : companyDetailByUnitId?.rating === "Silver"
+                    ? "#C0C0C0"
+                    : "#CD7F32",
+            }}
+          />
+        </Tooltip>
+      </Flex>
+
       <Divider style={{ margin: 0 }} />
       <Flex justify="space-between">
         <Flex vertical gap={4}>
@@ -112,8 +131,8 @@ const NewCompanyUnitDetails = () => {
             <Flex gap={4}>
               {companyDetailByUnitId?.industryData
                 ? companyDetailByUnitId?.industryData?.map((item) => (
-                    <Tag key={`${item?.id}industryData`}>{item?.name}</Tag>
-                  ))
+                  <Tag key={`${item?.id}industryData`}>{item?.name}</Tag>
+                ))
                 : "NA"}
             </Flex>
           </Flex>

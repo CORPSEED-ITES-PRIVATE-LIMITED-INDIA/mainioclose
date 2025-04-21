@@ -256,7 +256,7 @@ const ServingCompanyPage = () => {
     dispatch(getAllContactDetails());
     dispatch(getAllCountries());
     dispatch(getAllCompanyType());
-    dispatch(getSubIndustryByIndustryId(value?.industry));
+    dispatch(getSubIndustryByIndustryId(value?.industry?.id));
     dispatch(getSubSubIndustryBySubIndustryId(value?.subIndustry?.id));
     dispatch(getIndustryDataBySubSubIndustryId(value?.subSubIndustry?.id));
     form.setFieldsValue({

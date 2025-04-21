@@ -1,4 +1,4 @@
-import { Flex, Input, notification, Select, Typography } from "antd";
+import { Flex, Input, notification, Select, Tooltip, Typography } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
@@ -70,11 +70,13 @@ const NewCompany = () => {
           page: dataPage,
           size: size,
           filterUserId: filterUserId,
+          type: typeStatus,
+          rating
         })
       );
       setPaginationData({ size: size, page: dataPage });
     },
-    [userid, dispatch, filterUserId]
+    [userid, dispatch, filterUserId, typeStatus, rating]
   );
 
   const filterCompanyBasedOnUser = useCallback(
@@ -143,7 +145,7 @@ const NewCompany = () => {
           notification.error({ message: "Something went wrong !." });
         });
     },
-    [dispatch, paginationData, filterUserId]
+    [dispatch, paginationData, filterUserId, rating]
   );
 
   const columns = [
@@ -151,23 +153,40 @@ const NewCompany = () => {
       dataIndex: "companyId",
       title: "Id",
       fixed: "left",
-      width: 80,
+      width: 50,
     },
     {
       dataIndex: "companyName",
       title: "Company name",
       fixed: "left",
       render: (_, props) => (
-        <OverFlowText
-          linkText={true}
-          to={
-            props?.consultantOrCompany
-              ? `/erp/${userid}/sales/newcompanies/${props?.companyId}/newConsultantCompanies`
-              : `/erp/${userid}/sales/newcompanies/${props?.companyId}/newCompaniesUnit`
-          }
-        >
-          {props?.companyName}
-        </OverFlowText>
+        <Flex align='center' gap={12}>
+          <Tooltip title={props?.rating}>
+            <Icon
+              icon="carbon:badge"
+              width="24"
+              height="24"
+              style={{
+                color:
+                  props?.rating === "Gold"
+                    ? "#FFD700"
+                    : props?.rating === "Silver"
+                      ? "#C0C0C0"
+                      : "#CD7F32",
+              }}
+            />
+          </Tooltip>
+          <OverFlowText
+            linkText={true}
+            to={
+              props?.consultantOrCompany
+                ? `/erp/${userid}/sales/newcompanies/${props?.companyId}/newConsultantCompanies`
+                : `/erp/${userid}/sales/newcompanies/${props?.companyId}/newCompaniesUnit`
+            }
+          >
+            {props?.companyName}
+          </OverFlowText>
+        </Flex>
       ),
     },
     {
@@ -220,15 +239,15 @@ const NewCompany = () => {
 
     ...(getHighestPriorityRole(currentRoles) === "ADMIN"
       ? [
-          {
-            dataIndex: "clientContactEmail",
-            title: "Client email",
-          },
-          {
-            dataIndex: "clientContactNo",
-            title: "Client contact",
-          },
-        ]
+        {
+          dataIndex: "clientContactEmail",
+          title: "Client email",
+        },
+        {
+          dataIndex: "clientContactNo",
+          title: "Client contact",
+        },
+      ]
       : []),
     {
       dataIndex: "city",
@@ -331,9 +350,9 @@ const NewCompany = () => {
               options={
                 allUsers?.length > 0
                   ? allUsers?.map((item) => ({
-                      label: item?.fullName,
-                      value: item?.id,
-                    }))
+                    label: item?.fullName,
+                    value: item?.id,
+                  }))
                   : []
               }
               filterOption={(input, option) =>
@@ -359,7 +378,7 @@ const NewCompany = () => {
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "69vh", x: 2000 }}
+          scroll={{ y: "69vh", x: 2500 }}
           rowKey={(record) => record?.companyId}
           pagination={true}
           page={paginationData?.page}

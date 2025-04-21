@@ -684,11 +684,11 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
               )}
             </Form.Item>
 
-            <Form.Item label="Address" name="saddress">
+            <Form.Item label="Address" name="secondaryAddress">
               <Input.TextArea />
             </Form.Item>
 
-            <Form.Item label="Country" name="scountry">
+            <Form.Item label="Country" name="secondaryCountry">
               <Select
                 showSearch
                 options={
@@ -708,7 +708,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                 }
               />
             </Form.Item>
-            <Form.Item label="State" name="sstate">
+            <Form.Item label="State" name="secondaryState">
               <Select
                 showSearch
                 options={
@@ -727,7 +727,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
               />
             </Form.Item>
 
-            <Form.Item label="City" name="scity">
+            <Form.Item label="City" name="secondaryCity">
               <Select
                 showSearch
                 options={
