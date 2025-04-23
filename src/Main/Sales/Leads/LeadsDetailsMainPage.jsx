@@ -123,7 +123,9 @@ const LeadsDetailsMainPage = ({
       }
       if (e === "estimate") {
         dispatch(getAllProductData());
-        dispatch(getProductListByLeadName((singleLeadResponseData?.originalName)))
+        dispatch(
+          getProductListByLeadName(singleLeadResponseData?.originalName)
+        );
         dispatch(getAllContactDetails());
         dispatch(
           getCompanyDetailsByLeadId(data?.id ? data?.id : data?.leadId)
@@ -134,12 +136,8 @@ const LeadsDetailsMainPage = ({
                 notification.warning({
                   message: `This lead is already assigned to "${resp?.payload?.assignee?.fullName}" for company id "${resp?.payload?.id}" company name " ${resp?.payload?.name}"`,
                 });
-              } else {
-                dispatch(getCompanyUnitsById(resp?.payload?.id));
               }
-            } else {
             }
-          } else {
           }
         });
         dispatch(getEstimateByLeadId(data?.id ? data?.id : data?.leadId));
@@ -203,7 +201,7 @@ const LeadsDetailsMainPage = ({
           dispatch(getAllUrlList());
           dispatch(getDocumentsByLeadName(data?.originalName));
           setTabKey("leadDetail");
-          dispatch(getAllUsers())
+          dispatch(getAllUsers());
         }}
       >
         {children}

@@ -427,6 +427,15 @@ const SideBar = () => {
               },
               {
                 label: (
+                  <Link to={`/erp/${userid}/account/paymentApproval`}>
+                    {" "}
+                    Payment approvals
+                  </Link>
+                ),
+                key: "paymentApproval",
+              },
+              {
+                label: (
                   <Link to={`/erp/${userid}/account/companyForm`}>
                     {" "}
                     Company form
@@ -541,6 +550,15 @@ const SideBar = () => {
                   </Link>
                 ),
                 key: "companyApproval",
+              },
+              {
+                label: (
+                  <Link to={`/erp/${userid}/account/paymentApproval`}>
+                    {" "}
+                    Payment approvals
+                  </Link>
+                ),
+                key: "paymentApproval",
               },
               {
                 label: (

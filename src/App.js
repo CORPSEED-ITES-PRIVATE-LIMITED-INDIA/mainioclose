@@ -104,6 +104,7 @@ import ConsultantCompanyGStPage from "./Main/Sales/Leads/ConsultantCompanyGStPag
 import ConsultantCompanyUnitsPage from "./Main/Sales/Leads/ConsultantCompanyUnitsPage";
 import CompanyApproval from "./Main/Accounts/CompanyApproval";
 import ServingCompanyPage from "./Main/Sales/Leads/ServingCompanyPage";
+import PaymentApproval from "./Main/Accounts/PaymentApproval";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -367,6 +368,7 @@ function App() {
                 />
                 <Route path="companySearch" element={<CompanySearch />} />
                 <Route path="companyApproval" element={<CompanyApproval />} />
+                <Route path="paymentApproval" element={<PaymentApproval />} />
 
                 <Route path="organizations" element={<MainOrganizationPage />}>
                   <Route index element={<Organizations />} />

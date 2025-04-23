@@ -98,6 +98,7 @@ const LeadCompany = ({ edit, data }) => {
   const [createFormAs, setCreateFormAs] = useState("company");
   const [openDropdown, setOpenDropdown] = useState(false);
   const [presentAggrement, setPresentAggrement] = useState(false);
+  const [ndaPresent, setNdaPresent] = useState(false);
   const [searchDetail, setSearchDetail] = useState({
     searchText: "",
     userId: userid,
@@ -188,6 +189,7 @@ const LeadCompany = ({ edit, data }) => {
     (values) => {
       values.gstDocuments = values.gstDocuments?.[0]?.response;
       values.aggrement = values.aggrement?.[0]?.response;
+      values.nda = values.nda?.[0]?.response;
       values.leadId = data?.id;
       values.updatedBy = userid;
       dispatch(createNewCompanyInLeads(values))
@@ -599,6 +601,106 @@ const LeadCompany = ({ edit, data }) => {
                         <Icon icon="fluent:arrow-upload-20-filled" /> Upload
                       </Button>
                     </Upload>
+                  </Form.Item>
+                )}
+
+                <Form.Item
+                  label="NDA"
+                  name="ndaPresent"
+                  rules={[
+                    { required: true, message: "please select aggrement" },
+                  ]}
+                >
+                  <Select
+                    options={[
+                      { label: "Yes", value: true },
+                      { label: "No", value: false },
+                    ]}
+                    onChange={(e) => setNdaPresent(e)}
+                  />
+                </Form.Item>
+
+                {ndaPresent && (
+                  <Form.Item
+                    label="Upload NDA document"
+                    name="nda"
+                    getValueFromEvent={normFile}
+                    valuePropName="fileList"
+                    rules={[
+                      { required: true, message: "please upload document" },
+                    ]}
+                  >
+                    <Upload
+                      action="/leadService/api/v1/upload/uploadimageToFileSystem"
+                      listType="text"
+                    >
+                      <Button size="small">
+                        <Icon icon="fluent:arrow-upload-20-filled" /> Upload
+                      </Button>
+                    </Upload>
+                  </Form.Item>
+                )}
+
+                <Form.Item
+                  label="Business type"
+                  name="businessType"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select the business type",
+                    },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      businessTypeList?.gstTypePrice?.length > 0
+                        ? businessTypeList?.gstTypePrice?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      setGstMand((prev) => ({
+                        ...prev,
+                        gst: x?.gstPresent,
+                        pan: x?.panPresent,
+                      }));
+                      form.resetFields(["gstNo", "panNo"]);
+                    }}
+                  />
+                </Form.Item>
+
+                {gstMand?.gst && (
+                  <Form.Item
+                    label="Gst number"
+                    name="gstNo"
+                    rules={[
+                      {
+                        required: true,
+                        message: "",
+                      },
+                      {
+                        validator: validateGstNumber(dispatch),
+                      },
+                    ]}
+                  >
+                    <Input maxLength={15} />
+                  </Form.Item>
+                )}
+
+                {gstMand?.pan && (
+                  <Form.Item
+                    label="Pan number"
+                    name="panNo"
+                    rules={[
+                      { required: true, message: "please enter pan number" },
+                    ]}
+                  >
+                    <Input maxLength={10} onChange={handlePanNumberChange} />
                   </Form.Item>
                 )}
 

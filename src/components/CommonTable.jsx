@@ -20,6 +20,7 @@ const CommonTable = ({
   pageSize,
   onRow,
   getCheckboxProps,
+  expandable
 }) => {
   const tableContainerRef = useRef(null);
   const scrollIntervalRef = useRef(null);
@@ -122,6 +123,7 @@ const CommonTable = ({
         onRow={onRow}
         rowKey={rowKey}
         rowClassName={rowClassName}
+        expandable={expandable}
         rowSelection={
           rowSelection && {
             type: "checkbox",

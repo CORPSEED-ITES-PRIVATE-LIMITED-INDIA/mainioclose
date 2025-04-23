@@ -397,6 +397,26 @@ export const paymentRegisterconfirm = createAsyncThunk(
   }
 );
 
+export const getAllPaymentApprovals = createAsyncThunk(
+  "getAllPaymentApprovals",
+  async (userId) => {
+    const response = await getQuery(
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithCompany?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const approvedCompanyInPayment = createAsyncThunk(
+  "approvedCompanyInPayment",
+  async ({ stage, id }) => {
+    const response = await putQuery(
+      `/leadService/api/v1/company/updateStage?stage=${stage}&id=${id}`
+    );
+    return response.data;
+  }
+);
+
 const AccountSlice = createSlice({
   name: "account",
   initialState: {
@@ -428,6 +448,7 @@ const AccountSlice = createSlice({
     groupVoucherList: [],
     salesInvoiceList: [],
     allInvoiceList: [],
+    paymentApprovalList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -713,6 +734,18 @@ const AccountSlice = createSlice({
     builder.addCase(getAllInvoiceForSale.rejected, (state, action) => {
       state.loading = "rejected";
       state.salesInvoiceList = [];
+    });
+
+    builder.addCase(getAllPaymentApprovals.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPaymentApprovals.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.paymentApprovalList = action.payload;
+    });
+    builder.addCase(getAllPaymentApprovals.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.paymentApprovalList = [];
     });
   },
 });

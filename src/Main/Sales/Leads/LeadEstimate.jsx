@@ -6,11 +6,9 @@ import {
   Input,
   Modal,
   notification,
-  Radio,
   Row,
   Select,
   Typography,
-  Switch,
   Col,
   Upload,
   Space,
@@ -22,14 +20,12 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon } from "@iconify/react";
-import { getSingleProductByProductId } from "../../../Toolkit/Slices/ProductSlice";
 import {
   createEstimate,
   editLeadEstimate,
   getAllContactDetails,
   getAllContactDetailsById,
-  getCompanyByUnitId,
-  searchCompaniesForEstimate,
+  searchCompaniesForCompany,
 } from "../../../Toolkit/Slices/LeadSlice";
 import {
   createContacts,
@@ -48,7 +44,7 @@ import {
   getAllCompanyType,
   getAllCompanyUnits,
 } from "../../../Toolkit/Slices/CompanySlice";
-import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
+import LeadEstimateForApproval from "./LeadEstimateForApproval";
 const { Text, Title } = Typography;
 
 const LeadEstimate = ({ leadid }) => {
@@ -57,25 +53,19 @@ const LeadEstimate = ({ leadid }) => {
   const { userid } = useParams();
   const dispatch = useDispatch();
   const pdfRef = useRef();
-  const productList = useSelector((state) => state.product.productList);
   const productData = useSelector((state) => state.leads.productDataByLeadName);
   const contactList = useSelector(
     (state) => state?.leads?.contactListByCompanyId
   );
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
-  const companyUnits = useSelector((state) => state?.leads?.companyUnits);
-  const companiesListForEstimate = useSelector(
-    (state) => state?.leads?.companiesListForEstimate
-  );
+    const seachCompniesList = useSelector(
+      (state) => state.leads.seachCompniesList
+    );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const allCompanyUnits = useSelector((state) => state.company.allCompanyUnits);
   const details = useSelector((state) => state.leads.estimateDetail);
-  const companyTypeList = useSelector((state) => state.company.companyTypeList);
-  const companyDetail = useSelector(
-    (state) => state.leads.companyDetailByUnitId
-  );
   const estimateDetailLoading = useSelector(
     (state) => state.leads.estimateDetailLoading
   );
@@ -85,9 +75,9 @@ const LeadEstimate = ({ leadid }) => {
   const [openModal, setOpenModal] = useState(false);
   const [editEstimate, setEditEstimate] = useState(false);
   const [seachFields, setSearchFields] = useState({
-    searchNameAndGSt: null,
+    searchText: "",
     userId: userid,
-    fieldSearch: "companyName",
+    searchField: "searchNameAndGSt",
   });
 
   const [productFees, setProductFees] = useState({
@@ -373,14 +363,14 @@ const LeadEstimate = ({ leadid }) => {
               <Select
                 style={{ width: "20%" }}
                 options={[
-                  { label: "Company name", value: "companyName" },
-                  { label: "Gst number", value: "gstNumber" },
-                  { label: "Contact number", value: "contactNumber" },
-                  { label: "Contact email", value: "contactEmail" },
+                  { label: "GST", value: "gstNumber" },
+                  { label: "Name", value: "searchNameAndGSt" },
+                  { label: "Contact no.", value: "contactNumber" },
+                  { label: "Email", value: "contactEmail" },
                 ]}
-                value={seachFields?.fieldSearch}
+                value={seachFields?.searchField}
                 onChange={(e) =>
-                  setSearchFields((prev) => ({ ...prev, fieldSearch: e }))
+                  setSearchFields((prev) => ({ ...prev, searchField: e }))
                 }
               />
               <Select
@@ -388,31 +378,28 @@ const LeadEstimate = ({ leadid }) => {
                 style={{ width: "80%" }}
                 placeholder="Search companies ..."
                 options={
-                  companiesListForEstimate?.length > 0
-                    ? companiesListForEstimate?.map((item) => ({
+                  seachCompniesList?.length > 0
+                    ? seachCompniesList?.map((item) => ({
                         label: item?.companyName,
                         value: item?.companyId,
                       }))
                     : []
                 }
                 onChange={(e) => {
-                  setSearchFields((prev) => ({ ...prev, searchNameAndGSt: e }));
+                  setSearchFields((prev) => ({ ...prev, searchText: e }));
                   dispatch(getAllCompanyUnits(e));
                   dispatch(getAllContactDetailsById(e));
                 }}
                 open={openSelectDd}
-                value={seachFields?.searchNameAndGSt}
+                value={seachFields?.searchText}
                 onSearch={(e) =>
-                  setSearchFields((prev) => ({ ...prev, searchNameAndGSt: e }))
+                  setSearchFields((prev) => ({ ...prev, searchText: e }))
                 }
                 onDropdownVisibleChange={(e) => setOpenSelectDd(e)}
-                // filterOption={(input, option) =>
-                //   option.label.toLowerCase().includes(input.toLowerCase())
-                // }
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     console.log("aslkdjfkjsdbajbdfasbdfjb", e);
-                    dispatch(searchCompaniesForEstimate(seachFields)).then(
+                    dispatch(searchCompaniesForCompany(seachFields)).then(
                       (resp) => {
                         if (resp.meta.requestStatus === "fulfilled") {
                           setOpenSelectDd(true);
@@ -645,7 +632,8 @@ const LeadEstimate = ({ leadid }) => {
                 />
               </Form.Item>
             </Flex>
-            <div
+            <LeadEstimateForApproval/>
+            <div  
               style={{
                 display: "grid",
                 gridTemplateColumns: "46% 25% 25%",
