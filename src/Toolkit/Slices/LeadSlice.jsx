@@ -822,7 +822,7 @@ export const getEstimateByLeadId = createAsyncThunk(
   "getEstimateByLeadId",
   async (id) => {
     const response = await getQuery(
-      `/leadService/api/v1/leadEstimate/getEstimateByLeadId?leadId=${id}`
+      `/leadService/api/v1/leadEstimate/getEstimateFormByLeadId?leadId=${id}`
     );
     return response.data;
   }
@@ -930,10 +930,56 @@ export const getCompanyUnitsByStateAndCompanyId = createAsyncThunk(
   }
 );
 
-export const getProductListByLeadName=createAsyncThunk('getProductListByLeadName',async(name)=>{
-  const response=await getQuery(`/leadService/api/v1/product/getProductByName?name=${name}`)
-  return response.data
-})
+export const getProductListByLeadName = createAsyncThunk(
+  "getProductListByLeadName",
+  async (name) => {
+    const response = await getQuery(
+      `/leadService/api/v1/product/getProductByName?name=${name}`
+    );
+    return response.data;
+  }
+);
+
+export const createEstimateForApprovals = createAsyncThunk(
+  "createEstimateForApprovals",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/leadEstimate/createEstimateForm`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllEstimateForApproval = createAsyncThunk(
+  "getAllApprovalForEstimate",
+  async (status) => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getAllEstimateForm?status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const approveEstimateApproval = createAsyncThunk(
+  "approveEstimateApproval",
+  async ({ userId, estimateFormId, comment }) => {
+    const response = await putQuery(
+      `/leadService/api/v1/leadEstimate/approveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`
+    );
+    return response.data;
+  }
+);
+
+export const disApproveEstimateApproval = createAsyncThunk(
+  "disApproveEstimateApproval",
+  async ({ userId, estimateFormId, comment }) => {
+    const response = await putQuery(
+      `/leadService/api/v1/leadEstimate/disapproveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`
+    );
+    return response.data;
+  }
+);
 
 export const LeadSlice = createSlice({
   name: "lead",
@@ -997,8 +1043,9 @@ export const LeadSlice = createSlice({
     newCompaniesList: [],
     companyGstDetailList: [],
     companyUnitList: [],
-    contactListByCompanyId:[],
-    productDataByLeadName:{}
+    contactListByCompanyId: [],
+    productDataByLeadName: {},
+    estimateApprovalList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1500,39 +1547,29 @@ export const LeadSlice = createSlice({
       }
     );
 
-    builder.addCase(
-      getAllContactDetailsById.pending,
-      (state, action) => {}
-    );
-    builder.addCase(
-      getAllContactDetailsById.fulfilled,
-      (state, action) => {
-        state.contactListByCompanyId = action?.payload;
-      }
-    );
-    builder.addCase(
-      getAllContactDetailsById.rejected,
-      (state, action) => {
-        state.contactListByCompanyId = [];
-      }
-    );
+    builder.addCase(getAllContactDetailsById.pending, (state, action) => {});
+    builder.addCase(getAllContactDetailsById.fulfilled, (state, action) => {
+      state.contactListByCompanyId = action?.payload;
+    });
+    builder.addCase(getAllContactDetailsById.rejected, (state, action) => {
+      state.contactListByCompanyId = [];
+    });
 
-    builder.addCase(
-      getProductListByLeadName.pending,
-      (state, action) => {}
-    );
-    builder.addCase(
-      getProductListByLeadName.fulfilled,
-      (state, action) => {
-        state.productDataByLeadName = action?.payload;
-      }
-    );
-    builder.addCase(
-      getProductListByLeadName.rejected,
-      (state, action) => {
-        state.productDataByLeadName = {};
-      }
-    );
+    builder.addCase(getProductListByLeadName.pending, (state, action) => {});
+    builder.addCase(getProductListByLeadName.fulfilled, (state, action) => {
+      state.productDataByLeadName = action?.payload;
+    });
+    builder.addCase(getProductListByLeadName.rejected, (state, action) => {
+      state.productDataByLeadName = {};
+    });
+
+    builder.addCase(getAllEstimateForApproval.pending, (state, action) => {});
+    builder.addCase(getAllEstimateForApproval.fulfilled, (state, action) => {
+      state.estimateApprovalList = action?.payload;
+    });
+    builder.addCase(getAllEstimateForApproval.rejected, (state, action) => {
+      state.estimateApprovalList = [];
+    });
   },
 });
 export const {

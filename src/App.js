@@ -105,6 +105,7 @@ import ConsultantCompanyUnitsPage from "./Main/Sales/Leads/ConsultantCompanyUnit
 import CompanyApproval from "./Main/Accounts/CompanyApproval";
 import ServingCompanyPage from "./Main/Sales/Leads/ServingCompanyPage";
 import PaymentApproval from "./Main/Accounts/PaymentApproval";
+import EstimateApproval from "./Main/HR/EstimateApproval";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -292,6 +293,7 @@ function App() {
                 <Route path="userlist" element={<HrUserList />} />
                 <Route path="approveUser" element={<HRApprovalList />} />
                 <Route path="userservice" element={<UserService />} />
+                <Route path="estimateApproval" element={<EstimateApproval />} />
                 <Route path="userservice/:serviceid" element={<UserRating />} />
                 <Route path="hrlinkfour" element={<div>hrlinkfour</div>} />
                 <Route path="hrlinkfive" element={<div>hrlinkfive</div>} />

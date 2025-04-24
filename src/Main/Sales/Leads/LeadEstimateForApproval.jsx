@@ -6,6 +6,7 @@ import {
   Form,
   Input,
   Modal,
+  notification,
   Row,
   Select,
   Space,
@@ -23,12 +24,13 @@ import { useParams } from "react-router-dom";
 import { maskEmail, maskMobileNumber } from "../../Common/Commons";
 import { getAllCompanyUnits } from "../../../Toolkit/Slices/CompanySlice";
 import {
+  createEstimateForApprovals,
   getAllContactDetailsById,
   searchCompaniesForCompany,
 } from "../../../Toolkit/Slices/LeadSlice";
 const { Text } = Typography;
 
-const LeadEstimateForApproval = () => {
+const LeadEstimateForApproval = ({ leadid }) => {
   const dispatch = useDispatch();
   const { userid } = useParams();
   const [form] = Form.useForm();
@@ -70,6 +72,7 @@ const LeadEstimateForApproval = () => {
   });
   const [openSelectDd, setOpenSelectDd] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [companyId, setCompanyId] = useState(null);
 
   useEffect(() => {
     productData?.productAmount?.forEach((item) => {
@@ -125,10 +128,10 @@ const LeadEstimateForApproval = () => {
     });
   }, [productData, form]);
 
-  //   useEffect(() => {
-  //     dispatch(getAllCountries());
-  //     dispatch(getAllCompanyType());
-  //   }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(getAllCountries());
+  //   dispatch(getAllCompanyType());
+  // }, [dispatch]);
 
   const normFile = (e) => {
     if (Array.isArray(e)) {
@@ -147,7 +150,26 @@ const LeadEstimateForApproval = () => {
     }
   }, [companyDetails, form]);
 
-  const handleFinish = () => {};
+  const handleFinish = (values) => {
+    values.leadId = leadid;
+    values.companyId = companyId;
+    values.productId = productData?.id;
+    values.gstDocuments = values.gstDocuments?.[0]?.response;
+    dispatch(createEstimateForApprovals(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({
+            message: "Estimate created successfully !.",
+          });
+          setOpenModal(false);
+          form.resetFields();
+          setCompanyId(null);
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
 
   return (
     <>
@@ -166,6 +188,7 @@ const LeadEstimateForApproval = () => {
         onClose={() => setOpenModal(false)}
         onCancel={() => setOpenModal(false)}
         okText="Submit"
+        onOk={()=>form.submit()}
       >
         <Flex
           vertical
@@ -208,6 +231,7 @@ const LeadEstimateForApproval = () => {
                   setSearchFields((prev) => ({ ...prev, searchText: e }));
                   dispatch(getAllCompanyUnits(e));
                   dispatch(getAllContactDetailsById(e));
+                  setCompanyId(e);
                 }}
                 open={openSelectDd}
                 value={seachFields?.searchText}
@@ -754,6 +778,15 @@ const LeadEstimateForApproval = () => {
               >
                 <Input />
               </Form.Item>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1rem",
+              }}
+            >
               <Form.Item
                 label="Secondary address"
                 name="secondaryAddress"
@@ -825,6 +858,13 @@ const LeadEstimateForApproval = () => {
                 ]}
               >
                 <Input />
+              </Form.Item>
+              <Form.Item
+                label="Remark"
+                name="remarksForOption"
+                rules={[{ required: true, message: "please give the remark" }]}
+              >
+                <Input.TextArea />
               </Form.Item>
             </div>
           </Form>

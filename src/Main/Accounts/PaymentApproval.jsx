@@ -81,7 +81,6 @@ const PaymentApproval = () => {
       dataIndex: "companyAge",
       render: (_, data) => <ColComp data={data?.age} />,
     },
-
     {
       title: "Assignee",
       dataIndex: "assignee",
@@ -122,7 +121,7 @@ const PaymentApproval = () => {
       render: (_, data) => <ColComp data={data?.secState} />,
     },
     {
-      title: "Secondary sountry",
+      title: "Secondary country",
       dataIndex: "seCountry",
       render: (_, data) => <ColComp data={data?.seCountry} />,
     },

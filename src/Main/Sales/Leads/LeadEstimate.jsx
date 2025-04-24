@@ -632,7 +632,7 @@ const LeadEstimate = ({ leadid }) => {
                 />
               </Form.Item>
             </Flex>
-            <LeadEstimateForApproval/>
+            <LeadEstimateForApproval leadid={leadid}  />
             <div  
               style={{
                 display: "grid",

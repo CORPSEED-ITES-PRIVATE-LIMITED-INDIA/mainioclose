@@ -353,6 +353,12 @@ const SideBar = () => {
                 ),
                 key: "approveUser",
               },
+              {
+                label: (
+                  <Link to={`/erp/${userid}/hr/estimateApproval`}>Estimate approval</Link>
+                ),
+                key: "estimateApproval",
+              },
             ],
           },
         ]
@@ -389,6 +395,12 @@ const SideBar = () => {
                   <Link to={`/erp/${userid}/hr/userservice`}>Rating list</Link>
                 ),
                 key: "userservice",
+              },
+              {
+                label: (
+                  <Link to={`/erp/${userid}/hr/estimateApproval`}>Estimate approval</Link>
+                ),
+                key: "estimateApproval",
               },
             ],
           },

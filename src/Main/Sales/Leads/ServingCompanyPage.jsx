@@ -444,6 +444,14 @@ const ServingCompanyPage = () => {
           form.resetFields();
           setOpenModal(false);
           setEditData(null);
+          dispatch(
+            getAllServingCompanyList({
+              userId: userid,
+              page: paginationData?.page,
+              size: paginationData?.size,
+              status: typeStatus,
+            })
+          );
         } else {
           notification.error({ message: "Something went wrong !." });
         }
@@ -473,7 +481,7 @@ const ServingCompanyPage = () => {
               placeholder="search"
             />
             <Select
-              style={{ width: "20%" }}
+              style={{ width: "40%" }}
               showSearch
               value={typeStatus}
               options={[
