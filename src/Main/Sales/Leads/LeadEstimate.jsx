@@ -16,15 +16,19 @@ import {
   Badge,
   Spin,
   Divider,
+  Switch,
 } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon } from "@iconify/react";
 import {
   createEstimate,
+  createEstimateForApprovals,
+  editEstimateForApprovals,
   editLeadEstimate,
   getAllContactDetails,
   getAllContactDetailsById,
+  getEstimateByLeadId,
   searchCompaniesForCompany,
 } from "../../../Toolkit/Slices/LeadSlice";
 import {
@@ -44,7 +48,6 @@ import {
   getAllCompanyType,
   getAllCompanyUnits,
 } from "../../../Toolkit/Slices/CompanySlice";
-import LeadEstimateForApproval from "./LeadEstimateForApproval";
 const { Text, Title } = Typography;
 
 const LeadEstimate = ({ leadid }) => {
@@ -58,9 +61,9 @@ const LeadEstimate = ({ leadid }) => {
     (state) => state?.leads?.contactListByCompanyId
   );
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
-    const seachCompniesList = useSelector(
-      (state) => state.leads.seachCompniesList
-    );
+  const seachCompniesList = useSelector(
+    (state) => state.leads.seachCompniesList
+  );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -91,6 +94,13 @@ const LeadEstimate = ({ leadid }) => {
     otherGst: 0,
   });
   const [openSelectDd, setOpenSelectDd] = useState(false);
+  const [discount, setDiscount] = useState(false);
+  const [companyAndUnitData, setCompanyAndUnitData] = useState({
+    companyId: null,
+    companyName: "",
+    unitId: null,
+    unitName: "",
+  });
 
   useEffect(() => {
     dispatch(getAllCountries());
@@ -191,6 +201,17 @@ const LeadEstimate = ({ leadid }) => {
   }, [productData, form]);
 
   const handleEditEstimate = useCallback(() => {
+
+    console.log('dkjfbaskljdhflkasj',details)
+    dispatch(getAllCompanyUnits(details?.companyId));
+    dispatch(getAllContactDetailsById(details?.companyId));
+    setCompanyAndUnitData((prev) => ({
+      ...prev,
+      companyId: details?.companyId,
+      companyName: details?.companyName,
+      unitName: details?.unitName,
+      unitId: details?.unitId,
+    }));
     form.setFieldsValue({
       admin: details?.primaryContact?.id,
       cc: details?.ccMail,
@@ -250,13 +271,16 @@ const LeadEstimate = ({ leadid }) => {
     setEditEstimate((prev) => !prev);
   }, [details, form]);
 
-  const validateGreaterThanOrEqual = (initialValue) => ({
+  const validateGreaterThanOrEqual = (minValue, discount) => ({
     validator(_, value) {
-      if (value === undefined || value >= initialValue) {
+      if (discount) {
+        return Promise.resolve();
+      }
+      if (!value || parseFloat(value) >= parseFloat(minValue)) {
         return Promise.resolve();
       }
       return Promise.reject(
-        new Error(`Value must be greater than or equal to ${initialValue}`)
+        new Error(`Value should be greater than or equal to ${minValue}`)
       );
     },
   });
@@ -267,38 +291,106 @@ const LeadEstimate = ({ leadid }) => {
       values.unitCompany = false;
       values.productId = productData?.id;
       values.gstDocuments = values.gstDocuments?.[0]?.response;
-      if (editEstimate) {
-        values.id = details?.id;
-        dispatch(editLeadEstimate(values))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              notification.success({
-                message: "Estimate updated successfully !.",
-              });
-            } else {
-              notification.error({ message: "Something went wrong !." });
-            }
-          })
-          .catch(() =>
-            notification.error({ message: "Something went wrong !." })
-          );
+      values.companyId = companyAndUnitData?.companyId;
+      values.companyName = companyAndUnitData?.companyName;
+      values.unitName = companyAndUnitData?.unitName;
+      if (discount) {
+        if (details?.discountEstimate) {
+          values.estimateId = details?.id;
+          dispatch(editEstimateForApprovals(values))
+            .then((resp) => {
+              if (resp.meta.requestStatus === "fulfilled") {
+                notification.success({
+                  message: "Estimate edited successfully !.",
+                });
+                dispatch(getEstimateByLeadId(leadid));
+                form.resetFields();
+                setCompanyAndUnitData({
+                  companyId: null,
+                  companyName: "",
+                  unitId: null,
+                  unitName: "",
+                });
+              } else {
+                notification.error({ message: "Something went wrong !." });
+              }
+            })
+            .catch(() =>
+              notification.error({ message: "Something went wrong !." })
+            );
+        } else {
+          dispatch(createEstimateForApprovals(values))
+            .then((resp) => {
+              if (resp.meta.requestStatus === "fulfilled") {
+                notification.success({
+                  message: "Estimate created successfully !.",
+                });
+                dispatch(getEstimateByLeadId(leadid));
+                form.resetFields();
+                setCompanyAndUnitData({
+                  companyId: null,
+                  companyName: "",
+                  unitId: null,
+                  unitName: "",
+                });
+              } else {
+                notification.error({ message: "Something went wrong !." });
+              }
+            })
+            .catch(() =>
+              notification.error({ message: "Something went wrong !." })
+            );
+        }
       } else {
-        dispatch(createEstimate(values))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              notification.success({
-                message: "Estimate created successfully !.",
-              });
-            } else {
-              notification.error({ message: "Something went wrong !." });
-            }
-          })
-          .catch(() =>
-            notification.error({ message: "Something went wrong !." })
-          );
+        if (editEstimate) {
+          values.id = details?.id;
+          dispatch(editLeadEstimate(values))
+            .then((resp) => {
+              if (resp.meta.requestStatus === "fulfilled") {
+                notification.success({
+                  message: "Estimate updated successfully !.",
+                });
+                form.resetFields();
+                dispatch(getEstimateByLeadId(leadid));
+                setCompanyAndUnitData({
+                  companyId: null,
+                  companyName: "",
+                  unitId: null,
+                  unitName: "",
+                });
+              } else {
+                notification.error({ message: "Something went wrong !." });
+              }
+            })
+            .catch(() =>
+              notification.error({ message: "Something went wrong !." })
+            );
+        } else {
+          dispatch(createEstimate(values))
+            .then((resp) => {
+              if (resp.meta.requestStatus === "fulfilled") {
+                notification.success({
+                  message: "Estimate created successfully !.",
+                });
+                form.resetFields();
+                dispatch(getEstimateByLeadId(leadid));
+                setCompanyAndUnitData({
+                  companyId: null,
+                  companyName: "",
+                  unitId: null,
+                  unitName: "",
+                });
+              } else {
+                notification.error({ message: "Something went wrong !." });
+              }
+            })
+            .catch(() =>
+              notification.error({ message: "Something went wrong !." })
+            );
+        }
       }
     },
-    [leadid, details, editEstimate, productData, dispatch]
+    [leadid, details, editEstimate, productData, dispatch, companyAndUnitData]
   );
 
   const generatePDF = async () => {
@@ -385,8 +477,13 @@ const LeadEstimate = ({ leadid }) => {
                       }))
                     : []
                 }
-                onChange={(e) => {
+                onChange={(e, x) => {
                   setSearchFields((prev) => ({ ...prev, searchText: e }));
+                  setCompanyAndUnitData((prev) => ({
+                    ...prev,
+                    companyName: x?.label,
+                    companyId: x?.value,
+                  }));
                   dispatch(getAllCompanyUnits(e));
                   dispatch(getAllContactDetailsById(e));
                 }}
@@ -425,7 +522,7 @@ const LeadEstimate = ({ leadid }) => {
           >
             <Form.Item
               label="Select company unit"
-              name="companyName"
+              name="unitId"
               rules={[
                 { required: true, message: "please enter the company name" },
               ]}
@@ -442,6 +539,11 @@ const LeadEstimate = ({ leadid }) => {
                     : []
                 }
                 onChange={(e, compUnit) => {
+                  setCompanyAndUnitData((prev) => ({
+                    ...prev,
+                    unitName: compUnit?.label,
+                    unitId: compUnit?.value,
+                  }));
                   form.setFieldsValue({
                     gstType: compUnit?.gstType,
                     gstNo: compUnit?.gstNo,
@@ -632,20 +734,38 @@ const LeadEstimate = ({ leadid }) => {
                 />
               </Form.Item>
             </Flex>
-            <LeadEstimateForApproval leadid={leadid}  />
-            <div  
+            <Flex
+              gap={4}
+              align="center"
+              style={{ marginBottom: "12px", fontWeight: "bold" }}
+            >
+              <Switch
+                size="small"
+                onChange={(e) => {
+                  setDiscount(e);
+                  form.validateFields([
+                    "professionalFees",
+                    "serviceCharge",
+                    "govermentfees",
+                    "otherFees",
+                  ]);
+                }}
+              />{" "}
+              <Text strong>Discount aggrement</Text>
+            </Flex>
+            <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "46% 25% 25%",
-                gridTemplateRows: "repeat(4, auto)", 
-                gap: "16px", 
+                gridTemplateRows: "repeat(4, auto)",
+                gap: "16px",
                 width: "100%",
               }}
             >
-              {productData?.productAmount?.map((ele) => {
+              {productData?.productAmount?.map((ele,idx) => {
                 if (ele?.name === "Professional fees") {
                   return (
-                    <>
+                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}  >
                       <Form.Item
                         style={{ width: "100%" }}
                         label="Professional fees"
@@ -656,9 +776,13 @@ const LeadEstimate = ({ leadid }) => {
                             required: true,
                             message: "Please give professional fees",
                           },
-                          validateGreaterThanOrEqual(
-                            productFees?.professionalFees
-                          ),
+                          {
+                            validator: (_, value) =>
+                              validateGreaterThanOrEqual(
+                                productFees?.professionalFees,
+                                discount
+                              ).validator(_, value),
+                          },
                         ]}
                       >
                         <Input />
@@ -686,13 +810,13 @@ const LeadEstimate = ({ leadid }) => {
                           }
                         />
                       </Form.Item>
-                    </>
+                    </div>
                   );
                 }
 
                 if (ele?.name === "Service charges") {
                   return (
-                    <>
+                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}>
                       <Form.Item
                         label="Service charges"
                         name="serviceCharge"
@@ -702,9 +826,14 @@ const LeadEstimate = ({ leadid }) => {
                             required: true,
                             message: "please give service charges",
                           },
-                          validateGreaterThanOrEqual(
-                            productFees?.serviceCharge
-                          ),
+
+                          {
+                            validator: (_, value) =>
+                              validateGreaterThanOrEqual(
+                                productFees?.serviceCharge,
+                                discount
+                              ).validator(_, value),
+                          },
                         ]}
                       >
                         <Input />
@@ -725,22 +854,26 @@ const LeadEstimate = ({ leadid }) => {
                           }
                         />
                       </Form.Item>
-                    </>
+                    </div>
                   );
                 }
 
                 if (ele?.name === "Government") {
                   return (
-                    <>
+                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}>
                       <Form.Item
                         label="Government fees"
                         name="govermentfees"
                         layout="horizontal"
                         rules={[
                           { required: true, message: "please give govt. fees" },
-                          validateGreaterThanOrEqual(
-                            productFees?.govermentfees
-                          ),
+                          {
+                            validator: (_, value) =>
+                              validateGreaterThanOrEqual(
+                                productFees?.govermentfees,
+                                discount
+                              ).validator(_, value),
+                          },
                         ]}
                       >
                         <Input />
@@ -761,13 +894,13 @@ const LeadEstimate = ({ leadid }) => {
                           }
                         />
                       </Form.Item>
-                    </>
+                    </div>
                   );
                 }
 
                 if (ele?.name === "Other fees") {
                   return (
-                    <>
+                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}>
                       <Form.Item
                         label="Other fees"
                         name="otherFees"
@@ -777,7 +910,14 @@ const LeadEstimate = ({ leadid }) => {
                             required: true,
                             message: "please give other fees charges",
                           },
-                          validateGreaterThanOrEqual(productFees?.otherFees),
+
+                          {
+                            validator: (_, value) =>
+                              validateGreaterThanOrEqual(
+                                productFees?.otherFees,
+                                discount
+                              ).validator(_, value),
+                          },
                         ]}
                       >
                         <Input />
@@ -796,7 +936,7 @@ const LeadEstimate = ({ leadid }) => {
                           disabled={productFees?.otherGst === 0 ? false : true}
                         />
                       </Form.Item>
-                    </>
+                    </div>
                   );
                 }
 

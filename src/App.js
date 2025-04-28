@@ -106,6 +106,8 @@ import CompanyApproval from "./Main/Accounts/CompanyApproval";
 import ServingCompanyPage from "./Main/Sales/Leads/ServingCompanyPage";
 import PaymentApproval from "./Main/Accounts/PaymentApproval";
 import EstimateApproval from "./Main/HR/EstimateApproval";
+import DiscountedEstimates from "./Main/Sales/DiscountedEstimates";
+
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -308,6 +310,7 @@ function App() {
                 <Route path="oppurtities" element={<Opportunities />} />
                 <Route path="company" element={<MainComanyModule />} />
                 <Route path="newcompanies" element={<NewCompany />} />
+                <Route path="discountedEstimates" element={<DiscountedEstimates />} />
                 <Route path="servingcompanies" element={<ServingCompanyPage />} />
                 <Route
                   path="newcompanies/:companyId/details"

@@ -822,7 +822,7 @@ export const getEstimateByLeadId = createAsyncThunk(
   "getEstimateByLeadId",
   async (id) => {
     const response = await getQuery(
-      `/leadService/api/v1/leadEstimate/getEstimateFormByLeadId?leadId=${id}`
+      `/leadService/api/v1/leadEstimate/getEstimateByLeadId?leadId=${id}`
     );
     return response.data;
   }
@@ -951,11 +951,32 @@ export const createEstimateForApprovals = createAsyncThunk(
   }
 );
 
+export const editEstimateForApprovals = createAsyncThunk(
+  "editEstimateForApprovals",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/leadEstimate/editEstimateForm`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllEstimateForApproval = createAsyncThunk(
   "getAllApprovalForEstimate",
   async (status) => {
     const response = await getQuery(
       `/leadService/api/v1/leadEstimate/getAllEstimateForm?status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getEstimateListByUserId = createAsyncThunk(
+  "getEstimateListByUserId",
+  async ({ userId, status }) => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getAllEstimateFormByUserId?status=${status}&userId=${userId}`
     );
     return response.data;
   }
@@ -1046,6 +1067,7 @@ export const LeadSlice = createSlice({
     contactListByCompanyId: [],
     productDataByLeadName: {},
     estimateApprovalList: [],
+    estimateListByUser: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1569,6 +1591,14 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllEstimateForApproval.rejected, (state, action) => {
       state.estimateApprovalList = [];
+    });
+
+    builder.addCase(getEstimateListByUserId.pending, (state, action) => {});
+    builder.addCase(getEstimateListByUserId.fulfilled, (state, action) => {
+      state.estimateListByUser = action?.payload;
+    });
+    builder.addCase(getEstimateListByUserId.rejected, (state, action) => {
+      state.estimateListByUser = [];
     });
   },
 });

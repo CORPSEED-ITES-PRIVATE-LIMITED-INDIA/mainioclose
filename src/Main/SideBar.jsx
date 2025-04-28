@@ -131,6 +131,12 @@ const SideBar = () => {
                     },
                     {
                       label: (
+                        <Link to={`${userid}/sales/discountedEstimates`}>Discounted estimate</Link>
+                      ),
+                      key: "discountedEstimates",
+                    },
+                    {
+                      label: (
                         <Link to={`${userid}/sales/company`}>Company</Link>
                       ),
                       key: "company",
@@ -225,6 +231,12 @@ const SideBar = () => {
               //   label: <Link to={`${userid}/sales/vendors-request`}>Vendors request</Link>,
               //   key: "vendors-request",
               // },
+              {
+                label: (
+                  <Link to={`${userid}/sales/discountedEstimates`}>Discounted estimate</Link>
+                ),
+                key: "discountedEstimates",
+              },
               {
                 label: <Link to={`${userid}/sales/company`}>Company</Link>,
                 key: "company",
@@ -355,7 +367,9 @@ const SideBar = () => {
               },
               {
                 label: (
-                  <Link to={`/erp/${userid}/hr/estimateApproval`}>Estimate approval</Link>
+                  <Link to={`/erp/${userid}/hr/estimateApproval`}>
+                    Estimate approval
+                  </Link>
                 ),
                 key: "estimateApproval",
               },
@@ -398,7 +412,9 @@ const SideBar = () => {
               },
               {
                 label: (
-                  <Link to={`/erp/${userid}/hr/estimateApproval`}>Estimate approval</Link>
+                  <Link to={`/erp/${userid}/hr/estimateApproval`}>
+                    Estimate approval
+                  </Link>
                 ),
                 key: "estimateApproval",
               },

@@ -18,7 +18,7 @@ const CHECK_INTERVAL = 1000;
 const MainPage = () => {
   const { userid } = useParams();
   const dispatch = useDispatch();
-  const navigate=useNavigate()
+  const navigate = useNavigate();
   const intervalRef = useRef(null);
   const lastActiveRef = useRef(Date.now());
   const items = SideBar();
@@ -27,7 +27,6 @@ const MainPage = () => {
   const {
     token: { colorBgContainer },
   } = theme.useToken();
-
 
   const resetInactivityTimer = () => {
     lastActiveRef.current = Date.now();
@@ -64,9 +63,6 @@ const MainPage = () => {
       clearInterval(intervalRef.current);
     };
   }, []);
-
-
-
 
   useEffect(() => {
     dispatch(getDepartmentOfUser(userid));
@@ -113,6 +109,13 @@ const MainPage = () => {
           collapsible
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
+          style={{
+            maxHeight: '95vh',
+            overflowY: 'auto',
+            scrollbarWidth: 'none',       // Firefox
+            msOverflowStyle: 'none',      // IE 10+
+          }}
+          className="custom-scroll"
         >
           <div className="demo-logo-vertical" />
           <Menu
