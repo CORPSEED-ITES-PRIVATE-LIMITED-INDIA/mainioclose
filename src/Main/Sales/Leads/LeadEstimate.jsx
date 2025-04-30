@@ -201,8 +201,7 @@ const LeadEstimate = ({ leadid }) => {
   }, [productData, form]);
 
   const handleEditEstimate = useCallback(() => {
-
-    console.log('dkjfbaskljdhflkasj',details)
+    console.log("dkjfbaskljdhflkasj", details);
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactDetailsById(details?.companyId));
     setCompanyAndUnitData((prev) => ({
@@ -467,7 +466,7 @@ const LeadEstimate = ({ leadid }) => {
               />
               <Select
                 showSearch
-                style={{ width: "80%" }}
+                style={{ width: "100%" }}
                 placeholder="Search companies ..."
                 options={
                   seachCompniesList?.length > 0
@@ -511,8 +510,7 @@ const LeadEstimate = ({ leadid }) => {
           <Form
             form={form}
             layout="vertical"
-            size="small"
-            style={{ width: "60%" }}
+            style={{ width: "90%" }}
             scrollToFirstError
             initialValues={{
               cc: [""],
@@ -520,149 +518,177 @@ const LeadEstimate = ({ leadid }) => {
             }}
             onFinish={handleFinish}
           >
-            <Form.Item
-              label="Select company unit"
-              name="unitId"
-              rules={[
-                { required: true, message: "please enter the company name" },
-              ]}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+              }}
             >
-              <Select
-                showSearch
-                options={
-                  allCompanyUnits?.length > 0
-                    ? allCompanyUnits?.map((item) => ({
-                        label: item?.companyName,
-                        value: item?.id,
-                        ...item,
-                      }))
-                    : []
-                }
-                onChange={(e, compUnit) => {
-                  setCompanyAndUnitData((prev) => ({
-                    ...prev,
-                    unitName: compUnit?.label,
-                    unitId: compUnit?.value,
-                  }));
-                  form.setFieldsValue({
-                    gstType: compUnit?.gstType,
-                    gstNo: compUnit?.gstNo,
-                    companyAge: compUnit?.companyAge,
-                    address: compUnit?.address,
-                    city: compUnit?.city,
-                    country: compUnit?.country,
-                    state: compUnit?.state,
-                    primaryContact: compUnit?.primaryContact,
-                    panNo: compUnit?.panNo,
-                    primaryContact: compUnit?.primaryContact?.id,
-                    secondaryContact: compUnit?.secondaryContact?.id,
-                    assigneeId: compUnit?.assignee?.id,
-                    primaryPinCode: compUnit?.primaryPinCode,
-                    secondaryAddress: compUnit?.sAddress,
-                    secondaryCity: compUnit?.sCity,
-                    secondaryState: compUnit?.sState,
-                    secondaryCountry: compUnit?.sCountry,
-                    secondaryPinCode: compUnit?.secondaryPinCode,
-                  });
-                }}
-              />
-            </Form.Item>
-            <Form.Item label="GST type" name="gstType">
-              <Select
-                showSearch
-                allowClear
-                options={[
-                  { label: "Registered", value: "Registered" },
-                  { label: "Unregisterded", value: "Unregistered" },
-                  { label: "SE2", value: "SE2" },
-                  { label: "International", value: "International" },
+              <Form.Item
+                label="Select company unit"
+                name="unitId"
+                rules={[
+                  { required: true, message: "please enter the company name" },
                 ]}
-              />
-            </Form.Item>
-            <Form.Item label="GST number" name="gstNo">
-              <Input />
-            </Form.Item>
-            <Form.List name="cc">
-              {(fields, { add, remove }, { errors }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Form.Item
-                      {...(index === 0
-                        ? { label: "Email", required: true }
-                        : {})}
-                      key={field.key}
-                    >
-                      <Form.Item
-                        {...field}
-                        validateTrigger={["onChange", "onBlur"]}
-                        rules={[
-                          {
-                            required: true,
-                            whitespace: true,
-                            message: "Please input email",
-                          },
-                        ]}
-                        noStyle
-                      >
-                        <Input placeholder="example@xyz.com" />
-                      </Form.Item>
-                      {fields.length > 1 ? (
-                        <Button
-                          size="small"
-                          style={{ margin: "0px 4px" }}
-                          onClick={() => remove(field.name)}
-                          danger
-                        >
-                          <Icon icon="fluent:delete-24-regular" /> Delete
-                        </Button>
-                      ) : null}
-                    </Form.Item>
-                  ))}
-                  <Form.Item>
-                    <Button type="dashed" onClick={() => add()}>
-                      Add Cc
-                    </Button>
-                    <Form.ErrorList errors={errors} />
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-            <Form.Item
-              label="Pan number"
-              name="panNo"
-              rules={[{ required: true, message: "please enter pan number" }]}
+              >
+                <Select
+                  showSearch
+                  options={
+                    allCompanyUnits?.length > 0
+                      ? allCompanyUnits?.map((item) => ({
+                          label: item?.companyName,
+                          value: item?.id,
+                          ...item,
+                        }))
+                      : []
+                  }
+                  onChange={(e, compUnit) => {
+                    setCompanyAndUnitData((prev) => ({
+                      ...prev,
+                      unitName: compUnit?.label,
+                      unitId: compUnit?.value,
+                    }));
+                    form.setFieldsValue({
+                      gstType: compUnit?.gstType,
+                      gstNo: compUnit?.gstNo,
+                      companyAge: compUnit?.companyAge,
+                      address: compUnit?.address,
+                      city: compUnit?.city,
+                      country: compUnit?.country,
+                      state: compUnit?.state,
+                      primaryContact: compUnit?.primaryContact,
+                      panNo: compUnit?.panNo,
+                      primaryContact: compUnit?.primaryContact?.id,
+                      secondaryContact: compUnit?.secondaryContact?.id,
+                      assigneeId: compUnit?.assignee?.id,
+                      primaryPinCode: compUnit?.primaryPinCode,
+                      secondaryAddress: compUnit?.sAddress,
+                      secondaryCity: compUnit?.sCity,
+                      secondaryState: compUnit?.sState,
+                      secondaryCountry: compUnit?.sCountry,
+                      secondaryPinCode: compUnit?.secondaryPinCode,
+                    });
+                  }}
+                />
+              </Form.Item>
+              <Form.Item label="GST type" name="gstType">
+                <Select
+                  showSearch
+                  allowClear
+                  options={[
+                    { label: "Registered", value: "Registered" },
+                    { label: "Unregisterded", value: "Unregistered" },
+                    { label: "SE2", value: "SE2" },
+                    { label: "International", value: "International" },
+                  ]}
+                />
+              </Form.Item>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+              }}
             >
-              <Input maxLength={10} />
-            </Form.Item>
-            <Row>
-              <Col span={11}>
-                <Form.Item label="Company age" name="companyAge">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={2} />
-              <Col span={11}>
-                <Form.Item
-                  label="GST documents"
-                  name="gstDocuments"
-                  getValueFromEvent={normFile}
-                  valuePropName="fileList"
+              <div>
+                <Form.List name="cc">
+                  {(fields, { add, remove }, { errors }) => (
+                    <>
+                      {fields.map((field, index) => (
+                        <Form.Item
+                          {...(index === 0
+                            ? { label: "Email", required: true }
+                            : {})}
+                          key={field.key}
+                        >
+                          <Form.Item
+                            {...field}
+                            validateTrigger={["onChange", "onBlur"]}
+                            rules={[
+                              {
+                                required: true,
+                                whitespace: true,
+                                message: "Please input email",
+                              },
+                            ]}
+                          >
+                            <Input placeholder="example@xyz.com" />
+                          </Form.Item>
+                          {fields.length > 1 ? (
+                            <Button
+                              size="small"
+                              style={{ margin: "0px 4px" }}
+                              onClick={() => remove(field.name)}
+                              danger
+                            >
+                              <Icon icon="fluent:delete-24-regular" /> Delete
+                            </Button>
+                          ) : null}
+                        </Form.Item>
+                      ))}
+                      <Form.Item>
+                        <Button type="dashed" onClick={() => add()}>
+                          Add Cc
+                        </Button>
+                        <Form.ErrorList errors={errors} />
+                      </Form.Item>
+                    </>
+                  )}
+                </Form.List>
+              </div>
+
+              <Form.Item label="GST number" name="gstNo">
+                <Input maxLength={15} disabled />
+              </Form.Item>
+
+              <Form.Item
+                label="Pan number"
+                name="panNo"
+                rules={[{ required: true, message: "please enter pan number" }]}
+              >
+                <Input maxLength={10} disabled />
+              </Form.Item>
+
+              <Form.Item
+                label="Established date"
+                name="establishDate"
+                rules={[
+                  {
+                    required: true,
+                    message: "please select the established date",
+                  },
+                ]}
+              >
+                <DatePicker
+                  style={{ width: "100%" }}
+                  disabledDate={(current) => {
+                    return current && current > dayjs().endOf("day");
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="GST documents"
+                name="gstDocuments"
+                getValueFromEvent={normFile}
+                valuePropName="fileList"
+              >
+                <Upload
+                  action="/leadService/api/v1/upload/uploadimageToFileSystem"
+                  listType="text"
+                  multiple={true}
                 >
-                  <Upload
-                    action="/leadService/api/v1/upload/uploadimageToFileSystem"
-                    listType="text"
-                    multiple={true}
-                  >
-                    <Button size="small">
-                      <Icon icon="fluent:arrow-upload-20-filled" />
-                      Upload
-                    </Button>
-                  </Upload>
-                </Form.Item>
-              </Col>
-            </Row>
-            <Flex vertical style={{ width: "100%" }}>
-              <Flex justify="space-between">
+                  <Button style={{ width: "100%" }}>
+                    <Icon icon="fluent:arrow-upload-20-filled" />
+                    Upload
+                  </Button>
+                </Upload>
+              </Form.Item>
+
+              <Flex vertical gap={12}>
                 <Text className="heading-text">Contacts</Text>
                 <Button onClick={() => setOpenModal(true)}>
                   Add new contact
@@ -672,7 +698,10 @@ const LeadEstimate = ({ leadid }) => {
                 label="Primary contacts"
                 name="primaryContact"
                 rules={[
-                  { required: true, message: "please select primary contacts" },
+                  {
+                    required: true,
+                    message: "please select primary contacts",
+                  },
                 ]}
               >
                 <Select
@@ -733,7 +762,8 @@ const LeadEstimate = ({ leadid }) => {
                   }
                 />
               </Form.Item>
-            </Flex>
+            </div>
+
             <Flex
               gap={4}
               align="center"
@@ -753,19 +783,22 @@ const LeadEstimate = ({ leadid }) => {
               />{" "}
               <Text strong>Discount aggrement</Text>
             </Flex>
+
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "46% 25% 25%",
-                gridTemplateRows: "repeat(4, auto)",
+                gridTemplateColumns: "50% 50%",
                 gap: "16px",
                 width: "100%",
               }}
             >
-              {productData?.productAmount?.map((ele,idx) => {
+              {productData?.productAmount?.map((ele, idx) => {
                 if (ele?.name === "Professional fees") {
                   return (
-                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}  >
+                    <div
+                      key={`${idx}product`}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
                       <Form.Item
                         style={{ width: "100%" }}
                         label="Professional fees"
@@ -816,7 +849,10 @@ const LeadEstimate = ({ leadid }) => {
 
                 if (ele?.name === "Service charges") {
                   return (
-                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}>
+                    <div
+                      key={`${idx}product`}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
                       <Form.Item
                         label="Service charges"
                         name="serviceCharge"
@@ -841,7 +877,10 @@ const LeadEstimate = ({ leadid }) => {
                       <Form.Item
                         name="serviceCode"
                         rules={[
-                          { required: true, message: "please give HSN number" },
+                          {
+                            required: true,
+                            message: "please give HSN number",
+                          },
                         ]}
                       >
                         <Input placeholder="HSN number" />
@@ -860,13 +899,19 @@ const LeadEstimate = ({ leadid }) => {
 
                 if (ele?.name === "Government") {
                   return (
-                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}>
+                    <div
+                      key={`${idx}product`}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
                       <Form.Item
                         label="Government fees"
                         name="govermentfees"
                         layout="horizontal"
                         rules={[
-                          { required: true, message: "please give govt. fees" },
+                          {
+                            required: true,
+                            message: "please give govt. fees",
+                          },
                           {
                             validator: (_, value) =>
                               validateGreaterThanOrEqual(
@@ -881,7 +926,10 @@ const LeadEstimate = ({ leadid }) => {
                       <Form.Item
                         name="govermentCode"
                         rules={[
-                          { required: true, message: "please give HSN number" },
+                          {
+                            required: true,
+                            message: "please give HSN number",
+                          },
                         ]}
                       >
                         <Input placeholder="HSN number" />
@@ -900,7 +948,10 @@ const LeadEstimate = ({ leadid }) => {
 
                 if (ele?.name === "Other fees") {
                   return (
-                    <div key={`${idx}product`} style={{display:'flex',alignItems:'center'}}>
+                    <div
+                      key={`${idx}product`}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
                       <Form.Item
                         label="Other fees"
                         name="otherFees"
@@ -925,7 +976,10 @@ const LeadEstimate = ({ leadid }) => {
                       <Form.Item
                         name="otherCode"
                         rules={[
-                          { required: true, message: "please give HSN number" },
+                          {
+                            required: true,
+                            message: "please give HSN number",
+                          },
                         ]}
                       >
                         <Input placeholder="HSN number" />
@@ -943,204 +997,212 @@ const LeadEstimate = ({ leadid }) => {
                 return null;
               })}
             </div>
-            <Form.Item
-              label="Select sales person name"
-              name="assigneeId"
-              rules={[
-                { required: true, message: "please select sales person" },
-              ]}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+              }}
             >
-              <Select
-                options={
-                  leadUserNew?.length > 0
-                    ? leadUserNew?.map((ele) => ({
-                        label: ele?.fullName,
-                        value: ele?.id,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Row>
-              <Flex gap={30} align="center" justify="space-between">
-                <Form.Item
-                  label="Order number"
-                  name="orderNumber"
-                  rules={[
-                    { required: true, message: "please give order number" },
-                  ]}
-                >
-                  <Input />
-                </Form.Item>
-
-                <Form.Item
-                  label="Purchase date"
-                  name="purchaseDate"
-                  rules={[{ required: true, message: "please select date" }]}
-                >
-                  <DatePicker />
-                </Form.Item>
-              </Flex>
-            </Row>
-            <Form.Item
-              label="Invoice notes"
-              name="invoiceNote"
-              rules={[
-                { required: true, message: "please write invoice notes" },
-              ]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item
-              label="Remarks For Operation"
-              name="remarksForOption"
-              rules={[{ required: true, message: "please write remarks" }]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item
-              label="Address"
-              name="address"
-              rules={[{ required: true, message: "please enter address" }]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item label="Country" name="country">
-              <Select
-                showSearch
-                options={
-                  countryList?.length > 0
-                    ? countryList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                        id: item?.id,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => {
-                  dispatch(getAllStatesByCountryId(x?.id));
-                }}
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item label="State" name="state">
-              <Select
-                showSearch
-                options={
-                  statesList?.length > 0
-                    ? statesList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                        id: item?.id,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item label="City" name="city">
-              <Select
-                showSearch
-                options={
-                  citiesList?.length > 0
-                    ? citiesList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>{" "}
-            <Form.Item
-              label="Pin code"
-              name="primaryPinCode"
-              rules={[{ required: true, message: "please enter pincode" }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Secondary address"
-              name="secondaryAddress"
-              rules={[
-                { required: true, message: "please enter secondary address" },
-              ]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item label="Country" name="secondaryCountry">
-              <Select
-                showSearch
-                options={
-                  countryList?.length > 0
-                    ? countryList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                        id: item?.id,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => {
-                  dispatch(getAllStatesByCountryId(x?.id));
-                }}
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item label="State" name="secondaryState">
-              <Select
-                showSearch
-                options={
-                  statesList?.length > 0
-                    ? statesList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                        id: item?.id,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item label="City" name="secondaryCity">
-              <Select
-                showSearch
-                options={
-                  citiesList?.length > 0
-                    ? citiesList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item
-              label="Secondary address pincode"
-              name="secondaryPinCode"
-              rules={[
-                { required: true, message: "please enter secondary pincode" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
+              <Form.Item
+                label="Select sales person name"
+                name="assigneeId"
+                rules={[
+                  { required: true, message: "please select sales person" },
+                ]}
+              >
+                <Select
+                  options={
+                    leadUserNew?.length > 0
+                      ? leadUserNew?.map((ele) => ({
+                          label: ele?.fullName,
+                          value: ele?.id,
+                        }))
+                      : []
+                  }
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              <Form.Item
+                label="Order number"
+                name="orderNumber"
+                rules={[
+                  { required: true, message: "please give order number" },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="Purchase date"
+                name="purchaseDate"
+                rules={[{ required: true, message: "please select date" }]}
+              >
+                <DatePicker
+                  style={{ width: "100%" }}
+                  disabledDate={(current) => {
+                    return current && current > dayjs().endOf("day");
+                  }}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Invoice notes"
+                name="invoiceNote"
+                rules={[
+                  { required: true, message: "please write invoice notes" },
+                ]}
+              >
+                <Input.TextArea />
+              </Form.Item>
+              <Form.Item
+                label="Remarks For Operation"
+                name="remarksForOption"
+                rules={[{ required: true, message: "please write remarks" }]}
+              >
+                <Input.TextArea />
+              </Form.Item>
+              <Form.Item
+                label="Address"
+                name="address"
+                rules={[{ required: true, message: "please enter address" }]}
+              >
+                <Input.TextArea />
+              </Form.Item>
+              <Form.Item label="Country" name="country">
+                <Select
+                  showSearch
+                  options={
+                    countryList?.length > 0
+                      ? countryList?.map((item) => ({
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
+                      : []
+                  }
+                  onChange={(e, x) => {
+                    dispatch(getAllStatesByCountryId(x?.id));
+                  }}
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              <Form.Item label="State" name="state">
+                <Select
+                  showSearch
+                  options={
+                    statesList?.length > 0
+                      ? statesList?.map((item) => ({
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
+                      : []
+                  }
+                  onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              <Form.Item label="City" name="city">
+                <Select
+                  showSearch
+                  options={
+                    citiesList?.length > 0
+                      ? citiesList?.map((item) => ({
+                          label: item?.name,
+                          value: item?.name,
+                        }))
+                      : []
+                  }
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>{" "}
+              <Form.Item
+                label="Pin code"
+                name="primaryPinCode"
+                rules={[{ required: true, message: "please enter pincode" }]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="Secondary address"
+                name="secondaryAddress"
+                rules={[
+                  { required: true, message: "please enter secondary address" },
+                ]}
+              >
+                <Input.TextArea />
+              </Form.Item>
+              <Form.Item label="Country" name="secondaryCountry">
+                <Select
+                  showSearch
+                  options={
+                    countryList?.length > 0
+                      ? countryList?.map((item) => ({
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
+                      : []
+                  }
+                  onChange={(e, x) => {
+                    dispatch(getAllStatesByCountryId(x?.id));
+                  }}
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              <Form.Item label="State" name="secondaryState">
+                <Select
+                  showSearch
+                  options={
+                    statesList?.length > 0
+                      ? statesList?.map((item) => ({
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
+                      : []
+                  }
+                  onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              <Form.Item label="City" name="secondaryCity">
+                <Select
+                  showSearch
+                  options={
+                    citiesList?.length > 0
+                      ? citiesList?.map((item) => ({
+                          label: item?.name,
+                          value: item?.name,
+                        }))
+                      : []
+                  }
+                  filterOption={(input, option) =>
+                    option.label.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              <Form.Item
+                label="Secondary address pincode"
+                name="secondaryPinCode"
+                rules={[
+                  { required: true, message: "please enter secondary pincode" },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            </div>
             <Form.Item>
               <Button htmlType="submit" type="primary">
                 Submit

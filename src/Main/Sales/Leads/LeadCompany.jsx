@@ -58,6 +58,9 @@ import {
 import dayjs from "dayjs";
 const { Text } = Typography;
 
+const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
 const LeadCompany = ({ edit, data }) => {
   const [form] = Form.useForm();
   const dispatch = useDispatch();
@@ -109,19 +112,99 @@ const LeadCompany = ({ edit, data }) => {
     dispatch(getAllCompanyType());
   }, [dispatch]);
 
-  const handlePanNumberChange = (e) => {
-    const value = e.target.value;
-    const upperCaseValue = value.toUpperCase();
-    const isValid = /^[A-Z0-9]+$/.test(upperCaseValue);
-    form.setFieldsValue({ panNo: isValid ? upperCaseValue : value });
-  };
-
   const handleSearchCompanies = () => {
     dispatch(searchCompaniesForCompany(searchDetail)).then((res) => {
       if (res.meta.requestStatus === "fulfilled") {
         setOpenDropdown(true);
       }
     });
+  };
+
+  const formatPANInput = (value) => {
+    value = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    let formatted = "";
+
+    for (let i = 0; i < value.length && i < 10; i++) {
+      if (i < 5) {
+        if (/[A-Z]/.test(value[i])) formatted += value[i];
+      } else if (i < 9) {
+        if (/[0-9]/.test(value[i])) formatted += value[i];
+      } else if (i === 9) {
+        if (/[A-Z]/.test(value[i])) formatted += value[i];
+      }
+    }
+
+    return formatted;
+  };
+
+  const formatGSTInput = (value) => {
+    value = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    let formatted = "";
+
+    for (let i = 0; i < value.length && i < 15; i++) {
+      if (i < 2) {
+        if (/[0-9]/.test(value[i])) formatted += value[i];
+      } else if (i < 7) {
+        if (/[A-Z]/.test(value[i])) formatted += value[i];
+      } else if (i < 11) {
+        if (/[0-9]/.test(value[i])) formatted += value[i];
+      } else if (i === 11) {
+        if (/[A-Z]/.test(value[i])) formatted += value[i];
+      } else if (i === 12) {
+        if (/[0-9A-Z]/.test(value[i])) formatted += value[i];
+      } else if (i === 13) {
+        if (value[i] === "Z") formatted += value[i];
+      } else if (i === 14) {
+        if (/[0-9A-Z]/.test(value[i])) formatted += value[i];
+      }
+    }
+
+    return formatted;
+  };
+
+  const validateGSTWithState = (_, value) => {
+    const stateName = form.getFieldValue("state");
+    const selectedState = statesList.find((s) => s.name === stateName);
+
+    console.log("fdvdsjbvjksdb", selectedState, value);
+
+    if (!value || !gstRegex.test(value)) {
+      return Promise.reject("Invalid GST Number");
+    }
+
+    if (selectedState && value.slice(0, 2) !== selectedState.gstCode) {
+      return Promise.reject("GST code does not match selected state");
+    }
+
+    return Promise.resolve();
+  };
+
+  const validateStateWithGST = (_, value) => {
+    const gstNumber = form.getFieldValue("gstNo");
+    const selectedState = statesList.find((s) => s.id === value);
+
+    console.log("fdvdsjbvjksdb", selectedState, value);
+
+    if (selectedState && gstNumber.slice(0, 2) !== selectedState.gstCode) {
+      return Promise.reject("GST code does not match selected state");
+    }
+
+    return Promise.resolve();
+  };
+
+  const validateGSTWithServingState = (_, value) => {
+    const stateName = form.getFieldValue("servingState");
+    const selectedState = statesList.find((s) => s.name === stateName);
+
+    if (!value || !gstRegex.test(value)) {
+      return Promise.reject("Invalid GST Number");
+    }
+
+    if (selectedState && value.slice(0, 2) !== selectedState.gstCode) {
+      return Promise.reject("GST code does not match selected state");
+    }
+
+    return Promise.resolve();
   };
 
   const handleButtonClick = useCallback(() => {
@@ -132,36 +215,6 @@ const LeadCompany = ({ edit, data }) => {
     dispatch(getAllCountries());
     setOpenModal(true);
   }, [form, data, dispatch, userid]);
-
-  const validateGstNumber = (dispatch) => async (_, value) => {
-    if (!value) {
-      return Promise.reject(new Error("please enter the GST number"));
-    }
-
-    const pattern = /^[a-zA-Z0-9]{15}$/;
-    if (!pattern.test(value)) {
-      return Promise.reject(
-        new Error("please enter 15 digit alphanumeric characters")
-      );
-    }
-    try {
-      const resp = await dispatch(getCompanyDetailsByGst(value));
-      if (resp.meta.requestStatus === "fulfilled") {
-        const temp = resp?.payload;
-        if (temp?.length === 0) {
-          return Promise.resolve();
-        } else {
-          return Promise.reject(
-            new Error("company already exists with this GST number")
-          );
-        }
-      } else {
-        return Promise.reject(new Error("error validating GST"));
-      }
-    } catch (error) {
-      return Promise.reject(new Error("error validating GST"));
-    }
-  };
 
   const copyBillingToShipping = () => {
     const values = form.getFieldsValue();
@@ -331,19 +384,19 @@ const LeadCompany = ({ edit, data }) => {
                   options={
                     seachCompniesList?.length > 0
                       ? seachCompniesList?.map((item) => ({
-                        label: (
-                          <Flex justify="space-between" align="center">
-                            <Text>{item?.companyName}</Text>
-                            <Button
-                              size="small"
-                              onClick={() => handleMoveToUnits(item)}
-                            >
-                              Add unit
-                            </Button>
-                          </Flex>
-                        ),
-                        value: item?.companyId,
-                      }))
+                          label: (
+                            <Flex justify="space-between" align="center">
+                              <Text>{item?.companyName}</Text>
+                              <Button
+                                size="small"
+                                onClick={() => handleMoveToUnits(item)}
+                              >
+                                Add unit
+                              </Button>
+                            </Flex>
+                          ),
+                          value: item?.companyId,
+                        }))
                       : []
                   }
                 />
@@ -407,10 +460,10 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       companyTypeList?.length > 0
                         ? companyTypeList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                          ...item,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -434,10 +487,10 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       gstTypeList?.gstBussinessType?.length > 0
                         ? gstTypeList?.gstBussinessType?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                          ...item,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -462,10 +515,10 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       businessTypeList?.gstTypePrice?.length > 0
                         ? businessTypeList?.gstTypePrice?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                          ...item,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -488,12 +541,16 @@ const LeadCompany = ({ edit, data }) => {
                         required: true,
                         message: "",
                       },
-                      {
-                        validator: validateGstNumber(dispatch),
-                      },
+                      { validator: validateGSTWithState },
                     ]}
                   >
-                    <Input maxLength={15} />
+                    <Input
+                      maxLength={15}
+                      onChange={(e) => {
+                        const formatted = formatGSTInput(e.target.value);
+                        form.setFieldsValue({ gstNo: formatted });
+                      }}
+                    />
                   </Form.Item>
                 )}
 
@@ -503,12 +560,23 @@ const LeadCompany = ({ edit, data }) => {
                     name="panNo"
                     rules={[
                       { required: true, message: "please enter pan number" },
+                      {
+                        validator: (_, value) =>
+                          panRegex.test(value)
+                            ? Promise.resolve()
+                            : Promise.reject("Invalid PAN Number"),
+                      },
                     ]}
                   >
-                    <Input maxLength={10} onChange={handlePanNumberChange} />
+                    <Input
+                      maxLength={10}
+                      onChange={(e) => {
+                        const formatted = formatPANInput(e.target.value);
+                        form.setFieldsValue({ panNo: formatted });
+                      }}
+                    />
                   </Form.Item>
                 )}
-
 
                 <Form.Item
                   label="Rating"
@@ -642,69 +710,6 @@ const LeadCompany = ({ edit, data }) => {
                 )}
 
                 <Form.Item
-                  label="Business type"
-                  name="businessType"
-                  rules={[
-                    {
-                      required: true,
-                      message: "please select the business type",
-                    },
-                  ]}
-                >
-                  <Select
-                    showSearch
-                    allowClear
-                    options={
-                      businessTypeList?.gstTypePrice?.length > 0
-                        ? businessTypeList?.gstTypePrice?.map((item) => ({
-                            label: item?.name,
-                            value: item?.id,
-                            ...item,
-                          }))
-                        : []
-                    }
-                    onChange={(e, x) => {
-                      setGstMand((prev) => ({
-                        ...prev,
-                        gst: x?.gstPresent,
-                        pan: x?.panPresent,
-                      }));
-                      form.resetFields(["gstNo", "panNo"]);
-                    }}
-                  />
-                </Form.Item>
-
-                {gstMand?.gst && (
-                  <Form.Item
-                    label="Gst number"
-                    name="gstNo"
-                    rules={[
-                      {
-                        required: true,
-                        message: "",
-                      },
-                      {
-                        validator: validateGstNumber(dispatch),
-                      },
-                    ]}
-                  >
-                    <Input maxLength={15} />
-                  </Form.Item>
-                )}
-
-                {gstMand?.pan && (
-                  <Form.Item
-                    label="Pan number"
-                    name="panNo"
-                    rules={[
-                      { required: true, message: "please enter pan number" },
-                    ]}
-                  >
-                    <Input maxLength={10} onChange={handlePanNumberChange} />
-                  </Form.Item>
-                )}
-
-                <Form.Item
                   label="Company incorporate date"
                   name="establishDate"
                   rules={[
@@ -735,9 +740,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       allUsers?.length > 0
                         ? allUsers?.map((item) => ({
-                          label: item?.fullName,
-                          value: item?.id,
-                        }))
+                            label: item?.fullName,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -759,9 +764,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       allIndustry?.length > 0
                         ? allIndustry?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -793,9 +798,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       subIndustryListById?.length > 0
                         ? subIndustryListById?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -824,9 +829,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       subSubIndustryListById?.length > 0
                         ? subSubIndustryListById?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -857,9 +862,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       industryDataListById?.length > 0
                         ? industryDataListById?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -942,9 +947,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       desiginationList?.length > 0
                         ? desiginationList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1023,10 +1028,10 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       countryList?.length > 0
                         ? countryList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                          id: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -1043,24 +1048,51 @@ const LeadCompany = ({ edit, data }) => {
                   label="State"
                   name="state"
                   rules={[
-                    { required: true, message: "please enter the state" },
+                    { required: true, message: "Please select the state" },
+                    // { validator: validateStateWithGST },
                   ]}
                 >
                   <Select
                     showSearch
-                    options={
-                      statesList?.length > 0
-                        ? statesList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                          id: item?.id,
-                        }))
-                        : []
-                    }
-                    onChange={(e, x) => {
-                      console.log("jhbfjhbvfkjdfh", e, x);
-                      dispatch(getAllCitiesByStateId(x?.id));
+                    options={statesList?.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                      gstCode: item.gstCode,
+                      stateName: item.name,
+                    }))}
+                    onChange={(e, option) => {
+                      dispatch(getAllCitiesByStateId(e));
                       form.resetFields(["city"]);
+
+                      // Trigger revalidation for both state and gstNo
+                      form.validateFields(["state", "gstNo"]).catch(() => {
+                        // Force error display in case user touched the fields
+                        const gstNumber = form.getFieldValue("gstNo");
+                        const selectedState = statesList.find(
+                          (s) => s.id === e
+                        );
+
+                        if (
+                          selectedState &&
+                          gstNumber &&
+                          gstNumber.slice(0, 2) !== selectedState.gstCode
+                        ) {
+                          form.setFields([
+                            {
+                              name: "gstNo",
+                              errors: [
+                                "GST number does not match selected state",
+                              ],
+                            },
+                            {
+                              name: "state",
+                              errors: [
+                                "Selected state does not match GST number",
+                              ],
+                            },
+                          ]);
+                        }
+                      });
                     }}
                     filterOption={(input, option) =>
                       option.label.toLowerCase().includes(input.toLowerCase())
@@ -1078,9 +1110,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       citiesList?.length > 0
                         ? citiesList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1153,9 +1185,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       desiginationList?.length > 0
                         ? desiginationList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1221,10 +1253,10 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       countryList?.length > 0
                         ? countryList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                          id: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -1242,10 +1274,10 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       statesList?.length > 0
                         ? statesList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                          ...item,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                            ...item,
+                          }))
                         : []
                     }
                     onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1261,9 +1293,9 @@ const LeadCompany = ({ edit, data }) => {
                     options={
                       citiesList?.length > 0
                         ? citiesList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1277,15 +1309,14 @@ const LeadCompany = ({ edit, data }) => {
                 </Form.Item>
               </div>
 
-              <Divider
-                style={{ color: "#cccccc", margin: "32px 0px" }}
-                orientation="center"
-              >
-                Serving company details
-              </Divider>
-
               {createFormAs === "consultant" && (
                 <>
+                  <Divider
+                    style={{ color: "#cccccc", margin: "32px 0px" }}
+                    orientation="center"
+                  >
+                    Serving company details
+                  </Divider>
                   <div className="form-grid-col-2">
                     <Form.Item
                       label="Serving company name"
@@ -1316,10 +1347,10 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           companyTypeList?.length > 0
                             ? companyTypeList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                              ...item,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                                ...item,
+                              }))
                             : []
                         }
                         onChange={(e, x) => setGstMand(x?.gstPresent)}
@@ -1334,12 +1365,37 @@ const LeadCompany = ({ edit, data }) => {
                           required: true,
                           message: "",
                         },
+                        { validator: validateGSTWithServingState },
+                      ]}
+                    >
+                      <Input
+                        maxLength={15}
+                        onChange={(e) => {
+                          const formatted = formatGSTInput(e.target.value);
+                          form.setFieldsValue({ servingGstNo: formatted });
+                        }}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="Serving company pan number"
+                      name="servingPanNo"
+                      rules={[
                         {
-                          validator: validateGstNumber(dispatch),
+                          validator: (_, value) =>
+                            panRegex.test(value)
+                              ? Promise.resolve()
+                              : Promise.reject("Invalid PAN Number"),
                         },
                       ]}
                     >
-                      <Input maxLength={15} />
+                      <Input
+                        maxLength={10}
+                        onChange={(e) => {
+                          const formatted = formatPANInput(e.target.value);
+                          form.setFieldsValue({ servingPanNo: formatted });
+                        }}
+                      />
                     </Form.Item>
 
                     <Form.Item
@@ -1376,9 +1432,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           allIndustry?.length > 0
                             ? allIndustry?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1412,9 +1468,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           subIndustryListById?.length > 0
                             ? subIndustryListById?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1448,9 +1504,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           subSubIndustryListById?.length > 0
                             ? subSubIndustryListById?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1483,9 +1539,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           industryDataListById?.length > 0
                             ? industryDataListById?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1494,13 +1550,6 @@ const LeadCompany = ({ edit, data }) => {
                             .includes(input.toLowerCase())
                         }
                       />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="Serving company pan number"
-                      name="servingPanNo"
-                    >
-                      <Input maxLength={10} onChange={handlePanNumberChange} />
                     </Form.Item>
 
                     <Form.Item
@@ -1577,9 +1626,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           desiginationList?.length > 0
                             ? desiginationList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1663,10 +1712,10 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           countryList?.length > 0
                             ? countryList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                              id: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.name,
+                                id: item?.id,
+                              }))
                             : []
                         }
                         onChange={(e, x) => {
@@ -1692,10 +1741,10 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           statesList?.length > 0
                             ? statesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                              id: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.name,
+                                id: item?.id,
+                              }))
                             : []
                         }
                         onChange={(e, x) =>
@@ -1721,9 +1770,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           citiesList?.length > 0
                             ? citiesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                            }))
+                                label: item?.name,
+                                value: item?.name,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1801,9 +1850,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           desiginationList?.length > 0
                             ? desiginationList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1879,9 +1928,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           countryList?.length > 0
                             ? countryList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                            }))
+                                label: item?.name,
+                                value: item?.name,
+                              }))
                             : []
                         }
                         onChange={(e, x) => {
@@ -1901,9 +1950,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           statesList?.length > 0
                             ? statesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                            }))
+                                label: item?.name,
+                                value: item?.name,
+                              }))
                             : []
                         }
                         onChange={(e, x) =>
@@ -1923,9 +1972,9 @@ const LeadCompany = ({ edit, data }) => {
                         options={
                           citiesList?.length > 0
                             ? citiesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                            }))
+                                label: item?.name,
+                                value: item?.name,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>

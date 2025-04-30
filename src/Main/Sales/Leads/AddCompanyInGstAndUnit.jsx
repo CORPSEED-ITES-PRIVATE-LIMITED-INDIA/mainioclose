@@ -106,7 +106,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
   return (
     <>
       <Button type="primary" onClick={() => setOpenModal(true)}>
-        {gstField ? "Add Gst" : "Add company unit"}
+        {gstField ? "Add new Gst" : "Add company unit"}
       </Button>
       <Modal
         title={gstField ? "Add GST unit " : "Add company unit"}
@@ -246,7 +246,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
               />
             </Form.Item>
 
-              <Form.Item
+              {/* <Form.Item
                 label="Gst number"
                 name="gstNo"
                 rules={[
@@ -257,7 +257,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                 ]}
               >
                 <Input maxLength={15} />
-              </Form.Item>
+              </Form.Item> */}
           </div>
 
           <Divider style={{ color: "#cccccc" }} orientation="center">
