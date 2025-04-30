@@ -204,6 +204,8 @@ const LeadEstimate = ({ leadid }) => {
     console.log("dkjfbaskljdhflkasj", details);
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactDetailsById(details?.companyId));
+    getAllStatesByCountryId(details?.primaryCountry?.id)
+    getAllCitiesByStateId(details?.primaryState?.id)
     setCompanyAndUnitData((prev) => ({
       ...prev,
       companyId: details?.companyId,
@@ -787,7 +789,7 @@ const LeadEstimate = ({ leadid }) => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "50% 50%",
+                gridTemplateColumns: "1fr",
                 gap: "16px",
                 width: "100%",
               }}
@@ -857,6 +859,7 @@ const LeadEstimate = ({ leadid }) => {
                         label="Service charges"
                         name="serviceCharge"
                         layout="horizontal"
+                        style={{ width: "100%" }}
                         rules={[
                           {
                             required: true,
@@ -876,6 +879,7 @@ const LeadEstimate = ({ leadid }) => {
                       </Form.Item>
                       <Form.Item
                         name="serviceCode"
+                        style={{ width: "100%" }}
                         rules={[
                           {
                             required: true,
@@ -885,7 +889,7 @@ const LeadEstimate = ({ leadid }) => {
                       >
                         <Input placeholder="HSN number" />
                       </Form.Item>
-                      <Form.Item name="serviceGst">
+                      <Form.Item name="serviceGst" style={{ width: "100%" }}>
                         <Input
                           placeholder="Gst %"
                           disabled={
@@ -907,6 +911,7 @@ const LeadEstimate = ({ leadid }) => {
                         label="Government fees"
                         name="govermentfees"
                         layout="horizontal"
+                        style={{ width: "100%" }}
                         rules={[
                           {
                             required: true,
@@ -925,6 +930,7 @@ const LeadEstimate = ({ leadid }) => {
                       </Form.Item>
                       <Form.Item
                         name="govermentCode"
+                        style={{ width: "100%" }}
                         rules={[
                           {
                             required: true,
@@ -934,7 +940,7 @@ const LeadEstimate = ({ leadid }) => {
                       >
                         <Input placeholder="HSN number" />
                       </Form.Item>
-                      <Form.Item name="govermentGst">
+                      <Form.Item name="govermentGst" style={{ width: "100%" }}>
                         <Input
                           placeholder="Gst %"
                           disabled={
@@ -956,6 +962,7 @@ const LeadEstimate = ({ leadid }) => {
                         label="Other fees"
                         name="otherFees"
                         layout="horizontal"
+                        style={{ width: "100%" }}
                         rules={[
                           {
                             required: true,
@@ -975,6 +982,7 @@ const LeadEstimate = ({ leadid }) => {
                       </Form.Item>
                       <Form.Item
                         name="otherCode"
+                        style={{ width: "100%" }}
                         rules={[
                           {
                             required: true,
@@ -984,7 +992,7 @@ const LeadEstimate = ({ leadid }) => {
                       >
                         <Input placeholder="HSN number" />
                       </Form.Item>
-                      <Form.Item name="otherGst">
+                      <Form.Item name="otherGst" style={{ width: "100%" }}>
                         <Input
                           placeholder="Gst %"
                           disabled={productFees?.otherGst === 0 ? false : true}
@@ -1069,7 +1077,7 @@ const LeadEstimate = ({ leadid }) => {
               >
                 <Input.TextArea />
               </Form.Item>
-              <Form.Item label="Country" name="country">
+              <Form.Item label="Country" name="country" rules={[{required:true,message:'please select country'}]}>
                 <Select
                   showSearch
                   options={
@@ -1089,7 +1097,7 @@ const LeadEstimate = ({ leadid }) => {
                   }
                 />
               </Form.Item>
-              <Form.Item label="State" name="state">
+              <Form.Item label="State" name="state" rules={[{required:true,message:'please select state'}]} >
                 <Select
                   showSearch
                   options={
@@ -1101,7 +1109,36 @@ const LeadEstimate = ({ leadid }) => {
                         }))
                       : []
                   }
-                  onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                  // onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                  onChange={(e, option) => {
+                    dispatch(getAllCitiesByStateId(e));
+                    dispatch(getAllCitiesByStateId(option?.id))
+                    form.resetFields(["city"]);
+                    form.validateFields(["state", "gstNo"]).catch(() => {
+                      const gstNumber = form.getFieldValue("gstNo");
+                      const selectedState = statesList.find((s) => s.id === e);
+                      if (
+                        selectedState &&
+                        gstNumber &&
+                        gstNumber.slice(0, 2) !== selectedState.gstCode
+                      ) {
+                        form.setFields([
+                          {
+                            name: "gstNo",
+                            errors: [
+                              "GST number does not match selected state",
+                            ],
+                          },
+                          {
+                            name: "state",
+                            errors: [
+                              "Selected state does not match GST number",
+                            ],
+                          },
+                        ]);
+                      }
+                    });
+                  }}
                   filterOption={(input, option) =>
                     option.label.toLowerCase().includes(input.toLowerCase())
                   }
@@ -1426,7 +1463,7 @@ const LeadEstimate = ({ leadid }) => {
                               <Text>{details?.secondaryState},</Text>
                             )}
                             {details?.secondaryCountry && (
-                              <Text>{details?.secondaryCountry}</Text>
+                              <Text>{details?.secondaryCountry?.name}</Text>
                             )}
                           </Flex>
                         </Flex>

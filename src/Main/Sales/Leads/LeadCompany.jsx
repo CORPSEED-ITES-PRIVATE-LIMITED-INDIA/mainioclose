@@ -1063,15 +1063,11 @@ const LeadCompany = ({ edit, data }) => {
                     onChange={(e, option) => {
                       dispatch(getAllCitiesByStateId(e));
                       form.resetFields(["city"]);
-
-                      // Trigger revalidation for both state and gstNo
                       form.validateFields(["state", "gstNo"]).catch(() => {
-                        // Force error display in case user touched the fields
                         const gstNumber = form.getFieldValue("gstNo");
                         const selectedState = statesList.find(
                           (s) => s.id === e
                         );
-
                         if (
                           selectedState &&
                           gstNumber &&
