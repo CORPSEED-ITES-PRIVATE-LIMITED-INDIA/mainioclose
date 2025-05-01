@@ -26,7 +26,12 @@ import {
   getGstDetailsByCompanyId,
 } from "../../../Toolkit/Slices/LeadSlice";
 import { Icon } from "@iconify/react";
-import { maskEmail, maskMobileNumber } from "../../Common/Commons";
+import {
+  formatGSTInput,
+  gstRegex,
+  maskEmail,
+  maskMobileNumber,
+} from "../../Common/Commons";
 import {
   getAllCitiesByStateId,
   getAllCountries,
@@ -40,7 +45,7 @@ import { getAllUsers } from "../../../Toolkit/Slices/UsersSlice";
 
 const AddCompanyInGstAndUnit = ({ gstField }) => {
   const dispatch = useDispatch();
-  const { companyId } = useParams();
+  const { companyId, stateId, countryId } = useParams();
   const [form] = Form.useForm();
   const allIndustry = useSelector((state) => state.industry.allMainIndustry);
   const subIndustryListById = useSelector(
@@ -54,7 +59,9 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
     (state) => state.industry.industryDataListBySubSubIndustryId
   );
   const contactList = useSelector((state) => state?.leads?.allContactList);
-  const contactListById = useSelector((state) => state?.leads?.contactListByCompanyId);
+  const contactListById = useSelector(
+    (state) => state?.leads?.contactListByCompanyId
+  );
   const desiginationList = useSelector(
     (state) => state.setting.clientDesiginationList
   );
@@ -82,6 +89,31 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
     dispatch(getAllUsers());
     dispatch(getAllCompanyType());
   }, [dispatch]);
+
+  const validateGSTWithState = (_, value) => {
+    const stateName = form.getFieldValue("state");
+    const selectedState = statesList.find((s) => s.name === stateName);
+
+    console.log("fdvdsjbvjksdb", selectedState, value);
+
+    if (!value || !gstRegex.test(value)) {
+      return Promise.reject("Invalid GST Number");
+    }
+
+    if (selectedState && value.slice(0, 2) !== selectedState.gstCode) {
+      return Promise.reject("GST code does not match selected state");
+    }
+
+    return Promise.resolve();
+  };
+
+  useEffect(()=>{
+    if(!gstField){
+      dispatch(getAllCitiesByStateId(stateId))
+    }
+  },[dispatch,gstField,stateId])
+
+
 
   const handleFinish = (values) => {
     values.gstDocuments = values.gstDocuments?.[0]?.response;
@@ -245,8 +277,8 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                 }
               />
             </Form.Item>
-
-              {/* <Form.Item
+            {gstField && (
+              <Form.Item
                 label="Gst number"
                 name="gstNo"
                 rules={[
@@ -254,10 +286,18 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
                     required: true,
                     message: "please enter gst number",
                   },
+                  { validator: validateGSTWithState },
                 ]}
               >
-                <Input maxLength={15} />
-              </Form.Item> */}
+                <Input
+                  maxLength={15}
+                  onChange={(e) => {
+                    const formatted = formatGSTInput(e.target.value);
+                    form.setFieldsValue({ gstNo: formatted });
+                  }}
+                />
+              </Form.Item>
+            )}
           </div>
 
           <Divider style={{ color: "#cccccc" }} orientation="center">
@@ -436,58 +476,95 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
             >
               <Input.TextArea />
             </Form.Item>
+            {gstField && (
+              <>
+                <Form.Item
+                  label="Country"
+                  name="country"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please enter the country",
+                    },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    options={
+                      countryList?.length > 0
+                        ? countryList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      dispatch(getAllStatesByCountryId(x?.id));
+                    }}
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
 
-            <Form.Item
-              label="Country"
-              name="country"
-              rules={[
-                {
-                  required: true,
-                  message: "please enter the country",
-                },
-              ]}
-            >
-              <Select
-                showSearch
-                options={
-                  countryList?.length > 0
-                    ? countryList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                        id: item?.id,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => {
-                  dispatch(getAllStatesByCountryId(x?.id));
-                }}
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item
-              label="State"
-              name="state"
-              rules={[{ required: true, message: "please enter the state" }]}
-            >
-              <Select
-                showSearch
-                options={
-                  statesList?.length > 0
-                    ? statesList?.map((item) => ({
-                        label: item?.name,
-                        value: item?.name,
-                        id: item?.id,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
+                <Form.Item
+                  label="State"
+                  name="state"
+                  rules={[
+                    { required: true, message: "please enter the state" },
+                    // { validator: validateStateWithGST },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    options={
+                      statesList?.length > 0
+                        ? statesList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
+                        : []
+                    }
+                    // onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
+                    onChange={(e, option) => {
+                      dispatch(getAllCitiesByStateId(option?.id));
+                      form.resetFields(["city"]);
+                      form.validateFields(["state", "gstNo"]).catch(() => {
+                        const gstNumber = form.getFieldValue("gstNo");
+                        const selectedState = statesList.find(
+                          (s) => s.id === option?.id
+                        );
+                        if (
+                          selectedState &&
+                          gstNumber &&
+                          gstNumber.slice(0, 2) !== selectedState.gstCode
+                        ) {
+                          form.setFields([
+                            {
+                              name: "gstNo",
+                              errors: [
+                                "GST number does not match selected state",
+                              ],
+                            },
+                            {
+                              name: "state",
+                              errors: [
+                                "Selected state does not match GST number",
+                              ],
+                            },
+                          ]);
+                        }
+                      });
+                    }}
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              </>
+            )}
 
             <Form.Item
               label="City"
@@ -519,7 +596,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
             </Form.Item>
           </div>
 
-          <Divider style={{ color: "#cccccc" }} orientation="center">
+          {/* <Divider style={{ color: "#cccccc" }} orientation="center">
             Secondary details
           </Divider>
 
@@ -747,7 +824,7 @@ const AddCompanyInGstAndUnit = ({ gstField }) => {
             <Form.Item label="PinCode" name="secondaryPinCode">
               <Input />
             </Form.Item>
-          </div>
+          </div> */}
         </Form>
       </Modal>
     </>

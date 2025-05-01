@@ -333,7 +333,7 @@ function App() {
                   element={<ConsultantCompanyUnitsPage />}
                 />
                 <Route
-                  path="newcompanies/:companyId/details/:state/companyUnit"
+                  path="newcompanies/:companyId/newCompaniesUnit/:state/:stateId/companyUnit"
                   element={<NewCompanyUnits />}
                 />
                 <Route path="project" element={<ProjectPage />} />

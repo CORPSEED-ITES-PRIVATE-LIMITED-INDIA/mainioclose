@@ -2,14 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getGstDetailsByCompanyId } from "../../../Toolkit/Slices/LeadSlice";
 import { Link, useParams } from "react-router-dom";
-import {
-  Button,
-  Flex,
-  Form,
-  Input,
-  Modal,
-  notification,
-} from "antd";
+import { Button, Flex, Form, Input, Modal, notification } from "antd";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import AddCompanyInGstAndUnit from "./AddCompanyInGstAndUnit";
@@ -59,7 +52,7 @@ const CompanyDetailPage = () => {
       render: (_, props) => (
         <Link
           className="link-heading"
-          to={`/erp/${userid}/sales/newcompanies/${companyId}/details/${props?.state}/companyUnit`}
+          to={`/erp/${userid}/sales/newcompanies/${companyId}/newCompaniesUnit/${props?.state}/${props?.stateId}/companyUnit`}
         >
           {props?.state}
         </Link>
