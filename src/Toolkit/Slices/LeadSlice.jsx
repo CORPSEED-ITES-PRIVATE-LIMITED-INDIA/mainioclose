@@ -1002,6 +1002,16 @@ export const disApproveEstimateApproval = createAsyncThunk(
   }
 );
 
+export const getAllEstimateHistory = createAsyncThunk(
+  "getAllEstimateHistory",
+  async (estimateId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getEstimateHistoryByFormId?estimateId=${estimateId}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1068,6 +1078,7 @@ export const LeadSlice = createSlice({
     productDataByLeadName: {},
     estimateApprovalList: [],
     estimateListByUser: [],
+    estimateHistoryList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1599,6 +1610,14 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getEstimateListByUserId.rejected, (state, action) => {
       state.estimateListByUser = [];
+    });
+
+    builder.addCase(getAllEstimateHistory.pending, (state, action) => {});
+    builder.addCase(getAllEstimateHistory.fulfilled, (state, action) => {
+      state.estimateHistoryList = action?.payload;
+    });
+    builder.addCase(getAllEstimateHistory.rejected, (state, action) => {
+      state.estimateHistoryList = [];
     });
   },
 });

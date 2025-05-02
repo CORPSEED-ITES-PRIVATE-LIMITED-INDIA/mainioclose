@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Button, Flex, Form, Input, notification, Popover, Select } from "antd";
+import {
+  Button,
+  Flex,
+  Form,
+  Input,
+  Modal,
+  notification,
+  Popover,
+  Select,
+  Table,
+} from "antd";
 import { Icon } from "@iconify/react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -8,6 +18,7 @@ import {
   approveEstimateApproval,
   disApproveEstimateApproval,
   getAllEstimateForApproval,
+  getAllEstimateHistory,
 } from "../../Toolkit/Slices/LeadSlice";
 import OverFlowText from "../../components/OverFlowText";
 import ColComp from "../../components/small/ColComp";
@@ -18,10 +29,14 @@ import MainHeading from "../../components/design/MainHeading";
 const EstimateApproval = () => {
   const dispatch = useDispatch();
   const { userid } = useParams();
+  const [form] = Form.useForm();
   const [form1] = Form.useForm();
   const [form2] = Form.useForm();
   const estimateApprovalList = useSelector(
     (state) => state.leads.estimateApprovalList
+  );
+  const estimateHistoryList = useSelector(
+    (state) => state.leads.estimateHistoryList
   );
   const unusedBankStatementList = useSelector(
     (state) => state.account.unusedBankStatementList
@@ -33,6 +48,8 @@ const EstimateApproval = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [typeStatus, setTypeStatus] = useState("initiated");
+  const [openModal, setOpenModal] = useState(false);
+  const [estimateData, setEstimateData] = useState(null);
 
   useEffect(() => {
     setFilteredData(estimateApprovalList);
@@ -52,38 +69,6 @@ const EstimateApproval = () => {
   useEffect(() => {
     dispatch(getAllEstimateForApproval(typeStatus));
   }, [dispatch, typeStatus]);
-
-  const handleApprovedEstimate = (values) => {
-    dispatch(approveEstimateApproval({ ...values, userId: userid }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Estimate disapproved successfully !.",
-          });
-          form1.resetFields();
-          dispatch(getAllEstimateForApproval());
-        } else {
-          notification.error({ message: "Something went wrong !." });
-        }
-      })
-      .catch(() => notification.error({ message: "Something went wrong !." }));
-  };
-
-  const handleDisapprovedEstimate = (values) => {
-    dispatch(disApproveEstimateApproval({ ...values, userId: userid }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Estimate disapproved successfully !.",
-          });
-          form2.resetFields();
-          dispatch(getAllEstimateForApproval());
-        } else {
-          notification.error({ message: "Something went wrong !." });
-        }
-      })
-      .catch(() => notification.error({ message: "Something went wrong !." }));
-  };
 
   const columns = [
     {
@@ -181,51 +166,7 @@ const EstimateApproval = () => {
       title: "Payment date",
       render: (date) => dayjs(date).format("DD-MM-YYYY"),
     },
-    {
-      dataIndex: "docPersent",
-      title: "Document %",
-    },
-    {
-      dataIndex: "filingPersent",
-      title: "Filing %",
-    },
-    {
-      dataIndex: "liasoningPersent",
-      title: "Liasoning %",
-    },
-    {
-      dataIndex: "certificatePersent",
-      title: "Certificate %",
-    },
-    {
-      dataIndex: "tdsPresent",
-      title: "TDS present",
-      render: (info) => (info ? "Yes" : "No"),
-    },
-    {
-      dataIndex: "tdsAmount",
-      title: "TDS amount",
-    },
-    {
-      dataIndex: "tdsPercent",
-      title: "TDS %",
-    },
-    {
-      dataIndex: "tdsAmount",
-      title: "TDS amount",
-    },
-    {
-      dataIndex: "govermentfees",
-      title: "Govt fee",
-    },
-    {
-      dataIndex: "govermentGst",
-      title: "Govt gst %",
-    },
-    {
-      dataIndex: "govermentGstPercent",
-      title: "Govt gst amount",
-    },
+
     {
       dataIndex: "professionalFees",
       title: "Professional fee",
@@ -237,31 +178,6 @@ const EstimateApproval = () => {
     {
       dataIndex: "professionalGstPercent",
       title: "Professional gst amount",
-      width: 250,
-    },
-    {
-      dataIndex: "serviceCharge",
-      title: "Service charge",
-    },
-    {
-      dataIndex: "serviceGst",
-      title: "Service gst %",
-    },
-    {
-      dataIndex: "serviceGstPercent",
-      title: "Service gst amount",
-    },
-    {
-      dataIndex: "otherFees",
-      title: "Other fee",
-    },
-    {
-      dataIndex: "otherGst",
-      title: "Other gst %",
-    },
-    {
-      dataIndex: "otherGstPercent",
-      title: "Other gst amount",
     },
     {
       dataIndex: "totalAmount",
@@ -292,118 +208,67 @@ const EstimateApproval = () => {
     {
       title: "Approvals",
       dataIndex: "stage",
-      render: (_, info) =>
-        info?.status === "approved" ? null : info?.status === "disapproved" ? (
-          <Flex gap={4}>
-            <Popover
-              trigger={"click"}
-              placement="bottomLeft"
-              content={
-                <Form
-                  form={form1}
-                  layout="vertical"
-                  onFinish={(values) =>
-                    handleApprovedEstimate({
-                      ...values,
-                      estimateFormId: info?.id,
-                    })
-                  }
-                >
-                  <Form.Item
-                    label="Comment"
-                    name="comment"
-                    rules={[
-                      { required: true, message: "please enter comment" },
-                    ]}
-                  >
-                    <Input.TextArea />
-                  </Form.Item>
-                  <Form.Item>
-                    <Button htmlType="submit" type="primary">
-                      Submit
-                    </Button>
-                  </Form.Item>
-                </Form>
-              }
-              title="Approve estimate"
-            >
-              <Button>Approve</Button>
-            </Popover>
-          </Flex>
-        ) : (
-          <Flex gap={4}>
-            <Popover
-              trigger={"click"}
-              placement="bottomLeft"
-              content={
-                <Form
-                  form={form1}
-                  layout="vertical"
-                  onFinish={(values) =>
-                    handleApprovedEstimate({
-                      ...values,
-                      estimateFormId: info?.id,
-                    })
-                  }
-                >
-                  <Form.Item
-                    label="Comment"
-                    name="comment"
-                    rules={[
-                      { required: true, message: "please enter comment" },
-                    ]}
-                  >
-                    <Input.TextArea />
-                  </Form.Item>
-                  <Form.Item>
-                    <Button htmlType="submit" type="primary">
-                      Submit
-                    </Button>
-                  </Form.Item>
-                </Form>
-              }
-              title="Approve estimate"
-            >
-              <Button>Approve</Button>
-            </Popover>
-            <Popover
-              trigger={"click"}
-              placement="bottomLeft"
-              content={
-                <Form
-                  form={form2}
-                  layout="vertical"
-                  onFinish={(values) =>
-                    handleDisapprovedEstimate({
-                      ...values,
-                      estimateFormId: info?.id,
-                    })
-                  }
-                >
-                  <Form.Item
-                    label="Comment"
-                    name="comment"
-                    rules={[
-                      { required: true, message: "please enter comment" },
-                    ]}
-                  >
-                    <Input.TextArea />
-                  </Form.Item>
-                  <Form.Item>
-                    <Button htmlType="submit" type="primary">
-                      Submit
-                    </Button>
-                  </Form.Item>
-                </Form>
-              }
-              title="Disapprove estimate"
-            >
-              <Button>Disapprove</Button>
-            </Popover>
-          </Flex>
-        ),
+      render: (_, info) => (
+        <Button
+          onClick={() => {
+            setEstimateData(info);
+            setOpenModal(info);
+            dispatch(getAllEstimateHistory(info?.id));
+          }}
+        >
+          Action
+        </Button>
+      ),
     },
   ];
+
+  const handleFinish = (values) => {
+    if (values?.actionType === "approved") {
+      dispatch(
+        approveEstimateApproval({
+          ...values,
+          estimateFormId: estimateData?.id,
+          userId: userid,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Estimate disapproved successfully !.",
+            });
+            form1.resetFields();
+            dispatch(getAllEstimateForApproval());
+          } else {
+            notification.error({ message: "Something went wrong !." });
+          }
+        })
+        .catch(() =>
+          notification.error({ message: "Something went wrong !." })
+        );
+    } else {
+      dispatch(
+        disApproveEstimateApproval({
+          ...values,
+          estimateFormId: estimateData?.id,
+          userId: userid,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Estimate disapproved successfully !.",
+            });
+            form2.resetFields();
+            dispatch(getAllEstimateForApproval());
+          } else {
+            notification.error({ message: "Something went wrong !." });
+          }
+        })
+        .catch(() =>
+          notification.error({ message: "Something went wrong !." })
+        );
+    }
+  };
 
   return (
     <TableOutlet>
@@ -442,6 +307,44 @@ const EstimateApproval = () => {
           rowKey={(record) => record?.id}
         />
       </Flex>
+      <Modal
+        title="Estimate approval"
+        open={openModal}
+        onCancel={() => setOpenModal(false)}
+        onClose={() => setOpenModal(false)}
+        okText="Submit"
+        onOk={() => form.submit()}
+      >
+        <Table
+          dataSource={estimateHistoryList}
+          columns={[
+            { title: "Professional amount", dataIndex: "professionalFees" },
+            { title: "Professional code", dataIndex: "profesionalCode" },
+            { title: "Professional fees", dataIndex: "professionalFees" },
+          ]}
+        />
+        <Form layout="vertical" form={form} onFinish={handleFinish}>
+          <Form.Item
+            label="Action"
+            name="actionType"
+            rules={[{ required: true, message: "please select action" }]}
+          >
+            <Select
+              options={[
+                { label: "Approved", value: "approved" },
+                { label: "Disapproved", value: "disapproved" },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Comment"
+            name="comment"
+            rules={[{ required: true, message: "please enter comment" }]}
+          >
+            <Input.TextArea />
+          </Form.Item>
+        </Form>
+      </Modal>
     </TableOutlet>
   );
 };
