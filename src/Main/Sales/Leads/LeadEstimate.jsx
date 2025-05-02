@@ -631,7 +631,7 @@ const LeadEstimate = ({ leadid }) => {
                   <Input maxLength={10} disabled />
                 </Form.Item>
 
-                <Form.Item
+                {/* <Form.Item
                   label="Established date"
                   name="establishDate"
                   rules={[
@@ -647,7 +647,7 @@ const LeadEstimate = ({ leadid }) => {
                       return current && current > dayjs().endOf("day");
                     }}
                   />
-                </Form.Item>
+                </Form.Item> */}
 
                 <Form.Item
                   label="GST documents"
