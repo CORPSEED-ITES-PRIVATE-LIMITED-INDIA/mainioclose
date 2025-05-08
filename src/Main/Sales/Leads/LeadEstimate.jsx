@@ -17,6 +17,7 @@ import {
   Spin,
   Divider,
   Switch,
+  InputNumber,
 } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -48,6 +49,11 @@ import {
   getAllCompanyType,
   getAllCompanyUnits,
 } from "../../../Toolkit/Slices/CompanySlice";
+import {
+  getAllBusinessArrangement,
+  getAllProductCategoryById,
+  getAllProductSubCategoryListByCategoryId,
+} from "../../../Toolkit/Slices/ProductSlice";
 const { Text, Title } = Typography;
 
 const LeadEstimate = ({ leadid }) => {
@@ -75,6 +81,16 @@ const LeadEstimate = ({ leadid }) => {
   const companyDetails = useSelector(
     (state) => state?.leads?.companyDetailsById
   );
+  const businessArrangementList = useSelector(
+    (state) => state?.product?.businessArrangementList
+  );
+  const productCategoryList = useSelector(
+    (state) => state?.product?.productCategoryList
+  );
+  const productSubcategoryList = useSelector(
+    (state) => state?.product?.productSubcategoryList
+  );
+
   const [openModal, setOpenModal] = useState(false);
   const [editEstimate, setEditEstimate] = useState(false);
   const [seachFields, setSearchFields] = useState({
@@ -100,6 +116,11 @@ const LeadEstimate = ({ leadid }) => {
     companyName: "",
     unitId: null,
     unitName: "",
+  });
+  const [productSubCategoryData, setProductSubCategoryData] = useState(null);
+  const [productSubCategoryFees, setProductSubCategoryFees] = useState({
+    actualPrice: 0,
+    gst: 0,
   });
 
   useEffect(() => {
@@ -151,6 +172,14 @@ const LeadEstimate = ({ leadid }) => {
       return temp[temp?.length - 1];
     }
   }
+
+  console.log("djkfbsdkjbskdjbsdkj", productData);
+
+  useEffect(() => {
+    if (productData?.id) {
+      dispatch(getAllBusinessArrangement(productData?.id));
+    }
+  }, [dispatch, productData]);
 
   useEffect(() => {
     productData?.productAmount?.forEach((item) => {
@@ -205,6 +234,17 @@ const LeadEstimate = ({ leadid }) => {
       }
     });
   }, [productData, form]);
+
+  const calculateTotalPriceWithGST = (actualPrice, quantity, gstString) => {
+    const price = parseFloat(actualPrice) || 0;
+    const qty = parseFloat(quantity) || 0;
+    const gst = parseInt(gstString) || 0;
+
+    const subtotal = price * qty;
+    const total = subtotal + (subtotal * gst) / 100;
+
+    return total.toFixed(2); // Return as string with 2 decimal places
+  };
 
   const handleEditEstimate = useCallback(() => {
     console.log("dkjfbaskljdhflkasj", details);
@@ -301,6 +341,7 @@ const LeadEstimate = ({ leadid }) => {
       values.companyId = companyAndUnitData?.companyId;
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
+      values.type = productData?.type;
       if (discount) {
         if (details?.discountEstimate) {
           values.estimateId = details?.id;
@@ -435,14 +476,14 @@ const LeadEstimate = ({ leadid }) => {
       size="large"
       spinning={estimateDetailLoading === "pending" ? true : false}
     >
-      <Flex justify="space-between" align="center" style={{ width: "100%" }}>
-        <Text className="heading-text">
+      <Flex justify="space-between" align="center" style={{ width: "100%",marginLeft: 16 }}>
+        <Title level={4} className="heading-text" style={{margin:0}}   >
           {Object.keys(details)?.length > 0 && !editEstimate
             ? "Estimate details"
             : editEstimate
             ? "Edit estimate"
             : "Create estimate"}
-        </Text>
+        </Title>
         <Flex justify="flex-end" gap={4}>
           {Object.keys(details)?.length > 0 && !editEstimate && (
             <Button onClick={generatePDF}>Export as pdf</Button>
@@ -464,9 +505,18 @@ const LeadEstimate = ({ leadid }) => {
             marginTop: "24px",
           }}
         >
-          <Flex vertical gap={4} style={{ marginBottom: "12px" }}>
-            <Text style={{ fontSize: 14 }}>Seach for companies </Text>
-            <Space.Compact style={{ width: "60%" }}>
+          <Flex
+            vertical
+            gap={4}
+            style={{ marginBottom: "12px", marginLeft: 16 }}
+          >
+            <Text
+              className="heading-text"
+              style={{ fontSize: 14, marginBottom: 8 }}
+            >
+              Seach for companies{" "}
+            </Text>
+            <Space.Compact style={{ width: "80%" }}>
               <Select
                 style={{ width: "20%" }}
                 options={[
@@ -531,6 +581,17 @@ const LeadEstimate = ({ leadid }) => {
             initialValues={{
               cc: [""],
               isConsultant: false,
+            }}
+            onValuesChange={(changedValues, allValues) => {
+              const { actualPrice, quantity, gst } = allValues;
+              if (actualPrice && quantity && gst !== undefined) {
+                const total = calculateTotalPriceWithGST(
+                  actualPrice,
+                  quantity,
+                  gst
+                );
+                form.setFieldsValue({ totalPrice: total });
+              }
             }}
             onFinish={handleFinish}
           >
@@ -828,10 +889,11 @@ const LeadEstimate = ({ leadid }) => {
                     "serviceCharge",
                     "govermentfees",
                     "otherFees",
+                    "actualPrice",
                   ]);
                 }}
               />{" "}
-              <Text strong>Discount approval</Text>
+              <Text className="heading-text">Discount approval</Text>
             </Flex>
 
             <div
@@ -847,37 +909,139 @@ const LeadEstimate = ({ leadid }) => {
               }}
             >
               <Text className="heading-text">Product info</Text>
-              {productData?.productAmount?.map((ele, idx) => {
-                if (ele?.name === "Professional fees") {
-                  return (
+
+              {productData?.type === "Product" ? (
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      width: "100%",
+                      gap: 8,
+                    }}
+                  >
+                    <Form.Item
+                      style={{ width: "100%" }}
+                      label="Select business arrangement"
+                      name="businessArrangmentId"
+                      rules={[
+                        {
+                          required: true,
+                          message: "please select business arrangement",
+                        },
+                      ]}
+                    >
+                      <Select
+                        showSearch
+                        options={
+                          businessArrangementList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          })) || []
+                        }
+                        onChange={(e) => {
+                          dispatch(getAllProductCategoryById(e));
+                          form.resetFields([
+                            "productCategoryId",
+                            "productSubCategoryId",
+                          ]);
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      style={{ width: "100%" }}
+                      label="Select product category"
+                      name="productCategoryId"
+                      rules={[
+                        {
+                          required: true,
+                          message: "please select product category",
+                        },
+                      ]}
+                    >
+                      <Select
+                        showSearch
+                        options={
+                          productCategoryList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          })) || []
+                        }
+                        onChange={(e) => {
+                          dispatch(getAllProductSubCategoryListByCategoryId(e));
+                          form.resetFields(["productSubCategoryId"]);
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      style={{ width: "100%" }}
+                      label="Select product sub category"
+                      name="productSubCategoryId"
+                      rules={[
+                        {
+                          required: true,
+                          message: "please select product sub category",
+                        },
+                      ]}
+                    >
+                      <Select
+                        showSearch
+                        options={
+                          productSubcategoryList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          })) || []
+                        }
+                        onChange={(e, x) => {
+                          setProductSubCategoryData(x);
+                          form.setFieldsValue({
+                            actualPrice: x?.productFees,
+                            gstCode: x?.productCode,
+                            gst: x?.productGst,
+                          });
+                          setProductSubCategoryFees((prev) => ({
+                            ...prev,
+                            actualPrice: x?.productFees,
+                            gst: x?.productGst,
+                          }));
+                        }}
+                      />
+                    </Form.Item>
+                  </div>
+
+                  {Object.keys(productSubCategoryData || {})?.length > 0 && (
                     <div
-                      key={`${idx}product`}
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
                       <Form.Item
                         style={{ width: "100%" }}
-                        label="Professional fees"
-                        name="professionalFees"
-                        layout="horizontal"
+                        label="Actual price / kg"
+                        name="actualPrice"
                         rules={[
                           {
                             required: true,
-                            message: "Please give professional fees",
+                            message: "Please give actual price",
                           },
                           {
                             validator: (_, value) =>
                               validateGreaterThanOrEqual(
-                                productFees?.professionalFees,
+                                productSubCategoryFees?.actualPrice,
                                 discount
                               ).validator(_, value),
                           },
                         ]}
                       >
-                        <Input />
+                        <InputNumber
+                          controls={false}
+                          style={{ width: "100%" }}
+                        />
                       </Form.Item>
                       <Form.Item
                         style={{ width: "100%" }}
-                        name="professionalCode"
+                        label="HSN number"
+                        name="gstCode"
                         rules={[
                           {
                             required: true,
@@ -888,176 +1052,277 @@ const LeadEstimate = ({ leadid }) => {
                         <Input placeholder="Hsn number" />
                       </Form.Item>
                       <Form.Item
-                        name="profesionalGst"
+                        label="Gst %"
+                        name="gst"
                         style={{ width: "100%" }}
                       >
                         <Input
                           placeholder="Gst %"
                           disabled={
-                            productFees?.profesionalGst == 0 ? false : true
+                            productSubCategoryFees?.gst == 0 ? false : true
                           }
                         />
                       </Form.Item>
-                    </div>
-                  );
-                }
-
-                if (ele?.name === "Service charges") {
-                  return (
-                    <div
-                      key={`${idx}product`}
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
                       <Form.Item
-                        label="Service charges"
-                        name="serviceCharge"
-                        layout="horizontal"
+                        label="Quantity in kg"
+                        name="quantity"
                         style={{ width: "100%" }}
-                        rules={[
-                          {
-                            required: true,
-                            message: "please give service charges",
-                          },
-
-                          {
-                            validator: (_, value) =>
-                              validateGreaterThanOrEqual(
-                                productFees?.serviceCharge,
-                                discount
-                              ).validator(_, value),
-                          },
-                        ]}
                       >
-                        <Input />
-                      </Form.Item>
-                      <Form.Item
-                        name="serviceCode"
-                        style={{ width: "100%" }}
-                        rules={[
-                          {
-                            required: true,
-                            message: "please give HSN number",
-                          },
-                        ]}
-                      >
-                        <Input placeholder="HSN number" />
-                      </Form.Item>
-                      <Form.Item name="serviceGst" style={{ width: "100%" }}>
-                        <Input
-                          placeholder="Gst %"
-                          disabled={
-                            productFees?.serviceGst === 0 ? false : true
-                          }
+                        <InputNumber
+                          controls={false}
+                          style={{ width: "100%" }}
                         />
                       </Form.Item>
-                    </div>
-                  );
-                }
-
-                if (ele?.name === "Government") {
-                  return (
-                    <div
-                      key={`${idx}product`}
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
                       <Form.Item
-                        label="Government fees"
-                        name="govermentfees"
-                        layout="horizontal"
+                        label="Total price"
+                        name="totalPrice"
                         style={{ width: "100%" }}
-                        rules={[
-                          {
-                            required: true,
-                            message: "please give govt. fees",
-                          },
-                          {
-                            validator: (_, value) =>
-                              validateGreaterThanOrEqual(
-                                productFees?.govermentfees,
-                                discount
-                              ).validator(_, value),
-                          },
-                        ]}
                       >
-                        <Input />
-                      </Form.Item>
-                      <Form.Item
-                        name="govermentCode"
-                        style={{ width: "100%" }}
-                        rules={[
-                          {
-                            required: true,
-                            message: "please give HSN number",
-                          },
-                        ]}
-                      >
-                        <Input placeholder="HSN number" />
-                      </Form.Item>
-                      <Form.Item name="govermentGst" style={{ width: "100%" }}>
-                        <Input
-                          placeholder="Gst %"
-                          disabled={
-                            productFees?.govermentGst === 0 ? false : true
-                          }
-                        />
+                        <Input disabled />
                       </Form.Item>
                     </div>
-                  );
-                }
+                  )}
+                </div>
+              ) : (
+                <>
+                  {productData?.productAmount?.map((ele, idx) => {
+                    if (ele?.name === "Professional fees") {
+                      return (
+                        <div
+                          key={`${idx}product`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Form.Item
+                            style={{ width: "100%" }}
+                            label="Professional fees"
+                            name="professionalFees"
+                            layout="horizontal"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Please give professional fees",
+                              },
+                              {
+                                validator: (_, value) =>
+                                  validateGreaterThanOrEqual(
+                                    productFees?.professionalFees,
+                                    discount
+                                  ).validator(_, value),
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                          <Form.Item
+                            style={{ width: "100%" }}
+                            name="professionalCode"
+                            rules={[
+                              {
+                                required: true,
+                                message: "please provide HSN number",
+                              },
+                            ]}
+                          >
+                            <Input placeholder="Hsn number" />
+                          </Form.Item>
+                          <Form.Item
+                            name="profesionalGst"
+                            style={{ width: "100%" }}
+                          >
+                            <Input
+                              placeholder="Gst %"
+                              disabled={
+                                productFees?.profesionalGst == 0 ? false : true
+                              }
+                            />
+                          </Form.Item>
+                        </div>
+                      );
+                    }
 
-                if (ele?.name === "Other fees") {
-                  return (
-                    <div
-                      key={`${idx}product`}
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <Form.Item
-                        label="Other fees"
-                        name="otherFees"
-                        layout="horizontal"
-                        style={{ width: "100%" }}
-                        rules={[
-                          {
-                            required: true,
-                            message: "please give other fees charges",
-                          },
+                    if (ele?.name === "Service charges") {
+                      return (
+                        <div
+                          key={`${idx}product`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Form.Item
+                            label="Service charges"
+                            name="serviceCharge"
+                            layout="horizontal"
+                            style={{ width: "100%" }}
+                            rules={[
+                              {
+                                required: true,
+                                message: "please give service charges",
+                              },
 
-                          {
-                            validator: (_, value) =>
-                              validateGreaterThanOrEqual(
-                                productFees?.otherFees,
-                                discount
-                              ).validator(_, value),
-                          },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                      <Form.Item
-                        name="otherCode"
-                        style={{ width: "100%" }}
-                        rules={[
-                          {
-                            required: true,
-                            message: "please give HSN number",
-                          },
-                        ]}
-                      >
-                        <Input placeholder="HSN number" />
-                      </Form.Item>
-                      <Form.Item name="otherGst" style={{ width: "100%" }}>
-                        <Input
-                          placeholder="Gst %"
-                          disabled={productFees?.otherGst === 0 ? false : true}
-                        />
-                      </Form.Item>
-                    </div>
-                  );
-                }
+                              {
+                                validator: (_, value) =>
+                                  validateGreaterThanOrEqual(
+                                    productFees?.serviceCharge,
+                                    discount
+                                  ).validator(_, value),
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                          <Form.Item
+                            name="serviceCode"
+                            style={{ width: "100%" }}
+                            rules={[
+                              {
+                                required: true,
+                                message: "please give HSN number",
+                              },
+                            ]}
+                          >
+                            <Input placeholder="HSN number" />
+                          </Form.Item>
+                          <Form.Item
+                            name="serviceGst"
+                            style={{ width: "100%" }}
+                          >
+                            <Input
+                              placeholder="Gst %"
+                              disabled={
+                                productFees?.serviceGst === 0 ? false : true
+                              }
+                            />
+                          </Form.Item>
+                        </div>
+                      );
+                    }
 
-                return null;
-              })}
+                    if (ele?.name === "Government") {
+                      return (
+                        <div
+                          key={`${idx}product`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Form.Item
+                            label="Government fees"
+                            name="govermentfees"
+                            layout="horizontal"
+                            style={{ width: "100%" }}
+                            rules={[
+                              {
+                                required: true,
+                                message: "please give govt. fees",
+                              },
+                              {
+                                validator: (_, value) =>
+                                  validateGreaterThanOrEqual(
+                                    productFees?.govermentfees,
+                                    discount
+                                  ).validator(_, value),
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                          <Form.Item
+                            name="govermentCode"
+                            style={{ width: "100%" }}
+                            rules={[
+                              {
+                                required: true,
+                                message: "please give HSN number",
+                              },
+                            ]}
+                          >
+                            <Input placeholder="HSN number" />
+                          </Form.Item>
+                          <Form.Item
+                            name="govermentGst"
+                            style={{ width: "100%" }}
+                          >
+                            <Input
+                              placeholder="Gst %"
+                              disabled={
+                                productFees?.govermentGst === 0 ? false : true
+                              }
+                            />
+                          </Form.Item>
+                        </div>
+                      );
+                    }
+
+                    if (ele?.name === "Other fees") {
+                      return (
+                        <div
+                          key={`${idx}product`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Form.Item
+                            label="Other fees"
+                            name="otherFees"
+                            layout="horizontal"
+                            style={{ width: "100%" }}
+                            rules={[
+                              {
+                                required: true,
+                                message: "please give other fees charges",
+                              },
+
+                              {
+                                validator: (_, value) =>
+                                  validateGreaterThanOrEqual(
+                                    productFees?.otherFees,
+                                    discount
+                                  ).validator(_, value),
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                          <Form.Item
+                            name="otherCode"
+                            style={{ width: "100%" }}
+                            rules={[
+                              {
+                                required: true,
+                                message: "please give HSN number",
+                              },
+                            ]}
+                          >
+                            <Input placeholder="HSN number" />
+                          </Form.Item>
+                          <Form.Item name="otherGst" style={{ width: "100%" }}>
+                            <Input
+                              placeholder="Gst %"
+                              disabled={
+                                productFees?.otherGst === 0 ? false : true
+                              }
+                            />
+                          </Form.Item>
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  })}
+                </>
+              )}
             </div>
+
             <div
               style={{
                 display: "grid",

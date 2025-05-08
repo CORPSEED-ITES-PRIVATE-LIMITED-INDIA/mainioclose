@@ -14,6 +14,16 @@ export const getAllProductData = createAsyncThunk(
   }
 );
 
+export const getAllProductListByType = createAsyncThunk(
+  "getAllProductListByType",
+  async (type) => {
+    const response = await getQuery(
+      `/leadService/api/v1/product/getAllProductList?type=${type}`
+    );
+    return response.data;
+  }
+);
+
 export const getSingleProductByProductId = createAsyncThunk(
   "getSingleProductByProductId",
   async (id) => {
@@ -145,6 +155,69 @@ export const deleteProduct = createAsyncThunk("deleteProduct", async (id) => {
   return response.data;
 });
 
+export const getAllBusinessArrangement = createAsyncThunk(
+  "getAllBusinessArrangement",
+  async (productId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/businessArrangment/getAllBusinessArrangmentByProductId?productId=${productId}`
+    );
+    return response.data;
+  }
+);
+
+export const createBusinessArrangement = createAsyncThunk(
+  "createBusinessArrangement",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/businessArrangment/createBusinessArrangment`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllProductCategoryById = createAsyncThunk(
+  "getAllProductCategoryById",
+  async (businessArragmentId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/productCategory/getAllProductCategoryByBusinessArragmentId?businessArragmentId=${businessArragmentId}`
+    );
+    return response.data;
+  }
+);
+
+export const createProductCategory = createAsyncThunk(
+  "createProductCategory",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/productCategory/createProductCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllProductSubCategoryListByCategoryId = createAsyncThunk(
+  "getAllProductSubCategoryList",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/productSubCategory/getAllProductSubCategoryByProductCategoryId?productCategoryId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const createProductSubCategory = createAsyncThunk(
+  "createProductSubCategory",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/productSubCategory/createProductSubCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const ProductSlice = createSlice({
   name: "product",
   initialState: {
@@ -152,6 +225,10 @@ const ProductSlice = createSlice({
     productData: [],
     categoryData: [],
     singleProductDetail: {},
+    productList: [],
+    businessArrangementList: [],
+    productCategoryList: [],
+    productSubcategoryList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllProductData.pending, (state, action) => {
@@ -189,6 +266,63 @@ const ProductSlice = createSlice({
       state.loading = "rejected";
       state.singleProductDetail = {};
     });
+
+    builder.addCase(getAllProductListByType.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllProductListByType.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.productList = action.payload;
+    });
+    builder.addCase(getAllProductListByType.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.productList = [];
+    });
+
+    builder.addCase(getAllBusinessArrangement.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllBusinessArrangement.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.businessArrangementList = action.payload;
+    });
+    builder.addCase(getAllBusinessArrangement.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.businessArrangementList = [];
+    });
+
+    builder.addCase(getAllProductCategoryById.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllProductCategoryById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.productCategoryList = action.payload;
+    });
+    builder.addCase(getAllProductCategoryById.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.productCategoryList = [];
+    });
+
+    builder.addCase(
+      getAllProductSubCategoryListByCategoryId.pending,
+      (state, action) => {
+        state.loading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllProductSubCategoryListByCategoryId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.productSubcategoryList = action.payload;
+      }
+    );
+    builder.addCase(
+      getAllProductSubCategoryListByCategoryId.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.productSubcategoryList = [];
+      }
+    );
   },
 });
 

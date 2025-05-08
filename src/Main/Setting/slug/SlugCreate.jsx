@@ -63,12 +63,24 @@ const SlugCreate = () => {
     });
   };
 
-  const handleSubmit = async (values) => {
-    const slugCreation = await dispatch(leadSlugAction(values?.slugName));
-    if ((slugCreation.type = "createLeadSlugData/fulfilled")) {
-      form.resetFields();
-      notification.success({ message: "Slug created succesfully" });
-    }
+  const handleSubmit = (values) => {
+    dispatch(leadSlugAction(values?.slugName))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          form.resetFields();
+          notification.success({ message: "Slug created succesfully" });
+          dispatch(
+            getAllSlugAction({
+              page: paginationData?.page,
+              size: paginationData?.size,
+            })
+          );
+          setOpenModal(false);
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
   };
 
   const columns = [

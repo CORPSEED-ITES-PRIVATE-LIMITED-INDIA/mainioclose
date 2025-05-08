@@ -7,7 +7,7 @@ import { postQuery } from "../../API/PostQuery"
 export const leadSlugAction = createAsyncThunk(
   "createLeadSlugData",
   async (slugName) => {
-    const allLeadSlug = await postQueryNoData(
+    const allLeadSlug = await postQuery(
       `/leadService/api/v1/slug/createSlug?name=${slugName}`
     )
     return allLeadSlug?.data

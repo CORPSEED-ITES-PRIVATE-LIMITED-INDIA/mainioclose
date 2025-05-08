@@ -107,7 +107,9 @@ import ServingCompanyPage from "./Main/Sales/Leads/ServingCompanyPage";
 import PaymentApproval from "./Main/Accounts/PaymentApproval";
 import EstimateApproval from "./Main/HR/EstimateApproval";
 import DiscountedEstimates from "./Main/Sales/DiscountedEstimates";
-
+import BusinessArrangement from "./Main/Setting/Products/BusinessArrangement";
+import ProductCategory from "./Main/Setting/Products/ProductCategory";
+import ProductSubcategory from "./Main/Setting/Products/ProductSubcategory";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -310,8 +312,14 @@ function App() {
                 <Route path="oppurtities" element={<Opportunities />} />
                 <Route path="company" element={<MainComanyModule />} />
                 <Route path="newcompanies" element={<NewCompany />} />
-                <Route path="discountedEstimates" element={<DiscountedEstimates />} />
-                <Route path="servingcompanies" element={<ServingCompanyPage />} />
+                <Route
+                  path="discountedEstimates"
+                  element={<DiscountedEstimates />}
+                />
+                <Route
+                  path="servingcompanies"
+                  element={<ServingCompanyPage />}
+                />
                 <Route
                   path="newcompanies/:companyId/details"
                   element={<NewCompaniesDetailedLayout />}
@@ -557,6 +565,18 @@ function App() {
               >
                 <Route path="leadStatus" element={<LeadStatusPage />} />
                 <Route path="products" element={<ProductsChange />} />
+                <Route
+                  path="products/:productId/arrangement"
+                  element={<BusinessArrangement />}
+                />
+                <Route
+                  path="products/:productId/arrangement/:arrangementId/productCategory"
+                  element={<ProductCategory />}
+                />
+                   <Route
+                  path="products/:productId/arrangement/:arrangementId/productCategory/:productCategoryId"
+                  element={<ProductSubcategory />}
+                />
                 <Route path="category" element={<LeadCategory />} />
                 <Route path="slug" element={<SlugCreate />} />
                 <Route path="urls" element={<UrlsPage />} />

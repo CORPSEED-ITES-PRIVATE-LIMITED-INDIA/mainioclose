@@ -1,15 +1,24 @@
 import React, { useEffect, useState } from "react";
 import MainHeading from "../../../components/design/MainHeading";
-import { Button, Form, Input, Modal, notification, Popconfirm } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  Modal,
+  notification,
+  Popconfirm,
+  Select,
+} from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import CommonTable from "../../../components/CommonTable";
 import { Icon } from "@iconify/react";
 import ProductDetails from "./ProductDetails";
 import "./Product.scss";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   createProduct,
   getAllProductData,
+  getAllProductListByType,
 } from "../../../Toolkit/Slices/ProductSlice";
 import { deleteProduct } from "../../../Toolkit/Slices/LeadSlice";
 
@@ -17,14 +26,15 @@ const ProductsChange = () => {
   const dispatch = useDispatch();
   const { userid } = useParams();
   const [form] = Form.useForm();
-  const productData = useSelector((state) => state.product.productData);
+  const productData = useSelector((state) => state.product.productList);
   const [openModal, setOpenModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    dispatch(getAllProductData());
-  }, [dispatch]);
+    dispatch(getAllProductListByType(filter));
+  }, [dispatch, filter]);
 
   useEffect(() => {
     setFilteredData(productData);
@@ -47,9 +57,18 @@ const ProductsChange = () => {
       dataIndex: "productName",
       title: "Product name",
       fixed: "left",
-      render: (_, records) => (
-        <ProductDetails data={records}>{records?.productName}</ProductDetails>
-      ),
+      render: (_, records) =>
+        records?.type === "Service" ? (
+          <ProductDetails data={records}>{records?.productName}</ProductDetails>
+        ) : (
+          <Link className="link-heading" to={`/erp/${userid}/setting/erpSetting/products/${records.id}/arrangement`}>
+            {records?.productName}
+          </Link>
+        ),
+    },
+    {
+      dataIndex: "type",
+      title: "Type",
     },
     {
       dataIndex: "Action",
@@ -75,7 +94,7 @@ const ProductsChange = () => {
               )
           }
         >
-          <Button size="small"  danger>
+          <Button size="small" danger>
             <Icon icon="fluent:delete-20-regular" /> Delete
           </Button>
         </Popconfirm>
@@ -89,6 +108,7 @@ const ProductsChange = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Product created successfully" });
+          form.resetFields()
           setOpenModal(false);
         } else {
           notification.error({ message: "Something went wrong!." });
@@ -105,15 +125,24 @@ const ProductsChange = () => {
           Add product
         </Button>
       </div>
-      <div  className="setting-table">
+      <div className="setting-table">
         <div className="flex-verti-center-hori-start mt-2">
           <Input
             value={searchText}
-            size="small"
             onChange={handleSearch}
-            style={{ width: "220px" }}
+            style={{ width: "20%" }}
             placeholder="search"
             prefix={<Icon icon="fluent:search-24-regular" />}
+          />
+          <Select
+            value={filter}
+            style={{ width: "15%" }}
+            onChange={(e) => setFilter(e)}
+            options={[
+              { label: "All", value: "all" },
+              { label: "Product", value: "Product" },
+              { label: "Service", value: "Service" },
+            ]}
           />
         </div>
 
@@ -142,6 +171,18 @@ const ProductsChange = () => {
             ]}
           >
             <Input />
+          </Form.Item>
+          <Form.Item
+            label="Type"
+            name="type"
+            rules={[{ required: true, message: "please select type" }]}
+          >
+            <Select
+              options={[
+                { label: "Product", value: "Product" },
+                { label: "Service", value: "Service" },
+              ]}
+            />
           </Form.Item>
         </Form>
       </Modal>
