@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { Button, Form, Input, Modal, notification } from "antd";
 import {
   createProductCategory,
+  editProductCategory,
   getAllProductCategoryById,
 } from "../../../Toolkit/Slices/ProductSlice";
 import CommonTable from "../../../components/CommonTable";
@@ -20,6 +21,7 @@ const ProductCategory = () => {
   const [openModal, setOpenModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const [editData, setEditData] = useState(null);
 
   useEffect(() => {
     dispatch(getAllProductCategoryById(arrangementId));
@@ -40,6 +42,12 @@ const ProductCategory = () => {
     setFilteredData(filtered);
   };
 
+  const handleEdit = (value) => {
+    form.setFieldsValue({ name: value?.name });
+    setEditData(value);
+    setOpenModal(true);
+  };
+
   const columns = [
     {
       dataIndex: "id",
@@ -57,25 +65,61 @@ const ProductCategory = () => {
         </Link>
       ),
     },
+    {
+      dataIndex: "edit",
+      title: "Edit",
+      render: (_, records) => (
+        <Button size="small" onClick={() => handleEdit(records)}>
+          Edit
+        </Button>
+      ),
+    },
   ];
 
   const handleFinish = (values) => {
-    dispatch(
-      createProductCategory({ ...values, businessArrangmentId: arrangementId })
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Product category created successfully",
-          });
-          setOpenModal(false);
-          form.resetFields()
-          dispatch(getAllProductCategoryById(arrangementId));
-        } else {
-          notification.error({ message: "Something went wrong!." });
-        }
-      })
-      .catch(() => notification.error({ message: "Something went wrong!." }));
+    if (editData) {
+      dispatch(
+        editProductCategory({
+          ...values,
+          businessArrangmentId: arrangementId,
+          id: editData?.id,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Product category updated successfully",
+            });
+            setOpenModal(false);
+            form.resetFields();
+            setEditData(null);
+            dispatch(getAllProductCategoryById(arrangementId));
+          } else {
+            notification.error({ message: "Something went wrong!." });
+          }
+        })
+        .catch(() => notification.error({ message: "Something went wrong!." }));
+    } else {
+      dispatch(
+        createProductCategory({
+          ...values,
+          businessArrangmentId: arrangementId,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Product category created successfully",
+            });
+            setOpenModal(false);
+            form.resetFields();
+            dispatch(getAllProductCategoryById(arrangementId));
+          } else {
+            notification.error({ message: "Something went wrong!." });
+          }
+        })
+        .catch(() => notification.error({ message: "Something went wrong!." }));
+    }
   };
 
   return (
@@ -97,10 +141,14 @@ const ProductCategory = () => {
           prefix={<Icon icon="fluent:search-24-regular" />}
         />
         <Button type="primary" size="small" onClick={() => setOpenModal(true)}>
-          Add business arrangement
+          Add product category
         </Button>
       </div>
-      <CommonTable columns={columns} data={filteredData} scroll={{ y: "72vh" }} />
+      <CommonTable
+        columns={columns}
+        data={filteredData}
+        scroll={{ y: "72vh" }}
+      />
 
       <Modal
         title="Add product category"

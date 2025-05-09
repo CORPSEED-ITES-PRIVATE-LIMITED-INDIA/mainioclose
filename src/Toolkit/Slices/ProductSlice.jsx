@@ -176,6 +176,17 @@ export const createBusinessArrangement = createAsyncThunk(
   }
 );
 
+export const updateBusinessArrangement = createAsyncThunk(
+  "updateBusinessArrangement",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/businessArrangment/editBusinessArrangment`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllProductCategoryById = createAsyncThunk(
   "getAllProductCategoryById",
   async (businessArragmentId) => {
@@ -197,6 +208,17 @@ export const createProductCategory = createAsyncThunk(
   }
 );
 
+export const editProductCategory = createAsyncThunk(
+  "editProductCategory",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/productCategory/editProductCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllProductSubCategoryListByCategoryId = createAsyncThunk(
   "getAllProductSubCategoryList",
   async (id) => {
@@ -212,6 +234,17 @@ export const createProductSubCategory = createAsyncThunk(
   async (data) => {
     const response = await postQuery(
       `/leadService/api/v1/productSubCategory/createProductSubCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editProductSubCategory = createAsyncThunk(
+  "editProductSubCategory",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/productSubCategory/editProductSubCategory`,
       data
     );
     return response.data;

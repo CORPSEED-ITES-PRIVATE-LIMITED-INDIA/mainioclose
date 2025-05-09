@@ -1004,9 +1004,9 @@ export const disApproveEstimateApproval = createAsyncThunk(
 
 export const getAllEstimateHistory = createAsyncThunk(
   "getAllEstimateHistory",
-  async (estimateId) => {
+  async ({ estimateId, name, productSubCategoryId }) => {
     const response = await getQuery(
-      `/leadService/api/v1/leadEstimate/getEstimateHistoryByFormId?estimateId=${estimateId}`
+      `/leadService/api/v1/leadEstimate/getEstimateHistoryByFormId?estimateId=${estimateId}&name=${name}&productSubCategoryId=${productSubCategoryId}`
     );
     return response.data;
   }
@@ -1078,7 +1078,7 @@ export const LeadSlice = createSlice({
     productDataByLeadName: {},
     estimateApprovalList: [],
     estimateListByUser: [],
-    estimateHistoryList: [],
+    estimateHistoryList: {},
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1617,7 +1617,7 @@ export const LeadSlice = createSlice({
       state.estimateHistoryList = action?.payload;
     });
     builder.addCase(getAllEstimateHistory.rejected, (state, action) => {
-      state.estimateHistoryList = [];
+      state.estimateHistoryList = {};
     });
   },
 });

@@ -9,6 +9,7 @@ import {
   Popover,
   Select,
   Table,
+  Typography,
 } from "antd";
 import { Icon } from "@iconify/react";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,6 +26,7 @@ import ColComp from "../../components/small/ColComp";
 import TableOutlet from "../../components/design/TableOutlet";
 import CommonTable from "../../components/CommonTable";
 import MainHeading from "../../components/design/MainHeading";
+const { Text } = Typography;
 
 const EstimateApproval = () => {
   const dispatch = useDispatch();
@@ -212,8 +214,14 @@ const EstimateApproval = () => {
         <Button
           onClick={() => {
             setEstimateData(info);
-            setOpenModal(info);
-            dispatch(getAllEstimateHistory(info?.id));
+            setOpenModal(true);
+            dispatch(
+              getAllEstimateHistory({
+                estimateId: info?.id,
+                name: info?.productName,
+                productSubCategoryId: info?.productSubCategoryId || "",
+              })
+            );
           }}
         >
           Action
@@ -302,12 +310,13 @@ const EstimateApproval = () => {
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ x: 8000, y: "67vh" }}
+          scroll={{ x: 5000, y: "67vh" }}
           rowSelection={true}
           rowKey={(record) => record?.id}
         />
       </Flex>
       <Modal
+        width={"50%"}
         title="Estimate approval"
         open={openModal}
         onCancel={() => setOpenModal(false)}
@@ -315,13 +324,33 @@ const EstimateApproval = () => {
         okText="Submit"
         onOk={() => form.submit()}
       >
+        <Flex>
+          <Flex gap={8} align="center" style={{ margin: "24px 0px" }}>
+            <Text className="heading-text" type="secondary">
+              Actaul amount
+            </Text>
+            <Text className="heading-text">:</Text>
+            <Text className="heading-text">
+              {estimateHistoryList?.originalPrice?.pFees}
+            </Text>
+          </Flex>
+        </Flex>
         <Table
-          dataSource={estimateHistoryList}
-          columns={[
+          dataSource={estimateHistoryList?.history}
+          columns={ estimateData?.type==='Product'?[
+            { title: "Id", dataIndex: "id", width: 50 },
+            { title: "Price/kg", dataIndex: "actualPrice" },
+            { title: "Total price", dataIndex: "fees" },
+            { title: "Quantity", dataIndex: "quantity" },
+          ] : [
+            { title: "Id", dataIndex: "id", width: 50 },
             { title: "Professional amount", dataIndex: "professionalFees" },
             { title: "Professional code", dataIndex: "profesionalCode" },
             { title: "Professional fees", dataIndex: "professionalFees" },
           ]}
+          style={{ marginBottom: 24 }}
+          pagination={false}
+          scroll={{ y: 350 }}
         />
         <Form layout="vertical" form={form} onFinish={handleFinish}>
           <Form.Item

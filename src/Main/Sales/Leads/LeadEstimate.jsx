@@ -121,6 +121,7 @@ const LeadEstimate = ({ leadid }) => {
   const [productSubCategoryFees, setProductSubCategoryFees] = useState({
     actualPrice: 0,
     gst: 0,
+    roundOff: false,
   });
 
   useEffect(() => {
@@ -237,13 +238,13 @@ const LeadEstimate = ({ leadid }) => {
 
   const calculateTotalPriceWithGST = (actualPrice, quantity, gstString) => {
     const price = parseFloat(actualPrice) || 0;
-    const qty = parseFloat(quantity) || 0;
+    const qty = productSubCategoryFees?.roundOff
+      ? Math.ceil(parseFloat(quantity) / 1000) * 1000
+      : parseFloat(quantity) || 0;
     const gst = parseInt(gstString) || 0;
-
     const subtotal = price * qty;
     const total = subtotal + (subtotal * gst) / 100;
-
-    return total.toFixed(2); // Return as string with 2 decimal places
+    return total.toFixed(2);
   };
 
   const handleEditEstimate = useCallback(() => {
@@ -252,6 +253,10 @@ const LeadEstimate = ({ leadid }) => {
     dispatch(getAllContactDetailsById(details?.companyId));
     getAllStatesByCountryId(details?.primaryCountry?.id);
     getAllCitiesByStateId(details?.primaryState?.id);
+    dispatch(getAllProductCategoryById(details?.businessArrangmentId));
+    dispatch(
+      getAllProductSubCategoryListByCategoryId(details?.productCategoryId)
+    );
     setCompanyAndUnitData((prev) => ({
       ...prev,
       companyId: details?.companyId,
@@ -279,6 +284,14 @@ const LeadEstimate = ({ leadid }) => {
           response: details?.gstDocuments,
         },
       ],
+      businessArrangmentId: details?.businessArrangmentId,
+      productCategoryId: details?.productCategoryId,
+      productSubCategoryId: details?.productSubCategoryId,
+      actualPrice: details?.actualPrice,
+      gstCode: details?.gstCode,
+      gst: details?.gst,
+      quantity: details?.quantity,
+      totalPrice: details?.totalPrice,
       salesType: details?.salesType,
       secondaryContact: details?.secondaryContact?.id,
       primaryContact: details?.primaryContact?.id,
@@ -476,8 +489,12 @@ const LeadEstimate = ({ leadid }) => {
       size="large"
       spinning={estimateDetailLoading === "pending" ? true : false}
     >
-      <Flex justify="space-between" align="center" style={{ width: "100%",marginLeft: 16 }}>
-        <Title level={4} className="heading-text" style={{margin:0}}   >
+      <Flex
+        justify="space-between"
+        align="center"
+        style={{ width: "100%", marginLeft: 16 }}
+      >
+        <Title level={4} className="heading-text" style={{ margin: 0 }}>
           {Object.keys(details)?.length > 0 && !editEstimate
             ? "Estimate details"
             : editEstimate
@@ -745,6 +762,7 @@ const LeadEstimate = ({ leadid }) => {
                                 {
                                   required: true,
                                   whitespace: true,
+                                  type: "email",
                                   message: "Please input email",
                                 },
                               ]}
@@ -1005,6 +1023,7 @@ const LeadEstimate = ({ leadid }) => {
                             ...prev,
                             actualPrice: x?.productFees,
                             gst: x?.productGst,
+                            roundOff: x?.roundValue,
                           }));
                         }}
                       />
@@ -1017,7 +1036,7 @@ const LeadEstimate = ({ leadid }) => {
                     >
                       <Form.Item
                         style={{ width: "100%" }}
-                        label="Actual price / kg"
+                        label="Actual price ₹/kg"
                         name="actualPrice"
                         rules={[
                           {
@@ -1071,10 +1090,19 @@ const LeadEstimate = ({ leadid }) => {
                         <InputNumber
                           controls={false}
                           style={{ width: "100%" }}
+                          onChange={(e) => {
+                            if (productSubCategoryFees?.roundOff) {
+                              form.setFieldsValue({
+                                quantity: Math.ceil(e / 1000) * 1000,
+                              });
+                            } else {
+                              form.setFieldsValue({ quantity: e });
+                            }
+                          }}
                         />
                       </Form.Item>
                       <Form.Item
-                        label="Total price"
+                        label="Total price (₹)"
                         name="totalPrice"
                         style={{ width: "100%" }}
                       >

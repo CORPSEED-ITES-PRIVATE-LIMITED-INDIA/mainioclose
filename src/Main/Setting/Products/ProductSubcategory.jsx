@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from "react";
 import MainHeading from "../../../components/design/MainHeading";
 import CommonTable from "../../../components/CommonTable";
-import { Button, Form, Input, Modal, notification, Select } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  notification,
+  Select,
+} from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon } from "@iconify/react";
 import {
   createProductSubCategory,
+  editProductSubCategory,
   getAllProductSubCategoryListByCategoryId,
 } from "../../../Toolkit/Slices/ProductSlice";
 import { Link, useParams } from "react-router-dom";
@@ -20,6 +29,7 @@ const ProductSubcategory = () => {
   const [openModal, setOpenModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const [editData, setEditData] = useState(null);
 
   useEffect(() => {
     dispatch(getAllProductSubCategoryListByCategoryId(productCategoryId));
@@ -38,6 +48,18 @@ const ProductSubcategory = () => {
       )
     );
     setFilteredData(filtered);
+  };
+
+  const handleEdit = (value) => {
+    form.setFieldsValue({
+      name: value?.name,
+      productFees: value?.productFees,
+      productGst: value?.productGst,
+      roundValue: value?.roundValue,
+      productCode: value?.productCode,
+    });
+    setEditData(value);
+    setOpenModal(true);
   };
 
   const columns = [
@@ -61,28 +83,65 @@ const ProductSubcategory = () => {
       dataIndex: "productCode",
       title: "HSN code",
     },
+    {
+      dataIndex: "edit",
+      title: "Edit",
+      render: (_, records) => (
+        <Button size="small" onClick={() => handleEdit(records)}>
+          Edit
+        </Button>
+      ),
+    },
   ];
 
   const handleFinish = (values) => {
-    dispatch(
-      createProductSubCategory({
-        ...values,
-        productCategoryId: productCategoryId,
-      })
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Product category created successfully",
-          });
-          setOpenModal(false);
-          form.resetFields();
-          dispatch(getAllProductSubCategoryListByCategoryId(productCategoryId));
-        } else {
-          notification.error({ message: "Something went wrong!." });
-        }
-      })
-      .catch(() => notification.error({ message: "Something went wrong!." }));
+    if (editData) {
+      dispatch(
+        editProductSubCategory({
+          ...values,
+          productCategoryId: productCategoryId,
+          id: editData?.id,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Product category updated successfully",
+            });
+            setOpenModal(false);
+            form.resetFields();
+            setEditData(null);
+            dispatch(
+              getAllProductSubCategoryListByCategoryId(productCategoryId)
+            );
+          } else {
+            notification.error({ message: "Something went wrong!." });
+          }
+        })
+        .catch(() => notification.error({ message: "Something went wrong!." }));
+    } else {
+      dispatch(
+        createProductSubCategory({
+          ...values,
+          productCategoryId: productCategoryId,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Product category created successfully",
+            });
+            setOpenModal(false);
+            form.resetFields();
+            dispatch(
+              getAllProductSubCategoryListByCategoryId(productCategoryId)
+            );
+          } else {
+            notification.error({ message: "Something went wrong!." });
+          }
+        })
+        .catch(() => notification.error({ message: "Something went wrong!." }));
+    }
   };
 
   return (
@@ -144,7 +203,7 @@ const ProductSubcategory = () => {
               <Input />
             </Form.Item>
             <Form.Item
-              label="Product fee / kg"
+              label="Product fee ₹/kg"
               name="productFees"
               rules={[
                 {
@@ -153,7 +212,7 @@ const ProductSubcategory = () => {
                 },
               ]}
             >
-              <Input />
+              <InputNumber controls={false} style={{ width: "100%" }} />
             </Form.Item>
             <Form.Item
               label="Product gst %"
@@ -185,7 +244,7 @@ const ProductSubcategory = () => {
               />
             </Form.Item>
             <Form.Item
-              label="HSN code "
+              label="HSN code"
               name="productCode"
               rules={[
                 {
