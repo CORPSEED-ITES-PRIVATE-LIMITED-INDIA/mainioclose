@@ -6,6 +6,14 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+@media print {
+	body {
+		margin: 0 !important;
+	}
+}
+
 body {
   overflow-x: hidden;
   font-family: "Roboto", sans-serif;
@@ -1170,4 +1178,30 @@ select.form-control:not([size]):not([multiple]) {
 
 .custom-scroll::-webkit-scrollbar {
   display: none;
+}
+
+
+
+
+.main-container {
+	font-family: 'Lato';
+	width: fit-content;
+	margin-left: auto;
+	margin-right: auto;
+  background-color: #fff !important;
+}
+
+.ck-content {
+	font-family: 'Lato';
+	line-height: 1.6;
+	word-break: break-word;
+}
+
+.editor-container .editor-container_classic-editor{
+  width: 100% !important;
+}
+
+.editor-container_classic-editor .editor-container__editor {
+	min-width: 895px;
+	max-width: 895px;
 }
