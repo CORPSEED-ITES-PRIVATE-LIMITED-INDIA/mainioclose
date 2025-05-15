@@ -1012,6 +1012,37 @@ export const getAllEstimateHistory = createAsyncThunk(
   }
 );
 
+export const createProposalTemplate = createAsyncThunk(
+  "createProposalTemplate",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/leadEstimate/createProposalTempalte`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getProposalTemplate = createAsyncThunk(
+  "getProposalTemplate",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getProposalTempalteById?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllProposalTemplateList = createAsyncThunk(
+  "getAllProposalTemplateList",
+  async () => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1079,6 +1110,7 @@ export const LeadSlice = createSlice({
     estimateApprovalList: [],
     estimateListByUser: [],
     estimateHistoryList: {},
+    templateList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1618,6 +1650,14 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllEstimateHistory.rejected, (state, action) => {
       state.estimateHistoryList = {};
+    });
+
+    builder.addCase(getAllProposalTemplateList.pending, (state, action) => {});
+    builder.addCase(getAllProposalTemplateList.fulfilled, (state, action) => {
+      state.templateList = action?.payload;
+    });
+    builder.addCase(getAllProposalTemplateList.rejected, (state, action) => {
+      state.templateList = [];
     });
   },
 });

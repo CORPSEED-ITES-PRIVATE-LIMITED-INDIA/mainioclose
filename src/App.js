@@ -110,6 +110,7 @@ import DiscountedEstimates from "./Main/Sales/DiscountedEstimates";
 import BusinessArrangement from "./Main/Setting/Products/BusinessArrangement";
 import ProductCategory from "./Main/Setting/Products/ProductCategory";
 import ProductSubcategory from "./Main/Setting/Products/ProductSubcategory";
+import ProposalTemplate from "./Main/Setting/ProposalTemplate";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -621,10 +622,18 @@ function App() {
                   }
                 />
                 <Route
-                  path="clientDesigination"
+                  path="clientDesignation"
                   element={
                     <Suspense fallback={<SpinLoading />}>
                       <ClientDesigination />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="proposalTemplate"
+                  element={
+                    <Suspense fallback={<SpinLoading />}>
+                      <ProposalTemplate />
                     </Suspense>
                   }
                 />

@@ -229,6 +229,16 @@ export const getAllProductSubCategoryListByCategoryId = createAsyncThunk(
   }
 );
 
+export const toggleForRoundOffValue = createAsyncThunk(
+  "toggleForRoundOffValue",
+  async (id) => {
+    const response = await putQuery(
+      `/leadService/api/v1/productSubCategory/roundValueOnAndOff?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const createProductSubCategory = createAsyncThunk(
   "createProductSubCategory",
   async (data) => {

@@ -9,6 +9,7 @@ import {
   Modal,
   notification,
   Select,
+  Switch,
 } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon } from "@iconify/react";
@@ -16,12 +17,13 @@ import {
   createProductSubCategory,
   editProductSubCategory,
   getAllProductSubCategoryListByCategoryId,
+  toggleForRoundOffValue,
 } from "../../../Toolkit/Slices/ProductSlice";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const ProductSubcategory = () => {
   const dispatch = useDispatch();
-  const { userid, productId, productCategoryId } = useParams();
+  const { productCategoryId } = useParams();
   const [form] = Form.useForm();
   const productSubcategoryList = useSelector(
     (state) => state.product.productSubcategoryList
@@ -84,10 +86,37 @@ const ProductSubcategory = () => {
       title: "HSN code",
     },
     {
+      dataIndex: "roundoff",
+      title: "Roundoff toggle",
+      render: (_, records) => (
+        <Switch
+          value={records?.roundValue}
+          onChange={(e) => {
+            dispatch(toggleForRoundOffValue(records?.id))
+              .then((resp) => {
+                if (resp.meta.requestStatus === "fulfilled") {
+                  notification.success({
+                    message: "Toggle updated successfully !.",
+                  });
+                  dispatch(
+                    getAllProductSubCategoryListByCategoryId(productCategoryId)
+                  );
+                } else {
+                  notification.error({ message: "Something went wrong !." });
+                }
+              })
+              .catch(() =>
+                notification.error({ message: "Something went wrong !." })
+              );
+          }}
+        />
+      ),
+    },
+    {
       dataIndex: "edit",
       title: "Edit",
       render: (_, records) => (
-        <Button size="small" onClick={() => handleEdit(records)}>
+        <Button size="small" onClick={() => handleEdit(records)}>   
           Edit
         </Button>
       ),

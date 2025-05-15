@@ -62,7 +62,7 @@ const MainPage = () => {
       );
       clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [dispatch,navigate]);
 
   useEffect(() => {
     dispatch(getDepartmentOfUser(userid));
@@ -112,8 +112,8 @@ const MainPage = () => {
           style={{
             maxHeight: '95vh',
             overflowY: 'auto',
-            scrollbarWidth: 'none',       // Firefox
-            msOverflowStyle: 'none',      // IE 10+
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
           }}
           className="custom-scroll"
         >

@@ -181,7 +181,7 @@ const LeadDetailsPage = ({ leadid }) => {
     [updatedLeadName, leadid, userid, dispatch, getSingleLeadData]
   );
 
-  const changeLeadAssignee = async (id) => {
+  const changeLeadAssignee = (id) => {
     setAssigneValue(id);
     dispatch(changeLeadAssigneeLeads({ leadid, id, userid }))
       .then((resp) => {
@@ -590,7 +590,6 @@ const LeadDetailsPage = ({ leadid }) => {
                     <Text className="heading-text">Update assignee</Text>
                     <Select
                       placeholder="Change assignee"
-                      size="small"
                       showSearch
                       style={{ width: "100%", margin: "6px 0px" }}
                       value={assigneValue}
@@ -603,7 +602,7 @@ const LeadDetailsPage = ({ leadid }) => {
                       filterOption={(input, option) =>
                         option.label.toLowerCase().includes(input.toLowerCase())
                       }
-                      onChange={(e) => changeLeadAssignee(e)}
+                      onChange={changeLeadAssignee}
                     />
                   </div>
                 )}
@@ -617,7 +616,6 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Divider style={{ margin: "6px" }} />
                 <Select
                   showSearch
-                  size="small"
                   placeholder="change status"
                   value={singleLeadResponseData?.status?.id}
                   options={

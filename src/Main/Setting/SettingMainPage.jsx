@@ -128,9 +128,20 @@ const SettingMainPage = () => {
       label: (
         <Link
           className="link-four"
-          to={`/erp/${currentUserId}/setting/erpSetting/clientDesigination`}
+          to={`/erp/${currentUserId}/setting/erpSetting/clientDesignation`}
         >
-          Client Desigination
+          Client designation
+        </Link>
+      ),
+    },
+    {
+      key: "proposalTemplate",
+      label: (
+        <Link
+          className="link-four"
+          to={`/erp/${currentUserId}/setting/erpSetting/proposalTemplate`}
+        >
+          Proposal template
         </Link>
       ),
     },
