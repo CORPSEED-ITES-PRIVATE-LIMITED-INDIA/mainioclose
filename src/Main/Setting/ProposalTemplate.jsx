@@ -8,9 +8,10 @@ const ProposalTemplate = () => {
   const dispatch = useDispatch();
   const editorInstanceRef = useRef(null);
   const [templateName, setTempateName] = useState("");
-  
+  const [data, setData] = useState("");
+
   const handleSubmit = () => {
-    const data = editorInstanceRef.current?.getData();
+    // const data = editorInstanceRef.current?.getData();
     dispatch(createProposalTemplate({ name: templateName, description: data }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -22,13 +23,18 @@ const ProposalTemplate = () => {
       .catch(() => notification.error({ message: "Something went wrong !." }));
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <Input
         value={templateName}
         placeholder="Template name"
         onChange={(e) => setTempateName(e.target.value)}
       />
-      <TextEditor editorInstanceRef={editorInstanceRef} menu={true} />
+      <TextEditor
+        editorInstanceRef={editorInstanceRef}
+        menu={true}
+        setData={setData}
+        data={data}
+      />
       <Button onClick={handleSubmit}>Submit</Button>
     </div>
   );

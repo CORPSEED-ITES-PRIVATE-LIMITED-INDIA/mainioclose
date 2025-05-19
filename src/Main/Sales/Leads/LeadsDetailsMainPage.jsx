@@ -144,6 +144,9 @@ const LeadsDetailsMainPage = React.memo(
           dispatch(getAllContactDetails());
           dispatch(getProposalByLeadId(data?.id ? data?.id : data?.leadId));
           dispatch(
+            getProductListByLeadName(singleLeadResponseData?.originalName)
+          );
+          dispatch(
             getCompanyDetailsByLeadId(data?.id ? data?.id : data?.leadId)
           ).then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {

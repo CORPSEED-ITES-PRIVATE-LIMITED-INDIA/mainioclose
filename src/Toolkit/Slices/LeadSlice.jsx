@@ -1043,6 +1043,14 @@ export const getAllProposalTemplateList = createAsyncThunk(
   }
 );
 
+export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
+  const response = await postQuery(
+    `/leadService/api/v1/proposal/createProposal`,
+    data
+  );
+  return response.data;
+});
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {

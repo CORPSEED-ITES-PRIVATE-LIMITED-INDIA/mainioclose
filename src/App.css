@@ -1186,9 +1186,9 @@ select.form-control:not([size]):not([multiple]) {
   --ckeditor5-preview-sidebar-width: 270px;
   --ckeditor5-preview-height: 700px;
   font-family: "Lato";
-  width: 72vw;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  /* margin-left: auto;
+  margin-right: auto; */
   background-color: #fff !important;
 }
 
@@ -1200,6 +1200,10 @@ select.form-control:not([size]):not([multiple]) {
   font-family: "Lato";
   line-height: 1.6;
   word-break: break-word;
+}
+
+.editor-container__editor {
+  width: 100%;
 }
 
 .editor-container__editor-wrapper {
@@ -1285,13 +1289,13 @@ select.form-control:not([size]):not([multiple]) {
   margin-right: 0;
 }
 
-.editor-container__sidebar {
+/* .editor-container__sidebar {
   min-width: var(--ckeditor5-preview-sidebar-width);
   max-width: var(--ckeditor5-preview-sidebar-width);
   margin-top: 28px;
   margin-left: 10px;
   margin-right: 10px;
-}
+} */
 
 .revision-history {
   display: none;
@@ -1330,4 +1334,12 @@ select.form-control:not([size]):not([multiple]) {
 
 .ck.ck-user.ck-user_me {
   display: none !important;
+}
+
+.ck.ck-editor__main{
+  max-height: 69vh;
+}
+
+.ck-rounded-corners .ck.ck-editor__main > .ck-editor__editable, .ck.ck-editor__main > .ck-editor__editable.ck-rounded-corners{
+  max-height: 69vh;
 }

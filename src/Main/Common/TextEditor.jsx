@@ -1,23 +1,21 @@
-
 import { useState, useEffect, useRef, useMemo } from "react";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import {
-  DecoupledEditor,
+  ClassicEditor,
   Plugin,
-  ButtonView,
   Alignment,
   Autoformat,
   AutoImage,
   AutoLink,
   Autosave,
   BalloonToolbar,
+  BlockQuote,
   Bold,
   Bookmark,
   CKBox,
   CKBoxImageEdit,
   CloudServices,
   Code,
-  Emoji,
   Essentials,
   FindAndReplace,
   FontBackgroundColor,
@@ -25,7 +23,9 @@ import {
   FontFamily,
   FontSize,
   Fullscreen,
+  GeneralHtmlSupport,
   Heading,
+  Highlight,
   HorizontalLine,
   ImageBlock,
   ImageCaption,
@@ -60,6 +60,7 @@ import {
   SpecialCharactersMathematical,
   SpecialCharactersText,
   Strikethrough,
+  Style,
   Subscript,
   Superscript,
   Table,
@@ -73,26 +74,15 @@ import {
   Underline,
 } from "ckeditor5";
 import {
-  AIAssistant,
   CaseChange,
   Comments,
-  DocumentOutline,
   ExportPdf,
   ExportWord,
   FormatPainter,
   ImportWord,
-  MergeFields,
   MultiLevelList,
-  OpenAITextAdapter,
-  Pagination,
   PasteFromOfficeEnhanced,
-  PresenceList,
-  RealTimeCollaborativeComments,
-  RealTimeCollaborativeEditing,
-  RealTimeCollaborativeRevisionHistory,
-  RealTimeCollaborativeTrackChanges,
   RevisionHistory,
-  SlashCommand,
   TableOfContents,
   Template,
   TrackChanges,
@@ -105,18 +95,42 @@ import "ckeditor5-premium-features/ckeditor5-premium-features.css";
 
 const LICENSE_KEY =
   "eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NDgzMDM5OTksImp0aSI6IjJiNWI2N2YwLWQzNDctNDA1NS05ODliLWZjMWQ5NWFmZGQwYSIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImQwNTg2MzU3In0.VrY1Ta3tFhPK33RVLUBbmSa_7-Gq81gmUkd4rD7wMfl4ChNiVTWJZGvtH6i1DKfXQFbz_epwHd3X7GC89VPWdw";
-const AI_API_KEY = "<YOUR_AI_API_KEY>";
-const DOCUMENT_ID = "<YOUR_DOCUMENT_ID>";
+
 const CLOUD_SERVICES_TOKEN_URL =
   "https://f_v3z04zplsu.cke-cs.com/token/dev/885d2f4f11db923f216e23b79e86a0c206ba5d56713a31fcc0cc2047162c?limit=10";
-const CLOUD_SERVICES_WEBSOCKET_URL = "wss://f_v3z04zplsu.cke-cs.com/ws";
+class UsersIntegration extends Plugin {
+  static get requires() {
+    return ["Users"];
+  }
 
-export default function TextEditor({ editorInstanceRef, menu,initialData }) {
-  const editorPresenceRef = useRef(null);
+  static get pluginName() {
+    return "UsersIntegration";
+  }
+
+  init() {
+    const usersPlugin = this.editor.plugins.get("Users");
+    const users = [
+      { id: "user-1", name: "Zee Croce" },
+      { id: "user-2", name: "Mex Haddox" },
+    ];
+    const me = users[0];
+
+    for (const user of users) {
+      usersPlugin.addUser(user);
+    }
+
+    usersPlugin.defineMe(me.id);
+  }
+}
+
+class CommentsIntegration extends Plugin {}
+
+class TrackChangesIntegration extends Plugin {}
+
+class RevisionHistoryIntegration extends Plugin {}
+
+export default function TextEditor({ data, menu,onChange }) {
   const editorContainerRef = useRef(null);
-  const editorMenuBarRef = useRef(null);
-  const editorToolbarRef = useRef(null);
-  const editorOutlineRef = useRef(null);
   const editorRef = useRef(null);
   const editorAnnotationsRef = useRef(null);
   const editorRevisionHistoryRef = useRef(null);
@@ -142,22 +156,14 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
             "undo",
             "redo",
             "|",
-            "previousPage",
-            "nextPage",
-            "|",
             "revisionHistory",
             "trackChanges",
             "comment",
             "|",
-            "insertMergeField",
-            "previewMergeFields",
-            "|",
-            "aiCommands",
-            "aiAssistant",
-            "|",
             "formatPainter",
             "|",
             "heading",
+            "style",
             "|",
             "fontSize",
             "fontFamily",
@@ -171,6 +177,8 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
             "link",
             "insertImage",
             "insertTable",
+            "highlight",
+            "blockQuote",
             "|",
             "alignment",
             "|",
@@ -184,13 +192,13 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           shouldNotGroupWhenFull: false,
         },
         plugins: [
-          AIAssistant,
           Alignment,
           Autoformat,
           AutoImage,
           AutoLink,
           Autosave,
           BalloonToolbar,
+          BlockQuote,
           Bold,
           Bookmark,
           CaseChange,
@@ -199,8 +207,6 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           CloudServices,
           Code,
           Comments,
-          DocumentOutline,
-          Emoji,
           Essentials,
           ExportPdf,
           ExportWord,
@@ -211,7 +217,9 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           FontSize,
           FormatPainter,
           Fullscreen,
+          GeneralHtmlSupport,
           Heading,
+          Highlight,
           HorizontalLine,
           ImageBlock,
           ImageCaption,
@@ -234,23 +242,14 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           List,
           ListProperties,
           Mention,
-          MergeFields,
           MultiLevelList,
-          OpenAITextAdapter,
           PageBreak,
-          Pagination,
           Paragraph,
           PasteFromOffice,
           PasteFromOfficeEnhanced,
           PictureEditing,
-          PresenceList,
-          RealTimeCollaborativeComments,
-          RealTimeCollaborativeEditing,
-          RealTimeCollaborativeRevisionHistory,
-          RealTimeCollaborativeTrackChanges,
           RemoveFormat,
           RevisionHistory,
-          SlashCommand,
           SpecialCharacters,
           SpecialCharactersArrows,
           SpecialCharactersCurrency,
@@ -259,6 +258,7 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           SpecialCharactersMathematical,
           SpecialCharactersText,
           Strikethrough,
+          Style,
           Subscript,
           Superscript,
           Table,
@@ -276,17 +276,14 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           TrackChangesPreview,
           Underline,
         ],
-        ai: {
-          openAI: {
-            requestHeaders: {
-              Authorization: "Bearer " + AI_API_KEY,
-            },
-          },
-        },
+        extraPlugins: [
+          UsersIntegration,
+          CommentsIntegration,
+          TrackChangesIntegration,
+          RevisionHistoryIntegration,
+        ],
         balloonToolbar: [
           "comment",
-          "|",
-          "aiAssistant",
           "|",
           "bold",
           "italic",
@@ -299,10 +296,6 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
         ],
         cloudServices: {
           tokenUrl: CLOUD_SERVICES_TOKEN_URL,
-          webSocketUrl: CLOUD_SERVICES_WEBSOCKET_URL,
-        },
-        collaboration: {
-          channelId: DOCUMENT_ID,
         },
         comments: {
           editorConfig: {
@@ -319,25 +312,19 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
             },
           },
         },
-        documentOutline: {
-          container: editorOutlineRef.current,
-        },
         exportPdf: {
           stylesheets: [
-            /* This path should point to the content stylesheets on your assets server. */
-            /* See: https://ckeditor.com/docs/ckeditor5/latest/features/converters/export-pdf.html */
             "./export-style.css",
-            /* Export PDF needs access to stylesheets that style the content. */
             "https://cdn.ckeditor.com/ckeditor5/45.1.0/ckeditor5.css",
             "https://cdn.ckeditor.com/ckeditor5-premium-features/45.1.0/ckeditor5-premium-features.css",
           ],
           fileName: "export-pdf-demo.pdf",
           converterOptions: {
-            format: "A4",
+            format: "Tabloid",
             margin_top: "20mm",
             margin_bottom: "20mm",
-            margin_right: "12mm",
-            margin_left: "12mm",
+            margin_right: "24mm",
+            margin_left: "24mm",
             page_orientation: "portrait",
           },
         },
@@ -351,12 +338,12 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           converterOptions: {
             document: {
               orientation: "portrait",
-              size: "A4",
+              size: "Tabloid",
               margins: {
                 top: "20mm",
                 bottom: "20mm",
-                right: "12mm",
-                left: "12mm",
+                right: "24mm",
+                left: "24mm",
               },
             },
           },
@@ -372,10 +359,9 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
           onEnterCallback: (container) =>
             container.classList.add(
               "editor-container",
-              "editor-container_document-editor",
-              "editor-container_include-outline",
+              "editor-container_classic-editor",
               "editor-container_include-annotations",
-              "editor-container_include-pagination",
+              "editor-container_include-style",
               "editor-container_include-fullscreen",
               "main-container"
             ),
@@ -425,6 +411,16 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
             },
           ],
         },
+        htmlSupport: {
+          allow: [
+            {
+              name: /^.*$/,
+              styles: true,
+              attributes: true,
+              classes: true,
+            },
+          ],
+        },
         image: {
           toolbar: [
             "toggleImageCaption",
@@ -439,7 +435,8 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
             "ckboxImageEdit",
           ],
         },
-        initialData: initialData,
+        initialData:
+          '<h2>Congratulations on setting up CKEditor 5! 🎉</h2>\n<p>\n\tYou\'ve successfully created a CKEditor 5 project. This powerful text editor\n\twill enhance your application, enabling rich text editing capabilities that\n\tare customizable and easy to use.\n</p>\n<h3>What\'s next?</h3>\n<ol>\n\t<li>\n\t\t<strong>Integrate into your app</strong>: time to bring the editing into\n\t\tyour application. Take the code you created and add to your application.\n\t</li>\n\t<li>\n\t\t<strong>Explore features:</strong> Experiment with different plugins and\n\t\ttoolbar options to discover what works best for your needs.\n\t</li>\n\t<li>\n\t\t<strong>Customize your editor:</strong> Tailor the editor\'s\n\t\tconfiguration to match your application\'s style and requirements. Or\n\t\teven write your plugin!\n\t</li>\n</ol>\n<p>\n\tKeep experimenting, and don\'t hesitate to push the boundaries of what you\n\tcan achieve with CKEditor 5. Your feedback is invaluable to us as we strive\n\tto improve and evolve. Happy editing!\n</p>\n<h3>Helpful resources</h3>\n<ul>\n\t<li>📝 <a href="https://portal.ckeditor.com/checkout?plan=free">Trial sign up</a>,</li>\n\t<li>📕 <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/index.html">Documentation</a>,</li>\n\t<li>⭐️ <a href="https://github.com/ckeditor/ckeditor5">GitHub</a> (star us if you can!),</li>\n\t<li>🏠 <a href="https://ckeditor.com">CKEditor Homepage</a>,</li>\n\t<li>🧑‍💻 <a href="https://ckeditor.com/ckeditor-5/demo/">CKEditor 5 Demos</a>,</li>\n</ul>\n<h3>Need help?</h3>\n<p>\n\tSee this text, but the editor is not starting up? Check the browser\'s\n\tconsole for clues and guidance. It may be related to an incorrect license\n\tkey if you use premium features or another feature-related requirement. If\n\tyou cannot make it work, file a GitHub issue, and we will help as soon as\n\tpossible!\n</p>\n',
         licenseKey: LICENSE_KEY,
         link: {
           addTargetToExternalLinks: true,
@@ -471,23 +468,10 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
             },
           ],
         },
-        mergeFields: {
-          /* Read more: https://ckeditor.com/docs/ckeditor5/latest/features/merge-fields.html#configuration */
-        },
-        pagination: {
-          pageWidth: "21cm",
-          pageHeight: "29.7cm",
-          pageMargins: {
-            top: "20mm",
-            bottom: "20mm",
-            right: "12mm",
-            left: "12mm",
-          },
+        menuBar: {
+          isVisible: menu,
         },
         placeholder: "Type or paste your content here!",
-        presenceList: {
-          container: editorPresenceRef.current,
-        },
         revisionHistory: {
           editorContainer: editorContainerRef.current,
           viewerContainer: editorRevisionHistoryRef.current,
@@ -497,6 +481,50 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
         },
         sidebar: {
           container: editorAnnotationsRef.current,
+        },
+        style: {
+          definitions: [
+            {
+              name: "Article category",
+              element: "h3",
+              classes: ["category"],
+            },
+            {
+              name: "Title",
+              element: "h2",
+              classes: ["document-title"],
+            },
+            {
+              name: "Subtitle",
+              element: "h3",
+              classes: ["document-subtitle"],
+            },
+            {
+              name: "Info box",
+              element: "p",
+              classes: ["info-box"],
+            },
+            {
+              name: "CTA Link Primary",
+              element: "a",
+              classes: ["button", "button--green"],
+            },
+            {
+              name: "CTA Link Secondary",
+              element: "a",
+              classes: ["button", "button--black"],
+            },
+            {
+              name: "Marker",
+              element: "span",
+              classes: ["marker"],
+            },
+            {
+              name: "Spoiler",
+              element: "span",
+              classes: ["spoiler"],
+            },
+          ],
         },
         table: {
           contentToolbar: [
@@ -519,7 +547,7 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
         },
       },
     };
-  }, [isLayoutReady]);
+  }, [isLayoutReady,menu]);
 
   useEffect(() => {
     if (editorConfig) {
@@ -529,46 +557,19 @@ export default function TextEditor({ editorInstanceRef, menu,initialData }) {
 
   return (
     <div className="main-container">
-      <div className="presence" ref={editorPresenceRef}></div>
       <div
-        className="editor-container editor-container_document-editor editor-container_include-outline editor-container_include-annotations editor-container_include-pagination editor-container_include-fullscreen"
+        className="editor-container editor-container_classic-editor editor-container_include-annotations editor-container_include-style editor-container_include-fullscreen"
         ref={editorContainerRef}
       >
-        {menu && (
-          <div
-            className="editor-container__menu-bar"
-            ref={editorMenuBarRef}
-          ></div>
-        )}
-        <div className="editor-container__toolbar" ref={editorToolbarRef}></div>
         <div className="editor-container__editor-wrapper">
-          <div
-            className="editor-container__sidebar"
-            ref={editorOutlineRef}
-          ></div>
           <div className="editor-container__editor">
             <div ref={editorRef}>
               {editorConfig && (
                 <CKEditor
-                  onReady={(editor) => {
-                    editorInstanceRef.current = editor;
-                    editorToolbarRef.current.appendChild(
-                      editor.ui.view.toolbar.element
-                    );
-                    editorMenuBarRef.current.appendChild(
-                      editor.ui.view.menuBarView.element
-                    );
-                  }}
-                  onAfterDestroy={() => {
-                    Array.from(editorToolbarRef.current.children).forEach(
-                      (child) => child.remove()
-                    );
-                    Array.from(editorMenuBarRef.current.children).forEach(
-                      (child) => child.remove()
-                    );
-                  }}
-                  editor={DecoupledEditor}
+                  editor={ClassicEditor}
                   config={editorConfig}
+                  onChange={onChange}
+                  data={data}
                 />
               )}
             </div>
@@ -622,29 +623,11 @@ function configUpdateAlert(config) {
 
   if (
     !isModifiedByUser(
-      config.ai?.openAI?.requestHeaders?.Authorization,
-      "Bearer <YOUR_AI_API_KEY>"
-    )
-  ) {
-    valuesToUpdate.push("AI_API_KEY");
-  }
-
-  if (
-    !isModifiedByUser(
       config.cloudServices?.tokenUrl,
       "<YOUR_CLOUD_SERVICES_TOKEN_URL>"
     )
   ) {
     valuesToUpdate.push("CLOUD_SERVICES_TOKEN_URL");
-  }
-
-  if (
-    !isModifiedByUser(
-      config.cloudServices?.webSocketUrl,
-      "<YOUR_CLOUD_SERVICES_WEBSOCKET_URL>"
-    )
-  ) {
-    valuesToUpdate.push("CLOUD_SERVICES_WEBSOCKET_URL");
   }
 
   if (valuesToUpdate.length) {

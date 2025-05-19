@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { postQuery } from "../../API/PostQuery";
 import { getQuery } from "../../API/GetQuery";
+import { putQuery } from "../../API/PutQuery";
 
 export const getCurrentUser = createAsyncThunk("currentUser", async (data) => {
   const userData = await postQuery(`/securityService/api/auth/signin`, data);
@@ -53,6 +54,26 @@ export const createDesiginationByDepartment = createAsyncThunk(
     const response = await postQuery(
       `/securityService/api/department/createDepartmentInDesignation`,
       data
+    );
+    return response.data;
+  }
+);
+
+export const toggleAutoOnFeature = createAsyncThunk(
+  "toggleAutoOnOffFeature",
+  async ({ userId, flag }) => {
+    const response = await putQuery(
+      `/leadService/api/v1/users/autoPresentOn?userId=${userId}&flag=${flag}`
+    );
+    return response.data;
+  }
+);
+
+export const toggleAutoOffFeature = createAsyncThunk(
+  "toggleAutoOnOffFeature",
+  async ({ userId, flag }) => {
+    const response = await putQuery(
+      `/leadService/api/v1/users/autoPresentOff?userId=${userId}&flag=${flag}`
     );
     return response.data;
   }

@@ -1,18 +1,18 @@
 import { Avatar, Button, Drawer, Space, Typography } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutFun } from "../Toolkit/Slices/AuthSlice";
-import { useNavigate } from "react-router-dom";
+import { logoutFun, toggleAutoOffFeature } from "../Toolkit/Slices/AuthSlice";
+import { useNavigate, useParams } from "react-router-dom";
 import { updateProfilePhoto } from "../Toolkit/Slices/UserProfileSlice";
 import { toast } from "react-toastify";
 import "./ProfileDrawer.scss";
 import { Icon } from "@iconify/react";
 import { Upload } from "antd";
 import ImgCrop from "antd-img-crop";
-import { persistor } from "../Toolkit/store";
 const { Text } = Typography;
 
 const ProfileDrawer = () => {
+  const { userid } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUserId = useSelector((state) => state.auth?.currentUser?.id);
@@ -25,6 +25,7 @@ const ProfileDrawer = () => {
   const logoutUser = () => {
     if (window.confirm("Are you sure for Logout?") === true) {
       dispatch(logoutFun());
+      dispatch(toggleAutoOffFeature({ userId: userid, flag: false }));
       navigate("/erp/login");
       toast.success("Logout Succesfully");
     }

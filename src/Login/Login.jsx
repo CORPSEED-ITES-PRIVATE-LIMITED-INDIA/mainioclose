@@ -8,6 +8,7 @@ import {
   getCurrentUser,
   getDepartmentOfUser,
   handleLoadingState,
+  toggleAutoOnFeature,
 } from "../Toolkit/Slices/AuthSlice";
 import { Button, Checkbox, Form, Input, notification, Typography } from "antd";
 import { Icon } from "@iconify/react";
@@ -33,6 +34,12 @@ const Login = () => {
               setLoading("fulfilled");
               dispatch(getDepartmentOfUser(resp?.payload?.id)).then(
                 (response) => {
+                  dispatch(
+                    toggleAutoOnFeature({
+                      userId: resp?.payload?.id,
+                      flag: true,
+                    })
+                  );
                   if (resp?.payload?.roles?.includes("ADMIN")) {
                     navigate(`/erp/${resp?.payload?.id}/dashboard/records`);
                   } else {
