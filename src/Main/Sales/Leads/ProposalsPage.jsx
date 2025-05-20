@@ -1,35 +1,45 @@
 import React, { useCallback, useEffect, useState } from "react";
 import TableOutlet from "../../../components/design/TableOutlet";
 import MainHeading from "../../../components/design/MainHeading";
-import { Input, Typography } from "antd";
+import { Button, Form, Input, Modal, notification, Select } from "antd";
 import { Icon } from "@iconify/react";
 import TableScalaton from "../../../components/TableScalaton";
 import SomethingWrong from "../../../components/usefulThings/SomethingWrong";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { getAllProposalByUserIdForManager } from "../../../Toolkit/Slices/LeadSlice";
-import OverFlowText from "../../../components/OverFlowText";
+import {
+  getAllProposalByUserIdForManager,
+  getAllPropsalListCount,
+  proposalApprovalByManager,
+} from "../../../Toolkit/Slices/LeadSlice";
 import dayjs from "dayjs";
-const { Text } = Typography;
 
 const ProposalsPage = () => {
   const { userid } = useParams();
   const dispatch = useDispatch();
+  const [form] = Form.useForm();
   const proposalList = useSelector((state) => state.leads.proposalList);
   const proposalLoading = useSelector((state) => state.leads.proposalLoading);
   const totalCount = useSelector((state) => state.leads.proposalCount);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const [proposalData, setProposalData] = useState("");
+  const [openModal, setOpenModal] = useState(false);
+  const [openApproveModal, setOpenApproveModal] = useState(false);
+  const [data, setData] = useState(null);
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,
   });
 
+  console.log("xchjbaksdvckshvskhv", proposalList);
+
   useEffect(() => {
     dispatch(
       getAllProposalByUserIdForManager({ id: userid, ...paginationData })
     );
+    dispatch(getAllPropsalListCount(userid));
   }, [dispatch, userid]);
 
   const columns = [
@@ -40,15 +50,9 @@ const ProposalsPage = () => {
       fixed: "left",
     },
     {
-      datIndex: "productName",
+      dataIndex: "productName",
       title: "Product name",
-      width: 250,
       fixed: "left",
-      render: (_, data) => <Text>{data?.productName}</Text>,
-    },
-    {
-      dataIndex: "companyName",
-      title: "Company name",
     },
     {
       dataIndex: "createDate",
@@ -56,148 +60,37 @@ const ProposalsPage = () => {
       render: (_, data) => dayjs(data?.createDate).format("YYYY-MM-DD"),
     },
     {
-      dataIndexL: "unitName",
-      title: "Unit name",
+      dataIndex: "createdByEmail",
+      title: "Created person email",
     },
     {
-      datIndex: "panNo",
-      title: "Pan no.",
-    },
-    {
-      datIndex: "gstNo",
-      title: "Gst no.",
-    },
-    {
-      dataIndex: "status",
-      title: "Status",
-    },
-    {
-      datIndex: "companyAge",
-      title: "Company age",
-    },
-    {
-      datIndex: "orderNumber",
-      title: "Order number",
-    },
-    {
-      dataIndex: "primaryContact",
-      title: "Pcont. name",
+      dataIndex: "proposal",
+      title: "Proposal",
       render: (_, data) => (
-        <OverFlowText>{data?.primaryContact?.name}</OverFlowText>
+        <Button
+          onClick={() => {
+            setProposalData(data?.template);
+            setOpenModal(true);
+          }}
+        >
+          View proposal
+        </Button>
       ),
     },
     {
-      dataIndex: "primaryContactEmail",
-      title: "Pcont. email",
+      dataIndex: "action",
+      title: "Action",
       render: (_, data) => (
-        <OverFlowText>{data?.primaryContact?.emails}</OverFlowText>
+        <Button
+          onClick={() => {
+            setData(data);
+            setOpenApproveModal(true);
+            form.setFieldsValue({ status: data?.status });
+          }}
+        >
+          Action
+        </Button>
       ),
-    },
-    {
-      dataIndex: "primaryContactCont",
-      title: "Pcont. contact",
-      render: (_, data) => (
-        <OverFlowText>{data?.primaryContact?.contactNo}</OverFlowText>
-      ),
-    },
-    {
-      dataIndex: "primaryContactWhats",
-      title: "Pcont. whatsapp",
-      render: (_, data) => (
-        <OverFlowText>{data?.primaryContact?.whatsappNo}</OverFlowText>
-      ),
-    },
-    {
-      dataIndex: "secondaryContact",
-      title: "Scont. name",
-      render: (_, data) => (
-        <OverFlowText>{data?.secondaryContact?.name}</OverFlowText>
-      ),
-    },
-    {
-      dataIndex: "secondaryContactEmail",
-      title: "Scont. email",
-      render: (_, data) => (
-        <OverFlowText>{data?.secondaryContact?.emails}</OverFlowText>
-      ),
-    },
-    {
-      dataIndex: "secondaryContactCont",
-      title: "Scont. contact",
-      render: (_, data) => (
-        <OverFlowText>{data?.secondaryContact?.contactNo}</OverFlowText>
-      ),
-    },
-    {
-      dataIndex: "secondaryContactWhats",
-      title: "Scont. whatsapp",
-      render: (_, data) => (
-        <OverFlowText>{data?.secondaryContact?.whatsappNo}</OverFlowText>
-      ),
-    },
-    {
-      dataIndex: "govermentfees",
-      title: "Govt. fee",
-    },
-    {
-      dataIndex: "govermentCode",
-      title: "Govt. code",
-    },
-    {
-      dataIndex: "govermentGst",
-      title: "Govt. Gst",
-    },
-    {
-      dataIndex: "professionalFees",
-      title: "Prof. fee",
-    },
-    {
-      dataIndex: "professionalCode",
-      title: "Prof. code",
-    },
-    {
-      dataIndex: "profesionalGst",
-      title: "Prof. Gst",
-    },
-    {
-      dataIndex: "serviceCharge",
-      title: "Service charges",
-    },
-    {
-      dataIndex: "serviceCode",
-      title: "Service code",
-    },
-    {
-      dataIndex: "serviceGst",
-      title: "Service Gst",
-    },
-    {
-      dataIndex: "otherFees",
-      title: "Other fee",
-    },
-    {
-      dataIndex: "otherCode",
-      title: "Other code",
-    },
-    {
-      dataIndex: "otherGst",
-      title: "Other Gst",
-    },
-    {
-      dataIndex: "invoiceNote",
-      title: "Invoice note",
-    },
-    {
-      datIndex: "address",
-      title: "Address",
-    },
-    {
-      datIndex: "city",
-      title: "City",
-    },
-    {
-      dataIndex: "country",
-      title: "Country",
     },
   ];
 
@@ -207,14 +100,16 @@ const ProposalsPage = () => {
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getAllProposalByUserIdForManager({ id: userid, page: dataPage, size }));
+      dispatch(
+        getAllProposalByUserIdForManager({ id: userid, page: dataPage, size })
+      );
       setPaginationData({ size: size, page: dataPage });
     },
-    [dispatch]
+    [dispatch, userid]
   );
 
   const handleSearch = (e) => {
-    const value = e.target.value.trim();
+    const value = e.target.value;
     setSearchText(value);
     const filtered = proposalList?.filter((item) =>
       Object.values(item)?.some((val) =>
@@ -223,6 +118,39 @@ const ProposalsPage = () => {
     );
     setFilteredData(filtered);
   };
+
+  const handleFinish = (values) => {
+    dispatch(
+      proposalApprovalByManager({
+        proposalId: data?.id,
+        userId: userid,
+        ...values,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          if (values.status === "approved") {
+            notification.success({
+              message: "Proposal approved suucessfully !.",
+            });
+          } else {
+            notification.success({
+              message: "Proposal disapproved suucessfully !.",
+            });
+          }
+          form.resetFields();
+          setOpenApproveModal(false);
+          setData(null);
+          dispatch(
+            getAllProposalByUserIdForManager({ id: userid, ...paginationData })
+          );
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
+
   return (
     <TableOutlet>
       <MainHeading data={`All proposal`} />
@@ -242,8 +170,9 @@ const ProposalsPage = () => {
         {proposalList && proposalLoading === "success" && (
           <CommonTable
             data={filteredData}
+            rowKey={(row) => row?.id}
             columns={columns}
-            scroll={{ y: 500, x: 4000 }}
+            scroll={{ y: 500 }}
             page={paginationData?.page}
             pageSize={paginationData?.size}
             pagination={true}
@@ -252,6 +181,51 @@ const ProposalsPage = () => {
           />
         )}
       </div>
+      <Modal
+        title="Proposal"
+        width={"80%"}
+        centered
+        onCancel={() => setOpenModal(false)}
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        footer={null}
+      >
+        <div
+          dangerouslySetInnerHTML={{ __html: proposalData }}
+          style={{ maxHeight: "70vh", overflow: "auto" }}
+        />
+      </Modal>
+
+      <Modal
+        title="Proposal status"
+        open={openApproveModal}
+        onCancel={() => setOpenApproveModal(false)}
+        onClose={() => setOpenApproveModal(false)}
+        onOk={() => form.submit()}
+        okText="Submit"
+      >
+        <Form form={form} layout="vertical" onFinish={handleFinish}>
+          <Form.Item
+            label="Status"
+            name="status"
+            rules={[{ required: true, message: "please select the status" }]}
+          >
+            <Select
+              options={[
+                { label: "Approved", value: "approved" },
+                { label: "Disapproved", value: "disapproved" },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Comment"
+            name="comment"
+            rules={[{ required: true, message: "please give comment" }]}
+          >
+            <Input.TextArea />
+          </Form.Item>
+        </Form>
+      </Modal>
     </TableOutlet>
   );
 };

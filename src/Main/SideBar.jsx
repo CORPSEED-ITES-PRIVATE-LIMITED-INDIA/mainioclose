@@ -232,6 +232,10 @@ const SideBar = () => {
               //   key: "vendors-request",
               // },
               {
+                label: <Link to={`${userid}/sales/autoHistory`}>Auto history</Link>,
+                key: "autoHistory",
+              },
+              {
                 label: (
                   <Link to={`${userid}/sales/discountedEstimates`}>Discounted estimate</Link>
                 ),

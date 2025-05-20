@@ -111,6 +111,7 @@ import BusinessArrangement from "./Main/Setting/Products/BusinessArrangement";
 import ProductCategory from "./Main/Setting/Products/ProductCategory";
 import ProductSubcategory from "./Main/Setting/Products/ProductSubcategory";
 import ProposalTemplate from "./Main/Setting/ProposalTemplate";
+import AutoHistory from "./Main/Sales/auto/AutoHistory";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -353,6 +354,7 @@ function App() {
                 <Route path="lead-form" element={<CompanyForm />} />
                 <Route path="estimate" element={<EstimatePage />} />
                 <Route path="proposal" element={<ProposalsPage />} />
+                <Route path="autoHistory" element={<AutoHistory />} />
                 <Route path="paymentsRegister" element={<PaymentRegister />} />
 
                 <Route

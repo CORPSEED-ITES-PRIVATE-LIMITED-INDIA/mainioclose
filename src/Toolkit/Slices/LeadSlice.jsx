@@ -808,6 +808,16 @@ export const getAllProposalByUserIdForManager = createAsyncThunk(
   }
 );
 
+export const proposalApprovalByManager = createAsyncThunk(
+  "proposalApprovalByManager",
+  async ({ proposalId, status, userId, comment }) => {
+    const response = await putQuery(
+      `/leadService/api/v1/proposal/approvedProposalByManager?proposalId=${proposalId}&status=${status}&userId=${userId}&comment=${comment}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllEstimateByUserId = createAsyncThunk(
   "getAllEstimateByUserId",
   async (id) => {
@@ -842,7 +852,7 @@ export const getAllPropsalListCount = createAsyncThunk(
   "getAllPropsalListCount",
   async (id) => {
     const response = await getQuery(
-      `/leadService/api/v1/proposal/getAllProposalByUserIdCount?userId=${id}`
+      `/leadService/api/v1/proposal/getAllProposalForMangerCount?userId=${id}`
     );
     return response.data;
   }
@@ -1051,6 +1061,26 @@ export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
   return response.data;
 });
 
+export const getAllAutoHistoryList = createAsyncThunk(
+  "getAllAutoHistory",
+  async ({ page, size }) => {
+    const response = await getQuery(
+      `/leadService/api/v1/lead/getAllAutoHistoryDetail?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllAutoHistroryCount = createAsyncThunk(
+  "getAllAutoHistroryCount",
+  async () => {
+    const response = await getQuery(
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailCount`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1119,6 +1149,8 @@ export const LeadSlice = createSlice({
     estimateListByUser: [],
     estimateHistoryList: {},
     templateList: [],
+    autoList: [],
+    totalAutoListCount: 0,
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1511,17 +1543,26 @@ export const LeadSlice = createSlice({
       state.complianceDocumentList = [];
     });
 
-    builder.addCase(getAllProposalByUserIdForManager.pending, (state, action) => {
-      state.proposalLoading = "pending";
-    });
-    builder.addCase(getAllProposalByUserIdForManager.fulfilled, (state, action) => {
-      state.proposalLoading = "success";
-      state.proposalList = action?.payload;
-    });
-    builder.addCase(getAllProposalByUserIdForManager.rejected, (state, action) => {
-      state.proposalList = [];
-      state.proposalLoading = "rejected";
-    });
+    builder.addCase(
+      getAllProposalByUserIdForManager.pending,
+      (state, action) => {
+        state.proposalLoading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllProposalByUserIdForManager.fulfilled,
+      (state, action) => {
+        state.proposalLoading = "success";
+        state.proposalList = action?.payload;
+      }
+    );
+    builder.addCase(
+      getAllProposalByUserIdForManager.rejected,
+      (state, action) => {
+        state.proposalList = [];
+        state.proposalLoading = "rejected";
+      }
+    );
 
     builder.addCase(getAllEstimateByUserId.pending, (state, action) => {
       state.estimateLoading = "pending";
@@ -1666,6 +1707,22 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllProposalTemplateList.rejected, (state, action) => {
       state.templateList = [];
+    });
+
+    builder.addCase(getAllAutoHistoryList.pending, (state, action) => {});
+    builder.addCase(getAllAutoHistoryList.fulfilled, (state, action) => {
+      state.autoList = action?.payload;
+    });
+    builder.addCase(getAllAutoHistoryList.rejected, (state, action) => {
+      state.autoList = [];
+    });
+
+    builder.addCase(getAllAutoHistroryCount.pending, (state, action) => {});
+    builder.addCase(getAllAutoHistroryCount.fulfilled, (state, action) => {
+      state.totalAutoListCount = action?.payload;
+    });
+    builder.addCase(getAllAutoHistroryCount.rejected, (state, action) => {
+      state.totalAutoListCount = 0;
     });
   },
 });
