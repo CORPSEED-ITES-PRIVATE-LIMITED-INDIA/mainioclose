@@ -1343,3 +1343,7 @@ select.form-control:not([size]):not([multiple]) {
 .ck-rounded-corners .ck.ck-editor__main > .ck-editor__editable, .ck.ck-editor__main > .ck-editor__editable.ck-rounded-corners{
   max-height: 69vh;
 }
+
+.ant-form-item-control-input-content{
+  display: flex;
+}

@@ -84,14 +84,14 @@ const LeadsDetailsMainPage = React.memo(
           children: <LeadHistory leadid={currLeadId} />,
         },
         {
-          label: "Estimate",
-          key: "estimate",
-          children: <LeadEstimate leadid={currLeadId} />,
-        },
-        {
           label: "Proposal",
           key: "proposal",
           children: <Proposal leadid={currLeadId} />,
+        },
+        {
+          label: "Estimate",
+          key: "estimate",
+          children: <LeadEstimate leadid={currLeadId} />,
         },
       ];
     }, [currLeadId, singleLeadResponseData]);

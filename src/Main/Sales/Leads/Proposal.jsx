@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import TextEditor from "../../Common/TextEditor";
 import template from "../../../Images/template.png";
 import {
@@ -48,7 +48,8 @@ const Proposal = ({ leadid }) => {
     values.leadId = leadid;
     values.productId = productData?.id;
     values.createdById = userid;
-    values.templateName = dispatch(sendProposal(values))
+    values.templateName = templateName
+    dispatch(sendProposal(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Propsal sent successfully !." });
@@ -89,7 +90,16 @@ const Proposal = ({ leadid }) => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        height: "91vh",
+        overflow: "auto",
+        padding: "12px",
+      }}
+    >
       <Form
         layout="vertical"
         form={form}
@@ -103,6 +113,7 @@ const Proposal = ({ leadid }) => {
                 <Form.Item
                   {...(index === 0 ? { label: "To", required: true } : {})}
                   key={field.key}
+                  style={{ marginBottom: 4 }}
                 >
                   <Form.Item
                     {...field}
@@ -115,23 +126,24 @@ const Proposal = ({ leadid }) => {
                         message: "Please input email",
                       },
                     ]}
+                    style={{ width: "100%", marginBottom: 4 }}
                   >
                     <Input placeholder="example@xyz.com" />
                   </Form.Item>
                   {fields.length > 1 ? (
                     <Button
                       size="small"
-                      style={{ margin: "0px 4px" }}
+                      type="text"
                       onClick={() => remove(field.name)}
                       danger
                     >
-                      <Icon icon="fluent:delete-24-regular" /> Delete
+                      <Icon icon="fluent:delete-24-regular" />
                     </Button>
                   ) : null}
                 </Form.Item>
               ))}
               <Form.Item>
-                <Button type="dashed" onClick={() => add()}>
+                <Button type="link" onClick={() => add()}>
                   Add to
                 </Button>
                 <Form.ErrorList errors={errors} />
@@ -144,37 +156,38 @@ const Proposal = ({ leadid }) => {
             <>
               {fields.map((field, index) => (
                 <Form.Item
-                  {...(index === 0 ? { label: "Cc", required: true } : {})}
+                  {...(index === 0 ? { label: "Cc" } : {})}
                   key={field.key}
+                  style={{ marginBottom: 4 }}
                 >
                   <Form.Item
                     {...field}
                     validateTrigger={["onChange", "onBlur"]}
                     rules={[
                       {
-                        required: true,
                         whitespace: true,
                         type: "email",
                         message: "Please input email",
                       },
                     ]}
+                    style={{ width: "100%", marginBottom: 4 }}
                   >
                     <Input placeholder="example@xyz.com" />
                   </Form.Item>
                   {fields.length > 1 ? (
                     <Button
                       size="small"
-                      style={{ margin: "0px 4px" }}
+                      type="text"
                       onClick={() => remove(field.name)}
                       danger
                     >
-                      <Icon icon="fluent:delete-24-regular" /> Delete
+                      <Icon icon="fluent:delete-24-regular" />
                     </Button>
                   ) : null}
                 </Form.Item>
               ))}
               <Form.Item>
-                <Button type="dashed" onClick={() => add()}>
+                <Button type="link" onClick={() => add()}>
                   Add Cc
                 </Button>
                 <Form.ErrorList errors={errors} />
@@ -187,37 +200,38 @@ const Proposal = ({ leadid }) => {
             <>
               {fields.map((field, index) => (
                 <Form.Item
-                  {...(index === 0 ? { label: "Bcc", required: true } : {})}
+                  {...(index === 0 ? { label: "Bcc" } : {})}
                   key={field.key}
+                  style={{ marginBottom: 4 }}
                 >
                   <Form.Item
                     {...field}
                     validateTrigger={["onChange", "onBlur"]}
                     rules={[
                       {
-                        required: true,
                         whitespace: true,
                         type: "email",
                         message: "Please input email",
                       },
                     ]}
+                    style={{ width: "100%", marginBottom: 4 }}
                   >
                     <Input placeholder="example@xyz.com" />
                   </Form.Item>
                   {fields.length > 1 ? (
                     <Button
                       size="small"
-                      style={{ margin: "0px 4px" }}
+                      type="text"
                       onClick={() => remove(field.name)}
                       danger
                     >
-                      <Icon icon="fluent:delete-24-regular" /> Delete
+                      <Icon icon="fluent:delete-24-regular" />
                     </Button>
                   ) : null}
                 </Form.Item>
               ))}
               <Form.Item>
-                <Button type="dashed" onClick={() => add()}>
+                <Button type="link" onClick={() => add()}>
                   Add bcc
                 </Button>
                 <Form.ErrorList errors={errors} />
@@ -238,6 +252,7 @@ const Proposal = ({ leadid }) => {
           rules={[{ required: true, message: "please give mail body" }]}
         >
           <TextEditor
+            initialData="<h2>Your email content</h2>"
             data={form.getFieldValue("mailBody")}
             onChange={(prev, editor) =>
               form.setFieldsValue({ mailBody: editor?.getData() })
@@ -258,6 +273,7 @@ const Proposal = ({ leadid }) => {
         </Form.Item>
         <Form.Item label="Proposal" name="template">
           <TextEditor
+            initialData="<h2>Your proposal </h2>"
             onChange={(e, editor) => {
               form.setFieldsValue({ template: editor?.getData() });
               setData(editor?.getData());
@@ -266,7 +282,9 @@ const Proposal = ({ leadid }) => {
           />
         </Form.Item>
         <Form.Item>
-          <Button htmlType="submit">Submit</Button>
+          <Button htmlType="submit" type="primary">
+            Submit
+          </Button>
         </Form.Item>
       </Form>
     </div>

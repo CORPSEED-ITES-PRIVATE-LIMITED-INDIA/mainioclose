@@ -8,7 +8,7 @@ import SomethingWrong from "../../../components/usefulThings/SomethingWrong";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { getAllProposalByUserId } from "../../../Toolkit/Slices/LeadSlice";
+import { getAllProposalByUserIdForManager } from "../../../Toolkit/Slices/LeadSlice";
 import OverFlowText from "../../../components/OverFlowText";
 import dayjs from "dayjs";
 const { Text } = Typography;
@@ -27,7 +27,9 @@ const ProposalsPage = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllProposalByUserId({ id: userid, ...paginationData }));
+    dispatch(
+      getAllProposalByUserIdForManager({ id: userid, ...paginationData })
+    );
   }, [dispatch, userid]);
 
   const columns = [
@@ -205,7 +207,7 @@ const ProposalsPage = () => {
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getAllProposalByUserId({ id: userid, page: dataPage, size }));
+      dispatch(getAllProposalByUserIdForManager({ id: userid, page: dataPage, size }));
       setPaginationData({ size: size, page: dataPage });
     },
     [dispatch]

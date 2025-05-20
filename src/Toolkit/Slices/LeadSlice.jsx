@@ -798,11 +798,11 @@ export const leadProposalSentRequest = createAsyncThunk(
   }
 );
 
-export const getAllProposalByUserId = createAsyncThunk(
-  "getAllProposalByUserId",
+export const getAllProposalByUserIdForManager = createAsyncThunk(
+  "getAllProposalByUserIdForManager",
   async ({ id, page, size }) => {
     const response = await getQuery(
-      `/leadService/api/v1/proposal/getAllProposalByUserId?userId=${id}&page=${page}&size=${size}`
+      `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}`
     );
     return response.data;
   }
@@ -1511,14 +1511,14 @@ export const LeadSlice = createSlice({
       state.complianceDocumentList = [];
     });
 
-    builder.addCase(getAllProposalByUserId.pending, (state, action) => {
+    builder.addCase(getAllProposalByUserIdForManager.pending, (state, action) => {
       state.proposalLoading = "pending";
     });
-    builder.addCase(getAllProposalByUserId.fulfilled, (state, action) => {
+    builder.addCase(getAllProposalByUserIdForManager.fulfilled, (state, action) => {
       state.proposalLoading = "success";
       state.proposalList = action?.payload;
     });
-    builder.addCase(getAllProposalByUserId.rejected, (state, action) => {
+    builder.addCase(getAllProposalByUserIdForManager.rejected, (state, action) => {
       state.proposalList = [];
       state.proposalLoading = "rejected";
     });
