@@ -159,7 +159,7 @@ const ProposalsPage = () => {
           value={searchText}
           size="small"
           onChange={handleSearch}
-          style={{ width: "220px" }}
+          style={{ width: "25%" }}
           placeholder="search"
           prefix={<Icon icon="fluent:search-24-regular" />}
         />

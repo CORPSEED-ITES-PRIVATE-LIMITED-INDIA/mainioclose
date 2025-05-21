@@ -149,7 +149,7 @@ const MainPage = () => {
           </Header>
           <Content
             style={{
-              margin: "0 16px",
+              margin: "0 8px",
             }}
           >
             <Outlet />

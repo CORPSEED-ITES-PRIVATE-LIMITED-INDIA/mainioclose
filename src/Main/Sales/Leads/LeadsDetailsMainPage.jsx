@@ -12,6 +12,7 @@ import {
   getEstimateByLeadId,
   getProductListByLeadName,
   getProposalByLeadId,
+  getProposalDataByLeadId,
   getVendorDetailList,
   handleViewHistory,
 } from "../../../Toolkit/Slices/LeadSlice";
@@ -142,7 +143,7 @@ const LeadsDetailsMainPage = React.memo(
         if (e === "proposal") {
           dispatch(getAllProductData());
           dispatch(getAllContactDetails());
-          dispatch(getProposalByLeadId(data?.id ? data?.id : data?.leadId));
+          dispatch(getProposalDataByLeadId(data?.id ? data?.id : data?.leadId));
           dispatch(
             getProductListByLeadName(singleLeadResponseData?.originalName)
           );

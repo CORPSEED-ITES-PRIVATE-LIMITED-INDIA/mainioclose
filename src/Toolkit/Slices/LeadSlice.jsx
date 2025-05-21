@@ -872,7 +872,7 @@ export const editLeadEstimate = createAsyncThunk(
 export const editLeadPropposal = createAsyncThunk(
   "editPropposal",
   async (data) => {
-    const response = await putQuery(
+    const response = await postQuery(
       `/leadService/api/v1/proposal/editProposal`,
       data
     );
@@ -1081,6 +1081,11 @@ export const getAllAutoHistroryCount = createAsyncThunk(
   }
 );
 
+export const getProposalDataByLeadId=createAsyncThunk('getProposalDataByLeadId',async(id)=>{
+  const response=await getQuery(`/leadService/api/v1/proposal/getProposalByLeadId?proposalId=${id}`)
+  return response.data
+})
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1151,6 +1156,7 @@ export const LeadSlice = createSlice({
     templateList: [],
     autoList: [],
     totalAutoListCount: 0,
+    proposalDataDetail:{}
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1723,6 +1729,16 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllAutoHistroryCount.rejected, (state, action) => {
       state.totalAutoListCount = 0;
+    });
+
+    builder.addCase(getProposalDataByLeadId.pending, (state, action) => {
+      state.proposalDataDetail = {};
+    });
+    builder.addCase(getProposalDataByLeadId.fulfilled, (state, action) => {
+      state.proposalDataDetail = action?.payload;
+    });
+    builder.addCase(getProposalDataByLeadId.rejected, (state, action) => {
+      state.proposalDataDetail = {};
     });
   },
 });
