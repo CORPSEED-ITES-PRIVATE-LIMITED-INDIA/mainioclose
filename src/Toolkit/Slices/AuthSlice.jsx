@@ -79,6 +79,22 @@ export const toggleAutoOffFeature = createAsyncThunk(
   }
 );
 
+export const handleToggleAutomation = createAsyncThunk(
+  "handleToggleAutomation",
+  async () => {
+    const response = await putQuery(`/leadService/api/v1/auto/autoOnOff`);
+    return response.data;
+  }
+);
+
+export const getAutomationStatus = createAsyncThunk(
+  "getAutomationStatus",
+  async () => {
+    const response = await getQuery(`/leadService/api/v1/auto/getAutoOnOff`);
+    return response.data;
+  }
+);
+
 export const AuthSlice = createSlice({
   name: "auth",
   initialState: {
@@ -91,6 +107,7 @@ export const AuthSlice = createSlice({
     isManagerApproved: false,
     getDepartmentDetail: {},
     userLoading: "",
+    automationStatus: false,
   },
   reducers: {
     logoutFun: (state, action) => {
@@ -147,6 +164,13 @@ export const AuthSlice = createSlice({
     });
     builder.addCase(getDepartmentOfUser.rejected, (state, action) => {
       state.loginError = true;
+    });
+
+    builder.addCase(getAutomationStatus.pending, (state, action) => {});
+    builder.addCase(getAutomationStatus.fulfilled, (state, action) => {
+      state.automationStatus = action.payload;
+    });
+    builder.addCase(getAutomationStatus.rejected, (state, action) => {
     });
   },
 });

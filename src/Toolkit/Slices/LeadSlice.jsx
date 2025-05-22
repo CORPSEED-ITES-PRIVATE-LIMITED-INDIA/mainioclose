@@ -243,6 +243,16 @@ export const getAllStatusData = createAsyncThunk(
   }
 );
 
+export const getAllStatusListByUserId = createAsyncThunk(
+  "getAllStatusListByUserId",
+  async (userId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/status/getAllStatusByUserId?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
 export const editViewData = createAsyncThunk("editViewData", async (leadid) => {
   const response = await getQuery(
     `/leadService/api/v1/inbox/editView?leadId=${leadid}`
@@ -301,6 +311,16 @@ export const getAllContactDetails = createAsyncThunk(
 
 export const getAllContactDetailsById = createAsyncThunk(
   "getAllContactDetailsById",
+  async (companyId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`
+    );
+    return response.data;
+  }
+);
+
+export const getSecondaryContactListByCompanyId = createAsyncThunk(
+  "getSecondaryContactListByCompanyId",
   async (companyId) => {
     const response = await getQuery(
       `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`
@@ -1081,10 +1101,15 @@ export const getAllAutoHistroryCount = createAsyncThunk(
   }
 );
 
-export const getProposalDataByLeadId=createAsyncThunk('getProposalDataByLeadId',async(id)=>{
-  const response=await getQuery(`/leadService/api/v1/proposal/getProposalByLeadId?proposalId=${id}`)
-  return response.data
-})
+export const getProposalDataByLeadId = createAsyncThunk(
+  "getProposalDataByLeadId",
+  async (id) => {
+    const response = await getQuery(
+      `/leadService/api/v1/proposal/getProposalByLeadId?proposalId=${id}`
+    );
+    return response.data;
+  }
+);
 
 export const LeadSlice = createSlice({
   name: "lead",
@@ -1148,7 +1173,8 @@ export const LeadSlice = createSlice({
     newCompaniesList: [],
     companyGstDetailList: [],
     companyUnitList: [],
-    contactListByCompanyId: [],
+    primaryContactListByCompanyId: [],
+    secondaryContactListByCompanyId: [],
     productDataByLeadName: {},
     estimateApprovalList: [],
     estimateListByUser: [],
@@ -1156,7 +1182,8 @@ export const LeadSlice = createSlice({
     templateList: [],
     autoList: [],
     totalAutoListCount: 0,
-    proposalDataDetail:{}
+    proposalDataDetail: {},
+    statusListById: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1669,10 +1696,18 @@ export const LeadSlice = createSlice({
 
     builder.addCase(getAllContactDetailsById.pending, (state, action) => {});
     builder.addCase(getAllContactDetailsById.fulfilled, (state, action) => {
-      state.contactListByCompanyId = action?.payload;
+      state.primaryContactListByCompanyId = action?.payload;
     });
     builder.addCase(getAllContactDetailsById.rejected, (state, action) => {
-      state.contactListByCompanyId = [];
+      state.primaryContactListByCompanyId = [];
+    });
+
+    builder.addCase(getSecondaryContactListByCompanyId.pending, (state, action) => {});
+    builder.addCase(getSecondaryContactListByCompanyId.fulfilled, (state, action) => {
+      state.secondaryContactListByCompanyId = action?.payload;
+    });
+    builder.addCase(getSecondaryContactListByCompanyId.rejected, (state, action) => {
+      state.secondaryContactListByCompanyId = [];
     });
 
     builder.addCase(getProductListByLeadName.pending, (state, action) => {});
@@ -1739,6 +1774,16 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getProposalDataByLeadId.rejected, (state, action) => {
       state.proposalDataDetail = {};
+    });
+
+    builder.addCase(getAllStatusListByUserId.pending, (state, action) => {
+      state.statusListById = [];
+    });
+    builder.addCase(getAllStatusListByUserId.fulfilled, (state, action) => {
+      state.statusListById = action?.payload;
+    });
+    builder.addCase(getAllStatusListByUserId.rejected, (state, action) => {
+      state.statusListById = [];
     });
   },
 });

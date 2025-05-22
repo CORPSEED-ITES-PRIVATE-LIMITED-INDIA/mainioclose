@@ -30,6 +30,7 @@ import {
   getAllContactDetails,
   getAllContactDetailsById,
   getEstimateByLeadId,
+  getSecondaryContactListByCompanyId,
   searchCompaniesForCompany,
 } from "../../../Toolkit/Slices/LeadSlice";
 import {
@@ -64,7 +65,10 @@ const LeadEstimate = ({ leadid }) => {
   const pdfRef = useRef();
   const productData = useSelector((state) => state.leads.productDataByLeadName);
   const contactList = useSelector(
-    (state) => state?.leads?.contactListByCompanyId
+    (state) => state?.leads?.primaryContactListByCompanyId
+  );
+  const secondaryContactList = useSelector(
+    (state) => state?.leads?.primaryContactListByCompanyId
   );
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
   const seachCompniesList = useSelector(
@@ -251,6 +255,7 @@ const LeadEstimate = ({ leadid }) => {
     console.log("dkjfbaskljdhflkasj", details);
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactDetailsById(details?.companyId));
+    dispatch(getSecondaryContactListByCompanyId(details?.companyId));
     getAllStatesByCountryId(details?.primaryCountry?.id);
     getAllCitiesByStateId(details?.primaryState?.id);
     dispatch(getAllProductCategoryById(details?.businessArrangmentId));
@@ -754,6 +759,7 @@ const LeadEstimate = ({ leadid }) => {
                               ? { label: "Email", required: true }
                               : {})}
                             key={field.key}
+                            style={{ marginBottom: 4 }}
                           >
                             <Form.Item
                               {...field}
@@ -766,23 +772,25 @@ const LeadEstimate = ({ leadid }) => {
                                   message: "Please input email",
                                 },
                               ]}
+                              style={{ width: "100%", marginBottom: 4 }}
                             >
                               <Input placeholder="example@xyz.com" />
                             </Form.Item>
                             {fields.length > 1 ? (
                               <Button
                                 size="small"
+                                type="text"
                                 style={{ margin: "0px 4px" }}
                                 onClick={() => remove(field.name)}
                                 danger
                               >
-                                <Icon icon="fluent:delete-24-regular" /> Delete
+                                <Icon icon="fluent:delete-24-regular" />
                               </Button>
                             ) : null}
                           </Form.Item>
                         ))}
                         <Form.Item>
-                          <Button type="dashed" onClick={() => add()}>
+                          <Button type="link" onClick={() => add()}>
                             Add Cc
                           </Button>
                           <Form.ErrorList errors={errors} />
@@ -869,8 +877,8 @@ const LeadEstimate = ({ leadid }) => {
                   <Select
                     showSearch
                     options={
-                      contactList?.length > 0
-                        ? contactList?.map((item) => ({
+                      secondaryContactList?.length > 0
+                        ? secondaryContactList?.map((item) => ({
                             label: `${maskEmail(
                               item?.email
                             )} || ${maskMobileNumber(item?.contactNo)} `,
@@ -1917,97 +1925,167 @@ const LeadEstimate = ({ leadid }) => {
                   </Flex>
 
                   <Flex vertical gap={16}>
-                    <table className="custom-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Item and description</th>
-                          <th>HSN</th>
-                          <th>Rate</th>
-                          <th>GST %</th>
-                          <th>GST amount</th>
-                          <th>Amount</th>
-                        </tr>
-                      </thead>
+                    {details?.Type === "Product" ? (
+                      <table className="custom-table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Item and description</th>
+                            <th>HSN</th>
+                            <th>Rate/kg</th>
+                            <th>Quantity (kg)</th>
+                            <th>GST %</th>
+                            <th>GST amount</th>
+                            <th>Amount</th>
+                          </tr>
+                        </thead>
 
-                      <tbody>
-                        <tr>
-                          <td>1</td>
-                          <td>
-                            <Text style={{ fontWeight: "bold" }}>
-                              {details?.productName}
-                            </Text>
-                          </td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                        </tr>
-                        {details?.govermentCode && (
+                        <tbody>
                           <tr>
+                            <td>1</td>
+                            <td>
+                              <Text style={{ fontWeight: "bold" }}>
+                                {details?.productName}
+                              </Text>
+                            </td>
                             <td></td>
-                            <td>Government fee</td>
-                            <td>{details?.govermentCode}</td>
-                            <td>{""}</td>
-                            <td>{details?.govermentGst}</td>
-                            <td>{""}</td>
-                            <td>{details?.govermentFees}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                           </tr>
-                        )}
-                        {details?.profesionalCode !== null && (
+                          {details?.gstCode && (
+                            <tr>
+                              <td></td>
+                              <td>Service fee</td>
+                              <td>{details?.gstCode}</td>
+                              <td>{details?.totalPrice}</td>
+                              <td>{details?.quantity}</td>
+                              <td>{details?.gst}</td>
+                              <td>
+                                {(details?.totalPrice *
+                                  details?.quantity *
+                                  details?.gst) /
+                                  100}
+                              </td>
+                              <td>{details?.totalAmount}</td>
+                            </tr>
+                          )}
+                          <tr
+                            style={{
+                              borderTop: "1px solid black",
+                              borderBottom: "1px solid black",
+                            }}
+                          >
+                            <td></td>
+                            <td>
+                              <Text strong>Total Qty. : 1</Text>
+                            </td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>
+                              <Text strong>{details?.totalAmount}</Text>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    ) : (
+                      <table className="custom-table">
+                        <thead>
                           <tr>
-                            <td></td>
-                            <td>Professional fee</td>
-                            <td>{details?.profesionalCode}</td>
-                            <td>{""}</td>
-                            <td>{details?.profesionalGst}</td>
-                            <td>{""}</td>
-                            <td>{details?.professionalFees}</td>
+                            <th>#</th>
+                            <th>Item and description</th>
+                            <th>HSN</th>
+                            <th>Rate</th>
+                            <th>GST %</th>
+                            <th>GST amount</th>
+                            <th>Amount</th>
                           </tr>
-                        )}
-                        {details?.serviceCode !== null && (
+                        </thead>
+
+                        <tbody>
                           <tr>
+                            <td>1</td>
+                            <td>
+                              <Text style={{ fontWeight: "bold" }}>
+                                {details?.productName}
+                              </Text>
+                            </td>
                             <td></td>
-                            <td>Service fee</td>
-                            <td>{details?.serviceCode}</td>
-                            <td>{""}</td>
-                            <td>{details?.serviceGst}</td>
-                            <td>{""}</td>
-                            <td>{details?.serviceCharge}</td>
-                          </tr>
-                        )}
-                        {details?.otherCode !== null && (
-                          <tr>
                             <td></td>
-                            <td>Other fee</td>
-                            <td>{details?.otherCode}</td>
-                            <td>{""}</td>
-                            <td>{details?.otherGst}</td>
-                            <td>{""}</td>
-                            <td>{details?.otherFees}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                           </tr>
-                        )}
-                        <tr
-                          style={{
-                            borderTop: "1px solid black",
-                            borderBottom: "1px solid black",
-                          }}
-                        >
-                          <td></td>
-                          <td>
-                            <Text strong>Total Qty. : 1</Text>
-                          </td>
-                          <td>{""}</td>
-                          <td>{""}</td>
-                          <td>{""}</td>
-                          <td>{""}</td>
-                          <td>
-                            <Text strong>{details?.totalAmount}</Text>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          {details?.govermentCode && (
+                            <tr>
+                              <td></td>
+                              <td>Government fee</td>
+                              <td>{details?.govermentCode}</td>
+                              <td>{""}</td>
+                              <td>{details?.govermentGst}</td>
+                              <td>{""}</td>
+                              <td>{details?.govermentFees}</td>
+                            </tr>
+                          )}
+                          {details?.profesionalCode !== null && (
+                            <tr>
+                              <td></td>
+                              <td>Professional fee</td>
+                              <td>{details?.profesionalCode}</td>
+                              <td>{""}</td>
+                              <td>{details?.profesionalGst}</td>
+                              <td>{""}</td>
+                              <td>{details?.professionalFees}</td>
+                            </tr>
+                          )}
+                          {details?.serviceCode !== null && (
+                            <tr>
+                              <td></td>
+                              <td>Service fee</td>
+                              <td>{details?.serviceCode}</td>
+                              <td>{""}</td>
+                              <td>{details?.serviceGst}</td>
+                              <td>{""}</td>
+                              <td>{details?.serviceCharge}</td>
+                            </tr>
+                          )}
+                          {details?.otherCode !== null && (
+                            <tr>
+                              <td></td>
+                              <td>Other fee</td>
+                              <td>{details?.otherCode}</td>
+                              <td>{""}</td>
+                              <td>{details?.otherGst}</td>
+                              <td>{""}</td>
+                              <td>{details?.otherFees}</td>
+                            </tr>
+                          )}
+                          <tr
+                            style={{
+                              borderTop: "1px solid black",
+                              borderBottom: "1px solid black",
+                            }}
+                          >
+                            <td></td>
+                            <td>
+                              <Text strong>Total Qty. : 1</Text>
+                            </td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>{""}</td>
+                            <td>
+                              <Text strong>{details?.totalAmount}</Text>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    )}
+
                     {details?.totalAmount > 0 && (
                       <Flex justify="flex-end" gap={4}>
                         <Text type="secondary">Total in words</Text>
@@ -2017,50 +2095,73 @@ const LeadEstimate = ({ leadid }) => {
                     )}
                     <Flex vertical>
                       <Text>Text details</Text>
-                      <table className="gst-table">
-                        <thead>
-                          <tr>
-                            <th>HSN</th>
-                            <th>SGST %</th>
-                            <th>CGST %</th>
-                            <th>IGST %</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {details?.profesionalCode !== null && (
+                      {details?.Type === "Product" ? (
+                        <table className="gst-table">
+                          <thead>
                             <tr>
-                              <td>{details?.profesionalCode}</td>
-                              <td>0.0 %</td>
-                              <td>0.0 %</td>
-                              <td>{details?.profesionalGst}</td>
+                              <th>HSN</th>
+                              <th>SGST %</th>
+                              <th>CGST %</th>
+                              <th>IGST %</th>
                             </tr>
-                          )}
-                          {details?.serviceCode !== null && (
+                          </thead>
+                          <tbody>
+                            {details?.gstCode !== null && (
+                              <tr>
+                                <td>{details?.gstCode}</td>
+                                <td>0.0 %</td>
+                                <td>0.0 %</td>
+                                <td>{details?.gst}</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <table className="gst-table">
+                          <thead>
                             <tr>
-                              <td>{details?.serviceCode}</td>
-                              <td>0.0 %</td>
-                              <td>0.0 %</td>
-                              <td>{details?.serviceGst}</td>
+                              <th>HSN</th>
+                              <th>SGST %</th>
+                              <th>CGST %</th>
+                              <th>IGST %</th>
                             </tr>
-                          )}
-                          {details?.govermentCode !== null && (
-                            <tr>
-                              <td>{details?.govermentCode}</td>
-                              <td>0.0 %</td>
-                              <td>0.0 %</td>
-                              <td>{details?.govermentGst}</td>
-                            </tr>
-                          )}
-                          {details?.otherCode !== null && (
-                            <tr>
-                              <td>{details?.otherCode}</td>
-                              <td>0.0 %</td>
-                              <td>0.0 %</td>
-                              <td>{details?.otherGst}</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {details?.profesionalCode !== null && (
+                              <tr>
+                                <td>{details?.profesionalCode}</td>
+                                <td>0.0 %</td>
+                                <td>0.0 %</td>
+                                <td>{details?.profesionalGst}</td>
+                              </tr>
+                            )}
+                            {details?.serviceCode !== null && (
+                              <tr>
+                                <td>{details?.serviceCode}</td>
+                                <td>0.0 %</td>
+                                <td>0.0 %</td>
+                                <td>{details?.serviceGst}</td>
+                              </tr>
+                            )}
+                            {details?.govermentCode !== null && (
+                              <tr>
+                                <td>{details?.govermentCode}</td>
+                                <td>0.0 %</td>
+                                <td>0.0 %</td>
+                                <td>{details?.govermentGst}</td>
+                              </tr>
+                            )}
+                            {details?.otherCode !== null && (
+                              <tr>
+                                <td>{details?.otherCode}</td>
+                                <td>0.0 %</td>
+                                <td>0.0 %</td>
+                                <td>{details?.otherGst}</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      )}
                     </Flex>
                   </Flex>
                   <Flex vertical gap={8}>

@@ -11,6 +11,7 @@ import {
   deleteLeadContact,
   editViewData,
   getAllRemarkAndCommnts,
+  getAllStatusListByUserId,
   getSingleLeadDataByLeadID,
   handleLeadassignedToSamePerson,
   updateAutoAssignnee,
@@ -59,7 +60,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const userDataResponse = useSelector(
     (state) => state.leads.getAllLeadUserData
   );
-  const getAllStatus = useSelector((state) => state.leads.getAllStatus);
+  const getAllStatus = useSelector((state) => state.leads.statusListById);
   const singleLeadResponseData = useSelector(
     (state) => state.leads.singleLeadResponseData
   );
@@ -93,6 +94,10 @@ const LeadDetailsPage = ({ leadid }) => {
   useEffect(() => {
     setDescriptionText(singleLeadResponseData?.description);
   }, [singleLeadResponseData]);
+
+  useEffect(()=>{
+    dispatch(getAllStatusListByUserId(userid))
+  },[userid])
 
   const getSingleLeadData = useCallback(() => {
     if (leadid) {

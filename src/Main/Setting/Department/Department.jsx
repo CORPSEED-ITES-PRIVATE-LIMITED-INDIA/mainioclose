@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react"
-import "./Department.scss"
-import MainHeading from "../../../components/design/MainHeading"
+import React, { useCallback, useEffect, useState } from "react";
+import "./Department.scss";
+import MainHeading from "../../../components/design/MainHeading";
 import {
   Button,
   Form,
@@ -10,99 +10,104 @@ import {
   Select,
   Tag,
   Tooltip,
-} from "antd"
-import CommonTable from "../../../components/CommonTable"
-import { useDispatch, useSelector } from "react-redux"
+} from "antd";
+import CommonTable from "../../../components/CommonTable";
+import { useDispatch, useSelector } from "react-redux";
 import {
+  addStatusInDepartment,
   createDepartment,
   createDesiginationByDepartmentId,
   getAllDepartment,
   getAllDesiginations,
-} from "../../../Toolkit/Slices/SettingSlice"
+} from "../../../Toolkit/Slices/SettingSlice";
 import {
   createAuthDepartment,
   createDesiginationByDepartment,
-} from "../../../Toolkit/Slices/AuthSlice"
-import { playErrorSound, playSuccessSound } from "../../Common/Commons"
-import { Icon } from "@iconify/react"
-import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants"
+} from "../../../Toolkit/Slices/AuthSlice";
+import { playErrorSound, playSuccessSound } from "../../Common/Commons";
+import { Icon } from "@iconify/react";
+import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants";
+import { getAllStatusData } from "../../../Toolkit/Slices/LeadSlice";
 
 const Department = () => {
-  const [form] = Form.useForm()
-  const [form1] = Form.useForm()
-  const dispatch = useDispatch()
-  const departmentList = useSelector((state) => state.setting.allDepartment)
+  const [form] = Form.useForm();
+  const [form1] = Form.useForm();
+  const [statusForm] = Form.useForm();
+  const dispatch = useDispatch();
+  const departmentList = useSelector((state) => state.setting.allDepartment);
+  const getAllStatus = useSelector((state) => state.leads.getAllStatus);
   const desiginationList = useSelector(
     (state) => state.setting.desiginationList
-  )
-  const [openModal, setOpenModal] = useState(false)
-  const [openDesiginationModal, setOpenDesiginationModal] = useState(false)
-  const [departmentData, setDepartmentData] = useState(null)
-  const [searchText, setSearchText] = useState("")
-  const [filteredData, setFilteredData] = useState([])
+  );
+  const [openModal, setOpenModal] = useState(false);
+  const [openDesiginationModal, setOpenDesiginationModal] = useState(false);
+  const [departmentData, setDepartmentData] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  const [statusModal, setStatusModal] = useState(false);
 
   useEffect(() => {
-    dispatch(getAllDepartment())
-    dispatch(getAllDesiginations())
-  }, [dispatch])
-
+    dispatch(getAllDepartment());
+    dispatch(getAllDesiginations());
+    dispatch(getAllStatusData());
+  }, [dispatch]);
 
   useEffect(() => {
-    setFilteredData(departmentList)
-  }, [departmentList])
+    setFilteredData(departmentList);
+  }, [departmentList]);
 
   const handleSearch = (e) => {
-    const value = e.target.value.trim()
-    setSearchText(value)
+    const value = e.target.value.trim();
+    setSearchText(value);
     const filtered = departmentList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
-    )
-    setFilteredData(filtered)
-  }
+    );
+    setFilteredData(filtered);
+  };
 
   const handleFinish = (values) => {
     dispatch(createAuthDepartment(values)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        const temp = resp?.payload?.data
+        const temp = resp?.payload?.data;
         dispatch(createDepartment({ name: temp?.name }))
           .then((info) => {
             if (info.meta.requestStatus === "fulfilled") {
               notification.success({
                 message: "Department created successfully.",
-              })
-              playSuccessSound()
-              setOpenModal(false)
-              dispatch(getAllDepartment())
+              });
+              playSuccessSound();
+              setOpenModal(false);
+              dispatch(getAllDepartment());
             } else if (info.meta.requestStatus === "rejected") {
               notification.error({
                 message: "Something went wrong !.",
-              })
-              playErrorSound()
+              });
+              playErrorSound();
             }
           })
           .catch(() => {
             notification.error({
               message: "Something went wrong !.",
-            })
-            playErrorSound()
-          })
+            });
+            playErrorSound();
+          });
       }
-    })
-  }
+    });
+  };
 
   const addDesigination = (data) => {
-    setOpenDesiginationModal(true)
+    setOpenDesiginationModal(true);
     form1.setFieldsValue({
       designation: data?.designations?.map((item) => item?.id),
-    })
-    setDepartmentData(data)
-  }
+    });
+    setDepartmentData(data);
+  };
 
   const handleDesiginations = useCallback(
     (values) => {
-      values.id = departmentData?.id
+      values.id = departmentData?.id;
       dispatch(createDesiginationByDepartment(values))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -111,26 +116,26 @@ const Department = () => {
                 if (response.meta.requestStatus === "fulfilled") {
                   notification.success({
                     message: "Desigination added successfully",
-                  })
-                  setOpenDesiginationModal(false)
-                  dispatch(getAllDepartment())
+                  });
+                  setOpenDesiginationModal(false);
+                  dispatch(getAllDepartment());
                 } else {
-                  notification.error({ message: "Something went wrong !." })
+                  notification.error({ message: "Something went wrong !." });
                 }
               })
               .catch(() => {
-                notification.error({ message: "Something went wrong !." })
-              })
+                notification.error({ message: "Something went wrong !." });
+              });
           } else {
-            notification.error({ message: "Something went wrong !." })
+            notification.error({ message: "Something went wrong !." });
           }
         })
         .catch(() => {
-          notification.error({ message: "Something went wrong !." })
-        })
+          notification.error({ message: "Something went wrong !." });
+        });
     },
     [departmentData, dispatch]
-  )
+  );
 
   const columns = [
     {
@@ -147,12 +152,16 @@ const Department = () => {
       render: (_, records) => {
         const tags = records?.designations?.map((item) => (
           <Tag className="tags">{item?.name}</Tag>
-        ))
+        ));
         return (
           <div className="tagContainer">
             {tags?.[0]}
             {tags?.length >= 2 && (
-              <Tooltip title={tags} arrow={false} overlayStyle={{maxWidth:'700px'}}>
+              <Tooltip
+                title={tags}
+                arrow={false}
+                overlayStyle={{ maxWidth: "700px" }}
+              >
                 <Icon
                   icon="fluent:more-horizontal-24-regular"
                   height={BTN_ICON_HEIGHT}
@@ -161,41 +170,118 @@ const Department = () => {
               </Tooltip>
             )}
           </div>
-        )
+        );
+      },
+    },
+    {
+      title: "Status",
+      dataIndex: "departmentStatus",
+      render: (_, records) => {
+        const tags = records?.departmentStatus?.map((item) => (
+          <Tag className="tags">{item?.name}</Tag>
+        ));
+        return (
+          <div className="tagContainer">
+            {tags?.[0]}
+            {tags?.length >= 2 && (
+              <Tooltip
+                title={tags}
+                arrow={false}
+                overlayStyle={{ maxWidth: "700px" }}
+              >
+                <Icon
+                  icon="fluent:more-horizontal-24-regular"
+                  height={BTN_ICON_HEIGHT}
+                  width={BTN_ICON_WIDTH}
+                />
+              </Tooltip>
+            )}
+          </div>
+        );
       },
     },
     {
       title: "Add desigination",
       dataIndex: "addDesigination",
       render: (_, records) => (
-        <Button
-          size="small"
-          onClick={() => addDesigination(records)}
-        >
+        <Button size="small" onClick={() => addDesigination(records)}>
           <Icon icon="fluent:add-16-filled" /> Add
         </Button>
       ),
     },
-  ]
+    {
+      title: "Map status",
+      dataIndex: "mapStatus",
+      render: (_, records) => (
+        <Button
+          onClick={() => {
+            statusForm.setFieldsValue({
+              statusId: records?.departmentStatus?.map((item) => item?.id),
+            });
+            setDepartmentData(records);
+            setStatusModal(true);
+          }}
+        >
+          Status
+        </Button>
+      ),
+    },
+  ];
+
+  const handleAddStatus = (values) => {
+    dispatch(
+      addStatusInDepartment({
+        departmentId: departmentData?.id,
+        ...values,
+      })
+    )
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          notification.success({
+            message: "Status added successfully in department !.",
+          });
+          setStatusModal(false);
+          dispatch(getAllDepartment());
+          setDepartmentData(null);
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => {
+        notification.error({ message: "Something went wrong !." });
+      });
+  };
+
   return (
     <div>
       <div className="create-user-box">
         <MainHeading data={`Department`} />
-        <Button type="primary" size="small" onClick={() => setOpenModal(true)}>
-          Add department
-        </Button>
       </div>
       <div className="setting-table">
-      <div className="flex-verti-center-hori-start mt-2">
-        <Input
-          value={searchText}
-          size="small"
-          onChange={handleSearch}
-          style={{ width: "220px" }}
-          placeholder="search"
-          prefix={<Icon icon="fluent:search-24-regular" />}
-        />
-      </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Input
+            value={searchText}
+            size="small"
+            onChange={handleSearch}
+            style={{ width: "220px" }}
+            placeholder="search"
+            prefix={<Icon icon="fluent:search-24-regular" />}
+          />
+
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => setOpenModal(true)}
+          >
+            Add department
+          </Button>
+        </div>
         <div className="table-responsive">
           <CommonTable
             data={filteredData}
@@ -246,7 +332,7 @@ const Department = () => {
               showSearch
               allowClear
               mode="multiple"
-              maxTagCount='responsive'
+              maxTagCount="responsive"
               options={
                 desiginationList?.length > 0
                   ? desiginationList?.map((item) => ({
@@ -262,8 +348,38 @@ const Department = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
-  )
-}
 
-export default Department
+      <Modal
+        title="Map status with department"
+        open={statusModal}
+        onClose={() => setStatusModal(false)}
+        onCancel={() => setStatusModal(false)}
+        onOk={() => statusForm.submit()}
+        okText="Submit"
+      >
+        <Form form={statusForm} layout="vertical" onFinish={handleAddStatus}>
+          <Form.Item
+            label="Status"
+            name="statusId"
+            rules={[{ required: true, message: "please select status" }]}
+          >
+            <Select
+              mode="multiple"
+              options={
+                getAllStatus?.map((item) => ({
+                  label: item?.name,
+                  value: item?.id,
+                })) || []
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
+
+export default Department;
