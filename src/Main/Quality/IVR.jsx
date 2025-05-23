@@ -65,13 +65,13 @@ const IVR = () => {
         <Text>{dayjs(data?.startTime).format("DD-MM-YYYY ,  hh:mm a")}</Text>
       ),
     },
-    {
-      dataIndex: "endTime",
-      title: "End time",
-      render: (_, data) => (
-        <Text>{dayjs(data?.endTime).format("DD-MM-YYYY ,  hh:mm a")}</Text>
-      ),
-    },
+    // {
+    //   dataIndex: "endTime",
+    //   title: "End time",
+    //   render: (_, data) => (
+    //     <Text>{dayjs(data?.endTime).format("DD-MM-YYYY ,  hh:mm a")}</Text>
+    //   ),
+    // },
     {
       dataIndex: "duration",
       title: "Duration",
