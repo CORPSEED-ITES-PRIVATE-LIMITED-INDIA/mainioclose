@@ -13,6 +13,11 @@ export const addNewRating = createAsyncThunk(
   }
 )
 
+export const addMultiuser=createAsyncThunk('addMultiuser',async(data)=>{
+  const response=await postQuery(`/leadService/api/v1/rating/addUserAndMultiRating`,data)
+  return response.data
+})
+
 export const allRatingUsers = createAsyncThunk(
   "all-rating-users-list",
   async ({ id }) => {
