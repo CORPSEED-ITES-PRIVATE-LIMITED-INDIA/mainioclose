@@ -1,63 +1,90 @@
-import React, { useCallback, useEffect, useState } from "react"
-import TableOutlet from "../../components/design/TableOutlet"
-import MainHeading from "../../components/design/MainHeading"
-import { useDispatch, useSelector } from "react-redux"
-import TableScalaton from "../../components/TableScalaton"
-import SomethingWrong from "../../components/usefulThings/SomethingWrong"
-import CreateRatingModel from "../../Model/CreateRatingModel"
-import CommonTable from "../../components/CommonTable"
-import OverFlowText from "../../components/OverFlowText"
-import { Icon } from "@iconify/react"
-import { Button, Flex, Form, Input, Modal, Select, Typography, notification } from "antd"
-import { getAllUrlList } from "../../Toolkit/Slices/LeadUrlSlice"
-import { addMultiuser } from "../../Toolkit/Slices/RatingSlice"
-const { Text } = Typography
+import React, { useCallback, useEffect, useState } from "react";
+import TableOutlet from "../../components/design/TableOutlet";
+import MainHeading from "../../components/design/MainHeading";
+import { useDispatch, useSelector } from "react-redux";
+import TableScalaton from "../../components/TableScalaton";
+import SomethingWrong from "../../components/usefulThings/SomethingWrong";
+import CreateRatingModel from "../../Model/CreateRatingModel";
+import CommonTable from "../../components/CommonTable";
+import OverFlowText from "../../components/OverFlowText";
+import { Icon } from "@iconify/react";
+import {
+  Button,
+  Flex,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Typography,
+  notification,
+} from "antd";
+import { getAllUrlList } from "../../Toolkit/Slices/LeadUrlSlice";
+import { addMultiuser } from "../../Toolkit/Slices/RatingSlice";
+const { Text } = Typography;
 
 const UserService = () => {
-  const [form] = Form.useForm()
-  const dispatch = useDispatch()
+  const [form] = Form.useForm();
+  const dispatch = useDispatch();
   const { allLeadUrlLoading, allLeadUrlError, allUrlList } = useSelector(
     (prev) => prev?.leadurls
-  )
-  const allLeadUrl = useSelector((state) => state.leadurls.allUrlList)
-  const { allUsers } = useSelector((prev) => prev?.user)
+  );
+  const allLeadUrl = useSelector((state) => state.leadurls.allUrlList);
+  const { allUsers } = useSelector((prev) => prev?.user);
   const allStars = [
     { value: 1, label: "1" },
     { value: 2, label: "2" },
     { value: 3, label: "3" },
     { value: 4, label: "4" },
     { value: 5, label: "5" },
-  ]
-  const [openModal, setOpenModal] = useState(false)
-  const [searchText, setSearchText] = useState("")
-  const [filteredData, setFilteredData] = useState([])
+  ];
+  const [openModal, setOpenModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [ctrlPressed, setCtrlPressed] = useState(false);
 
   useEffect(() => {
-    dispatch(getAllUrlList())
-  }, [dispatch])
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey) setCtrlPressed(true);
+    };
+    const handleKeyUp = (e) => {
+      if (!e.ctrlKey) setCtrlPressed(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  const filteredOptions = allLeadUrl?.filter((item) =>
+    item?.urlsName?.toLowerCase().includes(searchTerm?.toLowerCase())
+  );
+  useEffect(() => {
+    dispatch(getAllUrlList());
+  }, [dispatch]);
 
   useEffect(() => {
-    setFilteredData(allUrlList)
-  }, [allUrlList])
-
-
+    setFilteredData(allUrlList);
+  }, [allUrlList]);
 
   const handleSearch = (e) => {
-    const value = e.target.value.trim()
-    setSearchText(value)
+    const value = e.target.value.trim();
+    setSearchText(value);
     const filtered = allUrlList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
-    )
-    setFilteredData(filtered)
-  }
+    );
+    setFilteredData(filtered);
+  };
 
   const columns = [
     {
       dataIndex: "id",
       title: "Id",
-      width: 100
+      width: 100,
     },
     {
       dataIndex: "urlsName",
@@ -74,75 +101,78 @@ const UserService = () => {
       width: 100,
       render: (_, data) => <Text>{data?.quality ? "True" : "False"}</Text>,
     },
-  ]
-
-
+  ];
 
   const handleFinish = useCallback(
     (values) => {
-
       dispatch(addMultiuser(values))
         .then((response) => {
           if (response.meta.requestStatus === "fulfilled") {
             notification.success({
               message: "Rating updated successfully .",
-            })
-            dispatch(getAllUrlList())
-            form.resetFields()
-            setOpenModal(false)
+            });
+            dispatch(getAllUrlList());
+            form.resetFields();
+            setOpenModal(false);
           } else if (response.meta.requestStatus === "rejected") {
             notification.error({
               message: "Either user is already persent or empty",
-            })
-            setOpenModal(false)
+            });
+            setOpenModal(false);
           }
         })
         .catch((err) => {
-          notification.error({ message: "Something went wrong !." })
-          setOpenModal(false)
-        })
+          notification.error({ message: "Something went wrong !." });
+          setOpenModal(false);
+        });
     },
     [dispatch, form]
-  )
+  );
 
   return (
     <TableOutlet>
       <div className="create-user-box">
         <MainHeading data={"All service"} />
-
-        <Flex gap={8}>
-          <Button onClick={() => setOpenModal(true)}>
-            Add multiservice
-          </Button>
-          <CreateRatingModel />
-        </Flex>
       </div>
 
       <div>
-        <Input
-          placeholder="search"
-          value={searchText}
-          onChange={handleSearch}
-          style={{ width: "250px" }}
-          prefix={<Icon icon="fluent:search-24-regular" />}
-        />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <Input
+            placeholder="search"
+            value={searchText}
+            onChange={handleSearch}
+            style={{ width: "250px" }}
+            prefix={<Icon icon="fluent:search-24-regular" />}
+          />
+          <Flex gap={8}>
+            <Button onClick={() => setOpenModal(true)}>Add multiservice</Button>
+            <CreateRatingModel />
+          </Flex>
+        </div>
         {allLeadUrlLoading && <TableScalaton />}
         {allLeadUrlError && <SomethingWrong />}
         {allUrlList && !allLeadUrlLoading && !allLeadUrlError && (
           <CommonTable
             data={filteredData}
             columns={columns}
-            scroll={{ y: 450 }}
+            scroll={{ y: 550 }}
             rowSelection={true}
           />
         )}
       </div>
       <Modal
-        title='Add multiservice'
-        open={openModal} 
+        title="Add multiservice"
+        open={openModal}
         onCancel={() => setOpenModal(false)}
         onClose={() => setOpenModal(false)}
-        okText='Submit'
+        okText="Submit"
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
@@ -157,9 +187,9 @@ const UserService = () => {
               options={
                 allUsers?.length > 0
                   ? allUsers?.map((item) => ({
-                    label: item?.fullName,
-                    value: item?.id,
-                  }))
+                      label: item?.fullName,
+                      value: item?.id,
+                    }))
                   : []
               }
               filterOption={(input, option) =>
@@ -193,24 +223,40 @@ const UserService = () => {
               allowClear
               mode="multiple"
               maxTagCount="responsive"
+              // options={
+              //   allLeadUrl?.length > 0
+              //     ? allLeadUrl?.map((item) => ({
+              //         label: item?.urlsName,
+              //         value: item?.id,
+              //       }))
+              //     : []
+              // }
+              // filterOption={(input, option) =>
+              //   option.label.toLowerCase().includes(input.toLowerCase())
+              // }
+
+              // options={filteredOptions}
               options={
-                allLeadUrl?.length > 0
-                  ? allLeadUrl?.map((item) => ({
-                    label: item?.urlsName,
-                    value: item?.id,
-                  }))
+                filteredOptions?.length > 0
+                  ? filteredOptions?.map((item) => ({
+                      label: item?.urlsName,
+                      value: item?.id,
+                    }))
                   : []
               }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
+              filterOption={false}
+              searchValue={searchTerm}
+              onSearch={(value) => setSearchTerm(value)}
+              onChange={(value) => {
+                form.setFieldsValue({ urlsManagmentId: value });
+                if (!ctrlPressed) setSearchTerm(""); // Clear only if Ctrl not pressed
+              }}
             />
           </Form.Item>
-
         </Form>
       </Modal>
     </TableOutlet>
-  )
-}
+  );
+};
 
-export default UserService
+export default UserService;
