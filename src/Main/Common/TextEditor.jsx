@@ -94,10 +94,13 @@ import "ckeditor5/ckeditor5.css";
 import "ckeditor5-premium-features/ckeditor5-premium-features.css";
 
 const LICENSE_KEY =
-  "eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NDgzMDM5OTksImp0aSI6IjJiNWI2N2YwLWQzNDctNDA1NS05ODliLWZjMWQ5NWFmZGQwYSIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImQwNTg2MzU3In0.VrY1Ta3tFhPK33RVLUBbmSa_7-Gq81gmUkd4rD7wMfl4ChNiVTWJZGvtH6i1DKfXQFbz_epwHd3X7GC89VPWdw";
+  'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NDk1OTk5OTksImp0aSI6ImZkNThkMzUyLTI5MmYtNDIzOC05YjY1LWU0NGIyNzJhNjc1MiIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImE4MGEzYTk3In0.5KwZ4UQlWjLg9gcPIz81MigTEn-CJrBqxjiUcpBqmFEfNU8zgnAqWVoJ98m2VI40d1gj4rjzowBN5XEECoj1xw';
+
+
 
 const CLOUD_SERVICES_TOKEN_URL =
-  "https://f_v3z04zplsu.cke-cs.com/token/dev/885d2f4f11db923f216e23b79e86a0c206ba5d56713a31fcc0cc2047162c?limit=10";
+  "https://24z76q5tkmo0.cke-cs.com/token/dev/473d08163310b43e380189e0db8d33ddb6b5ad7b19b6b0a2a0d02c6562ff?limit=10";
+  
 class UsersIntegration extends Plugin {
   static get requires() {
     return ["Users"];
