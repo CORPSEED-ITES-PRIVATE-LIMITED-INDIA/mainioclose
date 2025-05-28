@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import CommonTable from "../../../components/CommonTable";
 import TableScalaton from "../../../components/TableScalaton";
-import { Button, Flex, Input,  Typography } from "antd";
+import { Button, Flex, Input, Typography } from "antd";
 import { CSVLink } from "react-csv";
 import { Icon } from "@iconify/react";
 import MainHeading from "../../../components/design/MainHeading";
@@ -9,15 +9,25 @@ import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants";
 import OverFlowText from "../../../components/OverFlowText";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllAutoHistoryList, getAllAutoHistroryCount } from "../../../Toolkit/Slices/LeadSlice";
+import {
+  getAllAutoHistoryForExport,
+  getAllAutoHistoryList,
+  getAllAutoHistroryCount,
+} from "../../../Toolkit/Slices/LeadSlice";
 import { useParams } from "react-router-dom";
+import LeadsDetailsMainPage from "../Leads/LeadsDetailsMainPage";
 const { Text } = Typography;
 
 const AutoHistory = () => {
   const dispatch = useDispatch();
   const { userid } = useParams();
   const autoList = useSelector((state) => state.leads.autoList);
-  const totalAutoListCount = useSelector((state) => state.leads.totalAutoListCount);
+  const autoHistoryExportList = useSelector(
+    (state) => state.leads.autoHistoryExportList
+  );
+  const totalAutoListCount = useSelector(
+    (state) => state.leads.totalAutoListCount
+  );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [paginationData, setPaginationData] = useState({
@@ -27,7 +37,8 @@ const AutoHistory = () => {
 
   useEffect(() => {
     dispatch(getAllAutoHistoryList(paginationData));
-    dispatch(getAllAutoHistroryCount())
+    dispatch(getAllAutoHistroryCount());
+    dispatch(getAllAutoHistoryForExport());
   }, [dispatch]);
 
   const handlePagination = useCallback(
@@ -71,7 +82,12 @@ const AutoHistory = () => {
       dataIndex: "leadname",
       title: "Lead name",
       fixed: "left",
-      render: (_, data) => <Text>{data?.leadName}</Text>,
+      // render: (_, data) => <Text>{data?.leadName}</Text>,
+      render: (_, data) => (
+        <LeadsDetailsMainPage leadId={data?.leadId} data={data}>
+          {data?.leadName}
+        </LeadsDetailsMainPage>
+      ),
     },
     {
       dataIndex: "currId",
@@ -131,42 +147,31 @@ const AutoHistory = () => {
     // },
   ];
 
-  const exportData = []?.map((row) => ({
+  const exportData = autoHistoryExportList?.map((row) => ({
     Id: row?.id,
     "Lead name": row?.leadName,
-    "Missed task": row?.missedTaskName,
-    Frequency: row?.count,
-    Status: row?.status,
+    Status: row?.status?.name,
     "Client name": row?.clientName,
-    Email: row?.clientEmail,
-    "Mobile no.": row?.clientMobNo,
-    "Assignee person": row?.assigneeName,
-    "Assignee email": row?.assigneeEmail,
-    "Created by": row?.createdBy,
-    Source: row?.source,
-    "Updated By": row?.updatedBy,
-    "Reopen By": row?.reopenBy,
-    "Reopen By Quality": row?.isReopenByQuality,
+    "Client Email": row?.clientEmail,
+    "Mobile no.": row?.mobileNo,
+    "Previous Assignee person": row?.paName,
+    "Previous Assignee email": row?.paEmail,
+    "Current Assignee person": row?.currName,
+    "Current Assignee email": row?.currEmail,
     "Created Date": dayjs(row?.createDate).format("YYYY-MM-DD"),
   }));
 
   const headers = [
     "Id",
     "Lead name",
-    "Missed task",
-    "Frequency",
     "Status",
     "Client name",
-    "Email",
+    "Client Email",
     "Mobile no.",
-    "Assignee person",
-    "Assignee email",
-    "Created by",
-    "Helper",
-    "Source",
-    "Updated By",
-    "Reopen By",
-    "Reopen By Quality",
+    "Previous Assignee person",
+    "Previous Assignee email",
+    "Current Assignee person",
+    "Current Assignee email",
     "Created Date",
   ];
 
@@ -208,7 +213,7 @@ const AutoHistory = () => {
           <CommonTable
             data={filteredData}
             columns={columns}
-            scroll={{ y: "70vh",x:1800 }}
+            scroll={{ y: "70vh", x: 1800 }}
             rowKey={(record) => record?.id}
             page={paginationData?.page}
             pageSize={paginationData?.size}

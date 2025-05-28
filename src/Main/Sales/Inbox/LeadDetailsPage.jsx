@@ -95,9 +95,9 @@ const LeadDetailsPage = ({ leadid }) => {
     setDescriptionText(singleLeadResponseData?.description);
   }, [singleLeadResponseData]);
 
-  useEffect(()=>{
-    dispatch(getAllStatusListByUserId(userid))
-  },[userid])
+  useEffect(() => {
+    dispatch(getAllStatusListByUserId(userid));
+  }, [userid]);
 
   const getSingleLeadData = useCallback(() => {
     if (leadid) {
@@ -457,6 +457,7 @@ const LeadDetailsPage = ({ leadid }) => {
                 {updateOriginalName ? (
                   <div className="comp-container">
                     <Select
+                      showSearch
                       size="small"
                       className="comp-component-1"
                       style={{ width: "100%" }}
@@ -471,9 +472,9 @@ const LeadDetailsPage = ({ leadid }) => {
                           originalName: e,
                         }))
                       }
-                      filterOption={(input, option) =>
-                        option.label.toLowerCase().includes(input.toLowerCase())
-                      }
+                      // filterOption={(input, option) =>
+                      //   option.label.toLowerCase().includes(input.toLowerCase())
+                      // }
                     />
                     <Space className="comp-component-2">
                       <Button
@@ -560,9 +561,9 @@ const LeadDetailsPage = ({ leadid }) => {
                         })) || []
                       }
                       onChange={(e) => setUpdatedLeadName(e)}
-                      filterOption={(input, option) =>
-                        option.label.toLowerCase().includes(input.toLowerCase())
-                      }
+                      // filterOption={(input, option) =>
+                      //   option.label.toLowerCase().includes(input.toLowerCase())
+                      // }
                     />
                     <Space className="comp-component-2">
                       <Button

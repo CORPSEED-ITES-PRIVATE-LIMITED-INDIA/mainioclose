@@ -1111,6 +1111,11 @@ export const getProposalDataByLeadId = createAsyncThunk(
   }
 );
 
+export const getAllAutoHistoryForExport=createAsyncThunk('getAllAutoHistoryForExport',async()=>{
+  const response=await getQuery(`/leadService/api/v1/lead/getAutoHistoryDetailsForExport`)
+  return response.data
+})
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1184,6 +1189,7 @@ export const LeadSlice = createSlice({
     totalAutoListCount: 0,
     proposalDataDetail: {},
     statusListById: [],
+    autoHistoryExportList:[]
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1784,6 +1790,16 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllStatusListByUserId.rejected, (state, action) => {
       state.statusListById = [];
+    });
+
+    builder.addCase(getAllAutoHistoryForExport.pending, (state, action) => {
+      state.autoHistoryExportList = [];
+    });
+    builder.addCase(getAllAutoHistoryForExport.fulfilled, (state, action) => {
+      state.autoHistoryExportList = action?.payload;
+    });
+    builder.addCase(getAllAutoHistoryForExport.rejected, (state, action) => {
+      state.autoHistoryExportList = [];
     });
   },
 });

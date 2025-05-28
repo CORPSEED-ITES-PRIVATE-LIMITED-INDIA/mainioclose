@@ -135,7 +135,7 @@ const LeadCreateModel = ({ leadByCompany, companyId }) => {
               <Input />
             </Form.Item>
             <Form.Item label="Mobile number" name="mobileNo">
-              <Input  />
+              <Input />
             </Form.Item>
             <Form.Item
               label="Company"
@@ -149,6 +149,7 @@ const LeadCreateModel = ({ leadByCompany, companyId }) => {
             >
               <Input />
             </Form.Item>
+
             <Form.Item label="City" name="city">
               <Input />
             </Form.Item>
@@ -175,6 +176,18 @@ const LeadCreateModel = ({ leadByCompany, companyId }) => {
                 />
               </Form.Item>
             )}
+            <Form.Item
+              label="Automation"
+              name="auto"
+              rules={[{ required: true, message: "please select automation" }]}
+            >
+              <Select
+                options={[
+                  { label: "True", value: true },
+                  { label: "False", value: false },
+                ]}
+              />
+            </Form.Item>
             <Form.Item
               label="Source"
               name="source"
