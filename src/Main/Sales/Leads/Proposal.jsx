@@ -9,6 +9,7 @@ import {
   Input,
   notification,
   Popover,
+  Select,
   Typography,
 } from "antd";
 import { useDispatch, useSelector } from "react-redux";
@@ -188,148 +189,99 @@ const Proposal = ({ leadid }) => {
           dangerouslySetInnerHTML={{ __html: proposalDataDetail?.template }}
         />
       ) : (
-        <Form
-          layout="vertical"
-          form={form}
-          onFinish={handleSubmit}
-          initialValues={{ mailTo: [""], mailCc: [""], mailBcc: [""] }}
-        >
-          <Form.List name="mailTo">
-            {(fields, { add, remove }, { errors }) => (
-              <>
-                {fields.map((field, index) => (
-                  <Form.Item
-                    {...(index === 0 ? { label: "To", required: true } : {})}
-                    key={field.key}
-                    style={{ marginBottom: 4 }}
-                  >
-                    <Form.Item
-                      {...field}
-                      validateTrigger={["onChange", "onBlur"]}
-                      rules={[
-                        {
-                          required: true,
-                          whitespace: true,
-                          type: "email",
-                          message: "Please input email",
-                        },
-                      ]}
-                      style={{ width: "100%", marginBottom: 4 }}
-                    >
-                      <Input placeholder="example@xyz.com" />
-                    </Form.Item>
-                    {fields.length > 1 ? (
-                      <Button
-                        size="small"
-                        type="text"
-                        onClick={() => remove(field.name)}
-                        danger
-                      >
-                        <Icon icon="fluent:delete-24-regular" />
-                      </Button>
-                    ) : null}
-                  </Form.Item>
-                ))}
-                <Form.Item>
-                  <Button type="link" onClick={() => add()}>
-                    Add to
-                  </Button>
-                  <Form.ErrorList errors={errors} />
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-          <Form.List name="mailCc">
-            {(fields, { add, remove }, { errors }) => (
-              <>
-                {fields.map((field, index) => (
-                  <Form.Item
-                    {...(index === 0 ? { label: "Cc" } : {})}
-                    key={field.key}
-                    style={{ marginBottom: 4 }}
-                  >
-                    <Form.Item
-                      {...field}
-                      validateTrigger={["onChange", "onBlur"]}
-                      rules={[
-                        {
-                          whitespace: true,
-                          type: "email",
-                          message: "Please input email",
-                        },
-                      ]}
-                      style={{ width: "100%", marginBottom: 4 }}
-                    >
-                      <Input placeholder="example@xyz.com" />
-                    </Form.Item>
-                    {fields.length > 1 ? (
-                      <Button
-                        size="small"
-                        type="text"
-                        onClick={() => remove(field.name)}
-                        danger
-                      >
-                        <Icon icon="fluent:delete-24-regular" />
-                      </Button>
-                    ) : null}
-                  </Form.Item>
-                ))}
-                <Form.Item>
-                  <Button type="link" onClick={() => add()}>
-                    Add Cc
-                  </Button>
-                  <Form.ErrorList errors={errors} />
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-          <Form.List name="mailBcc">
-            {(fields, { add, remove }, { errors }) => (
-              <>
-                {fields.map((field, index) => (
-                  <Form.Item
-                    {...(index === 0 ? { label: "Bcc" } : {})}
-                    key={field.key}
-                    style={{ marginBottom: 4 }}
-                  >
-                    <Form.Item
-                      {...field}
-                      validateTrigger={["onChange", "onBlur"]}
-                      rules={[
-                        {
-                          whitespace: true,
-                          type: "email",
-                          message: "Please input email",
-                        },
-                      ]}
-                      style={{ width: "100%", marginBottom: 4 }}
-                    >
-                      <Input placeholder="example@xyz.com" />
-                    </Form.Item>
-                    {fields.length > 1 ? (
-                      <Button
-                        size="small"
-                        type="text"
-                        onClick={() => remove(field.name)}
-                        danger
-                      >
-                        <Icon icon="fluent:delete-24-regular" />
-                      </Button>
-                    ) : null}
-                  </Form.Item>
-                ))}
-                <Form.Item>
-                  <Button type="link" onClick={() => add()}>
-                    Add bcc
-                  </Button>
-                  <Form.ErrorList errors={errors} />
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
+        <Form layout="vertical" form={form} onFinish={handleSubmit}>
+          <Form.Item
+            name="mailTo"
+            label="To"
+            layout="horizontal"
+            rules={[
+              {
+                required: true,
+                message: "Please enter at least one valid email",
+              },
+              {
+                validator: (_, value) => {
+                  const invalid = (value || []).filter(
+                    (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                  );
+                  return invalid.length === 0
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error(`Invalid email(s): ${invalid.join(", ")}`)
+                      );
+                },
+              },
+            ]}
+          >
+            <Select
+              mode="tags"
+              style={{ width: "100%" }}
+              placeholder="Enter emails and press Enter"
+              tokenSeparators={[",", " "]}
+              open={false} 
+              suffixIcon={false}
+            />
+          </Form.Item>
+          <Form.Item
+            name="mailCc"
+            label="Cc"
+            layout="horizontal"
+            rules={[
+              {
+                validator: (_, value) => {
+                  const invalid = (value || []).filter(
+                    (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                  );
+                  return invalid.length === 0
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error(`Invalid email(s): ${invalid.join(", ")}`)
+                      );
+                },
+              },
+            ]}
+          >
+            <Select
+              mode="tags"
+              style={{ width: "100%" }}
+              placeholder="Enter emails and press Enter"
+              tokenSeparators={[",", " "]}
+              open={false}
+              suffixIcon={false}
+            />
+          </Form.Item>
+          <Form.Item
+            name="mailBcc"
+            label="Bcc"
+            layout="horizontal"
+            rules={[
+              {
+                validator: (_, value) => {
+                  const invalid = (value || []).filter(
+                    (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                  );
+                  return invalid.length === 0
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error(`Invalid email(s): ${invalid.join(", ")}`)
+                      );
+                },
+              },
+            ]}
+          >
+            <Select
+              mode="tags"
+              style={{ width: "100%" }}
+              placeholder="Enter emails and press Enter"
+              tokenSeparators={[",", " "]}
+              open={false} 
+              suffixIcon={false}
+            />
+          </Form.Item>
           <Form.Item
             label="Subject"
             name="mailSubject"
+            layout="horizontal"
             rules={[{ required: true, message: "please give subject" }]}
           >
             <Input />

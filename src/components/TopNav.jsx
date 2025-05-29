@@ -41,7 +41,7 @@ const TopNav = () => {
       <div className="top-nav-right-container">
         {getHighestPriorityRole(currentRoles) === "ADMIN" && (
           <Flex align="center" gap={8}>
-            <Switch onChange={handleAutomation} value={autoStatus?.status} />
+            <Switch onChange={handleAutomation} value={autoStatus?.status}  />
             <Text>Automation</Text>
           </Flex>
         )}
