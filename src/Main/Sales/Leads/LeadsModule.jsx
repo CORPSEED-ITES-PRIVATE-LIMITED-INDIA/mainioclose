@@ -856,7 +856,9 @@ const LeadsModule = () => {
 
           <div className="filter-right-container">
             <RangePicker
+              showTime={{ format: "HH:mm" }}
               placement="bottomRight"
+              format="YYYY-MM-DD HH:mm"
               presets={rangePresets}
               value={[
                 allMultiFilterData?.toDate
