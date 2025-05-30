@@ -163,7 +163,7 @@ const NewCompany = () => {
         <Flex align='center' gap={12}>
           <div style={{ minWidth: '25px' }}>
             <Tooltip title={props?.rating}>
-              <Icongit typeStatus
+              <Icon
                 icon="carbon:badge"
                 width="24"
                 height="24"
