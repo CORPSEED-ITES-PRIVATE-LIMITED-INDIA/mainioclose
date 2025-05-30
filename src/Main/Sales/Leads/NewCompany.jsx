@@ -161,21 +161,23 @@ const NewCompany = () => {
       fixed: "left",
       render: (_, props) => (
         <Flex align='center' gap={12}>
-          <Tooltip title={props?.rating}>
-            <Icon
-              icon="carbon:badge"
-              width="24"
-              height="24"
-              style={{
-                color:
-                  props?.rating === "Gold"
-                    ? "#FFD700"
-                    : props?.rating === "Silver"
-                      ? "#C0C0C0"
-                      : "#CD7F32",
-              }}
-            />
-          </Tooltip>
+          <div style={{ minWidth: '25px' }}>
+            <Tooltip title={props?.rating}>
+              <Icongit typeStatus
+                icon="carbon:badge"
+                width="24"
+                height="24"
+                style={{
+                  color:
+                    props?.rating === "Gold"
+                      ? "#FFD700"
+                      : props?.rating === "Silver"
+                        ? "#C0C0C0"
+                        : "#CD7F32",
+                }}
+              />
+            </Tooltip>
+          </div>
           <OverFlowText
             linkText={true}
             to={

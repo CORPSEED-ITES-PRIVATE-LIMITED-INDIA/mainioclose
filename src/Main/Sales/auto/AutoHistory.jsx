@@ -90,9 +90,12 @@ const AutoHistory = () => {
       ),
     },
     {
-      dataIndex: "currId",
-      title: "Assignee id",
-      render: (_, data) => <Text>{data?.currId}</Text>,
+      dataIndex: "clientEmail",
+      title: "Client email",
+    },
+    {
+      dataIndex: "mobileNo",
+      title: "Client mobile",
     },
     {
       dataIndex: "assignee",
