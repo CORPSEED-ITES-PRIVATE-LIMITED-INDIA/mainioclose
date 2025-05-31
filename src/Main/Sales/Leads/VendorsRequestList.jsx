@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { Icon } from "@iconify/react"
-import { Button, Flex, Typography } from "antd"
+import { Button, Flex, Input, Typography } from "antd"
 import { vendorRequestListForSalesUser } from "../../../Toolkit/Slices/LeadSlice"
 import MainHeading from "../../../components/design/MainHeading"
 import TableScalaton from "../../../components/TableScalaton"
@@ -31,6 +31,25 @@ const VendorsRequestList = () => {
     size: 50,
   })
 
+
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+
+  useEffect(() => {
+    setFilteredData(dataList);
+  }, [dataList]);
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchText(value);
+    const filtered = dataList?.filter((item) =>
+      Object.values(item)?.some((val) =>
+        String(val)?.toLowerCase()?.includes(value?.toLowerCase())
+      )
+    );
+    setFilteredData(filtered);
+  };
+
   useEffect(() => {
     dispatch(
       vendorRequestListForSalesUser({
@@ -45,7 +64,7 @@ const VendorsRequestList = () => {
     (dataPage, size) => {
       dispatch(
         vendorRequestListForSalesUser({
-          id: userid,
+          userid: userid,
           page: dataPage,
           size: size,
         })
@@ -137,11 +156,20 @@ const VendorsRequestList = () => {
       <div className="create-user-box">
         <MainHeading data={`Client request list for vendors`} />
       </div>
+      <Flex className="marginBottom8px">
+        <Input 
+        value={searchText}
+        size="small"
+        onChange={handleSearch}
+        placeholder="search"
+        style={{ width: "25%" }}
+        />
+      </Flex>
       {loading === "pending" ? (
         <TableScalaton />
       ) : (
         <CommonTable
-          data={dataList}
+          data={filteredData}
           columns={columns}
           scroll={{ y: 520, x: 1900 }}
           rowSelection={true}
