@@ -28,6 +28,7 @@ const ProposalsPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [openApproveModal, setOpenApproveModal] = useState(false);
   const [data, setData] = useState(null);
+  const [status, setStatus] = useState("all");
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,
@@ -37,7 +38,11 @@ const ProposalsPage = () => {
 
   useEffect(() => {
     dispatch(
-      getAllProposalByUserIdForManager({ id: userid, ...paginationData })
+      getAllProposalByUserIdForManager({
+        id: userid,
+        ...paginationData,
+        status,
+      })
     );
     dispatch(getAllPropsalListCount(userid));
   }, [dispatch, userid]);
@@ -62,6 +67,11 @@ const ProposalsPage = () => {
     {
       dataIndex: "createdByEmail",
       title: "Created person email",
+    },
+    {
+      dataIndex: "status",
+      title: "Status",
+      render: (text) => text.replace(/\b\w/g, (char) => char.toUpperCase()),
     },
     {
       dataIndex: "proposal",
@@ -101,11 +111,16 @@ const ProposalsPage = () => {
   const handlePagination = useCallback(
     (dataPage, size) => {
       dispatch(
-        getAllProposalByUserIdForManager({ id: userid, page: dataPage, size })
+        getAllProposalByUserIdForManager({
+          id: userid,
+          page: dataPage,
+          size,
+          status,
+        })
       );
       setPaginationData({ size: size, page: dataPage });
     },
-    [dispatch, userid]
+    [dispatch, userid, status]
   );
 
   const handleSearch = (e) => {
@@ -142,7 +157,11 @@ const ProposalsPage = () => {
           setOpenApproveModal(false);
           setData(null);
           dispatch(
-            getAllProposalByUserIdForManager({ id: userid, ...paginationData })
+            getAllProposalByUserIdForManager({
+              id: userid,
+              ...paginationData,
+              status,
+            })
           );
         } else {
           notification.error({ message: "Something went wrong !." });
@@ -154,7 +173,7 @@ const ProposalsPage = () => {
   return (
     <TableOutlet>
       <MainHeading data={`All proposal`} />
-      <div className="flex-verti-center-hori-start mt-2">
+      <div style={{ margin: "8px 0px", display: "flex", gap: "12px" }}>
         <Input
           value={searchText}
           size="small"
@@ -162,6 +181,25 @@ const ProposalsPage = () => {
           style={{ width: "25%" }}
           placeholder="search"
           prefix={<Icon icon="fluent:search-24-regular" />}
+        />
+        <Select
+          style={{ width: "20%" }}
+          value={status}
+          options={[
+            { label: "All", value: "all" },
+            { label: "Approved", value: "approved" },
+            { label: "Disapproved", value: "disapproved" },
+          ]}
+          onChange={(e) => {
+            setStatus(e);
+            dispatch(
+              getAllProposalByUserIdForManager({
+                id: userid,
+                ...paginationData,
+                status: e,
+              })
+            );
+          }}
         />
       </div>
       <div className="mt-3">

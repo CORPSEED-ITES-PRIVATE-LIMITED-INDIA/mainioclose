@@ -112,6 +112,7 @@ import ProductCategory from "./Main/Setting/Products/ProductCategory";
 import ProductSubcategory from "./Main/Setting/Products/ProductSubcategory";
 import ProposalTemplate from "./Main/Setting/ProposalTemplate";
 import AutoHistory from "./Main/Sales/auto/AutoHistory";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -277,150 +278,599 @@ function App() {
               path="/erp"
               element={userData ? <MainPage /> : <Navigate to="/erp/login" />}
             >
-              <Route path=":userid/dashboard" element={<DashBoard />}>
-                <Route path="users" element={<DisplayDashboardUser />} />
+              <Route
+                path=":userid/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashBoard />
+                  </ProtectedRoute> 
+                }
+              >
+                <Route
+                  path="users"
+                  element={
+                    <ProtectedRoute>
+                      <DisplayDashboardUser />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="users/:leadid/history"
-                  element={<SingleUserHistory />}
+                  element={
+                    <ProtectedRoute>
+                      <SingleUserHistory />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="tickets" element={<AllTickets />} />
-                <Route path="manager" element={<AllManagerApprovals />} />
-                <Route path="muiuser" element={<DisplayUserTwo />} />
+                <Route
+                  path="tickets"
+                  element={
+                    <ProtectedRoute>
+                      <AllTickets />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="manager"
+                  element={
+                    <ProtectedRoute>
+                      <AllManagerApprovals />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="muiuser"
+                  element={
+                    <ProtectedRoute>
+                      <DisplayUserTwo />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="users/deactivateUser"
-                  element={<AllDeactivateUser />}
+                  element={
+                    <ProtectedRoute>
+                      <AllDeactivateUser />
+                    </ProtectedRoute>
+                  }
                 />
                 {/* <Route path="records" element={<MainGraphPage />} /> */}
-                <Route path="records" element={<GraphMainPage />} />
+                <Route
+                  path="records"
+                  element={
+                    <ProtectedRoute>
+                      <GraphMainPage />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               {/* hr module routes */}
-              <Route path="/erp/:userid/hr" element={<HRMod />}>
-                <Route path="userlist" element={<HrUserList />} />
-                <Route path="approveUser" element={<HRApprovalList />} />
-                <Route path="userservice" element={<UserService />} />
-                <Route path="estimateApproval" element={<EstimateApproval />} />
-                <Route path="userservice/:serviceid" element={<UserRating />} />
+              <Route
+                path="/erp/:userid/hr"
+                element={
+                  <ProtectedRoute>
+                    <HRMod />
+                  </ProtectedRoute>
+                }
+              >
+                <Route
+                  path="userlist"
+                  element={
+                    <ProtectedRoute>
+                      <HrUserList />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="approveUser"
+                  element={
+                    <ProtectedRoute>
+                      <HRApprovalList />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="userservice"
+                  element={
+                    <ProtectedRoute>
+                      <UserService />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="estimateApproval"
+                  element={
+                    <ProtectedRoute>
+                      <EstimateApproval />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="userservice/:serviceid"
+                  element={
+                    <ProtectedRoute>
+                      <UserRating />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="hrlinkfour" element={<div>hrlinkfour</div>} />
                 <Route path="hrlinkfive" element={<div>hrlinkfive</div>} />
                 <Route path="hrlinksix" element={<div>hrlinksix</div>} />
               </Route>
               {/* end */}
-              <Route path="/erp/:userid/compliance" element={<Compliances />} />
+              <Route
+                path="/erp/:userid/compliance"
+                element={
+                  <ProtectedRoute>
+                    <Compliances />
+                  </ProtectedRoute>
+                }
+              />
               {/* sales module routes */}
-              <Route path="/erp/:userid/sales" element={<SalesMod />}>
-                <Route path="inbox" element={<InboxPage />} />
+              <Route
+                path="/erp/:userid/sales"
+                element={
+                  <ProtectedRoute>
+                    <SalesMod />
+                  </ProtectedRoute>
+                }
+              >
+                <Route
+                  path="inbox"
+                  element={
+                    <ProtectedRoute>
+                      <InboxPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="scalaton" element={<TableScalaton />} />
-                <Route path="oppurtities" element={<Opportunities />} />
-                <Route path="company" element={<MainComanyModule />} />
-                <Route path="newcompanies" element={<NewCompany />} />
+                <Route
+                  path="oppurtities"
+                  element={
+                    <ProtectedRoute>
+                      <Opportunities />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="company"
+                  element={
+                    <ProtectedRoute>
+                      <MainComanyModule />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="newcompanies"
+                  element={
+                    <ProtectedRoute>
+                      <NewCompany />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="discountedEstimates"
-                  element={<DiscountedEstimates />}
+                  element={
+                    <ProtectedRoute>
+                      <DiscountedEstimates />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="servingcompanies"
-                  element={<ServingCompanyPage />}
+                  element={
+                    <ProtectedRoute>
+                      <ServingCompanyPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="newcompanies/:companyId/details"
-                  element={<NewCompaniesDetailedLayout />}
+                  element={
+                    <ProtectedRoute>
+                      <NewCompaniesDetailedLayout />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="newcompanies/:companyId/newCompaniesUnit"
-                  element={<CompanyDetailPage />}
+                  element={
+                    <ProtectedRoute>
+                      <CompanyDetailPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="newcompanies/:companyId/newConsultantCompanies"
-                  element={<ConsultantCompanyPage />}
+                  element={
+                    <ProtectedRoute>
+                      <ConsultantCompanyPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/:companyType/consultantGst"
-                  element={<ConsultantCompanyGStPage />}
+                  element={
+                    <ProtectedRoute>
+                      <ConsultantCompanyGStPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="newcompanies/:companyId/newConsultantCompanies/:consultCompanyId/consultantGst/:consultantParentCompanyId/:state/:consultCompanyType/consultantCompanyUnits"
-                  element={<ConsultantCompanyUnitsPage />}
+                  element={
+                    <ProtectedRoute>
+                      <ConsultantCompanyUnitsPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="newcompanies/:companyId/newCompaniesUnit/:state/:stateId/companyUnit"
-                  element={<NewCompanyUnits />}
+                  element={
+                    <ProtectedRoute>
+                      <NewCompanyUnits />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="project" element={<ProjectPage />} />
+                <Route
+                  path="project"
+                  element={
+                    <ProtectedRoute>
+                      <ProjectPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="vendors-request"
-                  element={<VendorsRequestList />}
+                  element={
+                    <ProtectedRoute>
+                      <VendorsRequestList />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="lead-form" element={<CompanyForm />} />
-                <Route path="estimate" element={<EstimatePage />} />
-                <Route path="proposal" element={<ProposalsPage />} />
-                <Route path="autoHistory" element={<AutoHistory />} />
-                <Route path="paymentsRegister" element={<PaymentRegister />} />
+                <Route
+                  path="lead-form"
+                  element={
+                    <ProtectedRoute>
+                      <CompanyForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="estimate"
+                  element={
+                    <ProtectedRoute>
+                      <EstimatePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="proposal"
+                  element={
+                    <ProtectedRoute>
+                      <ProposalsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="autoHistory"
+                  element={
+                    <ProtectedRoute>
+                      <AutoHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="paymentsRegister"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentRegister />
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="company/:companyId/details"
-                  element={<CompanyPageLayout />}
+                  element={
+                    <ProtectedRoute>
+                      <CompanyPageLayout />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="estimate" element={<Estimate />} />
-                <Route path="orders" element={<OrdersModule />} />
-                <Route path="leads/:leadid" element={<LeadDetailsPage />} />
-                <Route path="contacts" element={<ContactModule />} />
-                <Route path="leads/:leadid/history" element={<LeadHistory />} />
-                <Route path="leads" element={<LeadsModule />} />
-                <Route path="leads/allTask" element={<GetAllTaskList />} />
+                <Route
+                  path="estimate"
+                  element={
+                    <ProtectedRoute>
+                      <Estimate />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="orders"
+                  element={
+                    <ProtectedRoute>
+                      <OrdersModule />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="leads/:leadid"
+                  element={
+                    <ProtectedRoute>
+                      <LeadDetailsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="contacts"
+                  element={
+                    <ProtectedRoute>
+                      <ContactModule />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="leads/:leadid/history"
+                  element={
+                    <ProtectedRoute>
+                      <LeadHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="leads"
+                  element={
+                    <ProtectedRoute>
+                      <LeadsModule />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="leads/allTask"
+                  element={
+                    <ProtectedRoute>
+                      <GetAllTaskList />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="leads/notification"
-                  element={<AllNotificationPage />}
+                  element={
+                    <ProtectedRoute>
+                      <AllNotificationPage />
+                    </ProtectedRoute>
+                  }
                 />
               </Route>
               {/* end */}
               {/* accounts module routes */}
-              <Route path="/erp/:userid/account" element={<Accounts />}>
+              <Route
+                path="/erp/:userid/account"
+                element={
+                  <ProtectedRoute>
+                    <Accounts />
+                  </ProtectedRoute>
+                }
+              >
                 {/* <Route path="accountlist" element={<AccountsList />} /> */}
                 {/* <Route path="companyForm" element={<CompanyForm />} /> */}
                 <Route
                   path="companyForm"
-                  element={<MainCompanyFormPage role={"sales"} />}
+                  element={
+                    <ProtectedRoute>
+                      <MainCompanyFormPage role={"sales"} />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="companySearch" element={<CompanySearch />} />
-                <Route path="companyApproval" element={<CompanyApproval />} />
-                <Route path="paymentApproval" element={<PaymentApproval />} />
+                <Route
+                  path="companySearch"
+                  element={
+                    <ProtectedRoute>
+                      <CompanySearch />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="companyApproval"
+                  element={
+                    <ProtectedRoute>
+                      <CompanyApproval />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="paymentApproval"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentApproval />
+                    </ProtectedRoute>
+                  }
+                />
 
-                <Route path="organizations" element={<MainOrganizationPage />}>
-                  <Route index element={<Organizations />} />
-                  <Route path="organization" element={<Organizations />} />
-                  <Route path="ledger" element={<Ledger />} />
-                  <Route path="voucher" element={<Voucher />} />
-                  <Route path="estimate" element={<AccountEstimate />} />
+                <Route
+                  path="organizations"
+                  element={
+                    <ProtectedRoute>
+                      <MainOrganizationPage />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route
+                    index
+                    element={
+                      <ProtectedRoute>
+                        <Organizations />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="organization"
+                    element={
+                      <ProtectedRoute>
+                        <Organizations />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="ledger"
+                    element={
+                      <ProtectedRoute>
+                        <Ledger />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="voucher"
+                    element={
+                      <ProtectedRoute>
+                        <Voucher />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="estimate"
+                    element={
+                      <ProtectedRoute>
+                        <AccountEstimate />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Group Routes */}
-                  <Route path="group" element={<MainGroupPage />}>
-                    <Route index element={<Group />} />
+                  <Route
+                    path="group"
+                    element={
+                      <ProtectedRoute>
+                        <MainGroupPage />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route
+                      index
+                      element={
+                        <ProtectedRoute>
+                          <Group />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path=":groupId/groupLedger"
-                      element={<MainGroupLedgerPage />}
+                      element={
+                        <ProtectedRoute>
+                          <MainGroupLedgerPage />
+                        </ProtectedRoute>
+                      }
                     >
-                      <Route index element={<GroupLedger />} />
+                      <Route
+                        index
+                        element={
+                          <ProtectedRoute>
+                            <GroupLedger />
+                          </ProtectedRoute>
+                        }
+                      />
                       <Route
                         path=":ledgerId/groupVoucher"
-                        element={<Groupvoucher />}
+                        element={
+                          <ProtectedRoute>
+                            <Groupvoucher />
+                          </ProtectedRoute>
+                        }
                       />
                     </Route>
                   </Route>
 
-                  <Route path="dailybook" element={<DailyBook />} />
-                  <Route path="bankStatement" element={<BankStatement />} />
-                  <Route path="paymentRegister" element={<PaymentRegister />} />
-                  <Route path="tds" element={<TDS />} />
-                  <Route path="allInvoice" element={<AllInvoice />} />
-                  <Route path="manageSales" element={<ManageSales />} />
+                  <Route
+                    path="dailybook"
+                    element={
+                      <ProtectedRoute>
+                        <DailyBook />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="bankStatement"
+                    element={
+                      <ProtectedRoute>
+                        <BankStatement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="paymentRegister"
+                    element={
+                      <ProtectedRoute>
+                        <PaymentRegister />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="tds"
+                    element={
+                      <ProtectedRoute>
+                        <TDS />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="allInvoice"
+                    element={
+                      <ProtectedRoute>
+                        <AllInvoice />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="manageSales"
+                    element={
+                      <ProtectedRoute>
+                        <ManageSales />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Settings Routes */}
-                  <Route path="setting" element={<SettingsPage />}>
-                    <Route index element={<VoucherTypePage />} />
-                    <Route path="voucherType" element={<VoucherTypePage />} />
-                    <Route path="ledgerType" element={<LedgerTypePage />} />
-                    <Route path="statutory" element={<Statutory />} />
+                  <Route
+                    path="setting"
+                    element={
+                      <ProtectedRoute>
+                        <SettingsPage />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route
+                      index
+                      element={
+                        <ProtectedRoute>
+                          <VoucherTypePage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="voucherType"
+                      element={
+                        <ProtectedRoute>
+                          <VoucherTypePage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="ledgerType"
+                      element={
+                        <ProtectedRoute>
+                          <LedgerTypePage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="statutory"
+                      element={
+                        <ProtectedRoute>
+                          <Statutory />
+                        </ProtectedRoute>
+                      }
+                    />
                   </Route>
                 </Route>
 
@@ -522,8 +972,22 @@ function App() {
               </Route>
               {/* end */}
               {/* quality module routes */}
-              <Route path="/erp/:userid/quality" element={<QualityModule />}>
-                <Route path="ivr" element={<IVR />} />
+              <Route
+                path="/erp/:userid/quality"
+                element={
+                  <ProtectedRoute>
+                    <QualityModule />
+                  </ProtectedRoute>
+                }
+              >
+                <Route
+                  path="ivr"
+                  element={
+                    <ProtectedRoute>
+                      <IVR />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="qualitytwo"
                   element={<div>Quality Number Two</div>}
@@ -548,46 +1012,142 @@ function App() {
               {/* end */}
 
               {/* Industry route */}
-              <Route path="/erp/:userid/industries" element={<Industry />}>
-                <Route path="industryData" element={<IndustryData />} />
-                <Route path="subindustry" element={<SubIndustry />} />
-                <Route path="subsubindustry" element={<SubsubIndustry />} />
-                <Route path="industry" element={<Industries />} />
+              <Route
+                path="/erp/:userid/industries"
+                element={
+                  <ProtectedRoute>
+                    <Industry />
+                  </ProtectedRoute>
+                }
+              >
+                <Route
+                  path="industryData"
+                  element={
+                    <ProtectedRoute>
+                      <IndustryData />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="subindustry"
+                  element={
+                    <ProtectedRoute>
+                      <SubIndustry />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="subsubindustry"
+                  element={
+                    <ProtectedRoute>
+                      <SubsubIndustry />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="industry"
+                  element={
+                    <ProtectedRoute>
+                      <Industries />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               {/* end */}
 
               {/* Vebdors Url */}
-              <Route path="/erp/:userid/vendors" element={<VendorsList />} />
+              <Route
+                path="/erp/:userid/vendors"
+                element={
+                  <ProtectedRoute>
+                    <VendorsList />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* end */}
 
               <Route
                 path="/erp/:userid/setting/erpSetting"
-                element={<SettingMainPage />}
+                element={
+                  <ProtectedRoute>
+                    <SettingMainPage />
+                  </ProtectedRoute>
+                }
               >
-                <Route path="leadStatus" element={<LeadStatusPage />} />
-                <Route path="products" element={<ProductsChange />} />
+                <Route
+                  path="leadStatus"
+                  element={
+                    <ProtectedRoute>
+                      <LeadStatusPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="products"
+                  element={
+                    <ProtectedRoute>
+                      <ProductsChange />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="products/:productId/arrangement"
-                  element={<BusinessArrangement />}
+                  element={
+                    <ProtectedRoute>
+                      <BusinessArrangement />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="products/:productId/arrangement/:arrangementId/productCategory"
-                  element={<ProductCategory />}
+                  element={
+                    <ProtectedRoute>
+                      <ProductCategory />
+                    </ProtectedRoute>
+                  }
                 />
-                   <Route
+                <Route
                   path="products/:productId/arrangement/:arrangementId/productCategory/:productCategoryId"
-                  element={<ProductSubcategory />}
+                  element={
+                    <ProtectedRoute>
+                      <ProductSubcategory />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="category" element={<LeadCategory />} />
-                <Route path="slug" element={<SlugCreate />} />
-                <Route path="urls" element={<UrlsPage />} />
+                <Route
+                  path="category"
+                  element={
+                    <ProtectedRoute>
+                      <LeadCategory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="slug"
+                  element={
+                    <ProtectedRoute>
+                      <SlugCreate />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="urls"
+                  element={
+                    <ProtectedRoute>
+                      <UrlsPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="comments"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <Comments />
+                      <ProtectedRoute>
+                        {" "}
+                        <Comments />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
@@ -595,7 +1155,9 @@ function App() {
                   path="desigination"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <Desigination />
+                      <ProtectedRoute>
+                        <Desigination />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
@@ -603,7 +1165,9 @@ function App() {
                   path="department"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <Department />
+                      <ProtectedRoute>
+                        <Department />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
@@ -611,7 +1175,9 @@ function App() {
                   path="ipaddress"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <IpAddress />
+                      <ProtectedRoute>
+                        <IpAddress />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
@@ -619,7 +1185,9 @@ function App() {
                   path="procurement"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <Procurement />
+                      <ProtectedRoute>
+                        <Procurement />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
@@ -627,7 +1195,9 @@ function App() {
                   path="clientDesignation"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <ClientDesigination />
+                      <ProtectedRoute>
+                        <ClientDesigination />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
@@ -635,18 +1205,45 @@ function App() {
                   path="proposalTemplate"
                   element={
                     <Suspense fallback={<SpinLoading />}>
-                      <ProposalTemplate />
+                      <ProtectedRoute>
+                        <ProposalTemplate />
+                      </ProtectedRoute>
                     </Suspense>
                   }
                 />
               </Route>
               <Route
                 path="/erp/:userid/setting/accountSetting"
-                element={<AccountSettingPage />}
+                element={
+                  <ProtectedRoute>
+                    <AccountSettingPage />
+                  </ProtectedRoute>
+                }
               >
-                <Route path="voucherType" element={<VoucherTypePage />} />
-                <Route path="ledgerType" element={<LedgerTypePage />} />
-                <Route path="statutory" element={<Statutory />} />
+                <Route
+                  path="voucherType"
+                  element={
+                    <ProtectedRoute>
+                      <VoucherTypePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="ledgerType"
+                  element={
+                    <ProtectedRoute>
+                      <LedgerTypePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="statutory"
+                  element={
+                    <ProtectedRoute>
+                      <Statutory />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               {/* profile routes */}

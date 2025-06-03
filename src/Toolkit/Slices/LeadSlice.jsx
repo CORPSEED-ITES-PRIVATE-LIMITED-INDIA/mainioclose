@@ -820,9 +820,9 @@ export const leadProposalSentRequest = createAsyncThunk(
 
 export const getAllProposalByUserIdForManager = createAsyncThunk(
   "getAllProposalByUserIdForManager",
-  async ({ id, page, size }) => {
+  async ({ id, page, size,status }) => {
     const response = await getQuery(
-      `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}`
+      `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}&status=${status}`
     );
     return response.data;
   }

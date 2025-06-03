@@ -1743,7 +1743,7 @@ const LeadEstimate = ({ leadid }) => {
             padding: "24px",
           }}
         >
-          <Flex style={{ width: "60%" }} gap={24} vertical>
+          <Flex style={{ width: "90%" }} gap={24} vertical>
             {details?.productName && (
               <Flex gap={4} align="center">
                 <Text className="heading-text">Product name</Text>
@@ -1935,8 +1935,8 @@ const LeadEstimate = ({ leadid }) => {
                             <th>Rate/kg</th>
                             <th>Quantity (kg)</th>
                             <th>GST %</th>
-                            <th>GST amount</th>
-                            <th>Amount</th>
+                            <th>GST amount(₹)</th>
+                            <th>Amount(₹)</th>
                           </tr>
                         </thead>
 
@@ -1959,16 +1959,16 @@ const LeadEstimate = ({ leadid }) => {
                               <td></td>
                               <td>Service fee</td>
                               <td>{details?.gstCode}</td>
-                              <td>{details?.totalPrice}</td>
+                              <td>{details?.actualPrice}</td>
                               <td>{details?.quantity}</td>
                               <td>{details?.gst}</td>
                               <td>
-                                {(details?.totalPrice *
+                                {(details?.actualPrice *
                                   details?.quantity *
                                   details?.gst) /
                                   100}
                               </td>
-                              <td>{details?.totalAmount}</td>
+                              <td>{details?.totalPrice}</td>
                             </tr>
                           )}
                           <tr
@@ -1987,7 +1987,10 @@ const LeadEstimate = ({ leadid }) => {
                             <td>{""}</td>
                             <td>{""}</td>
                             <td>
-                              <Text strong>{details?.totalAmount}</Text>
+                              <Flex gap={2} wrap='nowrap'>
+                                <Text>₹ </Text>
+                                <Text strong>{details?.totalPrice}</Text>
+                              </Flex>
                             </td>
                           </tr>
                         </tbody>
