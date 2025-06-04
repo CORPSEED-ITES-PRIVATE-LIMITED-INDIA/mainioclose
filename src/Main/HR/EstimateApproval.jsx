@@ -322,6 +322,9 @@ const EstimateApproval = () => {
         onCancel={() => setOpenModal(false)}
         onClose={() => setOpenModal(false)}
         okText="Submit"
+        okButtonProps={{
+          disabled: estimateHistoryList?.originalPrice?.pFees == 0,
+        }}
         onOk={() => form.submit()}
       >
         <Flex>
@@ -337,17 +340,24 @@ const EstimateApproval = () => {
         </Flex>
         <Table
           dataSource={estimateHistoryList?.history}
-          columns={ estimateData?.type==='Product'?[
-            { title: "Id", dataIndex: "id", width: 50 },
-            { title: "Price/kg", dataIndex: "actualPrice" },
-            { title: "Total price", dataIndex: "fees" },
-            { title: "Quantity", dataIndex: "quantity" },
-          ] : [
-            { title: "Id", dataIndex: "id", width: 50 },
-            { title: "Professional amount", dataIndex: "professionalFees" },
-            { title: "Professional code", dataIndex: "profesionalCode" },
-            { title: "Professional fees", dataIndex: "professionalFees" },
-          ]}
+          columns={
+            estimateData?.type === "Product"
+              ? [
+                  { title: "Id", dataIndex: "id", width: 50 },
+                  { title: "Price/kg", dataIndex: "actualPrice" },
+                  { title: "Total price", dataIndex: "fees" },
+                  { title: "Quantity", dataIndex: "quantity" },
+                ]
+              : [
+                  { title: "Id", dataIndex: "id", width: 50 },
+                  {
+                    title: "Professional amount",
+                    dataIndex: "professionalFees",
+                  },
+                  { title: "Professional code", dataIndex: "profesionalCode" },
+                  { title: "Professional fees", dataIndex: "professionalFees" },
+                ]
+          }
           style={{ marginBottom: 24 }}
           pagination={false}
           scroll={{ y: 350 }}

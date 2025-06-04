@@ -172,13 +172,13 @@ const ProductsChange = () => {
             <Input
               value={searchText}
               onChange={handleSearch}
-              style={{ width: "20%" }}
+              style={{ width: "50%" }}
               placeholder="search"
               prefix={<Icon icon="fluent:search-24-regular" />}
             />
             <Select
               value={filter}
-              style={{ width: "15%" }}
+              style={{ width: "45%" }}
               onChange={(e) => setFilter(e)}
               options={[
                 { label: "All", value: "all" },

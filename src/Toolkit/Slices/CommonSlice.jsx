@@ -46,6 +46,17 @@ export const createContacts = createAsyncThunk(
   }
 );
 
+export const createNewContacts = createAsyncThunk(
+  "createContacts",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/contact/createNewContact`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllCountries = createAsyncThunk("getAllCountries", async () => {
   const response = await getQuery(`/leadService/api/v1/country/getAllCountry`);
   return response.data;

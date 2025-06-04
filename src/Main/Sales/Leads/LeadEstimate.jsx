@@ -35,6 +35,7 @@ import {
 } from "../../../Toolkit/Slices/LeadSlice";
 import {
   createContacts,
+  createNewContacts,
   getAllCitiesByStateId,
   getAllCountries,
   getAllStatesByCountryId,
@@ -150,13 +151,14 @@ const LeadEstimate = ({ leadid }) => {
   }, [companyDetails, form]);
 
   const handleFinishContact = (values) => {
-    dispatch(createContacts(values))
+    values.companyId = companyAndUnitData?.companyId;
+    dispatch(createNewContacts(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Contact created successfully !." });
           setOpenModal(false);
           contactForm.resetFields();
-          dispatch(getAllContactDetails());
+          dispatch(getAllContactDetailsById(companyAndUnitData?.companyId));
         } else {
           notification.error({ message: "Something went wrong !." });
         }
@@ -1987,7 +1989,7 @@ const LeadEstimate = ({ leadid }) => {
                             <td>{""}</td>
                             <td>{""}</td>
                             <td>
-                              <Flex gap={2} wrap='nowrap'>
+                              <Flex gap={2} wrap="nowrap">
                                 <Text>₹ </Text>
                                 <Text strong>{details?.totalPrice}</Text>
                               </Flex>
