@@ -190,23 +190,23 @@ const EstimateApproval = () => {
       title: "Approved date",
       render: (date) => dayjs(date).format("DD-MM-YYYY"),
     },
-    {
-      dataIndex: "purchaseNumber",
-      title: "Purchase number",
-    },
+    // {
+    //   dataIndex: "purchaseNumber",
+    //   title: "Purchase number",
+    // },
     {
       dataIndex: "purchaseDate",
       title: "Purchase date",
       render: (date) => dayjs(date).format("DD-MM-YYYY"),
     },
-    {
-      dataIndex: "paymentTerm",
-      title: "Payment term",
-    },
-    {
-      dataIndex: "remark",
-      title: "Remark",
-    },
+    // {
+    //   dataIndex: "paymentTerm",
+    //   title: "Payment term",
+    // },
+    // {
+    //   dataIndex: "remark",
+    //   title: "Remark",
+    // },
     {
       title: "Approvals",
       dataIndex: "stage",
@@ -330,7 +330,7 @@ const EstimateApproval = () => {
         <Flex>
           <Flex gap={8} align="center" style={{ margin: "24px 0px" }}>
             <Text className="heading-text" type="secondary">
-              Actaul amount
+              Actual amount
             </Text>
             <Text className="heading-text">:</Text>
             <Text className="heading-text">
