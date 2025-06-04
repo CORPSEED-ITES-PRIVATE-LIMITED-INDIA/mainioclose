@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import MainHeading from "../../../components/design/MainHeading";
 import {
   Button,
+  Flex,
   Form,
   Input,
   Modal,
   notification,
   Popconfirm,
+  Popover,
   Select,
+  Typography,
+  Upload,
 } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import CommonTable from "../../../components/CommonTable";
@@ -19,8 +23,11 @@ import {
   createProduct,
   getAllProductData,
   getAllProductListByType,
+  importProductByCSV,
 } from "../../../Toolkit/Slices/ProductSlice";
 import { deleteProduct } from "../../../Toolkit/Slices/LeadSlice";
+import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants";
+const { Text, Title } = Typography;
 
 const ProductsChange = () => {
   const dispatch = useDispatch();
@@ -31,6 +38,7 @@ const ProductsChange = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   useEffect(() => {
     dispatch(getAllProductListByType(filter));
@@ -61,7 +69,10 @@ const ProductsChange = () => {
         records?.type === "Service" ? (
           <ProductDetails data={records}>{records?.productName}</ProductDetails>
         ) : (
-          <Link className="link-heading" to={`/erp/${userid}/setting/erpSetting/products/${records.id}/arrangement`}>
+          <Link
+            className="link-heading"
+            to={`/erp/${userid}/setting/erpSetting/products/${records.id}/arrangement`}
+          >
             {records?.productName}
           </Link>
         ),
@@ -108,7 +119,7 @@ const ProductsChange = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Product created successfully" });
-          form.resetFields()
+          form.resetFields();
           setOpenModal(false);
         } else {
           notification.error({ message: "Something went wrong!." });
@@ -117,33 +128,110 @@ const ProductsChange = () => {
       .catch(() => notification.error({ message: "Something went wrong!." }));
   };
 
+  const props = {
+    name: "file",
+    multiple: true,
+    action: "/leadService/api/v1/upload/uploadimageToFileSystem",
+    onChange(info) {
+      setUploadedFile(info?.file?.response);
+    },
+    onDrop(e) {},
+  };
+
+  const handleUploadFile = useCallback(() => {
+    if (uploadedFile) {
+      dispatch(importProductByCSV(uploadedFile))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({ message: "File uploaded successfully !." });
+          } else {
+            notification.error({ message: "Something wemt wrong !." });
+          }
+        })
+        .catch(() =>
+          notification.error({ message: "Something wemt wrong !." })
+        );
+    }
+  }, [dispatch, uploadedFile]);
+
   return (
     <div>
       <div className="create-user-box">
         <MainHeading data={`Lead product`} />
-        <Button type="primary" size="small" onClick={() => setOpenModal(true)}>
-          Add product
-        </Button>
       </div>
       <div className="setting-table">
-        <div className="flex-verti-center-hori-start mt-2">
-          <Input
-            value={searchText}
-            onChange={handleSearch}
-            style={{ width: "20%" }}
-            placeholder="search"
-            prefix={<Icon icon="fluent:search-24-regular" />}
-          />
-          <Select
-            value={filter}
-            style={{ width: "15%" }}
-            onChange={(e) => setFilter(e)}
-            options={[
-              { label: "All", value: "all" },
-              { label: "Product", value: "Product" },
-              { label: "Service", value: "Service" },
-            ]}
-          />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <Flex gap={8}>
+            {" "}
+            <Input
+              value={searchText}
+              onChange={handleSearch}
+              style={{ width: "20%" }}
+              placeholder="search"
+              prefix={<Icon icon="fluent:search-24-regular" />}
+            />
+            <Select
+              value={filter}
+              style={{ width: "15%" }}
+              onChange={(e) => setFilter(e)}
+              options={[
+                { label: "All", value: "all" },
+                { label: "Product", value: "Product" },
+                { label: "Service", value: "Service" },
+              ]}
+            />
+          </Flex>
+
+          <Flex gap={8} align="center">
+            <Popover
+              trigger={"click"}
+              overlayInnerStyle={{ minWidth: 200 }}
+              placement="bottomRight"
+              content={
+                <Flex vertical gap={24}>
+                  <Flex vertical gap={8}>
+                    <Title level={5}>Upload csv file or excel sheet </Title>
+                    <Upload {...props}>
+                      <Button>
+                        <Icon
+                          icon="fluent:attach-16-regular"
+                          width="16"
+                          height="16"
+                        />
+                        Attach
+                      </Button>
+                    </Upload>
+                  </Flex>
+                  <Button type="primary" onClick={handleUploadFile}>
+                    Submit
+                  </Button>
+                </Flex>
+              }
+            >
+              <Button className="mr-2">
+                {" "}
+                <Icon
+                  icon="fluent:arrow-download-16-filled"
+                  height={BTN_ICON_HEIGHT}
+                  width={BTN_ICON_WIDTH}
+                />{" "}
+                Import
+              </Button>
+            </Popover>
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => setOpenModal(true)}
+            >
+              Add product
+            </Button>
+          </Flex>
         </div>
 
         <CommonTable
