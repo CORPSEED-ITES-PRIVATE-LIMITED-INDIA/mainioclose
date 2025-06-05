@@ -265,8 +265,7 @@ export const importProductByCSV = createAsyncThunk(
   "importProductByCSV",
   async (data) => {
     const response = await postQuery(
-      `/leadService/api/v1/import-product-csv-from-s3`,
-      data
+      `/leadService/api/v1/import-product-csv-from-s3?s3Url=${data}`,
     );
     return response.data;
   }
