@@ -113,6 +113,7 @@ import ProductSubcategory from "./Main/Setting/Products/ProductSubcategory";
 import ProposalTemplate from "./Main/Setting/ProposalTemplate";
 import AutoHistory from "./Main/Sales/auto/AutoHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
+import EstimatePreviewPage from "./components/EstimatePreviewPage";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -245,6 +246,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/newfile" element={<NewGetFile />}></Route>
+            <Route path="/:leadId/estimate-preview" element={<EstimatePreviewPage />}></Route>
             <Route path="*" element={<NotFoundPage />} />
 
             {/* <Route path="/" element={<HomePage />}>
