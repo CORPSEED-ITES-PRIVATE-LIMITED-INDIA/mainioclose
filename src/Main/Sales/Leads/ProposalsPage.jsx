@@ -71,7 +71,7 @@ const ProposalsPage = () => {
     {
       dataIndex: "status",
       title: "Status",
-      render: (text) => text?.replace(/\b\w/g, (char) => char.toUpperCase()),
+      render: (text) => text?.replace(/\b\w/g, (char) => char?.toUpperCase()),
     },
     {
       dataIndex: "proposal",
