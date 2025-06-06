@@ -125,7 +125,7 @@ const AutoHistory = () => {
     {
       title: "Status",
       dataIndex: "status",
-      render: (_, data) => <OverFlowText>{data?.status?.name}</OverFlowText>,
+      render: (_, data) => <OverFlowText>{data?.status}</OverFlowText>,
     },
     {
       title: "Assigned date",
@@ -153,7 +153,7 @@ const AutoHistory = () => {
   const exportData = autoHistoryExportList?.map((row) => ({
     Id: row?.id,
     "Lead name": row?.leadName,
-    Status: row?.status?.name,
+    Status: row?.status,
     "Client name": row?.clientName,
     "Client Email": row?.clientEmail,
     "Mobile no.": row?.mobileNo,
