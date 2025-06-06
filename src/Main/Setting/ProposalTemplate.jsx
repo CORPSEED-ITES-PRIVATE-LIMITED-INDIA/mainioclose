@@ -22,6 +22,7 @@ const ProposalTemplate = () => {
       })
       .catch(() => notification.error({ message: "Something went wrong !." }));
   };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <Input
@@ -31,11 +32,14 @@ const ProposalTemplate = () => {
       />
       <TextEditor
         editorInstanceRef={editorInstanceRef}
+        onChange={(e, x) => setData(x?.getData())}
         menu={true}
         setData={setData}
         data={data}
       />
-      <Button onClick={handleSubmit}>Submit</Button>
+      <Button disabled={templateName === ""} onClick={handleSubmit}>
+        Submit
+      </Button>
     </div>
   );
 };
