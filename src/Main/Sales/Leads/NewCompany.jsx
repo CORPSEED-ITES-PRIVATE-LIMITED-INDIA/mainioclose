@@ -331,7 +331,7 @@ const NewCompany = () => {
               onChange={(e) => filterCompanyBasedOnUser("type", e)}
             />
             <Select
-              style={{ width: "40%" }}
+              style={{ width: "200px" }}
               options={[
                 { label: "All", value: "all" },
                 { label: "Gold", value: "Gold" },

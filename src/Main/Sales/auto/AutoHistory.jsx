@@ -161,7 +161,7 @@ const AutoHistory = () => {
     "Previous Assignee email": row?.paEmail,
     "Current Assignee person": row?.currName,
     "Current Assignee email": row?.currEmail,
-    "Created Date": dayjs(row?.createDate).format("YYYY-MM-DD"),
+    "Created Date": dayjs(row?.assignDate).format("YYYY-MM-DD"),
   }));
 
   const headers = [
