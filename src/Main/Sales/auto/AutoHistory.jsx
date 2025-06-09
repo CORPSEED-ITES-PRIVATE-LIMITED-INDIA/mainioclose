@@ -1,7 +1,15 @@
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import CommonTable from "../../../components/CommonTable";
 import TableScalaton from "../../../components/TableScalaton";
-import { Button, Flex, Input, Typography } from "antd";
+import {
+  Button,
+  DatePicker,
+  Flex,
+  Input,
+  notification,
+  Select,
+  Typography,
+} from "antd";
 import { CSVLink } from "react-csv";
 import { Icon } from "@iconify/react";
 import MainHeading from "../../../components/design/MainHeading";
@@ -11,12 +19,15 @@ import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllAutoHistoryForExport,
+  getAllAutoHistoryForExportByDate,
   getAllAutoHistoryList,
   getAllAutoHistroryCount,
 } from "../../../Toolkit/Slices/LeadSlice";
 import { useParams } from "react-router-dom";
 import LeadsDetailsMainPage from "../Leads/LeadsDetailsMainPage";
+import { rangePresets } from "../../Common/Commons";
 const { Text } = Typography;
+const { RangePicker } = DatePicker;
 
 const AutoHistory = () => {
   const dispatch = useDispatch();
@@ -24,6 +35,9 @@ const AutoHistory = () => {
   const autoList = useSelector((state) => state.leads.autoList);
   const autoHistoryExportList = useSelector(
     (state) => state.leads.autoHistoryExportList
+  );
+  const autoExportLoading = useSelector(
+    (state) => state.leads.autoExportLoading
   );
   const totalAutoListCount = useSelector(
     (state) => state.leads.totalAutoListCount
@@ -34,19 +48,24 @@ const AutoHistory = () => {
     page: 1,
     size: 50,
   });
+  const [dateFilter, setDateFilter] = useState({
+    toDate: "",
+    fromDate: "",
+    departmentId: "",
+  });
+
 
   useEffect(() => {
-    dispatch(getAllAutoHistoryList(paginationData));
+    dispatch(getAllAutoHistoryList({...paginationData,data:dateFilter}));
     dispatch(getAllAutoHistroryCount());
-    dispatch(getAllAutoHistoryForExport());
-  }, [dispatch]);
+  }, [dispatch,dateFilter]);
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getAllAutoHistoryList({ page: dataPage, size }));
+      dispatch(getAllAutoHistoryList({ page: dataPage, size,data:dateFilter }));
       setPaginationData({ size: size, page: dataPage });
     },
-    [dispatch, userid]
+    [dispatch, userid,dateFilter]
   );
 
   useEffect(() => {
@@ -82,10 +101,9 @@ const AutoHistory = () => {
       dataIndex: "leadname",
       title: "Lead name",
       fixed: "left",
-      // render: (_, data) => <Text>{data?.leadName}</Text>,
       render: (_, data) => (
         <LeadsDetailsMainPage leadId={data?.leadId} data={data}>
-          {data?.leadName}
+          {data?.leadOriginalName}
         </LeadsDetailsMainPage>
       ),
     },
@@ -152,8 +170,8 @@ const AutoHistory = () => {
 
   const exportData = autoHistoryExportList?.map((row) => ({
     Id: row?.id,
-    "Lead name": row?.leadName,
-    Status: row?.status,
+    "Lead name": row?.leadOriginalName,
+    Status: row?.status?.name,
     "Client name": row?.clientName,
     "Client Email": row?.clientEmail,
     "Mobile no.": row?.mobileNo,
@@ -178,28 +196,82 @@ const AutoHistory = () => {
     "Created Date",
   ];
 
+  const handleApplyFilter = () => {
+    dispatch(getAllAutoHistoryForExportByDate(dateFilter))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({ message: "Date is ready to export" });
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch((err) =>
+        notification.error({ message: "Something went wrong !." })
+      );
+  };
+
   return (
     <div className="lead-module small-box-padding">
       <div className="create-user-box">
-        <MainHeading data={`History`} />
+        <MainHeading data={`Auto history`} />
       </div>
       <Flex justify="space-between" align="center" className="marginBottom8px">
-        <Input
-          style={{ width: "25%" }}
-          value={searchText}
-          size="small"
-          onChange={handleSearch}
-          placeholder="search"
-          prefix={<Icon icon="fluent:search-24-regular" />}
-        />
+        <Flex gap={8} align="center">
+          <Input
+            style={{ width: "200px" }}
+            value={searchText}
+            onChange={handleSearch}
+            placeholder="search"
+            prefix={<Icon icon="fluent:search-24-regular" />}
+          />
+
+          <Select
+            style={{ width: "200px" }}
+            placeholder='Select department'
+            value={dateFilter?.departmentId}
+            options={[
+              { label: "Sales", value: 2 },
+              { label: "Quality", value: 3 },
+            ]}
+            onChange={(e) =>
+              setDateFilter((prev) => ({ ...prev, departmentId: e }))
+            }
+          />
+        </Flex>
         <Flex align="center" gap={2}>
+          <RangePicker
+            placement="bottomRight"
+            presets={rangePresets}
+            value={[
+              dateFilter?.toDate ? dayjs(dateFilter?.toDate) : "",
+              dateFilter?.fromDate ? dayjs(dateFilter?.fromDate) : "",
+            ]}
+            disabledDate={(current) =>
+              current && current > dayjs().endOf("day")
+            }
+            onChange={(dates, dateStrings) => {
+              if (dates) {
+                setDateFilter((prev) => ({
+                  ...prev,
+                  toDate: dateStrings[0],
+                  fromDate: dateStrings[1],
+                }));
+              }
+            }}
+          />
+          <Button
+            loading={autoExportLoading === "pending"}
+            onClick={handleApplyFilter}
+          >
+            Apply filter
+          </Button>
           <CSVLink
             className="text-white"
             data={exportData}
             headers={headers}
             filename={"history.csv"}
           >
-            <Button>
+            <Button disabled={autoExportLoading !== "success"}>
               <Icon
                 icon="fluent:arrow-upload-16-filled"
                 height={BTN_ICON_HEIGHT}

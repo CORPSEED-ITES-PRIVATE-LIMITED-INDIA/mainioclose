@@ -820,7 +820,7 @@ export const leadProposalSentRequest = createAsyncThunk(
 
 export const getAllProposalByUserIdForManager = createAsyncThunk(
   "getAllProposalByUserIdForManager",
-  async ({ id, page, size,status }) => {
+  async ({ id, page, size, status }) => {
     const response = await getQuery(
       `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}&status=${status}`
     );
@@ -1083,9 +1083,9 @@ export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
 
 export const getAllAutoHistoryList = createAsyncThunk(
   "getAllAutoHistory",
-  async ({ page, size }) => {
-    const response = await getQuery(
-      `/leadService/api/v1/lead/getAllAutoHistoryDetail?page=${page}&size=${size}`
+  async ({ page, size,data }) => {
+    const response = await postQuery(
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilter?page=${page}&size=${size}`,data
     );
     return response.data;
   }
@@ -1111,10 +1111,25 @@ export const getProposalDataByLeadId = createAsyncThunk(
   }
 );
 
-export const getAllAutoHistoryForExport=createAsyncThunk('getAllAutoHistoryForExport',async()=>{
-  const response=await getQuery(`/leadService/api/v1/lead/getAutoHistoryDetailsForExport`)
-  return response.data
-})
+export const getAllAutoHistoryForExport = createAsyncThunk(
+  "getAllAutoHistoryForExport",
+  async () => {
+    const response = await getQuery(
+      `/leadService/api/v1/lead/getAutoHistoryDetailsForExport`
+    );
+    return response.data;
+  }
+);
+
+export const getAllAutoHistoryForExportByDate = createAsyncThunk(
+  "getAllAutoHistoryForExportByDate",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilter`,data
+    );
+    return response.data;
+  }
+);
 
 export const LeadSlice = createSlice({
   name: "lead",
@@ -1189,7 +1204,8 @@ export const LeadSlice = createSlice({
     totalAutoListCount: 0,
     proposalDataDetail: {},
     statusListById: [],
-    autoHistoryExportList:[]
+    autoHistoryExportList: [],
+    autoExportLoading: "",
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1708,13 +1724,22 @@ export const LeadSlice = createSlice({
       state.primaryContactListByCompanyId = [];
     });
 
-    builder.addCase(getSecondaryContactListByCompanyId.pending, (state, action) => {});
-    builder.addCase(getSecondaryContactListByCompanyId.fulfilled, (state, action) => {
-      state.secondaryContactListByCompanyId = action?.payload;
-    });
-    builder.addCase(getSecondaryContactListByCompanyId.rejected, (state, action) => {
-      state.secondaryContactListByCompanyId = [];
-    });
+    builder.addCase(
+      getSecondaryContactListByCompanyId.pending,
+      (state, action) => {}
+    );
+    builder.addCase(
+      getSecondaryContactListByCompanyId.fulfilled,
+      (state, action) => {
+        state.secondaryContactListByCompanyId = action?.payload;
+      }
+    );
+    builder.addCase(
+      getSecondaryContactListByCompanyId.rejected,
+      (state, action) => {
+        state.secondaryContactListByCompanyId = [];
+      }
+    );
 
     builder.addCase(getProductListByLeadName.pending, (state, action) => {});
     builder.addCase(getProductListByLeadName.fulfilled, (state, action) => {
@@ -1792,15 +1817,27 @@ export const LeadSlice = createSlice({
       state.statusListById = [];
     });
 
-    builder.addCase(getAllAutoHistoryForExport.pending, (state, action) => {
-      state.autoHistoryExportList = [];
-    });
-    builder.addCase(getAllAutoHistoryForExport.fulfilled, (state, action) => {
-      state.autoHistoryExportList = action?.payload;
-    });
-    builder.addCase(getAllAutoHistoryForExport.rejected, (state, action) => {
-      state.autoHistoryExportList = [];
-    });
+    builder.addCase(
+      getAllAutoHistoryForExportByDate.pending,
+      (state, action) => {
+        state.autoHistoryExportList = [];
+        state.autoExportLoading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllAutoHistoryForExportByDate.fulfilled,
+      (state, action) => {
+        state.autoHistoryExportList = action?.payload;
+        state.autoExportLoading = "success";
+      }
+    );
+    builder.addCase(
+      getAllAutoHistoryForExportByDate.rejected,
+      (state, action) => {
+        state.autoHistoryExportList = [];
+        state.autoExportLoading = "error";
+      }
+    );
   },
 });
 export const {
