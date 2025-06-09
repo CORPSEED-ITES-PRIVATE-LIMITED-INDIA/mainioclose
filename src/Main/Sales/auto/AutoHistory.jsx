@@ -56,16 +56,16 @@ const AutoHistory = () => {
 
 
   useEffect(() => {
-    dispatch(getAllAutoHistoryList({...paginationData,data:dateFilter}));
+    dispatch(getAllAutoHistoryList({ ...paginationData, data: dateFilter }));
     dispatch(getAllAutoHistroryCount());
-  }, [dispatch,dateFilter]);
+  }, [dispatch, dateFilter]);
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getAllAutoHistoryList({ page: dataPage, size,data:dateFilter }));
+      dispatch(getAllAutoHistoryList({ page: dataPage, size, data: dateFilter }));
       setPaginationData({ size: size, page: dataPage });
     },
-    [dispatch, userid,dateFilter]
+    [dispatch, userid, dateFilter]
   );
 
   useEffect(() => {
@@ -240,7 +240,9 @@ const AutoHistory = () => {
         </Flex>
         <Flex align="center" gap={2}>
           <RangePicker
+            showTime={{ format: "HH:mm" }}
             placement="bottomRight"
+            format="YYYY-MM-DD HH:mm"
             presets={rangePresets}
             value={[
               dateFilter?.toDate ? dayjs(dateFilter?.toDate) : "",
