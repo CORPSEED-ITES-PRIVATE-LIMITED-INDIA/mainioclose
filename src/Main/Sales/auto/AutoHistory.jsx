@@ -108,9 +108,11 @@ const AutoHistory = () => {
       ),
     },
     {
-      dataIndex: "clientEmail",
-      title: "Client email",
+      dataIndex: "manual",
+      title: "Manual",
+      render: (data) => data ? 'Manual' : 'Auto'
     },
+
     {
       dataIndex: "mobileNo",
       title: "Client mobile",
@@ -139,6 +141,10 @@ const AutoHistory = () => {
       dataIndex: "previousemail",
       title: "Previous assignee email",
       render: (_, data) => <Text>{data?.paEmail}</Text>,
+    },
+    {
+      dataIndex: "clientEmail",
+      title: "Client email",
     },
     {
       title: "Status",
@@ -172,6 +178,7 @@ const AutoHistory = () => {
     Id: row?.id,
     "Lead name": row?.leadOriginalName,
     Status: row?.status,
+    Manual: row?.manual?'Manual':'Auto',
     "Client name": row?.clientName,
     "Client Email": row?.clientEmail,
     "Mobile no.": row?.mobileNo,
@@ -186,6 +193,7 @@ const AutoHistory = () => {
     "Id",
     "Lead name",
     "Status",
+    "Manual",
     "Client name",
     "Client Email",
     "Mobile no.",
