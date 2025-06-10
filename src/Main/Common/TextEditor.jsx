@@ -94,13 +94,12 @@ import "ckeditor5/ckeditor5.css";
 import "ckeditor5-premium-features/ckeditor5-premium-features.css";
 
 const LICENSE_KEY =
-  'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NDk1OTk5OTksImp0aSI6ImZkNThkMzUyLTI5MmYtNDIzOC05YjY1LWU0NGIyNzJhNjc1MiIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImE4MGEzYTk3In0.5KwZ4UQlWjLg9gcPIz81MigTEn-CJrBqxjiUcpBqmFEfNU8zgnAqWVoJ98m2VI40d1gj4rjzowBN5XEECoj1xw';
-
-
+  'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NTA4MDk1OTksImp0aSI6IjQ1NWQ5MTQxLTE4MjEtNGE2OS1iZjA2LTI5ZDNhYzFlNzlkMyIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6IjJjZTU1YjEzIn0.CRHe7YK8T8nr203oYXgSSAM5bxpCyztp2deeZpt8QVbja5kuNOpJyePaA1NwfDp5aAHwmCs0IcHVg_oXu3d4JA';
 
 const CLOUD_SERVICES_TOKEN_URL =
-  "https://24z76q5tkmo0.cke-cs.com/token/dev/473d08163310b43e380189e0db8d33ddb6b5ad7b19b6b0a2a0d02c6562ff?limit=10";
-  
+  'https://jfhin6fjvg6e.cke-cs.com/token/dev/1405f3c3c33a813afc6fd724f19a5b08d1d23b367e75a199cc8672d34639?limit=10';
+
+
 class UsersIntegration extends Plugin {
   static get requires() {
     return ["Users"];
@@ -126,11 +125,11 @@ class UsersIntegration extends Plugin {
   }
 }
 
-class CommentsIntegration extends Plugin {}
+class CommentsIntegration extends Plugin { }
 
-class TrackChangesIntegration extends Plugin {}
+class TrackChangesIntegration extends Plugin { }
 
-class RevisionHistoryIntegration extends Plugin {}
+class RevisionHistoryIntegration extends Plugin { }
 
 export default function TextEditor({ data, menu, onChange, initialData }) {
   const editorContainerRef = useRef(null);

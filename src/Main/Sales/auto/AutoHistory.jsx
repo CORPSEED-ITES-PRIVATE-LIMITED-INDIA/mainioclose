@@ -125,11 +125,11 @@ const AutoHistory = () => {
       title: "Assignee email",
       render: (_, data) => <Text>{data?.currEmail}</Text>,
     },
-    {
-      dataIndex: "paId",
-      title: "Previous assignee id",
-      render: (_, data) => <Text>{data?.paId}</Text>,
-    },
+    // {
+    //   dataIndex: "paId",
+    //   title: "Previous assignee id",
+    //   render: (_, data) => <Text>{data?.paId}</Text>,
+    // },
     {
       dataIndex: "paName",
       title: "Previous assignee name",
@@ -171,7 +171,7 @@ const AutoHistory = () => {
   const exportData = autoHistoryExportList?.map((row) => ({
     Id: row?.id,
     "Lead name": row?.leadOriginalName,
-    Status: row?.status?.name,
+    Status: row?.status,
     "Client name": row?.clientName,
     "Client Email": row?.clientEmail,
     "Mobile no.": row?.mobileNo,
