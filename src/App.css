@@ -195,6 +195,17 @@ button:focus {
   width: 50%;
   gap: 12px;
 }
+
+
+.main-filter-container{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+
+
 .filter-right-container {
   display: flex;
   justify-content: flex-end;

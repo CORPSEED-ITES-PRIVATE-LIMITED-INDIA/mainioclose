@@ -8,7 +8,7 @@ import { CSVLink } from "react-csv";
 import {
   deleteMultipleLeads,
   getAllLeadCount,
-  getAllLeads,
+  getAllLeadsByFilter,
   getAllLeadsForExport,
   getAllStatusData,
   getLeadNotificationCount,
@@ -26,8 +26,10 @@ import {
   Button,
   DatePicker,
   Drawer,
+  Dropdown,
   Flex,
   Input,
+  Menu,
   notification,
   Popconfirm,
   Popover,
@@ -48,6 +50,7 @@ import {
 import LeadsDetailsMainPage from "./LeadsDetailsMainPage";
 import dayjs from "dayjs";
 import AllNotificationPage from "./AllNotificationPage";
+import { leadSource } from "../../../data/FakeData";
 const { Text, Title } = Typography;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
@@ -55,6 +58,8 @@ const { RangePicker } = DatePicker;
 const CommonTable = React.lazy(() => import(`../../../components/CommonTable`));
 
 const LeadsModule = () => {
+  const { userid } = useParams();
+  const dispatch = useDispatch();
   const allLeadData = useSelector((state) => state.leads.allLeads);
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
   const getAllStatus = useSelector((state) => state.leads.getAllStatus);
@@ -78,21 +83,23 @@ const LeadsModule = () => {
   const [searchText, setSearchText] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
   const [openNotificationDrawer, setOpenNotificationDrawer] = useState(false);
-
   const onSelectChange = (newSelectedRowKeys, rowsData) => {
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
-  console.log("jkfdhgdkjgkjdhgdj", currentUserDetail);
-
-  const { userid } = useParams();
-  const dispatch = useDispatch();
   const [allMultiFilterData, setAllMultiFilterData] = useState({
     userId: Number(userid),
     userIdFilter: [],
     statusId: [1],
     toDate: "",
     fromDate: "",
+    updatedToDate: "",
+    updatedfromDate: "",
+    updatedById: null,
+    source: ["IVR"],
+    contactMobileNo: null,
+    contactEmail: null,
+    sortBy: "id",
     page: 1,
     size: 50,
   });
@@ -101,9 +108,10 @@ const LeadsModule = () => {
     statusId: null,
     assigneId: null,
   });
+  const [filterDrawer, setFilterDrawer] = useState(false);
 
   useEffect(() => {
-    dispatch(getAllLeads(allMultiFilterData));
+    dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
   }, [dispatch]);
@@ -114,7 +122,9 @@ const LeadsModule = () => {
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getAllLeads({ ...allMultiFilterData, page: dataPage, size }));
+      dispatch(
+        getAllLeadsByFilter({ ...allMultiFilterData, page: dataPage, size })
+      );
       setAllMultiFilterData((prev) => ({ ...prev, page: dataPage, size }));
     },
     [allMultiFilterData, dispatch]
@@ -131,7 +141,7 @@ const LeadsModule = () => {
         if (response?.meta?.requestStatus === "fulfilled") {
           notification.success({ message: "Leads deleted successfully" });
           // playSuccessSound()
-          dispatch(getAllLeads(allMultiFilterData));
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
           setLeadDelLoading("success");
           setSelectedRowKeys([]);
         } else {
@@ -157,8 +167,8 @@ const LeadsModule = () => {
     "Missed task": row?.missedTaskName,
     Frequency: row?.count,
     Status: row?.status,
-    "Client name": row?.clientName,
-    Email: row?.clientEmail,
+    "Client name": row?.clients?.name,
+    Email: row?.clients?.emails,
     "Mobile no.": row?.clientMobNo,
     "Assignee person": row?.assigneeName,
     "Assignee email": row?.assigneeEmail,
@@ -201,7 +211,7 @@ const LeadsModule = () => {
           if (response?.meta?.requestStatus === "fulfilled") {
             notification.success({ message: "Helper updated successfully" });
             // playSuccessSound()
-            dispatch(getAllLeads(allMultiFilterData));
+            dispatch(getAllLeadsByFilter(allMultiFilterData));
           } else {
             notification.error({ message: "Something went wrong !." });
             // playErrorSound()
@@ -229,7 +239,7 @@ const LeadsModule = () => {
               message: "Assignee is updated successfully.",
             });
             // playSuccessSound()
-            dispatch(getAllLeads(allMultiFilterData));
+            dispatch(getAllLeadsByFilter(allMultiFilterData));
           } else {
             notification.error({ message: "Something went wrong !." });
             // playErrorSound()
@@ -254,7 +264,7 @@ const LeadsModule = () => {
           if (response.meta.requestStatus === "fulfilled") {
             notification.success({ message: "Lead deleted successfully." });
             // playSuccessSound()
-            dispatch(getAllLeads(allMultiFilterData));
+            dispatch(getAllLeadsByFilter(allMultiFilterData));
           } else {
             notification.error({ message: "Something went wrong !." });
             // playErrorSound()
@@ -276,7 +286,7 @@ const LeadsModule = () => {
             message: "Lead assigned to same person successfully",
           });
           // playSuccessSound()
-          dispatch(getAllLeads(allMultiFilterData));
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
         } else {
           notification.error({ message: "Something went wrong !." });
           // playErrorSound()
@@ -302,7 +312,7 @@ const LeadsModule = () => {
             notification.success({
               message: "Lead status updated successfully",
             });
-            dispatch(getAllLeads(allMultiFilterData));
+            dispatch(getAllLeadsByFilter(allMultiFilterData));
           } else {
             notification.error({ message: "Something went wrong !." });
           }
@@ -581,7 +591,7 @@ const LeadsModule = () => {
         if (response?.meta?.requestStatus === "fulfilled") {
           notification.success({ message: "Leads assigned successfully ." });
           // playSuccessSound()
-          dispatch(getAllLeads(allMultiFilterData));
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
           setMultibtn("success");
           setSelectedRowKeys([]);
           setAssignedLeadInfo({
@@ -625,7 +635,7 @@ const LeadsModule = () => {
     if (!b) {
       // dispatch(searchLeads({ input: "", id: userid }))
       setSearchText("");
-      dispatch(getAllLeads(allMultiFilterData));
+      dispatch(getAllLeadsByFilter(allMultiFilterData));
     }
   };
 
@@ -657,14 +667,14 @@ const LeadsModule = () => {
 
   const handleApplyFilter = useCallback(() => {
     setSelectedRowKeys([]);
-    dispatch(getAllLeads(allMultiFilterData));
+    dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
   }, [allMultiFilterData, dispatch]);
 
   const handleResetFilter = useCallback(() => {
     dispatch(
-      getAllLeads({
+      getAllLeadsByFilter({
         userId: Number(userid),
         userIdFilter: [],
         statusId: [1],
@@ -698,6 +708,21 @@ const LeadsModule = () => {
     );
   }, [dispatch, userid]);
 
+  const handleMenuClick = (e) => {
+    setAllMultiFilterData((prev) => ({ ...prev, sortBy: e.key }));
+    dispatch(getAllLeadsByFilter({ ...allMultiFilterData, sortBy: e.key }));
+    dispatch(getAllLeadsForExport({ ...allMultiFilterData, sortBy: e.key }));
+    dispatch(getAllLeadCount({ ...allMultiFilterData, sortBy: e.key }));
+  };
+
+  const menu = (
+    <Menu onClick={handleMenuClick} selectedKeys={[allMultiFilterData?.sortBy]}>
+      <Menu.Item key="id">Id</Menu.Item>
+      <Menu.Item key="createdBy">Created By</Menu.Item>
+      <Menu.Item key="updatedBy">Updated By</Menu.Item>
+    </Menu>
+  );
+
   return (
     <div className="lead-module small-box-padding">
       <div className="create-user-box">
@@ -712,7 +737,7 @@ const LeadsModule = () => {
           onChange={(e) => {
             setSearchText(e.target.value);
             if (!e.target.value && !e.target.value.trim()) {
-              dispatch(getAllLeads(allMultiFilterData));
+              dispatch(getAllLeadsByFilter(allMultiFilterData));
               setSearchText("");
             }
           }}
@@ -742,7 +767,21 @@ const LeadsModule = () => {
             </CSVLink>
           )}
 
-          <Button onClick={() => setHideMUltiFilter((prev) => !prev)}>
+          <Dropdown overlay={menu} trigger={["click"]}>
+            <Button>
+               <Icon
+                icon="fluent:arrow-sort-down-lines-24-filled"
+                width="18"
+                height="18"
+              />
+                Sort
+            </Button>
+          </Dropdown>
+
+          <Button
+            // onClick={() => setHideMUltiFilter((prev) => !prev)}
+            onClick={() => setFilterDrawer(true)}
+          >
             Filter data
           </Button>
 
@@ -1020,6 +1059,224 @@ const LeadsModule = () => {
         width={"80%"}
       >
         <AllNotificationPage />
+      </Drawer>
+
+      <Drawer
+        title="Filter"
+        open={filterDrawer}
+        onClose={() => setFilterDrawer(false)}
+        width={"50%"}
+      >
+        <div className="main-filter-container">
+          {adminRole && (
+            <Flex vertical gap={8}>
+              <Text>User </Text>
+              <Select
+                mode="multiple"
+                maxTagCount="responsive"
+                allowClear
+                showSearch
+                style={{ width: "100%" }}
+                value={allMultiFilterData?.userIdFilter}
+                placeholder="Select users"
+                onChange={(e) =>
+                  setAllMultiFilterData((prev) => ({
+                    ...prev,
+                    userIdFilter: e,
+                  }))
+                }
+                options={
+                  leadUserNew?.length > 0
+                    ? leadUserNew?.map((item) => ({
+                        label: item?.fullName,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Flex>
+          )}
+          {adminRole && (
+            <Flex vertical gap={8}>
+              <Text>Updated by </Text>
+              <Select
+                showSearch
+                style={{ width: "100%" }}
+                value={allMultiFilterData?.updatedById}
+                placeholder="Select users"
+                onChange={(e) =>
+                  setAllMultiFilterData((prev) => ({
+                    ...prev,
+                    updatedById: e,
+                  }))
+                }
+                options={
+                  leadUserNew?.length > 0
+                    ? leadUserNew?.map((item) => ({
+                        label: item?.fullName,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Flex>
+          )}
+
+          <Flex vertical gap={8}>
+            <Text>Created date </Text>
+            <RangePicker
+              showTime={{ format: "HH:mm" }}
+              placement="bottomRight"
+              format="YYYY-MM-DD HH:mm"
+              presets={rangePresets}
+              value={[
+                allMultiFilterData?.toDate
+                  ? dayjs(allMultiFilterData?.toDate)
+                  : "",
+                allMultiFilterData?.fromDate
+                  ? dayjs(allMultiFilterData?.fromDate)
+                  : "",
+              ]}
+              disabledDate={(current) =>
+                current && current > dayjs().endOf("day")
+              }
+              onChange={(dates, dateStrings) => {
+                if (dates) {
+                  setAllMultiFilterData((prev) => ({
+                    ...prev,
+                    toDate: dateStrings[0],
+                    fromDate: dateStrings[1],
+                  }));
+                } else {
+                  setAllMultiFilterData((prev) => ({
+                    ...prev,
+                    toDate: "",
+                    fromDate: "",
+                  }));
+                }
+              }}
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Status </Text>
+            <Select
+              mode="multiple"
+              maxTagCount="responsive"
+              style={{ width: "100%" }}
+              value={allMultiFilterData?.statusId}
+              allowClear
+              showSearch
+              placeholder="Select Status"
+              options={
+                getAllStatus?.length > 0
+                  ? getAllStatus?.map((item) => ({
+                      label: item?.name,
+                      value: item?.id,
+                    }))
+                  : []
+              }
+              onChange={(e) =>
+                setAllMultiFilterData((prev) => ({ ...prev, statusId: e }))
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Upated date </Text>
+            <RangePicker
+              showTime={{ format: "HH:mm" }}
+              placement="bottomRight"
+              format="YYYY-MM-DD HH:mm"
+              presets={rangePresets}
+              value={[
+                allMultiFilterData?.updatedToDate
+                  ? dayjs(allMultiFilterData?.updatedToDate)
+                  : "",
+                allMultiFilterData?.updatedfromDate
+                  ? dayjs(allMultiFilterData?.updatedfromDate)
+                  : "",
+              ]}
+              disabledDate={(current) =>
+                current && current > dayjs().endOf("day")
+              }
+              onChange={(dates, dateStrings) => {
+                if (dates) {
+                  setAllMultiFilterData((prev) => ({
+                    ...prev,
+                    updatedToDate: dateStrings[0],
+                    updatedfromDate: dateStrings[1],
+                  }));
+                } else {
+                  setAllMultiFilterData((prev) => ({
+                    ...prev,
+                    updatedToDate: "",
+                    updatedfromDate: "",
+                  }));
+                }
+              }}
+            />
+          </Flex>
+          <Flex vertical gap={8}>
+            <Text>Source </Text>
+            <Select
+              placeholder="Select source"
+              showSearch
+              allowClear
+              options={
+                leadSource?.map((item) => ({
+                  label: item,
+                  value: item,
+                })) || []
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Mobile no.</Text>
+            <Input
+              value={allMultiFilterData?.contactMobileNo}
+              onChange={(e) =>
+                setAllMultiFilterData((prev) => ({
+                  ...prev,
+                  contactMobileNo: e.target.value,
+                }))
+              }
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Email</Text>
+            <Input
+              value={allMultiFilterData?.contactMobileNo}
+              onChange={(e) =>
+                setAllMultiFilterData((prev) => ({
+                  ...prev,
+                  contactEmail: e.target.value,
+                }))
+              }
+            />
+          </Flex>
+        </div>
+
+        <Flex gap={8}>
+          <Button onClick={handleResetFilter}>Reset filter</Button>
+          <Button type="primary" onClick={handleApplyFilter}>
+            Apply filter
+          </Button>
+        </Flex>
       </Drawer>
     </div>
   );

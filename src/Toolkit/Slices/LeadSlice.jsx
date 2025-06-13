@@ -1083,9 +1083,10 @@ export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
 
 export const getAllAutoHistoryList = createAsyncThunk(
   "getAllAutoHistory",
-  async ({ page, size,data }) => {
+  async ({ page, size, data }) => {
     const response = await postQuery(
-      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilter?page=${page}&size=${size}`,data
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilter?page=${page}&size=${size}`,
+      data
     );
     return response.data;
   }
@@ -1125,7 +1126,19 @@ export const getAllAutoHistoryForExportByDate = createAsyncThunk(
   "getAllAutoHistoryForExportByDate",
   async (data) => {
     const response = await postQuery(
-      `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilter`,data
+      `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilter`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllLeadsByFilter = createAsyncThunk(
+  "getAllLeadsByFilter",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/lead/getAllLeadV1?page=${data?.page}&size=${data?.size}`,
+      data
     );
     return response.data;
   }
@@ -1224,6 +1237,17 @@ export const LeadSlice = createSlice({
       state.leadresponseStatus = "success";
     });
     builder.addCase(getAllLeads.rejected, (state, action) => {
+      state.leadresponseStatus = "rejected";
+    });
+
+    builder.addCase(getAllLeadsByFilter.pending, (state, action) => {
+      state.leadresponseStatus = "pending";
+    });
+    builder.addCase(getAllLeadsByFilter.fulfilled, (state, action) => {
+      state.allLeads = action.payload;
+      state.leadresponseStatus = "success";
+    });
+    builder.addCase(getAllLeadsByFilter.rejected, (state, action) => {
       state.leadresponseStatus = "rejected";
     });
 
