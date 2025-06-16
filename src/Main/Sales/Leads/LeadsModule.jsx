@@ -717,8 +717,8 @@ const LeadsModule = () => {
   const menu = (
     <Menu onClick={handleMenuClick} selectedKeys={[allMultiFilterData?.sortBy]}>
       <Menu.Item key="id">Id</Menu.Item>
-      <Menu.Item key="createdBy">Created By</Menu.Item>
-      <Menu.Item key="updatedBy">Updated By</Menu.Item>
+      <Menu.Item key="createdDate">Created date</Menu.Item>
+      <Menu.Item key="updatedDate">Updated date</Menu.Item>
     </Menu>
   );
 
