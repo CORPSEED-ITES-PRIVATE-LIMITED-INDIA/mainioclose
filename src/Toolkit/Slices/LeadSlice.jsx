@@ -1085,7 +1085,7 @@ export const getAllAutoHistoryList = createAsyncThunk(
   "getAllAutoHistory",
   async ({ page, size, data }) => {
     const response = await postQuery(
-      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilter?page=${page}&size=${size}`,
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterNew?page=${page}&size=${size}`,
       data
     );
     return response.data;
@@ -1126,7 +1126,7 @@ export const getAllAutoHistoryForExportByDate = createAsyncThunk(
   "getAllAutoHistoryForExportByDate",
   async (data) => {
     const response = await postQuery(
-      `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilter`,
+      `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilterNew`,
       data
     );
     return response.data;

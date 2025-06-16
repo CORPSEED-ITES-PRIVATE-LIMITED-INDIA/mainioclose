@@ -4,6 +4,7 @@ import TableScalaton from "../../../components/TableScalaton";
 import {
   Button,
   DatePicker,
+  Drawer,
   Flex,
   Input,
   notification,
@@ -22,6 +23,8 @@ import {
   getAllAutoHistoryForExportByDate,
   getAllAutoHistoryList,
   getAllAutoHistroryCount,
+  getAllLeadUser,
+  getAllStatusData,
 } from "../../../Toolkit/Slices/LeadSlice";
 import { useParams } from "react-router-dom";
 import LeadsDetailsMainPage from "../Leads/LeadsDetailsMainPage";
@@ -36,6 +39,8 @@ const AutoHistory = () => {
   const autoHistoryExportList = useSelector(
     (state) => state.leads.autoHistoryExportList
   );
+  const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
+  const getAllStatus = useSelector((state) => state.leads.getAllStatus);
   const autoExportLoading = useSelector(
     (state) => state.leads.autoExportLoading
   );
@@ -44,6 +49,7 @@ const AutoHistory = () => {
   );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const [filterDrawer, setFilterDrawer] = useState(false);
   const [paginationData, setPaginationData] = useState({
     page: 1,
     size: 50,
@@ -51,18 +57,27 @@ const AutoHistory = () => {
   const [dateFilter, setDateFilter] = useState({
     toDate: "",
     fromDate: "",
-    departmentId: "",
+    departmentId: null,
+    assignType: "",
+    statusIds: [],
+    assigneeIds: [],
   });
 
+  useEffect(() => {
+    dispatch(getAllLeadUser(userid));
+    dispatch(getAllStatusData());
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(getAllAutoHistoryList({ ...paginationData, data: dateFilter }));
     dispatch(getAllAutoHistroryCount());
-  }, [dispatch, dateFilter]);
+  }, [dispatch]);
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getAllAutoHistoryList({ page: dataPage, size, data: dateFilter }));
+      dispatch(
+        getAllAutoHistoryList({ page: dataPage, size, data: dateFilter })
+      );
       setPaginationData({ size: size, page: dataPage });
     },
     [dispatch, userid, dateFilter]
@@ -110,7 +125,7 @@ const AutoHistory = () => {
     {
       dataIndex: "manual",
       title: "Manual",
-      render: (data) => data ? 'Manual' : 'Auto'
+      render: (data) => (data ? "Manual" : "Auto"),
     },
 
     {
@@ -127,11 +142,6 @@ const AutoHistory = () => {
       title: "Assignee email",
       render: (_, data) => <Text>{data?.currEmail}</Text>,
     },
-    // {
-    //   dataIndex: "paId",
-    //   title: "Previous assignee id",
-    //   render: (_, data) => <Text>{data?.paId}</Text>,
-    // },
     {
       dataIndex: "paName",
       title: "Previous assignee name",
@@ -158,27 +168,13 @@ const AutoHistory = () => {
         <Text>{dayjs(data?.assignDate).format("DD-MM-YYYY")}</Text>
       ),
     },
-    // {
-    //   title: "Created date",
-    //   dataIndex: "createDate",
-    //   render: (_, data) => (
-    //     <Text>{dayjs(data?.createDate).format("DD-MM-YYYY")}</Text>
-    //   ),
-    // },
-    // {
-    //   title: "Last updated date",
-    //   dataIndex: "lastUpdated",
-    //   render: (_, data) => (
-    //     <Text>{dayjs(data?.lastUpdated).format("DD-MM-YYYY")}</Text>
-    //   ),
-    // },
   ];
 
   const exportData = autoHistoryExportList?.map((row) => ({
     Id: row?.id,
     "Lead name": row?.leadOriginalName,
     Status: row?.status,
-    Manual: row?.manual?'Manual':'Auto',
+    Manual: row?.manual ? "Manual" : "Auto",
     "Client name": row?.clientName,
     "Client Email": row?.clientEmail,
     "Mobile no.": row?.mobileNo,
@@ -205,6 +201,7 @@ const AutoHistory = () => {
   ];
 
   const handleApplyFilter = () => {
+    dispatch(getAllAutoHistoryList({ ...paginationData, data: dateFilter }));
     dispatch(getAllAutoHistoryForExportByDate(dateFilter))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -216,6 +213,22 @@ const AutoHistory = () => {
       .catch((err) =>
         notification.error({ message: "Something went wrong !." })
       );
+  };
+
+  const handleResetFilter = () => {
+    dispatch(
+      getAllAutoHistoryList({
+        ...paginationData,
+        data: {
+          toDate: "",
+          fromDate: "",
+          departmentId: "",
+          assignType: "",
+          statusIds: [],
+          assigneeIds: [],
+        },
+      })
+    );
   };
 
   return (
@@ -234,46 +247,41 @@ const AutoHistory = () => {
           />
 
           <Select
+            allowClear
             style={{ width: "200px" }}
-            placeholder='Select department'
+            placeholder="Select department"
             value={dateFilter?.departmentId}
             options={[
               { label: "Sales", value: 2 },
               { label: "Quality", value: 3 },
             ]}
-            onChange={(e) =>
-              setDateFilter((prev) => ({ ...prev, departmentId: e }))
-            }
+            onClear={() => {
+              setDateFilter((prev) => ({ ...prev, departmentId: null }));
+              dispatch(
+                getAllAutoHistoryList({
+                  ...paginationData,
+                  data: { ...dateFilter, departmentId: null },
+                })
+              );
+            }}
+            onChange={(e) => {
+              setDateFilter((prev) => ({ ...prev, departmentId: e }));
+              dispatch(
+                getAllAutoHistoryList({
+                  ...paginationData,
+                  data: { ...dateFilter, departmentId: e },
+                })
+              );
+            }}
           />
         </Flex>
         <Flex align="center" gap={2}>
-          <RangePicker
-            showTime={{ format: "HH:mm" }}
-            placement="bottomRight"
-            format="YYYY-MM-DD HH:mm"
-            presets={rangePresets}
-            value={[
-              dateFilter?.toDate ? dayjs(dateFilter?.toDate) : "",
-              dateFilter?.fromDate ? dayjs(dateFilter?.fromDate) : "",
-            ]}
-            disabledDate={(current) =>
-              current && current > dayjs().endOf("day")
-            }
-            onChange={(dates, dateStrings) => {
-              if (dates) {
-                setDateFilter((prev) => ({
-                  ...prev,
-                  toDate: dateStrings[0],
-                  fromDate: dateStrings[1],
-                }));
-              }
-            }}
-          />
           <Button
             loading={autoExportLoading === "pending"}
-            onClick={handleApplyFilter}
+            onClick={() => setFilterDrawer(true)}
           >
-            Apply filter
+            <Icon icon="fluent:filter-12-regular" width="12" height="12" />{" "}
+            Filter
           </Button>
           <CSVLink
             className="text-white"
@@ -308,6 +316,132 @@ const AutoHistory = () => {
           />
         </Suspense>
       </div>
+
+      <Drawer
+        title="Filter"
+        open={filterDrawer}
+        onClose={() => setFilterDrawer(false)}
+        width={"50%"}
+      >
+        <div className="main-filter-container">
+          <Flex vertical gap={8}>
+            <Text>Select assignee </Text>
+            <Select
+              mode="multiple"
+              maxTagCount="responsive"
+              allowClear
+              showSearch
+              style={{ width: "100%" }}
+              value={dateFilter?.assigneeIds}
+              placeholder="Select assignee"
+              onChange={(e) =>
+                setDateFilter((prev) => ({
+                  ...prev,
+                  assigneeIds: e,
+                }))
+              }
+              options={
+                leadUserNew?.length > 0
+                  ? leadUserNew?.map((item) => ({
+                      label: item?.fullName,
+                      value: item?.id,
+                    }))
+                  : []
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Created date </Text>
+            <RangePicker
+              showTime={{ format: "HH:mm" }}
+              placement="bottomRight"
+              format="YYYY-MM-DD HH:mm"
+              presets={rangePresets}
+              value={[
+                dateFilter?.toDate ? dayjs(dateFilter?.toDate) : "",
+                dateFilter?.fromDate ? dayjs(dateFilter?.fromDate) : "",
+              ]}
+              disabledDate={(current) =>
+                current && current > dayjs().endOf("day")
+              }
+              onChange={(dates, dateStrings) => {
+                if (dates) {
+                  setDateFilter((prev) => ({
+                    ...prev,
+                    toDate: dateStrings[0],
+                    fromDate: dateStrings[1],
+                  }));
+                } else {
+                  setDateFilter((prev) => ({
+                    ...prev,
+                    toDate: "",
+                    fromDate: "",
+                  }));
+                }
+              }}
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Status </Text>
+            <Select
+              mode="multiple"
+              maxTagCount="responsive"
+              style={{ width: "100%" }}
+              value={dateFilter?.statusIds}
+              allowClear
+              showSearch
+              placeholder="Select Status"
+              options={
+                getAllStatus?.length > 0
+                  ? getAllStatus?.map((item) => ({
+                      label: item?.name,
+                      value: item?.id,
+                    }))
+                  : []
+              }
+              onChange={(e) =>
+                setDateFilter((prev) => ({ ...prev, statusIds: e }))
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Flex>
+
+          <Flex vertical gap={8}>
+            <Text>Assign type </Text>
+            <Select
+              style={{ width: "100%" }}
+              value={dateFilter?.assignType}
+              allowClear
+              showSearch
+              placeholder="Select assign type"
+              options={[
+                { label: "Manual", value: "Manual" },
+                { label: "Auto", value: "Auto" },
+              ]}
+              onChange={(e) =>
+                setDateFilter((prev) => ({ ...prev, assignType: e }))
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Flex>
+        </div>
+
+        <Flex gap={8}>
+          <Button onClick={handleResetFilter}>Reset filter</Button>
+          <Button type="primary" onClick={handleApplyFilter}>
+            Apply filter
+          </Button>
+        </Flex>
+      </Drawer>
     </div>
   );
 };

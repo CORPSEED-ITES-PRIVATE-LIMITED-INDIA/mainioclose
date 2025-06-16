@@ -78,7 +78,6 @@ const LeadsModule = () => {
   );
   const [multibtn, setMultibtn] = useState("");
   const [leadDelLoading, setLeadDelLoading] = useState("");
-  const [hideMUltiFilter, setHideMUltiFilter] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -769,17 +768,16 @@ const LeadsModule = () => {
 
           <Dropdown overlay={menu} trigger={["click"]}>
             <Button>
-               <Icon
+              <Icon
                 icon="fluent:arrow-sort-down-lines-24-filled"
                 width="18"
                 height="18"
               />
-                Sort
+              Sort
             </Button>
           </Dropdown>
 
           <Button
-            // onClick={() => setHideMUltiFilter((prev) => !prev)}
             onClick={() => setFilterDrawer(true)}
           >
             Filter data
@@ -837,98 +835,7 @@ const LeadsModule = () => {
         </Flex>
       </Flex>
 
-      {hideMUltiFilter && (
-        <div className={`all-between py-2`}>
-          <div className="filter-container">
-            {adminRole && (
-              <Select
-                mode="multiple"
-                maxTagCount="responsive"
-                allowClear
-                showSearch
-                style={{ width: "45%" }}
-                value={allMultiFilterData?.userIdFilter}
-                placeholder="Select users"
-                onChange={(e) =>
-                  setAllMultiFilterData((prev) => ({
-                    ...prev,
-                    userIdFilter: e,
-                  }))
-                }
-                options={
-                  leadUserNew?.length > 0
-                    ? leadUserNew?.map((item) => ({
-                        label: item?.fullName,
-                        value: item?.id,
-                      }))
-                    : []
-                }
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().includes(input.toLowerCase())
-                }
-              />
-            )}
-            <Select
-              mode="multiple"
-              maxTagCount="responsive"
-              style={{ width: "45%" }}
-              value={allMultiFilterData?.statusId}
-              allowClear
-              showSearch
-              placeholder="Select Status"
-              options={
-                getAllStatus?.length > 0
-                  ? getAllStatus?.map((item) => ({
-                      label: item?.name,
-                      value: item?.id,
-                    }))
-                  : []
-              }
-              onChange={(e) =>
-                setAllMultiFilterData((prev) => ({ ...prev, statusId: e }))
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-            />
-          </div>
-
-          <div className="filter-right-container">
-            <RangePicker
-              showTime={{ format: "HH:mm" }}
-              placement="bottomRight"
-              format="YYYY-MM-DD HH:mm"
-              presets={rangePresets}
-              value={[
-                allMultiFilterData?.toDate
-                  ? dayjs(allMultiFilterData?.toDate)
-                  : "",
-                allMultiFilterData?.fromDate
-                  ? dayjs(allMultiFilterData?.fromDate)
-                  : "",
-              ]}
-              disabledDate={(current) =>
-                current && current > dayjs().endOf("day")
-              }
-              onChange={(dates, dateStrings) => {
-                if (dates) {
-                  setAllMultiFilterData((prev) => ({
-                    ...prev,
-                    toDate: dateStrings[0],
-                    fromDate: dateStrings[1],
-                  }));
-                }
-              }}
-            />
-
-            <Button type="primary" onClick={handleApplyFilter}>
-              Apply filter
-            </Button>
-            <Button onClick={handleResetFilter}>Reset filter</Button>
-          </div>
-        </div>
-      )}
-
+  
       <div className="table-arrow">
         <Suspense fallback={<TableScalaton />}>
           <Spin
@@ -1229,6 +1136,8 @@ const LeadsModule = () => {
           <Flex vertical gap={8}>
             <Text>Source </Text>
             <Select
+              mode="multiple"
+              maxTagCount="responsive"
               placeholder="Select source"
               showSearch
               allowClear
