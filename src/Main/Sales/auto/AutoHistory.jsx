@@ -165,7 +165,7 @@ const AutoHistory = () => {
       title: "Assigned date",
       dataIndex: "assignDate",
       render: (_, data) => (
-        <Text>{dayjs(data?.assignDate).format("DD-MM-YYYY HH:mm git git ")}</Text>
+        <Text>{dayjs(data?.assignDate).format("DD-MM-YYYY HH:mm ")}</Text>
       ),
     },
   ];
