@@ -522,12 +522,12 @@ const LeadDetailsPage = ({ leadid }) => {
                           ? singleLeadResponseData?.originalName
                           : "NA"}
                       </Text>
-                      <Button
+                      {/* <Button
                         size="small"
                         onClick={() => setUpdateOriginalName(true)}
                       >
                         <Icon icon="fluent:edit-20-regular" /> Edit
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
                 )}

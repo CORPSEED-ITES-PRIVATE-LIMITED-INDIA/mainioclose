@@ -949,7 +949,7 @@ const LeadsModule = () => {
                         {multibtn === "pending" ? "Loading..." : "Send"}
                       </Button>
                     </div>
-                    <Text>Selected rows: {selectedRowKeys?.length}</Text>
+                    {/* <Text>Selected rows: {selectedRowKeys?.length}</Text> */}
                   </div>
                 ) : (
                   ""
