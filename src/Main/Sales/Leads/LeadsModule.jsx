@@ -669,6 +669,7 @@ const LeadsModule = () => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
+    setFilterDrawer(false)
   }, [allMultiFilterData, dispatch]);
 
   const handleResetFilter = useCallback(() => {
