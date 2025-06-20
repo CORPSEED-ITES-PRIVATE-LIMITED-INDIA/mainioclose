@@ -95,7 +95,7 @@ const LeadsModule = () => {
     updatedToDate: "",
     updatedfromDate: "",
     updatedById: null,
-    source: ["IVR"],
+    source: [],
     contactMobileNo: null,
     contactEmail: null,
     sortBy: "id",

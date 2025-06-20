@@ -1188,12 +1188,13 @@ const LeadCompany = ({ edit, data }) => {
                       showSearch
                       options={statesList?.map((item) => ({
                         label: item.name,
-                        value: item.id,
+                        value: item.name,
                         gstCode: item.gstCode,
                         stateName: item.name,
+                        id:item?.id
                       }))}
                       onChange={(e, option) => {
-                        dispatch(getAllCitiesByStateId(e));
+                        dispatch(getAllCitiesByStateId(option?.id));
                         form.resetFields(["city"]);
                         form.validateFields(["state", "gstNo"]).catch(() => {
                           const gstNumber = form.getFieldValue("gstNo");
