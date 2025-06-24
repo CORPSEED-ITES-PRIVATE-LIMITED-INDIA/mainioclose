@@ -162,6 +162,11 @@ const AutoHistory = () => {
       render: (_, data) => <OverFlowText>{data?.status}</OverFlowText>,
     },
     {
+      title: "Description",
+      dataIndex: "description",
+      render: (_, data) => <OverFlowText>{data?.description}</OverFlowText>,
+    },
+    {
       title: "Assigned date",
       dataIndex: "assignDate",
       render: (_, data) => (

@@ -86,7 +86,6 @@ const Proposal = ({ leadid }) => {
     const nextSelected = brochureUrl.includes(id)
       ? brochureUrl.filter((selectedId) => selectedId !== id)
       : [...brochureUrl, id];
-
     setBrochreUrl(nextSelected);
     form.setFieldsValue({ brochureBook: nextSelected });
   };
@@ -96,6 +95,7 @@ const Proposal = ({ leadid }) => {
     values.productId = productData?.id;
     values.createdById = userid;
     values.templateName = templateName;
+    values.brochureBook=brochureUrl
     if (Object.keys(proposalDataDetail)?.length > 0) {
       dispatch(editLeadPropposal({ id: proposalDataDetail?.id, ...values }))
         .then((resp) => {
@@ -376,10 +376,10 @@ const Proposal = ({ leadid }) => {
 
           <Form.Item
             label="Select brochure"
-            name="brochureUrl"
+            name="brochureBook"
             rules={[
               {
-                required: true,
+                required: false,
                 message: "Please select at least one brochure!",
               },
             ]}
