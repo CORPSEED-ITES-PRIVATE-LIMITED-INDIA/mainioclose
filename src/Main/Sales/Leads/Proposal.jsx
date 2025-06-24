@@ -15,6 +15,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   editLeadPropposal,
+  getAllBrochureList,
   getAllProposalTemplateList,
   sendProposal,
 } from "../../../Toolkit/Slices/LeadSlice";
@@ -27,6 +28,7 @@ const Proposal = ({ leadid }) => {
   const [form] = Form.useForm();
   const { userid } = useParams();
   const templateList = useSelector((state) => state.leads.templateList);
+  const brochureList = useSelector((state) => state.leads.brochureList);
   const productData = useSelector((state) => state.leads.productDataByLeadName);
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail
@@ -34,12 +36,15 @@ const Proposal = ({ leadid }) => {
   const [templates, setTemplates] = useState([]);
   const [data, setData] = useState("<h2>Your proposal </h2>");
   const [openPopOver, setOpenPopOver] = useState(false);
+  const [brochurePopOver, setBrochrePopOver] = useState(false);
+  const [brochureUrl, setBrochreUrl] = useState([]);
   const [templateName, setTemplateName] = useState("");
   const [editProposal, setEditProposal] = useState(false);
   const [mailBody, setMailBody] = useState("<h2>Your email body</h2>");
 
   useEffect(() => {
     dispatch(getAllProposalTemplateList());
+    dispatch(getAllBrochureList());
   }, [dispatch]);
 
   useEffect(() => {
@@ -55,17 +60,35 @@ const Proposal = ({ leadid }) => {
         mailCc: proposalDataDetail?.mailCc,
         mailBcc: proposalDataDetail?.mailBcc,
         mailSubject: proposalDataDetail?.mailSubject,
+        brochureBook: proposalDataDetail?.brochureBook,
+        mailBody: proposalDataDetail?.mailBody,
+        template: proposalDataDetail?.template,
       });
     } else {
       form.resetFields();
       setData("<h2>Your proposal </h2>");
       setMailBody("<h2>Your email body</h2>");
+      form.setFieldsValue({
+        mailBody: "<h2>Your email body</h2>",
+        template: "<h2>Your proposal </h2>",
+      });
     }
   }, [proposalDataDetail, form]);
 
-  const handleSetData = (description) => {
-    setData(description);
+  const handleSetData = (item) => {
+    setData(item?.description);
+    setMailBody(item?.body);
+    form.setFieldsValue({ mailBody: item?.body, template: item?.description });
     setOpenPopOver(false);
+  };
+
+  const handleSetBrochureData = (id) => {
+    const nextSelected = brochureUrl.includes(id)
+      ? brochureUrl.filter((selectedId) => selectedId !== id)
+      : [...brochureUrl, id];
+
+    setBrochreUrl(nextSelected);
+    form.setFieldsValue({ brochureBook: nextSelected });
   };
 
   const handleSubmit = (values) => {
@@ -101,6 +124,7 @@ const Proposal = ({ leadid }) => {
         );
     }
   };
+
   const content = () => {
     return (
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
@@ -110,7 +134,7 @@ const Proposal = ({ leadid }) => {
             key={`template${item?.id}`}
             hoverable
             onClick={() => {
-              handleSetData(item?.description);
+              handleSetData(item);
               setTemplateName(item?.name);
             }}
           >
@@ -127,6 +151,54 @@ const Proposal = ({ leadid }) => {
             </div>
           </Card>
         ))}
+      </div>
+    );
+  };
+
+  const brochureContent = () => {
+    return (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        {brochureList?.map((item) => {
+          const isSelected = brochureUrl.includes(item.id);
+
+          return (
+            <Card
+              key={`brochure${item.id}`}
+              hoverable
+              style={{
+                width: 140,
+                border: isSelected ? "2px solid #1890ff" : undefined,
+                position: "relative",
+              }}
+              onClick={() => handleSetBrochureData(item.id)}
+            >
+              {isSelected && (
+                <Icon
+                  icon="fluent:checkmark-circle-24-filled"
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    fontSize: 24,
+                    color: "#52c41a",
+                  }}
+                />
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <img src={template} alt="template" height={100} width={120} />
+                <Text className="heading-text">{item.name}</Text>
+              </div>
+            </Card>
+          );
+        })}
       </div>
     );
   };
@@ -218,7 +290,7 @@ const Proposal = ({ leadid }) => {
               style={{ width: "100%" }}
               placeholder="Enter emails and press Enter"
               tokenSeparators={[",", " "]}
-              open={false} 
+              open={false}
               suffixIcon={false}
             />
           </Form.Item>
@@ -274,7 +346,7 @@ const Proposal = ({ leadid }) => {
               style={{ width: "100%" }}
               placeholder="Enter emails and press Enter"
               tokenSeparators={[",", " "]}
-              open={false} 
+              open={false}
               suffixIcon={false}
             />
           </Form.Item>
@@ -286,6 +358,47 @@ const Proposal = ({ leadid }) => {
           >
             <Input />
           </Form.Item>
+
+          <Form.Item>
+            <Popover
+              trigger={"click"}
+              content={content}
+              overlayInnerStyle={{ maxWidth: 1200 }}
+              placement="bottomLeft"
+              open={openPopOver}
+              onOpenChange={(e) => setOpenPopOver(e)}
+            >
+              <Button style={{ width: 350 }}>
+                Select Proposal template and mail body
+              </Button>
+            </Popover>
+          </Form.Item>
+
+          <Form.Item
+            label="Select brochure"
+            name="brochureUrl"
+            rules={[
+              {
+                required: true,
+                message: "Please select at least one brochure!",
+              },
+            ]}
+          >
+            <Popover
+              trigger={"click"}
+              content={brochureContent}
+              overlayInnerStyle={{ maxWidth: 1200 }}
+              placement="bottomLeft"
+              open={brochurePopOver}
+              onOpenChange={(e) => setBrochrePopOver(e)}
+            >
+              <Button style={{ width: 350 }}>
+                Select brochure{" "}
+                {brochureUrl?.length > 0 ? `(${brochureUrl?.length})` : ""}{" "}
+              </Button>
+            </Popover>
+          </Form.Item>
+
           <Form.Item
             label="Mail body"
             name="mailBody"
@@ -299,18 +412,7 @@ const Proposal = ({ leadid }) => {
               }}
             />
           </Form.Item>
-          <Form.Item>
-            <Popover
-              trigger={"click"}
-              content={content}
-              overlayInnerStyle={{ maxWidth: 1200 }}
-              placement="bottomLeft"
-              open={openPopOver}
-              onOpenChange={(e) => setOpenPopOver(e)}
-            >
-              <Button style={{ width: 250 }}>Proposal templates</Button>
-            </Popover>
-          </Form.Item>
+
           <Form.Item label="Proposal" name="template">
             <TextEditor
               onChange={(e, editor) => {

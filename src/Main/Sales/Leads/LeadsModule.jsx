@@ -35,6 +35,7 @@ import {
   Popover,
   Select,
   Spin,
+  Tooltip,
   Typography,
   Upload,
 } from "antd";
@@ -381,12 +382,12 @@ const LeadsModule = () => {
     },
     ...(adminRole
       ? [
-        {
-          title: "Mobile no.",
-          dataIndex: "mobileNo",
-          checked: true,
-        },
-      ]
+          {
+            title: "Mobile no.",
+            dataIndex: "mobileNo",
+            checked: true,
+          },
+        ]
       : []),
     {
       title: "Missed task",
@@ -438,13 +439,13 @@ const LeadsModule = () => {
     },
     ...(adminRole
       ? [
-        {
-          title: "Email",
-          dataIndex: "email",
-          checked: true,
-          render: (_, record) => <OverFlowText>{record?.email}</OverFlowText>,
-        },
-      ]
+          {
+            title: "Email",
+            dataIndex: "email",
+            checked: true,
+            render: (_, record) => <OverFlowText>{record?.email}</OverFlowText>,
+          },
+        ]
       : []),
     {
       title: "Assignee person",
@@ -466,115 +467,115 @@ const LeadsModule = () => {
 
     ...(currentUserDetail?.department !== "Sales"
       ? [
-        {
-          title: "Change assignee",
-          dataIndex: "assignee",
-          checked: false,
-          render: (_, data) => (
-            <Select
-              showSearch
-              size="small"
-              style={{ width: "100%" }}
-              value={adminRole ? data?.assignee?.id : ""}
-              placeholder="select assignee"
-              options={
-                leadUserNew?.map((ele) => ({
-                  label: ele?.fullName,
-                  value: ele?.id,
-                })) || []
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-              onChange={(e) => handleUpdateAssignee(e, data?.id)}
-            />
-          ),
-        },
-      ]
+          {
+            title: "Change assignee",
+            dataIndex: "assignee",
+            checked: false,
+            render: (_, data) => (
+              <Select
+                showSearch
+                size="small"
+                style={{ width: "100%" }}
+                value={adminRole ? data?.assignee?.id : ""}
+                placeholder="select assignee"
+                options={
+                  leadUserNew?.map((ele) => ({
+                    label: ele?.fullName,
+                    value: ele?.id,
+                  })) || []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+                onChange={(e) => handleUpdateAssignee(e, data?.id)}
+              />
+            ),
+          },
+        ]
       : []),
 
     ...(adminRole
       ? [
-        {
-          title: "Helper",
-          dataIndex: "helper",
-          checked: true,
-          render: (_, data) => (
-            <Select
-              showSearch
-              size="small"
-              value={data?.helper ? data?.helpUser?.id : ""}
-              style={{ width: "100%" }}
-              options={
-                [
-                  { label: "NA", value: "" },
-                  ...allUsers?.map((item) => ({
-                    label: item?.fullName,
-                    value: item?.id,
-                  })),
-                ] || []
-              }
-              filterOption={(input, option) =>
-                option.label.toLowerCase().includes(input.toLowerCase())
-              }
-              onChange={(e) => handleHelperChange(e, data?.id)}
-            />
-          ),
-        },
-        {
-          title: "Created by",
-          dataIndex: "createdBy",
-          checked: true,
-          render: (_, data) => (
-            <OverFlowText>{data?.createdBy?.fullName}</OverFlowText>
-          ),
-        },
-        {
-          title: "Source",
-          dataIndex: "source",
-          checked: true,
-          render: (_, data) => <OverFlowText>{data?.source}</OverFlowText>,
-        },
-        {
-          title: "Create project",
-          dataIndex: "project",
-          checked: false,
-          render: (_, data) => <CompanyFormModal data={data} />,
-        },
-        {
-          title: "Lead assigned",
-          dataIndex: "assignedSame",
-          checked: false,
-          render: (_, data) => (
-            <Button size="small" onClick={() => leadAssignedToSame(data?.id)}>
-              To same{" "}
-            </Button>
-          ),
-        },
-        {
-          dataIndex: "action",
-          title: "Action",
-          checked: false,
-          render: (_, data) => (
-            <Popconfirm
-              title="Delete the lead"
-              description="Are you sure to delete this lead?"
-              onConfirm={() => leadDeleteResponse(data?.id)}
-              okText="Yes"
-              cancelText="No"
-            >
-              <Button size="small" danger>
-                <Icon
-                  icon="fluent:delete-20-regular"
-                  height={18}
-                  width={18}
-                />
-                Delete
+          {
+            title: "Helper",
+            dataIndex: "helper",
+            checked: true,
+            render: (_, data) => (
+              <Select
+                showSearch
+                size="small"
+                value={data?.helper ? data?.helpUser?.id : ""}
+                style={{ width: "100%" }}
+                options={
+                  [
+                    { label: "NA", value: "" },
+                    ...allUsers?.map((item) => ({
+                      label: item?.fullName,
+                      value: item?.id,
+                    })),
+                  ] || []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+                onChange={(e) => handleHelperChange(e, data?.id)}
+              />
+            ),
+          },
+          {
+            title: "Created by",
+            dataIndex: "createdBy",
+            checked: true,
+            render: (_, data) => (
+              <OverFlowText>{data?.createdBy?.fullName}</OverFlowText>
+            ),
+          },
+          {
+            title: "Source",
+            dataIndex: "source",
+            checked: true,
+            render: (_, data) => <OverFlowText>{data?.source}</OverFlowText>,
+          },
+          {
+            title: "Create project",
+            dataIndex: "project",
+            checked: false,
+            render: (_, data) => <CompanyFormModal data={data} />,
+          },
+          {
+            title: "Lead assigned",
+            dataIndex: "assignedSame",
+            checked: false,
+            render: (_, data) => (
+              <Button size="small" onClick={() => leadAssignedToSame(data?.id)}>
+                To same{" "}
               </Button>
-            </Popconfirm>
-          ),
-        },
-      ]
+            ),
+          },
+          {
+            dataIndex: "action",
+            title: "Action",
+            checked: false,
+            render: (_, data) => (
+              <Popconfirm
+                title="Delete the lead"
+                description="Are you sure to delete this lead?"
+                onConfirm={() => leadDeleteResponse(data?.id)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button size="small" danger>
+                  <Icon
+                    icon="fluent:delete-20-regular"
+                    height={18}
+                    width={18}
+                  />
+                  Delete
+                </Button>
+              </Popconfirm>
+            ),
+          },
+        ]
       : []),
   ];
 
@@ -645,7 +646,7 @@ const LeadsModule = () => {
     onChange(info) {
       setUploadedFile(info?.file?.response);
     },
-    onDrop(e) { },
+    onDrop(e) {},
   };
 
   const handleUploadFile = useCallback(() => {
@@ -669,7 +670,7 @@ const LeadsModule = () => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
-    setFilterDrawer(false)
+    setFilterDrawer(false);
   }, [allMultiFilterData, dispatch]);
 
   const handleResetFilter = useCallback(() => {
@@ -708,18 +709,77 @@ const LeadsModule = () => {
     );
   }, [dispatch, userid]);
 
-  const handleMenuClick = (e) => {
-    setAllMultiFilterData((prev) => ({ ...prev, sortBy: e.key }));
-    dispatch(getAllLeadsByFilter({ ...allMultiFilterData, sortBy: e.key }));
-    dispatch(getAllLeadsForExport({ ...allMultiFilterData, sortBy: e.key }));
-    dispatch(getAllLeadCount({ ...allMultiFilterData, sortBy: e.key }));
+  const handleSort = (sortBy, sortDirection) => {
+    const updatedData = { ...allMultiFilterData, sortBy, sortDirection };
+
+    setAllMultiFilterData(updatedData);
+
+    dispatch(getAllLeadsByFilter(updatedData));
+    dispatch(getAllLeadsForExport(updatedData));
+    dispatch(getAllLeadCount(updatedData));
   };
 
+  const sortFields = [
+    { key: "id", label: "Id" },
+    { key: "createdDate", label: "Created date" },
+    { key: "updatedDate", label: "Updated date" },
+  ];
+
   const menu = (
-    <Menu onClick={handleMenuClick} selectedKeys={[allMultiFilterData?.sortBy]}>
-      <Menu.Item key="id">Id</Menu.Item>
-      <Menu.Item key="createdDate">Created date</Menu.Item>
-      <Menu.Item key="updatedDate">Updated date</Menu.Item>
+    <Menu>
+      {sortFields.map(({ key, label }) => (
+        <Menu.Item
+          key={key}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Flex gap={8} align="center">
+            {" "}
+            <span>{label}</span>
+            <span style={{ display: "flex", gap: 8 }}>
+              <Tooltip title="Sort Ascending">
+                <Icon
+                  icon="fluent:arrow-sort-up-24-filled"
+                  style={{
+                    fontSize: 18,
+                    color:
+                      allMultiFilterData.sortBy === key &&
+                      allMultiFilterData.sortDirection === "asc"
+                        ? "#1677ff"
+                        : "#aaa",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.domEvent?.stopPropagation?.(); // prevent triggering Menu.Item
+                    handleSort(key, "asc");
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title="Sort Descending">
+                <Icon
+                  icon="fluent:arrow-sort-down-24-filled"
+                  style={{
+                    fontSize: 18,
+                    color:
+                      allMultiFilterData.sortBy === key &&
+                      allMultiFilterData.sortDirection === "desc"
+                        ? "#1677ff"
+                        : "#aaa",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.domEvent?.stopPropagation?.();
+                    handleSort(key, "desc");
+                  }}
+                />
+              </Tooltip>
+            </span>
+          </Flex>
+        </Menu.Item>
+      ))}
     </Menu>
   );
 
@@ -778,11 +838,7 @@ const LeadsModule = () => {
             </Button>
           </Dropdown>
 
-          <Button
-            onClick={() => setFilterDrawer(true)}
-          >
-            Filter data
-          </Button>
+          <Button onClick={() => setFilterDrawer(true)}>Filter data</Button>
 
           {adminRole && (
             <Popover
@@ -835,7 +891,6 @@ const LeadsModule = () => {
           </Button>
         </Flex>
       </Flex>
-
 
       <div className="table-arrow">
         <Suspense fallback={<TableScalaton />}>
@@ -895,9 +950,9 @@ const LeadsModule = () => {
                         options={
                           getAllStatus?.length > 0
                             ? getAllStatus?.map((item) => ({
-                              label: item?.name,
-                              value: item?.id,
-                            }))
+                                label: item?.name,
+                                value: item?.id,
+                              }))
                             : []
                         }
                         onChange={(e) =>
@@ -923,9 +978,9 @@ const LeadsModule = () => {
                         options={
                           leadUserNew?.length > 0
                             ? leadUserNew?.map((ele) => ({
-                              label: ele?.fullName,
-                              value: ele?.id,
-                            }))
+                                label: ele?.fullName,
+                                value: ele?.id,
+                              }))
                             : []
                         }
                         onChange={(e) =>
@@ -996,9 +1051,9 @@ const LeadsModule = () => {
                 options={
                   leadUserNew?.length > 0
                     ? leadUserNew?.map((item) => ({
-                      label: item?.fullName,
-                      value: item?.id,
-                    }))
+                        label: item?.fullName,
+                        value: item?.id,
+                      }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -1024,9 +1079,9 @@ const LeadsModule = () => {
                 options={
                   leadUserNew?.length > 0
                     ? leadUserNew?.map((item) => ({
-                      label: item?.fullName,
-                      value: item?.id,
-                    }))
+                        label: item?.fullName,
+                        value: item?.id,
+                      }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -1085,9 +1140,9 @@ const LeadsModule = () => {
               options={
                 getAllStatus?.length > 0
                   ? getAllStatus?.map((item) => ({
-                    label: item?.name,
-                    value: item?.id,
-                  }))
+                      label: item?.name,
+                      value: item?.id,
+                    }))
                   : []
               }
               onChange={(e) =>
@@ -1152,10 +1207,12 @@ const LeadsModule = () => {
               filterOption={(input, option) =>
                 option.label.toLowerCase().includes(input.toLowerCase())
               }
-              onChange={(e) => setAllMultiFilterData((prev) => ({
-                ...prev,
-                source: e
-              }))}
+              onChange={(e) =>
+                setAllMultiFilterData((prev) => ({
+                  ...prev,
+                  source: e,
+                }))
+              }
             />
           </Flex>
 

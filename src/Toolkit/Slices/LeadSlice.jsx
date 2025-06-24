@@ -1144,6 +1144,16 @@ export const getAllLeadsByFilter = createAsyncThunk(
   }
 );
 
+export const getAllBrochureList = createAsyncThunk(
+  "getAllBrochureList",
+  async () => {
+    const response = await getQuery(
+      `/leadService/api/v1/brochureBook/getAllBrochureBook`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1219,6 +1229,7 @@ export const LeadSlice = createSlice({
     statusListById: [],
     autoHistoryExportList: [],
     autoExportLoading: "",
+    brochureList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1862,6 +1873,16 @@ export const LeadSlice = createSlice({
         state.autoExportLoading = "error";
       }
     );
+
+    builder.addCase(getAllBrochureList.pending, (state, action) => {
+      state.brochureList = [];
+    });
+    builder.addCase(getAllBrochureList.fulfilled, (state, action) => {
+      state.brochureList = action?.payload;
+    });
+    builder.addCase(getAllBrochureList.rejected, (state, action) => {
+      state.brochureList = [];
+    });
   },
 });
 export const {
