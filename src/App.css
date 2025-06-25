@@ -1358,3 +1358,7 @@ select.form-control:not([size]):not([multiple]) {
 .ant-form-item-control-input-content{
   display: flex;
 }
+
+.performa .ant-form-vertical .ant-form-item-label{
+  padding: 0px !important;
+}

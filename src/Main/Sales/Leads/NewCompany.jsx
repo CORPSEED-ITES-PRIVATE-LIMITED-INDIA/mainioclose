@@ -313,7 +313,7 @@ const NewCompany = () => {
           align="center"
           className="marginBottom8px"
         >
-          <Flex gap={8} style={{ width: "30%" }}>
+          <Flex gap={8} style={{ width: "50%" }}>
             <Input
               prefix={<Icon icon="fluent:search-24-regular" />}
               value={searchText}

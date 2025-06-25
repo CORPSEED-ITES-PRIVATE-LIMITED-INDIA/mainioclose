@@ -244,7 +244,7 @@ const LeadEstimate = ({ leadid }) => {
 
 
 
-   useEffect(() => {
+  useEffect(() => {
     const handler = setTimeout(() => {
       // Only call API if searchText is not empty
       if (seachFields.searchText) {
@@ -308,6 +308,7 @@ const LeadEstimate = ({ leadid }) => {
       panNo: details?.panNo,
       gstType: details?.gstType,
       companyAge: details?.companyAge,
+      performaInvoice: details?.performaInvoice,
       gstNo: details?.gstNo,
       gstDocuments: [
         {
@@ -525,14 +526,14 @@ const LeadEstimate = ({ leadid }) => {
       <Flex
         justify="space-between"
         align="center"
-        style={{ width: "100%", marginLeft: 16 }}
+        style={{ width: "98%", marginLeft: 16 }}
       >
         <Title level={4} className="heading-text" style={{ margin: 0 }}>
           {Object.keys(details)?.length > 0 && !editEstimate
-            ? "Estimate details"
+            ? `${details?.performaInvoice ? 'Performa Invoice details' : "Estimate details"}`
             : editEstimate
-            ? "Edit estimate"
-            : "Create estimate"}
+              ? "Edit estimate"
+              : "Create estimate"}
         </Title>
         <Flex justify="flex-end" gap={4}>
           {Object.keys(details)?.length > 0 && !editEstimate && (
@@ -550,9 +551,9 @@ const LeadEstimate = ({ leadid }) => {
         <Flex
           vertical
           style={{
-            maxHeight: "86vh",
+            maxHeight: "84vh",
             overflow: "auto",
-            marginTop: "24px",
+            margin: "24px 0px",
           }}
         >
           <Flex
@@ -566,53 +567,53 @@ const LeadEstimate = ({ leadid }) => {
             >
               Seach for companies{" "}
             </Text>
-      <Space.Compact style={{ width: "80%" }}>
-        <Select
-          style={{ width: "20%" }}
-          options={[
-            { label: "GST", value: "gstNumber" },
-            { label: "Name", value: "searchNameAndGSt" },
-            { label: "Contact no.", value: "contactNumber" },
-            { label: "Email", value: "contactEmail" },
-          ]}
-          value={seachFields?.searchField}
-          onChange={(e) => {
-            setSearchFields((prev) => ({ ...prev, searchField: e }));
-          }}
-        />
-        <Select
-          showSearch
-          style={{ width: "100%" }}
-          placeholder="Search companies ..."
-          options={
-            seachCompniesList?.length > 0
-              ? seachCompniesList?.map((item) => ({
-                  label: item?.companyName,
-                  value: item?.companyId,
-                  key: item?.companyId, 
-                }))
-              : []
-          }
-          onChange={(value, option) => {
-            setSearchFields((prev) => ({ ...prev, searchText: option?.label })); 
-            setCompanyAndUnitData((prev) => ({
-              ...prev,
-              companyName: option?.label,
-              companyId: option?.value,
-            }));
-            dispatch(getAllCompanyUnits(option?.value)); 
-            dispatch(getAllContactDetailsById(option?.value)); 
-            setOpenSelectDd(false); 
-          }}
-          open={openSelectDd}
-          value={seachFields?.searchText || undefined} 
-          onSearch={(e) => {
-            setSearchFields((prev) => ({ ...prev, searchText: e }));
-          }}
-          onDropdownVisibleChange={(e) => setOpenSelectDd(e)}
-          filterOption={false} 
-        />
-      </Space.Compact>
+            <Space.Compact style={{ width: "80%" }}>
+              <Select
+                style={{ width: "20%" }}
+                options={[
+                  { label: "GST", value: "gstNumber" },
+                  { label: "Name", value: "searchNameAndGSt" },
+                  { label: "Contact no.", value: "contactNumber" },
+                  { label: "Email", value: "contactEmail" },
+                ]}
+                value={seachFields?.searchField}
+                onChange={(e) => {
+                  setSearchFields((prev) => ({ ...prev, searchField: e }));
+                }}
+              />
+              <Select
+                showSearch
+                style={{ width: "100%" }}
+                placeholder="Search companies ..."
+                options={
+                  seachCompniesList?.length > 0
+                    ? seachCompniesList?.map((item) => ({
+                      label: item?.companyName,
+                      value: item?.companyId,
+                      key: item?.companyId,
+                    }))
+                    : []
+                }
+                onChange={(value, option) => {
+                  setSearchFields((prev) => ({ ...prev, searchText: option?.label }));
+                  setCompanyAndUnitData((prev) => ({
+                    ...prev,
+                    companyName: option?.label,
+                    companyId: option?.value,
+                  }));
+                  dispatch(getAllCompanyUnits(option?.value));
+                  dispatch(getAllContactDetailsById(option?.value));
+                  setOpenSelectDd(false);
+                }}
+                open={openSelectDd}
+                value={seachFields?.searchText || undefined}
+                onSearch={(e) => {
+                  setSearchFields((prev) => ({ ...prev, searchText: e }));
+                }}
+                onDropdownVisibleChange={(e) => setOpenSelectDd(e)}
+                filterOption={false}
+              />
+            </Space.Compact>
 
           </Flex>
           <Form
@@ -623,6 +624,7 @@ const LeadEstimate = ({ leadid }) => {
             initialValues={{
               cc: [""],
               isConsultant: false,
+              performaInvoice: false
             }}
             onValuesChange={(changedValues, allValues) => {
               const { actualPrice, quantity, gst } = allValues;
@@ -637,6 +639,10 @@ const LeadEstimate = ({ leadid }) => {
             }}
             onFinish={handleFinish}
           >
+            <Flex style={{ margin: '12px 0px 0px 16px' }}>
+              <Form.Item layout='horizontal' label='Performa invoice' name='performaInvoice' className="performa"  >
+                <Switch size="small" />
+              </Form.Item></Flex>
             <div
               style={{
                 display: "grid",
@@ -672,10 +678,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       allCompanyUnits?.length > 0
                         ? allCompanyUnits?.map((item) => ({
-                            label: item?.companyName,
-                            value: item?.id,
-                            ...item,
-                          }))
+                          label: item?.companyName,
+                          value: item?.id,
+                          ...item,
+                        }))
                         : []
                     }
                     onChange={(e, compUnit) => {
@@ -865,13 +871,13 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       contactList?.length > 0
                         ? contactList?.map((item) => ({
-                            label: `${maskEmail(
-                              item?.email
-                            )} || ${maskMobileNumber(item?.contactNo)} `,
-                            value: item?.id,
-                            email: item?.email,
-                            contact: item?.contactNo,
-                          }))
+                          label: `${maskEmail(
+                            item?.email
+                          )} || ${maskMobileNumber(item?.contactNo)} `,
+                          value: item?.id,
+                          email: item?.email,
+                          contact: item?.contactNo,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -899,13 +905,13 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       secondaryContactList?.length > 0
                         ? secondaryContactList?.map((item) => ({
-                            label: `${maskEmail(
-                              item?.email
-                            )} || ${maskMobileNumber(item?.contactNo)} `,
-                            value: item?.id,
-                            email: item?.email,
-                            contact: item?.contactNo,
-                          }))
+                          label: `${maskEmail(
+                            item?.email
+                          )} || ${maskMobileNumber(item?.contactNo)} `,
+                          value: item?.id,
+                          email: item?.email,
+                          contact: item?.contactNo,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1410,9 +1416,9 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       leadUserNew?.length > 0
                         ? leadUserNew?.map((ele) => ({
-                            label: ele?.fullName,
-                            value: ele?.id,
-                          }))
+                          label: ele?.fullName,
+                          value: ele?.id,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1511,10 +1517,10 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         countryList?.length > 0
                           ? countryList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                              id: item?.id,
-                            }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                           : []
                       }
                       onChange={(e, x) => {
@@ -1535,10 +1541,10 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         statesList?.length > 0
                           ? statesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                              id: item?.id,
-                            }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                           : []
                       }
                       // onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1584,9 +1590,9 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         citiesList?.length > 0
                           ? citiesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                            }))
+                            label: item?.name,
+                            value: item?.name,
+                          }))
                           : []
                       }
                       filterOption={(input, option) =>
@@ -1631,10 +1637,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       countryList?.length > 0
                         ? countryList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                            id: item?.id,
-                          }))
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -1651,10 +1657,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       statesList?.length > 0
                         ? statesList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                            id: item?.id,
-                          }))
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
                         : []
                     }
                     onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1669,9 +1675,9 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       citiesList?.length > 0
                         ? citiesList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                          }))
+                          label: item?.name,
+                          value: item?.name,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1761,6 +1767,7 @@ const LeadEstimate = ({ leadid }) => {
             overflow: "auto",
             marginTop: "12px",
             padding: "24px",
+           
           }}
         >
           <Flex style={{ width: "90%" }} gap={24} vertical>
@@ -1835,7 +1842,7 @@ const LeadEstimate = ({ leadid }) => {
               )}
             </Flex>
             <Flex ref={pdfRef}>
-              <Badge.Ribbon text="Estimate" placement="start" color="green">
+              <Badge.Ribbon text={details?.performaInvoice ? 'Performa Invoice' : 'Estimate'} placement="start" color="green">
                 <Flex
                   vertical
                   style={{
@@ -1843,6 +1850,7 @@ const LeadEstimate = ({ leadid }) => {
                     boxShadow:
                       "rgba(9, 30, 66, 0.25) 0px 4px 8px -2px, rgba(9, 30, 66, 0.08) 0px 0px 0px 1px",
                     borderRadius: "4px",
+                    marginBottom:'24px'
                   }}
                   gap={24}
                 >
@@ -1864,7 +1872,7 @@ const LeadEstimate = ({ leadid }) => {
                     <Flex vertical gap={24}>
                       <Flex vertical>
                         <Title style={{ color: "#41d744" }} level={4}>
-                          Estimate
+                          {details?.performaInvoice ? "Performa Invoice" : "Estimate"}
                         </Title>
                         <Text strong>{`#ESTD0${details?.id}`}</Text>
                       </Flex>
@@ -2212,106 +2220,108 @@ const LeadEstimate = ({ leadid }) => {
                 </Flex>
               </Badge.Ribbon>
             </Flex>
+            {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
+              <Flex align="center">
+                {details?.companyName && (
+                  <Space>
+                    <Text type="secondary">companyName</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.companyName}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.createdDate && (
+                  <Space>
+                    <Text type="secondary">Created date</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{dayjs(details?.createDate).format("YYYY-MM-DD")}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.unitName && (
+                  <Space>
+                    <Text type="secondary">Unit name</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.unitName}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.panNo && (
+                  <Space>
+                    <Text type="secondary">Pan no.</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.panNo}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.gstNo && (
+                  <Space>
+                    <Text type="secondary">Gst no.</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.panNo}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.companyAge && (
+                  <Space>
+                    <Text type="secondary">Company age</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.companyAge}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.invoiceNote && (
+                  <Space>
+                    <Text type="secondary">Invoice note</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.invoiceNote}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.address && (
+                  <Space>
+                    <Text type="secondary">Address</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.address}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.city && (
+                  <Space>
+                    <Text type="secondary">City</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.city}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.state && (
+                  <Space>
+                    <Text type="secondary">State</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.state}</Text>
+                  </Space>
+                )}
+              </Flex>
+              <Flex>
+                {details?.country && (
+                  <Space>
+                    <Text type="secondary">Country</Text>
+                    <Text type="secondary">:</Text>
+                    <Text>{details?.country}</Text>
+                  </Space>
+                )}
+              </Flex>
+            </div> */}
 
-            <Flex align="center">
-              {details?.companyName && (
-                <Space>
-                  <Text type="secondary">companyName</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.companyName}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.createdDate && (
-                <Space>
-                  <Text type="secondary">Created date</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{dayjs(details?.createDate).format("YYYY-MM-DD")}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.unitName && (
-                <Space>
-                  <Text type="secondary">Unit name</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.unitName}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.panNo && (
-                <Space>
-                  <Text type="secondary">Pan no.</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.panNo}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.gstNo && (
-                <Space>
-                  <Text type="secondary">Gst no.</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.panNo}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.companyAge && (
-                <Space>
-                  <Text type="secondary">Company age</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.companyAge}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.invoiceNote && (
-                <Space>
-                  <Text type="secondary">Invoice note</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.invoiceNote}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.address && (
-                <Space>
-                  <Text type="secondary">Address</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.address}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.city && (
-                <Space>
-                  <Text type="secondary">City</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.city}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.state && (
-                <Space>
-                  <Text type="secondary">State</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.state}</Text>
-                </Space>
-              )}
-            </Flex>
-            <Flex>
-              {details?.country && (
-                <Space>
-                  <Text type="secondary">Country</Text>
-                  <Text type="secondary">:</Text>
-                  <Text>{details?.country}</Text>
-                </Space>
-              )}
-            </Flex>
           </Flex>
         </Flex>
       )}

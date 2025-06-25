@@ -129,7 +129,7 @@ const EstimatePreviewPage = () => {
             )}
           </Flex> */}
           <Flex ref={pdfRef}>
-            <Badge.Ribbon text="Estimate" placement="start" color="green">
+            <Badge.Ribbon text={details?.performaInvoice ? 'Performa Invoice':'Estimate'} placement="start" color="green">
               <Flex
                 vertical
                 style={{
@@ -158,7 +158,7 @@ const EstimatePreviewPage = () => {
                   <Flex vertical gap={24}>
                     <Flex vertical>
                       <Title style={{ color: "#41d744" }} level={4}>
-                        Estimate
+                        {details?.performaInvoice ? 'Performa Invoice':'Estimate'}
                       </Title>
                       <Text strong>{`#ESTD0${details?.id}`}</Text>
                     </Flex>
