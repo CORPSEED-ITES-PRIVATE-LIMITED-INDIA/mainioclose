@@ -242,6 +242,32 @@ const LeadEstimate = ({ leadid }) => {
     });
   }, [productData, form]);
 
+
+
+   useEffect(() => {
+    const handler = setTimeout(() => {
+      // Only call API if searchText is not empty
+      if (seachFields.searchText) {
+        dispatch(searchCompaniesForCompany(seachFields)).then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            setOpenSelectDd(true); // Open the dropdown when results are ready
+          }
+        });
+      } else {
+        // Optionally, clear search results in Redux if search text is empty
+        // dispatch({ type: 'company/clearCompanySearchResults' }); // If you have such an action
+      }
+    }, 500); // 500ms debounce time
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [seachFields.searchText, seachFields.searchField, dispatch]); // Add dispatch to dependency array
+
+
+
+
+
   const calculateTotalPriceWithGST = (actualPrice, quantity, gstString) => {
     const price = parseFloat(actualPrice) || 0;
     const qty = productSubCategoryFees?.roundOff
@@ -540,62 +566,54 @@ const LeadEstimate = ({ leadid }) => {
             >
               Seach for companies{" "}
             </Text>
-            <Space.Compact style={{ width: "80%" }}>
-              <Select
-                style={{ width: "20%" }}
-                options={[
-                  { label: "GST", value: "gstNumber" },
-                  { label: "Name", value: "searchNameAndGSt" },
-                  { label: "Contact no.", value: "contactNumber" },
-                  { label: "Email", value: "contactEmail" },
-                ]}
-                value={seachFields?.searchField}
-                onChange={(e) =>
-                  setSearchFields((prev) => ({ ...prev, searchField: e }))
-                }
-              />
-              <Select
-                showSearch
-                style={{ width: "100%" }}
-                placeholder="Search companies ..."
-                options={
-                  seachCompniesList?.length > 0
-                    ? seachCompniesList?.map((item) => ({
-                        label: item?.companyName,
-                        value: item?.companyId,
-                      }))
-                    : []
-                }
-                onChange={(e, x) => {
-                  setSearchFields((prev) => ({ ...prev, searchText: e }));
-                  setCompanyAndUnitData((prev) => ({
-                    ...prev,
-                    companyName: x?.label,
-                    companyId: x?.value,
-                  }));
-                  dispatch(getAllCompanyUnits(e));
-                  dispatch(getAllContactDetailsById(e));
-                }}
-                open={openSelectDd}
-                value={seachFields?.searchText}
-                onSearch={(e) =>
-                  setSearchFields((prev) => ({ ...prev, searchText: e }))
-                }
-                onDropdownVisibleChange={(e) => setOpenSelectDd(e)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    console.log("aslkdjfkjsdbajbdfasbdfjb", e);
-                    dispatch(searchCompaniesForCompany(seachFields)).then(
-                      (resp) => {
-                        if (resp.meta.requestStatus === "fulfilled") {
-                          setOpenSelectDd(true);
-                        }
-                      }
-                    );
-                  }
-                }}
-              />
-            </Space.Compact>
+      <Space.Compact style={{ width: "80%" }}>
+        <Select
+          style={{ width: "20%" }}
+          options={[
+            { label: "GST", value: "gstNumber" },
+            { label: "Name", value: "searchNameAndGSt" },
+            { label: "Contact no.", value: "contactNumber" },
+            { label: "Email", value: "contactEmail" },
+          ]}
+          value={seachFields?.searchField}
+          onChange={(e) => {
+            setSearchFields((prev) => ({ ...prev, searchField: e }));
+          }}
+        />
+        <Select
+          showSearch
+          style={{ width: "100%" }}
+          placeholder="Search companies ..."
+          options={
+            seachCompniesList?.length > 0
+              ? seachCompniesList?.map((item) => ({
+                  label: item?.companyName,
+                  value: item?.companyId,
+                  key: item?.companyId, 
+                }))
+              : []
+          }
+          onChange={(value, option) => {
+            setSearchFields((prev) => ({ ...prev, searchText: option?.label })); 
+            setCompanyAndUnitData((prev) => ({
+              ...prev,
+              companyName: option?.label,
+              companyId: option?.value,
+            }));
+            dispatch(getAllCompanyUnits(option?.value)); 
+            dispatch(getAllContactDetailsById(option?.value)); 
+            setOpenSelectDd(false); 
+          }}
+          open={openSelectDd}
+          value={seachFields?.searchText || undefined} 
+          onSearch={(e) => {
+            setSearchFields((prev) => ({ ...prev, searchText: e }));
+          }}
+          onDropdownVisibleChange={(e) => setOpenSelectDd(e)}
+          filterOption={false} 
+        />
+      </Space.Compact>
+
           </Flex>
           <Form
             form={form}

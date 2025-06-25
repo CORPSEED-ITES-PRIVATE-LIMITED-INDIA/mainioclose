@@ -380,11 +380,11 @@ const LeadCompany = ({ edit, data }) => {
                         </Flex>
                       ),
                       value: item?.companyId,
-                      key: item?.companyId, // Add a unique key for options
+                      key: item?.companyId,
                     }))
                   : []
               }
-              filterOption={false} // Disable default Ant Design filtering if you're doing server-side search
+              filterOption={false}
             />
           </Form.Item>
           <Form.Item label="." style={{ width: "20%" }}>
