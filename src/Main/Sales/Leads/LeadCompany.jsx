@@ -121,6 +121,22 @@ const LeadCompany = ({ edit, data }) => {
     });
   };
 
+
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchDetail.searchText) { // Only search if there's text
+        handleSearchCompanies();
+      } 
+    }, 500); 
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchDetail.searchText, searchDetail.searchField]);
+
+
+
   const validateGSTWithState = (_, value) => {
     const stateName = form.getFieldValue("state");
     const selectedState = statesList.find((s) => s.name === stateName);
@@ -300,85 +316,95 @@ const LeadCompany = ({ edit, data }) => {
             isConsultant: false,
           }}
         >
-          {isToggel ? null : (
-            <Space.Compact style={{ width: "100%" }}>
-              <Form.Item
-                style={{ width: "75%" }}
-                label="Company search"
-                name=""
-              >
-                <Select
-                  showSearch
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearchCompanies();
-                    }
-                  }}
-                  onSearch={(e) =>
-                    setSearchDetail((prev) => ({
-                      ...prev,
-                      searchText: e,
+{isToggel ? null : (
+        <Space.Compact style={{ width: "100%" }}>
+          <Form.Item
+            style={{ width: "75%" }}
+            label="Company search"
+            name="companySearch" // Added a name for better Form handling
+          >
+            <Select
+              showSearch
+              onSearch={(e) => {
+                setSearchDetail((prev) => ({
+                  ...prev,
+                  searchText: e,
+                }));
+                // The debounce useEffect will handle calling handleSearchCompanies
+              }}
+              onChange={(value, option) => {
+                // This is called when an item is selected from the dropdown
+                console.log("Selected company:", value, option);
+                // You might want to update a form field here or trigger other actions
+                setOpenDropdown(false); // Close dropdown after selection
+              }}
+              placeholder="Search companies"
+              open={openDropdown}
+              onDropdownVisibleChange={(e) => setOpenDropdown(e)}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <div
+                    style={{
+                      padding: "8px",
+                      textAlign: "center",
+                      borderTop: "1px solid #f0f0f0",
+                    }}
+                  >
+                    <Button
+                      type="primary"
+                      onClick={() => setIsToggel((prev) => !prev)}
+                    >
+                      Add new company
+                    </Button>
+                  </div>
+                </>
+              )}
+              options={
+                seachCompniesList?.length > 0
+                  ? seachCompniesList?.map((item) => ({
+                      label: (
+                        <Flex justify="space-between" align="center" style={{padding:'0px 8px'}} >
+                          <Flex wrap>
+                            <Text>{item?.companyName}</Text>
+                          </Flex>
+                          <Button
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveToUnits(item);
+                            }}
+                          >
+                            Add unit
+                          </Button>
+                        </Flex>
+                      ),
+                      value: item?.companyId,
+                      key: item?.companyId, // Add a unique key for options
                     }))
-                  }
-                  placeholder="Search companies"
-                  open={openDropdown}
-                  onDropdownVisibleChange={(e) => setOpenDropdown(e)}
-                  dropdownRender={(menu) => (
-                    <>
-                      {menu}
-                      <div
-                        style={{
-                          padding: "8px",
-                          textAlign: "center",
-                          borderTop: "1px solid #f0f0f0",
-                        }}
-                      >
-                        <Button
-                          type="primary"
-                          onClick={() => setIsToggel((prev) => !prev)}
-                        >
-                          Add new company
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                  options={
-                    seachCompniesList?.length > 0
-                      ? seachCompniesList?.map((item) => ({
-                          label: (
-                            <Flex justify="space-between" align="center">
-                              <Text>{item?.companyName}</Text>
-                              <Button
-                                size="small"
-                                onClick={() => handleMoveToUnits(item)}
-                              >
-                                Add unit
-                              </Button>
-                            </Flex>
-                          ),
-                          value: item?.companyId,
-                        }))
-                      : []
-                  }
-                />
-              </Form.Item>
-              <Form.Item label="." style={{ width: "20%" }}>
-                <Select
-                  style={{ width: "100px" }}
-                  value={searchDetail?.searchField}
-                  onChange={(e) =>
-                    setSearchDetail((prev) => ({ ...prev, searchField: e }))
-                  }
-                  options={[
-                    { label: "GST", value: "gstNumber" },
-                    { label: "Name", value: "searchNameAndGSt" },
-                    { label: "Contact no.", value: "contactNumber" },
-                    { label: "Email", value: "contactEmail" },
-                  ]}
-                />
-              </Form.Item>
-            </Space.Compact>
-          )}
+                  : []
+              }
+              filterOption={false} // Disable default Ant Design filtering if you're doing server-side search
+            />
+          </Form.Item>
+          <Form.Item label="." style={{ width: "20%" }}>
+            <Select
+              style={{ width: "100px" }}
+              value={searchDetail?.searchField}
+              onChange={(e) =>
+                setSearchDetail((prev) => ({ ...prev, searchField: e }))
+              }
+              options={[
+                { label: "GST", value: "gstNumber" },
+                { label: "Name", value: "searchNameAndGSt" },
+                { label: "Contact no.", value: "contactNumber" },
+                { label: "Email", value: "contactEmail" },
+              ]}
+            />
+          </Form.Item>
+        </Space.Compact>
+      )}
+
           {isToggel && (
             <>
               <div
@@ -1191,7 +1217,7 @@ const LeadCompany = ({ edit, data }) => {
                         value: item.name,
                         gstCode: item.gstCode,
                         stateName: item.name,
-                        id:item?.id
+                        id: item?.id,
                       }))}
                       onChange={(e, option) => {
                         dispatch(getAllCitiesByStateId(option?.id));

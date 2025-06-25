@@ -70,7 +70,7 @@ const AutoHistory = () => {
 
   useEffect(() => {
     dispatch(getAllAutoHistoryList({ ...paginationData, data: dateFilter }));
-    dispatch(getAllAutoHistroryCount());
+    dispatch(getAllAutoHistroryCount(dateFilter));
   }, [dispatch]);
 
   const handlePagination = useCallback(
@@ -179,7 +179,7 @@ const AutoHistory = () => {
     Id: row?.id,
     "Lead name": row?.leadOriginalName,
     Status: row?.status,
-    Manual: row?.manual?'Manual':'Auto',
+    Manual: row?.manual ? "Manual" : "Auto",
     "Client Email": row?.clientEmail,
     "Mobile no.": row?.mobileNo,
     "Previous Assignee person": row?.paName,
@@ -205,10 +205,11 @@ const AutoHistory = () => {
 
   const handleApplyFilter = () => {
     dispatch(getAllAutoHistoryList({ ...paginationData, data: dateFilter }));
+    dispatch(getAllAutoHistroryCount(dateFilter));
     dispatch(getAllAutoHistoryForExportByDate(dateFilter))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({ message: "Date is ready to export" });
+          notification.success({ message: "Data is ready to export" });
         } else {
           notification.error({ message: "Something went wrong !." });
         }

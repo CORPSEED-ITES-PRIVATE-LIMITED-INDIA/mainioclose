@@ -1094,9 +1094,9 @@ export const getAllAutoHistoryList = createAsyncThunk(
 
 export const getAllAutoHistroryCount = createAsyncThunk(
   "getAllAutoHistroryCount",
-  async () => {
-    const response = await getQuery(
-      `/leadService/api/v1/lead/getAllAutoHistoryDetailCount`
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterCount`,data
     );
     return response.data;
   }
