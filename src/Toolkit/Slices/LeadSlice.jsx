@@ -1096,7 +1096,8 @@ export const getAllAutoHistroryCount = createAsyncThunk(
   "getAllAutoHistroryCount",
   async (data) => {
     const response = await postQuery(
-      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterCount`,data
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterCount`,
+      data
     );
     return response.data;
   }
@@ -1149,6 +1150,16 @@ export const getAllBrochureList = createAsyncThunk(
   async () => {
     const response = await getQuery(
       `/leadService/api/v1/brochureBook/getAllBrochureBook`
+    );
+    return response.data;
+  }
+);
+
+export const updateGstTypeInEstimate = createAsyncThunk(
+  "updateGstTypeInEstimate",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/company/updateCompanyGst?companyId=${data?.companyId}&companyType=${data?.companyType}&gstType=${data?.gstType}&bussinessType=${data?.businessType}&gstNo=${data?.gstNo}&panNo=${data?.panNo}`
     );
     return response.data;
   }

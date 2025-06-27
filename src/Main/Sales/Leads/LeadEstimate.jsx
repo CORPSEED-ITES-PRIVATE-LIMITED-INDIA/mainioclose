@@ -32,6 +32,7 @@ import {
   getEstimateByLeadId,
   getSecondaryContactListByCompanyId,
   searchCompaniesForCompany,
+  updateGstTypeInEstimate,
 } from "../../../Toolkit/Slices/LeadSlice";
 import {
   createContacts,
@@ -41,7 +42,13 @@ import {
   getAllStatesByCountryId,
 } from "../../../Toolkit/Slices/CommonSlice";
 import dayjs from "dayjs";
-import { maskEmail, maskMobileNumber } from "../../Common/Commons";
+import {
+  formatGSTInput,
+  formatPANInput,
+  maskEmail,
+  maskMobileNumber,
+  panRegex,
+} from "../../Common/Commons";
 import logo from "../../../Images/CORPSEED.webp";
 import numWords from "num-words";
 import html2canvas from "html2canvas";
@@ -50,6 +57,8 @@ import { useParams } from "react-router-dom";
 import {
   getAllCompanyType,
   getAllCompanyUnits,
+  getAllGstTypeByCompanyTypeId,
+  getBusinessTypeByGstTypeId,
 } from "../../../Toolkit/Slices/CompanySlice";
 import {
   getAllBusinessArrangement,
@@ -60,6 +69,7 @@ const { Text, Title } = Typography;
 
 const LeadEstimate = ({ leadid }) => {
   const [form] = Form.useForm();
+  const [gstForm] = Form.useForm();
   const [contactForm] = Form.useForm();
   const { userid } = useParams();
   const dispatch = useDispatch();
@@ -74,6 +84,11 @@ const LeadEstimate = ({ leadid }) => {
   const leadUserNew = useSelector((state) => state.leads.getAllLeadUserData);
   const seachCompniesList = useSelector(
     (state) => state.leads.seachCompniesList
+  );
+  const companyTypeList = useSelector((state) => state.company.companyTypeList);
+  const gstTypeList = useSelector((state) => state.company.gstTypeList);
+  const businessTypeList = useSelector(
+    (state) => state.company.businessTypeList
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -95,7 +110,8 @@ const LeadEstimate = ({ leadid }) => {
   const productSubcategoryList = useSelector(
     (state) => state?.product?.productSubcategoryList
   );
-
+  const [gstModal, setGstModal] = useState(false);
+  const [gstMand, setGstMand] = useState({ gst: false, pan: false });
   const [openModal, setOpenModal] = useState(false);
   const [editEstimate, setEditEstimate] = useState(false);
   const [seachFields, setSearchFields] = useState({
@@ -242,8 +258,6 @@ const LeadEstimate = ({ leadid }) => {
     });
   }, [productData, form]);
 
-
-
   useEffect(() => {
     const handler = setTimeout(() => {
       // Only call API if searchText is not empty
@@ -263,10 +277,6 @@ const LeadEstimate = ({ leadid }) => {
       clearTimeout(handler);
     };
   }, [seachFields.searchText, seachFields.searchField, dispatch]); // Add dispatch to dependency array
-
-
-
-
 
   const calculateTotalPriceWithGST = (actualPrice, quantity, gstString) => {
     const price = parseFloat(actualPrice) || 0;
@@ -518,6 +528,29 @@ const LeadEstimate = ({ leadid }) => {
     pdf.save("estimate.pdf");
   };
 
+  const handleGstUpdate = (values) => {
+    values.companyId = companyAndUnitData?.companyId;
+    dispatch(updateGstTypeInEstimate(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          const compData = resp?.payload;
+          form.setFieldsValue({
+            companyType: compData?.companyType,
+            gstType: compData?.gstType,
+            gstNo: compData?.gstNo,
+            panNo: compData?.panNo,
+          });
+
+          notification.success({ message: "Gst updated successfully !." });
+          setGstModal(false);
+          gstForm.resetFields();
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
+
   return (
     <Spin
       size="large"
@@ -530,10 +563,14 @@ const LeadEstimate = ({ leadid }) => {
       >
         <Title level={4} className="heading-text" style={{ margin: 0 }}>
           {Object.keys(details)?.length > 0 && !editEstimate
-            ? `${details?.performaInvoice ? 'Performa Invoice details' : "Estimate details"}`
+            ? `${
+                details?.performaInvoice
+                  ? "Performa Invoice details"
+                  : "Estimate details"
+              }`
             : editEstimate
-              ? "Edit estimate"
-              : "Create estimate"}
+            ? "Edit estimate"
+            : "Create estimate"}
         </Title>
         <Flex justify="flex-end" gap={4}>
           {Object.keys(details)?.length > 0 && !editEstimate && (
@@ -588,14 +625,17 @@ const LeadEstimate = ({ leadid }) => {
                 options={
                   seachCompniesList?.length > 0
                     ? seachCompniesList?.map((item) => ({
-                      label: item?.companyName,
-                      value: item?.companyId,
-                      key: item?.companyId,
-                    }))
+                        label: item?.companyName,
+                        value: item?.companyId,
+                        key: item?.companyId,
+                      }))
                     : []
                 }
                 onChange={(value, option) => {
-                  setSearchFields((prev) => ({ ...prev, searchText: option?.label }));
+                  setSearchFields((prev) => ({
+                    ...prev,
+                    searchText: option?.label,
+                  }));
                   setCompanyAndUnitData((prev) => ({
                     ...prev,
                     companyName: option?.label,
@@ -614,7 +654,6 @@ const LeadEstimate = ({ leadid }) => {
                 filterOption={false}
               />
             </Space.Compact>
-
           </Flex>
           <Form
             form={form}
@@ -624,7 +663,7 @@ const LeadEstimate = ({ leadid }) => {
             initialValues={{
               cc: [""],
               isConsultant: false,
-              performaInvoice: false
+              performaInvoice: false,
             }}
             onValuesChange={(changedValues, allValues) => {
               const { actualPrice, quantity, gst } = allValues;
@@ -639,10 +678,16 @@ const LeadEstimate = ({ leadid }) => {
             }}
             onFinish={handleFinish}
           >
-            <Flex style={{ margin: '12px 0px 0px 16px' }}>
-              <Form.Item layout='horizontal' label='Performa invoice' name='performaInvoice' className="performa"  >
+            <Flex style={{ margin: "12px 0px 0px 16px" }}>
+              <Form.Item
+                layout="horizontal"
+                label="Performa invoice"
+                name="performaInvoice"
+                className="performa"
+              >
                 <Switch size="small" />
-              </Form.Item></Flex>
+              </Form.Item>
+            </Flex>
             <div
               style={{
                 display: "grid",
@@ -655,7 +700,13 @@ const LeadEstimate = ({ leadid }) => {
                 borderRadius: 6,
               }}
             >
-              <Text className="heading-text">Company info</Text>
+              <Flex justify="space-between" align="center">
+                {" "}
+                <Text className="heading-text">Company info</Text>
+                <Button onClick={() => setGstModal(true)} type="link">
+                  Update gst type
+                </Button>
+              </Flex>
               <div
                 style={{
                   display: "grid",
@@ -678,10 +729,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       allCompanyUnits?.length > 0
                         ? allCompanyUnits?.map((item) => ({
-                          label: item?.companyName,
-                          value: item?.id,
-                          ...item,
-                        }))
+                            label: item?.companyName,
+                            value: item?.id,
+                            ...item,
+                          }))
                         : []
                     }
                     onChange={(e, compUnit) => {
@@ -693,6 +744,8 @@ const LeadEstimate = ({ leadid }) => {
                       form.setFieldsValue({
                         gstType: compUnit?.gstType,
                         gstNo: compUnit?.gstNo,
+                        companyType: compUnit?.companyType,
+                        businessType:compUnit?.businessType,
                         companyAge: compUnit?.companyAge,
                         address: compUnit?.address,
                         city: compUnit?.city,
@@ -710,35 +763,149 @@ const LeadEstimate = ({ leadid }) => {
                         secondaryCountry: compUnit?.sCountry,
                         secondaryPinCode: compUnit?.secondaryPinCode,
                       });
+                      gstForm.setFieldsValue({
+                        companyType: compUnit?.companyType,
+                        gstType: compUnit?.gstType,
+                        gstNo: compUnit?.gstNo,
+                        panNo: compUnit?.panNo,
+                      });
                     }}
                   />
                 </Form.Item>
-                <Form.Item label="GST type" name="gstType">
+                <Form.Item
+                  label="Company structure"
+                  name="companyType"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select the company structure type",
+                    },
+                  ]}
+                >
                   <Select
                     showSearch
                     allowClear
-                    options={[
-                      { label: "Registered", value: "Registered" },
-                      { label: "Unregisterded", value: "Unregistered" },
-                      { label: "SE2", value: "SE2" },
-                      { label: "International", value: "International" },
-                    ]}
+                    options={
+                      companyTypeList?.length > 0
+                        ? companyTypeList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      dispatch(getAllGstTypeByCompanyTypeId(e));
+                      form.resetFields(["gstType", "businessType"]);
+                      setGstMand({ pan: false, gst: false });
+                    }}
                   />
                 </Form.Item>
 
-                <Form.Item label="GST number" name="gstNo">
-                  <Input maxLength={15} disabled />
+                <Form.Item
+                  label="Gst type"
+                  name="gstType"
+                  rules={[
+                    { required: true, message: "please select the gst type" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      gstTypeList?.gstBussinessType?.length > 0
+                        ? gstTypeList?.gstBussinessType?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      dispatch(getBusinessTypeByGstTypeId(e));
+                    }}
+                  />
                 </Form.Item>
 
                 <Form.Item
-                  label="Pan number"
-                  name="panNo"
+                  label="Business type"
+                  name="businessType"
                   rules={[
-                    { required: true, message: "please enter pan number" },
+                    {
+                      required: true,
+                      message: "please select the business type",
+                    },
                   ]}
                 >
-                  <Input maxLength={10} disabled />
+                  <Select
+                    showSearch
+                    allowClear
+                    options={
+                      businessTypeList?.gstTypePrice?.length > 0
+                        ? businessTypeList?.gstTypePrice?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                            ...item,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      setGstMand((prev) => ({
+                        ...prev,
+                        gst: x?.gstPresent,
+                        pan: x?.panPresent,
+                      }));
+                      form.resetFields(["gstNo", "panNo"]);
+                    }}
+                  />
                 </Form.Item>
+
+                {gstMand?.gst && (
+                  <Form.Item
+                    label="Gst number"
+                    name="gstNo"
+                    rules={[
+                      {
+                        required: true,
+                        message: "please enter gst number",
+                      },
+                    ]}
+                  >
+                    <Input
+                      maxLength={15}
+                      disabled
+                      onChange={(e) => {
+                        const formatted = formatGSTInput(e.target.value);
+                        form.setFieldsValue({ gstNo: formatted });
+                      }}
+                    />
+                  </Form.Item>
+                )}
+
+                {gstMand?.pan && (
+                  <Form.Item
+                    label="Pan number"
+                    name="panNo"
+                    rules={[
+                      { required: true, message: "please enter pan number" },
+                      {
+                        validator: (_, value) =>
+                          panRegex.test(value)
+                            ? Promise.resolve()
+                            : Promise.reject("Invalid PAN Number"),
+                      },
+                    ]}
+                  >
+                    <Input
+                      disabled
+                      maxLength={10}
+                      onChange={(e) => {
+                        const formatted = formatPANInput(e.target.value);
+                        form.setFieldsValue({ panNo: formatted });
+                      }}
+                    />
+                  </Form.Item>
+                )}
 
                 {/* <Form.Item
                   label="Established date"
@@ -871,13 +1038,13 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       contactList?.length > 0
                         ? contactList?.map((item) => ({
-                          label: `${maskEmail(
-                            item?.email
-                          )} || ${maskMobileNumber(item?.contactNo)} `,
-                          value: item?.id,
-                          email: item?.email,
-                          contact: item?.contactNo,
-                        }))
+                            label: `${maskEmail(
+                              item?.email
+                            )} || ${maskMobileNumber(item?.contactNo)} `,
+                            value: item?.id,
+                            email: item?.email,
+                            contact: item?.contactNo,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -905,13 +1072,13 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       secondaryContactList?.length > 0
                         ? secondaryContactList?.map((item) => ({
-                          label: `${maskEmail(
-                            item?.email
-                          )} || ${maskMobileNumber(item?.contactNo)} `,
-                          value: item?.id,
-                          email: item?.email,
-                          contact: item?.contactNo,
-                        }))
+                            label: `${maskEmail(
+                              item?.email
+                            )} || ${maskMobileNumber(item?.contactNo)} `,
+                            value: item?.id,
+                            email: item?.email,
+                            contact: item?.contactNo,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1416,9 +1583,9 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       leadUserNew?.length > 0
                         ? leadUserNew?.map((ele) => ({
-                          label: ele?.fullName,
-                          value: ele?.id,
-                        }))
+                            label: ele?.fullName,
+                            value: ele?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1517,10 +1684,10 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         countryList?.length > 0
                           ? countryList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                            id: item?.id,
-                          }))
+                              label: item?.name,
+                              value: item?.name,
+                              id: item?.id,
+                            }))
                           : []
                       }
                       onChange={(e, x) => {
@@ -1541,10 +1708,10 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         statesList?.length > 0
                           ? statesList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                            id: item?.id,
-                          }))
+                              label: item?.name,
+                              value: item?.name,
+                              id: item?.id,
+                            }))
                           : []
                       }
                       // onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1590,9 +1757,9 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         citiesList?.length > 0
                           ? citiesList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                          }))
+                              label: item?.name,
+                              value: item?.name,
+                            }))
                           : []
                       }
                       filterOption={(input, option) =>
@@ -1637,10 +1804,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       countryList?.length > 0
                         ? countryList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                          id: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -1657,10 +1824,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       statesList?.length > 0
                         ? statesList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                          id: item?.id,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                         : []
                     }
                     onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1675,9 +1842,9 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       citiesList?.length > 0
                         ? citiesList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.name,
-                        }))
+                            label: item?.name,
+                            value: item?.name,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1767,7 +1934,6 @@ const LeadEstimate = ({ leadid }) => {
             overflow: "auto",
             marginTop: "12px",
             padding: "24px",
-           
           }}
         >
           <Flex style={{ width: "90%" }} gap={24} vertical>
@@ -1842,7 +2008,13 @@ const LeadEstimate = ({ leadid }) => {
               )}
             </Flex>
             <Flex ref={pdfRef}>
-              <Badge.Ribbon text={details?.performaInvoice ? 'Performa Invoice' : 'Estimate'} placement="start" color="green">
+              <Badge.Ribbon
+                text={
+                  details?.performaInvoice ? "Performa Invoice" : "Estimate"
+                }
+                placement="start"
+                color="green"
+              >
                 <Flex
                   vertical
                   style={{
@@ -1850,7 +2022,7 @@ const LeadEstimate = ({ leadid }) => {
                     boxShadow:
                       "rgba(9, 30, 66, 0.25) 0px 4px 8px -2px, rgba(9, 30, 66, 0.08) 0px 0px 0px 1px",
                     borderRadius: "4px",
-                    marginBottom:'24px'
+                    marginBottom: "24px",
                   }}
                   gap={24}
                 >
@@ -1872,7 +2044,9 @@ const LeadEstimate = ({ leadid }) => {
                     <Flex vertical gap={24}>
                       <Flex vertical>
                         <Title style={{ color: "#41d744" }} level={4}>
-                          {details?.performaInvoice ? "Performa Invoice" : "Estimate"}
+                          {details?.performaInvoice
+                            ? "Performa Invoice"
+                            : "Estimate"}
                         </Title>
                         <Text strong>{`#ESTD0${details?.id}`}</Text>
                       </Flex>
@@ -2321,10 +2495,151 @@ const LeadEstimate = ({ leadid }) => {
                 )}
               </Flex>
             </div> */}
-
           </Flex>
         </Flex>
       )}
+
+      <Modal
+        title="Update gst type"
+        open={gstModal}
+        onCancel={() => setGstModal(false)}
+        onClose={() => setGstModal(false)}
+        okText="Submit"
+        onOk={() => gstForm.submit()}
+      >
+        <Form layout="vertical" form={gstForm} onFinish={handleGstUpdate}>
+          <Form.Item
+            label="Company structure"
+            name="companyType"
+            rules={[
+              {
+                required: true,
+                message: "please select the company structure type",
+              },
+            ]}
+          >
+            <Select
+              showSearch
+              allowClear
+              options={
+                companyTypeList?.length > 0
+                  ? companyTypeList?.map((item) => ({
+                      label: item?.name,
+                      value: item?.id,
+                      ...item,
+                    }))
+                  : []
+              }
+              onChange={(e, x) => {
+                dispatch(getAllGstTypeByCompanyTypeId(e));
+                form.resetFields(["gstType", "businessType"]);
+                setGstMand({ pan: false, gst: false });
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Gst type"
+            name="gstType"
+            rules={[{ required: true, message: "please select the gst type" }]}
+          >
+            <Select
+              showSearch
+              allowClear
+              options={
+                gstTypeList?.gstBussinessType?.length > 0
+                  ? gstTypeList?.gstBussinessType?.map((item) => ({
+                      label: item?.name,
+                      value: item?.id,
+                      ...item,
+                    }))
+                  : []
+              }
+              onChange={(e, x) => {
+                dispatch(getBusinessTypeByGstTypeId(e));
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Business type"
+            name="businessType"
+            rules={[
+              {
+                required: true,
+                message: "please select the business type",
+              },
+            ]}
+          >
+            <Select
+              showSearch
+              allowClear
+              options={
+                businessTypeList?.gstTypePrice?.length > 0
+                  ? businessTypeList?.gstTypePrice?.map((item) => ({
+                      label: item?.name,
+                      value: item?.id,
+                      ...item,
+                    }))
+                  : []
+              }
+              onChange={(e, x) => {
+                setGstMand((prev) => ({
+                  ...prev,
+                  gst: x?.gstPresent,
+                  pan: x?.panPresent,
+                }));
+                form.resetFields(["gstNo", "panNo"]);
+              }}
+            />
+          </Form.Item>
+
+          {gstMand?.gst && (
+            <Form.Item
+              label="Gst number"
+              name="gstNo"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter gst number",
+                },
+              ]}
+            >
+              <Input
+                maxLength={15}
+                onChange={(e) => {
+                  const formatted = formatGSTInput(e.target.value);
+                  form.setFieldsValue({ gstNo: formatted });
+                }}
+              />
+            </Form.Item>
+          )}
+
+          {gstMand?.pan && (
+            <Form.Item
+              label="Pan number"
+              name="panNo"
+              rules={[
+                { required: true, message: "please enter pan number" },
+                {
+                  validator: (_, value) =>
+                    panRegex.test(value)
+                      ? Promise.resolve()
+                      : Promise.reject("Invalid PAN Number"),
+                },
+              ]}
+            >
+              <Input
+                maxLength={10}
+                onChange={(e) => {
+                  const formatted = formatPANInput(e.target.value);
+                  form.setFieldsValue({ panNo: formatted });
+                }}
+              />
+            </Form.Item>
+          )}
+        </Form>
+      </Modal>
     </Spin>
   );
 };
