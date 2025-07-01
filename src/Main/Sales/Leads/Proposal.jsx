@@ -33,6 +33,8 @@ const Proposal = ({ leadid }) => {
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail
   );
+  const userDetail=useSelector((state)=>state.auth.currentUser)
+  const getDepartmentDetail=useSelector((state)=>state.auth.getDepartmentDetail)
   const [templates, setTemplates] = useState([]);
   const [data, setData] = useState("<h2>Your proposal </h2>");
   const [openPopOver, setOpenPopOver] = useState(false);
@@ -77,7 +79,18 @@ const Proposal = ({ leadid }) => {
 
   const handleSetData = (item) => {
     setData(item?.description);
-    setMailBody(item?.body);
+    setMailBody(`${item?.body}
+    <br/>
+    <br/>
+    <br/>
+    <div>
+    <p><span >${getDepartmentDetail?.name}</span><p>
+    <span >${getDepartmentDetail?.department}</span>
+    <br/>
+    <span >${getDepartmentDetail?.email}</span>
+    <br/>
+    Corpseed Ites Private Limited
+    </br>`);
     form.setFieldsValue({ mailBody: item?.body, template: item?.description });
     setOpenPopOver(false);
   };
@@ -95,7 +108,7 @@ const Proposal = ({ leadid }) => {
     values.productId = productData?.id;
     values.createdById = userid;
     values.templateName = templateName;
-    values.brochureBook=brochureUrl
+    values.brochureBook = brochureUrl;
     if (Object.keys(proposalDataDetail)?.length > 0) {
       dispatch(editLeadPropposal({ id: proposalDataDetail?.id, ...values }))
         .then((resp) => {
@@ -127,7 +140,15 @@ const Proposal = ({ leadid }) => {
 
   const content = () => {
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 12,
+          maxHeight: "400px",
+          overflow: "auto",
+        }}
+      >
         {templates?.map((item) => (
           <Card
             style={{ display: "flex", flexDirection: "column" }}
@@ -157,7 +178,15 @@ const Proposal = ({ leadid }) => {
 
   const brochureContent = () => {
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 12,
+          maxHeight: "400px",
+          overflow: "auto",
+        }}
+      >
         {brochureList?.map((item) => {
           const isSelected = brochureUrl.includes(item.id);
 
@@ -203,7 +232,7 @@ const Proposal = ({ leadid }) => {
     );
   };
 
-  console.log("dsjbvskdjhbsdkjhsdkj 11111111111", data);
+  console.log("dsjbvskdjhbsdkjhsdkj 11111111111", userDetail,getDepartmentDetail);
 
   return (
     <div
@@ -359,21 +388,6 @@ const Proposal = ({ leadid }) => {
             <Input />
           </Form.Item>
 
-          <Form.Item>
-            <Popover
-              trigger={"click"}
-              content={content}
-              overlayInnerStyle={{ maxWidth: 1200 }}
-              placement="bottomLeft"
-              open={openPopOver}
-              onOpenChange={(e) => setOpenPopOver(e)}
-            >
-              <Button style={{ width: 350 }}>
-                Select Proposal template and mail body
-              </Button>
-            </Popover>
-          </Form.Item>
-
           <Form.Item
             label="Select brochure"
             name="brochureBook"
@@ -387,7 +401,7 @@ const Proposal = ({ leadid }) => {
             <Popover
               trigger={"click"}
               content={brochureContent}
-              overlayInnerStyle={{ maxWidth: 1200 }}
+              overlayInnerStyle={{ maxWidth: 840 }}
               placement="bottomLeft"
               open={brochurePopOver}
               onOpenChange={(e) => setBrochrePopOver(e)}
@@ -395,6 +409,21 @@ const Proposal = ({ leadid }) => {
               <Button style={{ width: 350 }}>
                 Select brochure{" "}
                 {brochureUrl?.length > 0 ? `(${brochureUrl?.length})` : ""}{" "}
+              </Button>
+            </Popover>
+          </Form.Item>
+
+          <Form.Item>
+            <Popover
+              trigger={"click"}
+              content={content}
+              overlayInnerStyle={{ maxWidth: 840 }}
+              placement="bottomLeft"
+              open={openPopOver}
+              onOpenChange={(e) => setOpenPopOver(e)}
+            >
+              <Button style={{ width: 350 }}>
+                Select Proposal template and mail body
               </Button>
             </Popover>
           </Form.Item>

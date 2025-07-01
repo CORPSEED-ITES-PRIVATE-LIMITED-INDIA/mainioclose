@@ -1165,6 +1165,27 @@ export const updateGstTypeInEstimate = createAsyncThunk(
   }
 );
 
+export const getAllProposalAndEmailTemplates = createAsyncThunk(
+  "getAllProposalAndEmailTemplates",
+  async () => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`
+    );
+    return response.data;
+  }
+);
+
+export const editProposalAndEmailTemplate = createAsyncThunk(
+  "editProposalAndEmailTemplate",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/leadEstimate/editProposalTempalte`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1241,6 +1262,7 @@ export const LeadSlice = createSlice({
     autoHistoryExportList: [],
     autoExportLoading: "",
     brochureList: [],
+    templateAndMailList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1894,6 +1916,25 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllBrochureList.rejected, (state, action) => {
       state.brochureList = [];
     });
+
+    builder.addCase(
+      getAllProposalAndEmailTemplates.pending,
+      (state, action) => {
+        state.templateAndMailList = [];
+      }
+    );
+    builder.addCase(
+      getAllProposalAndEmailTemplates.fulfilled,
+      (state, action) => {
+        state.templateAndMailList = action?.payload;
+      }
+    );
+    builder.addCase(
+      getAllProposalAndEmailTemplates.rejected,
+      (state, action) => {
+        state.templateAndMailList = [];
+      }
+    );
   },
 });
 export const {

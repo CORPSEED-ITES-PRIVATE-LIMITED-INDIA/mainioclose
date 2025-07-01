@@ -196,7 +196,7 @@ const LeadEstimate = ({ leadid }) => {
     }
   }
 
-  console.log("djkfbsdkjbskdjbsdkj", productData);
+  console.log("djkfbsdkjbskdjbsdkj", gstTypeList,businessTypeList);
 
   useEffect(() => {
     if (productData?.id) {
@@ -300,6 +300,8 @@ const LeadEstimate = ({ leadid }) => {
     dispatch(
       getAllProductSubCategoryListByCategoryId(details?.productCategoryId)
     );
+    dispatch(getAllGstTypeByCompanyTypeId(details?.companyType));
+    dispatch(getBusinessTypeByGstTypeId(details?.gstType));
     setCompanyAndUnitData((prev) => ({
       ...prev,
       companyId: details?.companyId,
@@ -317,6 +319,8 @@ const LeadEstimate = ({ leadid }) => {
       unitName: details?.unitName,
       panNo: details?.panNo,
       gstType: details?.gstType,
+      companyType: details?.companyType,
+      businessType:details?.bussinessType,
       companyAge: details?.companyAge,
       performaInvoice: details?.performaInvoice,
       gstNo: details?.gstNo,
@@ -534,13 +538,16 @@ const LeadEstimate = ({ leadid }) => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           const compData = resp?.payload;
+          console.log('fkjhldhlkhlkghlkd',resp)
+          dispatch(getAllGstTypeByCompanyTypeId(compData?.companyGstType?.id));
+          dispatch(getBusinessTypeByGstTypeId(compData?.gstType?.id));
           form.setFieldsValue({
-            companyType: compData?.companyType,
-            gstType: compData?.gstType,
+            companyType: compData?.companyGstType?.id,
+            businessType:compData?.BussiessType?.id,
+            gstType: compData?.gstType?.id,
             gstNo: compData?.gstNo,
             panNo: compData?.panNo,
           });
-
           notification.success({ message: "Gst updated successfully !." });
           setGstModal(false);
           gstForm.resetFields();
@@ -565,7 +572,7 @@ const LeadEstimate = ({ leadid }) => {
           {Object.keys(details)?.length > 0 && !editEstimate
             ? `${
                 details?.performaInvoice
-                  ? "Performa Invoice details"
+                  ? "Proforma Invoice details"
                   : "Estimate details"
               }`
             : editEstimate
@@ -681,7 +688,7 @@ const LeadEstimate = ({ leadid }) => {
             <Flex style={{ margin: "12px 0px 0px 16px" }}>
               <Form.Item
                 layout="horizontal"
-                label="Performa invoice"
+                label="Proforma invoice"
                 name="performaInvoice"
                 className="performa"
               >
@@ -741,11 +748,13 @@ const LeadEstimate = ({ leadid }) => {
                         unitName: compUnit?.label,
                         unitId: compUnit?.value,
                       }));
+                      dispatch(getAllGstTypeByCompanyTypeId(compUnit?.companyType));
+                      dispatch(getBusinessTypeByGstTypeId(compUnit?.gstType));
                       form.setFieldsValue({
                         gstType: compUnit?.gstType,
                         gstNo: compUnit?.gstNo,
                         companyType: compUnit?.companyType,
-                        businessType:compUnit?.businessType,
+                        businessType:compUnit?.bussinessType,
                         companyAge: compUnit?.companyAge,
                         address: compUnit?.address,
                         city: compUnit?.city,
@@ -756,7 +765,7 @@ const LeadEstimate = ({ leadid }) => {
                         primaryContact: compUnit?.primaryContact?.id,
                         secondaryContact: compUnit?.secondaryContact?.id,
                         assigneeId: compUnit?.assignee?.id,
-                        primaryPinCode: compUnit?.primaryPinCode,
+                        primaryPinCode: compUnit?.pinCode,
                         secondaryAddress: compUnit?.sAddress,
                         secondaryCity: compUnit?.sCity,
                         secondaryState: compUnit?.sState,
@@ -766,6 +775,7 @@ const LeadEstimate = ({ leadid }) => {
                       gstForm.setFieldsValue({
                         companyType: compUnit?.companyType,
                         gstType: compUnit?.gstType,
+                        businessType:compUnit?.bussinessType,
                         gstNo: compUnit?.gstNo,
                         panNo: compUnit?.panNo,
                       });
@@ -784,6 +794,7 @@ const LeadEstimate = ({ leadid }) => {
                 >
                   <Select
                     showSearch
+                    disabled
                     allowClear
                     options={
                       companyTypeList?.length > 0
@@ -812,6 +823,7 @@ const LeadEstimate = ({ leadid }) => {
                   <Select
                     showSearch
                     allowClear
+                    disabled
                     options={
                       gstTypeList?.gstBussinessType?.length > 0
                         ? gstTypeList?.gstBussinessType?.map((item) => ({
@@ -840,6 +852,7 @@ const LeadEstimate = ({ leadid }) => {
                   <Select
                     showSearch
                     allowClear
+                    disabled
                     options={
                       businessTypeList?.gstTypePrice?.length > 0
                         ? businessTypeList?.gstTypePrice?.map((item) => ({
@@ -886,6 +899,7 @@ const LeadEstimate = ({ leadid }) => {
                   <Form.Item
                     label="Pan number"
                     name="panNo"
+                    disabled
                     rules={[
                       { required: true, message: "please enter pan number" },
                       {
@@ -2010,7 +2024,7 @@ const LeadEstimate = ({ leadid }) => {
             <Flex ref={pdfRef}>
               <Badge.Ribbon
                 text={
-                  details?.performaInvoice ? "Performa Invoice" : "Estimate"
+                  details?.performaInvoice ? "Proforma Invoice" : "Estimate"
                 }
                 placement="start"
                 color="green"
@@ -2045,7 +2059,7 @@ const LeadEstimate = ({ leadid }) => {
                       <Flex vertical>
                         <Title style={{ color: "#41d744" }} level={4}>
                           {details?.performaInvoice
-                            ? "Performa Invoice"
+                            ? "Proforma Invoice"
                             : "Estimate"}
                         </Title>
                         <Text strong>{`#ESTD0${details?.id}`}</Text>
