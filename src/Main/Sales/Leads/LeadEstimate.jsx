@@ -260,23 +260,19 @@ const LeadEstimate = ({ leadid }) => {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      // Only call API if searchText is not empty
       if (seachFields.searchText) {
         dispatch(searchCompaniesForCompany(seachFields)).then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            setOpenSelectDd(true); // Open the dropdown when results are ready
+            setOpenSelectDd(true);
           }
         });
-      } else {
-        // Optionally, clear search results in Redux if search text is empty
-        // dispatch({ type: 'company/clearCompanySearchResults' }); // If you have such an action
       }
-    }, 500); // 500ms debounce time
+    }, 500);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [seachFields.searchText, seachFields.searchField, dispatch]); // Add dispatch to dependency array
+  }, [seachFields.searchText, seachFields.searchField, dispatch]);
 
   const calculateTotalPriceWithGST = (actualPrice, quantity, gstString) => {
     const price = parseFloat(actualPrice) || 0;

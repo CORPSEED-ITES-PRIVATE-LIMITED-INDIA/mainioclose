@@ -529,6 +529,17 @@ export const convertServingCompanyToCompany = createAsyncThunk(
   }
 );
 
+export const updateCompanyDetails = createAsyncThunk(
+  "updateCompanyDetails",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/company/editCompany`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const CompnaySlice = createSlice({
   name: "company",
   initialState: {

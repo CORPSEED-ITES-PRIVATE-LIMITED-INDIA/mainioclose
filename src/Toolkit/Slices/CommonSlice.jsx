@@ -62,6 +62,16 @@ export const getAllCountries = createAsyncThunk("getAllCountries", async () => {
   return response.data;
 });
 
+export const getAllSecondaryCountries = createAsyncThunk(
+  "getAllSecondaryCountries",
+  async () => {
+    const response = await getQuery(
+      `/leadService/api/v1/country/getAllCountry`
+    );
+    return response.data;
+  }
+);
+
 export const getAllStatesByCountryId = createAsyncThunk(
   "getAllStatesByCountryId",
   async (id) => {
@@ -72,11 +82,51 @@ export const getAllStatesByCountryId = createAsyncThunk(
   }
 );
 
+export const getAllStatesByCountryName = createAsyncThunk(
+  "getAllStatesByCountryName",
+  async (name) => {
+    const response = await getQuery(
+      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSecondaryStatesBySecondaryCountryName = createAsyncThunk(
+  "getAllSecondaryStatesBySecondaryCountryName",
+  async (name) => {
+    const response = await getQuery(
+      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllCitiesByStateId = createAsyncThunk(
   "getAllCitiesByStateId",
   async (id) => {
     const response = await getQuery(
       `/leadService/api/v1/state/getAllCityByStateId?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllCitiesByStateName = createAsyncThunk(
+  "getAllCitiesByStateName",
+  async (name) => {
+    const response = await getQuery(
+      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSecondaryCitiesBySecondaryStateName = createAsyncThunk(
+  "getAllSecondaryCitiesBySecondaryStateName",
+  async (name) => {
+    const response = await getQuery(
+      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`
     );
     return response.data;
   }
@@ -102,6 +152,9 @@ const CommonSlice = createSlice({
     countriesList: [],
     statesList: [],
     citiesList: [],
+    secondaryCountriesList: [],
+    secondaryStateList: [],
+    secondaryCitiesList: [],
   },
   reducers: {
     handleReset: (state, action) => {
@@ -153,6 +206,17 @@ const CommonSlice = createSlice({
       state.loading = "rejected";
     });
 
+    builder.addCase(getAllSecondaryCountries.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSecondaryCountries.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.secondaryCountriesList = action.payload;
+    });
+    builder.addCase(getAllSecondaryCountries.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
     builder.addCase(getAllStatesByCountryId.pending, (state, action) => {
       state.loading = "pending";
     });
@@ -164,6 +228,37 @@ const CommonSlice = createSlice({
       state.loading = "rejected";
     });
 
+    builder.addCase(getAllStatesByCountryName.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllStatesByCountryName.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.statesList = action.payload;
+    });
+    builder.addCase(getAllStatesByCountryName.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(
+      getAllSecondaryStatesBySecondaryCountryName.pending,
+      (state, action) => {
+        state.loading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllSecondaryStatesBySecondaryCountryName.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.secondaryStateList = action.payload;
+      }
+    );
+    builder.addCase(
+      getAllSecondaryStatesBySecondaryCountryName.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+      }
+    );
+
     builder.addCase(getAllCitiesByStateId.pending, (state, action) => {
       state.loading = "pending";
     });
@@ -174,6 +269,37 @@ const CommonSlice = createSlice({
     builder.addCase(getAllCitiesByStateId.rejected, (state, action) => {
       state.loading = "rejected";
     });
+
+    builder.addCase(getAllCitiesByStateName.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCitiesByStateName.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.citiesList = action.payload;
+    });
+    builder.addCase(getAllCitiesByStateName.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(
+      getAllSecondaryCitiesBySecondaryStateName.pending,
+      (state, action) => {
+        state.loading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllSecondaryCitiesBySecondaryStateName.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.secondaryCitiesList = action.payload;
+      }
+    );
+    builder.addCase(
+      getAllSecondaryCitiesBySecondaryStateName.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+      }
+    );
   },
 });
 

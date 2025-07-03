@@ -114,7 +114,7 @@ const Proposal = ({ leadid }) => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             notification.success({
-              message: "Propsal updated successfully !.",
+              message: "Your proposal has been sent to the manager for review !.",
             });
           } else {
             notification.error({ message: "Something went wrong !." });
@@ -127,7 +127,7 @@ const Proposal = ({ leadid }) => {
       dispatch(sendProposal(values))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Propsal sent successfully !." });
+            notification.success({ message: "Your proposal has been sent to the manager for review !." });
           } else {
             notification.error({ message: "Something went wrong !." });
           }
