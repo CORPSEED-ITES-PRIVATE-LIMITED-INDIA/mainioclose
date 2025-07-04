@@ -79,18 +79,7 @@ const Proposal = ({ leadid }) => {
 
   const handleSetData = (item) => {
     setData(item?.description);
-    setMailBody(`${item?.body}
-    <br/>
-    <br/>
-    <br/>
-    <div>
-    <p><span >${getDepartmentDetail?.name}</span><p>
-    <span >${getDepartmentDetail?.department}</span>
-    <br/>
-    <span >${getDepartmentDetail?.email}</span>
-    <br/>
-    Corpseed Ites Private Limited
-    </br>`);
+    setMailBody(item?.body);
     form.setFieldsValue({ mailBody: item?.body, template: item?.description });
     setOpenPopOver(false);
   };
