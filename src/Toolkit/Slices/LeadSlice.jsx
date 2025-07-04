@@ -1186,6 +1186,17 @@ export const editProposalAndEmailTemplate = createAsyncThunk(
   }
 );
 
+export const updateCompanyAddress = createAsyncThunk(
+  "updateCompanyAddress",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/company/updateCompanyAddress`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
