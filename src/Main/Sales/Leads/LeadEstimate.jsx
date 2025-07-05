@@ -592,7 +592,7 @@ const LeadEstimate = ({ leadid }) => {
             primaryContact: compUnit?.primaryContact?.id,
             secondaryContact: compUnit?.secondaryContact?.id,
             assigneeId: compUnit?.assignee?.id,
-            primaryPinCode: compUnit?.pinCode,
+            primaryPinCode: compUnit?.primaryPinCode,
             secondaryAddress: compUnit?.sAddress,
             secondaryCity: compUnit?.sCity,
             secondaryState: compUnit?.sState,
