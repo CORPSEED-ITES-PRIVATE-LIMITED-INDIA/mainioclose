@@ -640,8 +640,8 @@ const LeadEstimate = ({ leadid }) => {
                   : "Estimate details"
               }`
             : editEstimate
-            ? "Edit estimate"
-            : "Create estimate"}
+              ? "Edit estimate"
+              : "Create estimate"}
         </Title>
         <Flex justify="flex-end" gap={4}>
           {Object.keys(details)?.length > 0 && !editEstimate && (
@@ -800,10 +800,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       allCompanyUnits?.length > 0
                         ? allCompanyUnits?.map((item) => ({
-                            label: item?.companyName,
-                            value: item?.id,
-                            ...item,
-                          }))
+                          label: item?.companyName,
+                          value: item?.id,
+                          ...item,
+                        }))
                         : []
                     }
                     onChange={(e, compUnit) => {
@@ -1108,13 +1108,13 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       contactList?.length > 0
                         ? contactList?.map((item) => ({
-                            label: `${maskEmail(
-                              item?.email
-                            )} || ${maskMobileNumber(item?.contactNo)} `,
-                            value: item?.id,
-                            email: item?.email,
-                            contact: item?.contactNo,
-                          }))
+                          label: `${maskEmail(
+                            item?.email
+                          )} || ${maskMobileNumber(item?.contactNo)} `,
+                          value: item?.id,
+                          email: item?.email,
+                          contact: item?.contactNo,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1142,13 +1142,13 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       secondaryContactList?.length > 0
                         ? secondaryContactList?.map((item) => ({
-                            label: `${maskEmail(
-                              item?.email
-                            )} || ${maskMobileNumber(item?.contactNo)} `,
-                            value: item?.id,
-                            email: item?.email,
-                            contact: item?.contactNo,
-                          }))
+                          label: `${maskEmail(
+                            item?.email
+                          )} || ${maskMobileNumber(item?.contactNo)} `,
+                          value: item?.id,
+                          email: item?.email,
+                          contact: item?.contactNo,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1653,9 +1653,9 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       leadUserNew?.length > 0
                         ? leadUserNew?.map((ele) => ({
-                            label: ele?.fullName,
-                            value: ele?.id,
-                          }))
+                          label: ele?.fullName,
+                          value: ele?.id,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -1759,10 +1759,10 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         countryList?.length > 0
                           ? countryList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                              id: item?.id,
-                            }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                           : []
                       }
                       onChange={(e, x) => {
@@ -1783,10 +1783,10 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         statesList?.length > 0
                           ? statesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                              id: item?.id,
-                            }))
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
                           : []
                       }
                       // onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1831,9 +1831,9 @@ const LeadEstimate = ({ leadid }) => {
                       options={
                         citiesList?.length > 0
                           ? citiesList?.map((item) => ({
-                              label: item?.name,
-                              value: item?.name,
-                            }))
+                            label: item?.name,
+                            value: item?.name,
+                          }))
                           : []
                       }
                       filterOption={(input, option) =>
@@ -1878,10 +1878,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       countryList?.length > 0
                         ? countryList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                            id: item?.id,
-                          }))
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
                         : []
                     }
                     onChange={(e, x) => {
@@ -1898,10 +1898,10 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       statesList?.length > 0
                         ? statesList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                            id: item?.id,
-                          }))
+                          label: item?.name,
+                          value: item?.name,
+                          id: item?.id,
+                        }))
                         : []
                     }
                     onChange={(e, x) => dispatch(getAllCitiesByStateId(x?.id))}
@@ -1916,9 +1916,9 @@ const LeadEstimate = ({ leadid }) => {
                     options={
                       citiesList?.length > 0
                         ? citiesList?.map((item) => ({
-                            label: item?.name,
-                            value: item?.name,
-                          }))
+                          label: item?.name,
+                          value: item?.name,
+                        }))
                         : []
                     }
                     filterOption={(input, option) =>
