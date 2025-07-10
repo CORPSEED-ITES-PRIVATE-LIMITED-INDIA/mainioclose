@@ -417,6 +417,37 @@ export const approvedCompanyInPayment = createAsyncThunk(
   }
 );
 
+export const addStagingInProduct = createAsyncThunk(
+  "addStagingInProduct",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/product/addStageInProduct`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllPaymentRegisterCount = createAsyncThunk(
+  "getAllPaymentRegisterCount",
+  async (status) => {
+    const response = await getQuery(
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterCount?status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllPaymentRegisterWithPagination = createAsyncThunk(
+  "getAllPaymentRegisterWithPagination",
+  async ({ page, size, status }) => {
+    const response = await getQuery(
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithPage?page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
 const AccountSlice = createSlice({
   name: "account",
   initialState: {
@@ -449,6 +480,8 @@ const AccountSlice = createSlice({
     salesInvoiceList: [],
     allInvoiceList: [],
     paymentApprovalList: [],
+    paymentRegistercont: null,
+    allPaymentRegisterList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -747,6 +780,39 @@ const AccountSlice = createSlice({
       state.loading = "rejected";
       state.paymentApprovalList = [];
     });
+
+    builder.addCase(getAllPaymentRegisterCount.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPaymentRegisterCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.paymentRegistercont = action.payload;
+    });
+    builder.addCase(getAllPaymentRegisterCount.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.paymentRegistercont = null;
+    });
+
+    builder.addCase(
+      getAllPaymentRegisterWithPagination.pending,
+      (state, action) => {
+        state.loading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllPaymentRegisterWithPagination.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.allPaymentRegisterList = action.payload;
+      }
+    );
+    builder.addCase(
+      getAllPaymentRegisterWithPagination.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.allPaymentRegisterList = [];
+      }
+    );
   },
 });
 

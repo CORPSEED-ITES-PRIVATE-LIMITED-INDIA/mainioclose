@@ -1,5 +1,5 @@
 import { Button, Flex, Input, notification, Select, Typography } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import dayjs from "dayjs";
@@ -7,6 +7,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   approvedPayment,
   getAllPaymentRegister,
+  getAllPaymentRegisterCount,
+  getAllPaymentRegisterWithPagination,
   getUnusedBankStatement,
   paymentRegisterconfirm,
 } from "../../../Toolkit/Slices/AccountSlice";
@@ -14,23 +16,50 @@ const { Text } = Typography;
 
 const PaymentRegister = () => {
   const dispatch = useDispatch();
+  const [status, setStatus] = useState("initiated");
   const paymentRegisterList = useSelector(
-    (state) => state.account.paymentRegisterList
+    (state) => state.account.allPaymentRegisterList
   );
+  const paymentRegistercont=useSelector((state)=>state.account.paymentRegistercont)
   const unusedBankStatementList = useSelector(
     (state) => state.account.unusedBankStatementList
   );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const [paginationData, setPaginationData] = useState({
+    page: 1,
+    size: 50,
+  });
 
   useEffect(() => {
     setFilteredData(paymentRegisterList);
   }, [paymentRegisterList]);
 
   useEffect(() => {
-    dispatch(getAllPaymentRegister());
+    dispatch(
+      getAllPaymentRegisterWithPagination({
+        page: paginationData?.page,
+        size: paginationData?.size,
+        status: status,
+      })
+    );
     dispatch(getUnusedBankStatement());
-  }, [dispatch]);
+    dispatch(getAllPaymentRegisterCount(status));
+  }, [dispatch, status]);
+
+  const handlePagination = useCallback(
+    (dataPage, size) => {
+      dispatch(
+        getAllPaymentRegisterWithPagination({
+          page: dataPage,
+          size: size,
+          status: status,
+        })
+      );
+      setPaginationData({ size: size, page: dataPage });
+    },
+    [dispatch,status]
+  );
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -202,14 +231,27 @@ const PaymentRegister = () => {
           align="center"
           className="vouchers-header"
         >
-          <Input
-            prefix={<Icon icon="fluent:search-24-regular" />}
-            value={searchText}
-            size="small"
-            onChange={handleSearch}
-            placeholder="search"
-            style={{ width: "25%" }}
-          />
+          <Flex gap={12} style={{ width: "70%" }}>
+            <Input
+              prefix={<Icon icon="fluent:search-24-regular" />}
+              value={searchText}
+              size="small"
+              onChange={handleSearch}
+              placeholder="search"
+              style={{ width: "25%" }}
+            />
+            <Select
+              style={{ width: "25%" }}
+              value={status}
+              onChange={(e) => setStatus(e)}
+              options={[
+                { label: "All", value: "all" },
+                { label: "Initiated", value: "initiated" },
+                { label: "Approved", value: "approved" },
+                { label: "Disapproved", value: "disapproved" },
+              ]}
+            />
+          </Flex>
           <Button
             type="primary"
             // onClick={() => {
@@ -224,6 +266,11 @@ const PaymentRegister = () => {
           columns={columns}
           scroll={{ y: "70vh", x: 2600 }}
           rowKey={(row) => row?.id}
+          page={paginationData?.page}
+          pageSize={paginationData?.size}
+          pagination={true}
+          totalCount={paymentRegistercont}
+          handlePagination={handlePagination}
         />
       </Flex>
     </>
