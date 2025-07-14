@@ -1197,6 +1197,28 @@ export const updateCompanyAddress = createAsyncThunk(
   }
 );
 
+export const updateAddressInLeads = createAsyncThunk(
+  "updateAddressInLeads",
+  async (data) => {
+    const response = await putQuery(
+      `/leadService/api/v1/lead/addAddressInLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const updateIndustriesInLeads = createAsyncThunk(
+  "updateIndustriesInLeads",
+  async (data) => {
+    const response = await putQuery(
+      `/leadService/api/v1/lead/addIndustryInLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {

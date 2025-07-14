@@ -14,7 +14,9 @@ import {
   getAllStatusListByUserId,
   getSingleLeadDataByLeadID,
   handleLeadassignedToSamePerson,
+  updateAddressInLeads,
   updateAutoAssignnee,
+  updateIndustriesInLeads,
   updateLeadDescription,
   updateLeadsContact,
   updateOriginalNameInLeads,
@@ -46,12 +48,25 @@ import { playErrorSound, playSuccessSound } from "../../Common/Commons";
 import CompanyFormModal from "../../Accounts/CompanyFormModal";
 import LeadComments from "./LeadComments";
 import LeadCompany from "../Leads/LeadCompany";
+import {
+  getAllCitiesByStateId,
+  getAllCountries,
+  getAllStatesByCountryId,
+} from "../../../Toolkit/Slices/CommonSlice";
+import {
+  getAllMainIndustry,
+  getIndustryDataBySubSubIndustryId,
+  getSubIndustryByIndustryId,
+  getSubSubIndustryBySubIndustryId,
+} from "../../../Toolkit/Slices/IndustrySlice";
 const { Text } = Typography;
 
 toast.configure();
 
 const LeadDetailsPage = ({ leadid }) => {
   const [form1] = Form.useForm();
+  const [addressForm] = Form.useForm();
+  const [industryForm] = Form.useForm();
   const { userid } = useParams();
   const dispatch = useDispatch();
   const [descriptionText, setDescriptionText] = useState("");
@@ -75,7 +90,20 @@ const LeadDetailsPage = ({ leadid }) => {
   const leadDetailLoading = useSelector(
     (state) => state.leads.leadDetailLoading
   );
+  const countryList = useSelector((state) => state.common.countriesList);
+  const statesList = useSelector((state) => state.common.statesList);
+  const citiesList = useSelector((state) => state.common.citiesList);
   const slugList = useSelector((state) => state.leadslug.slugList);
+  const allIndustry = useSelector((state) => state.industry.allMainIndustry);
+  const subIndustryListById = useSelector(
+    (state) => state.industry.subIndustryListByIndustryId
+  );
+  const subSubIndustryListById = useSelector(
+    (state) => state.industry.subSubIndustryListBySubIndustryId
+  );
+  const industryDataListById = useSelector(
+    (state) => state.industry.industryDataListBySubSubIndustryId
+  );
   const [openModal, setOpenModal] = useState(false);
   const [contactData, setContactData] = useState(null);
   const [updateLeadNameToggle, setUpdateLeadNameToggle] = useState(true);
@@ -85,6 +113,8 @@ const LeadDetailsPage = ({ leadid }) => {
   const [assigneValue, setAssigneValue] = useState(null);
   const [document, setDocument] = useState("");
   const [openDocumentModal, setOpenDocumentModal] = useState(false);
+  const [addressModal, setAddressModal] = useState(false);
+  const [industryModal, setIndustryModal] = useState(false);
   const [originalData, setOriginalData] = useState({
     leadId: leadid,
     originalName: "",
@@ -384,6 +414,55 @@ const LeadDetailsPage = ({ leadid }) => {
       });
   }, [leadid, dispatch, descriptionText]);
 
+  const onEditClick = () => {
+    dispatch(getAllCountries());
+    dispatch(getAllStatesByCountryId(singleLeadResponseData?.countryId));
+    dispatch(getAllCitiesByStateId(singleLeadResponseData?.stateId));
+    addressForm.setFieldsValue({
+      address: singleLeadResponseData?.address,
+      country: singleLeadResponseData?.country,
+      state: singleLeadResponseData?.state,
+      city: singleLeadResponseData?.city,
+    });
+    setAddressModal(true);
+  };
+
+  const handleAddressFinish = (values) => {
+    values.leadId = singleLeadResponseData?.leadId;
+    dispatch(updateAddressInLeads(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({ message: "Address updated successfully !." });
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
+
+  const onIndustryEdit = () => {
+    dispatch(getAllMainIndustry());
+    dispatch(getSubIndustryByIndustryId());
+    dispatch(getSubSubIndustryBySubIndustryId());
+    dispatch(getIndustryDataBySubSubIndustryId());
+    setIndustryModal(true);
+  };
+
+  const handleIndustryFinish = (values) => {
+    values.leadId = singleLeadResponseData?.leadId;
+    dispatch(updateIndustriesInLeads(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({
+            message: "Industries updated successfully !.",
+          });
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
+
   const items = [
     {
       key: "1",
@@ -476,7 +555,6 @@ const LeadDetailsPage = ({ leadid }) => {
                       //   option.label.toLowerCase().includes(input.toLowerCase())
                       // }
                     />
-
 
                     <Space className="comp-component-2">
                       <Button
@@ -584,14 +662,40 @@ const LeadDetailsPage = ({ leadid }) => {
                     </Space>
                   </div>
                 )}
-                <div className="flex-vert-hori-center">
-                  <Icon icon="fluent:location-24-regular" />
-                  <Text type="secondary">
-                    {singleLeadResponseData?.city
-                      ? singleLeadResponseData?.city
-                      : "Address"}
-                  </Text>
-                </div>
+                <Flex vertical gap={8}>
+                  <div className="flex-vert-hori-center">
+                    <Icon icon="fluent:location-24-regular" />
+                    <Text type="secondary">
+                      {singleLeadResponseData?.city
+                        ? singleLeadResponseData?.city
+                        : "Address"}
+                    </Text>
+                  </div>
+                  <Button onClick={onEditClick}>Edit address</Button>
+                </Flex>
+
+                <Flex vertical gap={8}>
+                  <Text type="secondary">Industries</Text>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "24",
+                    }}
+                  >
+                    <Text>{singleLeadResponseData?.industries?.name}</Text>
+                    <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
+                    <Text>{singleLeadResponseData?.subSubIndustry?.name}</Text>
+                    <Text>
+                      {singleLeadResponseData?.industriesData
+                        ?.map((item) => item?.name)
+                        ?.join(",")}
+                    </Text>
+                  </div>
+
+                  <Button onClick={onIndustryEdit}>Edit industry</Button>
+                </Flex>
+
                 <Divider style={{ margin: "6px" }} />
                 {currentUserDetail?.department !== "Sales" && (
                   <div className="lead-assignee-container">
@@ -814,6 +918,252 @@ const LeadDetailsPage = ({ leadid }) => {
             centered
           >
             <iframe src={document} height={580} width={"100%"} />
+          </Modal>
+          <Modal
+            title="Update address"
+            open={addressModal}
+            onCancel={() => setAddressModal(false)}
+            onClose={() => setAddressModal(false)}
+            onOk={() => addressForm.submit()}
+          >
+            <Form
+              layout="vertical"
+              form={addressForm}
+              onFinish={handleAddressFinish}
+            >
+              <div className="form-grid-col-2">
+                <Form.Item
+                  label="Primary address"
+                  name="address"
+                  rules={[
+                    { required: true, message: "please enter the address" },
+                  ]}
+                >
+                  <Input.TextArea />
+                </Form.Item>
+
+                <Form.Item
+                  label="Country"
+                  name="country"
+                  rules={[
+                    { required: true, message: "please select the country" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    options={
+                      countryList?.length > 0
+                        ? countryList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.name,
+                            id: item?.id,
+                          }))
+                        : []
+                    }
+                    onChange={(e, x) => {
+                      dispatch(getAllStatesByCountryId(x?.id));
+                      addressForm.resetFields(["state", "city"]);
+                    }}
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="State"
+                  name="state"
+                  rules={[
+                    { required: true, message: "Please select the state" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    options={statesList?.map((item) => ({
+                      label: item.name,
+                      value: item.name,
+                      gstCode: item.gstCode,
+                      stateName: item.name,
+                      id: item?.id,
+                    }))}
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    onChange={(e, option) => {
+                      dispatch(getAllCitiesByStateId(option?.id));
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="City"
+                  name="city"
+                  rules={[{ required: true, message: "please enter the city" }]}
+                >
+                  <Select
+                    showSearch
+                    options={
+                      citiesList?.length > 0
+                        ? citiesList?.map((item) => ({
+                            label: item?.name,
+                            value: item?.name,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Pin code"
+                  name="pinCode"
+                  rules={[{ required: true, message: "please enter pincode" }]}
+                >
+                  <Input />
+                </Form.Item>
+              </div>
+            </Form>
+          </Modal>
+          <Modal
+            title="Update industry"
+            open={industryModal}
+            onCancel={() => setIndustryModal(false)}
+            onClose={() => setIndustryModal(false)}
+            onOk={() => industryForm.submit()}
+          >
+            <Form
+              layout="vertical"
+              form={industryForm}
+              onFinish={handleIndustryFinish}
+            >
+              <div className="form-grid-col-2">
+                <Form.Item
+                  label="Select industry"
+                  name="industriesId"
+                  rules={[
+                    { required: true, message: "please select the industry" },
+                  ]}
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    options={
+                      allIndustry?.length > 0
+                        ? allIndustry?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    onChange={(e) => {
+                      dispatch(getSubIndustryByIndustryId(e));
+                      industryForm.resetFields([
+                        "industriesDataId",
+                        "subsubIndustryId",
+                        "subIndustryId",
+                      ]);
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Select sub-industry"
+                  name="subIndustryId"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select the sub industry",
+                    },
+                  ]}
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    options={
+                      subIndustryListById?.length > 0
+                        ? subIndustryListById?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    onChange={(e) => {
+                      dispatch(getSubSubIndustryBySubIndustryId(e));
+                      industryForm.resetFields([
+                        "industriesDataId",
+                        "subsubIndustryId",
+                      ]);
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Select category"
+                  name="subsubIndustryId"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select the sub sub industry",
+                    },
+                  ]}
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    options={
+                      subSubIndustryListById?.length > 0
+                        ? subSubIndustryListById?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    onChange={(e) => {
+                      dispatch(getIndustryDataBySubSubIndustryId(e));
+                      industryForm.resetFields(["industriesDataId"]);
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Select business activity"
+                  name="industriesDataId"
+                  rules={[
+                    {
+                      required: true,
+                      message: "please select the industry data",
+                    },
+                  ]}
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    mode="multiple"
+                    maxTagCount="responsive"
+                    options={
+                      industryDataListById?.length > 0
+                        ? industryDataListById?.map((item) => ({
+                            label: item?.name,
+                            value: item?.id,
+                          }))
+                        : []
+                    }
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              </div>
+            </Form>
           </Modal>
         </div>
       ) : (

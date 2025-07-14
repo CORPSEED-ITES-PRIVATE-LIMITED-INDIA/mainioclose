@@ -287,7 +287,6 @@ const LeadEstimate = ({ leadid }) => {
   };
 
   const handleEditEstimate = useCallback(() => {
-    console.log("dkjfbaskljdhflkasj", details);
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactDetailsById(details?.companyId));
     dispatch(getSecondaryContactListByCompanyId(details?.companyId));
