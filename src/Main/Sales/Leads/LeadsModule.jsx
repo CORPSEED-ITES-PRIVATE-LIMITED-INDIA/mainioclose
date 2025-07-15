@@ -35,6 +35,7 @@ import {
   Popover,
   Select,
   Spin,
+  Tag,
   Tooltip,
   Typography,
   Upload,
@@ -174,6 +175,15 @@ const LeadsModule = () => {
     "Assignee email": row?.assigneeEmail,
     "Created by": row?.createdBy,
     Source: row?.source,
+    Industry: row?.industry,
+    "Sub industry": row?.subIndustry,
+    Category: row?.subSubIndustry,
+    "Business activity": row?.industryData,
+    Address: row?.address,
+    Country: row?.country,
+    State: row?.state,
+    City: row?.city,
+    "Pin code": row?.pincode,
     "Updated By": row?.updatedBy,
     "Reopen By": row?.reopenBy,
     "Reopen By Quality": row?.isReopenByQuality,
@@ -194,6 +204,15 @@ const LeadsModule = () => {
     "Created by",
     "Helper",
     "Source",
+    "Industry",
+    "Sub industry",
+    "Category",
+    "Business activity",
+    "Address",
+    "Country",
+    "State",
+    "City",
+    "Pin code",
     "Updated By",
     "Reopen By",
     "Reopen By Quality",
@@ -551,6 +570,58 @@ const LeadsModule = () => {
                 To same{" "}
               </Button>
             ),
+          },
+          {
+            title: "Industry",
+            dataIndex: "industries",
+            checked: false,
+            render: (data) => data?.name,
+          },
+          {
+            title: "Sub industry",
+            dataIndex: "subIndustry",
+            checked: false,
+            render: (data) => data?.name,
+          },
+          {
+            title: "Category",
+            dataIndex: "subsubIndustry",
+            checked: false,
+            render: (data) => data?.name,
+          },
+          {
+            title: "Business activity",
+            dataIndex: "industryDataList",
+            checked: false,
+            render: (data) =>
+              data?.map((item) => (
+                <Tag key={`activity${item?.name}`}>{item?.name}</Tag>
+              )),
+          },
+          {
+            title: "Address",
+            dataIndex: "address",
+            checked: false,
+          },
+          {
+            title: "Country",
+            dataIndex: "country",
+            checked: false,
+          },
+          {
+            title: "State",
+            dataIndex: "state",
+            checked: false,
+          },
+          {
+            title: "City",
+            dataIndex: "city",
+            checked: false,
+          },
+          {
+            title: "Pin code",
+            dataIndex: "pinCode",
+            checked: false,
           },
           {
             dataIndex: "action",

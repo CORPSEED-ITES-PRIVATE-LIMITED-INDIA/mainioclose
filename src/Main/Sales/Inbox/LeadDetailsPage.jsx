@@ -120,9 +120,37 @@ const LeadDetailsPage = ({ leadid }) => {
     originalName: "",
     currentUserId: userid,
   });
+  const [addressInfo, setaddressInfo] = useState(false);
+  const [industryInfo, setIndustryInfo] = useState(false);
 
   useEffect(() => {
-    setDescriptionText(singleLeadResponseData?.description);
+    if (
+      singleLeadResponseData &&
+      Object.keys(singleLeadResponseData)?.length > 0
+    ) {
+      setDescriptionText(singleLeadResponseData?.description);
+      if (
+        singleLeadResponseData?.industries &&
+        Object.keys(singleLeadResponseData?.industries)?.length > 0 &&
+        singleLeadResponseData?.subIndustry &&
+        Object.keys(singleLeadResponseData?.subIndustry)?.length > 0 &&
+        singleLeadResponseData?.subSubIndustry &&
+        Object.keys(singleLeadResponseData?.subSubIndustry)?.length > 0 &&
+        singleLeadResponseData?.industriesData?.length > 0
+      ) {
+        setIndustryInfo(true);
+      }
+
+      if (
+        singleLeadResponseData?.address &&
+        singleLeadResponseData?.country &&
+        singleLeadResponseData?.state &&
+        singleLeadResponseData?.city &&
+        singleLeadResponseData?.pinCode
+      ) {
+        setaddressInfo(true);
+      }
+    }
   }, [singleLeadResponseData]);
 
   useEffect(() => {
@@ -136,26 +164,32 @@ const LeadDetailsPage = ({ leadid }) => {
   }, [leadid, userid, dispatch]);
 
   const updateOriginalNameFun = useCallback(() => {
-    dispatch(updateOriginalNameInLeads(originalData))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Name updated successfully",
-          });
-          getSingleLeadData();
-          setUpdateOriginalName((prev) => !prev);
-        } else {
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      dispatch(updateOriginalNameInLeads(originalData))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Name updated successfully",
+            });
+            getSingleLeadData();
+            setUpdateOriginalName((prev) => !prev);
+          } else {
+            notification.error({
+              message: "Something went wrong !.",
+            });
+          }
+        })
+        .catch(() => {
           notification.error({
             message: "Something went wrong !.",
           });
-        }
-      })
-      .catch(() => {
-        notification.error({
-          message: "Something went wrong !.",
         });
-      });
-  }, [originalData, dispatch, getSingleLeadData]);
+    }
+  }, [originalData, dispatch, getSingleLeadData, addressInfo, industryInfo]);
 
   useEffect(() => {
     if (leadid) {
@@ -167,24 +201,30 @@ const LeadDetailsPage = ({ leadid }) => {
   const adminRole = currentUserRoles.includes("ADMIN");
 
   const changeLeadStatusFun = (statusId) => {
-    dispatch(changeLeadStatus({ leadid, userid, statusId }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Status updated successfully",
-          });
-          getSingleLeadData();
-        } else {
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      dispatch(changeLeadStatus({ leadid, userid, statusId }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Status updated successfully",
+            });
+            getSingleLeadData();
+          } else {
+            notification.error({
+              message: "Something went wrong !.",
+            });
+          }
+        })
+        .catch(() => {
           notification.error({
             message: "Something went wrong !.",
           });
-        }
-      })
-      .catch(() => {
-        notification.error({
-          message: "Something went wrong !.",
         });
-      });
+    }
   };
 
   useEffect(() => {
@@ -193,14 +233,58 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const updateLeadNameSinglePage = useCallback(
     (e) => {
-      dispatch(updateSingleLeadName({ updatedLeadName, leadid, userid }))
+      if (!addressInfo) {
+        notification.warning({ message: "Please update address first !." });
+      } else if (!industryInfo) {
+        notification.warning({ message: "Please update industry first !." });
+      } else {
+        dispatch(updateSingleLeadName({ updatedLeadName, leadid, userid }))
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              notification.success({
+                message: "Assignee updated successfully",
+              });
+              getSingleLeadData();
+              setUpdateLeadNameToggle(true);
+            } else {
+              notification.error({
+                message: "Something went wrong !.",
+              });
+            }
+          })
+          .catch(() => {
+            notification.error({
+              message: "Something went wrong !.",
+            });
+          });
+      }
+    },
+    [
+      updatedLeadName,
+      leadid,
+      userid,
+      dispatch,
+      getSingleLeadData,
+      addressInfo,
+      industryInfo,
+    ]
+  );
+
+  const changeLeadAssignee = (id) => {
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      setAssigneValue(id);
+      dispatch(changeLeadAssigneeLeads({ leadid, id, userid }))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             notification.success({
               message: "Assignee updated successfully",
             });
             getSingleLeadData();
-            setUpdateLeadNameToggle(true);
+            setAssigneValue(null);
           } else {
             notification.error({
               message: "Something went wrong !.",
@@ -212,106 +296,106 @@ const LeadDetailsPage = ({ leadid }) => {
             message: "Something went wrong !.",
           });
         });
-    },
-    [updatedLeadName, leadid, userid, dispatch, getSingleLeadData]
-  );
-
-  const changeLeadAssignee = (id) => {
-    setAssigneValue(id);
-    dispatch(changeLeadAssigneeLeads({ leadid, id, userid }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Assignee updated successfully",
-          });
-          getSingleLeadData();
-          setAssigneValue(null);
-        } else {
-          notification.error({
-            message: "Something went wrong !.",
-          });
-        }
-      })
-      .catch(() => {
-        notification.error({
-          message: "Something went wrong !.",
-        });
-      });
+    }
   };
 
   const deleteContactFun = useCallback(
     (id) => {
-      let data = {
-        leadid: leadid,
-        id: id,
-        userid: userid,
-      };
-      dispatch(deleteLeadContact(data))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({
-              message: "Contact deleted successfully",
-            });
-            getSingleLeadData();
-          } else {
+      if (!addressInfo) {
+        notification.warning({ message: "Please update address first !." });
+      } else if (!industryInfo) {
+        notification.warning({ message: "Please update industry first !." });
+      } else {
+        let data = {
+          leadid: leadid,
+          id: id,
+          userid: userid,
+        };
+        dispatch(deleteLeadContact(data))
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              notification.success({
+                message: "Contact deleted successfully",
+              });
+              getSingleLeadData();
+            } else {
+              notification.error({
+                message: "Something went wrong !.",
+              });
+            }
+          })
+          .catch(() => {
             notification.error({
               message: "Something went wrong !.",
             });
-          }
-        })
-        .catch(() => {
-          notification.error({
-            message: "Something went wrong !.",
           });
-        });
+      }
     },
-    [leadid, userid, dispatch, getSingleLeadData]
+    [leadid, userid, dispatch, getSingleLeadData, addressInfo, industryInfo]
   );
 
   const sameAssigneePresonFun = async () => {
-    if (window.confirm("Aree you Want to Sure")) {
-      const autoUpdateSame = await dispatch(
-        updateAutoAssignnee({
-          leadId: leadid,
-          updatedById: userid,
-          status: "Badfit",
-          autoSame: true,
-        })
-      );
-      if (autoUpdateSame.type === "auto-lead-assignee/rejected")
-        return toast.error("Something went Wrong");
-      if (autoUpdateSame.type === "auto-lead-assignee/fulfilled") {
-        toast.success("Lead Assignee Same Person Succesfully");
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      if (window.confirm("Aree you Want to Sure")) {
+        const autoUpdateSame = await dispatch(
+          updateAutoAssignnee({
+            leadId: leadid,
+            updatedById: userid,
+            status: "Badfit",
+            autoSame: true,
+          })
+        );
+        if (autoUpdateSame.type === "auto-lead-assignee/rejected")
+          return toast.error("Something went Wrong");
+        if (autoUpdateSame.type === "auto-lead-assignee/fulfilled") {
+          toast.success("Lead Assignee Same Person Succesfully");
+        }
       }
     }
   };
 
   const notSameAssigneePresonFun = async () => {
-    if (window.confirm("Aree you Want to Sure")) {
-      const autoUpdateNotSame = await dispatch(
-        updateAutoAssignnee({
-          leadId: leadid,
-          updatedById: userid,
-          status: "Badfit",
-          autoSame: false,
-        })
-      );
-      if (autoUpdateNotSame.type === "auto-lead-assignee/rejected")
-        return toast.error("Something went Wrong");
-      if (autoUpdateNotSame.type === "auto-lead-assignee/fulfilled") {
-        toast.success("Lead Assignee Different Person Succesfully");
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      if (window.confirm("Aree you Want to Sure")) {
+        const autoUpdateNotSame = await dispatch(
+          updateAutoAssignnee({
+            leadId: leadid,
+            updatedById: userid,
+            status: "Badfit",
+            autoSame: false,
+          })
+        );
+        if (autoUpdateNotSame.type === "auto-lead-assignee/rejected")
+          return toast.error("Something went Wrong");
+        if (autoUpdateNotSame.type === "auto-lead-assignee/fulfilled") {
+          toast.success("Lead Assignee Different Person Succesfully");
+        }
       }
     }
   };
 
   const handleUpdateContact = (value) => {
-    form1.setFieldsValue({
-      name: value?.clientName,
-      email: value?.email,
-      contactNo: value?.contactNo,
-    });
-    setContactData(value);
-    setOpenModal(true);
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      form1.setFieldsValue({
+        name: value?.clientName,
+        email: value?.email,
+        contactNo: value?.contactNo,
+      });
+      setContactData(value);
+      setOpenModal(true);
+    }
   };
 
   const handleSubmitContact = useCallback(
@@ -372,47 +456,59 @@ const LeadDetailsPage = ({ leadid }) => {
   );
 
   const leadAssignedToSame = (id) => {
-    dispatch(handleLeadassignedToSamePerson(id))
-      .then((response) => {
-        if (response.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Lead assigned to same person successfully.",
-          });
-          // playSuccessSound()
-          getSingleLeadData();
-          window.location.reload();
-        } else {
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry info first !." });
+    } else {
+      dispatch(handleLeadassignedToSamePerson(id))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Lead assigned to same person successfully.",
+            });
+            // playSuccessSound()
+            getSingleLeadData();
+            window.location.reload();
+          } else {
+            notification.error({ message: "Something went wrong !." });
+            playErrorSound();
+          }
+        })
+        .catch(() => {
           notification.error({ message: "Something went wrong !." });
           playErrorSound();
-        }
-      })
-      .catch(() => {
-        notification.error({ message: "Something went wrong !." });
-        playErrorSound();
-      });
+        });
+    }
   };
 
   const handleUpdateLeadDescription = useCallback(() => {
-    let obj = { id: leadid, description: descriptionText };
-    dispatch(updateLeadDescription(obj))
-      .then((response) => {
-        if (response.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Lead description successfully.",
-          });
-          // playSuccessSound()
-          getSingleLeadData();
-          setShowDescriptionField(false);
-        } else {
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry info first !." });
+    } else {
+      let obj = { id: leadid, description: descriptionText };
+      dispatch(updateLeadDescription(obj))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Lead description successfully.",
+            });
+            // playSuccessSound()
+            getSingleLeadData();
+            setShowDescriptionField(false);
+          } else {
+            notification.error({ message: "Something went wrong !." });
+            playErrorSound();
+          }
+        })
+        .catch(() => {
           notification.error({ message: "Something went wrong !." });
           playErrorSound();
-        }
-      })
-      .catch(() => {
-        notification.error({ message: "Something went wrong !." });
-        playErrorSound();
-      });
-  }, [leadid, dispatch, descriptionText]);
+        });
+    }
+  }, [leadid, dispatch, descriptionText, addressInfo, industryInfo]);
 
   const onEditClick = () => {
     dispatch(getAllCountries());
@@ -423,6 +519,7 @@ const LeadDetailsPage = ({ leadid }) => {
       country: singleLeadResponseData?.country,
       state: singleLeadResponseData?.state,
       city: singleLeadResponseData?.city,
+      pinCode: singleLeadResponseData?.pinCode,
     });
     setAddressModal(true);
   };
@@ -433,6 +530,13 @@ const LeadDetailsPage = ({ leadid }) => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           notification.success({ message: "Address updated successfully !." });
+          dispatch(
+            getSingleLeadDataByLeadID({
+              leadid: singleLeadResponseData?.leadId,
+              userid,
+            })
+          );
+          setAddressModal(false);
         } else {
           notification.error({ message: "Something went wrong !." });
         }
@@ -442,9 +546,25 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const onIndustryEdit = () => {
     dispatch(getAllMainIndustry());
-    dispatch(getSubIndustryByIndustryId());
-    dispatch(getSubSubIndustryBySubIndustryId());
-    dispatch(getIndustryDataBySubSubIndustryId());
+    dispatch(
+      getSubIndustryByIndustryId(singleLeadResponseData?.industries?.id)
+    );
+    dispatch(
+      getSubSubIndustryBySubIndustryId(singleLeadResponseData?.subIndustry?.id)
+    );
+    dispatch(
+      getIndustryDataBySubSubIndustryId(
+        singleLeadResponseData?.subSubIndustry?.id
+      )
+    );
+    industryForm.setFieldsValue({
+      industriesId: singleLeadResponseData?.industries?.id,
+      subIndustryId: singleLeadResponseData?.subIndustry?.id,
+      subsubIndustryId: singleLeadResponseData?.subSubIndustry?.id,
+      industriesDataId: singleLeadResponseData?.industriesData?.map(
+        (item) => item?.id
+      ),
+    });
     setIndustryModal(true);
   };
 
@@ -456,6 +576,13 @@ const LeadDetailsPage = ({ leadid }) => {
           notification.success({
             message: "Industries updated successfully !.",
           });
+          dispatch(
+            getSingleLeadDataByLeadID({
+              leadid: singleLeadResponseData?.leadId,
+              userid,
+            })
+          );
+          setIndustryModal(false);
         } else {
           notification.error({ message: "Something went wrong !." });
         }
@@ -472,8 +599,18 @@ const LeadDetailsPage = ({ leadid }) => {
           size="small"
           onClick={(e) => {
             e.stopPropagation();
-            setOpenModal(true);
-            form1.resetFields();
+            if (!addressInfo) {
+              notification.warning({
+                message: "Please update your address first !.",
+              });
+            } else if (!industryInfo) {
+              notification.warning({
+                message: "Please update your industries info first !.",
+              });
+            } else {
+              setOpenModal(true);
+              form1.resetFields();
+            }
           }}
         >
           <Icon icon="fluent:add-20-regular" /> Add
@@ -618,7 +755,19 @@ const LeadDetailsPage = ({ leadid }) => {
                       </Text>
                       <Button
                         size="small"
-                        onClick={() => setUpdateLeadNameToggle(false)}
+                        onClick={() => {
+                          if (!addressInfo) {
+                            notification.warning({
+                              message: "Please update address first !.",
+                            });
+                          } else if (!industryInfo) {
+                            notification.warning({
+                              message: "Please update industry first !.",
+                            });
+                          } else {
+                            setUpdateLeadNameToggle(false);
+                          }
+                        }}
                       >
                         <Icon icon="fluent:edit-20-regular" />
                         Edit
@@ -662,39 +811,111 @@ const LeadDetailsPage = ({ leadid }) => {
                     </Space>
                   </div>
                 )}
-                <Flex vertical gap={8}>
-                  <div className="flex-vert-hori-center">
-                    <Icon icon="fluent:location-24-regular" />
-                    <Text type="secondary">
-                      {singleLeadResponseData?.city
-                        ? singleLeadResponseData?.city
-                        : "Address"}
-                    </Text>
-                  </div>
-                  <Button onClick={onEditClick}>Edit address</Button>
-                </Flex>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+                    padding: "12px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <Flex justify="space-between" align="center">
+                    <Flex gap={8} align="center">
+                      <Icon icon="fluent:location-24-regular" />
+                      <Text className="heading-text">Address info</Text>
+                    </Flex>
+                    <Button type="link" onClick={onEditClick}>
+                      Update address
+                    </Button>
+                  </Flex>
 
-                <Flex vertical gap={8}>
-                  <Text type="secondary">Industries</Text>
                   <div
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: "24",
+                      gap: "24px",
                     }}
                   >
-                    <Text>{singleLeadResponseData?.industries?.name}</Text>
-                    <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
-                    <Text>{singleLeadResponseData?.subSubIndustry?.name}</Text>
-                    <Text>
-                      {singleLeadResponseData?.industriesData
-                        ?.map((item) => item?.name)
-                        ?.join(",")}
-                    </Text>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Address</Text>
+                      <Text>{singleLeadResponseData?.address}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Country</Text>
+                      <Text>{singleLeadResponseData?.country}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">State</Text>
+                      <Text>{singleLeadResponseData?.state}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">City</Text>
+                      <Text>{singleLeadResponseData?.city}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Pin code</Text>
+                      <Text>{singleLeadResponseData?.pinCode}</Text>
+                    </Flex>
                   </div>
+                </div>
 
-                  <Button onClick={onIndustryEdit}>Edit industry</Button>
-                </Flex>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+                    padding: "12px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <Flex justify="space-between" align="center">
+                    <Flex gap={8} align="center">
+                      <Icon
+                        icon="fluent:building-32-regular"
+                        width="12"
+                        height="12"
+                      />
+                      <Text className="heading-text">Industry info</Text>
+                    </Flex>
+                    <Button type="link" onClick={onIndustryEdit}>
+                      Update industry
+                    </Button>
+                  </Flex>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "24px",
+                    }}
+                  >
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Industries</Text>
+                      <Text>{singleLeadResponseData?.industries?.name}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Sub industries</Text>
+                      <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Sub sub industries</Text>
+                      <Text>
+                        {singleLeadResponseData?.subSubIndustry?.name}
+                      </Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Industries data</Text>
+                      <Text>
+                        {singleLeadResponseData?.industriesData
+                          ?.map((item) => item?.name)
+                          ?.join(",")}
+                      </Text>
+                    </Flex>
+                  </div>
+                </div>
 
                 <Divider style={{ margin: "6px" }} />
                 {currentUserDetail?.department !== "Sales" && (
@@ -857,17 +1078,32 @@ const LeadDetailsPage = ({ leadid }) => {
                   >
                     Assign to same person
                   </Button>
-                  <LeadCompany data={singleLeadResponseData} />
+                  <LeadCompany
+                    data={singleLeadResponseData}
+                    addressInfo={addressInfo}
+                    industryInfo={industryInfo}
+                  />
                   <CompanyFormModal
                     detailView={true}
                     data={singleLeadResponseData}
+                    addressInfo={addressInfo}
+                    industryInfo={industryInfo}
                   />
                 </div>
               </div>
 
               <Flex vertical gap={12}>
-                <BulkFileUploader leadid={leadid} />
-                <LeadComments list={notesApiData} leadid={leadid} />
+                <BulkFileUploader
+                  leadid={leadid}
+                  addressInfo={addressInfo}
+                  industryInfo={industryInfo}
+                />
+                <LeadComments
+                  list={notesApiData}
+                  leadid={leadid}
+                  addressInfo={addressInfo}
+                  industryInfo={industryInfo}
+                />
               </Flex>
             </Col>
           </Row>

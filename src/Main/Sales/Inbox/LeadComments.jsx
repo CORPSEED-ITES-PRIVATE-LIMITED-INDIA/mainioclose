@@ -11,27 +11,27 @@ import {
   Select,
   Skeleton,
   Typography,
-} from "antd"
-import React, { useCallback, useState } from "react"
-import { Icon } from "@iconify/react"
-import dayjs from "dayjs"
-import { useDispatch, useSelector } from "react-redux"
+} from "antd";
+import React, { useCallback, useState } from "react";
+import { Icon } from "@iconify/react";
+import dayjs from "dayjs";
+import { useDispatch, useSelector } from "react-redux";
 import {
   deleteRemarks,
   getAllRemarkAndCommnts,
   updateRemarks,
-} from "../../../Toolkit/Slices/LeadSlice"
-import { useParams } from "react-router-dom"
-const { Text } = Typography
+} from "../../../Toolkit/Slices/LeadSlice";
+import { useParams } from "react-router-dom";
+const { Text } = Typography;
 
-const LeadComments = ({ list, leadid }) => {
-  const { userid } = useParams()
-  const dispatch = useDispatch()
-  const allComments = useSelector((state) => state.rating.allComments)
-  const currentUserRoles = useSelector((state) => state?.auth?.roles)
-  const [form] = Form.useForm()
-  const [openModal, setOpenModal] = useState(false)
-  const [remarkId, setRemarkId] = useState(null)
+const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
+  const { userid } = useParams();
+  const dispatch = useDispatch();
+  const allComments = useSelector((state) => state.rating.allComments);
+  const currentUserRoles = useSelector((state) => state?.auth?.roles);
+  const [form] = Form.useForm();
+  const [openModal, setOpenModal] = useState(false);
+  const [remarkId, setRemarkId] = useState(null);
 
   const loadMore = (
     <div
@@ -44,68 +44,86 @@ const LeadComments = ({ list, leadid }) => {
     >
       <Button>loading more</Button>
     </div>
-  )
+  );
 
   const handleDeleteRemark = useCallback(
     (remarkId) => {
-      dispatch(
-        deleteRemarks({
-          remarkId,
-          userid,
-          leadid,
-        })
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Remark deleted successfully" })
-            dispatch(getAllRemarkAndCommnts(leadid))
-          } else {
-            notification.error({ message: "Something went wrong !." })
-          }
-        })
-        .catch(() => {
-          notification.error({ message: "Something went wrong !." })
-        })
+      if (!addressInfo) {
+        notification.warning({ message: "Please update address first !." });
+      } else if (!industryInfo) {
+        notification.warning({ message: "Please update industry first !." });
+      } else {
+        dispatch(
+          deleteRemarks({
+            remarkId,
+            userid,
+            leadid,
+          })
+        )
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              notification.success({ message: "Remark deleted successfully" });
+              dispatch(getAllRemarkAndCommnts(leadid));
+            } else {
+              notification.error({ message: "Something went wrong !." });
+            }
+          })
+          .catch(() => {
+            notification.error({ message: "Something went wrong !." });
+          });
+      }
     },
-    [dispatch, userid, leadid]
-  )
+    [dispatch, userid, leadid, addressInfo, industryInfo]
+  );
 
   const handleEdit = (item) => {
-    setRemarkId(item?.id)
-    setOpenModal(true)
-    form.setFieldsValue({
-      message: item?.type === "selected" ? item?.message : "Other",
-      textMessage: item?.type === "Other" ? item?.message : "",
-    })
-  }
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      setRemarkId(item?.id);
+      setOpenModal(true);
+      form.setFieldsValue({
+        message: item?.type === "selected" ? item?.message : "Other",
+        textMessage: item?.type === "Other" ? item?.message : "",
+      });
+    }
+  };
 
   const handleUpdateRemark = useCallback(
     (values) => {
-      let obj = {
-        remarkId,
-        userId: userid,
-        message:
-          values?.message === "Other" ? values?.textMessage : values?.message,
-        type: values?.message === "Other" ? "Other" : "selected",
-        leadId: leadid,
-      }
+      if (!addressInfo) {
+        notification.warning({ message: "Please update address first !." });
+      } else if (!industryInfo) {
+        notification.warning({ message: "Please update industry first !." });
+      } else {
+        let obj = {
+          remarkId,
+          userId: userid,
+          message:
+            values?.message === "Other" ? values?.textMessage : values?.message,
+          type: values?.message === "Other" ? "Other" : "selected",
+          leadId: leadid,
+        };
 
-      dispatch(updateRemarks(obj))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Remark updated successfully" })
-            dispatch(getAllRemarkAndCommnts(leadid))
-            setOpenModal(false)
-          } else {
-            notification.error({ message: "Something went wrong !." })
-          }
-        })
-        .catch(() => {
-          notification.error({ message: "Something went wrong !." })
-        })
+        dispatch(updateRemarks(obj))
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              notification.success({ message: "Remark updated successfully" });
+              dispatch(getAllRemarkAndCommnts(leadid));
+              setOpenModal(false);
+            } else {
+              notification.error({ message: "Something went wrong !." });
+            }
+          })
+          .catch(() => {
+            notification.error({ message: "Something went wrong !." });
+          });
+      }
     },
-    [remarkId, userid, leadid, dispatch]
-  )
+    [remarkId, userid, leadid, dispatch, addressInfo, industryInfo]
+  );
 
   return (
     <>
@@ -120,7 +138,11 @@ const LeadComments = ({ list, leadid }) => {
         renderItem={(item) => (
           <List.Item
             actions={[
-              <Button size="small" style={{marginRight:4}}  onClick={() => handleEdit(item)}>
+              <Button
+                size="small"
+                style={{ marginRight: 4 }}
+                onClick={() => handleEdit(item)}
+              >
                 <Icon icon="fluent:edit-24-regular" /> Edit
               </Button>,
 
@@ -136,7 +158,7 @@ const LeadComments = ({ list, leadid }) => {
                   }
                   onConfirm={() => handleDeleteRemark(item?.id)}
                 >
-                  <Button size="small"  danger>
+                  <Button size="small" danger>
                     <Icon icon="fluent:delete-24-regular" /> Delete
                   </Button>
                 </Popconfirm>
@@ -227,7 +249,7 @@ const LeadComments = ({ list, leadid }) => {
         </Form>
       </Modal>
     </>
-  )
-}
+  );
+};
 
-export default LeadComments
+export default LeadComments;

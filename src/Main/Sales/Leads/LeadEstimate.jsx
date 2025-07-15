@@ -2659,7 +2659,7 @@ const LeadEstimate = ({ leadid }) => {
                 }
                 onChange={(e, x) => {
                   dispatch(getAllStatesByCountryId(x?.id));
-                  form.resetFields(["state", "city"]);
+                  addressForm.resetFields(["state", "city"]);
                 }}
                 filterOption={(input, option) =>
                   option.label.toLowerCase().includes(input.toLowerCase())

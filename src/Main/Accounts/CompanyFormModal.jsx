@@ -54,6 +54,8 @@ const CompanyFormModal = ({
   selectedFilter,
   detailView,
   paginationData,
+  industryInfo,
+  addressInfo
 }) => {
   const [form] = Form.useForm();
   const dispatch = useDispatch();
@@ -100,43 +102,48 @@ const CompanyFormModal = ({
   };
 
   const handleButtonClick = useCallback(() => {
-    dispatch(getAllMainIndustry());
-    dispatch(getClientDesiginationList());
-    dispatch(getAllContactDetails());
-    dispatch(getCompanyExistData(data?.id ? data?.id : data?.leadId)).then(
-      (resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          if (resp.payload?.length > 0) {
-            let sortedCompany =
-              resp?.payload?.find((item) => item.assigneeId == userid) ||
-              resp?.payload?.[0];
-            if (sortedCompany?.assigneeId != userid) {
-              playWarningSound();
-              notification.warning({
-                message: `This lead is already assigned to "${sortedCompany?.assigneeName}" for company id "${sortedCompany?.id}" company name " ${sortedCompany?.companyName}"`,
-              });
-            } else {
-              form.setFieldsValue({
-                isUnit: false,
-              });
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
+    } else {
+      dispatch(getAllMainIndustry());
+      dispatch(getClientDesiginationList());
+      dispatch(getAllContactDetails());
+      dispatch(getCompanyExistData(data?.id ? data?.id : data?.leadId)).then(
+        (resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            if (resp.payload?.length > 0) {
+              let sortedCompany =
+                resp?.payload?.find((item) => item.assigneeId == userid) ||
+                resp?.payload?.[0];
+              if (sortedCompany?.assigneeId != userid) {
+                playWarningSound();
+                notification.warning({
+                  message: `This lead is already assigned to "${sortedCompany?.assigneeName}" for company id "${sortedCompany?.id}" company name " ${sortedCompany?.companyName}"`,
+                });
+              } else {
+                form.setFieldsValue({
+                  isUnit: false,
+                });
 
+                setOpenModal(true);
+              }
+            } else {
+              form.setFieldsValue({ isUnit: false });
               setOpenModal(true);
             }
           } else {
-            form.setFieldsValue({ isUnit: false });
             setOpenModal(true);
           }
-        } else {
-          setOpenModal(true);
         }
-      }
-    );
-  }, [form, data, dispatch, userid]);
-
+      );
+    }
+  }, [form, data, dispatch, userid,addressInfo,industryInfo]);
 
   const handleSelectCompany = (e) => {
     dispatch(getCompanyUnitsById(e));
-    form.resetFields(['unitId'])
+    form.resetFields(["unitId"]);
     form.setFieldsValue({
       panNo: "",
       gstNo: "",
@@ -178,7 +185,7 @@ const CompanyFormModal = ({
       subsubIndustryId: "",
       industrydataId: [],
     });
-  }
+  };
 
   function getFileName(file) {
     if (file) {
@@ -299,7 +306,7 @@ const CompanyFormModal = ({
           dispatch(
             getIndustryDataBySubSubIndustryId(editData?.subsubIndustry?.id)
           );
-          dispatch(getCompanyExistData(editData?.lead?.id))
+          dispatch(getCompanyExistData(editData?.lead?.id));
           dispatch(getCompanyUnitsById(editData?.companyId));
           form.setFieldsValue({
             isPresent: editData?.isPresent,
@@ -435,7 +442,7 @@ const CompanyFormModal = ({
               });
               form.resetFields();
               setOpenModal(false);
-              dispatch(handleResetExistingCompany())
+              dispatch(handleResetExistingCompany());
             } else {
               setFormLoading("rejected");
               playErrorSound();
@@ -452,8 +459,8 @@ const CompanyFormModal = ({
         values.leadId = singleLeadResponseData?.parent
           ? values?.leadId
           : data?.id
-            ? data?.id
-            : data?.leadId;
+          ? data?.id
+          : data?.leadId;
         if (existingCompanyList?.length > 0) {
           values.isPresent = true;
         } else {
@@ -470,7 +477,7 @@ const CompanyFormModal = ({
               setOpenModal(false);
               playSuccessSound();
               form.resetFields();
-              dispatch(handleResetExistingCompany())
+              dispatch(handleResetExistingCompany());
             } else {
               setFormLoading("rejected");
               playErrorSound();
@@ -623,9 +630,9 @@ const CompanyFormModal = ({
                             options={
                               companyUnits?.length > 0
                                 ? companyUnits?.map((item) => ({
-                                  label: item?.companyName,
-                                  value: item?.id,
-                                }))
+                                    label: item?.companyName,
+                                    value: item?.id,
+                                  }))
                                 : []
                             }
                             filterOption={(input, option) =>
@@ -660,9 +667,9 @@ const CompanyFormModal = ({
                   options={
                     singleLeadResponseData?.childLead?.length > 0
                       ? singleLeadResponseData?.childLead?.map((item) => ({
-                        label: item?.childLeadName,
-                        value: item?.childId,
-                      }))
+                          label: item?.childLeadName,
+                          value: item?.childId,
+                        }))
                       : []
                   }
                   filterOption={(input, option) =>
@@ -698,14 +705,14 @@ const CompanyFormModal = ({
               rules={
                 gstMand === "Registered" || gstMand === ""
                   ? [
-                    {
-                      required: true,
-                      message: "",
-                    },
-                    {
-                      validator: validateGstNumber(dispatch),
-                    },
-                  ]
+                      {
+                        required: true,
+                        message: "",
+                      },
+                      {
+                        validator: validateGstNumber(dispatch),
+                      },
+                    ]
                   : []
               }
             >
@@ -725,9 +732,9 @@ const CompanyFormModal = ({
                 options={
                   allIndustry?.length > 0
                     ? allIndustry?.map((item) => ({
-                      label: item?.name,
-                      value: item?.id,
-                    }))
+                        label: item?.name,
+                        value: item?.id,
+                      }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -756,9 +763,9 @@ const CompanyFormModal = ({
                 options={
                   subIndustryListById?.length > 0
                     ? subIndustryListById?.map((item) => ({
-                      label: item?.name,
-                      value: item?.id,
-                    }))
+                        label: item?.name,
+                        value: item?.id,
+                      }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -786,9 +793,9 @@ const CompanyFormModal = ({
                 options={
                   subSubIndustryListById?.length > 0
                     ? subSubIndustryListById?.map((item) => ({
-                      label: item?.name,
-                      value: item?.id,
-                    }))
+                        label: item?.name,
+                        value: item?.id,
+                      }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -816,9 +823,9 @@ const CompanyFormModal = ({
                 options={
                   industryDataListById?.length > 0
                     ? industryDataListById?.map((item) => ({
-                      label: item?.name,
-                      value: item?.id,
-                    }))
+                        label: item?.name,
+                        value: item?.id,
+                      }))
                     : []
                 }
                 filterOption={(input, option) =>
@@ -842,9 +849,9 @@ const CompanyFormModal = ({
                     options={
                       allUsers?.length > 0
                         ? allUsers?.map((item) => ({
-                          label: item?.fullName,
-                          value: item?.id,
-                        }))
+                            label: item?.fullName,
+                            value: item?.id,
+                          }))
                         : []
                     }
                     filterOption={(input, option) =>
@@ -955,9 +962,9 @@ const CompanyFormModal = ({
                           options={
                             desiginationList?.length > 0
                               ? desiginationList?.map((item) => ({
-                                label: item?.name,
-                                value: item?.id,
-                              }))
+                                  label: item?.name,
+                                  value: item?.id,
+                                }))
                               : []
                           }
                           filterOption={(input, option) =>
@@ -1023,13 +1030,13 @@ const CompanyFormModal = ({
                         options={
                           contactList?.length > 0
                             ? contactList?.map((item) => ({
-                              label: `${maskEmail(
-                                item?.emails
-                              )} || ${maskMobileNumber(item?.contactNo)} `,
-                              value: item?.id,
-                              email: item?.emails,
-                              contact: item?.contactNo,
-                            }))
+                                label: `${maskEmail(
+                                  item?.emails
+                                )} || ${maskMobileNumber(item?.contactNo)} `,
+                                value: item?.id,
+                                email: item?.emails,
+                                contact: item?.contactNo,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>
@@ -1047,9 +1054,6 @@ const CompanyFormModal = ({
               )}
             </Form.Item>
 
-
-
-
             <Form.Item
               label="Primary address"
               name="address"
@@ -1066,9 +1070,7 @@ const CompanyFormModal = ({
             <Form.Item
               label="City"
               name="city"
-              rules={[
-                { required: true, message: "please enter the city" },
-              ]}
+              rules={[{ required: true, message: "please enter the city" }]}
             >
               <Input />
             </Form.Item>
@@ -1076,9 +1078,7 @@ const CompanyFormModal = ({
             <Form.Item
               label="State"
               name="state"
-              rules={[
-                { required: true, message: "please enter the state" },
-              ]}
+              rules={[{ required: true, message: "please enter the state" }]}
             >
               <Input />
             </Form.Item>
@@ -1099,9 +1099,7 @@ const CompanyFormModal = ({
             <Form.Item
               label="PinCode"
               name="primaryPinCode"
-              rules={[
-                { required: true, message: "please enter pincode" },
-              ]}
+              rules={[{ required: true, message: "please enter pincode" }]}
             >
               <Input />
             </Form.Item>
@@ -1179,9 +1177,9 @@ const CompanyFormModal = ({
                           options={
                             desiginationList?.length > 0
                               ? desiginationList?.map((item) => ({
-                                label: item?.name,
-                                value: item?.id,
-                              }))
+                                  label: item?.name,
+                                  value: item?.id,
+                                }))
                               : []
                           }
                           filterOption={(input, option) =>
@@ -1247,13 +1245,13 @@ const CompanyFormModal = ({
                         options={
                           contactList?.length > 0
                             ? contactList?.map((item) => ({
-                              label: `${maskEmail(
-                                item?.emails
-                              )} || ${maskMobileNumber(item?.contactNo)} `,
-                              value: item?.id,
-                              email: item?.emails,
-                              contact: item?.contactNo,
-                            }))
+                                label: `${maskEmail(
+                                  item?.emails
+                                )} || ${maskMobileNumber(item?.contactNo)} `,
+                                value: item?.id,
+                                email: item?.emails,
+                                contact: item?.contactNo,
+                              }))
                             : []
                         }
                         filterOption={(input, option) =>

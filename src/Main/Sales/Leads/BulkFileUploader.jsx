@@ -120,7 +120,7 @@ import { getAllComments } from "../../../Toolkit/Slices/UserRatingSlice";
 const { Dragger } = Upload;
 const { Text } = Typography;
 
-const BulkFileUploader = ({ leadid }) => {
+const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
   const dispatch = useDispatch();
   const allComments = useSelector((state) => state.rating.allComments);
   const { userid } = useParams();
@@ -150,62 +150,68 @@ const BulkFileUploader = ({ leadid }) => {
   };
 
   const onSubmit = useCallback(() => {
-    let data = {
-      leadId: leadid,
-      userId: userid,
-      type: text === "Other" ? "Other" : "selected",
-      message: text === "Other" ? inputCommentText : text,
-      file: files,
-    };
-    if ((text !== "" || inputCommentText !== "") && files?.length > 0) {
-      setApiLoading("pending");
-      dispatch(createRemakWithFile(data))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Remark added successfully" });
-            setFlag(true);
-            setApiLoading("success");
-            setFiles([]);
-            setFilesToUpload([]);
-            setText("");
-            setInputCommentText("");
-            dispatch(getAllRemarkAndCommnts(leadid));
-            setUploadList(false);
-          } else {
-            notification.error({ message: "Something went wrong" });
-            setApiLoading("error");
-          }
-        })
-        .catch(() => {
-          notification.error({ message: "Something went wrong" });
-          setApiLoading("error");
-        });
-    } else if (text !== "" || inputCommentText !== "") {
-      setApiLoading("pending");
-      dispatch(createRemakWithFile(data))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({ message: "Remark added successfully" });
-            setFlag(true);
-            setFiles([]);
-            setText("");
-            setInputCommentText("");
-            setApiLoading("success");
-            setUploadList(false);
-            dispatch(getAllRemarkAndCommnts(leadid));
-          } else {
-            notification.error({ message: "Something went wrong" });
-            setApiLoading("error");
-          }
-        })
-        .catch(() => {
-          notification.error({ message: "Something went wrong" });
-          setApiLoading("error");
-        });
+    if (!addressInfo) {
+      notification.warning({ message: "Please update address first !." });
+    } else if (!industryInfo) {
+      notification.warning({ message: "Please update industry first !." });
     } else {
-      setFlag(false);
+      let data = {
+        leadId: leadid,
+        userId: userid,
+        type: text === "Other" ? "Other" : "selected",
+        message: text === "Other" ? inputCommentText : text,
+        file: files,
+      };
+      if ((text !== "" || inputCommentText !== "") && files?.length > 0) {
+        setApiLoading("pending");
+        dispatch(createRemakWithFile(data))
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              notification.success({ message: "Remark added successfully" });
+              setFlag(true);
+              setApiLoading("success");
+              setFiles([]);
+              setFilesToUpload([]);
+              setText("");
+              setInputCommentText("");
+              dispatch(getAllRemarkAndCommnts(leadid));
+              setUploadList(false);
+            } else {
+              notification.error({ message: "Something went wrong" });
+              setApiLoading("error");
+            }
+          })
+          .catch(() => {
+            notification.error({ message: "Something went wrong" });
+            setApiLoading("error");
+          });
+      } else if (text !== "" || inputCommentText !== "") {
+        setApiLoading("pending");
+        dispatch(createRemakWithFile(data))
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              notification.success({ message: "Remark added successfully" });
+              setFlag(true);
+              setFiles([]);
+              setText("");
+              setInputCommentText("");
+              setApiLoading("success");
+              setUploadList(false);
+              dispatch(getAllRemarkAndCommnts(leadid));
+            } else {
+              notification.error({ message: "Something went wrong" });
+              setApiLoading("error");
+            }
+          })
+          .catch(() => {
+            notification.error({ message: "Something went wrong" });
+            setApiLoading("error");
+          });
+      } else {
+        setFlag(false);
+      }
     }
-  }, [leadid, userid, text, files, dispatch, inputCommentText]);
+  }, [leadid, userid, text, files, dispatch, inputCommentText,addressInfo,industryInfo]);
 
   return (
     <Flex vertical gap={8}>
@@ -214,7 +220,7 @@ const BulkFileUploader = ({ leadid }) => {
         style={{ width: "100%", margin: "12px 0px" }}
         placeholder="Select comment..."
         value={text === "" ? null : text}
-        size='large'
+        size="large"
         showSearch
         allowClear
         options={
@@ -230,8 +236,16 @@ const BulkFileUploader = ({ leadid }) => {
           setText(undefined);
         }}
         onChange={(e) => {
-          setText(e);
-          setFlag(null);
+          if (!addressInfo) {
+            notification.warning({ message: "Please update address first !." });
+          } else if (!industryInfo) {
+            notification.warning({
+              message: "Please update industry first !.",
+            });
+          } else {
+            setText(e);
+            setFlag(null);
+          }
         }}
       />
       {text === "Other" && (
