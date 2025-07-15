@@ -49,9 +49,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
   const handleDeleteRemark = useCallback(
     (remarkId) => {
       if (!addressInfo) {
-        notification.warning({ message: "Please update address first !." });
+        notification.warning({ message: "Please update address to proceed !." });
       } else if (!industryInfo) {
-        notification.warning({ message: "Please update industry first !." });
+        notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         dispatch(
           deleteRemarks({
@@ -78,9 +78,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
 
   const handleEdit = (item) => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       setRemarkId(item?.id);
       setOpenModal(true);
@@ -94,9 +94,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
   const handleUpdateRemark = useCallback(
     (values) => {
       if (!addressInfo) {
-        notification.warning({ message: "Please update address first !." });
+        notification.warning({ message: "Please update address to proceed !." });
       } else if (!industryInfo) {
-        notification.warning({ message: "Please update industry first !." });
+        notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         let obj = {
           remarkId,

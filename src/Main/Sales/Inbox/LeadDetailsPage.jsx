@@ -165,9 +165,9 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const updateOriginalNameFun = useCallback(() => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       dispatch(updateOriginalNameInLeads(originalData))
         .then((resp) => {
@@ -202,9 +202,9 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const changeLeadStatusFun = (statusId) => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       dispatch(changeLeadStatus({ leadid, userid, statusId }))
         .then((resp) => {
@@ -234,9 +234,9 @@ const LeadDetailsPage = ({ leadid }) => {
   const updateLeadNameSinglePage = useCallback(
     (e) => {
       if (!addressInfo) {
-        notification.warning({ message: "Please update address first !." });
+        notification.warning({ message: "Please update address to proceed !." });
       } else if (!industryInfo) {
-        notification.warning({ message: "Please update industry first !." });
+        notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         dispatch(updateSingleLeadName({ updatedLeadName, leadid, userid }))
           .then((resp) => {
@@ -272,9 +272,9 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const changeLeadAssignee = (id) => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       setAssigneValue(id);
       dispatch(changeLeadAssigneeLeads({ leadid, id, userid }))
@@ -302,9 +302,9 @@ const LeadDetailsPage = ({ leadid }) => {
   const deleteContactFun = useCallback(
     (id) => {
       if (!addressInfo) {
-        notification.warning({ message: "Please update address first !." });
+        notification.warning({ message: "Please update address to proceed !." });
       } else if (!industryInfo) {
-        notification.warning({ message: "Please update industry first !." });
+        notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         let data = {
           leadid: leadid,
@@ -336,9 +336,9 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const sameAssigneePresonFun = async () => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       if (window.confirm("Aree you Want to Sure")) {
         const autoUpdateSame = await dispatch(
@@ -360,9 +360,9 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const notSameAssigneePresonFun = async () => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       if (window.confirm("Aree you Want to Sure")) {
         const autoUpdateNotSame = await dispatch(
@@ -384,9 +384,9 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const handleUpdateContact = (value) => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       form1.setFieldsValue({
         name: value?.clientName,
@@ -457,7 +457,7 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const leadAssignedToSame = (id) => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
       notification.warning({ message: "Please update industry info first !." });
     } else {
@@ -484,7 +484,7 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const handleUpdateLeadDescription = useCallback(() => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
       notification.warning({ message: "Please update industry info first !." });
     } else {
@@ -758,11 +758,11 @@ const LeadDetailsPage = ({ leadid }) => {
                         onClick={() => {
                           if (!addressInfo) {
                             notification.warning({
-                              message: "Please update address first !.",
+                              message: "Please update address to proceed !.",
                             });
                           } else if (!industryInfo) {
                             notification.warning({
-                              message: "Please update industry first !.",
+                              message: "Please update industry  to proceed !.",
                             });
                           } else {
                             setUpdateLeadNameToggle(false);

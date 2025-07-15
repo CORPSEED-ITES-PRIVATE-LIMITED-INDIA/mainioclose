@@ -151,9 +151,9 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
 
   const onSubmit = useCallback(() => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       let data = {
         leadId: leadid,
@@ -237,10 +237,10 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
         }}
         onChange={(e) => {
           if (!addressInfo) {
-            notification.warning({ message: "Please update address first !." });
+            notification.warning({ message: "Please update address to proceed !." });
           } else if (!industryInfo) {
             notification.warning({
-              message: "Please update industry first !.",
+              message: "Please update industry  to proceed !.",
             });
           } else {
             setText(e);

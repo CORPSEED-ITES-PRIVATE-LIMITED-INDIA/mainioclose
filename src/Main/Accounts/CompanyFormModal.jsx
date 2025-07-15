@@ -103,9 +103,9 @@ const CompanyFormModal = ({
 
   const handleButtonClick = useCallback(() => {
     if (!addressInfo) {
-      notification.warning({ message: "Please update address first !." });
+      notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry first !." });
+      notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       dispatch(getAllMainIndustry());
       dispatch(getClientDesiginationList());
