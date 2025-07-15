@@ -591,7 +591,7 @@ const LeadsModule = () => {
           },
           {
             title: "Business activity",
-            dataIndex: "industryDataList",
+            dataIndex: "industriesData",
             checked: false,
             render: (data) =>
               data?.map((item) => (
@@ -972,7 +972,7 @@ const LeadsModule = () => {
             <CommonTable
               data={allLeadData}
               columns={columns}
-              scroll={{ y: "70vh", x: adminRole ? 2500 : 1500 }}
+              scroll={{ y: "70vh", x: adminRole ? 3500 : 2500 }}
               rowSelection={true}
               onRowSelection={onSelectChange}
               selectedRowKeys={selectedRowKeys}
