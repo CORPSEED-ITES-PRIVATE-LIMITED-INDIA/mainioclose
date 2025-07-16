@@ -630,7 +630,7 @@ const LeadsModule = () => {
             render: (_, data) => (
               <Popconfirm
                 title="Delete the lead"
-                description="Are you sure to delete this lead?"
+                description="Are you sure to delete this lead ?."
                 onConfirm={() => leadDeleteResponse(data?.id)}
                 okText="Yes"
                 cancelText="No"

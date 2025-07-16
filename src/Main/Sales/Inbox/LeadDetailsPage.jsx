@@ -136,7 +136,8 @@ const LeadDetailsPage = ({ leadid }) => {
         Object.keys(singleLeadResponseData?.subIndustry)?.length > 0 &&
         singleLeadResponseData?.subSubIndustry &&
         Object.keys(singleLeadResponseData?.subSubIndustry)?.length > 0 &&
-        singleLeadResponseData?.industriesData?.length > 0
+        singleLeadResponseData?.industriesData?.length > 0 &&
+        !adminRole
       ) {
         setIndustryInfo(true);
       }
@@ -146,7 +147,8 @@ const LeadDetailsPage = ({ leadid }) => {
         singleLeadResponseData?.country &&
         singleLeadResponseData?.state &&
         singleLeadResponseData?.city &&
-        singleLeadResponseData?.pinCode
+        singleLeadResponseData?.pinCode &&
+        !adminRole
       ) {
         setaddressInfo(true);
       }
@@ -167,7 +169,9 @@ const LeadDetailsPage = ({ leadid }) => {
     if (!addressInfo) {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       dispatch(updateOriginalNameInLeads(originalData))
         .then((resp) => {
@@ -204,7 +208,9 @@ const LeadDetailsPage = ({ leadid }) => {
     if (!addressInfo) {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       dispatch(changeLeadStatus({ leadid, userid, statusId }))
         .then((resp) => {
@@ -234,9 +240,13 @@ const LeadDetailsPage = ({ leadid }) => {
   const updateLeadNameSinglePage = useCallback(
     (e) => {
       if (!addressInfo) {
-        notification.warning({ message: "Please update address to proceed !." });
+        notification.warning({
+          message: "Please update address to proceed !.",
+        });
       } else if (!industryInfo) {
-        notification.warning({ message: "Please update industry  to proceed !." });
+        notification.warning({
+          message: "Please update industry  to proceed !.",
+        });
       } else {
         dispatch(updateSingleLeadName({ updatedLeadName, leadid, userid }))
           .then((resp) => {
@@ -274,7 +284,9 @@ const LeadDetailsPage = ({ leadid }) => {
     if (!addressInfo) {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       setAssigneValue(id);
       dispatch(changeLeadAssigneeLeads({ leadid, id, userid }))
@@ -302,9 +314,13 @@ const LeadDetailsPage = ({ leadid }) => {
   const deleteContactFun = useCallback(
     (id) => {
       if (!addressInfo) {
-        notification.warning({ message: "Please update address to proceed !." });
+        notification.warning({
+          message: "Please update address to proceed !.",
+        });
       } else if (!industryInfo) {
-        notification.warning({ message: "Please update industry  to proceed !." });
+        notification.warning({
+          message: "Please update industry  to proceed !.",
+        });
       } else {
         let data = {
           leadid: leadid,
@@ -338,7 +354,9 @@ const LeadDetailsPage = ({ leadid }) => {
     if (!addressInfo) {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       if (window.confirm("Aree you Want to Sure")) {
         const autoUpdateSame = await dispatch(
@@ -362,7 +380,9 @@ const LeadDetailsPage = ({ leadid }) => {
     if (!addressInfo) {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       if (window.confirm("Aree you Want to Sure")) {
         const autoUpdateNotSame = await dispatch(
@@ -386,7 +406,9 @@ const LeadDetailsPage = ({ leadid }) => {
     if (!addressInfo) {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo) {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       form1.setFieldsValue({
         name: value?.clientName,
@@ -815,7 +837,7 @@ const LeadDetailsPage = ({ leadid }) => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "12px",
+                    gap: "8px",
                     boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
                     padding: "12px",
                     borderRadius: "4px",
@@ -835,7 +857,7 @@ const LeadDetailsPage = ({ leadid }) => {
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: "24px",
+                      gap: "12px",
                     }}
                   >
                     <Flex vertical gap={8}>
@@ -865,7 +887,7 @@ const LeadDetailsPage = ({ leadid }) => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "12px",
+                    gap: "8px",
                     boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
                     padding: "12px",
                     borderRadius: "4px",
@@ -889,7 +911,7 @@ const LeadDetailsPage = ({ leadid }) => {
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: "24px",
+                      gap: "12px",
                     }}
                   >
                     <Flex vertical gap={8}>
