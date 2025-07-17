@@ -20,10 +20,15 @@ const PaymentRegister = () => {
   const paymentRegisterList = useSelector(
     (state) => state.account.allPaymentRegisterList
   );
-  const paymentRegistercont=useSelector((state)=>state.account.paymentRegistercont)
+  const paymentRegistercont = useSelector(
+    (state) => state.account.paymentRegistercont
+  );
   const unusedBankStatementList = useSelector(
     (state) => state.account.unusedBankStatementList
   );
+    const currentUserDetail = useSelector(
+      (state) => state.auth.getDepartmentDetail
+    );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [paginationData, setPaginationData] = useState({
@@ -58,7 +63,7 @@ const PaymentRegister = () => {
       );
       setPaginationData({ size: size, page: dataPage });
     },
-    [dispatch,status]
+    [dispatch, status]
   );
 
   const handleSearch = (e) => {
@@ -192,31 +197,35 @@ const PaymentRegister = () => {
       dataIndex: "remark",
       title: "Remark",
     },
-    {
-      dataIndex: "approved",
-      title: "Approved",
-      fixed: "right",
-      width: 200,
-      render: (_, data) => (
-        <Select
-          style={{ width: "95%" }}
-          defaultActiveFirstOption={true}
-          defaultValue={0}
-          showSearch
-          options={[
-            { label: "None", value: 0 },
-            ...(unusedBankStatementList?.length > 0
-              ? unusedBankStatementList?.map((item) => ({
-                  label: `${item?.transaction} || ₹ ${item?.leftAmount}`,
-                  value: item?.id,
-                  ...item,
-                }))
-              : []),
-          ]}
-          onSelect={(e, x) => handleApproved(e, x, data)}
-        />
-      ),
-    },
+    ...(currentUserDetail?.department === "Sales"
+      ? []
+      : [
+          {
+            dataIndex: "approved",
+            title: "Approved",
+            fixed: "right",
+            width: 200,
+            render: (_, data) => (
+              <Select
+                style={{ width: "95%" }}
+                defaultActiveFirstOption={true}
+                defaultValue={0}
+                showSearch
+                options={[
+                  { label: "None", value: 0 },
+                  ...(unusedBankStatementList?.length > 0
+                    ? unusedBankStatementList?.map((item) => ({
+                        label: `${item?.transaction} || ₹ ${item?.leftAmount}`,
+                        value: item?.id,
+                        ...item,
+                      }))
+                    : []),
+                ]}
+                onSelect={(e, x) => handleApproved(e, x, data)}
+              />
+            ),
+          },
+        ]),
   ];
 
   return (

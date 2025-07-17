@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllInvoice } from "../../Toolkit/Slices/AccountSlice";
 import { useParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import dayjs from "dayjs";
 const { Text, Title } = Typography;
 
 const AllInvoice = () => {
@@ -30,8 +31,70 @@ const AllInvoice = () => {
       title: "Id",
     },
     {
-      dataIndex: "invoiceName",
-      title: "Invoice name",
+      dataIndex: "productName",
+      title: "Product name",
+    },
+    {
+      dataIndex: "createDate",
+      title: "Created date",
+      render:(info)=>dayjs(info).format('DD-MM-YYYY HH:mm a')
+    },
+    {
+      dataIndex: "panNo",
+      title: "Pan number",
+    },
+    {
+      dataIndex: "gstNo",
+      title: "GST number",
+    },
+    {
+      dataIndex: "orderNumber",
+      title: "Order number",
+    },
+    {
+      dataIndex: "purchaseDate",
+      title: "Purchase date",
+      render:(info)=>dayjs(info).format('DD-MM-YYYY HH:mm a')
+    },
+    {
+      dataIndex: "professionalFees",
+      title: "Professional Fee",
+    },
+    {
+      dataIndex: "professionalCode",
+      title: "Professional code",
+    },
+    {
+      dataIndex: "profesionalGst",
+      title: "Professional gst%",
+    },
+    {
+      dataIndex: "serviceCharge",
+      title: "Service fees",
+    },
+    {
+      dataIndex: "serviceCode",
+      title: "Service code",
+    },
+    {
+      dataIndex: "serviceGst",
+      title: "Service gst%",
+    },
+    {
+      dataIndex: "otherFees",
+      title: "Other fees",
+    },
+    {
+      dataIndex: "otherCode",
+      title: "Other code",
+    },
+    {
+      dataIndex: "otherGst",
+      title: "Other gst%",
+    },
+    {
+      dataIndex: "totalAmount",
+      title: "Total amount",
     },
   ];
 

@@ -10,7 +10,7 @@ import {
   Select,
   Typography,
 } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -22,14 +22,22 @@ import {
 } from "../../../Toolkit/Slices/AccountSlice";
 import CommonTable from "../../../components/CommonTable";
 import { Link, useParams } from "react-router-dom";
+import {
+  getAllCitiesByStateId,
+  getAllCountries,
+  getAllStatesByCountryId,
+} from "../../../Toolkit/Slices/CommonSlice";
 const { Text } = Typography;
 
 const Ledger = () => {
   const [form] = Form.useForm();
   const dispatch = useDispatch();
-  const {userid}=useParams()
+  const { userid } = useParams();
   const ledgerList = useSelector((state) => state.account.ledgerList);
+  const ledgerCount = useSelector((state) => state.account.ledgerCount);
   const ledgerTypeList = useSelector((state) => state.account.ledgerTypeList);
+  const countryList = useSelector((state) => state.common.countriesList);
+  const statesList = useSelector((state) => state.common.statesList);
   const [openModal, setOpenModal] = useState(false);
   const [editData, setEditData] = useState(null);
   const [searchText, setSearchText] = useState("");
@@ -39,9 +47,27 @@ const Ledger = () => {
     gstRateDetailPresent: false,
     bankAccountPresent: false,
   });
+  const [paginationData, setPaginationData] = useState({
+    page: 1,
+    size: 50,
+  });
+
+  const handlePagination = useCallback(
+    (dataPage, size) => {
+      dispatch(
+        getAllLedger({
+          page: dataPage,
+          size: size,
+        })
+      );
+      setPaginationData({ size: size, page: dataPage });
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
-    dispatch(getAllLedger());
+    dispatch(getAllCountries());
+    dispatch(getAllLedger(paginationData));
     dispatch(getAllLedgerType());
   }, [dispatch]);
 
@@ -155,7 +181,9 @@ const Ledger = () => {
       dataIndex: "name",
       title: "Name",
       render: (_, data) => (
-        <Link className="link-heading" to={`${data?.id}/detail`}>{data?.name}</Link>
+        <Link className="link-heading" to={`${data?.id}/detail`}>
+          {data?.name}
+        </Link>
       ),
     },
     {
@@ -198,6 +226,7 @@ const Ledger = () => {
             onClick={() => {
               setOpenModal(true);
               form.resetFields();
+              setEditData(null);
             }}
           >
             Create ledger
@@ -207,319 +236,305 @@ const Ledger = () => {
           data={filteredData}
           columns={columns}
           scroll={{ y: "70vh" }}
+          rowKey={(row) => row?.id}
+          page={paginationData?.page}
+          pageSize={paginationData?.size}
+          pagination={true}
+          totalCount={ledgerCount}
+          handlePagination={handlePagination}
         />
       </Flex>
       <Modal
         title={editData ? "Edit ledger" : "Create ledger"}
         open={openModal}
+        width={"60%"}
         centered
         onCancel={() => setOpenModal(false)}
         onClose={() => setOpenModal(false)}
         onOk={() => form.submit()}
         okText="Submit"
       >
-        <Form layout="vertical" form={form} onFinish={handleFinish}>
-          <Row>
-            <Col span={11}>
-              <Form.Item
-                label="Name"
-                name="name"
-                rules={[
-                  { required: true, message: "please enter ledger name" },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={2} />
-            <Col span={11}>
-              <Form.Item
-                label="Select ledger type"
-                name="ledgerTypeId"
-                rules={[
-                  { required: true, message: "please select ledger type" },
-                ]}
-              >
-                <Select
-                  options={
-                    ledgerTypeList?.length > 0
-                      ? ledgerTypeList?.map((item) => ({
-                          label: item?.name,
-                          value: item?.id,
-                        }))
-                      : []
-                  }
-                  filterOption={(input, option) =>
-                    option.label.toLowerCase().includes(input.toLowerCase())
-                  }
-                  onChange={getLedgerType}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          {ledgerForm?.hsnSacPresent && (
-            <Flex vertical>
-              <Row>
-                <Col span={11}>
-                  <Form.Item
-                    label="HSN sac details"
-                    name="hsnSacDetails"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter the HSN sac details",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={2} />
-                <Col span={11}>
-                  <Form.Item
-                    label="HSN sac"
-                    name="HsnSac"
-                    rules={[
-                      { required: true, message: "please enter the HSN sac" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row>
-                <Col span={24}>
-                  <Form.Item label="HSN Description" name="hsnDescription">
-                    <Input.TextArea />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Flex>
-          )}
-
-          {ledgerForm?.gstRateDetailPresent && (
-            <Flex vertical>
-              <Row>
-                <Col span={11}>
-                  <Form.Item
-                    label="GST rate detail"
-                    name="gstRateDetails"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter GST rate detail",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={2} />
-                <Col>
-                  <Form.Item
-                    label="Tax ability type"
-                    name="taxabilityType"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter tax ability type",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row>
-                <Col span={24}>
-                  <Form.Item
-                    label="GST rates"
-                    name="gstRates"
-                    rules={[
-                      { required: true, message: "please enter GST rates" },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Flex>
-          )}
-
-          {ledgerForm?.bankAccountPresent && (
-            <Flex vertical>
-              <Row>
-                <Col span={11}>
-                  <Form.Item
-                    label="Account holder name"
-                    name="accountHolderName"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter account holder name",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={2} />
-                <Col span={11}>
-                  <Form.Item
-                    label="Account number"
-                    name="accountNo"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter account account number",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row>
-                <Col span={11}>
-                  <Form.Item
-                    label="IFSC code"
-                    name="ifscCode"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter IFSC code",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={2} />
-                <Col span={11}>
-                  <Form.Item
-                    label="Swift code"
-                    name="swiftCode"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter swift code",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row>
-                <Col span={11}>
-                  <Form.Item
-                    label="Bank name"
-                    name="bankName"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter bank name",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={2} />
-                <Col span={11}>
-                  <Form.Item
-                    label="Branch"
-                    name="branch"
-                    rules={[
-                      {
-                        required: true,
-                        message: "please enter branch",
-                      },
-                    ]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Flex>
-          )}
-
-          <Row>
-            <Col span={11}>
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[
-                  {
-                    required: true,
-                    type: "email",
-                    message: "please enter email id",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={2} />
-            <Col span={11}>
-              <Form.Item
-                label="Country"
-                name="country"
-                rules={[
-                  {
-                    required: true,
-                    message: "please enter country name",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row>
-            <Col span={11}>
-              <Form.Item
-                label="State"
-                name="state"
-                rules={[
-                  {
-                    required: true,
-                    message: "please enter state name",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={2} />
-            <Col span={11}>
-              <Form.Item
-                label="Pin code / Zip code"
-                name="pin"
-                rules={[
-                  {
-                    required: true,
-                    message: "please enter pin code",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label="Address"
-            name="address"
-            rules={[
-              {
-                required: true,
-                message: "please enter address",
-              },
-            ]}
+        <Form
+          layout="vertical"
+          form={form}
+          onFinish={handleFinish}
+          style={{ maxHeight: "70vh", overflow: "auto" }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+            }}
           >
-            <Input.TextArea />
-          </Form.Item>
+            <Form.Item
+              label="Name"
+              name="name"
+              rules={[{ required: true, message: "please enter ledger name" }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              label="Select ledger type"
+              name="ledgerTypeId"
+              rules={[{ required: true, message: "please select ledger type" }]}
+            >
+              <Select
+                options={
+                  ledgerTypeList?.length > 0
+                    ? ledgerTypeList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.id,
+                      }))
+                    : []
+                }
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+                onChange={getLedgerType}
+              />
+            </Form.Item>
+            {ledgerForm?.hsnSacPresent && (
+              <Form.Item
+                label="HSN sac details"
+                name="hsnSacDetails"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter the HSN sac details",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.hsnSacPresent && (
+              <Form.Item
+                label="HSN sac"
+                name="HsnSac"
+                rules={[
+                  { required: true, message: "please enter the HSN sac" },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.hsnSacPresent && (
+              <Form.Item label="HSN Description" name="hsnDescription">
+                <Input.TextArea />
+              </Form.Item>
+            )}
+            {ledgerForm?.gstRateDetailPresent && (
+              <Form.Item
+                label="GST rate detail"
+                name="gstRateDetails"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter GST rate detail",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.gstRateDetailPresent && (
+              <Form.Item
+                label="Tax ability type"
+                name="taxabilityType"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter tax ability type",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.gstRateDetailPresent && (
+              <Form.Item
+                label="GST rates"
+                name="gstRates"
+                rules={[{ required: true, message: "please enter GST rates" }]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+
+            {ledgerForm?.bankAccountPresent && (
+              <Form.Item
+                label="Account holder name"
+                name="accountHolderName"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter account holder name",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+
+            {ledgerForm?.bankAccountPresent && (
+              <Form.Item
+                label="Account number"
+                name="accountNo"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter account account number",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.bankAccountPresent && (
+              <Form.Item
+                label="IFSC code"
+                name="ifscCode"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter IFSC code",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.bankAccountPresent && (
+              <Form.Item
+                label="Swift code"
+                name="swiftCode"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter swift code",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.bankAccountPresent && (
+              <Form.Item
+                label="Bank name"
+                name="bankName"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter bank name",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+            {ledgerForm?.bankAccountPresent && (
+              <Form.Item
+                label="Branch"
+                name="branch"
+                rules={[
+                  {
+                    required: true,
+                    message: "please enter branch",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            )}
+
+            <Form.Item
+              label="Email"
+              name="email"
+              rules={[
+                {
+                  required: true,
+                  type: "email",
+                  message: "please enter email id",
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              label="Country"
+              name="country"
+              rules={[{ required: true, message: "please select the country" }]}
+            >
+              <Select
+                showSearch
+                options={
+                  countryList?.length > 0
+                    ? countryList?.map((item) => ({
+                        label: item?.name,
+                        value: item?.name,
+                        id: item?.id,
+                      }))
+                    : []
+                }
+                onChange={(e, x) => {
+                  dispatch(getAllStatesByCountryId(x?.id));
+                  form.resetFields(["state"]);
+                }}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="State"
+              name="state"
+              rules={[{ required: true, message: "Please select the state" }]}
+            >
+              <Select
+                showSearch
+                options={statesList?.map((item) => ({
+                  label: item.name,
+                  value: item.name,
+                  gstCode: item.gstCode,
+                  stateName: item.name,
+                  id: item?.id,
+                }))}
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Pin code / Zip code"
+              name="pin"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter pin code",
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              label="Address"
+              name="address"
+              rules={[
+                {
+                  required: true,
+                  message: "please enter address",
+                },
+              ]}
+            >
+              <Input.TextArea />
+            </Form.Item>
+          </div>
         </Form>
       </Modal>
     </>

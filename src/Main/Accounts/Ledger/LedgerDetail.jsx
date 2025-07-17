@@ -76,7 +76,7 @@ const LedgerDetail = () => {
     <>
       <Flex vertical>
         <Flex className="vouchers-header">
-          <Text className="heading-text">Ledger list</Text>
+          <Text className="heading-text">Ledger detail list</Text>
         </Flex>
         <Flex
           justify="space-between"

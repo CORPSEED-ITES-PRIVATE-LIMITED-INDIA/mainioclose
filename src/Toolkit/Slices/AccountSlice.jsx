@@ -73,15 +73,33 @@ export const createLedger = createAsyncThunk("createLedger", async (data) => {
   return response.data;
 });
 
-export const updateLedger = createAsyncThunk("updateLedger", async () => {
-  const response = await putQuery(``);
+export const updateLedger = createAsyncThunk("updateLedger", async (data) => {
+  const response = await putQuery(
+    `/accountService/api/v1/ledger/updateLedger`,
+    data
+  );
   return response.data;
 });
 
-export const getAllLedger = createAsyncThunk("getAllLedger", async () => {
-  const response = await getQuery(`/accountService/api/v1/ledger/getAllLedger`);
-  return response.data;
-});
+export const getAllLedger = createAsyncThunk(
+  "getAllLedger",
+  async ({ page, size }) => {
+    const response = await getQuery(
+      `/accountService/api/v1/ledger/getAllLedger?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllLedgerCounts = createAsyncThunk(
+  "getAllLedgerCounts",
+  async () => {
+    const response = await getQuery(
+      `/accountService/api/v1/ledger/getAllLedgerCount`
+    );
+    return response.data;
+  }
+);
 
 export const getLedgerTypeById = createAsyncThunk(
   "getLedgerTypeById",
@@ -482,6 +500,7 @@ const AccountSlice = createSlice({
     paymentApprovalList: [],
     paymentRegistercont: null,
     allPaymentRegisterList: [],
+    ledgerCount: 0,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -791,6 +810,18 @@ const AccountSlice = createSlice({
     builder.addCase(getAllPaymentRegisterCount.rejected, (state, action) => {
       state.loading = "rejected";
       state.paymentRegistercont = null;
+    });
+
+    builder.addCase(getAllLedgerCounts.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLedgerCounts.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.ledgerCount = action.payload;
+    });
+    builder.addCase(getAllLedgerCounts.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.ledgerCount = 0;
     });
 
     builder.addCase(

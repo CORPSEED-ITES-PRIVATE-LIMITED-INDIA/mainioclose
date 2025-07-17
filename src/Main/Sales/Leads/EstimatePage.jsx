@@ -20,7 +20,7 @@ import {
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllEstimateByUserId } from "../../../Toolkit/Slices/LeadSlice";
+import { getAllEstimateByUserId, getTotalCountOfEstimate } from "../../../Toolkit/Slices/LeadSlice";
 import OverFlowText from "../../../components/OverFlowText";
 import TableScalaton from "../../../components/TableScalaton";
 import SomethingWrong from "../../../components/usefulThings/SomethingWrong";
@@ -41,6 +41,7 @@ const EstimatePage = () => {
   const [form] = Form.useForm();
   const estimateList = useSelector((state) => state.leads.estimateList);
   const estimateLoading = useSelector((state) => state.leads.estimateLoading);
+  const estimateCount = useSelector((state) => state.leads.totalEstimateCount);
   const paymentList = useSelector((state) => state.account.paymentList);
   const allLeadUrl = useSelector((prev) => prev?.leadurls.allUrlList);
   const [searchText, setSearchText] = useState("");
@@ -62,6 +63,7 @@ const EstimatePage = () => {
 
   useEffect(() => {
     dispatch(getAllEstimateByUserId(userid));
+    dispatch(getTotalCountOfEstimate(userid))
   }, [dispatch, userid]);
 
   useEffect(() => {
@@ -401,7 +403,7 @@ const EstimatePage = () => {
               page={paginationData?.page}
               pageSize={paginationData?.size}
               pagination={true}
-              totalCount={filteredData?.[0]?.totalProject}
+              totalCount={estimateCount}
               handlePagination={handlePagination}
             />
           )}

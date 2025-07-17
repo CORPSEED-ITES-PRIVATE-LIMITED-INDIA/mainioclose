@@ -132,7 +132,9 @@ const DailyBook = () => {
               <Text className="text-heading" strong>{dailybookList?.totalDebit}</Text>
             </Flex>
             <RangePicker
+              showTime={{ format: "HH:mm" }}
               placement="bottomRight"
+              format="YYYY-MM-DD HH:mm"
               value={[
                 dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
                 dateRange?.endDate ? dayjs(dateRange?.endDate) : "",

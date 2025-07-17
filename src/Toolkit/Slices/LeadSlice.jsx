@@ -1219,6 +1219,11 @@ export const updateIndustriesInLeads = createAsyncThunk(
   }
 );
 
+export const getTotalCountOfEstimate=createAsyncThunk('getTotalCountOfEstimate',async(userId)=>{
+  const response=await getQuery(`/leadService/api/v1/leadEstimate/getAllEstimateCount?userId=${userId}`)
+  return response.data
+})
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1296,6 +1301,7 @@ export const LeadSlice = createSlice({
     autoExportLoading: "",
     brochureList: [],
     templateAndMailList: [],
+    totalEstimateCount:0
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1948,6 +1954,16 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllBrochureList.rejected, (state, action) => {
       state.brochureList = [];
+    });
+
+    builder.addCase(getTotalCountOfEstimate.pending, (state, action) => {
+      state.totalEstimateCount = 0;
+    });
+    builder.addCase(getTotalCountOfEstimate.fulfilled, (state, action) => {
+      state.totalEstimateCount = action?.payload;
+    });
+    builder.addCase(getTotalCountOfEstimate.rejected, (state, action) => {
+      state.totalEstimateCount = 0;
     });
 
     builder.addCase(

@@ -228,27 +228,32 @@ const Voucher = () => {
     {
       dataIndex: "creditAmount",
       title: "Credit amount",
-      render: (info) => (info ? info : "NA"),
+      render: (info) => (info ? info : "0"),
     },
     {
       dataIndex: "debitAmount",
       title: "Debit amount",
-      render: (info) => (info ? info : "NA"),
+      render: (info) => (info ? info : "0"),
     },
     {
       dataIndex: "sgst",
       title: "Sgst",
-      render: (info) => (info ? info : "NA"),
+      render: (info) => (info ? info : "0"),
     },
     {
       dataIndex: "cgst",
       title: "Cgst",
-      render: (info) => (info ? info : "NA"),
+      render: (info) => (info ? info : "0"),
     },
     {
       dataIndex: "igst",
       title: "Igst",
-      render: (info) => (info ? info : "NA"),
+      render: (info) => (info ? info : "0"),
+    },
+    {
+      dataIndex: "totalAmount",
+      title: "Total amount",
+      render: (info) => (info ? info : "0"),
     },
     {
       dataIndex: "paymentType",
@@ -301,7 +306,7 @@ const Voucher = () => {
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "70vh" }}
+          scroll={{ y: "70vh",x:1500 }}
         />
       </Flex>
       <Modal
