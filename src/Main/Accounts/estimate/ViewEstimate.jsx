@@ -169,9 +169,9 @@ const ViewEstimate = () => {
                     {details?.address && <Text>{details?.address}</Text>}
                     <Flex vertical>
                       <Flex>
-                        {details?.city && <Text>{details?.city},</Text>}
-                        {details?.state && <Text>{details?.state},</Text>}
-                        {details?.country && <Text>{details?.country}</Text>}
+                        {details?.primaryCity && <Text>{details?.primaryCity?.name},</Text>}
+                        {details?.primaryState && <Text>{details?.primaryState?.name},</Text>}
+                        {details?.primaryCountry && <Text>{details?.primaryCountry?.name}</Text>}
                       </Flex>
                     </Flex>
                     {details?.primaryPinCode && (
@@ -199,7 +199,7 @@ const ViewEstimate = () => {
                             <Text>{details?.secondaryState},</Text>
                           )}
                           {details?.secondaryCountry && (
-                            <Text>{details?.secondaryCountry}</Text>
+                            <Text>{details?.secondaryCountry?.name}</Text>
                           )}
                         </Flex>
                       </Flex>
@@ -399,7 +399,7 @@ const ViewEstimate = () => {
             </Badge.Ribbon>
           </Flex>
 
-          <Flex align="center">
+          {/* <Flex align="center">
             {details?.companyName && (
               <Space>
                 <Text type="secondary">companyName</Text>
@@ -497,7 +497,7 @@ const ViewEstimate = () => {
                 <Text>{details?.country}</Text>
               </Space>
             )}
-          </Flex>
+          </Flex> */}
         </Flex>
       </Flex>
     </>

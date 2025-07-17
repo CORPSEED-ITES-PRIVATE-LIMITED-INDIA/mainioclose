@@ -1,12 +1,14 @@
-import { Button, Flex, Input, Typography } from "antd";
+import { Drawer, Flex, Input, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import CommonTable from "../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllInvoice } from "../../Toolkit/Slices/AccountSlice";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import dayjs from "dayjs";
-const { Text, Title } = Typography;
+import ViewEstimate from "./estimate/ViewEstimate";
+import { getEstimateByLeadId } from "../../Toolkit/Slices/LeadSlice";
+const { Text } = Typography;
 
 const AllInvoice = () => {
   const dispatch = useDispatch();
@@ -14,30 +16,44 @@ const AllInvoice = () => {
   const allInvoiceList = useSelector((state) => state.account.allInvoiceList);
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [openDrawer, setOpenDrawer] = useState(false);
 
   useEffect(() => {
     if (userid) {
       dispatch(getAllInvoice(userid));
     }
-  }, [userid]);
+  }, [userid,dispatch]);
 
   useEffect(() => {
     setFilteredData(allInvoiceList);
   }, [allInvoiceList]);
 
+  const handleViewEstimate = (value) => {
+    dispatch(getEstimateByLeadId(value?.leadId));
+    setOpenDrawer(true);
+  };
+
   const columns = [
     {
       dataIndex: "id",
       title: "Id",
+      width: 50,
+      fixed:'left'
     },
     {
       dataIndex: "productName",
       title: "Product name",
+      render: (_, data) => (
+        <Link className="link-heading" onClick={() => handleViewEstimate(data)}>
+          {data?.productName}
+        </Link>
+      ),
+      fixed:'left'
     },
     {
       dataIndex: "createDate",
       title: "Created date",
-      render:(info)=>dayjs(info).format('DD-MM-YYYY HH:mm a')
+      render: (info) => dayjs(info).format("DD-MM-YYYY hh:mm a"),
     },
     {
       dataIndex: "panNo",
@@ -54,7 +70,7 @@ const AllInvoice = () => {
     {
       dataIndex: "purchaseDate",
       title: "Purchase date",
-      render:(info)=>dayjs(info).format('DD-MM-YYYY HH:mm a')
+      render: (info) => dayjs(info).format("DD-MM-YYYY hh:mm a"),
     },
     {
       dataIndex: "professionalFees",
@@ -123,7 +139,6 @@ const AllInvoice = () => {
           <Input
             prefix={<Icon icon="fluent:search-24-regular" />}
             value={searchText}
-            size="small"
             onChange={handleSearch}
             placeholder="search"
             style={{ width: "25%" }}
@@ -132,9 +147,17 @@ const AllInvoice = () => {
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "70vh" }}
+          scroll={{ y: "70vh", x: 2500 }}
         />
       </Flex>
+      <Drawer
+        open={openDrawer}
+        onClose={() => setOpenDrawer(false)}
+        width={"60%"}
+        closeIcon={null}
+      >
+        <ViewEstimate />
+      </Drawer>
     </>
   );
 };
