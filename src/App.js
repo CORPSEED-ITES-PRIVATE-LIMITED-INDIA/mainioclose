@@ -114,6 +114,7 @@ import ProposalTemplate from "./Main/Setting/ProposalTemplate";
 import AutoHistory from "./Main/Sales/auto/AutoHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
 import EstimatePreviewPage from "./components/EstimatePreviewPage";
+import LedgerDetail from "./Main/Accounts/Ledger/LedgerDetail";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -719,6 +720,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Ledger />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="ledger/:ledgerId/detail"
+                    element={
+                      <ProtectedRoute>
+                        <LedgerDetail />
                       </ProtectedRoute>
                     }
                   />

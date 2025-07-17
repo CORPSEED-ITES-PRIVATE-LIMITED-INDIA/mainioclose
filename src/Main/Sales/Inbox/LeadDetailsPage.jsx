@@ -882,62 +882,63 @@ const LeadDetailsPage = ({ leadid }) => {
                     </Flex>
                   </div>
                 </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                    boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-                    padding: "12px",
-                    borderRadius: "4px",
-                  }}
-                >
-                  <Flex justify="space-between" align="center">
-                    <Flex gap={8} align="center">
-                      <Icon
-                        icon="fluent:building-32-regular"
-                        width="12"
-                        height="12"
-                      />
-                      <Text className="heading-text">Industry info</Text>
-                    </Flex>
-                    <Button type="link" onClick={onIndustryEdit}>
-                      Update industry
-                    </Button>
-                  </Flex>
-
+                {!adminRole && (
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+                      padding: "12px",
+                      borderRadius: "4px",
                     }}
                   >
-                    <Flex vertical gap={8}>
-                      <Text type="secondary">Industries</Text>
-                      <Text>{singleLeadResponseData?.industries?.name}</Text>
+                    <Flex justify="space-between" align="center">
+                      <Flex gap={8} align="center">
+                        <Icon
+                          icon="fluent:building-32-regular"
+                          width="12"
+                          height="12"
+                        />
+                        <Text className="heading-text">Industry info</Text>
+                      </Flex>
+                      <Button type="link" onClick={onIndustryEdit}>
+                        Update industry
+                      </Button>
                     </Flex>
-                    <Flex vertical gap={8}>
-                      <Text type="secondary">Sub industries</Text>
-                      <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
-                    </Flex>
-                    <Flex vertical gap={8}>
-                      <Text type="secondary">Sub sub industries</Text>
-                      <Text>
-                        {singleLeadResponseData?.subSubIndustry?.name}
-                      </Text>
-                    </Flex>
-                    <Flex vertical gap={8}>
-                      <Text type="secondary">Industries data</Text>
-                      <Text>
-                        {singleLeadResponseData?.industriesData
-                          ?.map((item) => item?.name)
-                          ?.join(",")}
-                      </Text>
-                    </Flex>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "12px",
+                      }}
+                    >
+                      <Flex vertical gap={8}>
+                        <Text type="secondary">Industries</Text>
+                        <Text>{singleLeadResponseData?.industries?.name}</Text>
+                      </Flex>
+                      <Flex vertical gap={8}>
+                        <Text type="secondary">Sub industries</Text>
+                        <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
+                      </Flex>
+                      <Flex vertical gap={8}>
+                        <Text type="secondary">Sub sub industries</Text>
+                        <Text>
+                          {singleLeadResponseData?.subSubIndustry?.name}
+                        </Text>
+                      </Flex>
+                      <Flex vertical gap={8}>
+                        <Text type="secondary">Industries data</Text>
+                        <Text>
+                          {singleLeadResponseData?.industriesData
+                            ?.map((item) => item?.name)
+                            ?.join(",")}
+                        </Text>
+                      </Flex>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <Divider style={{ margin: "6px" }} />
                 {currentUserDetail?.department !== "Sales" && (
@@ -1183,6 +1184,7 @@ const LeadDetailsPage = ({ leadid }) => {
             onCancel={() => setAddressModal(false)}
             onClose={() => setAddressModal(false)}
             onOk={() => addressForm.submit()}
+            okText='Submit'
           >
             <Form
               layout="vertical"
@@ -1193,9 +1195,16 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Primary address"
                   name="address"
-                  rules={[
-                    { required: true, message: "please enter the address" },
-                  ]}
+                  rules={
+                    adminRole
+                      ? []
+                      : [
+                          {
+                            required: true,
+                            message: "please enter the address",
+                          },
+                        ]
+                  }
                 >
                   <Input.TextArea />
                 </Form.Item>
@@ -1203,9 +1212,16 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Country"
                   name="country"
-                  rules={[
-                    { required: true, message: "please select the country" },
-                  ]}
+                  rules={
+                    adminRole
+                      ? []
+                      : [
+                          {
+                            required: true,
+                            message: "please select the country",
+                          },
+                        ]
+                  }
                 >
                   <Select
                     showSearch
@@ -1231,9 +1247,11 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="State"
                   name="state"
-                  rules={[
-                    { required: true, message: "Please select the state" },
-                  ]}
+                  rules={
+                    adminRole
+                      ? []
+                      : [{ required: true, message: "Please select the state" }]
+                  }
                 >
                   <Select
                     showSearch
@@ -1256,7 +1274,11 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="City"
                   name="city"
-                  rules={[{ required: true, message: "please enter the city" }]}
+                  rules={
+                    adminRole
+                      ? []
+                      : [{ required: true, message: "please enter the city" }]
+                  }
                 >
                   <Select
                     showSearch
@@ -1277,7 +1299,11 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Pin code"
                   name="pinCode"
-                  rules={[{ required: true, message: "please enter pincode" }]}
+                  rules={
+                    adminRole
+                      ? []
+                      : [{ required: true, message: "please enter pincode" }]
+                  }
                 >
                   <Input />
                 </Form.Item>
@@ -1290,6 +1316,7 @@ const LeadDetailsPage = ({ leadid }) => {
             onCancel={() => setIndustryModal(false)}
             onClose={() => setIndustryModal(false)}
             onOk={() => industryForm.submit()}
+            okText='Submit'
           >
             <Form
               layout="vertical"

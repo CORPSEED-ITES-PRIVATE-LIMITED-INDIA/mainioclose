@@ -49,10 +49,8 @@ const Voucher = () => {
     setFilteredData(voucherList);
   }, [voucherList]);
 
-  const handleSetGst = (ledgerDetail,voucherData) => {
-
-
-    console.log('asdkjsdbkjdsahb',ledgerDetail,voucherData)
+  const handleSetGst = (ledgerDetail, voucherData) => {
+    console.log("asdkjsdbkjdsahb", ledgerDetail, voucherData);
     const creditCgstAmount =
       (Number(voucherData?.creditAmount) * Number(ledgerDetail?.cgst)) / 100;
     const creditSgstAmount =
@@ -86,9 +84,13 @@ const Voucher = () => {
           perticulars: "Total amount",
           rate: "",
           debitAmount:
-            debitCgstAmount + debitSgstAmount + Number(voucherData?.debitAmount),
+            debitCgstAmount +
+            debitSgstAmount +
+            Number(voucherData?.debitAmount),
           creditAmount:
-            creditCgstAmount + creditSgstAmount + Number(voucherData?.creditAmount),
+            creditCgstAmount +
+            creditSgstAmount +
+            Number(voucherData?.creditAmount),
         },
       ]);
     }
@@ -124,7 +126,7 @@ const Voucher = () => {
     setOpenModal(true);
     dispatch(getLedgerById(value?.productId)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        handleSetGst(resp.payload,{...voucherData,...value });
+        handleSetGst(resp.payload, { ...voucherData, ...value });
       }
     });
     setVoucherData((prev) => ({ ...prev, ...value }));
@@ -168,6 +170,14 @@ const Voucher = () => {
         sgstDebitAmount:
           renderedGSTData?.[1]?.perticulars === "SGST"
             ? renderedGSTData?.[1]?.debitAmount
+            : 0,
+        totalAmount:
+          renderedGSTData?.[1]?.perticulars === "Total amount"
+            ? renderedGSTData?.[1]?.creditAmount -
+              renderedGSTData?.[1]?.debitAmount
+            : 0 || renderedGSTData?.[2]?.perticulars === "Total amount"
+            ? renderedGSTData?.[2]?.creditAmount -
+              renderedGSTData?.[2]?.debitAmount
             : 0,
       })
     )

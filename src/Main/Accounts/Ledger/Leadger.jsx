@@ -21,11 +21,13 @@ import {
   updateLedger,
 } from "../../../Toolkit/Slices/AccountSlice";
 import CommonTable from "../../../components/CommonTable";
+import { Link, useParams } from "react-router-dom";
 const { Text } = Typography;
 
 const Ledger = () => {
   const [form] = Form.useForm();
   const dispatch = useDispatch();
+  const {userid}=useParams()
   const ledgerList = useSelector((state) => state.account.ledgerList);
   const ledgerTypeList = useSelector((state) => state.account.ledgerTypeList);
   const [openModal, setOpenModal] = useState(false);
@@ -108,7 +110,7 @@ const Ledger = () => {
     setEditData(value);
   };
 
-  const handleFinish = (values) => { 
+  const handleFinish = (values) => {
     if (editData) {
       dispatch(updateLedger({ ...values, id: editData?.id, ...ledgerForm }))
         .then((resp) => {
@@ -152,11 +154,14 @@ const Ledger = () => {
     {
       dataIndex: "name",
       title: "Name",
+      render: (_, data) => (
+        <Link className="link-heading" to={`${data?.id}/detail`}>{data?.name}</Link>
+      ),
     },
     {
       dataIndex: "ledgerType",
       title: "Ledger type",
-      render:(info)=><Text>{info?.name}</Text>
+      render: (info) => <Text>{info?.name}</Text>,
     },
     {
       dataIndex: "edit",
