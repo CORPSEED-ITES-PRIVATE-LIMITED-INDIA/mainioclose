@@ -29,7 +29,7 @@ export function ThemeSwitcher() {
           variant="light"
           className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
         >
-          {isDark ? <Moon className="w-5 h-5 text-white" /> : <Sun className="w-5 h-5 text-black" />}
+          {isDark ? <Moon className="w-4 h-4 text-white" /> : <Sun className="w-4 h-4 text-black" />}
         </Button>
       </DropdownTrigger>
       <DropdownMenu aria-label="Theme Options" className="dark:bg-black dark:text-white">

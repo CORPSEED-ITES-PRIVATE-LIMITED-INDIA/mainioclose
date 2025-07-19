@@ -1,22 +1,44 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Layoutpage from "./Layout/Layoutpage";
-import AdminDashboards from "./dashboards/AdminDashboards";
-import Leads from "./sales/Leads";
 import Company from "./sales/Company";
+import Leads from "./sales/leads/Leads";
+import ProtectedRoute from "./ProtectedRoute";
+import { Provider } from "react-redux";
+import HomePage from "./home/HomePage";
+import Login from "./login/Login";
+import { ToastProvider } from "@heroui/react";
+import { store } from "./toolkit/store";
 
 function App() {
+  const router = createBrowserRouter([
+    { path: "/", element: <HomePage /> },
+    { path: "/login", element: <Login /> },
+    {
+      path: "/erp",
+      element: <ProtectedRoute />,
+      children: [
+        {
+          path: ":userId",
+          element: <Layoutpage />,
+          children: [
+            {
+              path: "sales",
+              children: [
+                { path: "leads", element: <Leads /> },
+                { path: "company", element: <Company /> },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    { path: "/unauthorized", element: <div>Unauthorized</div> },
+  ]);
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layoutpage />}>
-        <Route path="dashboard" element={<AdminDashboards/>}  />
-        <Route path="sales">
-          <Route path="/sales/leads" element={<Leads/>}  />
-          <Route path="/sales/company" element={<Company/>}  />
-          </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Provider store={store}>
+      <ToastProvider placement={"top-right"} toastOffset={60} />
+      <RouterProvider router={router} />
+    </Provider>
   );
 }
 

@@ -6,9 +6,9 @@ import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider } from "./ThemeProvider.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
+  <>
     <ThemeProvider>
       <App />
     </ThemeProvider>
-  </StrictMode>
+  </>
 );

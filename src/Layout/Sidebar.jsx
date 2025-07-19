@@ -6,10 +6,20 @@ import {
   Menu,
   ChevronDown,
   ChevronRight,
+  User2,
+  LogOut,
+  UserCircle2,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "../../public/CORPSEED.webp";
+import logo from "../assets/CORPSEED.webp";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  User,
+} from "@heroui/react";
 
 const icons = {
   LayoutDashboard,
@@ -57,15 +67,17 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
               >
                 <div className="flex items-center space-x-2">
                   {Icon && <Icon className="w-4 h-4" />}
-                  {!collapsed && (
-                    item?.children ? (
+                  {!collapsed &&
+                    (item?.children ? (
                       <span className="text-small">{item?.title}</span>
                     ) : (
-                      <Link to={item?.url} className="dark:text-white text-small">
+                      <Link
+                        to={item?.url}
+                        className="dark:text-white text-small"
+                      >
                         {item?.title}
                       </Link>
-                    )
-                  )}
+                    ))}
                 </div>
                 {!collapsed &&
                   item.children &&
@@ -93,6 +105,48 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
           );
         })}
       </nav>
+      <div className="absolute bottom-1">
+        <Dropdown placement="right-end">
+          <DropdownTrigger>
+            <div className="flex items-center gap-3 hover:bg-gray-200 cursor-pointer px-4 py-1 rounded-md">
+              <User
+                avatarProps={{
+                  icon: (
+                    <User2 className="w-5 h-5 text-neutral-700 dark:text-white" />
+                  ),
+                }}
+                description={!collapsed && "Product Designer"}
+                name={!collapsed && "Jane Doe"}
+              />
+              {!collapsed && (
+                <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-white" />
+              )}
+            </div>
+          </DropdownTrigger>
+          <DropdownMenu aria-label="Static Actions">
+            <DropdownItem>
+              <div className="px-4 py-2">
+                <p className="text-sm font-medium text-neutral-700 dark:text-white">
+                  John Doe
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-gray-400">
+                  john.doe@example.com
+                </p>
+              </div>
+            </DropdownItem>
+            <DropdownItem key="new">
+              <div className="flex items-center gap-4 text-neutral-700">
+                <UserCircle2 className="w-5 h-5" /> Profile
+              </div>
+            </DropdownItem>
+            <DropdownItem key="copy">
+              <div className="flex items-center gap-4 text-neutral-700">
+                <LogOut className="w-5 h-5" /> Logout
+              </div>
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+      </div>
     </aside>
   );
 };
