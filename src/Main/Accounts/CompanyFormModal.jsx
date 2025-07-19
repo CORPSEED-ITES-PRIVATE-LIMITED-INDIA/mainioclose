@@ -66,6 +66,9 @@ const CompanyFormModal = ({
   const companyDetailByUnitId = useSelector(
     (state) => state?.leads?.companyDetailByUnitId
   );
+    const currentUserDetail = useSelector(
+      (state) => state.auth.getDepartmentDetail
+    );
   const singleLeadResponseData = useSelector(
     (state) => state.leads.singleLeadResponseData
   );
@@ -102,9 +105,9 @@ const CompanyFormModal = ({
   };
 
   const handleButtonClick = useCallback(() => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       dispatch(getAllMainIndustry());
@@ -139,7 +142,7 @@ const CompanyFormModal = ({
         }
       );
     }
-  }, [form, data, dispatch, userid,addressInfo,industryInfo]);
+  }, [form, data, dispatch, userid,addressInfo,industryInfo,currentUserDetail]);
 
   const handleSelectCompany = (e) => {
     dispatch(getCompanyUnitsById(e));

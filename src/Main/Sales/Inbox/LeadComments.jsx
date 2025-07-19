@@ -29,6 +29,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
   const dispatch = useDispatch();
   const allComments = useSelector((state) => state.rating.allComments);
   const currentUserRoles = useSelector((state) => state?.auth?.roles);
+    const currentUserDetail = useSelector(
+      (state) => state.auth.getDepartmentDetail
+    );
   const [form] = Form.useForm();
   const [openModal, setOpenModal] = useState(false);
   const [remarkId, setRemarkId] = useState(null);
@@ -48,9 +51,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
 
   const handleDeleteRemark = useCallback(
     (remarkId) => {
-      if (!addressInfo) {
+      if (!addressInfo && currentUserDetail?.department === "Sales") {
         notification.warning({ message: "Please update address to proceed !." });
-      } else if (!industryInfo) {
+      } else if (!industryInfo && currentUserDetail?.department === "Sales") {
         notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         dispatch(
@@ -73,13 +76,13 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
           });
       }
     },
-    [dispatch, userid, leadid, addressInfo, industryInfo]
+    [dispatch, userid, leadid, addressInfo, industryInfo,currentUserDetail]
   );
 
   const handleEdit = (item) => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       setRemarkId(item?.id);
@@ -93,9 +96,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
 
   const handleUpdateRemark = useCallback(
     (values) => {
-      if (!addressInfo) {
+      if (!addressInfo && currentUserDetail?.department === "Sales") {
         notification.warning({ message: "Please update address to proceed !." });
-      } else if (!industryInfo) {
+      } else if (!industryInfo && currentUserDetail?.department === "Sales") {
         notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         let obj = {
@@ -122,7 +125,7 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
           });
       }
     },
-    [remarkId, userid, leadid, dispatch, addressInfo, industryInfo]
+    [remarkId, userid, leadid, dispatch, addressInfo, industryInfo,currentUserDetail]
   );
 
   return (

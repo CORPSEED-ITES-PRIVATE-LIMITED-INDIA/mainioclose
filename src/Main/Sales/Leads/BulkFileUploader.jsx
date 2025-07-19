@@ -123,6 +123,9 @@ const { Text } = Typography;
 const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
   const dispatch = useDispatch();
   const allComments = useSelector((state) => state.rating.allComments);
+    const currentUserDetail = useSelector(
+      (state) => state.auth.getDepartmentDetail
+    );
   const { userid } = useParams();
   const [files, setFiles] = useState([]);
   const [text, setText] = useState("");
@@ -150,9 +153,9 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
   };
 
   const onSubmit = useCallback(() => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       let data = {
@@ -211,7 +214,7 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
         setFlag(false);
       }
     }
-  }, [leadid, userid, text, files, dispatch, inputCommentText,addressInfo,industryInfo]);
+  }, [leadid, userid, text, files, dispatch, inputCommentText,addressInfo,industryInfo,currentUserDetail]);
 
   return (
     <Flex vertical gap={8}>

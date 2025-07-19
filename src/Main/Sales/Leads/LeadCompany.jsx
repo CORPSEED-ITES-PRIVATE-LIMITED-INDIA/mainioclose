@@ -95,6 +95,9 @@ const LeadCompany = ({ edit, data, addressInfo, industryInfo }) => {
   const desiginationList = useSelector(
     (state) => state.setting.clientDesiginationList
   );
+    const currentUserDetail = useSelector(
+      (state) => state.auth.getDepartmentDetail
+    );
   const [isToggel, setIsToggel] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [gstMand, setGstMand] = useState({ gst: false, pan: false });
@@ -180,9 +183,9 @@ const LeadCompany = ({ edit, data, addressInfo, industryInfo }) => {
   };
 
   const handleButtonClick = useCallback(() => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update industry  to proceed !." });
     } else {
       setOpenModal(true);
@@ -194,7 +197,7 @@ const LeadCompany = ({ edit, data, addressInfo, industryInfo }) => {
       dispatch(getAllContactDetails());
       dispatch(getAllCountries());
     }
-  }, [form, data, dispatch, userid,addressInfo,industryInfo]);
+  }, [form, data, dispatch, userid,addressInfo,industryInfo,currentUserDetail]);
 
   const copyBillingToShipping = () => {
     const values = form.getFieldsValue();

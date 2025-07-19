@@ -175,9 +175,9 @@ const LeadDetailsPage = ({ leadid }) => {
   }, [leadid, userid, dispatch]);
 
   const updateOriginalNameFun = useCallback(() => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({
         message: "Please update industry  to proceed !.",
       });
@@ -202,7 +202,7 @@ const LeadDetailsPage = ({ leadid }) => {
           });
         });
     }
-  }, [originalData, dispatch, getSingleLeadData, addressInfo, industryInfo]);
+  }, [originalData, dispatch, getSingleLeadData, addressInfo, industryInfo,currentUserDetail]);
 
   useEffect(() => {
     if (leadid) {
@@ -212,9 +212,9 @@ const LeadDetailsPage = ({ leadid }) => {
   }, [dispatch, leadid]);
 
   const changeLeadStatusFun = (statusId) => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({
         message: "Please update industry  to proceed !.",
       });
@@ -246,11 +246,11 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const updateLeadNameSinglePage = useCallback(
     (e) => {
-      if (!addressInfo) {
+      if (!addressInfo && currentUserDetail?.department === "Sales") {
         notification.warning({
           message: "Please update address to proceed !.",
         });
-      } else if (!industryInfo) {
+      } else if (!industryInfo && currentUserDetail?.department === "Sales") {
         notification.warning({
           message: "Please update industry  to proceed !.",
         });
@@ -284,13 +284,14 @@ const LeadDetailsPage = ({ leadid }) => {
       getSingleLeadData,
       addressInfo,
       industryInfo,
+      currentUserDetail
     ]
   );
 
   const changeLeadAssignee = (id) => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({
         message: "Please update industry  to proceed !.",
       });
@@ -320,11 +321,11 @@ const LeadDetailsPage = ({ leadid }) => {
 
   const deleteContactFun = useCallback(
     (id) => {
-      if (!addressInfo) {
+      if (!addressInfo && currentUserDetail?.department === "Sales") {
         notification.warning({
           message: "Please update address to proceed !.",
         });
-      } else if (!industryInfo) {
+      } else if (!industryInfo && currentUserDetail?.department === "Sales") {
         notification.warning({
           message: "Please update industry  to proceed !.",
         });
@@ -354,13 +355,13 @@ const LeadDetailsPage = ({ leadid }) => {
           });
       }
     },
-    [leadid, userid, dispatch, getSingleLeadData, addressInfo, industryInfo]
+    [leadid, userid, dispatch, getSingleLeadData, addressInfo, industryInfo,currentUserDetail]
   );
 
   const sameAssigneePresonFun = async () => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({
         message: "Please update industry  to proceed !.",
       });
@@ -384,9 +385,9 @@ const LeadDetailsPage = ({ leadid }) => {
   };
 
   const notSameAssigneePresonFun = async () => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({
         message: "Please update industry  to proceed !.",
       });
@@ -410,9 +411,9 @@ const LeadDetailsPage = ({ leadid }) => {
   };
 
   const handleUpdateContact = (value) => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({
         message: "Please update industry  to proceed !.",
       });
@@ -485,9 +486,9 @@ const LeadDetailsPage = ({ leadid }) => {
   );
 
   const leadAssignedToSame = (id) => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update industry info first !." });
     } else {
       dispatch(handleLeadassignedToSamePerson(id))
@@ -512,9 +513,9 @@ const LeadDetailsPage = ({ leadid }) => {
   };
 
   const handleUpdateLeadDescription = useCallback(() => {
-    if (!addressInfo) {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo) {
+    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update industry info first !." });
     } else {
       let obj = { id: leadid, description: descriptionText };
@@ -537,7 +538,7 @@ const LeadDetailsPage = ({ leadid }) => {
           playErrorSound();
         });
     }
-  }, [leadid, dispatch, descriptionText, addressInfo, industryInfo]);
+  }, [leadid, dispatch, descriptionText, addressInfo, industryInfo,currentUserDetail]);
 
   const onEditClick = () => {
     dispatch(getAllCountries());
@@ -628,11 +629,11 @@ const LeadDetailsPage = ({ leadid }) => {
           size="small"
           onClick={(e) => {
             e.stopPropagation();
-            if (!addressInfo) {
+            if (!addressInfo && currentUserDetail?.department === "Sales") {
               notification.warning({
                 message: "Please update your address first !.",
               });
-            } else if (!industryInfo) {
+            } else if (!industryInfo && currentUserDetail?.department === "Sales") {
               notification.warning({
                 message: "Please update your industries info first !.",
               });
@@ -785,15 +786,15 @@ const LeadDetailsPage = ({ leadid }) => {
                       <Button
                         size="small"
                         onClick={() => {
-                          if (!addressInfo) {
+                          if (!addressInfo && currentUserDetail?.department === "Sales") {
                             notification.warning({
                               message: "Please update address to proceed !.",
                             });
-                          } else if (!industryInfo) {
+                          } else if (!industryInfo && currentUserDetail?.department === "Sales") {
                             notification.warning({
                               message: "Please update industry  to proceed !.",
                             });
-                          } elsegit  {
+                          } else  {
                             setUpdateLeadNameToggle(false);
                           }
                         }}
