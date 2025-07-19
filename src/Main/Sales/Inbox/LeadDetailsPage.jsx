@@ -137,7 +137,7 @@ const LeadDetailsPage = ({ leadid }) => {
         singleLeadResponseData?.subSubIndustry &&
         Object.keys(singleLeadResponseData?.subSubIndustry)?.length > 0 &&
         singleLeadResponseData?.industriesData?.length > 0 &&
-        !adminRole
+        adminRole
       ) {
         setIndustryInfo(true);
       }
@@ -148,7 +148,7 @@ const LeadDetailsPage = ({ leadid }) => {
         singleLeadResponseData?.state &&
         singleLeadResponseData?.city &&
         singleLeadResponseData?.pinCode &&
-        !adminRole
+        adminRole
       ) {
         setaddressInfo(true);
       }

@@ -6,7 +6,6 @@ import im2 from "../Images/COMPLIANCE_MONITORING_FRAMEWORK.png";
 import img3 from "../Images/OUTSOURCE_AND_MANAGE_TASKS.png";
 import img4 from "../Images/AUTOMATED_TRIGGERS_AND_ALERTS.png";
 import masterImg from "../Images/ERP2.png";
-// import img5 from "../Images/SECURED_CLOU_DOCUMENTS.svg"
 import img6 from "../Images/COMPREHENSIV_DASHBOARDS_AND_REPORTS-01.png";
 import erpNew from "../Images/erp-new.webp";
 import facebook from "../Images/facebook.png";
