@@ -1,6 +1,6 @@
-import  { useState, useMemo, useRef, useEffect } from 'react';
-import { Select, SelectItem, Input, Avatar } from '@heroui/react';
-import { ChevronDownIcon } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Select, SelectItem, Input, Avatar } from "@heroui/react";
+import { ChevronDownIcon } from "lucide-react";
 
 export const users = [
   {
@@ -206,7 +206,7 @@ export const users = [
 ];
 
 const NewSelect = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
   const [triggerWidth, setTriggerWidth] = useState(null);
   const triggerRef = useRef(null);
@@ -219,28 +219,31 @@ const NewSelect = () => {
       }
     };
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
   // Filter users based on search query
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
-    return users.filter(user =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    return users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery]);
 
   return (
     <div className="w-full max-w-xs">
       <Select
+        isVirtualized
         className="max-w-xs"
         classNames={{
           label: "group-data-[filled=true]:-translate-y-5",
           trigger: "min-h-12 border-small rounded-medium flex ",
           listboxWrapper: "max-h-[400px] p-2",
-          popoverContent: "p-0 border-small border-divider bg-background min-w-full",
+          popoverContent:
+            "p-0 border-small border-divider bg-background min-w-full",
         }}
         items={filteredUsers}
         label="Assigned to"
@@ -248,7 +251,7 @@ const NewSelect = () => {
         onSelectionChange={(keys) => {
           const selected = keys.size > 0 ? Array.from(keys)[0] : null;
           setSelectedKey(selected);
-          setSearchQuery('');
+          setSearchQuery("");
         }}
         disallowEmptySelection={false}
         aria-label="Searchable select"
@@ -256,7 +259,7 @@ const NewSelect = () => {
         selectorIcon={<ChevronDownIcon className="w-5 h-5 text-default-500" />}
         ref={triggerRef}
         popoverProps={{
-          style: { width: triggerWidth ? `${triggerWidth}px` : '100%' },
+          style: { width: triggerWidth ? `${triggerWidth}px` : "100%" },
           classNames: {
             content: "p-0 border-small border-divider bg-background min-w-full",
           },
@@ -294,13 +297,21 @@ const NewSelect = () => {
           emptyContent: "No users found",
         }}
         renderValue={(items) => {
-          if (!items.length) return <span className="text-default-400">Select a user</span>;
+          if (!items.length)
+            return <span className="text-default-400">Select a user</span>;
           return items.map((item) => (
             <div key={item.key} className="flex items-center gap-2">
-              <Avatar alt={item.data.name} className="shrink-0" size="sm" src={item.data.avatar} />
+              <Avatar
+                alt={item.data.name}
+                className="shrink-0"
+                size="sm"
+                src={item.data.avatar}
+              />
               <div className="flex flex-col">
                 <span>{item.data.name}</span>
-                <span className="text-default-500 text-tiny">({item.data.email})</span>
+                <span className="text-default-500 text-tiny">
+                  ({item.data.email})
+                </span>
               </div>
             </div>
           ));
@@ -309,7 +320,12 @@ const NewSelect = () => {
         {(user) => (
           <SelectItem key={user.id} textValue={user.name}>
             <div className="flex gap-2 items-center">
-              <Avatar alt={user.name} className="shrink-0" size="sm" src={user.avatar} />
+              <Avatar
+                alt={user.name}
+                className="shrink-0"
+                size="sm"
+                src={user.avatar}
+              />
               <div className="flex flex-col">
                 <span className="text-small">{user.name}</span>
                 <span className="text-tiny text-default-400">{user.email}</span>
