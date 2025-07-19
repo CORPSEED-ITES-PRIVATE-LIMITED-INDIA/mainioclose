@@ -40,33 +40,33 @@ const Login = () => {
                       flag: true,
                     })
                   );
-                  // if (resp?.payload?.roles?.includes("ADMIN")) {
-                  //   navigate(`/erp/${resp?.payload?.id}/dashboard/records`);
-                  // } else {
-                  //   if (response.payload?.department === "Procurement") {
-                  //     navigate(`/erp/${resp?.payload?.id}/vendors`);
-                  //   }
-                  //   if (response.payload?.department === "Human Resource") {
-                  //     navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
-                  //   }
-                  //   if (response.payload?.department === "Accounts") {
-                  //     navigate(`/erp/${resp?.payload?.id}/account/companyForm`);
-                  //   } else {
-                  //     navigate(`/erp/${resp?.payload?.id}/sales/leads`);
-                  //   }
-                  // }
+                  if (resp?.payload?.roles?.includes("ADMIN")) {
+                    navigate(`/erp/${resp?.payload?.id}/dashboard/records`);
+                  } else {
+                    if (response.payload?.department === "Procurement") {
+                      navigate(`/erp/${resp?.payload?.id}/vendors`);
+                    }
+                    if (response.payload?.department === "Human Resource") {
+                      navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
+                    }
+                    if (response.payload?.department === "Accounts") {
+                      navigate(`/erp/${resp?.payload?.id}/account/companyForm`);
+                    } else {
+                      navigate(`/erp/${resp?.payload?.id}/sales/leads`);
+                    }
+                  }
                 }
               );
               notification.success({ message: "User logged in successfully." });
-              // setTimeout(() => {
-              //   window.location.reload();
-              // }, 2000);
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
             } else {
               setLoading("ipRestricted");
               notification.error({ message: "Ip address restricted ." });
             }
           } else {
-            // navigate(`/erp/login`);
+            navigate(`/erp/login`);
             setLoading("rejected");
             notification.error({ message: "Something went wrong !." });
           }

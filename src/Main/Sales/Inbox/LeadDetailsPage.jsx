@@ -104,6 +104,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const industryDataListById = useSelector(
     (state) => state.industry.industryDataListBySubSubIndustryId
   );
+  const adminRole = currentUserRoles.includes("ADMIN");
   const [openModal, setOpenModal] = useState(false);
   const [contactData, setContactData] = useState(null);
   const [updateLeadNameToggle, setUpdateLeadNameToggle] = useState(true);
@@ -120,40 +121,48 @@ const LeadDetailsPage = ({ leadid }) => {
     originalName: "",
     currentUserId: userid,
   });
-  const [addressInfo, setaddressInfo] = useState(false);
-  const [industryInfo, setIndustryInfo] = useState(false);
+  const [addressInfo, setaddressInfo] = useState(true);
+  const [industryInfo, setIndustryInfo] = useState(true);
+
+  console.log(
+    "cjhvkjsdksjdhsdfkjdskfj 0000000000000",
+    industryInfo,
+    addressInfo
+  );
 
   useEffect(() => {
-    if (
-      singleLeadResponseData &&
-      Object.keys(singleLeadResponseData)?.length > 0
-    ) {
-      setDescriptionText(singleLeadResponseData?.description);
+    setDescriptionText(singleLeadResponseData?.description);
+    if (!adminRole || !currentUserDetail?.department === "Quality Team") {
       if (
-        singleLeadResponseData?.industries &&
-        Object.keys(singleLeadResponseData?.industries)?.length > 0 &&
-        singleLeadResponseData?.subIndustry &&
-        Object.keys(singleLeadResponseData?.subIndustry)?.length > 0 &&
-        singleLeadResponseData?.subSubIndustry &&
-        Object.keys(singleLeadResponseData?.subSubIndustry)?.length > 0 &&
-        singleLeadResponseData?.industriesData?.length > 0 &&
-        adminRole
+        singleLeadResponseData &&
+        Object.keys(singleLeadResponseData)?.length > 0
       ) {
-        setIndustryInfo(true);
-      }
+        if (
+          singleLeadResponseData?.industries &&
+          Object.keys(singleLeadResponseData?.industries)?.length > 0 &&
+          singleLeadResponseData?.subIndustry &&
+          Object.keys(singleLeadResponseData?.subIndustry)?.length > 0 &&
+          singleLeadResponseData?.subSubIndustry &&
+          Object.keys(singleLeadResponseData?.subSubIndustry)?.length > 0 &&
+          singleLeadResponseData?.industriesData?.length > 0
+        ) {
+          console.log("cjhvkjsdksjdhsdfkjdskfj 11111111111");
+          setIndustryInfo(false);
+        }
 
-      if (
-        singleLeadResponseData?.address &&
-        singleLeadResponseData?.country &&
-        singleLeadResponseData?.state &&
-        singleLeadResponseData?.city &&
-        singleLeadResponseData?.pinCode &&
-        adminRole
-      ) {
-        setaddressInfo(true);
+        if (
+          singleLeadResponseData?.address &&
+          singleLeadResponseData?.country &&
+          singleLeadResponseData?.state &&
+          singleLeadResponseData?.city &&
+          singleLeadResponseData?.pinCode
+        ) {
+          console.log("cjhvkjsdksjdhsdfkjdskfj 222222222222");
+          setaddressInfo(false);
+        }
       }
     }
-  }, [singleLeadResponseData]);
+  }, [singleLeadResponseData, currentUserRoles]);
 
   useEffect(() => {
     dispatch(getAllStatusListByUserId(userid));
@@ -201,8 +210,6 @@ const LeadDetailsPage = ({ leadid }) => {
       dispatch(getAllRemarkAndCommnts(leadid));
     }
   }, [dispatch, leadid]);
-
-  const adminRole = currentUserRoles.includes("ADMIN");
 
   const changeLeadStatusFun = (statusId) => {
     if (!addressInfo) {
@@ -786,7 +793,7 @@ const LeadDetailsPage = ({ leadid }) => {
                             notification.warning({
                               message: "Please update industry  to proceed !.",
                             });
-                          } else {
+                          } elsegit  {
                             setUpdateLeadNameToggle(false);
                           }
                         }}
@@ -882,63 +889,62 @@ const LeadDetailsPage = ({ leadid }) => {
                     </Flex>
                   </div>
                 </div>
-                {!adminRole && (
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+                    padding: "12px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <Flex justify="space-between" align="center">
+                    <Flex gap={8} align="center">
+                      <Icon
+                        icon="fluent:building-32-regular"
+                        width="12"
+                        height="12"
+                      />
+                      <Text className="heading-text">Industry info</Text>
+                    </Flex>
+                    <Button type="link" onClick={onIndustryEdit}>
+                      Update industry
+                    </Button>
+                  </Flex>
+
                   <div
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                      boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-                      padding: "12px",
-                      borderRadius: "4px",
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "12px",
                     }}
                   >
-                    <Flex justify="space-between" align="center">
-                      <Flex gap={8} align="center">
-                        <Icon
-                          icon="fluent:building-32-regular"
-                          width="12"
-                          height="12"
-                        />
-                        <Text className="heading-text">Industry info</Text>
-                      </Flex>
-                      <Button type="link" onClick={onIndustryEdit}>
-                        Update industry
-                      </Button>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Industries</Text>
+                      <Text>{singleLeadResponseData?.industries?.name}</Text>
                     </Flex>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "12px",
-                      }}
-                    >
-                      <Flex vertical gap={8}>
-                        <Text type="secondary">Industries</Text>
-                        <Text>{singleLeadResponseData?.industries?.name}</Text>
-                      </Flex>
-                      <Flex vertical gap={8}>
-                        <Text type="secondary">Sub industries</Text>
-                        <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
-                      </Flex>
-                      <Flex vertical gap={8}>
-                        <Text type="secondary">Sub sub industries</Text>
-                        <Text>
-                          {singleLeadResponseData?.subSubIndustry?.name}
-                        </Text>
-                      </Flex>
-                      <Flex vertical gap={8}>
-                        <Text type="secondary">Industries data</Text>
-                        <Text>
-                          {singleLeadResponseData?.industriesData
-                            ?.map((item) => item?.name)
-                            ?.join(",")}
-                        </Text>
-                      </Flex>
-                    </div>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Sub industries</Text>
+                      <Text>{singleLeadResponseData?.subIndustry?.name}</Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Sub sub industries</Text>
+                      <Text>
+                        {singleLeadResponseData?.subSubIndustry?.name}
+                      </Text>
+                    </Flex>
+                    <Flex vertical gap={8}>
+                      <Text type="secondary">Industries data</Text>
+                      <Text>
+                        {singleLeadResponseData?.industriesData
+                          ?.map((item) => item?.name)
+                          ?.join(",")}
+                      </Text>
+                    </Flex>
                   </div>
-                )}
+                </div>
 
                 <Divider style={{ margin: "6px" }} />
                 {currentUserDetail?.department !== "Sales" && (
@@ -1184,7 +1190,7 @@ const LeadDetailsPage = ({ leadid }) => {
             onCancel={() => setAddressModal(false)}
             onClose={() => setAddressModal(false)}
             onOk={() => addressForm.submit()}
-            okText='Submit'
+            okText="Submit"
           >
             <Form
               layout="vertical"
@@ -1196,7 +1202,8 @@ const LeadDetailsPage = ({ leadid }) => {
                   label="Primary address"
                   name="address"
                   rules={
-                    adminRole
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
                       ? []
                       : [
                           {
@@ -1213,7 +1220,8 @@ const LeadDetailsPage = ({ leadid }) => {
                   label="Country"
                   name="country"
                   rules={
-                    adminRole
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
                       ? []
                       : [
                           {
@@ -1248,7 +1256,8 @@ const LeadDetailsPage = ({ leadid }) => {
                   label="State"
                   name="state"
                   rules={
-                    adminRole
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
                       ? []
                       : [{ required: true, message: "Please select the state" }]
                   }
@@ -1275,7 +1284,8 @@ const LeadDetailsPage = ({ leadid }) => {
                   label="City"
                   name="city"
                   rules={
-                    adminRole
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
                       ? []
                       : [{ required: true, message: "please enter the city" }]
                   }
@@ -1300,7 +1310,8 @@ const LeadDetailsPage = ({ leadid }) => {
                   label="Pin code"
                   name="pinCode"
                   rules={
-                    adminRole
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
                       ? []
                       : [{ required: true, message: "please enter pincode" }]
                   }
@@ -1316,7 +1327,7 @@ const LeadDetailsPage = ({ leadid }) => {
             onCancel={() => setIndustryModal(false)}
             onClose={() => setIndustryModal(false)}
             onOk={() => industryForm.submit()}
-            okText='Submit'
+            okText="Submit"
           >
             <Form
               layout="vertical"
@@ -1327,9 +1338,17 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Select industry"
                   name="industriesId"
-                  rules={[
-                    { required: true, message: "please select the industry" },
-                  ]}
+                  rules={
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
+                      ? []
+                      : [
+                          {
+                            required: true,
+                            message: "please select the industry",
+                          },
+                        ]
+                  }
                 >
                   <Select
                     allowClear
@@ -1358,12 +1377,17 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Select sub-industry"
                   name="subIndustryId"
-                  rules={[
-                    {
-                      required: true,
-                      message: "please select the sub industry",
-                    },
-                  ]}
+                  rules={
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
+                      ? []
+                      : [
+                          {
+                            required: true,
+                            message: "please select the sub industry",
+                          },
+                        ]
+                  }
                 >
                   <Select
                     allowClear
@@ -1391,12 +1415,17 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Select category"
                   name="subsubIndustryId"
-                  rules={[
-                    {
-                      required: true,
-                      message: "please select the sub sub industry",
-                    },
-                  ]}
+                  rules={
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
+                      ? []
+                      : [
+                          {
+                            required: true,
+                            message: "please select the sub sub industry",
+                          },
+                        ]
+                  }
                 >
                   <Select
                     allowClear
@@ -1422,12 +1451,17 @@ const LeadDetailsPage = ({ leadid }) => {
                 <Form.Item
                   label="Select business activity"
                   name="industriesDataId"
-                  rules={[
-                    {
-                      required: true,
-                      message: "please select the industry data",
-                    },
-                  ]}
+                  rules={
+                    adminRole ||
+                    currentUserDetail?.department === "Quality Team"
+                      ? []
+                      : [
+                          {
+                            required: true,
+                            message: "please select the industry data",
+                          },
+                        ]
+                  }
                 >
                   <Select
                     allowClear
