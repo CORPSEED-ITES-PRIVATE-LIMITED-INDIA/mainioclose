@@ -81,7 +81,7 @@ const Login = () => {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center">
-      <div className="w-[30%] flex flex-col items-center gap-4 shadow-lg px-8 py-12 rounded-lg dark:bg-gray-100">
+      <div className="w-[30%] flex flex-col items-center gap-4 shadow-lg px-8 py-12 rounded-lg dark:bg-gray-700">
         <span className="text-xl font-bold text-neutral-800 dark:text-white">
           <img src={logo} alt="corpseed" style={{ height: "68px" }} />
         </span>

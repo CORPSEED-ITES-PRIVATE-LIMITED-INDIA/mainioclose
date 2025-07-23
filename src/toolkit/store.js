@@ -4,11 +4,16 @@ import persistStore from "redux-persist/es/persistStore";
 import storage from "redux-persist/lib/storage";
 import authReducer from "./slices/authSlice";
 import leadReducer from "./slices/leadSlice";
-
+import commonReducer from "./slices/commonSlice";
+import settingReducer from "./slices/settingSlice";
+import companyReducer from "./slices/companySlice";
 
 const reducers = combineReducers({
   auth: authReducer,
-  leads:leadReducer
+  leads: leadReducer,
+  common: commonReducer,
+  setting: settingReducer,
+  company: companyReducer,
 });
 
 const persistConfig = {

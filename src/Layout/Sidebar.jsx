@@ -108,7 +108,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
       <div className="absolute bottom-1">
         <Dropdown placement="right-end">
           <DropdownTrigger>
-            <div className="flex items-center gap-3 hover:bg-gray-200 cursor-pointer px-4 py-1 rounded-md">
+            <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-4 py-1 rounded-md">
               <User
                 avatarProps={{
                   icon: (

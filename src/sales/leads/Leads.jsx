@@ -15,6 +15,16 @@ import {
   Chip,
   User,
   Pagination,
+  Modal,
+  useDisclosure,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  Form,
+  Select,
+  SelectItem,
+  Textarea,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,7 +32,13 @@ import {
   getAllLeadCount,
   getAllLeadsByFilter,
 } from "../../toolkit/slices/leadSlice";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import {
+  getAllCitiesByStateName,
+  getAllCountries,
+  getAllStatesByCountryName,
+} from "../../toolkit/slices/commonSlice";
+import NewSelect from "../../components/NewSelect";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -58,6 +74,11 @@ const Leads = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.leads.allLeads);
   const count = useSelector((state) => state.leads.totalCount);
+  const allLeadUser = useSelector((state) => state.leads.allLeadUsers);
+  const currentRoles = useSelector((state) => state?.auth?.roles);
+  const countryList = useSelector((state) => state.common.countriesList);
+  const statesList = useSelector((state) => state.common.statesList);
+  const citiesList = useSelector((state) => state.common.citiesList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -68,7 +89,7 @@ const Leads = () => {
     column: "age",
     direction: "ascending",
   });
-
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [allMultiFilterData, setAllMultiFilterData] = useState({
     userId: userId,
     userIdFilter: [],
@@ -121,7 +142,6 @@ const Leads = () => {
     return filteredUsers;
   }, [data, filterValue, statusFilter]);
 
-  console.log("hgvdjhvdjgvdhgvjhvdjhgdvjhg", data);
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
@@ -147,7 +167,9 @@ const Leads = () => {
       case "leadName":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{lead.leadName || "-"}</span>
+            <Link to={`${lead?.id}/leadDetail`} className="font-semibold">
+              {lead.leadName || "-"}
+            </Link>
             <span className="text-sm text-gray-400">{lead.mobileNo}</span>
           </div>
         );
@@ -185,7 +207,9 @@ const Leads = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="view">View</DropdownItem>
+                <DropdownItem key="history">
+                  <Link to={`${lead?.id}/leadHistory`}>History</Link>
+                </DropdownItem>
                 <DropdownItem key="edit">Edit</DropdownItem>
                 <DropdownItem key="delete">Delete</DropdownItem>
               </DropdownMenu>
@@ -287,7 +311,11 @@ const Leads = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" endContent={<Plus />}>
+            <Button
+              color="primary"
+              onPress={() => handleOpenModal()}
+              endContent={<Plus />}
+            >
               Add New
             </Button>
           </div>
@@ -367,44 +395,201 @@ const Leads = () => {
     );
   }, [selectedKeys, items.length, allMultiFilterData, pages, hasSearchFilter]);
 
+  const handleOpenModal = () => {
+    onOpen();
+    dispatch(getAllCountries());
+  };
+
   return (
-    <Table
-      isHeaderSticky
-      aria-label="Example table with custom cells, pagination and sorting"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[500px]",
-      }}
-      selectedKeys={selectedKeys}
-      selectionMode="multiple"
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSelectionChange={setSelectedKeys}
-      onSortChange={setSortDescriptor}
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody emptyContent={"No users found"} items={sortedItems}>
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+    <>
+    <h1 className="font-sans text-2xl font-medium mb-1">Leads</h1>
+      <Table
+        isHeaderSticky
+        aria-label="Example table with custom cells, pagination and sorting"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[500px]",
+        }}
+        selectedKeys={selectedKeys}
+        selectionMode="multiple"
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSelectionChange={setSelectedKeys}
+        onSortChange={setSortDescriptor}
+      >
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody emptyContent={"No users found"} items={sortedItems}>
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Create lead
+              </ModalHeader>
+              <ModalBody>
+                <Form
+                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    let data = Object.fromEntries(
+                      new FormData(e.currentTarget)
+                    );
+
+                    console.log(`submit ${JSON.stringify(data)}`);
+                  }}
+                >
+                  <div className="w-full grid grid-cols-2 gap-4">
+                    <Input
+                      isRequired
+                      errorMessage="Please enter lead name"
+                      label="Lead name"
+                      name="leadName"
+                      type="text"
+                    />
+
+                    <Input
+                      isRequired
+                      errorMessage="Please enter a valid client name"
+                      label="Client name"
+                      name="name"
+                      type="text"
+                    />
+
+                    <Input label="Email" name="email" type="email" />
+
+                    <Input label="Mobile number" name="mobileNo" type="text" />
+                    <Input
+                      isRequired
+                      label="Company"
+                      errorMessage="Please enter company name"
+                      name="urls"
+                      type="text"
+                    />
+
+                    <NewSelect
+                      data={countryList}
+                      label="Country"
+                      name="country"
+                      labelKey="name"
+                      valueKey="name"
+                      onChange={(e) => dispatch(getAllStatesByCountryName(e))}
+                    />
+
+                    <NewSelect
+                      data={statesList}
+                      label="State"
+                      name="state"
+                      labelKey="name"
+                      valueKey="name"
+                      onChange={(e) => dispatch(getAllCitiesByStateName(e))}
+                    />
+
+                    <NewSelect
+                      data={citiesList}
+                      label="City"
+                      name="city"
+                      labelKey="name"
+                      valueKey="name"
+                    />
+
+                    <Input label="Ip address" name="ipAddress" type="text" />
+
+                    <Select label="Assignee" name="assigneeId">
+                      {[
+                        { id: "1", name: "Aryan" },
+                        { id: "2", name: "Kausahal" },
+                        { id: "3", name: "Nishu singh" },
+                        { id: "4", name: "Avnish kumar" },
+                      ].map((user) => (
+                        <SelectItem key={user.id}>{user.name}</SelectItem>
+                      ))}
+                    </Select>
+                    <Select label="Automation" name="auto">
+                      {[
+                        { id: true, name: "True" },
+                        { id: false, name: "False" },
+                      ].map((user) => (
+                        <SelectItem key={user.id}>{user.name}</SelectItem>
+                      ))}
+                    </Select>
+                    <Select
+                      isRequired
+                      errorMessage="please select the lead source"
+                      label="Source"
+                      name="source"
+                    >
+                      {[
+                        "Corpseed Website",
+                        "Facebook",
+                        "Instagram",
+                        "IVR",
+                        "Person Reference",
+                        "Whatsapp",
+                        "Law Zoom website",
+                        "Other",
+                        "Mail",
+                        "Emailer",
+                      ].map((user) => (
+                        <SelectItem key={user}>{user}</SelectItem>
+                      ))}
+                    </Select>
+
+                    <Textarea
+                      isRequired
+                      errorMessage="Please enter address"
+                      label="Primary address"
+                      name="primaryAddress"
+                      type="text"
+                    />
+                    <Textarea
+                      isRequired
+                      errorMessage="Please enter lead description"
+                      label="Lead description"
+                      name="leadDescription"
+                      type="text"
+                    />
+                  </div>
+                  <ModalFooter className="w-full flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </Form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 

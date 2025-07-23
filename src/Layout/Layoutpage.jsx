@@ -21,6 +21,12 @@ const navItems = [
       { title: "Company", icon: "", url: "sales/company", key: "company" },
     ],
   },
+  {
+    title: "Users",
+    icon: "User",
+    url: "users",
+    key: "users",
+  },
 ];
 
 const Layoutpage = () => {
