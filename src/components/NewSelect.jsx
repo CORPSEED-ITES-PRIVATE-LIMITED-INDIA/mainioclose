@@ -1,10 +1,4 @@
-import {
-  useState,
-  useMemo,
-  useRef,
-  useEffect,
-  useCallback,
-} from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Select, SelectItem, Input } from "@heroui/react";
 import { ChevronDownIcon } from "lucide-react";
 
@@ -18,11 +12,12 @@ const NewSelect = ({
   isRequired,
   valueKey,
   labelKey,
-  isClearable=false,
-  isVirtualized
+  isClearable = false,
+  isVirtualized,
+  value,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState(new Set());
+  const [selectedKeys, setSelectedKeys] = useState(value ? [value] : new Set());
   const [triggerWidth, setTriggerWidth] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const triggerRef = useRef(null);
@@ -88,6 +83,7 @@ const NewSelect = ({
       <Select
         isRequired={isRequired}
         name={name}
+        value={value}
         isVirtualized={isVirtualized}
         isClearable={isClearable}
         selectionMode={selectionMode}

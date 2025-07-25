@@ -3,7 +3,6 @@ import {
   Briefcase,
   LayoutDashboard,
   Settings,
-  Menu,
   ChevronDown,
   ChevronRight,
   User2,
@@ -26,6 +25,7 @@ const icons = {
   Briefcase,
   Settings,
   BarChart,
+  User2
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {

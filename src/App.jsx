@@ -11,6 +11,12 @@ import LeadDetail from "./sales/leads/LeadDetail";
 import LeadHistory from "./sales/leads/LeadHistory";
 import Company from "./sales/company/Company";
 import Users from "./users/Users";
+import LeadStatus from "./setting/status/LeadStatus";
+import LeadProducts from "./setting/products/LeadProducts";
+import LeadComments from "./setting/comments/LeadComments";
+import IpAddress from "./setting/ipaddress/IpAddress";
+import ProductDetails from "./setting/products/ProductDetails";
+
 
 function App() {
   const router = createBrowserRouter([
@@ -36,6 +42,16 @@ function App() {
             {
               path: "users",
               element: <Users />,
+            },
+            {
+              path: "settings",
+              children: [
+                { path: "status", element: <LeadStatus /> },
+                { path: "products", element: <LeadProducts /> },
+                { path: "products/:productId/productDetail", element: <ProductDetails /> },
+                { path: "comments", element: <LeadComments /> },
+                { path: "ipAddress", element: <IpAddress /> },
+              ],
             },
           ],
         },
