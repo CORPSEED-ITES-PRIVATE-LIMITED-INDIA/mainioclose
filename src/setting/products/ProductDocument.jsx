@@ -1,143 +1,137 @@
 import {
+  addToast,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Form,
   getKeyValue,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
   useDisclosure,
 } from "@heroui/react";
-import { EllipsisVertical, FileText, Plus } from "lucide-react";
-import { useCallback, useState } from "react";
+import { Download, EllipsisVertical, FileText, Plus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import {
+  addDocumentProduct,
+  getSingleProductByProductId,
+  importProductCheckListDoument,
+} from "../../toolkit/slices/settingSlice";
+import NewSelect from "../../components/NewSelect";
+import {
+  getAllCountries,
+  getAllStatesByCountryName,
+} from "../../toolkit/slices/commonSlice";
+import SingleFileUploader from "../../components/SingleFileUploader";
 const iconClass = "w-5 h-5";
 
 const ProductDocument = ({ data, details }) => {
-      const dispatch = useDispatch();
-      const { userId, productId } = useParams();
+  const dispatch = useDispatch();
+  const { userId, productId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const uploadModal = useDisclosure();
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
-  const [isEdit, setIsEdit] = useState(false);
-  const [itemId, setItemId] = useState(null);
   const formValues = {
     productId: productId,
-    categoryId: 0,
     userId,
     name: "",
-    fees: 0,
-    hsnNo: "",
-    taxAmount: "",
+    type: "",
+    description: "",
     centralName: details?.serviceType === "central" ? "India" : "",
     stateName: "",
     country: "",
   };
   const [formData, setFormData] = useState(formValues);
+  const [fileUrl, setFileUrl] = useState("");
 
   useEffect(() => {
-      dispatch(getAllCountries());
-      dispatch(getAllStatesByCountryName("India"));
-    }, []);
-  
-    const handleEdit = (values) => {
-      setFormData({
-        productId: productId,
-        categoryId: 0,
-        userId,
-        name: values?.name,
-        fees: values?.fees,
-        hsnNo: values?.hsnNo,
-        taxAmount: values?.taxAmount,
-        centralName: values?.centralName,
-        stateName: values?.stateName,
-        country: values?.country,
-      });
-      setIsEdit(true);
-      setItemId(values?.id);
-      onOpen();
-    };
-  
-    const handleSubmit = useCallback(
-      (values) => {
-        if (isEdit) {
-          dispatch(editAmountForProduct({ productAmountId: itemId, ...values }))
-            .then((resp) => {
-              if (resp.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Fee details updated successfully !.",
-                  color: "success",
-                });
-                onOpenChange(false);
-                dispatch(getSingleProductByProductId(productId));
-                setIsEdit(false);
-                setItemId(null);
-                setFormData(formValues);
-              } else {
-                addToast({ title: "Something went wrong !.", color: "danger" });
-              }
-            })
-            .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
-            );
+    dispatch(getAllCountries());
+    dispatch(getAllStatesByCountryName("India"));
+  }, [dispatch]);
+
+  const handleSubmit = useCallback(
+    (values) => {
+      dispatch(addDocumentProduct(formData))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Document added successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getSingleProductByProductId(productId));
+            setFormData(formValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    },
+    [formData, productId, dispatch]
+  );
+
+  const handleSubmitUploadDoc = useCallback(() => {
+    dispatch(importProductCheckListDoument(fileUrl))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({ title: "Document uploaded successfully !." });
+          setFileUrl("");
+          uploadModal.onOpenChange(false);
         } else {
-          dispatch(addAmountForProduct(formData))
-            .then((resp) => {
-              if (resp.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Fee details created successfully !.",
-                  color: "success",
-                });
-                onOpenChange(false);
-                dispatch(getSingleProductByProductId(productId));
-                setIsEdit(false);
-                setItemId(null);
-                setFormData(formValues);
-              } else {
-                addToast({ title: "Something went wrong !.", color: "danger" });
-              }
-            })
-            .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
-            );
+          addToast({ title: "Something went wrong !." });
         }
-      },
-      [formData]
-    );
-  
+      })
+      .catch(() => addToast({ title: "Something went wrong !." }));
+  }, [dispatch, fileUrl]);
 
   return (
     <>
       <div className="flex justify-between items-center w-full">
-        <div className="flex items-center gap-2">
-          <FileText className={iconClass} /> <h1>Documents</h1>
+        <div className="flex items-center gap-2 my-2">
+          <FileText className={iconClass} />{" "}
+          <h1 className="font-medium">Documents</h1>
         </div>
-        <Button
-          size="sm"
-          isIconOnly
-          variant="light"
-          className="w-6 h-6 rounded-full bg-none"
-          onPress={onOpen}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="light" onPress={uploadModal.onOpen}>
+            <Download className="h-4 w-4" /> Import
+          </Button>
+          <Button
+            size="sm"
+            isIconOnly
+            variant="light"
+            className="w-6 h-6 rounded-full bg-none"
+            onPress={onOpen}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <Table
-        maxTableHeight={"200"}
+        maxTableHeight={"400"}
         aria-label="Example static collection table"
         isHeaderSticky
         classNames={{
-          wrapper: "max-h-[250px]",
+          wrapper: "max-h-[60vh]",
         }}
       >
         <TableHeader
@@ -149,6 +143,18 @@ const ProductDocument = ({ data, details }) => {
             {
               key: "description",
               label: "DESCRIPTION",
+            },
+            {
+              key: "country",
+              label: "COUNTRY",
+            },
+            {
+              key: "centralName",
+              label: "CENTRAL",
+            },
+            {
+              key: "stateName",
+              label: "STATE",
             },
             {
               key: "actions",
@@ -166,7 +172,7 @@ const ProductDocument = ({ data, details }) => {
               {(columnKey) =>
                 columnKey === "actions" ? (
                   <TableCell>
-                    <div className="relative flex justify-center items-center gap-2">
+                    <div className="flex justify-start items-center gap-2">
                       <Dropdown>
                         <DropdownTrigger>
                           <Button isIconOnly size="sm" variant="light">
@@ -178,7 +184,7 @@ const ProductDocument = ({ data, details }) => {
                           <DropdownItem
                             key="delete"
                             color="danger"
-                            // onClick={modal.onOpen} q
+                            // onClick={modal.onOpen}
                           >
                             Delete
                           </DropdownItem>
@@ -199,7 +205,7 @@ const ProductDocument = ({ data, details }) => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Product fee detail
+                Add product document
               </ModalHeader>
               <ModalBody className="w-full">
                 <Form
@@ -215,6 +221,8 @@ const ProductDocument = ({ data, details }) => {
                   <div className="grid grid-cols-2 gap-4 w-full">
                     {details?.serviceType === "international" && (
                       <NewSelect
+                        isRequired={true}
+                        errorMessage={"please select country"}
                         data={countryList}
                         label="Country"
                         name="country"
@@ -229,6 +237,8 @@ const ProductDocument = ({ data, details }) => {
 
                     {details?.serviceType === "central" && (
                       <NewSelect
+                        isRequired={true}
+                        errorMessage={"please select state"}
                         data={statesList}
                         label="State"
                         name="stateName"
@@ -240,72 +250,52 @@ const ProductDocument = ({ data, details }) => {
                         }
                       />
                     )}
-
-                    <Select
-                      items={[
-                        {
-                          label: "Professional fees",
-                          key: "Professional fees",
-                        },
-                        { label: "Service charges", key: "Service charges" },
-                        { label: "Government", key: "Government" },
-                        { label: "Other fees", key: "Other fees" },
-                      ]}
+                    <Input
                       isRequired
-                      errorMessage="please select fee name"
-                      label="Fee name"
+                      label="Document name"
                       name="name"
-                      selectedKeys={[formData?.name]}
+                      errorMessage="please enter the document name ."
+                      value={formData?.name}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
                           name: e.target.value,
                         }))
                       }
+                    />
+                    <Textarea
+                      isRequired
+                      label="Description"
+                      name="description"
+                      errorMessage="please enter the document description ."
+                      value={formData?.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                    />
+
+                    <Select
+                      items={[
+                        { label: "Client", key: "client" },
+                        { label: "Agent", key: "agent" },
+                      ]}
+                      isRequired
+                      errorMessage="please select type"
+                      label="Type"
+                      name="type"
+                      selectedKeys={[formData?.type]}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          type: e.target.value,
+                        }))
+                      }
                     >
                       {(info) => <SelectItem>{info.label}</SelectItem>}
                     </Select>
-                    <Input
-                      isRequired
-                      label="Fee"
-                      errorMessage="please enter fee amount"
-                      name="fees"
-                      type="number"
-                      startContent={<IndianRupee className="h-4 w-4" />}
-                      value={formData?.fees}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          fees: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      label="HSN number"
-                      errorMessage="please enter HSN number"
-                      name="hsnNo"
-                      value={formData?.hsnNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          hsnNo: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      label="Tax %"
-                      errorMessage="please enter tax %"
-                      name="taxAmount"
-                      value={formData?.taxAmount}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          taxAmount: e.target.value,
-                        }))
-                      }
-                    />
                   </div>
                   <ModalFooter className="flex justify-end gap-2 w-full">
                     <Button onPress={onClose}>Cancel</Button>
@@ -314,6 +304,38 @@ const ProductDocument = ({ data, details }) => {
                     </Button>
                   </ModalFooter>
                 </Form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={uploadModal.isOpen}
+        onOpenChange={uploadModal.onOpenChange}
+        size="xl"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Upload document</ModalHeader>
+              <ModalBody className="w-full">
+                <div className="flex flex-col gap-4">
+                  <SingleFileUploader
+                    fileUrl={fileUrl}
+                    setFileUrl={setFileUrl}
+                  />
+                  <div>
+                    <a href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794064357DocumentsChecklist_(2).xlsx">
+                      Download the sample document
+                    </a>
+                  </div>
+                </div>
+                <ModalFooter className="flex justify-end gap-2 w-full">
+                  <Button onPress={onClose}>Cancel</Button>
+                  <Button color="primary" onPress={handleSubmitUploadDoc}>
+                    Submit
+                  </Button>
+                </ModalFooter>
               </ModalBody>
             </>
           )}

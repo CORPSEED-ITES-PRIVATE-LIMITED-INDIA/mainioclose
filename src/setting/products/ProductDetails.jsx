@@ -9,11 +9,14 @@ import {
   FileText,
   FlaskConical,
   HandCoins,
+  HandHelping,
   Handshake,
   Paperclip,
   Wrench,
 } from "lucide-react";
 import ProductDocument from "./ProductDocument";
+import ProductAttachedDocument from "./ProductAttachedDocument";
+import SalesTAT from "./SalesTAT";
 
 const ProductDetails = () => {
   const dispatch = useDispatch();
@@ -53,7 +56,17 @@ const ProductDetails = () => {
           <span>Service documnents</span>
         </div>
       ),
-      content: <ProductDocument data={details?.productDoc} details={details} />,
+      content: <ProductAttachedDocument data={details?.doc} details={details} />,
+    },
+    {
+      id: "salesTat",
+      label: (
+        <div className="flex items-center space-x-2">
+          <HandHelping />
+          <span>Sales TAT</span>
+        </div>
+      ),
+      content: <SalesTAT data={details?.productDoc} details={details} />,
     },
     {
       id: "qualityTat",

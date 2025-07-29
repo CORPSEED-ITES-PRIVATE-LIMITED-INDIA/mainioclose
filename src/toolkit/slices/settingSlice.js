@@ -150,6 +150,69 @@ export const editAmountForProduct = createAsyncThunk(
   }
 );
 
+export const addDocumentProduct = createAsyncThunk(
+  "addDocumentProduct",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/product/addDocumentsInProduct`,
+      data
+    );
+    return response.categoryData;
+  }
+);
+
+export const addDocsInProduct = createAsyncThunk(
+  "addDocsInProduct",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/product/addProductDocumentsInProduct`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const addSalesTatInProduct = createAsyncThunk(
+  "addSalesTATInProduct",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/product/addSalesTat`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllSalesTatInProduct = createAsyncThunk(
+  "getAllSalesTatInProduct",
+  async (productId) => {
+    const response = await api.get(
+      `/leadService/api/v1/product/getAllSalesTat?productId=${productId}`
+    );
+    return response.data;
+  }
+);
+
+export const importProductAmountDoument = createAsyncThunk(
+  "importProductAmountDoument",
+  async (s3Url) => {
+    const response = await api.post(
+      `/leadService/api/v1/import-product-amount-csv-from-s3?s3Url=${s3Url}`
+    );
+    return response.data;
+  }
+);
+
+export const importProductCheckListDoument = createAsyncThunk(
+  "importProductCheckListDoument",
+  async (s3Url) => {
+    const response = await api.post(
+      `/leadService/api/v1/import-product-checklist-doc-csv-from-s3?s3Url=${s3Url}`
+    );
+    return response.data;
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -161,6 +224,7 @@ export const SettingSlice = createSlice({
     ipAddressList: [],
     productListCount: 0,
     singleProductDetail: {},
+    salesTatList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -249,6 +313,18 @@ export const SettingSlice = createSlice({
     builder.addCase(getAllIpAddress.rejected, (state, action) => {
       state.loading = "rejected";
       state.ipAddressList = [];
+    });
+
+    builder.addCase(getAllSalesTatInProduct.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSalesTatInProduct.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesTatList = action.payload;
+    });
+    builder.addCase(getAllSalesTatInProduct.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesTatList = [];
     });
   },
 });

@@ -26,7 +26,7 @@ import {
   TableRow,
   useDisclosure,
 } from "@heroui/react";
-import { Banknote, EllipsisVertical, IndianRupee, Plus } from "lucide-react";
+import { Banknote, Download, EllipsisVertical, IndianRupee, Plus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllCountries,
@@ -39,7 +39,9 @@ import {
   addAmountForProduct,
   editAmountForProduct,
   getSingleProductByProductId,
+  importProductAmountDoument,
 } from "../../toolkit/slices/settingSlice";
+import SingleFileUploader from "../../components/SingleFileUploader";
 const iconClass = "w-5 h-5";
 
 const ProductPrice = ({ data, details }) => {
@@ -48,6 +50,7 @@ const ProductPrice = ({ data, details }) => {
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const uploadModal = useDisclosure();
   const [isEdit, setIsEdit] = useState(false);
   const [itemId, setItemId] = useState(null);
   const formValues = {
@@ -63,6 +66,7 @@ const ProductPrice = ({ data, details }) => {
     country: "",
   };
   const [formData, setFormData] = useState(formValues);
+  const [fileUrl, setFileUrl] = useState("");
 
   useEffect(() => {
     dispatch(getAllCountries());
@@ -134,6 +138,19 @@ const ProductPrice = ({ data, details }) => {
     [formData]
   );
 
+  const handleSubmitUploadDoc = useCallback(() => {
+    dispatch(importProductAmountDoument(fileUrl))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({ title: "Document uploaded successfully !." });
+          setFileUrl("");
+          uploadModal.onOpenChange(false);
+        } else {
+          addToast({ title: "Something went wrong !." });
+        }
+      })
+      .catch(() => addToast({ title: "Something went wrong !." }));
+  }, [dispatch, fileUrl]);
 
   return (
     <>
@@ -142,15 +159,21 @@ const ProductPrice = ({ data, details }) => {
           <Banknote className={iconClass} />{" "}
           <h1 className="font-medium">Price</h1>
         </div>
-        <Button
-          size="sm"
-          isIconOnly
-          variant="light"
-          className="w-6 h-6 rounded-full bg-none"
-          onPress={onOpen}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button variant="light" onPress={uploadModal.onOpen}>
+            <Download className="h-4 w-4" /> Import
+          </Button>
+          <Button
+            size="sm"
+            isIconOnly
+            variant="light"
+            className="w-6 h-6 rounded-full bg-none"
+            onPress={onOpen}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <Table
@@ -178,6 +201,18 @@ const ProductPrice = ({ data, details }) => {
             {
               key: "taxAmount",
               label: "TAX %",
+            },
+            {
+              key: "country",
+              label: "COUNTRY",
+            },
+            {
+              key: "centralName",
+              label: "CENTRAL",
+            },
+            {
+              key: "stateName",
+              label: "STATE",
             },
             {
               key: "actions",
@@ -349,6 +384,38 @@ const ProductPrice = ({ data, details }) => {
                     </Button>
                   </ModalFooter>
                 </Form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={uploadModal.isOpen}
+        onOpenChange={uploadModal.onOpenChange}
+        size="xl"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Upload document</ModalHeader>
+              <ModalBody className="w-full">
+                <div className="flex flex-col gap-4">
+                  <SingleFileUploader
+                    fileUrl={fileUrl}
+                    setFileUrl={setFileUrl}
+                  />
+                  <div>
+                    <a href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794100973productAmount_(1).xlsx">
+                      Download the sample document
+                    </a>
+                  </div>
+                </div>
+                <ModalFooter className="flex justify-end gap-2 w-full">
+                  <Button onPress={onClose}>Cancel</Button>
+                  <Button color="primary" onPress={handleSubmitUploadDoc}>
+                    Submit
+                  </Button>
+                </ModalFooter>
               </ModalBody>
             </>
           )}

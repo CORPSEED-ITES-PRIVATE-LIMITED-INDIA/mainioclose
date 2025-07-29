@@ -15,6 +15,7 @@ const NewSelect = ({
   isClearable = false,
   isVirtualized,
   value,
+  errorMessage
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(value ? [value] : new Set());
@@ -81,6 +82,7 @@ const NewSelect = ({
   return (
     <div className="w-full">
       <Select
+        errorMessage={errorMessage}
         isRequired={isRequired}
         name={name}
         value={value}

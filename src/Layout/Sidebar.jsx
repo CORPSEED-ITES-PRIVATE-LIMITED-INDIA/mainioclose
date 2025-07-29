@@ -108,7 +108,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
       <div className="absolute bottom-1">
         <Dropdown placement="right-end">
           <DropdownTrigger>
-            <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-4 py-1 rounded-md">
+            <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-1 py-1 rounded-md">
               <User
                 avatarProps={{
                   icon: (
@@ -135,12 +135,12 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
               </div>
             </DropdownItem>
             <DropdownItem key="new">
-              <div className="flex items-center gap-4 text-neutral-700">
+              <div className="flex items-center gap-4 text-neutral-700 dark:text-gray-100">
                 <UserCircle2 className="w-5 h-5" /> Profile
               </div>
             </DropdownItem>
             <DropdownItem key="copy">
-              <div className="flex items-center gap-4 text-neutral-700">
+              <div className="flex items-center gap-4 text-neutral-700 dark:text-gray-100">
                 <LogOut className="w-5 h-5" /> Logout
               </div>
             </DropdownItem>
