@@ -29,6 +29,7 @@ import {
 import { useParams } from "react-router-dom";
 import LeadsDetailsMainPage from "../Leads/LeadsDetailsMainPage";
 import { rangePresets } from "../../Common/Commons";
+import { leadSource } from "../../../data/FakeData";
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -61,6 +62,7 @@ const AutoHistory = () => {
     assignType: "",
     statusIds: [],
     assigneeIds: [],
+    source: [],
   });
 
   useEffect(() => {
@@ -415,6 +417,34 @@ const AutoHistory = () => {
               }
               filterOption={(input, option) =>
                 option.label.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Flex>
+
+
+          <Flex vertical gap={8}>
+            <Text>Source </Text>
+            <Select
+              mode="multiple"
+              maxTagCount="responsive"
+              placeholder="Select source"
+              showSearch
+              allowClear
+              value={dateFilter?.source}
+              options={
+                leadSource?.map((item) => ({
+                  label: item,
+                  value: item,
+                })) || []
+              }
+              filterOption={(input, option) =>
+                option.label.toLowerCase().includes(input.toLowerCase())
+              }
+              onChange={(e) =>
+                setDateFilter((prev) => ({
+                  ...prev,
+                  source: e,
+                }))
               }
             />
           </Flex>

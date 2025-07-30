@@ -28,6 +28,7 @@ const TopNav = () => {
             message: "Automation updated successfully !.",
           });
           dispatch(getAutomationStatus());
+          window.location.reload()
         } else {
           notification.error({ message: "Something went wrong !." });
         }
@@ -41,7 +42,7 @@ const TopNav = () => {
       <div className="top-nav-right-container">
         {getHighestPriorityRole(currentRoles) === "ADMIN" && (
           <Flex align="center" gap={8}>
-            <Switch onChange={handleAutomation} value={autoStatus?.status}  />
+            <Switch onChange={handleAutomation} disabled value={autoStatus?.status} checked={autoStatus?.status} />
             <Text>Automation</Text>
           </Flex>
         )}

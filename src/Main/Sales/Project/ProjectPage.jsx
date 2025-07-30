@@ -80,7 +80,7 @@ const ProjectPage = () => {
     {
       dataIndex: "client",
       title: "Client",
-      render: (_, props) => <OverFlowText>{props?.client}</OverFlowText>,
+      render: (_, props) => <OverFlowText>{props?.client?.name}</OverFlowText>,
     },
 
     {
