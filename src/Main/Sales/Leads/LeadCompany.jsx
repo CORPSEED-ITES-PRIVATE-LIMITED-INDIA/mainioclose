@@ -1859,7 +1859,7 @@ const LeadCompany = ({ edit, data, addressInfo, industryInfo }) => {
 
                       <Form.Item
                         label="Contact number"
-                        name="servingSecondaryContactName"
+                        name="servingSecondaryContactNo"
                         rules={[
                           {
                             required: true,
