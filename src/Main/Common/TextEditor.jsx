@@ -97,7 +97,7 @@ const LICENSE_KEY =
 	'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NTUyMTU5OTksImp0aSI6IjcwYmNlMGJhLWRmMzktNDhkOC04Yjk5LTcxODQ1YTk1MTk4NCIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImFlZGE3Y2VmIn0.y9PGSwezbU4Xi1ocy0YwUqpJNPe4pTcJs4-CNFmjZqQqe4fT2smLzGzYf3RyK8VZfPGlXfU0U0ijgQlZnodhXw';
 
   const CLOUD_SERVICES_TOKEN_URL =
-	'https://ssuav8gypc94.cke-cs.com/token/dev/027cdc61050177c172f3170c569024778425b06b4d4021f62a3ca00c2fef?limit=100';
+	'https://ssuav8gypc94.cke-cs.com/token/dev/027cdc61050177c172f3170c569024778425b06b4d4021f62a3ca00c2fef?limit=10';
 
 
 class UsersIntegration extends Plugin {
