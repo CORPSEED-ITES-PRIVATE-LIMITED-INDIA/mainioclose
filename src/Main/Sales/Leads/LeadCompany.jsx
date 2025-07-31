@@ -885,7 +885,7 @@ const LeadCompany = ({ edit, data, addressInfo, industryInfo }) => {
                     label="NDA"
                     name="ndaPresent"
                     rules={[
-                      { required: true, message: "please select aggrement" },
+                      { required: true, message: "please select NDA" },
                     ]}
                   >
                     <Select

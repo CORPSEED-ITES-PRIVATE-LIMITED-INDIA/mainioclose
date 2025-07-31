@@ -121,8 +121,8 @@ const LeadDetailsPage = ({ leadid }) => {
     originalName: "",
     currentUserId: userid,
   });
-  const [addressInfo, setaddressInfo] = useState(true);
-  const [industryInfo, setIndustryInfo] = useState(true);
+  const [addressInfo, setaddressInfo] = useState(false);
+  const [industryInfo, setIndustryInfo] = useState(false);
 
   console.log(
     "cjhvkjsdksjdhsdfkjdskfj 0000000000000",
@@ -147,7 +147,7 @@ const LeadDetailsPage = ({ leadid }) => {
           singleLeadResponseData?.industriesData?.length > 0
         ) {
           console.log("cjhvkjsdksjdhsdfkjdskfj 11111111111");
-          setIndustryInfo(false);
+          setIndustryInfo(true);
         }
 
         if (
@@ -158,11 +158,11 @@ const LeadDetailsPage = ({ leadid }) => {
           singleLeadResponseData?.pinCode
         ) {
           console.log("cjhvkjsdksjdhsdfkjdskfj 222222222222");
-          setaddressInfo(false);
+          setaddressInfo(true);
         }
       }
     }
-  }, [singleLeadResponseData, currentUserRoles]);
+  }, [singleLeadResponseData, currentUserRoles,adminRole]);
 
   useEffect(() => {
     dispatch(getAllStatusListByUserId(userid));

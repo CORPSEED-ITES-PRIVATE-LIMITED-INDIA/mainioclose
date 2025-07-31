@@ -122,10 +122,21 @@ const { Text } = Typography;
 
 const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
   const dispatch = useDispatch();
+  const storageData = localStorage.getItem("userDetail");
+  let localData = null;
+  if (storageData) {
+    try {
+      localData = JSON.parse(storageData);
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+    }
+  } else {
+    console.warn("user detail not found in localStorage");
+  }
   const allComments = useSelector((state) => state.rating.allComments);
-    const currentUserDetail = useSelector(
-      (state) => state.auth.getDepartmentDetail
-    );
+  const currentUserDetail = useSelector(
+    (state) => state.auth.getDepartmentDetail
+  );
   const { userid } = useParams();
   const [files, setFiles] = useState([]);
   const [text, setText] = useState("");
@@ -144,6 +155,9 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
     multiple: true,
     // showUploadList: showUploadList,
     action: "/leadService/api/v1/upload/uploadimageToFileSystem",
+    headers: {
+      Authorization: `Bearer ${localData?.jwt}`,
+    },
     fileList: filesToUpload,
     onChange(info) {
       setFiles(info?.fileList?.map((file) => file?.response));
@@ -156,7 +170,9 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
     } else if (!industryInfo && currentUserDetail?.department === "Sales") {
-      notification.warning({ message: "Please update industry  to proceed !." });
+      notification.warning({
+        message: "Please update industry  to proceed !.",
+      });
     } else {
       let data = {
         leadId: leadid,
@@ -214,7 +230,17 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
         setFlag(false);
       }
     }
-  }, [leadid, userid, text, files, dispatch, inputCommentText,addressInfo,industryInfo,currentUserDetail]);
+  }, [
+    leadid,
+    userid,
+    text,
+    files,
+    dispatch,
+    inputCommentText,
+    addressInfo,
+    industryInfo,
+    currentUserDetail,
+  ]);
 
   return (
     <Flex vertical gap={8}>
@@ -240,7 +266,9 @@ const BulkFileUploader = ({ leadid, addressInfo, industryInfo }) => {
         }}
         onChange={(e) => {
           if (!addressInfo) {
-            notification.warning({ message: "Please update address to proceed !." });
+            notification.warning({
+              message: "Please update address to proceed !.",
+            });
           } else if (!industryInfo) {
             notification.warning({
               message: "Please update industry  to proceed !.",
