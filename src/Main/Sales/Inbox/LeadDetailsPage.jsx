@@ -162,7 +162,7 @@ const LeadDetailsPage = ({ leadid }) => {
         }
       }
     }
-  }, [singleLeadResponseData, currentUserRoles,adminRole]);
+  }, [singleLeadResponseData, currentUserRoles, adminRole]);
 
   useEffect(() => {
     dispatch(getAllStatusListByUserId(userid));
@@ -202,7 +202,14 @@ const LeadDetailsPage = ({ leadid }) => {
           });
         });
     }
-  }, [originalData, dispatch, getSingleLeadData, addressInfo, industryInfo,currentUserDetail]);
+  }, [
+    originalData,
+    dispatch,
+    getSingleLeadData,
+    addressInfo,
+    industryInfo,
+    currentUserDetail,
+  ]);
 
   useEffect(() => {
     if (leadid) {
@@ -212,32 +219,24 @@ const LeadDetailsPage = ({ leadid }) => {
   }, [dispatch, leadid]);
 
   const changeLeadStatusFun = (statusId) => {
-    if (!addressInfo && currentUserDetail?.department === "Sales") {
-      notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
-      notification.warning({
-        message: "Please update industry  to proceed !.",
-      });
-    } else {
-      dispatch(changeLeadStatus({ leadid, userid, statusId }))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            notification.success({
-              message: "Status updated successfully",
-            });
-            getSingleLeadData();
-          } else {
-            notification.error({
-              message: "Something went wrong !.",
-            });
-          }
-        })
-        .catch(() => {
+    dispatch(changeLeadStatus({ leadid, userid, statusId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({
+            message: "Status updated successfully",
+          });
+          getSingleLeadData();
+        } else {
           notification.error({
             message: "Something went wrong !.",
           });
+        }
+      })
+      .catch(() => {
+        notification.error({
+          message: "Something went wrong !.",
         });
-    }
+      });
   };
 
   useEffect(() => {
@@ -284,7 +283,7 @@ const LeadDetailsPage = ({ leadid }) => {
       getSingleLeadData,
       addressInfo,
       industryInfo,
-      currentUserDetail
+      currentUserDetail,
     ]
   );
 
@@ -355,7 +354,15 @@ const LeadDetailsPage = ({ leadid }) => {
           });
       }
     },
-    [leadid, userid, dispatch, getSingleLeadData, addressInfo, industryInfo,currentUserDetail]
+    [
+      leadid,
+      userid,
+      dispatch,
+      getSingleLeadData,
+      addressInfo,
+      industryInfo,
+      currentUserDetail,
+    ]
   );
 
   const sameAssigneePresonFun = async () => {
@@ -538,7 +545,14 @@ const LeadDetailsPage = ({ leadid }) => {
           playErrorSound();
         });
     }
-  }, [leadid, dispatch, descriptionText, addressInfo, industryInfo,currentUserDetail]);
+  }, [
+    leadid,
+    dispatch,
+    descriptionText,
+    addressInfo,
+    industryInfo,
+    currentUserDetail,
+  ]);
 
   const onEditClick = () => {
     dispatch(getAllCountries());
@@ -633,7 +647,10 @@ const LeadDetailsPage = ({ leadid }) => {
               notification.warning({
                 message: "Please update your address first !.",
               });
-            } else if (!industryInfo && currentUserDetail?.department === "Sales") {
+            } else if (
+              !industryInfo &&
+              currentUserDetail?.department === "Sales"
+            ) {
               notification.warning({
                 message: "Please update your industries info first !.",
               });
@@ -786,15 +803,21 @@ const LeadDetailsPage = ({ leadid }) => {
                       <Button
                         size="small"
                         onClick={() => {
-                          if (!addressInfo && currentUserDetail?.department === "Sales") {
+                          if (
+                            !addressInfo &&
+                            currentUserDetail?.department === "Sales"
+                          ) {
                             notification.warning({
                               message: "Please update address to proceed !.",
                             });
-                          } else if (!industryInfo && currentUserDetail?.department === "Sales") {
+                          } else if (
+                            !industryInfo &&
+                            currentUserDetail?.department === "Sales"
+                          ) {
                             notification.warning({
                               message: "Please update industry  to proceed !.",
                             });
-                          } else  {
+                          } else {
                             setUpdateLeadNameToggle(false);
                           }
                         }}
