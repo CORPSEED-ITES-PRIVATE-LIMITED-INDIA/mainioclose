@@ -10,7 +10,6 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
-  Image,
   Snippet,
   Textarea,
 } from "@heroui/react";
@@ -19,7 +18,6 @@ import {
   EllipsisVertical,
   Factory,
   FileText,
-  FileUp,
   Link,
   MapPin,
   MessageCircle,
@@ -47,6 +45,7 @@ import {
 import { useParams } from "react-router-dom";
 import FileUploader from "../../components/FileUploader";
 import ImageGroup from "../../components/ImageGroup";
+const iconClass="h-4 w-4"
 
 const phoneData = [
   {
@@ -88,8 +87,6 @@ const LeadInfo = ({ leadData }) => {
   const allComments = useSelector((state) => state.setting.allComments);
   const remarkData = useSelector((state) => state.leads.remarkData);
 
-  const iconClass = "w-5 h-5";
-
   useEffect(() => {
     dispatch(getAllSlugList());
     dispatch(getAllComments());
@@ -101,7 +98,7 @@ const LeadInfo = ({ leadData }) => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Assignee updated successfully",
+            title: "Lead name updated successfully !.",
             color: "success",
           });
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
@@ -161,7 +158,7 @@ const LeadInfo = ({ leadData }) => {
             <CardBody>
               {toggleSlug ? (
                 <div className="flex justify-between items-center">
-                  <h6>{leadData?.leadName}</h6>
+                  <h6 className="font-medium">{leadData?.leadName}</h6>
                   <Button
                     onPress={() => setToggleSlug(false)}
                     size="sm"
@@ -169,7 +166,7 @@ const LeadInfo = ({ leadData }) => {
                     variant="light"
                     className="w-6 h-6 rounded-full bg-none"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className={iconClass} />
                   </Button>
                 </div>
               ) : (
@@ -188,7 +185,7 @@ const LeadInfo = ({ leadData }) => {
                     variant="light"
                     className="w-6 h-6 rounded-full bg-none"
                   >
-                    <X className="h-4 w-4" />
+                    <X className={iconClass} />
                   </Button>
                 </div>
               )}
@@ -198,7 +195,7 @@ const LeadInfo = ({ leadData }) => {
             <CardHeader>
               <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                  <MapPin className={iconClass} /> <h1>Address Info</h1>
+                  <MapPin className={iconClass} /> <h3 className="font-medium">Address Info</h3>
                 </div>
                 <Button
                   size="sm"
@@ -206,27 +203,27 @@ const LeadInfo = ({ leadData }) => {
                   variant="light"
                   className="w-6 h-6 rounded-full bg-none"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className={iconClass} />
                 </Button>
               </div>
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-foreground-500 text-sm">Address</p>
-                  <p className="text-sm">A-41 Ramji nagar</p>
+                  <p className="text-foreground-500 text-tiny">Address</p>
+                  <p className="text-tiny">A-41 Ramji nagar</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-sm">Country</p>
-                  <p className="text-sm">India</p>
+                  <p className="text-foreground-500 text-tiny">Country</p>
+                  <p className="text-tiny">India</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-sm">State</p>
-                  <p className="text-sm">Uttar pradesh</p>
+                  <p className="text-foreground-500 text-tiny">State</p>
+                  <p className="text-tiny">Uttar pradesh</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-sm">City</p>
-                  <p className="text-sm">Lucknow</p>
+                  <p className="text-foreground-500 text-tiny">City</p>
+                  <p className="text-tiny">Lucknow</p>
                 </div>
               </div>
             </CardBody>
@@ -235,7 +232,7 @@ const LeadInfo = ({ leadData }) => {
             <CardHeader>
               <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                  <Factory className={iconClass} /> <h1>Industry Info</h1>
+                  <Factory className={iconClass} /> <h3 className="font-medium" >Industry Info</h3>
                 </div>
                 <Button
                   size="sm"
@@ -243,29 +240,29 @@ const LeadInfo = ({ leadData }) => {
                   variant="light"
                   className="w-6 h-6 rounded-full bg-none"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className={iconClass} />
                 </Button>
               </div>
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-foreground-500 text-sm">Industry</p>
-                  <p className="text-sm">Electronics</p>
+                  <p className="text-foreground-500 text-tiny">Industry</p>
+                  <p className="text-tiny">Electronics</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-sm">Sub Industry</p>
-                  <p className="text-sm">Electronics Metal</p>
+                  <p className="text-foreground-500 text-tiny">Sub Industry</p>
+                  <p className="text-tiny">Electronics Metal</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-sm">Category</p>
-                  <p className="text-sm">Wire</p>
+                  <p className="text-foreground-500 text-tiny">Category</p>
+                  <p className="text-tiny">Wire</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-sm">
+                  <p className="text-foreground-500 text-tiny">
                     Business activity
                   </p>
-                  <p className="text-sm">Aluminum wire , Copper wire</p>
+                  <p className="text-tiny">Aluminum wire , Copper wire</p>
                 </div>
               </div>
             </CardBody>
@@ -274,7 +271,7 @@ const LeadInfo = ({ leadData }) => {
             <CardHeader>
               <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                  <User className={iconClass} /> <h1>Assignee</h1>
+                  <User className={iconClass} /> <h3 className="font-medium">Assignee</h3>
                 </div>
 
                 {toggleAssignee ? (
@@ -285,7 +282,7 @@ const LeadInfo = ({ leadData }) => {
                     isIconOnly
                     className="w-6 h-6 rounded-full bg-none"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className={iconClass} />
                   </Button>
                 ) : (
                   <Button
@@ -295,7 +292,7 @@ const LeadInfo = ({ leadData }) => {
                     isIconOnly
                     className="w-6 h-6 rounded-full bg-none"
                   >
-                    <X className="h-4 w-4" />
+                    <X className={iconClass} />
                   </Button>
                 )}
               </div>
@@ -303,8 +300,8 @@ const LeadInfo = ({ leadData }) => {
             <CardBody>
               {toggleAssignee ? (
                 <div className="flex flex-col">
-                  <span className="font-semibold">Nishu singh</span>
-                  <span className="text-sm text-gray-400">
+                  <span className="font-semibold text-tiny">Nishu singh</span>
+                  <span className="text-tiny text-gray-400">
                     nishu@corpseed.com
                   </span>
                 </div>
@@ -323,7 +320,7 @@ const LeadInfo = ({ leadData }) => {
             <CardHeader>
               <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                  <ChartBarDecreasing className={iconClass} /> <h1>Status</h1>
+                  <ChartBarDecreasing className={iconClass} /> <h3 className="font-medium" >Status</h3>
                 </div>
 
                 {toggleStatus ? (
@@ -334,7 +331,7 @@ const LeadInfo = ({ leadData }) => {
                     isIconOnly
                     className="w-6 h-6 rounded-full bg-none"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className={iconClass} />
                   </Button>
                 ) : (
                   <Button
@@ -344,7 +341,7 @@ const LeadInfo = ({ leadData }) => {
                     isIconOnly
                     className="w-6 h-6 rounded-full bg-none"
                   >
-                    <X className="h-4 w-4" />
+                    <X className={iconClass} />
                   </Button>
                 )}
               </div>
@@ -352,7 +349,7 @@ const LeadInfo = ({ leadData }) => {
             <CardBody>
               {toggleStatus ? (
                 <div className="flex flex-col">
-                  <span className="font-semibold">New</span>
+                  <span className="text-sm">New</span>
                 </div>
               ) : (
                 <NewSelect
@@ -370,11 +367,11 @@ const LeadInfo = ({ leadData }) => {
           <Card className="dark:bg-gray-700 my-2">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <FileText className={iconClass} /> <h1>Lead description</h1>
+                <FileText className={iconClass} /> <h3 className="font-medium">Lead description</h3>
               </div>
             </CardHeader>
             <CardBody>
-              <p className="text-sm">
+              <p className="text-tiny">
                 Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ipsa
                 veritatis culpa fugit recusandae placeat, in vitae? Dicta nam
                 incidunt odit aut ipsa provident excepturi explicabo iste
@@ -385,7 +382,7 @@ const LeadInfo = ({ leadData }) => {
           <Card className="dark:bg-gray-700 my-2">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Link className={iconClass} /> <h1>Website link</h1>
+                <Link className={iconClass} /> <h3 className="font-medium">Website link</h3>
               </div>
             </CardHeader>
             <CardBody>
@@ -396,7 +393,7 @@ const LeadInfo = ({ leadData }) => {
             <CardHeader>
               <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                  <Phone className={iconClass} /> <h1>Contacts</h1>
+                  <Phone className={iconClass} /> <h3 className="font-medium">Contacts</h3>
                 </div>
                 <Button
                   size="sm"
@@ -404,7 +401,7 @@ const LeadInfo = ({ leadData }) => {
                   variant="light"
                   className="w-6 h-6 rounded-full bg-none"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className={iconClass} />
                 </Button>
               </div>
             </CardHeader>
@@ -426,13 +423,13 @@ const LeadInfo = ({ leadData }) => {
                     <Dropdown>
                       <DropdownTrigger>
                         <Button variant="light" isIconOnly size="sm">
-                          <EllipsisVertical className="h-4 w-4" />
+                          <EllipsisVertical className={iconClass} />
                         </Button>
                       </DropdownTrigger>
                       <DropdownMenu aria-label="Static Actions">
                         <DropdownItem
                           key="edit"
-                          startContent={<Pencil className="h-3 w-3" />}
+                          startContent={<Pencil className={iconClass} />}
                         >
                           Edit
                         </DropdownItem>
@@ -440,7 +437,7 @@ const LeadInfo = ({ leadData }) => {
                           key="delete"
                           color="danger"
                           className="text-danger"
-                          startContent={<Trash className="h-3 w-3" />}
+                          startContent={<Trash className={iconClass} />}
                         >
                           Delete
                         </DropdownItem>
@@ -458,7 +455,7 @@ const LeadInfo = ({ leadData }) => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <MessageCircle className={iconClass} />
-              <h1>Comments / Upload </h1>
+              <h3 className="font-medium">Comments / Upload </h3>
             </div>
           </CardHeader>
           <CardBody>
@@ -496,12 +493,11 @@ const LeadInfo = ({ leadData }) => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <MessageSquareMore className={iconClass} />
-              <h1>Remarks </h1>
+              <h3 className="font-medium">Remarks </h3>
             </div>
           </CardHeader>
           <CardBody className="max-h-[200px] overflow-auto">
             {remarkData?.map((remark) => {
-              console.log("dfjhdkjhdjgdkjd", remark);
               return (
                 <div
                   key={`remark${remark?.id}`}
@@ -509,7 +505,7 @@ const LeadInfo = ({ leadData }) => {
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                      <Avatar className="w-6 h-6 text-tiny">
+                      <Avatar className="w-5 h-5 text-tiny">
                         {remark?.updatedBy?.fullName?.[0]}
                       </Avatar>
                       <span className="font-medium text-tiny">
@@ -517,8 +513,8 @@ const LeadInfo = ({ leadData }) => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Pencil className="w-3 h-3" />
-                      <Trash className="w-3 h-3" color="red" />
+                      <Pencil className={iconClass} />
+                      <Trash className={iconClass} color="red" />
                     </div>
                   </div>
                   <div className="flex justify-between items-center">

@@ -213,6 +213,16 @@ export const importProductCheckListDoument = createAsyncThunk(
   }
 );
 
+export const getClientDesiginationList = createAsyncThunk(
+  "getClientDesiginationList",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/clientDesignation/getAllClientDesignation`
+    );
+    return response.data;
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -225,6 +235,7 @@ export const SettingSlice = createSlice({
     productListCount: 0,
     singleProductDetail: {},
     salesTatList: [],
+    clientDesiginationList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -325,6 +336,17 @@ export const SettingSlice = createSlice({
     builder.addCase(getAllSalesTatInProduct.rejected, (state) => {
       state.loading = "rejected";
       state.salesTatList = [];
+    });
+
+    builder.addCase(getClientDesiginationList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getClientDesiginationList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.clientDesiginationList = action.payload;
+    });
+    builder.addCase(getClientDesiginationList.rejected, (state, action) => {
+      state.loading = "rejected";
     });
   },
 });

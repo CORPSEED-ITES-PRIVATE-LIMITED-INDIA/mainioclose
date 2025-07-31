@@ -15,16 +15,21 @@ const NewSelect = ({
   isClearable = false,
   isVirtualized,
   value,
-  errorMessage
+  errorMessage,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState(value ? [value] : new Set());
+  const [selectedKeys, setSelectedKeys] = useState(
+    Array.isArray(value)
+      ? value
+      : typeof value === "string"
+      ? [value]
+      : new Set()
+  );
   const [triggerWidth, setTriggerWidth] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const triggerRef = useRef(null);
-  const inputRef = useRef(null); // ADD this
+  const inputRef = useRef(null);
 
-  // Update trigger width on mount and resize
   useEffect(() => {
     const updateWidth = () => {
       if (triggerRef.current) {
