@@ -13,69 +13,51 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-  Tooltip,
-  useDisclosure,
 } from "@heroui/react";
-import {
-  Award,
-  ChevronDown,
-  EllipsisVertical,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getAllNewCompanies } from "../../toolkit/slices/companySlice";
+import { getCompanyProjectAction, getLeadsByCompanyId } from "../../toolkit/slices/companySlice";
 
-export const columns = [
-  { name: "ID", uid: "companyId", sortable: true },
+const columns = [
+  { name: "ID", uid: "projectId" },
   { name: "COMPANY NAME", uid: "companyName", sortable: true },
-  { name: "GST", uid: "gstNo" },
-  { name: "ASSIGNEE", uid: "assignee" },
+  { name: "PROJECT NAME", uid: "projectName" },
   { name: "CLIENT", uid: "client" },
-  { name: "PRIMARY ADDRESS", uid: "primaryAddres" },
-  { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "ASSIGNEE", uid: "assignee" },
+  { name: "PRIMARY ADDRESS", uid: "address" },
+  { name: "SECONDARY ADDRESS", uid: "secAddress" },
 ];
 
-export function capitalize(s) {
+function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
+  "leadId",
   "companyName",
-  "gstNo",
-  "email",
-  "assignee",
+  "projectName",
   "client",
-  "primaryAddres",
-  "actions",
+  "assignee",
+  "address",
+  "secAddress",
 ];
 
-const Company = () => {
-  const { userId } = useParams();
+const CompanyProjects = () => {
+  const { userId, companyUnitId } = useParams();
   const dispatch = useDispatch();
-  const count = useSelector(
-    (state) => state.company.newCompaniesList?.[0]?.total
-  );
-  const data = useSelector((state) => state.company.newCompaniesList);
-  const allLeadUser = useSelector((state) => state.leads.allLeadUsers);
-  const currentRoles = useSelector((state) => state?.auth?.roles);
-  const countryList = useSelector((state) => state.common.countriesList);
-  const statesList = useSelector((state) => state.common.statesList);
-  const citiesList = useSelector((state) => state.common.citiesList);
+  const count = useSelector((state) => state.company.companyProjectList?.length);
+  const data = useSelector((state) => state.company.companyProjectList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
-  const [statusFilter, setStatusFilter] = useState("all");
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
     direction: "ascending",
   });
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [companyFilteration, setCompanyFilteration] = useState({
     userId: userId,
     page: 1,
@@ -88,8 +70,8 @@ const Company = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllNewCompanies(companyFilteration));
-  }, [dispatch]);
+    dispatch(getCompanyProjectAction(companyUnitId));
+  }, [dispatch, companyUnitId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -107,9 +89,8 @@ const Company = () => {
         user.leadName.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
-
     return filteredUsers;
-  }, [data, filterValue, statusFilter]);
+  }, [data, filterValue]);
 
   const pages = Math.ceil(count / companyFilteration?.size) || 1;
 
@@ -130,108 +111,63 @@ const Company = () => {
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = useCallback((company, columnKey) => {
+  const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "companyName":
+      case "leadName":
         return (
           <div className="flex items-start gap-2">
-            <Tooltip content={company?.rating}>
-              <Award
-                className="w-5 h-5 mt-1"
-                color={
-                  company?.rating === "Gold"
-                    ? "#FFD700"
-                    : company?.rating === "Silver"
-                    ? "#C0C0C0"
-                    : "#CD7F32"
-                }
-              />
-            </Tooltip>
             <div className="flex flex-col">
-              <Link to={`${company?.companyId}/gstDetails`} className="font-semibold">
-                {company?.companyName || "-"}
-              </Link>
-              <span className="text-sm text-gray-400">
-                Age:{company?.age || "---"}
-              </span>
+              <Link className="font-normal">{rowData?.leadName || "-"}</Link>
             </div>
           </div>
         );
 
-      case "gstNo":
+      case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.gstNo || "-"}</span>
-            {company?.gstType && (
-              <Chip
-                className="capitalize"
-                color="secondary"
-                size="sm"
-                variant="flat"
-              >
-                {company?.gstType || "-"}
-              </Chip>
-            )}
+            <span className="font-semibold">{rowData?.client?.name || "-"}</span>
+            <span className="text-sm text-gray-400">
+              {rowData?.client?.emails || ""},{rowData?.client?.contactNo || ""}
+            </span>
           </div>
         );
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.assignee || "-"}</span>
-          </div>
-        );
-      case "client":
-        return (
-          <div className="flex flex-col">
             <span className="font-semibold">
-              {company.clientContactEmail || "-"}
+              {rowData?.assignee?.fullName || "-"}
             </span>
             <span className="text-sm text-gray-400">
-              {company.clientContactNo || "-"}
+              {rowData?.assignee?.email || ""}
             </span>
           </div>
         );
-      case "primaryAddres":
+
+      case "address":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.address || "-"}</span>
+            <span className="font-normal">
+              {rowData.pAddress || "-"},{rowData.pPinCode || "-"}
+            </span>
             <span className="text-sm text-gray-400">
-              {company.city || ""},{company?.state},{company?.country}
+              {rowData.city || ""},{rowData?.pState},{rowData?.pCountry}
             </span>
           </div>
         );
-      case "secondaryAddress":
+      case "secAddress":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.secAddress || "-"}</span>
+            <span className="font-normal">
+              {rowData.secAddress || "-"},{rowData.sPinCode || "-"}
+            </span>
             <span className="text-sm text-gray-400">
-              {company.secCity || ""},{company?.secState},{company?.seCountry}
+              {rowData.sCity || ""},{rowData?.sState},{rowData?.sCountry}
             </span>
           </div>
         );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem key="history">
-                  <Link>History</Link>
-                </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+
       default:
-        return company[columnKey] || "-";
+        return rowData[columnKey] || "-";
     }
   }, []);
 
@@ -283,7 +219,6 @@ const Company = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-           
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -309,7 +244,7 @@ const Company = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} companies
+            Total {count} company projects
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -329,7 +264,6 @@ const Company = () => {
     );
   }, [
     filterValue,
-    statusFilter,
     visibleColumns,
     onRowsPerPageChange,
     data.length,
@@ -380,9 +314,10 @@ const Company = () => {
       </div>
     );
   }, [selectedKeys, items.length, companyFilteration, pages, hasSearchFilter]);
+
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Company</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Company leads</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -412,7 +347,7 @@ const Company = () => {
         </TableHeader>
         <TableBody emptyContent={"No users found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.companyId}>
+            <TableRow key={item.projectId}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -424,4 +359,4 @@ const Company = () => {
   );
 };
 
-export default Company;
+export default CompanyProjects;

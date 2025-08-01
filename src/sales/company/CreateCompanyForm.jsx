@@ -22,6 +22,7 @@ import {
 import {
   getLocalTimeZone,
   parseAbsoluteToLocal,
+  parseDate,
   toCalendarDate,
   today,
 } from "@internationalized/date";
@@ -285,6 +286,7 @@ const CreateCompanyForm = () => {
                     <SelectItem key={item?.key}>{item?.label}</SelectItem>
                   )}
                 </Select>
+
                 <Input
                   isRequired
                   label="Company name"
@@ -298,6 +300,7 @@ const CreateCompanyForm = () => {
                     }))
                   }
                 />
+
                 <NewSelect
                   isRequired={true}
                   errorMessage={"please select the company structure"}
@@ -312,6 +315,7 @@ const CreateCompanyForm = () => {
                     setFormData((prev) => ({ ...prev, companyType: e }));
                   }}
                 />
+
                 <NewSelect
                   isRequired={true}
                   errorMessage={"please select the gst type"}
@@ -325,6 +329,7 @@ const CreateCompanyForm = () => {
                     setFormData((prev) => ({ ...prev, gstType: e }));
                   }}
                 />
+
                 <NewSelect
                   isRequired={true}
                   errorMessage={"please select the business type"}
@@ -353,9 +358,9 @@ const CreateCompanyForm = () => {
                     name="gstNo"
                     value={formData.gstNo}
                     onChange={handleGstChange}
-                    maxLength={15} // Restrict to 15 characters
-                    errorMessage={gstError} // Show validation error
-                    isInvalid={!!gstError} // Mark as invalid if there's an error
+                    maxLength={15}
+                    errorMessage={gstError}
+                    isInvalid={!!gstError}
                   />
                 )}
 
@@ -380,7 +385,11 @@ const CreateCompanyForm = () => {
                   showMonthAndYearPickers
                   label="Company incorporate date"
                   name="establishDate"
-                  // value={parseAbsoluteToLocal(formData?.establishDate)}
+                  value={
+                    formData?.establishDate
+                      ? parseDate(formData?.establishDate)
+                      : null
+                  }
                   maxValue={today(getLocalTimeZone())}
                   onChange={(e) => {
                     setFormData((prev) => ({
@@ -981,9 +990,11 @@ const CreateCompanyForm = () => {
                       label="Serving company incorporate date"
                       name="servingEstablishDate"
                       maxValue={today(getLocalTimeZone())}
-                      // value={parseAbsoluteToLocal(
-                      //   formData?.servingEstablishDate
-                      // )}
+                      value={
+                        formData?.servingEstablishDate
+                          ? parseDate(formData?.servingEstablishDate)
+                          : null
+                      }
                       onChange={(e) => {
                         setFormData((prev) => ({
                           ...prev,

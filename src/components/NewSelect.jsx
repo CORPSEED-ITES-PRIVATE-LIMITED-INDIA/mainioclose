@@ -3,8 +3,8 @@ import { Select, SelectItem, Input } from "@heroui/react";
 import { ChevronDownIcon } from "lucide-react";
 
 const NewSelect = ({
-  data,
-  selectionMode,
+  data = [], // Default to empty array
+  selectionMode = "single", // Default to single selection
   labelPlacement,
   label,
   name,
@@ -17,19 +17,21 @@ const NewSelect = ({
   value,
   errorMessage,
 }) => {
+  // Initialize selectedKeys based on selectionMode and value prop
+  const [selectedKeys, setSelectedKeys] = useState(() => {
+    if (selectionMode === "multiple") {
+      return Array.isArray(value) ? value : [];
+    }
+    return typeof value === "string" && value ? value : "";
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState(
-    Array.isArray(value)
-      ? value
-      : typeof value === "string"
-      ? [value]
-      : new Set()
-  );
   const [triggerWidth, setTriggerWidth] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const triggerRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Update trigger width for dropdown alignment
   useEffect(() => {
     const updateWidth = () => {
       if (triggerRef.current) {
@@ -41,16 +43,19 @@ const NewSelect = ({
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
+  // Sync filteredData with data prop
   useEffect(() => {
     setFilteredData(data);
   }, [data]);
 
+  // Focus input when filteredData changes
   useEffect(() => {
     if (filteredData.length > 0 && inputRef.current) {
       inputRef.current.focus();
     }
   }, [filteredData]);
 
+  // Handle search query
   const handleSearchQuery = useCallback(
     (e) => {
       setSearchQuery(e);
@@ -60,12 +65,13 @@ const NewSelect = ({
         const filter = data?.filter((user) =>
           user?.[labelKey]?.toLowerCase()?.includes(e?.toLowerCase())
         );
-        setFilteredData(filter);
+        setFilteredData(filter || []);
       }
     },
     [data, labelKey]
   );
 
+  // Memoized top content (search input)
   const topContent = useMemo(
     () => (
       <div className="sticky top-0 z-10">
@@ -84,25 +90,56 @@ const NewSelect = ({
     [searchQuery, handleSearchQuery]
   );
 
+  // Handle selection change
+  const handleSelectionChange = (keys) => {
+    let selectedValue;
+
+    if (selectionMode === "multiple") {
+      if (keys === "all") {
+        selectedValue = data
+          .map((item) => String(item[valueKey]))
+          .filter((key) => key !== "");
+      } else {
+        selectedValue = [...keys].filter((key) => key !== "");
+      }
+    } else {
+      // For single selection, take the first key or empty string
+      selectedValue = keys.size > 0 ? [...keys][0] : "";
+    }
+
+    // Update state
+    setSelectedKeys(selectedValue);
+    setSearchQuery("");
+
+    // Call parent onChange with the appropriate format
+    if (onChange) {
+      onChange(selectedValue);
+    }
+  };
+
+  // Convert selectedKeys to Set for Select component
+  const selectKeys =
+    selectionMode === "multiple"
+      ? new Set(selectedKeys)
+      : new Set([selectedKeys].filter(Boolean));
+
+  console.log("Selected Keys (internal):", selectedKeys);
+  console.log("Select Keys (for Select component):", selectKeys);
+
   return (
     <div className="w-full">
       <Select
         errorMessage={errorMessage}
         isRequired={isRequired}
         name={name}
-        value={value}
         isVirtualized={isVirtualized}
         isClearable={isClearable}
         selectionMode={selectionMode}
         items={filteredData}
         label={label}
         labelPlacement={labelPlacement}
-        selectedKeys={selectedKeys}
-        onSelectionChange={(keys) => {
-          setSelectedKeys(keys);
-          setSearchQuery("");
-        }}
-        onChange={(e) => onChange(e.target.value)}
+        selectedKeys={selectKeys}
+        onSelectionChange={handleSelectionChange}
         disallowEmptySelection={false}
         aria-label="Searchable select"
         selectorIcon={<ChevronDownIcon className="w-5 h-5 text-default-500" />}
@@ -117,7 +154,10 @@ const NewSelect = ({
           return (
             <div className="flex flex-wrap gap-2">
               {items.map((item) => (
-                <div key={item.key} className="flex items-center gap-2">
+                <div
+                  key={item.key}
+                  className="flex items-center gap-2 selectable-text"
+                >
                   <div className="flex flex-col">
                     <span>{item.data?.[labelKey]}</span>
                   </div>
@@ -127,15 +167,13 @@ const NewSelect = ({
           );
         }}
       >
-        {(data) => {
-          return (
-            <SelectItem key={data?.[valueKey]} textValue={data?.[labelKey]}>
-              <div className="flex flex-col">
-                <span className="text-small">{data?.[labelKey]}</span>
-              </div>
-            </SelectItem>
-          );
-        }}
+        {(data) => (
+          <SelectItem key={data?.[valueKey]} textValue={data?.[labelKey]}>
+            <div className="flex flex-col">
+              <span className="text-small">{data?.[labelKey]}</span>
+            </div>
+          </SelectItem>
+        )}
       </Select>
     </div>
   );

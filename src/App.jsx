@@ -1,3 +1,4 @@
+import './App.css'
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Layoutpage from "./Layout/Layoutpage";
 import Leads from "./sales/leads/Leads";
@@ -16,7 +17,9 @@ import LeadProducts from "./setting/products/LeadProducts";
 import LeadComments from "./setting/comments/LeadComments";
 import IpAddress from "./setting/ipaddress/IpAddress";
 import ProductDetails from "./setting/products/ProductDetails";
-
+import CompanyGstList from "./sales/company/CompanyGstList";
+import CompanyUnits from './sales/company/companyUnits';
+import CompanyUnitDetails from './sales/company/CompanyUnitDetails';
 
 function App() {
   const router = createBrowserRouter([
@@ -37,6 +40,18 @@ function App() {
                 { path: "leads/:leadId/leadDetail", element: <LeadDetail /> },
                 { path: "leads/:leadId/leadHistory", element: <LeadHistory /> },
                 { path: "company", element: <Company /> },
+                {
+                  path: "company/:companyId/gstDetails",
+                  element: <CompanyGstList />,
+                },
+                {
+                  path: "company/:companyId/gstDetails/:stateName/companyUnits",
+                  element: <CompanyUnits />,
+                },
+                {
+                  path: "company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/unitDetails",
+                  element: <CompanyUnitDetails />,
+                },
               ],
             },
             {
@@ -48,7 +63,10 @@ function App() {
               children: [
                 { path: "status", element: <LeadStatus /> },
                 { path: "products", element: <LeadProducts /> },
-                { path: "products/:productId/productDetail", element: <ProductDetails /> },
+                {
+                  path: "products/:productId/productDetail",
+                  element: <ProductDetails />,
+                },
                 { path: "comments", element: <LeadComments /> },
                 { path: "ipAddress", element: <IpAddress /> },
               ],

@@ -192,6 +192,16 @@ export const getAllContactDetails = createAsyncThunk(
   }
 );
 
+export const getAllContactListById = createAsyncThunk(
+  "getAllContactListById",
+  async (companyId) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`
+    );
+    return response.data;
+  }
+);
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -213,93 +223,94 @@ const CommonSlice = createSlice({
     subSubIndustryListBySubIndustryId: [],
     industryDataListBySubSubIndustryId: [],
     allContactList: [],
+    contactListByCompanyId: [],
   },
   reducers: {
-    handleReset: (state, action) => {
+    handleReset: (state) => {
       state.citiesList = [];
       state.statesList = [];
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(getDesiginationById.pending, (state, action) => {
+    builder.addCase(getDesiginationById.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getDesiginationById.fulfilled, (state, action) => {
       state.loading = "success";
       state.desiginationListById = action.payload;
     });
-    builder.addCase(getDesiginationById.rejected, (state, action) => {
+    builder.addCase(getDesiginationById.rejected, (state) => {
       state.loading = "rejected";
     });
-    builder.addCase(getManagerById.pending, (state, action) => {
+    builder.addCase(getManagerById.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getManagerById.fulfilled, (state, action) => {
       state.loading = "success";
       state.managerListById = action.payload;
     });
-    builder.addCase(getManagerById.rejected, (state, action) => {
+    builder.addCase(getManagerById.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getProcurementAssigneeList.pending, (state, action) => {
+    builder.addCase(getProcurementAssigneeList.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getProcurementAssigneeList.fulfilled, (state, action) => {
       state.loading = "success";
       state.procurementAssigneeList = action.payload;
     });
-    builder.addCase(getProcurementAssigneeList.rejected, (state, action) => {
+    builder.addCase(getProcurementAssigneeList.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAllCountries.pending, (state, action) => {
+    builder.addCase(getAllCountries.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllCountries.fulfilled, (state, action) => {
       state.loading = "success";
       state.countriesList = action.payload;
     });
-    builder.addCase(getAllCountries.rejected, (state, action) => {
+    builder.addCase(getAllCountries.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAllSecondaryCountries.pending, (state, action) => {
+    builder.addCase(getAllSecondaryCountries.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllSecondaryCountries.fulfilled, (state, action) => {
       state.loading = "success";
       state.secondaryCountriesList = action.payload;
     });
-    builder.addCase(getAllSecondaryCountries.rejected, (state, action) => {
+    builder.addCase(getAllSecondaryCountries.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAllStatesByCountryId.pending, (state, action) => {
+    builder.addCase(getAllStatesByCountryId.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllStatesByCountryId.fulfilled, (state, action) => {
       state.loading = "success";
       state.statesList = action.payload;
     });
-    builder.addCase(getAllStatesByCountryId.rejected, (state, action) => {
+    builder.addCase(getAllStatesByCountryId.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAllStatesByCountryName.pending, (state, action) => {
+    builder.addCase(getAllStatesByCountryName.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllStatesByCountryName.fulfilled, (state, action) => {
       state.loading = "success";
       state.statesList = action.payload;
     });
-    builder.addCase(getAllStatesByCountryName.rejected, (state, action) => {
+    builder.addCase(getAllStatesByCountryName.rejected, (state) => {
       state.loading = "rejected";
     });
 
     builder.addCase(
       getAllSecondaryStatesBySecondaryCountryName.pending,
-      (state, action) => {
+      (state) => {
         state.loading = "pending";
       }
     );
@@ -312,36 +323,36 @@ const CommonSlice = createSlice({
     );
     builder.addCase(
       getAllSecondaryStatesBySecondaryCountryName.rejected,
-      (state, action) => {
+      (state) => {
         state.loading = "rejected";
       }
     );
 
-    builder.addCase(getAllCitiesByStateId.pending, (state, action) => {
+    builder.addCase(getAllCitiesByStateId.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllCitiesByStateId.fulfilled, (state, action) => {
       state.loading = "success";
       state.citiesList = action.payload;
     });
-    builder.addCase(getAllCitiesByStateId.rejected, (state, action) => {
+    builder.addCase(getAllCitiesByStateId.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAllCitiesByStateName.pending, (state, action) => {
+    builder.addCase(getAllCitiesByStateName.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllCitiesByStateName.fulfilled, (state, action) => {
       state.loading = "success";
       state.citiesList = action.payload;
     });
-    builder.addCase(getAllCitiesByStateName.rejected, (state, action) => {
+    builder.addCase(getAllCitiesByStateName.rejected, (state) => {
       state.loading = "rejected";
     });
 
     builder.addCase(
       getAllSecondaryCitiesBySecondaryStateName.pending,
-      (state, action) => {
+      (state) => {
         state.loading = "pending";
       }
     );
@@ -354,12 +365,12 @@ const CommonSlice = createSlice({
     );
     builder.addCase(
       getAllSecondaryCitiesBySecondaryStateName.rejected,
-      (state, action) => {
+      (state) => {
         state.loading = "rejected";
       }
     );
 
-    builder.addCase(getAllUsers.pending, (state, action) => {
+    builder.addCase(getAllUsers.pending, (state) => {
       state.usersLoading = "pending";
       state.usersList = [];
     });
@@ -367,23 +378,23 @@ const CommonSlice = createSlice({
       state.usersList = action.payload;
       state.usersLoading = "success";
     });
-    builder.addCase(getAllUsers.rejected, (state, action) => {
+    builder.addCase(getAllUsers.rejected, (state) => {
       state.usersList = [];
       state.usersLoading = "rejected";
     });
 
-    builder.addCase(getAllMainIndustry.pending, (state, action) => {
+    builder.addCase(getAllMainIndustry.pending, (state) => {
       state.industryLoading = "pending";
     });
     builder.addCase(getAllMainIndustry.fulfilled, (state, action) => {
       state.industryLoading = "fulfilled";
       state.allMainIndustry = action.payload;
     });
-    builder.addCase(getAllMainIndustry.rejected, (state, action) => {
+    builder.addCase(getAllMainIndustry.rejected, (state) => {
       state.industryLoading = "rejected";
     });
 
-    builder.addCase(getSubIndustryByIndustryId.pending, (state, action) => {
+    builder.addCase(getSubIndustryByIndustryId.pending, (state) => {
       state.industryLoading = "pending";
       state.subIndustryListByIndustryId = [];
     });
@@ -391,18 +402,15 @@ const CommonSlice = createSlice({
       state.industryLoading = "fulfilled";
       state.subIndustryListByIndustryId = action.payload;
     });
-    builder.addCase(getSubIndustryByIndustryId.rejected, (state, action) => {
+    builder.addCase(getSubIndustryByIndustryId.rejected, (state) => {
       state.industryLoading = "rejected";
       state.subIndustryListByIndustryId = [];
     });
 
-    builder.addCase(
-      getSubSubIndustryBySubIndustryId.pending,
-      (state, action) => {
-        state.industryLoading = "pending";
-        state.subSubIndustryListBySubIndustryId = [];
-      }
-    );
+    builder.addCase(getSubSubIndustryBySubIndustryId.pending, (state) => {
+      state.industryLoading = "pending";
+      state.subSubIndustryListBySubIndustryId = [];
+    });
     builder.addCase(
       getSubSubIndustryBySubIndustryId.fulfilled,
       (state, action) => {
@@ -410,21 +418,15 @@ const CommonSlice = createSlice({
         state.subSubIndustryListBySubIndustryId = action.payload;
       }
     );
-    builder.addCase(
-      getSubSubIndustryBySubIndustryId.rejected,
-      (state, action) => {
-        state.industryLoading = "rejected";
-        state.subSubIndustryListBySubIndustryId = [];
-      }
-    );
+    builder.addCase(getSubSubIndustryBySubIndustryId.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.subSubIndustryListBySubIndustryId = [];
+    });
 
-    builder.addCase(
-      getIndustryDataBySubSubIndustryId.pending,
-      (state, action) => {
-        state.industryLoading = "pending";
-        state.industryDataListBySubSubIndustryId = [];
-      }
-    );
+    builder.addCase(getIndustryDataBySubSubIndustryId.pending, (state) => {
+      state.industryLoading = "pending";
+      state.industryDataListBySubSubIndustryId = [];
+    });
     builder.addCase(
       getIndustryDataBySubSubIndustryId.fulfilled,
       (state, action) => {
@@ -432,23 +434,32 @@ const CommonSlice = createSlice({
         state.industryDataListBySubSubIndustryId = action.payload;
       }
     );
-    builder.addCase(
-      getIndustryDataBySubSubIndustryId.rejected,
-      (state, action) => {
-        state.industryLoading = "rejected";
-        state.industryDataListBySubSubIndustryId = [];
-      }
-    );
+    builder.addCase(getIndustryDataBySubSubIndustryId.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.industryDataListBySubSubIndustryId = [];
+    });
 
-    builder.addCase(getAllContactDetails.pending, (state, action) => {
+    builder.addCase(getAllContactDetails.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllContactDetails.fulfilled, (state, action) => {
       state.loading = "success";
       state.allContactList = action.payload;
     });
-    builder.addCase(getAllContactDetails.rejected, (state, action) => {
+    builder.addCase(getAllContactDetails.rejected, (state) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(getAllContactListById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllContactListById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.contactListByCompanyId = action?.payload;
+    });
+    builder.addCase(getAllContactListById.rejected, (state) => {
+      state.loading = "rejected";
+      state.contactListByCompanyId = [];
     });
   },
 });
