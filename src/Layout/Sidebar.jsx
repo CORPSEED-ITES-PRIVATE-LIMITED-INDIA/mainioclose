@@ -8,6 +8,8 @@ import {
   User2,
   LogOut,
   UserCircle2,
+  HandCoins,
+  SquareUserRound,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -25,7 +27,9 @@ const icons = {
   Briefcase,
   Settings,
   BarChart,
-  User2
+  User2,
+  HandCoins,
+  SquareUserRound,
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {

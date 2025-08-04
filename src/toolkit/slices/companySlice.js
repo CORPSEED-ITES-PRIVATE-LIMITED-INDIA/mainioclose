@@ -84,7 +84,7 @@ export const getLeadsByCompanyId = createAsyncThunk(
 
 export const getCompanyProjectAction = createAsyncThunk(
   "get-company-project-action",
-  async ( id ) => {
+  async (id) => {
     const getCompanyProjectData = await api.get(
       `/leadService/api/v1/company/getAllProjectByCompany?companyId=${id}`
     );
@@ -102,6 +102,16 @@ export const getCompanyByUnitId = createAsyncThunk(
   }
 );
 
+export const getAllServingCompanyList = createAsyncThunk(
+  "getAllServingCompanyList",
+  async ({ userId, page, size, status }) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/getAllServingCompany?userId=${userId}&page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -113,8 +123,9 @@ const CompanySlice = createSlice({
     companyGstList: [],
     companyUnitList: [],
     comapanyLeadsList: [],
-    companyProjectList:[],
-    companyDetail:{}
+    companyProjectList: [],
+    companyDetail: {},
+    servingCompanyList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllNewCompanies.pending, (state) => {
@@ -204,7 +215,7 @@ const CompanySlice = createSlice({
       state.comapanyLeadsList = [];
     });
 
-     builder.addCase(getCompanyProjectAction.pending, (state) => {
+    builder.addCase(getCompanyProjectAction.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getCompanyProjectAction.fulfilled, (state, action) => {
@@ -216,9 +227,8 @@ const CompanySlice = createSlice({
       state.companyProjectList = [];
     });
 
-     builder.addCase(getCompanyByUnitId.pending, (state) => {
+    builder.addCase(getCompanyByUnitId.pending, (state) => {
       state.loading = "pending";
-
     });
     builder.addCase(getCompanyByUnitId.fulfilled, (state, action) => {
       state.loading = "success";
@@ -227,6 +237,18 @@ const CompanySlice = createSlice({
     builder.addCase(getCompanyByUnitId.rejected, (state) => {
       state.loading = "rejected";
       state.companyDetail = {};
+    });
+
+    builder.addCase(getAllServingCompanyList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllServingCompanyList.fulfilled, (state, action) => {
+      state.servingCompanyList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllServingCompanyList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.servingCompanyList = [];
     });
   },
 });

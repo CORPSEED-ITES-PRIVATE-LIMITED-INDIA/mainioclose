@@ -12,6 +12,7 @@
   "dependencies": {
     "@heroui/react": "^2.7.8",
     "@heroui/use-infinite-scroll": "^2.2.10",
+    "@hookform/resolvers": "^5.2.1",
     "@internationalized/date": "^3.8.2",
     "@reduxjs/toolkit": "^2.8.2",
     "axios": "^1.10.0",
@@ -23,7 +24,8 @@
     "react-hook-form": "^7.60.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.1",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "zod": "^4.0.14"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

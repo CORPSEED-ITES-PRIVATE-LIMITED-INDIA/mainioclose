@@ -20,6 +20,15 @@ import ProductDetails from "./setting/products/ProductDetails";
 import CompanyGstList from "./sales/company/CompanyGstList";
 import CompanyUnits from './sales/company/companyUnits';
 import CompanyUnitDetails from './sales/company/CompanyUnitDetails';
+import DiscountedEstimate from './sales/leads/DiscountedEstimate';
+import Projects from './sales/leads/Projects';
+import ServingCompanies from './sales/leads/ServingCompanies';
+import CompanyApprovals from './accounts/CompanyApprovals';
+import PaymentApprovals from './accounts/PaymentApprovals';
+import UsersList from './hr/UsersList';
+import UserApprovals from './hr/UserApprovals';
+import Services from './hr/Services';
+import Rating from './hr/Rating';
 
 function App() {
   const router = createBrowserRouter([
@@ -52,7 +61,44 @@ function App() {
                   path: "company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/unitDetails",
                   element: <CompanyUnitDetails />,
                 },
+                { path: "discountedEstimate", element: <DiscountedEstimate /> },
+                { path: "projects", element: <Projects /> },
+                { path: "servingCompanies", element: <ServingCompanies /> },
               ],
+            },
+            {
+              path:'accounts',
+              children:[
+                {
+                  path:'companyApprovals',
+                  element:<CompanyApprovals/>
+                },
+                {
+                  path:'paymentApprovals',
+                  element:<PaymentApprovals/>
+                }
+              ]
+            },
+            {
+              path:'hr',
+              children:[
+                {
+                  path:'usersList',
+                  element:<UsersList/>
+                },
+                {
+                  path:'usersApprovalList',
+                  element:<UserApprovals/>
+                },
+                {
+                  path:'services',
+                  element:<Services/>
+                },
+                {
+                  path:'services/:serviceId/rating',
+                  element:<Rating/>
+                },
+              ]
             },
             {
               path: "users",

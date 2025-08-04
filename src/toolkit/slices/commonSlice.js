@@ -202,6 +202,43 @@ export const getAllContactListById = createAsyncThunk(
   }
 );
 
+export const getUserApprovalList = createAsyncThunk(
+  "allhrUserApprovalList",
+  async ({ userId }) => {
+    const allDataUser = await api.get(
+      `/leadService/api/v1/hrManagment/getUserApprovalHr?userId=${userId}`
+    );
+    return allDataUser?.data;
+  }
+);
+
+export const getAllUrlList = createAsyncThunk("allUrlsList", async () => {
+  const response = await api.get(`/leadService/api/v1/urls/getAllUrls`);
+  return response.data;
+});
+
+
+export const getUsersListByServiceRatingId = createAsyncThunk(
+  "getUsersListByServiceRatingId",
+  async ({ serviceId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/rating/getRetingByUrls?urlsId=${serviceId}`
+    )
+    return response?.data
+  }
+)
+
+export const addNewRating = createAsyncThunk(
+  "add-new-rating-star",
+  async (data) => {
+    const createRating = await api.post(
+      `/leadService/api/v1/rating/addUserAndRating`,
+      data
+    )
+    return createRating
+  }
+)
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -224,6 +261,9 @@ const CommonSlice = createSlice({
     industryDataListBySubSubIndustryId: [],
     allContactList: [],
     contactListByCompanyId: [],
+    approvalUserList: [],
+    urlList: [],
+    usersListByServiceId:[]
   },
   reducers: {
     handleReset: (state) => {
@@ -460,6 +500,42 @@ const CommonSlice = createSlice({
     builder.addCase(getAllContactListById.rejected, (state) => {
       state.loading = "rejected";
       state.contactListByCompanyId = [];
+    });
+
+    builder.addCase(getUserApprovalList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUserApprovalList.fulfilled, (state, action) => {
+      state.approvalUserList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getUserApprovalList.rejected, (state) => {
+      state.approvalUserList = [];
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllUrlList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUrlList.fulfilled, (state, action) => {
+      state.urlList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllUrlList.rejected, (state) => {
+      state.loading = "success";
+      state.urlList = [];
+    });
+
+    builder.addCase(getUsersListByServiceRatingId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUsersListByServiceRatingId.fulfilled, (state, action) => {
+      state.usersListByServiceId = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getUsersListByServiceRatingId.rejected, (state) => {
+      state.loading = "success";
+      state.usersListByServiceId = [];
     });
   },
 });

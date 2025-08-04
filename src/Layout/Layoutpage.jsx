@@ -20,6 +20,30 @@ const navItems = [
     children: [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
+      { title: "Discounted Estimate", icon: "", url: "sales/discountedEstimate", key: "discountedEstimate" },
+      { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
+      { title: "Serving Companies", icon: "", url: "sales/servingCompanies", key: "servingCompanies" },
+    ],
+  },
+  {
+    title: "Accounts",
+    icon: "HandCoins",
+    url: "/accounts",
+    key: "accounts",
+    children: [
+      { title: "Company approvals", icon: "", url: "accounts/companyApprovals", key: "companyApprovals" },
+      { title: "Payment approvals", icon: "", url: "accounts/paymentApprovals", key: "paymentApprovals" },
+    ],
+  },
+  {
+    title: "HR",
+    icon: "SquareUserRound",
+    url: "/hr",
+    key: "hr",
+    children: [
+      { title: "Users list", icon: "", url: "hr/usersList", key: "usersList" },
+      { title: "Users approval list", icon: "", url: "hr/usersApprovalList", key: "usersApprovalList" },
+      { title: "Services", icon: "", url: "hr/services", key: "services" },
     ],
   },
   {

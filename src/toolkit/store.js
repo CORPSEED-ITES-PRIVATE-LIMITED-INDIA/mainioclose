@@ -7,6 +7,7 @@ import leadReducer from "./slices/leadSlice";
 import commonReducer from "./slices/commonSlice";
 import settingReducer from "./slices/settingSlice";
 import companyReducer from "./slices/companySlice";
+import accountReducer from "./slices/accountSlice";
 
 const reducers = combineReducers({
   auth: authReducer,
@@ -14,6 +15,7 @@ const reducers = combineReducers({
   common: commonReducer,
   setting: settingReducer,
   company: companyReducer,
+  account:accountReducer
 });
 
 const persistConfig = {
