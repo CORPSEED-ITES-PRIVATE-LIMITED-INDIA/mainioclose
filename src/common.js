@@ -60,3 +60,16 @@ export function dateFormat(isoDate) {
     return 'Invalid Date'; // Or handle the error as needed
   }
 }
+
+export const leadSource = [
+  "Corpseed Website",
+  "Facebook",
+  "Instagram",
+  "IVR",
+  "Person Reference",
+  "Whatsapp",
+  "Law Zoom website",
+  "Other",
+  "Mail",
+  "Emailer",
+];

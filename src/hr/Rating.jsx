@@ -34,6 +34,9 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addNewRating,
+  editUserRatingAssignee,
+  getAllUrlList,
   getAllUsers,
   getUsersListByServiceRatingId,
 } from "../toolkit/slices/commonSlice";
@@ -55,15 +58,19 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "urlsName", "user", "rating"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "urlsName", "user", "rating", "actions"];
 
 const formSchema = z.object({
   ratingsUser: z.array(z.string()).min(1, "Please select at least one user"),
-
   rating: z.enum(["1", "2", "3", "4", "5"], {
     errorMap: () => ({ message: "Please select a rating" }),
   }),
 });
+
+const defaultValues = {
+  ratingsUser: [],
+  rating: "",
+};
 
 const Rating = () => {
   const { serviceId } = useParams();
@@ -87,6 +94,7 @@ const Rating = () => {
     page: 1,
     size: 50,
   });
+  const [editData, setEditData] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -94,13 +102,10 @@ const Rating = () => {
     control,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      ratingsUser: [],
-      rating: "",
-    },
+    defaultValues,
   });
 
   useEffect(() => {
@@ -116,13 +121,18 @@ const Rating = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...data];
+    let filteredData = [...data];
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredData = filteredData.filter((item) =>{
+        console.log('djhfsdkjhdfjkhgj',item)
+        return(
+          item?.urlsName?.toLowerCase().includes(filterValue.toLowerCase())
+        )
+      }
+        
       );
     }
-    return filteredUsers;
+    return filteredData;
   }, [data, filterValue]);
 
   const pages = Math.ceil(count / filteration?.size) || 1;
@@ -142,30 +152,75 @@ const Rating = () => {
     });
   }, [sortDescriptor, items]);
 
+  const handleEdit = (rowData) => {
+    reset({
+      ratingsUser: rowData?.user?.map((item) => item?.id),
+      rating: rowData?.rating,
+    });
+    setEditData(rowData);
+    onOpen();
+  };
+
   const onSubmit = (data) => {
-    console.log("dfjgbkjdhbjjjjdhbd", data);
-    dispatch(addNewRating(data))
-      .then((response) => {
-        if (response.meta.requestStatus === "fulfilled") {
+    if (editData) {
+      dispatch(
+        editUserRatingAssignee({
+          ...data,
+          urlsManagmentId: serviceId,
+          ratingId: editData?.id,
+        })
+      )
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Rating updated successfully !.",
+              color: "success",
+            });
+            dispatch(getUsersListByServiceRatingId({ serviceId }));
+            dispatch(getAllUrlList());
+            reset(defaultValues);
+            onOpenChange(false);
+            setEditData(null);
+          } else {
+            addToast({
+              title: "Either user is already persent or empty !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
           addToast({
-            title: "Rating updated successfully !.",
-            color: "success",
+            title: "Either user is already persent or empty !.",
+            color: "danger",
           });
-          dispatch(getUsersListByServiceRatingId({ serviceId }));
-          dispatch(getAllUrlList());
-          form.resetFields();
-          setOpenModal(false);
-        } else if (response.meta.requestStatus === "rejected") {
-          notification.error({
-            message: "Either user is already persent or empty",
+        });
+    } else {
+      dispatch(addNewRating({ ...data, urlsManagmentId: serviceId }))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Rating updated successfully !.",
+              color: "success",
+            });
+            dispatch(getUsersListByServiceRatingId({ serviceId }));
+            dispatch(getAllUrlList());
+            reset(defaultValues);
+            onOpenChange(false);
+            setEditData(null);
+          } else {
+            addToast({
+              title: "Either user is already persent or empty !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Either user is already persent or empty !.",
+            color: "danger",
           });
-          setOpenModal(false);
-        }
-      })
-      .catch((err) => {
-        notification.error({ message: "Something went wrong !." });
-        setOpenModal(false);
-      });
+        });
+    }
   };
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -194,9 +249,22 @@ const Rating = () => {
                     <EllipsisVertical />
                   </Button>
                 </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem startContent={<Pencil />}> Edit</DropdownItem>
-                  <DropdownItem color="danger" startContent={<Trash />}>
+                <DropdownMenu
+                  selectionMode="single"
+                  onSelectionChange={(e) => handleEdit(rowData)}
+                >
+                  <DropdownItem
+                    key={"edit"}
+                    startContent={<Pencil className="h-4 w-4" />}
+                  >
+                    {" "}
+                    Edit
+                  </DropdownItem>
+                  <DropdownItem
+                    key={"delete"}
+                    color="danger"
+                    startContent={<Trash className="h-4 w-4" />}
+                  >
                     Delete
                   </DropdownItem>
                 </DropdownMenu>
@@ -414,23 +482,24 @@ const Rating = () => {
                   <Controller
                     name="ratingsUser"
                     control={control}
-                    defaultValue={[]} // multiple = array
-                    render={({ field }) => (
-                      <NewSelect
-                        isRequired={true}
-                        data={userList}
-                        label={"Select users"}
-                        name={"ratingsUser"}
-                        labelKey={"fullName"}
-                        valueKey={"id"}
-                        selectionMode="multiple"
-                        value={new Set(field.value)}
-                        onChange={(selectedSet) => {
-                          const selectedArray = Array.from(selectedSet);
-                          field.onChange(selectedArray); // pass array to RHF
-                        }}
-                      />
-                    )}
+                    render={({ field }) => {
+                      return (
+                        <NewSelect
+                          isRequired={true}
+                          data={userList}
+                          label="Select users"
+                          name="ratingsUser"
+                          labelKey="fullName"
+                          valueKey="id"
+                          selectionMode="multiple"
+                          value={field.value}
+                          onChange={(selectedValue) => {
+                            field.onChange(selectedValue);
+                          }}
+                          errorMessage={errors.ratingsUser?.message}
+                        />
+                      );
+                    }}
                   />
                   <Controller
                     name="rating"

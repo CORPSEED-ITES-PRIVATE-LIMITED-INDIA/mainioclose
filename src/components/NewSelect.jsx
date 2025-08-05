@@ -3,8 +3,8 @@ import { Select, SelectItem, Input } from "@heroui/react";
 import { ChevronDownIcon } from "lucide-react";
 
 const NewSelect = ({
-  data = [], // Default to empty array
-  selectionMode = "single", // Default to single selection
+  data = [],
+  selectionMode = "single",
   labelPlacement,
   label,
   name,
@@ -14,24 +14,31 @@ const NewSelect = ({
   labelKey,
   isClearable = false,
   isVirtualized,
-  value,
+  value, // Controlled value from parent (array for multiple, string for single)
   errorMessage,
 }) => {
-  // Initialize selectedKeys based on selectionMode and value prop
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
-      return Array.isArray(value) ? value : [];
+      return Array.isArray(value) ? value.map(String) : [];
     }
     return typeof value === "string" && value ? value : "";
   });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [triggerWidth, setTriggerWidth] = useState(null);
-  const [filteredData, setFilteredData] = useState([]);
+  const [filteredData, setFilteredData] = useState(data);
   const triggerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Update trigger width for dropdown alignment
+
+  useEffect(() => {
+    if (selectionMode === "multiple") {
+      setSelectedKeys(Array.isArray(value) ? value.map(String) : []);
+    } else {
+      setSelectedKeys(typeof value === "string" && value ? value : "");
+    }
+  }, [value, selectionMode]);
+
   useEffect(() => {
     const updateWidth = () => {
       if (triggerRef.current) {
@@ -43,19 +50,19 @@ const NewSelect = ({
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  // Sync filteredData with data prop
+
   useEffect(() => {
     setFilteredData(data);
   }, [data]);
 
-  // Focus input when filteredData changes
+
   useEffect(() => {
     if (filteredData.length > 0 && inputRef.current) {
       inputRef.current.focus();
     }
   }, [filteredData]);
 
-  // Handle search query
+
   const handleSearchQuery = useCallback(
     (e) => {
       setSearchQuery(e);
@@ -71,7 +78,7 @@ const NewSelect = ({
     [data, labelKey]
   );
 
-  // Memoized top content (search input)
+
   const topContent = useMemo(
     () => (
       <div className="sticky top-0 z-10">
@@ -90,41 +97,39 @@ const NewSelect = ({
     [searchQuery, handleSearchQuery]
   );
 
-  // Handle selection change
-  const handleSelectionChange = (keys) => {
-    let selectedValue;
 
-    if (selectionMode === "multiple") {
-      if (keys === "all") {
-        selectedValue = data
-          .map((item) => String(item[valueKey]))
-          .filter((key) => key !== "");
+  const handleSelectionChange = useCallback(
+    (keys) => {
+      let selectedValue;
+
+      if (selectionMode === "multiple") {
+        if (keys === "all") {
+          selectedValue = data
+            .map((item) => String(item[valueKey]))
+            .filter((key) => key !== "");
+        } else {
+          selectedValue = [...keys].map(String).filter((key) => key !== "");
+        }
       } else {
-        selectedValue = [...keys].filter((key) => key !== "");
+        selectedValue = keys.size > 0 ? String([...keys][0]) : "";
       }
-    } else {
-      // For single selection, take the first key or empty string
-      selectedValue = keys.size > 0 ? [...keys][0] : "";
-    }
 
-    // Update state
-    setSelectedKeys(selectedValue);
-    setSearchQuery("");
+      setSelectedKeys(selectedValue);
+      setSearchQuery("");
 
-    // Call parent onChange with the appropriate format
-    if (onChange) {
-      onChange(selectedValue);
-    }
-  };
+      if (onChange) {
+        onChange(selectedValue);
+      }
+    },
+    [onChange, selectionMode, data, valueKey]
+  );
 
-  // Convert selectedKeys to Set for Select component
+  
   const selectKeys =
     selectionMode === "multiple"
-      ? new Set(selectedKeys)
+      ? new Set(selectedKeys.map(String))
       : new Set([selectedKeys].filter(Boolean));
 
-  console.log("Selected Keys (internal):", selectedKeys);
-  console.log("Select Keys (for Select component):", selectKeys);
 
   return (
     <div className="w-full">
@@ -149,8 +154,9 @@ const NewSelect = ({
           emptyContent: "No data found",
         }}
         renderValue={(items) => {
-          if (!items.length)
+          if (!items.length) {
             return <span className="text-default-400">Select data</span>;
+          }
           return (
             <div className="flex flex-wrap gap-2">
               {items.map((item) => (
@@ -158,19 +164,20 @@ const NewSelect = ({
                   key={item.key}
                   className="flex items-center gap-2 selectable-text"
                 >
-                  <div className="flex flex-col">
-                    <span>{item.data?.[labelKey]}</span>
-                  </div>
+                  <span>{item.data?.[labelKey] || "Unknown"}</span>
                 </div>
               ))}
             </div>
           );
         }}
       >
-        {(data) => (
-          <SelectItem key={data?.[valueKey]} textValue={data?.[labelKey]}>
+        {(item) => (
+          <SelectItem
+            key={String(item[valueKey])}
+            textValue={item?.[labelKey]}
+          >
             <div className="flex flex-col">
-              <span className="text-small">{data?.[labelKey]}</span>
+              <span className="text-small">{item?.[labelKey] || "Unknown"}</span>
             </div>
           </SelectItem>
         )}

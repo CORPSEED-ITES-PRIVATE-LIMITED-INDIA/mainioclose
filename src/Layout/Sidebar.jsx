@@ -42,8 +42,8 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
   return (
     <aside
       className={`relative h-screen ${
-        collapsed ? "w-16" : "w-56"
-      } bg-white dark:bg-black dark:text-white flex flex-col transition-all duration-300`}
+        collapsed ? "w-16" : "w-60"
+      } bg-white dark:bg-black dark:text-white flex flex-col transition-all duration-300 `}
     >
       {/* Collapse Toggle */}
       <div className="p-2 flex justify-between">
@@ -58,7 +58,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
         </div>
       </div>
 
-      <nav className="p-3 space-y-1 font-medium text-neutral-700 dark:text-white">
+      <nav className="p-3 space-y-1 font-medium text-neutral-700 dark:text-white max-h-[85vh] overflow-auto">
         {items.map((item) => {
           const Icon = item.icon ? icons[item.icon] : null;
           const isOpen = openMenu[item.key];
@@ -66,7 +66,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
           return (
             <div key={item.key}>
               <div
-                className="flex items-center justify-between px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 text-black dark:text-white cursor-pointer"
+                className="flex items-center justify-between px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 text-black dark:text-white cursor-pointer "
                 onClick={() => (item.children ? toggleMenu(item.key) : null)}
               >
                 <div className="flex items-center space-x-2">

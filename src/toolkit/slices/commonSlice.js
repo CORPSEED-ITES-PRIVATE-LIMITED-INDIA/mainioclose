@@ -217,16 +217,15 @@ export const getAllUrlList = createAsyncThunk("allUrlsList", async () => {
   return response.data;
 });
 
-
 export const getUsersListByServiceRatingId = createAsyncThunk(
   "getUsersListByServiceRatingId",
   async ({ serviceId }) => {
     const response = await api.get(
       `/leadService/api/v1/rating/getRetingByUrls?urlsId=${serviceId}`
-    )
-    return response?.data
+    );
+    return response?.data;
   }
-)
+);
 
 export const addNewRating = createAsyncThunk(
   "add-new-rating-star",
@@ -234,10 +233,32 @@ export const addNewRating = createAsyncThunk(
     const createRating = await api.post(
       `/leadService/api/v1/rating/addUserAndRating`,
       data
-    )
-    return createRating
+    );
+    return createRating;
   }
-)
+);
+
+export const addMultiuserForRating = createAsyncThunk(
+  "addMultiuserForRating",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/rating/addUserAndMultiRating`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editUserRatingAssignee = createAsyncThunk(
+  "editUserAsignee",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/rating/updateUserRatingService`,
+      data
+    );
+    return response.data;
+  }
+);
 
 const CommonSlice = createSlice({
   name: "common",
@@ -263,7 +284,7 @@ const CommonSlice = createSlice({
     contactListByCompanyId: [],
     approvalUserList: [],
     urlList: [],
-    usersListByServiceId:[]
+    usersListByServiceId: [],
   },
   reducers: {
     handleReset: (state) => {
@@ -529,10 +550,13 @@ const CommonSlice = createSlice({
     builder.addCase(getUsersListByServiceRatingId.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getUsersListByServiceRatingId.fulfilled, (state, action) => {
-      state.usersListByServiceId = action.payload;
-      state.loading = "success";
-    });
+    builder.addCase(
+      getUsersListByServiceRatingId.fulfilled,
+      (state, action) => {
+        state.usersListByServiceId = action.payload;
+        state.loading = "success";
+      }
+    );
     builder.addCase(getUsersListByServiceRatingId.rejected, (state) => {
       state.loading = "success";
       state.usersListByServiceId = [];

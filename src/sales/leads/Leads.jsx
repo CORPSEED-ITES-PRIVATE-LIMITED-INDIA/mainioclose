@@ -25,12 +25,23 @@ import {
   Select,
   SelectItem,
   Textarea,
+  PopoverTrigger,
+  PopoverContent,
+  Popover,
+  DateRangePicker,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  ListFilter,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllLeadCount,
   getAllLeadsByFilter,
+  getAllLeadUser,
 } from "../../toolkit/slices/leadSlice";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -39,6 +50,12 @@ import {
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
+import { getAllStatusData } from "../../toolkit/slices/settingSlice";
+import { leadSource } from "../../common";
+import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -68,14 +85,51 @@ const INITIAL_VISIBLE_COLUMNS = [
   "city",
   "actions",
 ];
+const formSchema = z.object({
+  leadName: z.string().min(1, "Please enter lead name"),
+  name: z.string().min(1, "Please enter a valid client name"),
+  email: z
+    .string()
+    .email("Please enter a valid email")
+    .optional()
+    .or(z.literal("")),
+  mobileNo: z.string().optional().or(z.literal("")),
+  urls: z.string().min(1, "Please enter company name"),
+  country: z.string().optional().or(z.literal("")),
+  state: z.string().optional().or(z.literal("")),
+  city: z.string().optional().or(z.literal("")),
+  ipAddress: z.string().optional().or(z.literal("")),
+  assigneeId: z.string().optional().or(z.literal("")),
+  auto: z.string().optional().or(z.literal("")),
+  source: z.string().min(1, "Please select the lead source"),
+  primaryAddress: z.string().min(1, "Please enter address"),
+  leadDescription: z.string().min(1, "Please enter lead description"),
+});
+
+const defaultValues = {
+  leadName: "",
+  name: "",
+  email: "",
+  mobileNo: "",
+  urls: "",
+  country: "",
+  state: "",
+  city: "",
+  ipAddress: "",
+  assigneeId: "",
+  auto: "",
+  source: "",
+  primaryAddress: "",
+  leadDescription: "",
+};
 
 const Leads = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const data = useSelector((state) => state.leads.allLeads);
   const count = useSelector((state) => state.leads.totalCount);
-  const allLeadUser = useSelector((state) => state.leads.allLeadUsers);
-  const currentRoles = useSelector((state) => state?.auth?.roles);
+  const allLeadUser = useSelector((state) => state.leads.leadUsersList);
+  const statusList = useSelector((state) => state?.setting?.statusList);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -90,7 +144,7 @@ const Leads = () => {
     direction: "ascending",
   });
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [allMultiFilterData, setAllMultiFilterData] = useState({
+  const initialFilterValues = {
     userId: userId,
     userIdFilter: [],
     statusId: [1],
@@ -105,14 +159,28 @@ const Leads = () => {
     sortBy: "id",
     page: 1,
     size: 50,
-  });
+  };
+  const [allMultiFilterData, setAllMultiFilterData] =
+    useState(initialFilterValues);
 
   const hasSearchFilter = Boolean(filterValue);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
 
   useEffect(() => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
-  }, []);
+    dispatch(getAllLeadUser(userId));
+    dispatch(getAllStatusData());
+  }, [dispatch]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -141,7 +209,6 @@ const Leads = () => {
 
     return filteredUsers;
   }, [data, filterValue, statusFilter]);
-
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
@@ -255,6 +322,16 @@ const Leads = () => {
     setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
+  const handleApplyFilter = useCallback(() => {
+    dispatch(getAllLeadsByFilter(allMultiFilterData));
+    dispatch(getAllLeadCount(allMultiFilterData));
+  }, [allMultiFilterData, dispatch]);
+
+  const handleResetFilter = useCallback(() => {
+    dispatch(getAllLeadsByFilter(initialFilterValues));
+    dispatch(getAllLeadCount(initialFilterValues));
+  }, [initialFilterValues, dispatch]);
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -269,27 +346,165 @@ const Leads = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
-                  Status
+            <Popover size="lg" showArrow>
+              <PopoverTrigger>
+                <Button variant="flat" endContent={<ListFilter />}>
+                  Filter
                 </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={statusFilter}
-                selectionMode="multiple"
-                onSelectionChange={setStatusFilter}
-              >
-                {/* {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))} */}
-              </DropdownMenu>
-            </Dropdown>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                      Lead filter
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <NewSelect
+                        data={allLeadUser}
+                        selectionMode="multiple"
+                        label={"Select users"}
+                        name={"userIdFilter"}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        value={allMultiFilterData?.userIdFilter}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            userIdFilter: selectedSet,
+                          }));
+                        }}
+                      />
+                      <NewSelect
+                        data={allLeadUser}
+                        label={"Updated by"}
+                        name={"updatedById"}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        value={allMultiFilterData?.updatedById}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            updatedById: selectedSet,
+                          }));
+                        }}
+                      />
+                      <DateRangePicker
+                        hourCycle={"24"}
+                        granularity="minute"
+                        value={{
+                          start: allMultiFilterData?.toDate
+                            ? parseDateTime(allMultiFilterData?.toDate)
+                            : null,
+                          end: allMultiFilterData?.fromDate
+                            ? parseDateTime(allMultiFilterData?.fromDate)
+                            : null,
+                        }}
+                        label="Created date"
+                        visibleMonths={2}
+                        onChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            toDate: toCalendarDateTime(e?.start).toString(),
+                            fromDate: toCalendarDateTime(e?.end).toString(),
+                          }))
+                        }
+                      />
+                      <NewSelect
+                        data={statusList}
+                        label={"Status"}
+                        name={"statusId"}
+                        selectionMode="multiple"
+                        labelKey={"name"}
+                        valueKey={"id"}
+                        value={allMultiFilterData?.statusId}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            statusId: selectedSet,
+                          }));
+                        }}
+                      />
+                      <DateRangePicker
+                        hourCycle={"24"}
+                        hideTimeZone
+                        granularity="minute"
+                        value={{
+                          start: allMultiFilterData?.updatedToDate
+                            ? parseDateTime(allMultiFilterData?.updatedToDate)
+                            : null,
+                          end: allMultiFilterData?.updatedfromDate
+                            ? parseDateTime(allMultiFilterData?.updatedfromDate)
+                            : null,
+                        }}
+                        label="Updated date"
+                        visibleMonths={2}
+                        onChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            updatedToDate: toCalendarDateTime(
+                              e?.start
+                            ).toString(),
+                            updatedfromDate: toCalendarDateTime(
+                              e?.end
+                            ).toString(),
+                          }))
+                        }
+                      />
+
+                      <Select
+                        label="Source"
+                        selectionMode="multiple"
+                        items={
+                          leadSource?.map((item) => ({
+                            label: item,
+                            key: item,
+                          })) || []
+                        }
+                        selectedKeys={allMultiFilterData?.source}
+                        onSelectionChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            source: Array.from(e),
+                          }))
+                        }
+                      >
+                        {(source) => (
+                          <SelectItem key={source.key}>
+                            {source.label}
+                          </SelectItem>
+                        )}
+                      </Select>
+                      <Input
+                        label="Mobile number"
+                        value={allMultiFilterData?.contactMobileNo}
+                        onChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            contactMobileNo: e.target.value,
+                          }))
+                        }
+                      />
+                      <Input
+                        label="Email address"
+                        value={allMultiFilterData?.contactEmail}
+                        onChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            contactEmail: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 my-2">
+                      <Button onPress={handleResetFilter}>Reset</Button>
+                      <Button color="primary" onPress={handleApplyFilter}>
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -402,7 +617,7 @@ const Leads = () => {
 
   return (
     <>
-    <h1 className="font-sans text-2xl font-medium mb-1">Leads</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Leads</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -455,126 +670,229 @@ const Leads = () => {
                 Create lead
               </ModalHeader>
               <ModalBody>
-                <Form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
-                    );
-
-                    console.log(`submit ${JSON.stringify(data)}`);
-                  }}
+                <form
+                  className="w-full flex flex-col gap-4 "
+                  onSubmit={handleSubmit()}
                 >
-                  <div className="w-full grid grid-cols-2 gap-4">
-                    <Input
-                      isRequired
-                      errorMessage="Please enter lead name"
-                      label="Lead name"
+                  <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                    <Controller
                       name="leadName"
-                      type="text"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage={errors.leadName?.message}
+                          label="Lead name"
+                          type="text"
+                          {...field}
+                        />
+                      )}
                     />
 
-                    <Input
-                      isRequired
-                      errorMessage="Please enter a valid client name"
-                      label="Client name"
+                    <Controller
                       name="name"
-                      type="text"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage={errors.name?.message}
+                          label="Client name"
+                          type="text"
+                          {...field}
+                        />
+                      )}
                     />
 
-                    <Input label="Email" name="email" type="email" />
+                    <Controller
+                      name="email"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          label="Email"
+                          errorMessage={errors.email?.message}
+                          type="email"
+                          {...field}
+                        />
+                      )}
+                    />
 
-                    <Input label="Mobile number" name="mobileNo" type="text" />
-                    <Input
-                      isRequired
-                      label="Company"
-                      errorMessage="Please enter company name"
+                    <Controller
+                      name="mobileNo"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          label="Mobile number"
+                          errorMessage={errors.mobileNo?.message}
+                          type="text"
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
                       name="urls"
-                      type="text"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage={errors.urls?.message}
+                          label="Company"
+                          type="text"
+                          {...field}
+                        />
+                      )}
                     />
 
-                    <NewSelect
-                      data={countryList}
-                      label="Country"
+                    <Controller
                       name="country"
-                      labelKey="name"
-                      valueKey="name"
-                      onChange={(e) => dispatch(getAllStatesByCountryName(e))}
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          data={countryList}
+                          label="Country"
+                          labelKey="name"
+                          valueKey="name"
+                          errorMessage={errors.country?.message}
+                          {...field}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            dispatch(getAllStatesByCountryName(value));
+                          }}
+                        />
+                      )}
                     />
 
-                    <NewSelect
-                      data={statesList}
-                      label="State"
+                    <Controller
                       name="state"
-                      labelKey="name"
-                      valueKey="name"
-                      onChange={(e) => dispatch(getAllCitiesByStateName(e))}
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          data={statesList}
+                          label="State"
+                          labelKey="name"
+                          valueKey="name"
+                          errorMessage={errors.state?.message}
+                          {...field}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            dispatch(getAllCitiesByStateName(value));
+                          }}
+                        />
+                      )}
                     />
 
-                    <NewSelect
-                      data={citiesList}
-                      label="City"
+                    <Controller
                       name="city"
-                      labelKey="name"
-                      valueKey="name"
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          data={citiesList}
+                          label="City"
+                          labelKey="name"
+                          valueKey="name"
+                          errorMessage={errors.city?.message}
+                          {...field}
+                        />
+                      )}
                     />
 
-                    <Input label="Ip address" name="ipAddress" type="text" />
+                    <Controller
+                      name="ipAddress"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          label="Ip address"
+                          errorMessage={errors.ipAddress?.message}
+                          type="text"
+                          {...field}
+                        />
+                      )}
+                    />
 
-                    <Select label="Assignee" name="assigneeId">
-                      {[
-                        { id: "1", name: "Aryan" },
-                        { id: "2", name: "Kausahal" },
-                        { id: "3", name: "Nishu singh" },
-                        { id: "4", name: "Avnish kumar" },
-                      ].map((user) => (
-                        <SelectItem key={user.id}>{user.name}</SelectItem>
-                      ))}
-                    </Select>
-                    <Select label="Automation" name="auto">
-                      {[
-                        { id: true, name: "True" },
-                        { id: false, name: "False" },
-                      ].map((user) => (
-                        <SelectItem key={user.id}>{user.name}</SelectItem>
-                      ))}
-                    </Select>
-                    <Select
-                      isRequired
-                      errorMessage="please select the lead source"
-                      label="Source"
+                    <Controller
+                      name="assigneeId"
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          isRequired={true}
+                          data={allLeadUser}
+                          label="Select users"
+                          name="assigneeId"
+                          labelKey="fullName"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(selectedValue) => {
+                            field.onChange(selectedValue);
+                          }}
+                          errorMessage={errors.assigneeId?.message}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="auto"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          label="Automation"
+                          errorMessage={errors.auto?.message}
+                          {...field}
+                        >
+                          {[
+                            { name: "True", id: true },
+                            { name: "False", id: false },
+                          ].map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.name}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+
+                    <Controller
                       name="source"
-                    >
-                      {[
-                        "Corpseed Website",
-                        "Facebook",
-                        "Instagram",
-                        "IVR",
-                        "Person Reference",
-                        "Whatsapp",
-                        "Law Zoom website",
-                        "Other",
-                        "Mail",
-                        "Emailer",
-                      ].map((user) => (
-                        <SelectItem key={user}>{user}</SelectItem>
-                      ))}
-                    </Select>
-
-                    <Textarea
-                      isRequired
-                      errorMessage="Please enter address"
-                      label="Primary address"
-                      name="primaryAddress"
-                      type="text"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          isRequired
+                          errorMessage={errors.source?.message}
+                          label="Source"
+                          {...field}
+                        >
+                          {leadSource.map((item) => (
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
                     />
-                    <Textarea
-                      isRequired
-                      errorMessage="Please enter lead description"
-                      label="Lead description"
+
+                    <Controller
+                      name="primaryAddress"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          isRequired
+                          errorMessage={errors.primaryAddress?.message}
+                          label="Primary address"
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
                       name="leadDescription"
-                      type="text"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          isRequired
+                          errorMessage={errors.leadDescription?.message}
+                          label="Lead description"
+                          {...field}
+                        />
+                      )}
                     />
                   </div>
                   <ModalFooter className="w-full flex justify-end">
@@ -583,7 +901,7 @@ const Leads = () => {
                       Submit
                     </Button>
                   </ModalFooter>
-                </Form>
+                </form>
               </ModalBody>
             </>
           )}

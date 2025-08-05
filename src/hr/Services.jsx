@@ -1,4 +1,5 @@
 import {
+  addToast,
   Avatar,
   Button,
   Chip,
@@ -7,19 +8,41 @@ import {
   DropdownMenu,
   DropdownTrigger,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Pagination,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Phone, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  Phone,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllUrlList } from "../toolkit/slices/commonSlice";
+import {
+  addMultiuserForRating,
+  getAllUrlList,
+  getAllUsers,
+} from "../toolkit/slices/commonSlice";
 import { Link } from "react-router-dom";
+import { Controller, useForm } from "react-hook-form";
+import NewSelect from "../components/NewSelect";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -33,10 +56,24 @@ function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = ["id", "urlsName", "quality"];
 
+const formSchema = z.object({
+  ratingsUser: z.string().min(1, "Please select at least one user"),
+  rating: z.enum(["1", "2", "3", "4", "5"], {
+    errorMap: () => ({ message: "Please select a rating" }),
+  }),
+});
+
+const defaultValues = {
+  ratingsUser: "",
+  rating: "",
+};
+
 const Services = () => {
   const dispatch = useDispatch();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector((state) => state.common.urlList?.length || 0);
   const data = useSelector((state) => state.common.urlList);
+  const userList = useSelector((state) => state.common.usersList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -53,8 +90,19 @@ const Services = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
   useEffect(() => {
     dispatch(getAllUrlList());
+    dispatch(getAllUsers());
   }, [dispatch]);
 
   const headerColumns = useMemo(() => {
@@ -65,13 +113,13 @@ const Services = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...data];
+    let filteredData = [...data];
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredData = filteredData.filter((item) =>
+        item?.urlsName?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
-    return filteredUsers;
+    return filteredData;
   }, [data, filterValue]);
 
   const pages = Math.ceil(count / filteration?.size) || 1;
@@ -91,12 +139,61 @@ const Services = () => {
     });
   }, [sortDescriptor, items]);
 
+  const handlePress = useCallback(
+    (e) => {
+      if (selectedKeys.size > 0) {
+        onOpen();
+      } else {
+        addToast({
+          title:
+            "Please select at least one service or URL by clicking on a table row to add a rating.",
+          color: "warning",
+        });
+      }
+    },
+    [selectedKeys, onOpen]
+  );
+
+  const onSubmit = (data) => {
+    dispatch(
+      addMultiuserForRating({
+        ...data,
+        urlsManagmentId: Array.from(selectedKeys),
+      })
+    )
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Rating updated successfully !.",
+            color: "success",
+          });
+          dispatch(getAllUrlList());
+          reset(defaultValues);
+          onOpenChange(false);
+          setSelectedKeys(new Set([]));
+        } else {
+          addToast({
+            title: "Either user is already present or empty !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Either user is already present or empty !.",
+          color: "danger",
+        });
+      });
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "urlsName":
         return (
           <div className="flex items-start gap-2">
-            <Link to={`${rowData?.id}/rating`} className="font-medium" >{rowData?.urlsName}</Link>
+            <Link to={`${rowData?.id}/rating`} className="font-medium">
+              {rowData?.urlsName}
+            </Link>
           </div>
         );
       case "quality":
@@ -181,6 +278,10 @@ const Services = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+
+            <Button color="primary" onPress={handlePress} endContent={<Plus />}>
+              Add rating
+            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -203,7 +304,14 @@ const Services = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
+  }, [
+    filterValue,
+    visibleColumns,
+    onRowsPerPageChange,
+    count,
+    onSearchChange,
+    handlePress,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -256,9 +364,7 @@ const Services = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Services list
-      </h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Services list</h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"
@@ -272,7 +378,9 @@ const Services = () => {
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        onSelectionChange={(keys) => {
+          setSelectedKeys(keys);
+        }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -296,6 +404,83 @@ const Services = () => {
           )}
         </TableBody>
       </Table>
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Add Rating</ModalHeader>
+              <ModalBody>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="flex flex-col gap-4"
+                >
+                  <Controller
+                    name="ratingsUser"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <NewSelect
+                        isRequired={true}
+                        data={userList}
+                        label={"Select users"}
+                        name={"ratingsUser"}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        value={field.value}
+                        onChange={(selectedSet) => {
+                          field.onChange(selectedSet);
+                        }}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="rating"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        isRequired
+                        errorMessage="please select rating for users"
+                        label="Rating"
+                        items={[
+                          { value: 1, label: "1" },
+                          { value: 2, label: "2" },
+                          { value: 3, label: "3" },
+                          { value: 4, label: "4" },
+                          { value: 5, label: "5" },
+                        ]}
+                        selectedKeys={[field.value]}
+                        onSelectionChange={(selectedSet) => {
+                          const selectedArray = Array.from(selectedSet)[0];
+                          field.onChange(selectedArray);
+                        }}
+                      >
+                        {(item) => (
+                          <SelectItem key={item?.value}>
+                            {item?.label}
+                          </SelectItem>
+                        )}
+                      </Select>
+                    )}
+                  />
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

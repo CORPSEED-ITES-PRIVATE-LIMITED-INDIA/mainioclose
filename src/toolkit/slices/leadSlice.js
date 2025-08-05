@@ -81,6 +81,16 @@ export const getProjectAction = createAsyncThunk(
   }
 )
 
+export const getAllLeadUser = createAsyncThunk(
+  "getAllLeadUserss",
+  async (userid) => {
+    const response = await api.get(
+      `/leadService/api/v1/users/getAllUserByHierarchy?userId=${userid}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -93,7 +103,8 @@ export const LeadSlice = createSlice({
     singleLeadData: {},
     remarkData: [],
     estimateListByUserId:[],
-    projectsList:[]
+    projectsList:[],
+    leadUsersList:[]
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -167,6 +178,18 @@ export const LeadSlice = createSlice({
     builder.addCase(getProjectAction.rejected, (state) => {
       state.loading = "rejected";
       state.projectsList = [];
+    });
+
+    builder.addCase(getAllLeadUser.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLeadUser.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadUsersList = action?.payload;
+    });
+    builder.addCase(getAllLeadUser.rejected, (state) => {
+      state.loading = "rejected";
+      state.leadUsersList = [];
     });
   },
 });
