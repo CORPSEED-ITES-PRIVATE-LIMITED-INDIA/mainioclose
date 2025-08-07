@@ -23,6 +23,11 @@ export const getAllLeadCount = createAsyncThunk(
   }
 );
 
+export const createLeads = createAsyncThunk("createLeads", async (data) => {
+  const response = await api.post(`/leadService/api/v1/lead/createLead`, data);
+  return response.data;
+});
+
 export const getSingleLeadDataByLeadId = createAsyncThunk(
   "getSingleLeadData",
   async ({ leadId, userId }) => {
@@ -76,16 +81,89 @@ export const getProjectAction = createAsyncThunk(
   async ({ userId, page, size }) => {
     const getProjectData = await api.get(
       `/leadService/api/v1/project/getAllProject?userId=${userId}&page=${page}&size=${size}`
-    )
-    return getProjectData?.data
+    );
+    return getProjectData?.data;
   }
-)
+);
 
 export const getAllLeadUser = createAsyncThunk(
   "getAllLeadUserss",
   async (userid) => {
     const response = await api.get(
       `/leadService/api/v1/users/getAllUserByHierarchy?userId=${userid}`
+    );
+    return response.data;
+  }
+);
+
+export const updateAddressInLeads = createAsyncThunk(
+  "updateAddressInLeads",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/addAddressInLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const updateIndustriesInLeads = createAsyncThunk(
+  "updateIndustriesInLeads",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/addIndustryInLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const changeLeadAssigneeLeads = createAsyncThunk(
+  "changeLeadAssignee",
+  async ({ leadId, assigneeId, userId }) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/updateAssignee?leadId=${leadId}&userId=${assigneeId}&updatedById=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const updateLeadStatus = createAsyncThunk(
+  "updateLeadStatus",
+  async ({ leadId, statusId, userId }) => {
+    const response = await api.put(
+      `/leadService/api/v1/status/updateLeadStatus?leadId=${leadId}&statusId=${statusId}&currentUserId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const createLeadContacts = createAsyncThunk(
+  "createLeadContact",
+  async (createContact) => {
+    const response = await api.post(
+      `/leadService/api/v1/client/createClient`,
+      createContact
+    );
+    return response.data;
+  }
+);
+
+export const updateLeadsContact = createAsyncThunk(
+  "updateContacts",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/client/updateClientInfo`,
+      data
+    );
+    return response.data;
+  }
+);
+export const deleteLeadContact = createAsyncThunk(
+  "deleteLeadContacts",
+  async ({ leadId, clientId, userId }) => {
+    const response = await api.delete(
+      `/leadService/api/v1/client/deleteClient?leadId=${leadId}&clientId=${clientId}&currentUserId=${userId}`
     );
     return response.data;
   }
@@ -102,9 +180,9 @@ export const LeadSlice = createSlice({
     totalCount: 0,
     singleLeadData: {},
     remarkData: [],
-    estimateListByUserId:[],
-    projectsList:[],
-    leadUsersList:[]
+    estimateListByUserId: [],
+    projectsList: [],
+    leadUsersList: [],
   },
   reducers: {},
   extraReducers: (builder) => {

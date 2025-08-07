@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
 import CustomSearchInput from "../../components/CustomSearchInput";
 import {
+  addToast,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
   Checkbox,
   DatePicker,
-  Divider,
   Input,
   Select,
   SelectItem,
-  Textarea,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import NewSelect from "../../components/NewSelect";
 import {
+  createNewCompanyInLeads,
   getAllCompanyType,
   getAllGstTypeByCompanyTypeId,
+  getBusinessTypeByGstTypeId,
 } from "../../toolkit/slices/companySlice";
 import {
   getLocalTimeZone,
-  parseAbsoluteToLocal,
   parseDate,
   toCalendarDate,
   today,
@@ -41,9 +38,366 @@ import SingleFileUploader from "../../components/SingleFileUploader";
 import { ArrowLeft } from "lucide-react";
 import { formatGSTInput, formatPANInput } from "../../common";
 import { getClientDesiginationList } from "../../toolkit/slices/settingSlice";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useParams } from "react-router-dom";
+
+const formSchema = z.object({
+  consultantOrCompany: z.enum(["consultant", "company"], {
+    required_error: "Please select role as",
+  }),
+  companyName: z.string().min(1, "Please enter company name"),
+  companyType: z.string().min(1, "Please select the company structure"),
+  gstType: z.string().min(1, "Please select the gst type"),
+  businessType: z.string().optional(),
+  gstNo: z.string().min(15, "please enter GST number"),
+  panNo: z.string().min(10, "please enter pan number"),
+  establishDate: z.string().min(1, "Please enter company incorporate date"),
+  assigneeId: z.string().min(1, "Please select the assignee"),
+  industryId: z.string().min(1, "Please select the industry"),
+  subIndustryId: z.string().min(1, "Please select the sub industry"),
+  subsubIndustryId: z.string().min(1, "Please select the category"),
+  industrydataId: z
+    .array(z.string())
+    .min(1, "Please select the business activity"),
+  companyFileUrl: z.string().optional(),
+  rating: z.enum(["Gold", "Silver", "Bronze"], {
+    required_error: "Please select rating",
+  }),
+  paymentTerm: z.enum(
+    [
+      "Net 30",
+      "Net 60",
+      "Net 90",
+      "2/10 Net 30",
+      "EOM (End of Month)",
+      "COD (Cash on Delivery)",
+      "CIA (Cash in Advance)",
+      "Installments",
+      "Milestone-based",
+      "Due on Receipt",
+    ],
+    { required_error: "Please select payment term" }
+  ),
+  aggrementPresent: z.boolean(),
+  agreementFileUrl: z.string().optional(),
+  ndaPresent: z.boolean(),
+  ndaFileUrl: z.string().optional(),
+  primaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
+    required_error: "Please select the salutation",
+  }),
+  contactName: z.string().min(1, "Please enter contact person name"),
+  primaryDesignation: z.string().min(1, "Please select the designation"),
+  contactEmails: z.string().email("Please enter a valid email address"),
+  contactNo: z.string().min(1, "Please enter contact number"),
+  contactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
+  secondaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
+    required_error: "Please select the salutation",
+  }),
+  secondaryContactName: z.string().min(1, "Please enter contact person name"),
+  secondaryDesignation: z.string().min(1, "Please select the designation"),
+  secondaryContactEmails: z
+    .string()
+    .email("Please enter a valid email address"),
+  secondaryContactNo: z.string().min(1, "Please enter contact number"),
+  secondaryContactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
+  address: z.string().min(1, "Please enter primary address"),
+  country: z.string().min(1, "Please select the country"),
+  state: z.string().min(1, "Please select the state"),
+  city: z.string().min(1, "Please select the city"),
+  primaryPinCode: z.string().min(1, "Please enter primary pin code"),
+  secondaryAddress: z.string().optional(),
+  secondaryCountry: z.string().optional(),
+  secondaryState: z.string().optional(),
+  secondaryCity: z.string().optional(),
+  secondaryPinCode: z.string().optional(),
+  servingName: z
+    .string()
+    .min(1, "Please enter serving company name")
+    .optional(),
+  servingCompanyType: z
+    .string()
+    .min(1, "Please select the company structure")
+    .optional(),
+  servingGstNo: z
+    .string()
+    .min(1, "Please enter serving company GST number")
+    .optional(),
+  servingPanNo: z
+    .string()
+    .min(10, "Please enter serving company PAN number")
+    .optional(),
+  servingEstablishDate: z
+    .string()
+    .min(1, "Please enter serving company incorporate date")
+    .optional(),
+  industries: z.string().min(1, "Please select the industry").optional(),
+  subIndustry: z.string().min(1, "Please select the sub industry").optional(),
+  subsubIndustry: z.string().min(1, "Please select the category").optional(),
+  industriesData: z
+    .string()
+    .min(1, "Please select the business activity")
+    .optional(),
+  servingCompanyFileUrl: z.string().optional(),
+  servingPrimaryTitle: z
+    .enum(["master", "mr", "mrs", "miss"], {
+      required_error: "Please select the salutation",
+    })
+    .optional(),
+  servingContactName: z
+    .string()
+    .min(1, "Please enter contact person name")
+    .optional(),
+  servingPrimaryDesignation: z
+    .string()
+    .min(1, "Please select the designation")
+    .optional(),
+  servingContactEmails: z
+    .string()
+    .email("Please enter a valid email address")
+    .optional(),
+  servingContactNo: z.string().min(1, "Please enter contact number").optional(),
+  servingContactWhatsappNo: z
+    .string()
+    .min(1, "Please enter whatsapp number")
+    .optional(),
+  servingSecondaryTitle: z
+    .enum(["master", "mr", "mrs", "miss"], {
+      required_error: "Please select the salutation",
+    })
+    .optional(),
+  servingSecondaryContactName: z
+    .string()
+    .min(1, "Please enter contact person name")
+    .optional(),
+  servingSecondaryDesignation: z
+    .string()
+    .min(1, "Please select the designation")
+    .optional(),
+  servingSecondaryContactEmails: z
+    .string()
+    .email("Please enter a valid email address")
+    .optional(),
+  servingSecondaryContactNo: z
+    .string()
+    .min(1, "Please enter contact number")
+    .optional(),
+  servingSecondaryContactWhatsappNo: z
+    .string()
+    .min(1, "Please enter whatsapp number")
+    .optional(),
+  servingAddress: z.string().min(1, "Please enter primary address").optional(),
+  servingCountry: z.string().min(1, "Please select the country").optional(),
+  servingState: z.string().min(1, "Please select the state").optional(),
+  servingCity: z.string().min(1, "Please select the city").optional(),
+  servingprimaryPinCode: z
+    .string()
+    .min(1, "Please enter primary pin code")
+    .optional(),
+  servingSecondaryAddress: z.string().optional(),
+  servingSecondaryCountry: z.string().optional(),
+  servingSecondaryState: z.string().optional(),
+  servingsecondaryCity: z.string().optional(),
+  servingSecondaryPinCode: z.string().optional(),
+});
+
+const companyFormSchema = z.object({
+  consultantOrCompany: z.enum(["consultant", "company"], {
+    required_error: "Please select role as",
+  }),
+  companyName: z.string().min(1, "Please enter company name"),
+  companyType: z.string().min(1, "Please select the company structure"),
+  gstType: z.string().min(1, "Please select the gst type"),
+  businessType: z.string().optional(),
+  gstNo: z.string().min(15, "please enter GST number"),
+  panNo: z.string().min(10, "please enter pan number"),
+  establishDate: z.string().min(1, "Please enter company incorporate date"),
+  assigneeId: z.string().min(1, "Please select the assignee"),
+  industryId: z.string().min(1, "Please select the industry"),
+  subIndustryId: z.string().min(1, "Please select the sub industry"),
+  subsubIndustryId: z.string().min(1, "Please select the category"),
+  industrydataId: z
+    .array(z.string())
+    .min(1, "Please select the business activity"),
+  companyFileUrl: z.string().optional(),
+  rating: z.enum(["Gold", "Silver", "Bronze"], {
+    required_error: "Please select rating",
+  }),
+  paymentTerm: z.enum(
+    [
+      "Net 30",
+      "Net 60",
+      "Net 90",
+      "2/10 Net 30",
+      "EOM (End of Month)",
+      "COD (Cash on Delivery)",
+      "CIA (Cash in Advance)",
+      "Installments",
+      "Milestone-based",
+      "Due on Receipt",
+    ],
+    { required_error: "Please select payment term" }
+  ),
+  aggrementPresent: z.boolean(),
+  agreementFileUrl: z.string().optional(),
+  ndaPresent: z.boolean(),
+  ndaFileUrl: z.string().optional(),
+  primaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
+    required_error: "Please select the salutation",
+  }),
+  contactName: z.string().min(1, "Please enter contact person name"),
+  primaryDesignation: z.string().min(1, "Please select the designation"),
+  contactEmails: z.string().email("Please enter a valid email address"),
+  contactNo: z.string().min(1, "Please enter contact number"),
+  contactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
+  secondaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
+    required_error: "Please select the salutation",
+  }),
+  secondaryContactName: z.string().min(1, "Please enter contact person name"),
+  secondaryDesignation: z.string().min(1, "Please select the designation"),
+  secondaryContactEmails: z
+    .string()
+    .email("Please enter a valid email address"),
+  secondaryContactNo: z.string().min(1, "Please enter contact number"),
+  secondaryContactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
+  address: z.string().min(1, "Please enter primary address"),
+  country: z.string().min(1, "Please select the country"),
+  state: z.string().min(1, "Please select the state"),
+  city: z.string().min(1, "Please select the city"),
+  primaryPinCode: z.string().min(1, "Please enter primary pin code"),
+  secondaryAddress: z.string().optional(),
+  secondaryCountry: z.string().optional(),
+  secondaryState: z.string().optional(),
+  secondaryCity: z.string().optional(),
+  secondaryPinCode: z.string().optional(),
+});
+
+const defaultValues = {
+  consultantOrCompany: "",
+  companyName: "",
+  companyType: "",
+  gstType: "",
+  businessType: "",
+  gstNo: "",
+  panNo: "",
+  establishDate: "",
+  assigneeId: "",
+  industryId: "",
+  subIndustryId: "",
+  subsubIndustryId: "",
+  industrydataId: [],
+  companyFileUrl: "",
+  rating: "",
+  paymentTerm: "",
+  aggrementPresent: false,
+  agreementFileUrl: "",
+  ndaPresent: false,
+  ndaFileUrl: "",
+  primaryTitle: "",
+  contactName: "",
+  primaryDesignation: "",
+  contactEmails: "",
+  contactNo: "",
+  contactWhatsappNo: "",
+  secondaryTitle: "",
+  secondaryContactName: "",
+  secondaryDesignation: "",
+  secondaryContactEmails: "",
+  secondaryContactNo: "",
+  secondaryContactWhatsappNo: "",
+  address: "",
+  country: "",
+  state: "",
+  city: "",
+  primaryPinCode: "",
+  secondaryAddress: "",
+  secondaryCountry: "",
+  secondaryState: "",
+  secondaryCity: "",
+  secondaryPinCode: "",
+  servingName: "",
+  servingCompanyType: "",
+  servingGstNo: "",
+  servingPanNo: "",
+  servingEstablishDate: "",
+  industries: "",
+  subIndustry: "",
+  subsubIndustry: "",
+  industriesData: "",
+  servingCompanyFileUrl: "",
+  servingPrimaryTitle: "",
+  servingContactName: "",
+  servingPrimaryDesignation: "",
+  servingContactEmails: "",
+  servingContactNo: "",
+  servingContactWhatsappNo: "",
+  servingSecondaryTitle: "",
+  servingSecondaryContactName: "",
+  servingSecondaryDesignation: "",
+  servingSecondaryContactEmails: "",
+  servingSecondaryContactNo: "",
+  servingSecondaryContactWhatsappNo: "",
+  servingAddress: "",
+  servingCountry: "",
+  servingState: "",
+  servingCity: "",
+  servingprimaryPinCode: "",
+  servingSecondaryAddress: "",
+  servingSecondaryCountry: "",
+  servingSecondaryState: "",
+  servingsecondaryCity: "",
+  servingSecondaryPinCode: "",
+};
+
+const defaultCompanyValues = {
+  consultantOrCompany: "",
+  companyName: "",
+  companyType: "",
+  gstType: "",
+  businessType: "",
+  gstNo: "",
+  panNo: "",
+  establishDate: "",
+  assigneeId: "",
+  industryId: "",
+  subIndustryId: "",
+  subsubIndustryId: "",
+  industrydataId: [],
+  companyFileUrl: "",
+  rating: "",
+  paymentTerm: "",
+  aggrementPresent: false,
+  agreementFileUrl: "",
+  ndaPresent: false,
+  ndaFileUrl: "",
+  primaryTitle: "",
+  contactName: "",
+  primaryDesignation: "",
+  contactEmails: "",
+  contactNo: "",
+  contactWhatsappNo: "",
+  secondaryTitle: "",
+  secondaryContactName: "",
+  secondaryDesignation: "",
+  secondaryContactEmails: "",
+  secondaryContactNo: "",
+  secondaryContactWhatsappNo: "",
+  address: "",
+  country: "",
+  state: "",
+  city: "",
+  primaryPinCode: "",
+  secondaryAddress: "",
+  secondaryCountry: "",
+  secondaryState: "",
+  secondaryCity: "",
+  secondaryPinCode: "",
+};
 
 const CreateCompanyForm = () => {
   const dispatch = useDispatch();
+  const { userId, leadId } = useParams();
   const allUsers = useSelector((state) => state.common.usersList);
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
   const gstTypeList = useSelector((state) => state.company.gstTypeList);
@@ -67,163 +421,91 @@ const CreateCompanyForm = () => {
     (state) => state.setting.clientDesiginationList
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [isNewCompany, setIsNewCompany] = useState(false);
-  const [fileUrl, setFileUrl] = useState("");
-  const formValues = {
-    companyName: "",
-    panNo: "",
-    rating: "",
-    consultantPresent: "",
-    gstNo: "",
-    establishDate: "",
-    companyType: "",
-    gstType: "",
-    businessType: "",
-    gstDocuments: "",
-    consultantOrCompany: "",
-    companyAge: "",
-    isPrimaryAddress: "",
-    primaryTitle: "",
-    primaryPinCode: "",
-    isSecondaryAddress: "",
-    secondaryTitle: "",
-    secondaryAddress: "",
-    secondaryCity: "",
-    secondaryState: "",
-    secondaryPinCode: "",
-    secondaryCountry: "",
-    assigneeId: "",
-    status: "",
-    contactName: "",
-    contactEmails: "",
-    contactNo: "",
-    contactWhatsappNo: "",
-    primaryDesignation: "",
-    secondaryContactName: "",
-    secondaryContactEmails: "",
-    secondaryContactNo: "",
-    secondaryContactWhatsappNo: "",
-    secondaryDesignation: "",
-    updatedBy: "",
-    industryId: "",
-    subIndustryId: "",
-    subsubIndustryId: "",
-    industrydataId: [],
-    servingName: "",
-    servingPanNo: "",
-    servingCompanyType: "",
-    servingGstNo: "",
-    servingGstDocuments: "",
-    servingCompanyAge: "",
-    servingEstablishDate: "",
-    servingAddress: "",
-    servingCity: "",
-    servingState: "",
-    servingCountry: "",
-    servingprimaryPinCode: "",
-    servingSecondaryAddress: "",
-    servingsecondaryCity: "",
-    servingSecondaryState: "",
-    servingSecondaryCountry: "",
-    servingSecondaryPinCode: "",
-    servingPrimaryContact: "",
-    servingPrimaryTitle: "",
-    servingContactName: "",
-    servingContactEmails: "",
-    servingContactNo: "",
-    servingContactWhatsappNo: "",
-    servingPrimaryDesignation: "",
-    servingSecondaryContact: "",
-    servingSecondaryTitle: "",
-    servingSecondaryContactName: "",
-    servingSecondaryContactEmails: "",
-    servingSecondaryContactNo: "",
-    servingSecondaryContactWhatsappNo: "",
-    servingSecondaryDesignation: "",
-    servingstatus: "",
-    servingParentServing: "",
-    parentServingCompany: "",
-    createDate: "",
-    industries: "",
-    subIndustry: "",
-    subsubIndustry: "",
-    industriesData: [],
-    paymentTerm: "",
-    aggrement: "",
-    aggrementPresent: false,
-    nda: "",
-    ndaPresent: false,
-    revenue: "",
-    state: "",
-    address: "",
-    country: "",
-    primaryContact: "",
-    city: "",
-    secondaryContact: "",
-    consultant: "",
-  };
-  const [formData, setFormData] = useState(formValues);
+  const [isNewCompany, setIsNewCompany] = useState(true);
   const [gstAndPanData, setGstAndPanData] = useState({
     pan: false,
     gst: false,
   });
+  const [isConsultant, setIsConsultant] = useState(false);
   const [panError, setPanError] = useState("");
   const [gstError, setGstError] = useState("");
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(isConsultant ? formSchema : companyFormSchema),
+    defaultValues: isConsultant ? defaultValues : defaultCompanyValues,
+  });
+
+  const aggrementPresent = watch("aggrementPresent");
+  const ndaPresent = watch("ndaPresent");
+  const state = watch("state");
+  const gstNo = watch("gstNo");
+
+  // Debug form state changes for file fields
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (
+        [
+          "companyFileUrl",
+          "agreementFileUrl",
+          "ndaFileUrl",
+          "servingCompanyFileUrl",
+        ].includes(name)
+      ) {
+        console.log(`Field ${name} updated:`, value[name]);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  const validateGST = (gstNo, stateName) => {
+    if (!gstNo) return "";
+    if (
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNo)
+    ) {
+      return "Invalid GST Number";
+    }
+    const selectedState = statesList?.find((s) => s.name === stateName);
+    if (selectedState && gstNo.slice(0, 2) !== selectedState.gstCode) {
+      return "GST code does not match selected state";
+    }
+    return "";
+  };
 
   const handlePanChange = (e) => {
     const rawValue = e.target.value;
     const formattedValue = formatPANInput(rawValue);
-    setFormData((prev) => ({
-      ...prev,
-      panNo: formattedValue,
-    }));
-    if (formattedValue.length === 10 && !panRegex.test(formattedValue)) {
+    setValue("panNo", formattedValue);
+    if (
+      formattedValue.length === 10 &&
+      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedValue)
+    ) {
       setPanError("Invalid PAN Number");
     } else {
       setPanError("");
     }
   };
 
-  const validateGST = (gstNo, stateName) => {
-    if (!gstNo) {
-      return "Please enter GST number";
-    }
-    if (!gstRegex.test(gstNo)) {
-      return "Invalid GST Number";
-    }
-    const selectedState = statesList.find((s) => s.name === stateName);
-    if (selectedState && gstNo.slice(0, 2) !== selectedState.gstCode) {
-      return "GST code does not match selected state";
-    }
-    return ""; // No error
-  };
-
   const handleGstChange = (e) => {
     const rawValue = e.target.value;
-    const formattedValue = formatGSTInput(rawValue); // Format the input
-
-    // Update form data with formatted value
-    setFormData((prev) => ({
-      ...prev,
-      gstNo: formattedValue,
-    }));
-
-    // Validate GST with state
-    const error = validateGST(formattedValue, formData.state);
+    const formattedValue = formatGSTInput(rawValue);
+    setValue("gstNo", formattedValue);
+    const error = validateGST(formattedValue, state);
     setGstError(error);
   };
 
   const handleStateChange = (stateName) => {
-    // Update form data and fetch cities
-    setFormData((prev) => ({ ...prev, state: stateName }));
-    dispatch(getAllCitiesByStateName(stateName)); // Preserve your existing dispatch
-
-    // Re-validate GST when state changes
-    const error = validateGST(formData.gstNo, stateName);
+    setValue("state", stateName);
+    dispatch(getAllCitiesByStateName(stateName));
+    const error = validateGST(gstNo, stateName);
     setGstError(error);
   };
-
-  console.log("dkjhdskfjhkjdhkjfd", formData);
 
   useEffect(() => {
     dispatch(getAllCompanyType());
@@ -233,6 +515,33 @@ const CreateCompanyForm = () => {
     dispatch(getAllContactDetails());
     dispatch(getAllCountries());
   }, [dispatch]);
+
+  const onSubmit = (data) => {
+    console.log("Form Data:", data);
+    data.leadId = leadId;
+    data.updatedBy = userId;
+    dispatch(createNewCompanyInLeads(data))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Company created successfully !.",
+            color: "success",
+          });
+          reset();
+        } else {
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({
+          title: "Something went wrong !.",
+          color: "danger",
+        })
+      );
+  };
 
   return (
     <>
@@ -245,7 +554,7 @@ const CreateCompanyForm = () => {
         >
           <ArrowLeft />
         </Button>
-        <h1 className="font-medium ">Company details</h1>
+        <h1 className="font-medium">Company details</h1>
       </div>
       <div>
         {!isNewCompany && (
@@ -260,1153 +569,1381 @@ const CreateCompanyForm = () => {
         )}
       </div>
       {isNewCompany && (
-        <div className="max-h-[70vh] overflow-auto mt-2 p-2 ">
-          <Card className="mt-4">
-            <CardHeader>Company info</CardHeader>
-            <CardBody>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="max-h-[64vh] overflow-auto p-4 mb-2">
+            <div className="mt-4">
+              <h2>Company info</h2>
               <div className="grid grid-cols-3 gap-4">
-                <Select
-                  label="Company type"
+                <Controller
                   name="consultantOrCompany"
-                  errorMessage="please select role as"
-                  selectedKeys={[formData?.consultantOrCompany]}
-                  isRequired
-                  items={[
-                    { label: "Consultant", key: "consultant" },
-                    { label: "Company", key: "company" },
-                  ]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      consultantOrCompany: e.target.value,
-                    }))
-                  }
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired
+                      label="Company type"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      selectedKeys={[field.value]}
+                      onSelectionChange={(e) => {
+                        field.onChange(Array.from(e)[0]);
+                        if (Array.from(e)[0] === "consultant") {
+                          setIsConsultant(true);
+                        } else {
+                          setIsConsultant(false);
+                        }
+                      }}
+                      items={[
+                        { label: "Consultant", key: "consultant" },
+                        { label: "Company", key: "company" },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
                   )}
-                </Select>
-
-                <Input
-                  isRequired
-                  label="Company name"
+                />
+                <Controller
                   name="companyName"
-                  errorMessage="please enter company name"
-                  value={formData?.companyName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      companyName: e.target.value,
-                    }))
-                  }
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Company name"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
                 />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the company structure"}
-                  label="Company structure"
+                <Controller
                   name="companyType"
-                  data={companyTypeList || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.companyType}
-                  onChange={(e) => {
-                    dispatch(getAllGstTypeByCompanyTypeId(e));
-                    setFormData((prev) => ({ ...prev, companyType: e }));
-                  }}
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the gst type"}
-                  label="GST type"
-                  name="gstType"
-                  data={gstTypeList?.gstBussinessType || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  onChange={(e) => {
-                    dispatch(getAllGstTypeByCompanyTypeId(e));
-                    setFormData((prev) => ({ ...prev, gstType: e }));
-                  }}
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the business type"}
-                  label="Business type"
-                  name="businessType"
-                  data={businessTypeList?.gstTypePrice || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.businessType}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, businessType: e }));
-                    const foundObject = businessTypeList?.gstTypePrice?.find(
-                      (item) => item?.id === e
-                    );
-                    setGstAndPanData({
-                      pan: foundObject?.panPresent,
-                      gst: foundObject?.gstPresent,
-                    });
-                  }}
-                />
-
-                {gstAndPanData?.gst && (
-                  <Input
-                    isRequired
-                    label="GST number"
-                    name="gstNo"
-                    value={formData.gstNo}
-                    onChange={handleGstChange}
-                    maxLength={15}
-                    errorMessage={gstError}
-                    isInvalid={!!gstError}
-                  />
-                )}
-
-                {gstAndPanData?.pan && (
-                  <Input
-                    isRequired
-                    label="Pan number"
-                    name="panNo"
-                    value={formData.panNo}
-                    onChange={handlePanChange}
-                    maxLength={10}
-                    errorMessage={
-                      panError ||
-                      (formData.panNo === "" ? "Please enter PAN number" : "")
-                    }
-                    isInvalid={!!panError}
-                  />
-                )}
-
-                <DatePicker
-                  errorMessage="please enter company incorporate date"
-                  showMonthAndYearPickers
-                  label="Company incorporate date"
-                  name="establishDate"
-                  value={
-                    formData?.establishDate
-                      ? parseDate(formData?.establishDate)
-                      : null
-                  }
-                  maxValue={today(getLocalTimeZone())}
-                  onChange={(e) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      establishDate: toCalendarDate(e).toString(),
-                    }));
-                  }}
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the assignee"}
-                  label="Select assignee"
-                  name="assigneeId"
-                  data={allUsers || []}
-                  labelKey={"fullName"}
-                  valueKey={"id"}
-                  value={formData?.assigneeId}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, assigneeId: e }))
-                  }
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the industry"}
-                  label="Select industry"
-                  name="industryId"
-                  data={allIndustry || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.industryId}
-                  onChange={(e) => {
-                    dispatch(getSubIndustryByIndustryId(e));
-                    setFormData((prev) => ({ ...prev, industryId: e }));
-                  }}
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the sub industry"}
-                  label="Select sub industry"
-                  name="subIndustryId"
-                  data={subIndustryListById || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.subIndustryId}
-                  onChange={(e) => {
-                    dispatch(getSubSubIndustryBySubIndustryId(e));
-                    setFormData((prev) => ({ ...prev, subIndustryId: e }));
-                  }}
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the category"}
-                  label="Select category"
-                  name="subsubIndustryId"
-                  data={subSubIndustryListById || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.subsubIndustryId}
-                  onChange={(e) => {
-                    dispatch(getIndustryDataBySubSubIndustryId(e));
-                    setFormData((prev) => ({ ...prev, subsubIndustryId: e }));
-                  }}
-                />
-
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the business activity"}
-                  label="Select category"
-                  name="industrydataId"
-                  selectionMode={"multiple"}
-                  data={industryDataListById || []}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.industrydataId}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, industrydataId: e }))
-                  }
-                />
-
-                <SingleFileUploader fileUrl={fileUrl} setFileUrl={setFileUrl} />
-              </div>
-            </CardBody>
-          </Card>
-          <Card className="mt-4">
-            <CardHeader>Arrangement detail</CardHeader>
-            <CardBody>
-              <div className="grid grid-cols-3 gap-4">
-                <Select
-                  isRequired
-                  errorMessage="please select rating"
-                  label="Rating"
-                  name="rating"
-                  items={[
-                    { label: "Gold", key: "Gold" },
-                    { label: "Silver", key: "Silver" },
-                    { label: "Bronze", key: "Bronze" },
-                  ]}
-                  selectedKeys={[formData?.rating]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, rating: e.target.value }))
-                  }
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                  )}
-                </Select>
-                <Select
-                  isRequired
-                  errorMessage="please select payment term"
-                  label="Payment term"
-                  name="paymentTerm"
-                  items={[
-                    { label: "Net 30", key: "Net 30" },
-                    { label: "Net 60", key: "Net 60" },
-                    { label: "Net 90", key: "Net 90" },
-                    { label: "2/10 Net 30", key: "2/10 Net 30" },
-                    {
-                      label: "EOM (End of Month)",
-                      key: "EOM (End of Month)",
-                    },
-                    {
-                      label: "COD (Cash on Delivery)",
-                      key: "COD (Cash on Delivery)",
-                    },
-                    {
-                      label: "CIA (Cash in Advance)",
-                      key: "CIA (Cash in Advance)",
-                    },
-                    { label: "Installments", key: "Installments" },
-                    { label: "Milestone-based", key: "Milestone-based" },
-                    { label: "Due on Receipt", key: "Due on Receipt" },
-                  ]}
-                  selectedKeys={[formData?.paymentTerm]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      paymentTerm: e.target.value,
-                    }))
-                  }
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                  )}
-                </Select>
-                <Select
-                  isRequired
-                  errorMessage="please select aggrement"
-                  label="Aggrement"
-                  name="aggrementPresent"
-                  selectedKeys={[formData?.aggrementPresent]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      aggrementPresent: JSON.parse(e.target.value),
-                    }))
-                  }
-                  items={[
-                    { label: "Yes", key: true },
-                    { label: "No", key: false },
-                  ]}
-                >
-                  {(item) => (
-                    <SelectItem key={Boolean(item?.key)}>
-                      {item?.label}
-                    </SelectItem>
-                  )}
-                </Select>
-
-                {formData?.aggrementPresent && (
-                  <SingleFileUploader fileUrl={""} setFileUrl={() => ""} />
-                )}
-
-                <Select
-                  isRequired
-                  errorMessage="please select NDA"
-                  label="NDA"
-                  name="ndaPresent"
-                  selectedKeys={[formData?.ndaPresent]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      ndaPresent: JSON.parse(e.target.value),
-                    }))
-                  }
-                  items={[
-                    { label: "Yes", key: true },
-                    { label: "No", key: false },
-                  ]}
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                  )}
-                </Select>
-
-                {formData?.ndaPresent && (
-                  <SingleFileUploader fileUrl={""} setFileUrl={() => ""} />
-                )}
-              </div>
-            </CardBody>
-          </Card>
-          <Card className="mt-4">
-            <CardHeader>Contacts</CardHeader>
-            <CardBody>
-              <h1 className="font-medium my-3">Primary contacts</h1>
-              <div className="grid grid-cols-3 gap-4 w-full">
-                <Select
-                  isRequired
-                  errorMessage="please select the salutation"
-                  label="Salutation"
-                  name="primaryTitle"
-                  items={[
-                    { label: "Master.", key: "master" },
-                    { label: "Mr.", key: "mr" },
-                    { label: "Mrs.", key: "mrs" },
-                    { label: "Miss.", key: "miss" },
-                  ]}
-                  selectedKeys={[formData?.primaryTitle]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      primaryTitle: e.target.value,
-                    }))
-                  }
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                  )}
-                </Select>
-                <Input
-                  isRequired
-                  errorMessage="please enter contact person name"
-                  name="contactName"
-                  label="Name"
-                  value={formData?.contactName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contactName: e.target.value,
-                    }))
-                  }
-                />
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the designation"}
-                  data={desiginationList || []}
-                  label={"Designation"}
-                  name={"primaryDesignation"}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.primaryDesignation}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, primaryDesignation: e }))
-                  }
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter email address"
-                  label="Email"
-                  name="contactEmails"
-                  type="email"
-                  value={formData?.contactEmails}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contactEmails: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter contact number"
-                  label="Contact number"
-                  name="contactNo"
-                  value={formData?.contactNo}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contactNo: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter whatsapp number"
-                  label="Whatsapp number"
-                  name="contactWhatsappNo"
-                  value={formData?.contactWhatsappNo}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contactWhatsappNo: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <h1 className="font-medium my-3">Secondary contacts</h1>
-              <div className="grid grid-cols-3 gap-4">
-                <Select
-                  isRequired
-                  errorMessage="please select the salutation"
-                  label="Salutation"
-                  name="secondaryTitle"
-                  items={[
-                    { label: "Master.", key: "master" },
-                    { label: "Mr.", key: "mr" },
-                    { label: "Mrs.", key: "mrs" },
-                    { label: "Miss.", key: "miss" },
-                  ]}
-                  selectedKeys={[formData?.secondaryTitle]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryTitle: e.target.value,
-                    }))
-                  }
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                  )}
-                </Select>
-                <Input
-                  isRequired
-                  errorMessage="please enter contact person name"
-                  name="secondaryContactName"
-                  label="Name"
-                  value={formData?.secondaryContactName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryContactName: e.target.value,
-                    }))
-                  }
-                />
-                <NewSelect
-                  isRequired={true}
-                  errorMessage={"please select the designation"}
-                  data={desiginationList || []}
-                  label={"Designation"}
-                  name={"secondaryDesignation"}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  value={formData?.secondaryDesignation}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryDesignation: e,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter email address"
-                  label="Email"
-                  name="secondaryContactEmails"
-                  type="email"
-                  value={formData?.secondaryContactEmails}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryContactEmails: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter contact number"
-                  label="Contact number"
-                  name="secondaryContactNo"
-                  value={formData?.secondaryContactNo}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryContactNo: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter whatsapp number"
-                  label="Whatsapp number"
-                  name="secondaryContactWhatsappNo"
-                  value={formData?.secondaryContactWhatsappNo}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryContactWhatsappNo: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </CardBody>
-          </Card>
-          <Card className="mt-4">
-            <CardHeader>Address</CardHeader>
-            <CardBody>
-              <h1 className="font-medium my-3">Billing address</h1>
-              <div className="grid grid-cols-3 gap-4">
-                <Textarea
-                  isRequired
-                  errorMessage="please enter primary address"
-                  label="Address"
-                  name="address"
-                  value={formData?.address}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      address: e.target.value,
-                    }))
-                  }
-                />
-                <NewSelect
-                  data={countryList || []}
-                  isRequired={true}
-                  errorMessage={"please select the country"}
-                  label={"Country"}
-                  name={"country"}
-                  labelKey={"name"}
-                  valueKey={"name"}
-                  value={formData?.country}
-                  onChange={(e) => {
-                    dispatch(getAllStatesByCountryName(e));
-                    setFormData((prev) => ({ ...prev, country: e }));
-                  }}
-                />
-                <NewSelect
-                  data={statesList || []}
-                  errorMessage={formData.state ? "" : "Please select the state"}
-                  isRequired={true}
-                  label="State"
-                  name="state"
-                  labelKey="name"
-                  valueKey="name"
-                  value={formData.state}
-                  onChange={handleStateChange}
-                />
-                <NewSelect
-                  data={citiesList || []}
-                  errorMessage={"please select the city"}
-                  isRequired={true}
-                  label={"City"}
-                  name={"city"}
-                  labelKey={"name"}
-                  valueKey={"name"}
-                  value={formData?.city}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, city: e }));
-                  }}
-                />
-                <Input
-                  isRequired
-                  errorMessage="please enter primary pin code"
-                  label="Pin code"
-                  name="primaryPinCode"
-                  value={formData?.primaryPinCode}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, primaryPinCode: e }));
-                  }}
-                />
-              </div>
-              <div>
-                <h1 className="font-medium my-3">Shipping address</h1>
-                <Checkbox defaultSelected>Same as billing address</Checkbox>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <Textarea
-                  label="Address"
-                  name="secondaryAddress"
-                  value={formData?.secondaryAddress}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryAddress: e.target.value,
-                    }))
-                  }
-                />
-                <NewSelect
-                  data={countryList || []}
-                  label={"Country"}
-                  name={"secondaryCountry"}
-                  labelKey={"name"}
-                  valueKey={"name"}
-                  value={formData?.secondaryCountry}
-                  onChange={(e) => {
-                    dispatch(getAllStatesByCountryName(e));
-                    setFormData((prev) => ({ ...prev, secondaryCountry: e }));
-                  }}
-                />
-                <NewSelect
-                  data={statesList || []}
-                  label={"State"}
-                  name={"secondaryState"}
-                  labelKey={"name"}
-                  valueKey={"name"}
-                  value={formData?.secondaryState}
-                  onChange={(e) => {
-                    dispatch(getAllCitiesByStateName(e));
-                    setFormData((prev) => ({ ...prev, secondaryState: e }));
-                  }}
-                />
-                <NewSelect
-                  data={citiesList || []}
-                  label={"City"}
-                  name={"secondaryCity"}
-                  labelKey={"name"}
-                  valueKey={"name"}
-                  value={formData?.secondaryCity}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, secondaryCity: e }));
-                  }}
-                />
-                <Input
-                  label="Pin code"
-                  name="secondaryPinCode"
-                  value={formData?.secondaryPinCode}
-                  onChange={(e) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      secondaryPinCode: e.target.value,
-                    }));
-                  }}
-                />
-              </div>
-            </CardBody>
-          </Card>
-          {formData?.consultantOrCompany === "consultant" && (
-            <div>
-              <div className="my-6 flex justify-center">
-                <h1 className="font-medium text-lg">Serving company details</h1>
-              </div>
-              <Card className="mt-4">
-                <CardHeader>Company info</CardHeader>
-                <CardBody>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Input
-                      isRequired
-                      errorMessage="please enter serving company name"
-                      label="Serving company name"
-                      name="servingName"
-                      value={formData?.servingName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingName: e.target.value,
-                        }))
-                      }
-                    />
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <NewSelect
-                      isRequired={true}
-                      errorMessage={"please select the company structure"}
-                      label="Serving company structure"
-                      name="servingCompanyType"
+                      isRequired
+                      label="Company structure"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
                       data={companyTypeList || []}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.servingCompanyType}
-                      onChange={(e) => {
-                        dispatch(getAllGstTypeByCompanyTypeId(e));
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingCompanyType: e.target.value,
-                        }));
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllGstTypeByCompanyTypeId(value));
+                        field.onChange(value);
                       }}
                     />
-                    <Input
+                  )}
+                />
+                <Controller
+                  name="gstType"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
                       isRequired
-                      errorMessage="please enter serving company GST number"
-                      label="Serving company GST number"
-                      name="servingGstNo"
-                      value={formData?.servingGstNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingGstNo: e.target.value,
-                        }))
-                      }
+                      label="GST type"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={gstTypeList?.gstBussinessType || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getBusinessTypeByGstTypeId(value));
+                        field.onChange(value);
+                      }}
                     />
-
-                    <Input
+                  )}
+                />
+                <Controller
+                  name="businessType"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
                       isRequired
-                      errorMessage="please enter serving PAN number"
-                      label="Serving company PAN number"
-                      name="servingPanNo"
-                      value={formData?.servingPanNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingPanNo: e.target.value,
-                        }))
-                      }
+                      label="Business type"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={businessTypeList?.gstTypePrice || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        const foundObject =
+                          businessTypeList?.gstTypePrice?.find(
+                            (item) => item.id == value
+                          );
+                        console.log(
+                          "sdkjhdjkhdjk",
+                          value,
+                          businessTypeList?.gstTypePrice,
+                          foundObject
+                        );
+                        setGstAndPanData({
+                          pan: foundObject?.panPresent || false,
+                          gst: foundObject?.gstPresent || false,
+                        });
+                      }}
                     />
+                  )}
+                />
+                {gstAndPanData.gst && (
+                  <Controller
+                    name="gstNo"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        label="GST number"
+                        maxLength={15}
+                        errorMessage={error?.message || gstError}
+                        isInvalid={!!error || !!gstError}
+                        {...field}
+                        onChange={(e) => {
+                          handleGstChange(e);
+                        }}
+                      />
+                    )}
+                  />
+                )}
+                {gstAndPanData.pan && (
+                  <Controller
+                    name="panNo"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        label="Pan number"
+                        maxLength={10}
+                        errorMessage={error?.message || panError}
+                        isInvalid={!!error || !!panError}
+                        {...field}
+                        onChange={(e) => {
+                          handlePanChange(e);
+                        }}
+                      />
+                    )}
+                  />
+                )}
+                <Controller
+                  name="establishDate"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <DatePicker
-                      errorMessage="please enter serving company incorporate date"
+                      isRequired
+                      label="Company incorporate date"
                       showMonthAndYearPickers
-                      label="Serving company incorporate date"
-                      name="servingEstablishDate"
                       maxValue={today(getLocalTimeZone())}
-                      value={
-                        formData?.servingEstablishDate
-                          ? parseDate(formData?.servingEstablishDate)
-                          : null
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      value={field.value ? parseDate(field.value) : null}
+                      onChange={(e) =>
+                        field.onChange(toCalendarDate(e).toString())
                       }
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingEstablishDate: toCalendarDate(e).toString(),
-                        }));
-                      }}
                     />
+                  )}
+                />
+                <Controller
+                  name="assigneeId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
-                      errorMessage={"please select the industry"}
+                      label="Select assignee"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={allUsers || []}
+                      labelKey="fullName"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+                <Controller
+                  name="industryId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired={true}
                       label="Select industry"
-                      name="industries"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
                       data={allIndustry || []}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.industries}
-                      onChange={(e) => {
-                        dispatch(getSubIndustryByIndustryId(e));
-                        setFormData((prev) => ({ ...prev, industries: e }));
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getSubIndustryByIndustryId(value));
+                        field.onChange(value);
                       }}
                     />
+                  )}
+                />
+                <Controller
+                  name="subIndustryId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
-                      errorMessage={"please select the sub industry"}
                       label="Select sub industry"
-                      name="subIndustry"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
                       data={subIndustryListById || []}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.subIndustry}
-                      onChange={(e) => {
-                        dispatch(getSubSubIndustryBySubIndustryId(e));
-                        setFormData((prev) => ({ ...prev, subIndustry: e }));
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getSubSubIndustryBySubIndustryId(value));
+                        field.onChange(value);
                       }}
                     />
+                  )}
+                />
+                <Controller
+                  name="subsubIndustryId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
-                      errorMessage={"please select the category"}
                       label="Select category"
-                      name="subsubIndustry"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
                       data={subSubIndustryListById || []}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.subsubIndustry}
-                      onChange={(e) => {
-                        dispatch(getIndustryDataBySubSubIndustryId(e));
-                        setFormData((prev) => ({ ...prev, subsubIndustry: e }));
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getIndustryDataBySubSubIndustryId(value));
+                        field.onChange(value);
                       }}
                     />
+                  )}
+                />
+                <Controller
+                  name="industrydataId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
-                      errorMessage={"please select the business activity"}
-                      label="Select category"
-                      name="industriesData"
+                      label="Select business activity"
+                      selectionMode="multiple"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
                       data={industryDataListById || []}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.industriesData}
-                      onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, industriesData: e }));
-                      }}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
                     />
+                  )}
+                />
+                <Controller
+                  name="companyFileUrl"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
                     <SingleFileUploader
-                      fileUrl={fileUrl}
-                      setFileUrl={setFileUrl}
-                    />
-                  </div>
-                </CardBody>
-              </Card>
-              <Card className="mt-4">
-                <CardHeader>Contacts</CardHeader>
-                <CardBody>
-                  <h1 className="font-medium my-3">Primary contacts</h1>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Select
                       isRequired
-                      errorMessage="please select the salutation"
-                      label="Salutation"
-                      name="servingPrimaryTitle"
-                      items={[
-                        { label: "Master.", key: "master" },
-                        { label: "Mr.", key: "mr" },
-                        { label: "Mrs.", key: "mrs" },
-                        { label: "Miss.", key: "miss" },
-                      ]}
-                      selectedKeys={[formData?.servingPrimaryTitle]}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingPrimaryTitle: e.target.value,
-                        }))
-                      }
-                    >
-                      {(item) => (
-                        <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                      )}
-                    </Select>
-                    <Input
-                      isRequired
-                      errorMessage="please enter contact person name"
-                      name="servingContactName"
-                      label="Name"
-                      value={formData?.servingContactName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingContactName: e.target.value,
-                        }))
-                      }
-                    />
-                    <NewSelect
-                      isRequired={true}
-                      errorMessage={"please select the designation"}
-                      data={desiginationList || []}
-                      label={"Designation"}
-                      name={"servingPrimaryDesignation"}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.servingPrimaryDesignation}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingPrimaryDesignation: e,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter email address"
-                      label="Email"
-                      name="servingContactEmails"
-                      type="email"
-                      value={formData?.servingContactEmails}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingContactEmails: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter contact number"
-                      label="Contact number"
-                      name="servingContactNo"
-                      value={formData?.servingContactNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingContactNo: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter whatsapp number"
-                      label="Whatsapp number"
-                      name="servingContactWhatsappNo"
-                      value={formData?.servingContactWhatsappNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingContactWhatsappNo: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  <h1 className="font-medium my-3">Secondary contacts</h1>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Select
-                      isRequired
-                      errorMessage="please select the salutation"
-                      label="Salutation"
-                      name="servingSecondaryTitle"
-                      items={[
-                        { label: "Master.", key: "master" },
-                        { label: "Mr.", key: "mr" },
-                        { label: "Mrs.", key: "mrs" },
-                        { label: "Miss.", key: "miss" },
-                      ]}
-                      selectedKeys={[formData?.servingSecondaryTitle]}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryTitle: e.target.value,
-                        }))
-                      }
-                    >
-                      {(item) => (
-                        <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                      )}
-                    </Select>
-                    <Input
-                      isRequired
-                      errorMessage="please enter contact person name"
-                      name="servingSecondaryContactName"
-                      label="Name"
-                      value={formData?.servingSecondaryContactName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryContactName: e.target.value,
-                        }))
-                      }
-                    />
-                    <NewSelect
-                      isRequired={true}
-                      errorMessage={"please select the designation"}
-                      data={desiginationList || []}
-                      label={"Designation"}
-                      name={"servingSecondaryDesignation"}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={formData?.servingSecondaryDesignation}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryDesignation: e,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter email address"
-                      label="Email"
-                      name="servingSecondaryContactEmails"
-                      type="email"
-                      value={formData?.servingSecondaryContactEmails}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryContactEmails: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter contact number"
-                      label="Contact number"
-                      name="servingSecondaryContactNo"
-                      value={formData?.servingSecondaryContactNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryContactNo: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter whatsapp number"
-                      label="Whatsapp number"
-                      name="servingSecondaryContactWhatsappNo"
-                      value={formData?.servingSecondaryContactWhatsappNo}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryContactWhatsappNo: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </CardBody>
-              </Card>
-              <Card className="mt-4">
-                <CardHeader>Address</CardHeader>
-                <CardBody>
-                  <h1 className="font-medium my-3">Billing address</h1>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Textarea
-                      isRequired
-                      errorMessage="please enter primary address"
-                      label="Address"
-                      name="servingAddress"
-                      value={formData?.servingAddress}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingAddress: e.target.value,
-                        }))
-                      }
-                    />
-                    <NewSelect
-                      data={countryList || []}
-                      isRequired={true}
-                      errorMessage={"please select the country"}
-                      label={"Country"}
-                      name={"servingCountry"}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      value={formData?.servingCountry}
-                      onChange={(e) => {
-                        dispatch(getAllStatesByCountryName(e));
-                        setFormData((prev) => ({ ...prev, servingCountry: e }));
+                      label="Company document"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
                       }}
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
                     />
-                    <NewSelect
-                      data={statesList || []}
-                      errorMessage={"please select the state"}
-                      isRequired={true}
-                      label={"State"}
-                      name={"servingState"}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      value={formData?.servingState}
-                      onChange={(e) => {
-                        dispatch(getAllCitiesByStateName(e));
-                        setFormData((prev) => ({ ...prev, servingState: e }));
-                      }}
-                    />
-                    <NewSelect
-                      data={citiesList || []}
-                      errorMessage={"please select the city"}
-                      isRequired={true}
-                      label={"City"}
-                      name={"servingCity"}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      value={formData?.servingCity}
-                      onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, servingCity: e }));
-                      }}
-                    />
-                    <Input
-                      isRequired
-                      errorMessage="please enter primary pin code"
-                      label="Pin code"
-                      name="servingprimaryPinCode"
-                      value={formData?.servingprimaryPinCode}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingprimaryPinCode: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-                  <h1 className="font-medium my-3">Shipping address</h1>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Textarea
-                      label="Address"
-                      name="servingSecondaryAddress"
-                      value={formData?.servingSecondaryAddress}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryAddress: e.target.value,
-                        }));
-                      }}
-                    />
-                    <NewSelect
-                      data={countryList || []}
-                      label={"Country"}
-                      name={"servingSecondaryCountry"}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      value={formData?.servingSecondaryCountry}
-                      onChange={(e) => {
-                        dispatch(getAllStatesByCountryName(e));
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryCountry: e,
-                        }));
-                      }}
-                    />
-                    <NewSelect
-                      data={statesList || []}
-                      label={"State"}
-                      name={"servingSecondaryState"}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      value={formData?.servingSecondaryState}
-                      onChange={(e) => {
-                        dispatch(getAllCitiesByStateName(e));
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryState: e,
-                        }));
-                      }}
-                    />
-                    <NewSelect
-                      data={citiesList || []}
-                      label={"City"}
-                      name={"servingsecondaryCity"}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      value={formData?.servingsecondaryCity}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingsecondaryCity: e,
-                        }));
-                      }}
-                    />
-                    <Input
-                      label="Pin code"
-                      name="servingSecondaryPinCode"
-                      value={formData?.servingSecondaryPinCode}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          servingSecondaryPinCode: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-                </CardBody>
-              </Card>
+                  )}
+                />
+              </div>
             </div>
-          )}
-        </div>
+            <div className="mt-4">
+              <h2>Arrangement detail</h2>
+              <div className="grid grid-cols-3 gap-4">
+                <Controller
+                  name="rating"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired={true}
+                      label="Rating"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      value={[field.value]}
+                      onSelectionChange={(e) =>
+                        field.onChange(Array.from(e)[0])
+                      }
+                      items={[
+                        { label: "Gold", key: "Gold" },
+                        { label: "Silver", key: "Silver" },
+                        { label: "Bronze", key: "Bronze" },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="paymentTerm"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired={true}
+                      label="Payment term"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      items={[
+                        { label: "Net 30", key: "Net 30" },
+                        { label: "Net 60", key: "Net 60" },
+                        { label: "Net 90", key: "Net 90" },
+                        { label: "2/10 Net 30", key: "2/10 Net 30" },
+                        {
+                          label: "EOM (End of Month)",
+                          key: "EOM (End of Month)",
+                        },
+                        {
+                          label: "COD (Cash on Delivery)",
+                          key: "COD (Cash on Delivery)",
+                        },
+                        {
+                          label: "CIA (Cash in Advance)",
+                          key: "CIA (Cash in Advance)",
+                        },
+                        { label: "Installments", key: "Installments" },
+                        { label: "Milestone-based", key: "Milestone-based" },
+                        { label: "Due on Receipt", key: "Due on Receipt" },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="aggrementPresent"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired={true}
+                      label="Agreement"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      value={field.value}
+                      onChange={(e) =>
+                        field.onChange(e.target.value === "true")
+                      }
+                      items={[
+                        { label: "Yes", key: true },
+                        { label: "No", key: false },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+                  )}
+                />
+                {aggrementPresent && (
+                  <Controller
+                    name="agreementFileUrl"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <SingleFileUploader
+                        label="Agreement document"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                      />
+                    )}
+                  />
+                )}
+                <Controller
+                  name="ndaPresent"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired={true}
+                      label="NDA"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      value={field.value}
+                      onChange={(e) =>
+                        field.onChange(e.target.value === "true")
+                      }
+                      items={[
+                        { label: "Yes", key: true },
+                        { label: "No", key: false },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+                  )}
+                />
+                {ndaPresent && (
+                  <Controller
+                    name="ndaFileUrl"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <SingleFileUploader
+                        label="NDA document"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                      />
+                    )}
+                  />
+                )}
+              </div>
+            </div>
+            <div className="mt-4">
+              <h2>Contacts</h2>
+              <h3 className="font-medium my-3">Primary contacts</h3>
+              <div className="grid grid-cols-3 gap-4 w-full">
+                <Controller
+                  name="primaryTitle"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired={true}
+                      label="Salutation"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      items={[
+                        { label: "Master.", key: "master" },
+                        { label: "Mr.", key: "mr" },
+                        { label: "Mrs.", key: "mrs" },
+                        { label: "Miss.", key: "miss" },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="contactName"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired={true}
+                      label="Name"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="primaryDesignation"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired={true}
+                      label="Designation"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={desiginationList || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+                <Controller
+                  name="contactEmails"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired={true}
+                      label="Email"
+                      type="email"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="contactNo"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired={true}
+                      label="Contact number"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="contactWhatsappNo"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired={true}
+                      label="Whatsapp number"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+              <h3 className="font-medium my-3">Secondary contacts</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <Controller
+                  name="secondaryTitle"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      label="Salutation"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      items={[
+                        { label: "Master.", key: "master" },
+                        { label: "Mr.", key: "mr" },
+                        { label: "Mrs.", key: "mrs" },
+                        { label: "Miss.", key: "miss" },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="secondaryContactName"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Name"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="secondaryDesignation"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Designation"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={desiginationList || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+                <Controller
+                  name="secondaryContactEmails"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Email"
+                      type="email"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="secondaryContactNo"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Contact number"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="secondaryContactWhatsappNo"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Whatsapp number"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h2>Address</h2>
+              <h3 className="font-medium my-3">Billing address</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <Controller
+                  name="address"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Address"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Country"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={countryList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllStatesByCountryName(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="state"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="State"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={statesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        handleStateChange(value);
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="City"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={citiesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="primaryPinCode"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Pin code"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+              <h3 className="font-medium my-3">Shipping address</h3>
+              {/* <Controller
+              name="sameAsBilling"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  isSelected={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                >
+                  Same as billing address
+                </Checkbox>
+              )}
+            /> */}
+              <div className="grid grid-cols-3 gap-4">
+                <Controller
+                  name="secondaryAddress"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Address"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryCountry"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Country"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={countryList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllStatesByCountryName(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryState"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="State"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={statesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllCitiesByStateName(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryCity"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="City"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={citiesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryPinCode"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Pin code"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            {isConsultant && (
+              <div>
+                <div className="my-6 flex justify-center">
+                  <h1 className="font-medium text-lg">
+                    Serving company details
+                  </h1>
+                </div>
+                <div className="mt-4">
+                  <h2>Company info</h2>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Controller
+                      name="servingName"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Serving company name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingCompanyType"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Serving company structure"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={companyTypeList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllGstTypeByCompanyTypeId(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingGstNo"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Serving company GST number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingPanNo"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Serving company PAN number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingEstablishDate"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <DatePicker
+                          label="Serving company incorporate date"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          showMonthAndYearPickers
+                          maxValue={today(getLocalTimeZone())}
+                          value={field.value ? parseDate(field.value) : null}
+                          onChange={(e) =>
+                            field.onChange(toCalendarDate(e).toString())
+                          }
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="industries"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Select industry"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={allIndustry || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getSubIndustryByIndustryId(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="subIndustry"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Select sub industry"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={subIndustryListById || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getSubSubIndustryBySubIndustryId(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="subsubIndustry"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Select category"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={subSubIndustryListById || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getIndustryDataBySubSubIndustryId(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="industriesData"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Select business activity"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={industryDataListById || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingCompanyFileUrl"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <SingleFileUploader
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <h2>Contacts</h2>
+                  <h3 className="font-medium my-3">Primary contacts</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Controller
+                      name="servingPrimaryTitle"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Salutation"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          items={[
+                            { label: "Master.", key: "master" },
+                            { label: "Mr.", key: "mr" },
+                            { label: "Mrs.", key: "mrs" },
+                            { label: "Miss.", key: "miss" },
+                          ]}
+                        >
+                          {(item) => (
+                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                          )}
+                        </Select>
+                      )}
+                    />
+
+                    <Controller
+                      name="servingContactName"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingPrimaryDesignation"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Designation"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={desiginationList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingContactEmails"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Email"
+                          type="email"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingContactNo"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Contact number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingContactWhatsappNo"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Whatsapp number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                  </div>
+                  <h3 className="font-medium my-3">Secondary contacts</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Controller
+                      name="servingSecondaryTitle"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Salutation"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          items={[
+                            { label: "Master.", key: "master" },
+                            { label: "Mr.", key: "mr" },
+                            { label: "Mrs.", key: "mrs" },
+                            { label: "Miss.", key: "miss" },
+                          ]}
+                        >
+                          {(item) => (
+                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                          )}
+                        </Select>
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryContactName"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryDesignation"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Designation"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={desiginationList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryContactEmails"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Email"
+                          type="email"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryContactNo"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Contact number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryContactWhatsappNo"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Whatsapp number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <h2>Address</h2>
+                  <h3 className="font-medium my-3">Billing address</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Controller
+                      name="servingAddress"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Address"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingCountry"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Country"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={countryList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllStatesByCountryName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingState"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="State"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={statesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllCitiesByStateName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingCity"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="City"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={citiesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingprimaryPinCode"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Pin code"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                  </div>
+                  <h3 className="font-medium my-3">Shipping address</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Controller
+                      name="servingSecondaryAddress"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Address"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryCountry"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Country"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={countryList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllStatesByCountryName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryState"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="State"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={statesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllCitiesByStateName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingsecondaryCity"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="City"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={citiesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="servingSecondaryPinCode"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Pin code"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <Button size="lg" color="primary" type="submit">
+            Submit
+          </Button>
+        </form>
       )}
     </>
   );

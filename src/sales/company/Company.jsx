@@ -20,7 +20,6 @@ import {
   Award,
   ChevronDown,
   EllipsisVertical,
-  Plus,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -160,11 +159,11 @@ const Company = () => {
 
       case "gstNo":
         return (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1">
             <span className="font-semibold">{company.gstNo || "-"}</span>
             {company?.gstType && (
               <Chip
-                className="capitalize"
+                className="capitalize text-tiny"
                 color="secondary"
                 size="sm"
                 variant="flat"

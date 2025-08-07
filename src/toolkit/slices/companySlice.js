@@ -112,6 +112,17 @@ export const getAllServingCompanyList = createAsyncThunk(
   }
 );
 
+export const createNewCompanyInLeads = createAsyncThunk(
+  "createNewCompanyInLeads",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/company/createCompanyNew`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {

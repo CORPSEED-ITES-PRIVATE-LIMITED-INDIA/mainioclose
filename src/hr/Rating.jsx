@@ -124,7 +124,6 @@ const Rating = () => {
     let filteredData = [...data];
     if (hasSearchFilter) {
       filteredData = filteredData.filter((item) =>{
-        console.log('djhfsdkjhdfjkhgj',item)
         return(
           item?.urlsName?.toLowerCase().includes(filterValue.toLowerCase())
         )

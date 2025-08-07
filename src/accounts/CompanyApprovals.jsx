@@ -40,7 +40,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "status",
   "assignee",
   "address",
-  "secondaryAddress",
   "actions"
 ];
 
@@ -85,8 +84,8 @@ const CompanyApprovals = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        item?.companyName?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
     return filteredUsers;
@@ -203,7 +202,7 @@ const CompanyApprovals = () => {
         );
       case "actions":
         return (
-          <Dropdown>
+          <Dropdown showArrow>
             <DropdownTrigger>
               <Button size="sm" isIconOnly variant="light">
                 <EllipsisVertical />

@@ -31,7 +31,7 @@ const FileUploader = ({setFiles,files}) => {
         }
       );
 
-      const fileUrl = response?.data; // 👈 updated line
+      const fileUrl = response?.data;
       if (
         fileUrl &&
         typeof fileUrl === "string" &&
@@ -112,7 +112,6 @@ const FileUploader = ({setFiles,files}) => {
 
   return (
     <div className="w-full">
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -122,19 +121,17 @@ const FileUploader = ({setFiles,files}) => {
         onChange={handleFileInputChange}
       />
 
-      {/* Drop zone */}
       <div
         ref={dropRef}
         onClick={handleClickDropZone}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className="w-full h-[150px] border-2 border-dashed rounded-lg mt-1 border-slate-300 dark:text-white flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:bg-gray-700 transition-colors"
+        className="w-full h-[150px] border-2 border-dashed rounded-lg mt-3 border-slate-300 dark:text-white flex items-center justify-center cursor-pointer bg-inherit transition-colors"
       >
         Drag & Drop Files Here, Click to Choose, or Paste with Ctrl+V
       </div>
 
-      {/* File list with status color */}
       <div className="mt-4">
         <h4 className="font-semibold">Uploaded Files:</h4>
         <ul className="list-disc list-inside">

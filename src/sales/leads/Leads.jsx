@@ -13,7 +13,6 @@ import {
   DropdownMenu,
   DropdownItem,
   Chip,
-  User,
   Pagination,
   Modal,
   useDisclosure,
@@ -21,7 +20,6 @@ import {
   ModalHeader,
   ModalFooter,
   ModalBody,
-  Form,
   Select,
   SelectItem,
   Textarea,
@@ -29,6 +27,7 @@ import {
   PopoverContent,
   Popover,
   DateRangePicker,
+  addToast,
 } from "@heroui/react";
 import {
   ChevronDown,
@@ -39,6 +38,7 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  createLeads,
   getAllLeadCount,
   getAllLeadsByFilter,
   getAllLeadUser,
@@ -128,6 +128,7 @@ const Leads = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.leads.allLeads);
   const count = useSelector((state) => state.leads.totalCount);
+  const roles = useSelector((state) => state.auth.currentUser?.roles);
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
   const statusList = useSelector((state) => state?.setting?.statusList);
   const countryList = useSelector((state) => state.common.countriesList);
@@ -178,8 +179,6 @@ const Leads = () => {
   useEffect(() => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
-    dispatch(getAllLeadUser(userId));
-    dispatch(getAllStatusData());
   }, [dispatch]);
 
   const headerColumns = useMemo(() => {
@@ -330,6 +329,7 @@ const Leads = () => {
   const handleResetFilter = useCallback(() => {
     dispatch(getAllLeadsByFilter(initialFilterValues));
     dispatch(getAllLeadCount(initialFilterValues));
+    setAllMultiFilterData(initialFilterValues);
   }, [initialFilterValues, dispatch]);
 
   const topContent = useMemo(() => {
@@ -613,6 +613,30 @@ const Leads = () => {
   const handleOpenModal = () => {
     onOpen();
     dispatch(getAllCountries());
+    dispatch(getAllLeadUser(userId));
+    dispatch(getAllStatusData());
+  };
+
+  const handleFinish = (values) => {
+    values.categoryId = "1";
+    values.createdById = userId;
+    values.serviceId = "1";
+    values.industryId = "1";
+    values.assigneeId = roles?.includes("ADMIN") ? values.assigneeId : userId;
+    dispatch(createLeads(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({ title: "Lead created successfully !.", color: "success" });
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
+          dispatch(getAllLeadCount(allMultiFilterData));
+          onOpenChange(false);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
   };
 
   return (
@@ -672,7 +696,7 @@ const Leads = () => {
               <ModalBody>
                 <form
                   className="w-full flex flex-col gap-4 "
-                  onSubmit={handleSubmit()}
+                  onSubmit={handleSubmit(handleFinish)}
                 >
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
                     <Controller
@@ -724,6 +748,7 @@ const Leads = () => {
                           label="Mobile number"
                           errorMessage={errors.mobileNo?.message}
                           type="text"
+                          maxLength={10}
                           {...field}
                         />
                       )}
@@ -736,7 +761,7 @@ const Leads = () => {
                         <Input
                           isRequired
                           errorMessage={errors.urls?.message}
-                          label="Company"
+                          label="Company url"
                           type="text"
                           {...field}
                         />

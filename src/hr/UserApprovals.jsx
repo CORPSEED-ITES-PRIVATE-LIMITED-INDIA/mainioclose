@@ -98,8 +98,8 @@ const UserApprovals = () => {
   const filteredItems = useMemo(() => {
     let filteredUsers = [...data];
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        item?.fullName?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
     return filteredUsers;
