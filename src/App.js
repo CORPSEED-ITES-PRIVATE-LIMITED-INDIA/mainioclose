@@ -115,6 +115,8 @@ import AutoHistory from "./Main/Sales/auto/AutoHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
 import EstimatePreviewPage from "./components/EstimatePreviewPage";
 import LedgerDetail from "./Main/Accounts/Ledger/LedgerDetail";
+import AutomationLeads from "./Main/Sales/Leads/AutomationLeads";
+import QualityLeadReport from "./Main/Sales/Leads/QualityLeadReport";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -561,6 +563,22 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AutoHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="automationStatus"
+                  element={
+                    <ProtectedRoute>
+                      <AutomationLeads />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="qualityReport"
+                  element={
+                    <ProtectedRoute>
+                      <QualityLeadReport />
                     </ProtectedRoute>
                   }
                 />

@@ -236,6 +236,14 @@ const SideBar = () => {
                 key: "autoHistory",
               },
               {
+                label: <Link to={`${userid}/sales/automationStatus`}>Automation status</Link>,
+                key: "automationStatus",
+              },
+              {
+                label: <Link to={`${userid}/sales/qualityReport`}>Quality report</Link>,
+                key: "qualityReport",
+              },
+              {
                 label: (
                   <Link to={`${userid}/sales/discountedEstimates`}>Discounted estimate</Link>
                 ),

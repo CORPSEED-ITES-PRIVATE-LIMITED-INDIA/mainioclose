@@ -81,8 +81,6 @@ export const createLead = createAsyncThunk(
   }
 );
 
-
-
 export const createLeadCateogry = createAsyncThunk(
   "createLeadCategory",
   async (leadCategory) => {
@@ -1221,10 +1219,37 @@ export const updateIndustriesInLeads = createAsyncThunk(
   }
 );
 
-export const getTotalCountOfEstimate=createAsyncThunk('getTotalCountOfEstimate',async(userId)=>{
-  const response=await getQuery(`/leadService/api/v1/leadEstimate/getAllEstimateCount?userId=${userId}`)
-  return response.data
-})
+export const getTotalCountOfEstimate = createAsyncThunk(
+  "getTotalCountOfEstimate",
+  async (userId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getAllEstimateCount?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const getAutomationLeads = createAsyncThunk(
+  "getAutomationLeads",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/leadRepot/getAllAutoReport`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getQualityLeadsReport = createAsyncThunk(
+  "getQualityLeadsReport",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/leadRepot/getAllAutoLeadQualityReport`,
+      data
+    );
+    return response.data;
+  }
+);
 
 export const LeadSlice = createSlice({
   name: "lead",
@@ -1303,7 +1328,9 @@ export const LeadSlice = createSlice({
     autoExportLoading: "",
     brochureList: [],
     templateAndMailList: [],
-    totalEstimateCount:0
+    totalEstimateCount: 0,
+    automationReportList: [],
+    qualityReportList: [],
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -1986,6 +2013,26 @@ export const LeadSlice = createSlice({
         state.templateAndMailList = [];
       }
     );
+
+    builder.addCase(getAutomationLeads.pending, (state) => {
+      state.automationReportList = [];
+    });
+    builder.addCase(getAutomationLeads.fulfilled, (state, action) => {
+      state.automationReportList = action?.payload;
+    });
+    builder.addCase(getAutomationLeads.rejected, (state) => {
+      state.automationReportList = [];
+    });
+
+    builder.addCase(getQualityLeadsReport.pending, (state) => {
+      state.qualityReportList = [];
+    });
+    builder.addCase(getQualityLeadsReport.fulfilled, (state, action) => {
+      state.qualityReportList = action?.payload;
+    });
+    builder.addCase(getQualityLeadsReport.rejected, (state) => {
+      state.qualityReportList = [];
+    });
   },
 });
 export const {
