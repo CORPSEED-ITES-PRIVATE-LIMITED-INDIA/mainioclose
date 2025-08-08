@@ -169,6 +169,26 @@ export const deleteLeadContact = createAsyncThunk(
   }
 );
 
+export const getAllEstimateByUserId = createAsyncThunk(
+  "getAllEstimateByUserId",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getEstimateByUserId?userId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getTotalCountOfEstimate = createAsyncThunk(
+  "getTotalCountOfEstimate",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getAllEstimateCount?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -183,6 +203,8 @@ export const LeadSlice = createSlice({
     estimateListByUserId: [],
     projectsList: [],
     leadUsersList: [],
+    estimateList: [],
+    totalEstimateCount: 0,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -268,6 +290,30 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllLeadUser.rejected, (state) => {
       state.loading = "rejected";
       state.leadUsersList = [];
+    });
+
+    builder.addCase(getAllEstimateByUserId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllEstimateByUserId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateList = action?.payload;
+    });
+    builder.addCase(getAllEstimateByUserId.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimateList = [];
+    });
+
+    builder.addCase(getTotalCountOfEstimate.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTotalCountOfEstimate.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalEstimateCount = action?.payload;
+    });
+    builder.addCase(getTotalCountOfEstimate.rejected, (state) => {
+      state.loading = "rejected";
+      state.totalEstimateCount = 0;
     });
   },
 });

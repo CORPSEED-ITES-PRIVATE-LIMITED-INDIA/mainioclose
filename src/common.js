@@ -47,17 +47,17 @@ export const formatGSTInput = (value) => {
 };
 
 export function dateFormat(isoDate) {
-  if (!isoDate || typeof isoDate !== 'string') {
-    console.error('Invalid date input:', isoDate);
-    return 'Invalid Date'; // Or return a fallback value
+  if (!isoDate || typeof isoDate !== "string") {
+    console.error("Invalid date input:", isoDate);
+    return "Invalid Date"; // Or return a fallback value
   }
 
   try {
-    const date = parseAbsolute(isoDate, 'UTC');
-    return date.toString().split('T')[0].split('-').reverse().join('-');
+    const date = parseAbsolute(isoDate, "UTC");
+    return date.toString().split("T")[0].split("-").reverse().join("-");
   } catch (error) {
-    console.error('Error parsing date:', error);
-    return 'Invalid Date'; // Or handle the error as needed
+    console.error("Error parsing date:", error);
+    return "Invalid Date"; // Or handle the error as needed
   }
 }
 
@@ -72,4 +72,52 @@ export const leadSource = [
   "Other",
   "Mail",
   "Emailer",
+];
+
+export const paymentTermDays = [
+  { label: 1, key: 1 },
+  { label: 2, key: 2 },
+  { label: 3, key: 3 },
+  { label: 4, key: 4 },
+  { label: 5, key: 5 },
+  { label: 6, key: 6 },
+  { label: 7, key: 7 },
+  { label: 8, key: 8 },
+  { label: 9, key: 9 },
+  { label: 10, key: 10 },
+  { label: 11, key: 11 },
+  { label: 12, key: 12 },
+  { label: 13, key: 13 },
+  { label: 14, key: 14 },
+  { label: 15, key: 15 },
+  { label: 16, key: 16 },
+  { label: 17, key: 17 },
+  { label: 18, key: 18 },
+  { label: 19, key: 19 },
+  { label: 20, key: 20 },
+  { label: 21, key: 21 },
+  { label: 22, key: 22 },
+  { label: 23, key: 23 },
+  { label: 24, key: 24 },
+  { label: 25, key: 25 },
+  { label: 26, key: 26 },
+  { label: 27, key: 27 },
+  { label: 28, key: 28 },
+  { label: 29, key: 29 },
+  { label: 30, key: 30 },
+  { label: 31, key: 31 },
+  { label: 32, key: 32 },
+  { label: 33, key: 33 },
+  { label: 34, key: 34 },
+  { label: 35, key: 35 },
+  { label: 36, key: 36 },
+  { label: 37, key: 37 },
+  { label: 38, key: 38 },
+  { label: 39, key: 39 },
+  { label: 40, key: 40 },
+  { label: 41, key: 41 },
+  { label: 42, key: 42 },
+  { label: 43, key: 43 },
+  { label: 44, key: 44 },
+  { label: 45, key: 45 },
 ];

@@ -21,6 +21,17 @@ export const getAllPaymentApprovals = createAsyncThunk(
   }
 );
 
+export const createPurchaseOrder = createAsyncThunk(
+  "createPurchaseOrder",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/paymentRegister/createPurchaseOrder`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

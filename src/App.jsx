@@ -29,6 +29,8 @@ import UsersList from './hr/UsersList';
 import UserApprovals from './hr/UserApprovals';
 import Services from './hr/Services';
 import Rating from './hr/Rating';
+import AdminDashboards from './dashboards/AdminDashboards';
+import Estimate from './sales/estimate/Estimate';
 
 function App() {
   const router = createBrowserRouter([
@@ -42,6 +44,10 @@ function App() {
           path: ":userId",
           element: <Layoutpage />,
           children: [
+            {
+              path:'dashboard',
+              element:<AdminDashboards/>
+            },
             {
               path: "sales",
               children: [
@@ -61,6 +67,7 @@ function App() {
                   path: "company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/unitDetails",
                   element: <CompanyUnitDetails />,
                 },
+                { path: "estimate", element: <Estimate /> },
                 { path: "discountedEstimate", element: <DiscountedEstimate /> },
                 { path: "projects", element: <Projects /> },
                 { path: "servingCompanies", element: <ServingCompanies /> },

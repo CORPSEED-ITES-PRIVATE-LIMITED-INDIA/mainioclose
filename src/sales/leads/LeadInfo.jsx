@@ -727,7 +727,7 @@ const LeadInfo = ({ leadData }) => {
           </Card>
         </div>
       </div>
-      <div>
+      <>
         <Card className="my-2">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -805,7 +805,7 @@ const LeadInfo = ({ leadData }) => {
             })}
           </CardBody>
         </Card>
-      </div>
+      </>
       <Modal
         size="3xl"
         isDismissable={false}

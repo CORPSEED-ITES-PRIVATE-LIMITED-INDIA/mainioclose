@@ -9,7 +9,7 @@ const navItems = [
   {
     title: "Dashboard",
     icon: "LayoutDashboard",
-    url: "/dashboard",
+    url: "dashboard",
     key: "dashboard",
   },
   {
@@ -20,6 +20,7 @@ const navItems = [
     children: [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
+      { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
       { title: "Discounted Estimate", icon: "", url: "sales/discountedEstimate", key: "discountedEstimate" },
       { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
       { title: "Serving Companies", icon: "", url: "sales/servingCompanies", key: "servingCompanies" },
