@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-react": "^11.0.0",
     "@heroui/react": "^2.7.8",
     "@heroui/use-infinite-scroll": "^2.2.10",
     "@hookform/resolvers": "^5.2.1",
     "@internationalized/date": "^3.8.2",
     "@reduxjs/toolkit": "^2.8.2",
     "axios": "^1.10.0",
+    "ckeditor5-premium-features": "^46.0.1",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.23.6",
     "lucide-react": "^0.511.0",

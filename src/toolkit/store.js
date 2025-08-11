@@ -8,6 +8,7 @@ import commonReducer from "./slices/commonSlice";
 import settingReducer from "./slices/settingSlice";
 import companyReducer from "./slices/companySlice";
 import accountReducer from "./slices/accountSlice";
+import vendorsReducer from "./slices/vendorsSlice";
 
 const reducers = combineReducers({
   auth: authReducer,
@@ -15,7 +16,8 @@ const reducers = combineReducers({
   common: commonReducer,
   setting: settingReducer,
   company: companyReducer,
-  account:accountReducer
+  account: accountReducer,
+  vendors: vendorsReducer,
 });
 
 const persistConfig = {

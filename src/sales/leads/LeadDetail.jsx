@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { getSingleLeadDataByLeadId } from "../../toolkit/slices/leadSlice";
 import CreateCompanyForm from "../company/CreateCompanyForm";
+import Vendors from "../vendors/vendors";
+import Proposal from "../proposal/Proposal";
 
 const LeadDetail = () => {
   const dispatch = useDispatch();
@@ -35,14 +37,12 @@ const LeadDetail = () => {
     {
       id: "vendors",
       label: "Vendors",
-      content:
-        "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+      content:<Vendors/>
     },
     {
       id: "proposal",
       label: "Proposal",
-      content:
-        "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+      content:<Proposal/>
     },
     {
       id: "estimate",

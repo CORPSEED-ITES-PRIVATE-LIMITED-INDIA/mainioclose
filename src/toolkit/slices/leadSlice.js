@@ -189,6 +189,55 @@ export const getTotalCountOfEstimate = createAsyncThunk(
   }
 );
 
+export const getAllProposalTemplateList = createAsyncThunk(
+  "getAllProposalTemplateList",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBrochureList = createAsyncThunk(
+  "getAllBrochureList",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/brochureBook/getAllBrochureBook`
+    );
+    return response.data;
+  }
+);
+
+export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
+  const response = await api.post(
+    `/leadService/api/v1/proposal/createProposal`,
+    data
+  );
+  return response.data;
+});
+
+export const editLeadPropposal = createAsyncThunk(
+  "editPropposal",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/proposal/editProposal`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getProposalDataByLeadId = createAsyncThunk(
+  "getProposalDataByLeadId",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/proposal/getProposalByLeadId?proposalId=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -205,6 +254,9 @@ export const LeadSlice = createSlice({
     leadUsersList: [],
     estimateList: [],
     totalEstimateCount: 0,
+    templateList: [],
+    brochureList: [],
+    proposalDataDetail: {},
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -314,6 +366,44 @@ export const LeadSlice = createSlice({
     builder.addCase(getTotalCountOfEstimate.rejected, (state) => {
       state.loading = "rejected";
       state.totalEstimateCount = 0;
+    });
+
+    builder.addCase(getAllProposalTemplateList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllProposalTemplateList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.templateList = action?.payload;
+    });
+    builder.addCase(getAllProposalTemplateList.rejected, (state) => {
+      state.loading = "rejected";
+      state.templateList = [];
+    });
+
+    builder.addCase(getAllBrochureList.pending, (state) => {
+      state.loading = "pending";
+      state.brochureList = [];
+    });
+    builder.addCase(getAllBrochureList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.brochureList = action?.payload;
+    });
+    builder.addCase(getAllBrochureList.rejected, (state) => {
+      state.loading = "rejected";
+      state.brochureList = [];
+    });
+
+    builder.addCase(getProposalDataByLeadId.pending, (state) => {
+      state.loading = "pending";
+      state.proposalDataDetail = {};
+    });
+    builder.addCase(getProposalDataByLeadId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.proposalDataDetail = action?.payload;
+    });
+    builder.addCase(getProposalDataByLeadId.rejected, (state) => {
+      state.loading = "rejected";
+      state.proposalDataDetail = {};
     });
   },
 });
