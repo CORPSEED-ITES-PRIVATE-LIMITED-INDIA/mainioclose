@@ -27,14 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import NewSelect from "../../components/NewSelect";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addVendorsDetail,
-  allVendorsCategory,
-  getSingleCategoryDataById,
-  getVendorDetailList,
-} from "../../toolkit/slices/vendorsSlice";
 import {
   ChevronDown,
   EllipsisVertical,
@@ -43,19 +36,25 @@ import {
   Search,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import FileUploader from "../../components/FileUploader";
 import dayjs from "dayjs";
+import { addVendorsDetail, allVendorsCategory, getAllVendorsRequest, getSingleCategoryDataById } from "../toolkit/slices/vendorsSlice";
+import NewSelect from "../components/NewSelect";
+import FileUploader from "../components/FileUploader";
 
 const columns = [
   { name: "ID", uid: "id" },
-  { name: "PERSON NAME", uid: "contactPersonName", sortable: true },
+  { name: "CLIENT NAME", uid: "clientName", sortable: true },
   { name: "COMPANY NAME", uid: "clientCompanyName" },
-  { name: "CONTACT DETAILS", uid: "contactNumber" },
+  { name: "ASSIGNEE", uid: "assigneeName" },
+  { name: "CLIENT CONTACT", uid: "clientMobileNumber" },
   { name: "BUDGET", uid: "budgetPrice" },
   { name: "CATEGORY", uid: "vendorCategoryName" },
-  { name: "DESCRIPTION", uid: "requirementDescription" },
-  { name: "ASSIGNEE", uid: "assigneeName" },
-  { name: "LATEST UPDATE", uid: "latestUpdate" },
+  { name: "SUB CATEGORY", uid: "vendorSubCategoryName" },
+  { name: "RECEIVED DATE", uid: "receivedDate" },
+  { name: "COMPLETED DATE", uid: "completedDate" },
+  { name: "TAT detail", uid: "tatDetail" },
+  { name: "RAISED BY", uid: "raiseBy" },
+  { name: "COMMENT", uid: "vendorComment" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -64,12 +63,14 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "contactPersonName",
+  "clientName",
   "clientCompanyName",
-  "budgetPrice",
   "assigneeName",
+  "budgetPrice",
   "vendorCategoryName",
-  "latestUpdate",
+  "tatDetail",
+  "raiseBy",
+  "vendorComment",
   "actions",
 ];
 
@@ -99,7 +100,7 @@ const defaultValues = {
   description: "",
 };
 
-const Vendors = () => {
+const VendorRequests = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -109,8 +110,8 @@ const Vendors = () => {
   const subCategoryList = useSelector(
     (state) => state.vendors.singleCategoryDetail.subCategories
   );
-  const count = useSelector((state) => state.vendors.vendorsList?.length);
-  const data = useSelector((state) => state.vendors.vendorsList);
+  const count = useSelector((state) => state.vendors.totalItems);
+  const data = useSelector((state) => state.vendors.vendorsRequests)||[];
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -128,7 +129,7 @@ const Vendors = () => {
 
   useEffect(() => {
     dispatch(allVendorsCategory());
-    dispatch(getVendorDetailList({ userId, leadId }));
+    dispatch(getAllVendorsRequest({ userId, ...filteration }));
   }, [dispatch]);
 
   const {
@@ -179,10 +180,10 @@ const Vendors = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "contactPersonName":
+      case "clientName":
         return (
           <div className="flex items-start gap-2">
-            <span className="font-medium">{rowData?.contactPersonName}</span>
+            <span className="font-medium">{rowData?.clientName}</span>
           </div>
         );
       case "clientCompanyName":
@@ -191,12 +192,12 @@ const Vendors = () => {
             <span className="font-normal">{rowData?.clientCompanyName}</span>
           </div>
         );
-      case "contactNumber":
+      case "clientMobileNumber":
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.clientEmailId}</span>
             <span className="text-sm text-gray-400">
-              {rowData?.contactNumber || "---"}
+              {rowData?.clientMobileNumber || "---"}
             </span>
           </div>
         );
@@ -232,22 +233,24 @@ const Vendors = () => {
             <span className="">{rowData?.requirementDescription || "-"}</span>
           </div>
         );
-      case "latestUpdate":
+      case "tatDetail":
         return (
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
               <span className="">
-                Status : {rowData?.updateHistory[0]?.requestStatus || "-"}
+                Completion days : {rowData?.completionDays|| "-"}
               </span>
               <span className="text-xs text-foreground-400">
-                Updated on :{" "}
-                {dayjs(rowData?.updateHistory[0]?.updateDate).format(
-                  "DD-MM-YYYY , hh:mm a"
-                ) || "-"}
+                Days left :{" "}
+                {rowData?.tatDaysLeft|| "-"}
               </span>
               <span className="text-xs text-foreground-400">
-                Updated description :{" "}
-                {rowData?.updateHistory[0]?.updateDescription || "-"}
+                Overdue :{" "}
+                {rowData?.overDueTat || "-"}
+              </span>
+              <span className="text-xs text-foreground-400">
+                Subcategory TAT :{" "}
+                {rowData?.subCategoryTatDays || "-"}
               </span>
             </div>
             <Popover>
@@ -494,7 +497,7 @@ const Vendors = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendors list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Vendors request list</h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"
@@ -708,4 +711,4 @@ const Vendors = () => {
   );
 };
 
-export default Vendors;
+export default VendorRequests;

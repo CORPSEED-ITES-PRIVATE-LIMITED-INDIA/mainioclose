@@ -10,6 +10,7 @@ import {
   UserCircle2,
   HandCoins,
   SquareUserRound,
+  UserRound,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -28,6 +29,7 @@ const icons = {
   Settings,
   BarChart,
   User2,
+  UserRound,
   HandCoins,
   SquareUserRound,
 };

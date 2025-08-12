@@ -131,7 +131,7 @@ class TrackChangesIntegration extends Plugin { }
 
 class RevisionHistoryIntegration extends Plugin { }
 
-export default function TextEditor({ data, menu, onChange, initialData }) {
+export default function TextEditor({ data, menu=true, onChange, initialData }) {
   const editorContainerRef = useRef(null);
   const editorRef = useRef(null);
   const editorAnnotationsRef = useRef(null);
@@ -595,6 +595,7 @@ export default function TextEditor({ data, menu, onChange, initialData }) {
         </div>
       </div>
     </div>
+    
   );
 }
 

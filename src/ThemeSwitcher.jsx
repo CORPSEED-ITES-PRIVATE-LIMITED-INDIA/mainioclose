@@ -1,8 +1,6 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import {
-  Button,
-} from "@heroui/react";
+import { Button } from "@heroui/react";
 import { Sun, Moon } from "lucide-react";
 
 export function ThemeSwitcher() {
@@ -26,9 +24,9 @@ export function ThemeSwitcher() {
       onPress={() => (theme === "light" ? setTheme("dark") : setTheme("light"))}
     >
       {isDark ? (
-        <Moon className="w-4 h-4 text-white" />
+        <Sun className="w-4 h-4 text-white" />
       ) : (
-        <Sun className="w-4 h-4 text-black" />
+        <Moon className="w-4 h-4 text-black" />
       )}
     </Button>
   );

@@ -5,7 +5,7 @@ export const allVendorsCategory = createAsyncThunk(
   "allVendorsCatagory",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=200`
+      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=800`
     );
     return response.data;
   }
@@ -42,6 +42,16 @@ export const addVendorsDetail = createAsyncThunk(
   }
 );
 
+export const getAllVendorsRequest = createAsyncThunk(
+  "getAllVendorsRequest",
+  async ({ userId, page, size }) => {
+    const response = await api.get(
+      `/leadService/api/v1/vendor/find-all-vendor-request?userId=${userId}&page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -49,6 +59,8 @@ const VendorsSlice = createSlice({
     loading: "",
     singleCategoryDetail: {},
     vendorsList: [],
+    totalVendorRequestCount:0,
+    allVendorsRequestList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -86,6 +98,20 @@ const VendorsSlice = createSlice({
     builder.addCase(getVendorDetailList.rejected, (state, action) => {
       state.loading = "rejected";
       state.vendorsList = [];
+    });
+
+     builder.addCase(getAllVendorsRequest.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorsRequest.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalVendorRequestCount = action?.payload?.totalItems;
+      state.allVendorsRequestList = action?.payload?.vendorsRequests;
+    });
+    builder.addCase(getAllVendorsRequest.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.totalVendorRequestCount = 0;
+      state.allVendorsRequestList = [];
     });
   },
 });

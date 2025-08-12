@@ -31,6 +31,7 @@ import Services from './hr/Services';
 import Rating from './hr/Rating';
 import AdminDashboards from './dashboards/AdminDashboards';
 import Estimate from './sales/estimate/Estimate';
+import VendorRequests from './vendor-request/VendorRequests';
 
 function App() {
   const router = createBrowserRouter([
@@ -110,6 +111,10 @@ function App() {
             {
               path: "users",
               element: <Users />,
+            },
+            {
+              path: "vendors-requests",
+              element: <VendorRequests />,
             },
             {
               path: "settings",

@@ -57,7 +57,6 @@ import {
   updateSingleLeadName,
 } from "../../toolkit/slices/leadSlice";
 import { useParams } from "react-router-dom";
-import FileUploader from "../../components/FileUploader";
 import ImageGroup from "../../components/ImageGroup";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -72,6 +71,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import BulkFileUploader from "../../components/BulkFileUploader";
 const iconClass = "h-4 w-4";
 
 const addressFormSchema = z.object({
@@ -756,7 +756,7 @@ const LeadInfo = ({ leadData }) => {
                 onChange={(e) => setCustomComment(e.target.value)}
               />
             )}
-            <FileUploader files={files} setFiles={setFiles} />
+            <BulkFileUploader files={files} setFiles={setFiles} />
           </CardBody>
           <CardFooter className="flex justify-end">
             <div>

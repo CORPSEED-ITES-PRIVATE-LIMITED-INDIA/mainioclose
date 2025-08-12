@@ -54,6 +54,12 @@ const navItems = [
     key: "users",
   },
   {
+    title: "Vendor's",
+    icon: "UsersRound",
+    url: "vendors-requests",
+    key: "vendors-requests",
+  },
+  {
     title: "Settings",
     icon: "Settings",
     url: "/settings",
