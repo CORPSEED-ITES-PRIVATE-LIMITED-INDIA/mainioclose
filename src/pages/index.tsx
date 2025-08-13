@@ -3,10 +3,28 @@ import { Snippet } from "@heroui/snippet";
 import { Code } from "@heroui/code";
 import { button as buttonStyles } from "@heroui/theme";
 
+
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
 import { GithubIcon } from "@/components/icons";
 import DefaultLayout from "@/layouts/default";
+import { Button,Select,SelectItem } from "@heroui/react";
+
+export const animals = [
+  {key: "cat", label: "Cat"},
+  {key: "dog", label: "Dog"},
+  {key: "elephant", label: "Elephant"},
+  {key: "lion", label: "Lion"},
+  {key: "tiger", label: "Tiger"},
+  {key: "giraffe", label: "Giraffe"},
+  {key: "dolphin", label: "Dolphin"},
+  {key: "penguin", label: "Penguin"},
+  {key: "zebra", label: "Zebra"},
+  {key: "shark", label: "Shark"},
+  {key: "whale", label: "Whale"},
+  {key: "otter", label: "Otter"},
+  {key: "crocodile", label: "Crocodile"},
+];
 
 export default function IndexPage() {
   return (
@@ -54,6 +72,18 @@ export default function IndexPage() {
             </span>
           </Snippet>
         </div>
+        <Button>Hello</Button>
+             <Select className="max-w-xs" label="Select an animal">
+        {animals.map((animal) => (
+          <SelectItem key={animal.key}>{animal.label}</SelectItem>
+        ))}
+      </Select>
+      <Select className="max-w-xs" label="Favorite Animal" placeholder="Select an animal">
+        {animals.map((animal) => (
+          <SelectItem key={animal.key}>{animal.label}</SelectItem>
+        ))}
+      </Select>
+
       </section>
     </DefaultLayout>
   );
