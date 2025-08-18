@@ -41,7 +41,7 @@ const Voucher = () => {
 
   useEffect(() => {
     dispatch(getAllVoucherType());
-    dispatch(getAllLedger());
+    dispatch(getAllLedger({page:1,size:100}));
     dispatch(getAllVoucher());
   }, [dispatch]);
 
