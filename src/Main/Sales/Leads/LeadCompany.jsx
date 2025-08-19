@@ -185,9 +185,7 @@ const LeadCompany = ({ edit, data, addressInfo, industryInfo }) => {
   const handleButtonClick = useCallback(() => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
-      notification.warning({ message: "Please update industry  to proceed !." });
-    } else {
+    }  else {
       setOpenModal(true);
       setIsToggel(false);
       form.resetFields();

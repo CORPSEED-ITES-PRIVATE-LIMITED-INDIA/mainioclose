@@ -179,6 +179,7 @@ const AutoHistory = () => {
 
   const exportData = autoHistoryExportList?.map((row) => ({
     Id: row?.id,
+    "Lead Id": row?.leadId,
     "Lead name": row?.leadOriginalName,
     Status: row?.status,
     Manual: row?.manual ? "Manual" : "Auto",
@@ -194,6 +195,7 @@ const AutoHistory = () => {
 
   const headers = [
     "Id",
+    "Lead Id",
     "Lead name",
     "Status",
     "Manual",
@@ -271,6 +273,8 @@ const AutoHistory = () => {
                   data: { ...dateFilter, departmentId: null },
                 })
               );
+              dispatch(getAllAutoHistroryCount(dateFilter));
+              dispatch(getAllAutoHistoryForExportByDate(dateFilter))
             }}
             onChange={(e) => {
               setDateFilter((prev) => ({ ...prev, departmentId: e }));
@@ -280,6 +284,8 @@ const AutoHistory = () => {
                   data: { ...dateFilter, departmentId: e },
                 })
               );
+              dispatch(getAllAutoHistroryCount(dateFilter));
+              dispatch(getAllAutoHistoryForExportByDate(dateFilter))
             }}
           />
         </Flex>

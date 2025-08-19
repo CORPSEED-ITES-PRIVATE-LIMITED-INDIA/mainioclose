@@ -36,6 +36,9 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
   const [openModal, setOpenModal] = useState(false);
   const [remarkId, setRemarkId] = useState(null);
 
+
+  console.log('dfjgskdjgkjdgkjdgkjd',addressInfo,currentUserDetail)
+
   const loadMore = (
     <div
       style={{
@@ -74,7 +77,7 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
           });
       }
     },
-    [dispatch, userid, leadid, addressInfo, industryInfo,currentUserDetail]
+    [dispatch, userid, leadid, addressInfo,currentUserDetail]
   );
 
   const handleEdit = (item) => {
