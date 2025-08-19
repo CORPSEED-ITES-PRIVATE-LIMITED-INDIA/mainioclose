@@ -179,7 +179,7 @@ const VendorForm = ({ leadId, userId }) => {
                 <Icon icon="fluent:arrow-upload-20-filled" />
                 Upload
               </Button>
-            </Upload>
+            </Upload> 
           </Form.Item>
 
           <Form.Item

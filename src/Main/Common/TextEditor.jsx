@@ -558,9 +558,9 @@ export default function TextEditor({ data, menu, onChange, initialData }) {
   }, [editorConfig]);
 
   return (
-    <div className="main-container">
+    <div className="main-container w-[95%]">
       <div
-        className="editor-container editor-container_classic-editor editor-container_include-annotations editor-container_include-style editor-container_include-fullscreen"
+        className="editor-container editor-container_classic-editor editor-container_include-annotations editor-container_include-style editor-container_include-fullscreen w-[95%]"
         ref={editorContainerRef}
       >
         <div className="editor-container__editor-wrapper">

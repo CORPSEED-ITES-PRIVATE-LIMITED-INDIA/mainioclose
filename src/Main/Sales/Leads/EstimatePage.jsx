@@ -20,7 +20,10 @@ import {
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllEstimateByUserId, getTotalCountOfEstimate } from "../../../Toolkit/Slices/LeadSlice";
+import {
+  getAllEstimateByUserId,
+  getTotalCountOfEstimate,
+} from "../../../Toolkit/Slices/LeadSlice";
 import OverFlowText from "../../../components/OverFlowText";
 import TableScalaton from "../../../components/TableScalaton";
 import SomethingWrong from "../../../components/usefulThings/SomethingWrong";
@@ -63,7 +66,7 @@ const EstimatePage = () => {
 
   useEffect(() => {
     dispatch(getAllEstimateByUserId(userid));
-    dispatch(getTotalCountOfEstimate(userid))
+    dispatch(getTotalCountOfEstimate(userid));
   }, [dispatch, userid]);
 
   useEffect(() => {

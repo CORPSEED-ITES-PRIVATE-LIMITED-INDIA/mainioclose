@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import TextEditor from "../../Common/TextEditor";
 import template from "../../../Images/template.png";
 import {

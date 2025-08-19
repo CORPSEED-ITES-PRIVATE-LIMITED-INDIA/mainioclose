@@ -466,6 +466,34 @@ export const getAllPaymentRegisterWithPagination = createAsyncThunk(
   }
 );
 
+export const getAllUnbillList = createAsyncThunk(
+  "getAllUnbillList",
+  async () => {
+    const response = await getQuery(
+      `/accountService/api/v1/ledgerType/getAllUnbilled`
+    );
+    return response.data;
+  }
+);
+
+export const getUnbillItemById = createAsyncThunk(
+  "getUnbillItemById",
+  async (id) => {
+    const response = await getQuery(
+      `/accountService/api/v1/ledgerType/getUnbilledById?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const createUnbillItems = createAsyncThunk("unbillItems", async (data) => {
+  const response = await postQuery(
+    `/accountService/api/v1/ledgerType/createUnbilled`,
+    data
+  );
+  return response.data;
+});
+
 const AccountSlice = createSlice({
   name: "account",
   initialState: {
@@ -501,6 +529,8 @@ const AccountSlice = createSlice({
     paymentRegistercont: null,
     allPaymentRegisterList: [],
     ledgerCount: 0,
+    unBillList: [],
+    unBillItemDetail: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -844,6 +874,30 @@ const AccountSlice = createSlice({
         state.allPaymentRegisterList = [];
       }
     );
+
+    builder.addCase(getAllUnbillList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUnbillList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.unBillList = action.payload;
+    });
+    builder.addCase(getAllUnbillList.rejected, (state) => {
+      state.loading = "rejected";
+      state.unBillList = [];
+    });
+
+    builder.addCase(getUnbillItemById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUnbillItemById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.unBillItemDetail = action.payload;
+    });
+    builder.addCase(getUnbillItemById.rejected, (state) => {
+      state.loading = "rejected";
+      state.unBillItemDetail = {};
+    });
   },
 });
 

@@ -53,8 +53,6 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
     (remarkId) => {
       if (!addressInfo && currentUserDetail?.department === "Sales") {
         notification.warning({ message: "Please update address to proceed !." });
-      } else if (!industryInfo && currentUserDetail?.department === "Sales") {
-        notification.warning({ message: "Please update industry  to proceed !." });
       } else {
         dispatch(
           deleteRemarks({
@@ -82,9 +80,7 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
   const handleEdit = (item) => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    } else if (!industryInfo && currentUserDetail?.department === "Sales") {
-      notification.warning({ message: "Please update industry  to proceed !." });
-    } else {
+    }  else {
       setRemarkId(item?.id);
       setOpenModal(true);
       form.setFieldsValue({
@@ -98,9 +94,7 @@ const LeadComments = ({ list, leadid, addressInfo, industryInfo }) => {
     (values) => {
       if (!addressInfo && currentUserDetail?.department === "Sales") {
         notification.warning({ message: "Please update address to proceed !." });
-      } else if (!industryInfo && currentUserDetail?.department === "Sales") {
-        notification.warning({ message: "Please update industry  to proceed !." });
-      } else {
+      }  else {
         let obj = {
           remarkId,
           userId: userid,
