@@ -121,3 +121,13 @@ export const paymentTermDays = [
   { label: 44, key: 44 },
   { label: 45, key: 45 },
 ];
+
+export const getNameAndEmailById = (list, id) => {
+  if (list?.length > 0) {
+    const result = list.find((item) => item.id == id);
+    return {
+      name: result?.name,
+      email: result?.email,
+    };
+  }
+};

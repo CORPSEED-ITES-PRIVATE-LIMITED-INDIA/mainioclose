@@ -1,8 +1,8 @@
-import { PanelLeft } from "lucide-react";
+import { BellRing, PanelLeft } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { BreadcrumbItem, Breadcrumbs } from "@heroui/react";
+import { Badge, BreadcrumbItem, Breadcrumbs, Button } from "@heroui/react";
 import { ThemeSwitch } from "../components/theme-switch";
 
 const navItems = [
@@ -21,9 +21,19 @@ const navItems = [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
       { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
-      { title: "Discounted Estimate", icon: "", url: "sales/discountedEstimate", key: "discountedEstimate" },
+      {
+        title: "Discounted Estimate",
+        icon: "",
+        url: "sales/discountedEstimate",
+        key: "discountedEstimate",
+      },
       { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
-      { title: "Serving Companies", icon: "", url: "sales/servingCompanies", key: "servingCompanies" },
+      {
+        title: "Serving Companies",
+        icon: "",
+        url: "sales/servingCompanies",
+        key: "servingCompanies",
+      },
     ],
   },
   {
@@ -32,8 +42,24 @@ const navItems = [
     url: "/accounts",
     key: "accounts",
     children: [
-      { title: "Company approvals", icon: "", url: "accounts/companyApprovals", key: "companyApprovals" },
-      { title: "Payment approvals", icon: "", url: "accounts/paymentApprovals", key: "paymentApprovals" },
+      {
+        title: "Organization",
+        icon: "",
+        url: "accounts/organizations",
+        key: "organizations",
+      },
+      {
+        title: "Company approvals",
+        icon: "",
+        url: "accounts/companyApprovals",
+        key: "companyApprovals",
+      },
+      {
+        title: "Payment approvals",
+        icon: "",
+        url: "accounts/paymentApprovals",
+        key: "paymentApprovals",
+      },
     ],
   },
   {
@@ -43,7 +69,12 @@ const navItems = [
     key: "hr",
     children: [
       { title: "Users list", icon: "", url: "hr/usersList", key: "usersList" },
-      { title: "Users approval list", icon: "", url: "hr/usersApprovalList", key: "usersApprovalList" },
+      {
+        title: "Users approval list",
+        icon: "",
+        url: "hr/usersApprovalList",
+        key: "usersApprovalList",
+      },
       { title: "Services", icon: "", url: "hr/services", key: "services" },
     ],
   },
@@ -91,9 +122,9 @@ const navItems = [
 const Layoutpage = () => {
   const location = useLocation();
   const pathname = location.pathname;
-  const segments = pathname.split('/');
-  const userIndex = segments.indexOf('erp');
-  const afterUserId = segments.slice(userIndex + 2)
+  const segments = pathname.split("/");
+  const userIndex = segments.indexOf("erp");
+  const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -107,20 +138,33 @@ const Layoutpage = () => {
         <main className="w-full">
           <header className="dark:bg-black dark:text-white bg-white h-[40px] shadow px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="text-black dark:text-white"
+              <Button
+                variant="light"
+                size="sm"
+                isIconOnly
+                onPress={() => setCollapsed(!collapsed)}
+                className="w-1"
               >
                 <PanelLeft color="gray" className="h-4 w-4" />
-              </button>
+              </Button>
               <Breadcrumbs isDisabled>
-              {
-                afterUserId?.map((item)=><BreadcrumbItem key={item} className="capitalize">{item}</BreadcrumbItem>)
-              }
-                
+                {afterUserId?.map((item) => (
+                  <BreadcrumbItem key={item} className="capitalize">
+                    {item}
+                  </BreadcrumbItem>
+                ))}
               </Breadcrumbs>
             </div>
             <div className="flex items-center gap-4">
+              <Badge
+                color="danger"
+                content={5}
+                shape="circle"
+              >
+                <Button size="sm" variant="light" isIconOnly>
+                  <BellRing className="text-gray-500 "  />
+                </Button>
+              </Badge>
               <ThemeSwitch />
             </div>
           </header>

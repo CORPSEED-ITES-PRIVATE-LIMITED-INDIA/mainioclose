@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -13,29 +13,15 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  Form,
-  Textarea,
-  ModalFooter,
-  useDisclosure,
-  ModalBody,
-  addToast,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createLeadStatus,
-  deleteLeadStatus,
-  editLeadStatus,
-  getAllStatusData,
-} from "../../toolkit/slices/settingSlice";
+import { getAllGroups } from "../../toolkit/slices/organizationSlice";
+import { Link } from "react-router-dom";
 
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
+  { name: "ID", uid: "id",  },
   { name: "NAME", uid: "name", sortable: true },
-  { name: "DESCRIPTION", uid: "description" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -43,13 +29,11 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["name", "description", "actions"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
-const LeadStatus = () => {
+const Group = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const modal = useDisclosure();
-  const data = useSelector((state) => state.setting.statusList);
+  const data = useSelector((state) => state.organization.groupList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -61,13 +45,10 @@ const LeadStatus = () => {
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
-  const [formData, setFormData] = useState({ name: "", description: "" });
-  const [isEdit, setIsEdit] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllStatusData());
+    dispatch(getAllGroups());
   }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
@@ -109,89 +90,13 @@ const LeadStatus = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handleEdit = (values) => {
-    setIsEdit(values?.id);
-    setFormData({ name: values?.name, description: values?.description });
-    onOpen();
-  };
-
-  const handleDelete = () => {
-    dispatch(deleteLeadStatus(deleteId))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Status deleted successfully !.",
-            color: "success",
-          });
-          modal.onOpenChange(false);
-          setDeleteId(null);
-          dispatch(getAllStatusData());
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
-  };
-
-  const handleSubmit = (values) => {
-    if (isEdit) {
-      dispatch(editLeadStatus({ id: isEdit, ...values }))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Status updated successfully !.",
-              color: "success",
-            });
-            onOpenChange(false);
-            setFormData({ name: "", description: "" });
-            setIsEdit(null);
-            dispatch(getAllStatusData());
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
-        );
-    } else {
-      dispatch(createLeadStatus(values))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Status created successfully !.",
-              color: "success",
-            });
-            onOpenChange(false);
-            setFormData({ name: "", description: "" });
-            setIsEdit(false);
-            dispatch(getAllStatusData());
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
-        );
-    }
-  };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
-
     switch (columnKey) {
       case "name":
         return (
-          <p className="text-bold text-small capitalize">{rowData?.name}</p>
-        );
-      case "description":
-        return (
-          <div className="flex flex-col">
-            <p className="text-bold text-tiny capitalize text-default-400">
-              {rowData?.description}
-            </p>
-          </div>
+          <Link to={`${rowData?.id}/groupLedger`} className="text-sm font-medium capitalize text-blue-500">{rowData?.name}</Link>
         );
       case "actions":
         return (
@@ -203,18 +108,8 @@ const LeadStatus = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="edit" onClick={() => handleEdit(rowData)}>
+                <DropdownItem key="edit" >
                   Edit
-                </DropdownItem>
-                <DropdownItem
-                  key="delete"
-                  color="danger"
-                  onClick={() => {
-                    modal.onOpen();
-                    setDeleteId(rowData?.id);
-                  }}
-                >
-                  Delete
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -294,9 +189,6 @@ const LeadStatus = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
-              Add New
-            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -367,7 +259,7 @@ const LeadStatus = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Leads status</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Group list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -405,97 +297,8 @@ const LeadStatus = () => {
           )}
         </TableBody>
       </Table>
-      <Modal
-        size="2xl"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="top-center"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                {isEdit ? "Update status" : "Create status"}
-              </ModalHeader>
-              <ModalBody>
-                <Form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
-                    );
-                    handleSubmit(data);
-                  }}
-                >
-                  <Input
-                    isRequired
-                    errorMessage="Please enter status name"
-                    label="Status name"
-                    name="name"
-                    type="text"
-                    value={formData?.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                  />
-
-                  <Textarea
-                    isRequired
-                    errorMessage="Please enter description"
-                    label="Description"
-                    name="description"
-                    type="text"
-                    value={formData?.description}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                  />
-
-                  <ModalFooter className="w-full flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </Form>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      <Modal
-        isOpen={modal.isOpen}
-        backdrop="blur"
-        onOpenChange={modal.onOpenChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
     </>
   );
 };
 
-export default LeadStatus;
+export default Group;

@@ -268,7 +268,7 @@ const UsersList = ({ edit }) => {
       case "userName":
         return (
           <div className="flex items-start gap-2">
-            <Avatar size="sm" />
+            <Avatar size="sm" classNames={{icon:'text-gray-500'}} />
             <div className="flex flex-col">
               <p className="font-normal capitalize">
                 {rowData?.fullName || "-"}
@@ -630,7 +630,7 @@ const UsersList = ({ edit }) => {
               <ModalHeader>Add users</ModalHeader>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <ModalBody>
-                  <div className="max-h-[80vh] overflow-auto p-4">
+                  <div className="max-h-[60vh] overflow-auto p-4">
                     <div className="grid grid-cols-2 gap-4">
                       <Controller
                         name="userName"

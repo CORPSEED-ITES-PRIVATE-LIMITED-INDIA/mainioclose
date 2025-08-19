@@ -727,7 +727,7 @@ const LeadInfo = ({ leadData }) => {
           </Card>
         </div>
       </div>
-      <>
+      <div>
         <Card className="my-2">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -781,31 +781,41 @@ const LeadInfo = ({ leadData }) => {
                   className="rounded-md border-1 p-2 my-1"
                 >
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-5 h-5 text-xs">
-                        {remark?.updatedBy?.fullName?.[0]}
-                      </Avatar>
-                      <span className="font-medium text-xs">
-                        {remark?.updatedBy?.fullName}
-                      </span>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-5 h-5 text-xs">
+                          {remark?.updatedBy?.fullName?.[0]}
+                        </Avatar>
+                        <span className="font-medium text-xs">
+                          {remark?.updatedBy?.fullName}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">{remark?.message}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Pencil className={iconClass} />
-                      <Trash className={iconClass} color="red" />
+                      <div className="flex justify-between items-center">
+                        <ImageGroup
+                          images={remark?.imageList?.map(
+                            (item) => item?.filePath
+                          )}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button isIconOnly size="sm" variant="light">
+                          <Pencil className={iconClass} />
+                        </Button>
+                        <Button isIconOnly size="sm" variant="light">
+                          <Trash className={iconClass} color="red" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-500">{remark?.message}</p>
-                    <ImageGroup
-                      images={remark?.imageList?.map((item) => item?.filePath)}
-                    />
                   </div>
                 </div>
               );
             })}
           </CardBody>
         </Card>
-      </>
+      </div>
       <Modal
         size="3xl"
         isDismissable={false}

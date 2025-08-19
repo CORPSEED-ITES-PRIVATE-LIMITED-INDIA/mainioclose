@@ -698,7 +698,7 @@ const Leads = () => {
                   className="w-full flex flex-col gap-4 "
                   onSubmit={handleSubmit(handleFinish)}
                 >
-                  <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                  <div className="w-full grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto px-2 py-1">
                     <Controller
                       name="leadName"
                       control={control}

@@ -15,12 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  Phone,
-  Search,
-} from "lucide-react";
+import { ChevronDown, EllipsisVertical, Phone, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -86,7 +81,7 @@ const UserApprovals = () => {
 
   useEffect(() => {
     dispatch(getUserApprovalList({ userId }));
-  }, [dispatch,userId]);
+  }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -127,7 +122,7 @@ const UserApprovals = () => {
       case "userName":
         return (
           <div className="flex items-start gap-2">
-            <Avatar size="sm" />
+            <Avatar size="sm" classNames={{ icon: "text-gray-500" }} />
             <div className="flex flex-col">
               <p className="font-normal capitalize">
                 {rowData?.fullName || "-"}
@@ -377,13 +372,7 @@ const UserApprovals = () => {
         </div>
       </div>
     );
-  }, [
-    filterValue,
-    visibleColumns,
-    onRowsPerPageChange,
-    count,
-    onSearchChange,
-  ]);
+  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -436,7 +425,9 @@ const UserApprovals = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Users approval list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Users approval list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"

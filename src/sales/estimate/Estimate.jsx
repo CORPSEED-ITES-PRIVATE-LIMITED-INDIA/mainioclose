@@ -49,6 +49,7 @@ import SingleFileUploader from "../../components/SingleFileUploader";
 import { paymentTermDays } from "../../common";
 import { createPurchaseOrder } from "../../toolkit/slices/accountSlice";
 import { getLocalTimeZone, today } from "@internationalized/date";
+import InvoiceView from "../../components/InvoiceView";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -192,11 +193,14 @@ const Estimate = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const viewModal = useDisclosure();
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
   const urlList = useSelector((state) => state.common.urlList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [companyType, setCompanyType] = useState("");
+  const [paymentType, setPaymentType] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
@@ -262,20 +266,10 @@ const Estimate = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handlePress = useCallback(
-    (e) => {
-      if (selectedKeys.size > 0) {
-        onOpen();
-      } else {
-        addToast({
-          title:
-            "Please select at least one service or URL by clicking on a table row to add a rating.",
-          color: "warning",
-        });
-      }
-    },
-    [selectedKeys, onOpen]
-  );
+  const handleViewEstimate = (rowData) => {
+    setRowItem(rowData);
+    viewModal.onOpen();
+  };
 
   const handleActionsPress = (e) => {
     setRowItem(e);
@@ -449,14 +443,19 @@ const Estimate = () => {
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
+                  console.log('dskjfhdkjbdjbdj   000000',item)
                   if (item === "paymentRegister") {
                     handleActionsPress(rowData);
+                  } else if (item === "viewEstimate") {
+                    console.log('dskjfhdkjbdjbdj   111111',item)
+                    handleViewEstimate(rowData);
                   }
                 }}
               >
                 <DropdownItem key="paymentRegister">
-                  <Link>Add payment register</Link>
+                  Add payment register
                 </DropdownItem>
+                <DropdownItem key="viewEstimate">View estimate</DropdownItem>
                 <DropdownItem key="edit">Edit</DropdownItem>
                 <DropdownItem key="delete" color="danger">
                   Delete
@@ -539,10 +538,6 @@ const Estimate = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-
-            <Button color="primary" onPress={handlePress} endContent={<Plus />}>
-              Add rating
-            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -565,14 +560,7 @@ const Estimate = () => {
         </div>
       </div>
     );
-  }, [
-    filterValue,
-    visibleColumns,
-    onRowsPerPageChange,
-    count,
-    onSearchChange,
-    handlePress,
-  ]);
+  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -694,6 +682,7 @@ const Estimate = () => {
                           {...field}
                           selectedKeys={[field.value]}
                           onSelectionChange={(e) => {
+                            setCompanyType(Array.from(e)[0]);
                             field.onChange(Array.from(e)[0]);
                           }}
                           items={[
@@ -708,58 +697,66 @@ const Estimate = () => {
                         </Select>
                       )}
                     />
-                    <Controller
-                      name="docPersent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Document rate %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="filingPersent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Filing rate %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="liasoningPersent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Liasoning rate %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="certificatePersent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Certificate rate %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
+                    {companyType === "Milestone" && (
+                      <Controller
+                        name="docPersent"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            isRequired
+                            label="Document rate %"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            {...field}
+                          />
+                        )}
+                      />
+                    )}
+                    {companyType === "Milestone" && (
+                      <Controller
+                        name="filingPersent"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            isRequired
+                            label="Filing rate %"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            {...field}
+                          />
+                        )}
+                      />
+                    )}
+                    {companyType === "Milestone" && (
+                      <Controller
+                        name="liasoningPersent"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            isRequired
+                            label="Liasoning rate %"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            {...field}
+                          />
+                        )}
+                      />
+                    )}
+                    {companyType === "Milestone" && (
+                      <Controller
+                        name="certificatePersent"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            isRequired
+                            label="Certificate rate %"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            {...field}
+                          />
+                        )}
+                      />
+                    )}
                     <Controller
                       name="paymentType"
                       control={control}
@@ -771,6 +768,7 @@ const Estimate = () => {
                           {...field}
                           selectedKeys={[field.value]}
                           onSelectionChange={(e) => {
+                            setPaymentType(Array.from(e)[0]);
                             field.onChange(Array.from(e)[0]);
                           }}
                           items={[
@@ -787,394 +785,408 @@ const Estimate = () => {
                         </Select>
                       )}
                     />
-                    <Controller
-                      name="purchaseNumber"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="PO number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="serviceName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          label="Service name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          data={urlList || []}
-                          labelKey="urlsName"
-                          valueKey="id"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="purchaseAttach"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <SingleFileUploader
-                          isRequired
-                          label="Company document"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="approveDate"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          isRequired
-                          label="Approved date"
-                          showMonthAndYearPickers
-                          maxValue={today(getLocalTimeZone())}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
-                          }
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="paymentTerm"
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <Select
-                          isRequired
-                          label="Payment term"
-                          {...field}
-                          selectedKeys={[field.value]}
-                          onSelectionChange={(e) => {
-                            field.onChange(Array.from(e)[0]);
-                          }}
-                          items={paymentTermDays || []}
-                        >
-                          {(item) => (
-                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                    {paymentType === "Purchase order" ? (
+                      <>
+                        <Controller
+                          name="purchaseNumber"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="PO number"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
                           )}
-                        </Select>
-                      )}
-                    />
-
-                    <Controller
-                      name="comment"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Comment"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
                         />
-                      )}
-                    />
-
-                    <Controller
-                      name="companyName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Company name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="serviceName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          label="Service name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          data={urlList || []}
-                          labelKey="urlsName"
-                          valueKey="id"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="transactionId"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Transaction Id"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="estimateNo"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Estimate number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="billingQuantity"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Billing quantity"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="tdsPresent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          isRequired={true}
-                          label="TDS present"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(e.target.value === "true")
-                          }
-                          items={[
-                            { label: "Yes", key: true },
-                            { label: "No", key: false },
-                          ]}
-                        >
-                          {(item) => (
-                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                        <Controller
+                          name="serviceName"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NewSelect
+                              isRequired
+                              label="Service name"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={urlList || []}
+                              labelKey="urlsName"
+                              valueKey="id"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                            />
                           )}
-                        </Select>
-                      )}
-                    />
+                        />
+                        <Controller
+                          name="purchaseAttach"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <SingleFileUploader
+                              isRequired
+                              label="Company document"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="approveDate"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <DatePicker
+                              isRequired
+                              label="Approved date"
+                              showMonthAndYearPickers
+                              maxValue={today(getLocalTimeZone())}
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={
+                                field.value ? parseDate(field.value) : null
+                              }
+                              onChange={(e) =>
+                                field.onChange(toCalendarDate(e).toString())
+                              }
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="paymentTerm"
+                          control={control}
+                          defaultValue={[]}
+                          render={({ field }) => (
+                            <Select
+                              isRequired
+                              label="Payment term"
+                              {...field}
+                              selectedKeys={[field.value]}
+                              onSelectionChange={(e) => {
+                                field.onChange(Array.from(e)[0]);
+                              }}
+                              items={paymentTermDays || []}
+                            >
+                              {(item) => (
+                                <SelectItem key={item.key}>
+                                  {item.label}
+                                </SelectItem>
+                              )}
+                            </Select>
+                          )}
+                        />
 
-                    <Controller
-                      name="tdsPercent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="TDS percent %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
+                        <Controller
+                          name="comment"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Comment"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="professionalFees"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Professional fees"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
+                      </>
+                    ) : (
+                      <>
+                        <Controller
+                          name="companyName"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Company name"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="profesionalGst"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Professional GST %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
+                        <Controller
+                          name="serviceName"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NewSelect
+                              isRequired
+                              label="Service name"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={urlList || []}
+                              labelKey="urlsName"
+                              valueKey="id"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="govermentfees"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Government fees"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="govermentGst"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Government GST %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="serviceCharge"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Service charge"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="serviceGst"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Service GST %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="otherFees"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Other fees"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="otherGst"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Other GST %"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="totalAmount"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Total amount"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                          type="number"
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="paymentDate"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          isRequired
-                          label="Payment date"
-                          showMonthAndYearPickers
-                          maxValue={today(getLocalTimeZone())}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
-                          }
-                        />
-                      )}
-                    />
 
-                    <Controller
-                      name="remark"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Remark"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
+                        <Controller
+                          name="transactionId"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Transaction Id"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="doc"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <SingleFileUploader
-                          isRequired
-                          label="Document attachement"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                        <Controller
+                          name="estimateNo"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Estimate number"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
                         />
-                      )}
-                    />
+                        <Controller
+                          name="billingQuantity"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Billing quantity"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="tdsPresent"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Select
+                              isRequired={true}
+                              label="TDS present"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              value={field.value}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "true")
+                              }
+                              items={[
+                                { label: "Yes", key: true },
+                                { label: "No", key: false },
+                              ]}
+                            >
+                              {(item) => (
+                                <SelectItem key={item.key}>
+                                  {item.label}
+                                </SelectItem>
+                              )}
+                            </Select>
+                          )}
+                        />
+
+                        <Controller
+                          name="tdsPercent"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="TDS percent %"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="professionalFees"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Professional fees"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="profesionalGst"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Professional GST %"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="govermentfees"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Government fees"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="govermentGst"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Government GST %"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="serviceCharge"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Service charge"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="serviceGst"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Service GST %"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="otherFees"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Other fees"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="otherGst"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Other GST %"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="totalAmount"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Total amount"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                              type="number"
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="paymentDate"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <DatePicker
+                              isRequired
+                              label="Payment date"
+                              showMonthAndYearPickers
+                              maxValue={today(getLocalTimeZone())}
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={
+                                field.value ? parseDate(field.value) : null
+                              }
+                              onChange={(e) =>
+                                field.onChange(toCalendarDate(e).toString())
+                              }
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="remark"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Remark"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="doc"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <SingleFileUploader
+                              isRequired
+                              label="Document attachement"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                            />
+                          )}
+                        />
+                      </>
+                    )}
                   </div>
 
                   <ModalFooter className="flex justify-end">
@@ -1185,6 +1197,28 @@ const Estimate = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Estimate</ModalHeader>
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <InvoiceView details={rowItem} />
+              </ModalBody>
+              <ModalFooter className="flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

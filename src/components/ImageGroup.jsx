@@ -20,7 +20,7 @@ const ImageGroup = ({ images = [] }) => {
             src={url}
             alt={`thumb-${idx}`}
             onClick={() => setCurrentIndex(idx)}
-            className="w-12 h-12 object-cover rounded cursor-pointer border border-gray-300 hover:scale-105 transition-transform"
+            className="w-8 h-8 object-cover rounded cursor-pointer border border-gray-300 hover:scale-105 transition-transform"
           />
         ))}
       </div>
