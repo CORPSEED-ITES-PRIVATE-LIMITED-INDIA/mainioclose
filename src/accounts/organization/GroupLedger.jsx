@@ -268,7 +268,7 @@ const GroupLedger = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[60vh]",
+          wrapper: "max-h-[55vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

@@ -266,10 +266,8 @@ const Group = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[60vh]",
+          wrapper: "max-h-[55vh]",
         }}
-        // selectedKeys={selectedKeys}
-        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"

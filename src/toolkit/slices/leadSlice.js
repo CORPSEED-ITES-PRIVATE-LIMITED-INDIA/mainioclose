@@ -238,6 +238,16 @@ export const getProposalDataByLeadId = createAsyncThunk(
   }
 );
 
+export const getEstimateByLeadId = createAsyncThunk(
+  "getEstimateByLeadId",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getEstimateByLeadId?leadId=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -257,6 +267,7 @@ export const LeadSlice = createSlice({
     templateList: [],
     brochureList: [],
     proposalDataDetail: {},
+    estimateDetail: {},
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -404,6 +415,18 @@ export const LeadSlice = createSlice({
     builder.addCase(getProposalDataByLeadId.rejected, (state) => {
       state.loading = "rejected";
       state.proposalDataDetail = {};
+    });
+
+    builder.addCase(getEstimateByLeadId.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getEstimateByLeadId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateDetail = action?.payload;
+    });
+    builder.addCase(getEstimateByLeadId.rejected, (state, action) => {
+      state.estimateDetail = {};
+      state.loading = "rejected";
     });
   },
 });

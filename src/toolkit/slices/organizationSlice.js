@@ -84,6 +84,119 @@ export const getLedgerTypeById = createAsyncThunk(
   }
 );
 
+export const getAllVoucher = createAsyncThunk("getAllVoucher", async () => {
+  const response = await api.get(
+    `/accountService/api/v1/voucher/getAllVoucher`
+  );
+  return response.data;
+});
+
+export const getLedgerById = createAsyncThunk("getLedgerById", async (id) => {
+  const response = await api.get(
+    `/accountService/api/v1/ledger/getLedgerById?id=${id}`
+  );
+  return response.data;
+});
+
+export const createVoucher = createAsyncThunk("createVoucher", async (data) => {
+  const response = await api.post(
+    `/accountService/api/v1/voucher/createVoucher`,
+    data
+  );
+  return response.data;
+});
+
+export const getAllVoucherType = createAsyncThunk(
+  "getAllVoucherType",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/voucherType/getAllVoucherType`
+    );
+    return response.data;
+  }
+);
+
+export const getEstimateByStatus = createAsyncThunk(
+  "getEstimateByStatus",
+  async ({ status, page, size, userId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getEstimateByStatus?status=${status}&page=${page}&size=${size}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const getTotalCountOfEstimate = createAsyncThunk(
+  "getTotalCountOfEstimate",
+  async ({ status, userId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getEstimateByStatusCount?status=${status}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllDailyBookRecord = createAsyncThunk(
+  "getAllDailyBookRecord",
+  async ({ start, end }) => {
+    const response = await api.get(
+      `/accountService/api/v1/voucher/getAllVoucherInBetweenDate?startDate=${start}&endDate=${end}`
+    );
+    return response.data;
+  }
+);
+
+export const estimateApprovedAndDisapprovedStatus = createAsyncThunk(
+  "approvedAndDisapprovedStatus",
+  async ({ status, estimateId, userId }) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/approvedEstimate?status=${status}&estimateId=${estimateId}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBankStatements = createAsyncThunk(
+  "getAllBankStatements",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/bankStatements/getAllBankStatements`
+    );
+    return response.data;
+  }
+);
+
+export const addBankDetails = createAsyncThunk(
+  "addBankDetails",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/bankStatements/createBankStatement`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllPaymentRegisterWithPagination = createAsyncThunk(
+  "getAllPaymentRegisterWithPagination",
+  async ({ page, size, status }) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithPage?page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllPaymentRegisterCount = createAsyncThunk(
+  "getAllPaymentRegisterCount",
+  async (status) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterCount?status=${status}`
+    );
+    return response.data;
+  }
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -94,6 +207,15 @@ const OrganizationSlice = createSlice({
     ledgerCount: 0,
     groupVoucherList: [],
     ledgerTypeList: [],
+    voucherList: [],
+    ledgerDetail: {},
+    voucherTypeList: [],
+    allEstimateByStatus: [],
+    totalEstimateCount: 0,
+    dailybookDetail: {},
+    bankStatementList: [],
+    allPaymentRegisterList: [],
+    paymentRegistercont:null
   },
   extraReducers: (builder) => {
     builder.addCase(getAllGroups.pending, (state) => {
@@ -166,6 +288,117 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllLedgerType.rejected, (state) => {
       state.loading = "rejected";
       state.ledgerTypeList = [];
+    });
+
+    builder.addCase(getAllVoucher.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVoucher.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.voucherList = action.payload;
+    });
+    builder.addCase(getAllVoucher.rejected, (state) => {
+      state.loading = "rejected";
+      state.voucherList = [];
+    });
+
+    builder.addCase(getLedgerById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getLedgerById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.ledgerDetail = action.payload;
+    });
+    builder.addCase(getLedgerById.rejected, (state) => {
+      state.loading = "rejected";
+      state.ledgerDetail = {};
+    });
+
+    builder.addCase(getAllVoucherType.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVoucherType.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.voucherTypeList = action.payload;
+    });
+    builder.addCase(getAllVoucherType.rejected, (state) => {
+      state.loading = "rejected";
+      state.voucherTypeList = [];
+    });
+
+    builder.addCase(getEstimateByStatus.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getEstimateByStatus.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allEstimateByStatus = action.payload;
+    });
+    builder.addCase(getEstimateByStatus.rejected, (state) => {
+      state.loading = "rejected";
+      state.allEstimateByStatus = [];
+    });
+
+    builder.addCase(getTotalCountOfEstimate.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTotalCountOfEstimate.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalEstimateCount = action.payload;
+    });
+    builder.addCase(getTotalCountOfEstimate.rejected, (state) => {
+      state.loading = "rejected";
+      state.totalEstimateCount = 0;
+    });
+
+    builder.addCase(getAllDailyBookRecord.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllDailyBookRecord.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.dailybookDetail = action.payload;
+    });
+    builder.addCase(getAllDailyBookRecord.rejected, (state) => {
+      state.loading = "rejected";
+      state.dailybookDetail = {};
+    });
+
+    builder.addCase(getAllBankStatements.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllBankStatements.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.bankStatementList = action.payload;
+    });
+    builder.addCase(getAllBankStatements.rejected, (state) => {
+      state.loading = "rejected";
+      state.bankStatementList = [];
+    });
+
+    builder.addCase(getAllPaymentRegisterWithPagination.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllPaymentRegisterWithPagination.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.allPaymentRegisterList = action.payload;
+      }
+    );
+    builder.addCase(getAllPaymentRegisterWithPagination.rejected, (state) => {
+      state.loading = "rejected";
+      state.allPaymentRegisterList = [];
+    });
+
+    builder.addCase(getAllPaymentRegisterCount.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPaymentRegisterCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.paymentRegistercont = action.payload;
+    });
+    builder.addCase(getAllPaymentRegisterCount.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.paymentRegistercont = null;
     });
   },
 });

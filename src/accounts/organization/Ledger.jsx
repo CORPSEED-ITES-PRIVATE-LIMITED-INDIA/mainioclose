@@ -219,6 +219,14 @@ const Ledger = () => {
             hsnDescription:
               data?.hsnDescription || currentValues.hsnDescription,
           });
+        } else {
+          setLedgerForm((prev) => ({ ...prev, hsnSacPresent: false }));
+          reset({
+            ...currentValues,
+            hsnSacDetails: "",
+            HsnSac: "",
+            hsnDescription: "",
+          });
         }
         if (data?.gstRateDetailPresent) {
           setLedgerForm((prev) => ({ ...prev, gstRateDetailPresent: true }));
@@ -229,6 +237,14 @@ const Ledger = () => {
             taxabilityType:
               data?.taxabilityType || currentValues.taxabilityType,
             gstRates: data?.gstRates || currentValues.gstRates,
+          });
+        } else {
+          setLedgerForm((prev) => ({ ...prev, gstRateDetailPresent: false }));
+          reset({
+            ...currentValues,
+            gstRateDetails: "",
+            taxabilityType: "",
+            gstRates: "",
           });
         }
         if (data?.bankAccountPresent) {
@@ -242,6 +258,17 @@ const Ledger = () => {
             swiftCode: data?.swiftCode || currentValues.swiftCode,
             bankName: data?.bankName || currentValues.bankName,
             branch: data?.branch || currentValues.branch,
+          });
+        } else {
+          setLedgerForm((prev) => ({ ...prev, bankAccountPresent: false }));
+          reset({
+            ...currentValues,
+            accountHolderName: "",
+            accountNo: "",
+            ifscCode: "",
+            swiftCode: "",
+            bankName: "",
+            branch: "",
           });
         }
       }
@@ -278,6 +305,11 @@ const Ledger = () => {
             dispatch(getAllLedger({ page, size: rowsPerPage }));
             reset(defaultValues);
             setEditData(null);
+            setLedgerForm({
+              hsnSacPresent: false,
+              gstRateDetailPresent: false,
+              bankAccountPresent: false,
+            });
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -296,6 +328,11 @@ const Ledger = () => {
             onOpenChange(false);
             dispatch(getAllLedger({ page, size: rowsPerPage }));
             reset(defaultValues);
+            setLedgerForm({
+              hsnSacPresent: false,
+              gstRateDetailPresent: false,
+              bankAccountPresent: false,
+            });
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -425,7 +462,7 @@ const Ledger = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} status
+            Total {count} ledger
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -797,6 +834,7 @@ const Ledger = () => {
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="Country"
+                          isRequired={true}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={countryList || []}
@@ -817,6 +855,7 @@ const Ledger = () => {
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="State"
+                          isRequired={true}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={statesList || []}
