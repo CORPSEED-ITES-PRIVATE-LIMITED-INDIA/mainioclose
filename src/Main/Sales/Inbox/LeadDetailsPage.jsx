@@ -169,7 +169,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const updateOriginalNameFun = useCallback(() => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    }  else {
+    } else {
       dispatch(updateOriginalNameInLeads(originalData))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -207,24 +207,28 @@ const LeadDetailsPage = ({ leadid }) => {
   }, [dispatch, leadid]);
 
   const changeLeadStatusFun = (statusId) => {
-    dispatch(changeLeadStatus({ leadid, userid, statusId }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          notification.success({
-            message: "Status updated successfully",
-          });
-          getSingleLeadData();
-        } else {
+    if (!addressInfo && currentUserDetail?.department === "Sales") {
+      notification.warning({ message: "Please update address to proceed !." });
+    } else {
+      dispatch(changeLeadStatus({ leadid, userid, statusId }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            notification.success({
+              message: "Status updated successfully",
+            });
+            getSingleLeadData();
+          } else {
+            notification.error({
+              message: "Something went wrong !.",
+            });
+          }
+        })
+        .catch(() => {
           notification.error({
             message: "Something went wrong !.",
           });
-        }
-      })
-      .catch(() => {
-        notification.error({
-          message: "Something went wrong !.",
         });
-      });
+    }
   };
 
   useEffect(() => {
@@ -237,7 +241,7 @@ const LeadDetailsPage = ({ leadid }) => {
         notification.warning({
           message: "Please update address to proceed !.",
         });
-      }  else {
+      } else {
         dispatch(updateSingleLeadName({ updatedLeadName, leadid, userid }))
           .then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {
@@ -274,7 +278,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const changeLeadAssignee = (id) => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    }  else {
+    } else {
       setAssigneValue(id);
       dispatch(changeLeadAssigneeLeads({ leadid, id, userid }))
         .then((resp) => {
@@ -304,7 +308,7 @@ const LeadDetailsPage = ({ leadid }) => {
         notification.warning({
           message: "Please update address to proceed !.",
         });
-      }  else {
+      } else {
         let data = {
           leadid: leadid,
           id: id,
@@ -344,7 +348,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const sameAssigneePresonFun = async () => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    }  else {
+    } else {
       if (window.confirm("Aree you Want to Sure")) {
         const autoUpdateSame = await dispatch(
           updateAutoAssignnee({
@@ -388,7 +392,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const handleUpdateContact = (value) => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    }else {
+    } else {
       form1.setFieldsValue({
         name: value?.clientName,
         email: value?.email,
@@ -459,7 +463,7 @@ const LeadDetailsPage = ({ leadid }) => {
   const leadAssignedToSame = (id) => {
     if (!addressInfo && currentUserDetail?.department === "Sales") {
       notification.warning({ message: "Please update address to proceed !." });
-    }  else {
+    } else {
       dispatch(handleLeadassignedToSamePerson(id))
         .then((response) => {
           if (response.meta.requestStatus === "fulfilled") {
@@ -607,7 +611,7 @@ const LeadDetailsPage = ({ leadid }) => {
               notification.warning({
                 message: "Please update your address first !.",
               });
-            }  else {
+            } else {
               setOpenModal(true);
               form1.resetFields();
             }
