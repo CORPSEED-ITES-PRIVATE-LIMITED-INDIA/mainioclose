@@ -16,7 +16,7 @@ export const addNewRating = createAsyncThunk(
 
 
 export const deleteRatingUser=createAsyncThunk('deleteRatingUser',async(id)=>{
-  const response=await deleteQuerygit (`/leadService/api/v1/rating/deleteUserByRatingId?id=${id}`)
+  const response=await deleteQuery(`/leadService/api/v1/rating/deleteUserByRatingId?id=${id}`)
   return response.data
 })
 
