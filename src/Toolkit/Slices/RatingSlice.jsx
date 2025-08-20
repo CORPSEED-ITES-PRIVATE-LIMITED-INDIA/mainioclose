@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import { postQuery } from "../../API/PostQuery"
 import { getQuery } from "../../API/GetQuery"
+import { deleteQuery } from "../../API/DeleteQuery"
 
 export const addNewRating = createAsyncThunk(
   "add-new-rating-star",
@@ -12,6 +13,13 @@ export const addNewRating = createAsyncThunk(
     return createRating
   }
 )
+
+
+export const deleteRatingUser=createAsyncThunk('deleteRatingUser',async(id)=>{
+  const response=await deleteQuerygit (`/leadService/api/v1/rating/deleteUserByRatingId?id=${id}`)
+  return response.data
+})
+
 
 export const addMultiuser=createAsyncThunk('addMultiuser',async(data)=>{
   const response=await postQuery(`/leadService/api/v1/rating/addUserAndMultiRating`,data)
