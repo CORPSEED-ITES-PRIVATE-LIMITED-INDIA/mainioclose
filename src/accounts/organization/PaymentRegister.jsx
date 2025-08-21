@@ -135,8 +135,8 @@ const PaymentRegister = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        item.serviceName.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 

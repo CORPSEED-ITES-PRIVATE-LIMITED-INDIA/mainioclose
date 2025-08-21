@@ -112,8 +112,8 @@ const BankStatement = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        item.name.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 

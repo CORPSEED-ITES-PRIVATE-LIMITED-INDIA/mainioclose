@@ -1,6 +1,37 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
 
+export const getOrganizationByName = createAsyncThunk(
+  "getOrganizationByName",
+  async (name) => {
+    const response = await api.get(
+      `/accountService/api/v1/organization/getAllOrganizationByName?name=${name}`
+    );
+    return response.data;
+  }
+);
+
+export const createOrganization = createAsyncThunk(
+  "createOrganization",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/organization/createOrganization`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllOrganizations = createAsyncThunk(
+  "getAllOrganizations",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/organization/getAllOrganization`
+    );
+    return response.data;
+  }
+);
+
 export const getAllGroups = createAsyncThunk("getAllGroups", async () => {
   const response = await api.get(
     `/accountService/api/v1/ledgerType/getAllLedgerType`
@@ -197,10 +228,97 @@ export const getAllPaymentRegisterCount = createAsyncThunk(
   }
 );
 
+export const getAllInvoice = createAsyncThunk("getAllInvoice", async (id) => {
+  const response = await api.get(
+    `/accountService/api/v1/paymentRegister/getAllInvoice?userId=${id}`
+  );
+  return response.data;
+});
+
+export const getAllUnbillList = createAsyncThunk(
+  "getAllUnbillList",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/ledgerType/getAllUnbilled`
+    );
+    return response.data;
+  }
+);
+
+export const getAllInvoiceForSale = createAsyncThunk(
+  "getAllInvoiceForSale",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllInvoiceForSales?userId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllTdsList = createAsyncThunk("getAllTdsList", async () => {
+  const response = await api.get(`/accountService/api/v1/tds/getAllTds`);
+  return response.data;
+});
+
+export const createTDS = createAsyncThunk("createTDS", async (data) => {
+  const response = await api.post(`/accountService/api/v1/tds/createTds`, data);
+  return response.data;
+});
+
+export const getTdsAmounts = createAsyncThunk("getTdsAmounts", async () => {
+  const response = await api.get(`/accountService/api/v1/tds/getAllTdsCount`);
+  return response.data;
+});
+
+export const updateVouchersType = createAsyncThunk(
+  "updateVouchersType",
+  async ({ name, id }) => {
+    const response = await api.put(
+      `/accountService/api/v1/voucherType/updateVoucherType?name=${name}&id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const createVoucherType = createAsyncThunk(
+  "createVoucherType",
+  async ({ name }) => {
+    const response = await api.post(
+      `/accountService/api/v1/voucherType/createVoucherType?name=${name}`
+    );
+    return response.data;
+  }
+);
+
+export const updateLedgerType = createAsyncThunk(
+  "updateLedgerType",
+  async (data) => {
+    const response = await api.put(
+      `/accountService/api/v1/ledgerType/updateLedgerType`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const createLedgerType = createAsyncThunk(
+  "createLedgerType",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/ledgerType/createLedgerType`,
+      data
+    );
+    return response.data;
+  }
+);
+
+
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
     loading: "",
+    organizationDetail: {},
     groupList: [],
     groupLedgerList: [],
     ledgerList: [],
@@ -215,9 +333,26 @@ const OrganizationSlice = createSlice({
     dailybookDetail: {},
     bankStatementList: [],
     allPaymentRegisterList: [],
-    paymentRegistercont:null
+    paymentRegistercont: null,
+    allInvoiceList: [],
+    unBillList: [],
+    salesInvoiceList: [],
+    tdsList: [],
+    tdsAmount: {},
   },
   extraReducers: (builder) => {
+    builder.addCase(getOrganizationByName.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getOrganizationByName.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.organizationDetail = action.payload;
+    });
+    builder.addCase(getOrganizationByName.rejected, (state) => {
+      state.loading = "rejected";
+      state.organizationDetail = {};
+    });
+
     builder.addCase(getAllGroups.pending, (state) => {
       state.loading = "pending";
     });
@@ -389,16 +524,76 @@ const OrganizationSlice = createSlice({
       state.allPaymentRegisterList = [];
     });
 
-    builder.addCase(getAllPaymentRegisterCount.pending, (state, action) => {
+    builder.addCase(getAllPaymentRegisterCount.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllPaymentRegisterCount.fulfilled, (state, action) => {
       state.loading = "success";
       state.paymentRegistercont = action.payload;
     });
-    builder.addCase(getAllPaymentRegisterCount.rejected, (state, action) => {
+    builder.addCase(getAllPaymentRegisterCount.rejected, (state) => {
       state.loading = "rejected";
       state.paymentRegistercont = null;
+    });
+
+    builder.addCase(getAllInvoice.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllInvoice.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allInvoiceList = action.payload;
+    });
+    builder.addCase(getAllInvoice.rejected, (state) => {
+      state.loading = "rejected";
+      state.allInvoiceList = [];
+    });
+
+    builder.addCase(getAllUnbillList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUnbillList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.unBillList = action.payload;
+    });
+    builder.addCase(getAllUnbillList.rejected, (state) => {
+      state.loading = "rejected";
+      state.unBillList = [];
+    });
+
+    builder.addCase(getAllInvoiceForSale.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllInvoiceForSale.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesInvoiceList = action.payload;
+    });
+    builder.addCase(getAllInvoiceForSale.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesInvoiceList = [];
+    });
+
+    builder.addCase(getAllTdsList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllTdsList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.tdsList = action.payload;
+    });
+    builder.addCase(getAllTdsList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.tdsList = [];
+    });
+
+    builder.addCase(getTdsAmounts.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTdsAmounts.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.tdsAmount = action.payload;
+    });
+    builder.addCase(getTdsAmounts.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.tdsAmount = [];
     });
   },
 });

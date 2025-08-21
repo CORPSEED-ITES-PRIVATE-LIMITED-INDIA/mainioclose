@@ -60,7 +60,7 @@ const Organizations = () => {
           <Tab key="bankStatement" title="Bank statement" />
           <Tab key="paymentRegister" title="Payment register" />
           <Tab key="allInvoice" title="All invoice" />
-          <Tab key="unbill" title="Unbill" />
+          <Tab key="unbilled" title="Unbilled" />
           <Tab key="manageSales" title="Manage sales" />
           <Tab key="tds" title="Tds" />
         </Tabs>

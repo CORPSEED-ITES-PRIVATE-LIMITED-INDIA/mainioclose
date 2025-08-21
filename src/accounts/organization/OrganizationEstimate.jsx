@@ -113,8 +113,8 @@ const Ledger = () => {
     let filteredUsers = [...data];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        item.productName.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 

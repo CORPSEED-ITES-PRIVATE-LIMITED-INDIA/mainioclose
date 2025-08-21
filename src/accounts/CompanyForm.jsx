@@ -20,24 +20,30 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Chip,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import {
-  createLedgerType,
-  getAllLedgerType,
-  updateLedgerType,
-} from "../../../toolkit/slices/organizationSlice";
+import { useParams } from "react-router-dom";
+import { getAllCompanyByStatus } from "../toolkit/slices/companySlice";
+import { inrCurrency, maskEmail, maskMobileNumber } from "../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
-  { name: "DEBIT CREDIT", uid: "debitCredit" },
-  { name: "USED FOR CALCULATION", uid: "usedForCalculation" },
-  { name: "SUB LEDGER", uid: "subLeadger" },
+  { name: "LEAD ID", uid: "leadId" },
+  { name: "COMPANY NAME", uid: "companyName", sortable: true },
+  { name: "LEAD NAME", uid: "leadName", sortable: true },
+  { name: "GST", uid: "gstNo" },
+  { name: "AMOUNT", uid: "amount" },
+  { name: "PRI.CONT", uid: "primaryContact" },
+  { name: "SEC.CONT", uid: "secondaryContact" },
+  { name: "ADDRESS", uid: "address" },
+  { name: "SEC.ADDRESS", uid: "seconadryAddress" },
+  { name: "INDUSTRY INFO", uid: "industry" },
+  { name: "UPDATED BY", uid: "updatedBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -46,12 +52,13 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "id",
-  "name",
-  "debitCredit",
-  "usedForCalculation",
-  "totalPaymentAmount",
-  "subLeadger",
+  "companyName",
+  "leadName",
+  "gstNo",
+  "amount",
+  "primaryContact",
+  "address",
+  "industry",
   "actions",
 ];
 
@@ -71,21 +78,22 @@ const defaultValues = {
   usedForCalculation: "",
 };
 
-const LedgerType = () => {
+const CompanyForm = () => {
   const dispatch = useDispatch();
+  const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.ledgerTypeList);
-  const ledgerTypeList = useSelector(
-    (state) => state.organization.ledgerTypeList
-  );
+  const data = useSelector((state) => state.company.allLeadCompanyList);
   const count = useSelector(
-    (state) => state.organization.ledgerTypeList?.length
+    (state) => state.company.allLeadCompanyList?.[0]?.totalLeadFor
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const admin = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
+  const [status, setStatus] = useState("initiated");
   const [editData, setEditData] = useState(null);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -96,8 +104,15 @@ const LedgerType = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllLedgerType());
-  }, [dispatch]);
+    dispatch(
+      getAllCompanyByStatus({
+        id: userId,
+        status: status,
+        page: page,
+        size: rowsPerPage,
+      })
+    );
+  }, [dispatch, page, rowsPerPage, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -160,6 +175,8 @@ const LedgerType = () => {
     setEditData(value);
   };
 
+  console.log("jdhgkjgdjkgd", admin);
+
   const onSubmit = useCallback(
     (values) => {
       if (editData) {
@@ -207,27 +224,141 @@ const LedgerType = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "name":
+      case "leadId":
+        return <p className="text-sm capitalize">{rowData?.lead?.id}</p>;
+      case "companyName":
         return (
-          <p className="text-sm font-medium capitalize">{rowData?.name}</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium capitalize">
+              {rowData?.companyName}
+            </p>
+            <span className="text-muted-foreground text-xs">
+              Age : {rowData?.companyAge || "-"} yrs
+            </span>
+            {rowData?.status && (
+              <Chip
+                color={
+                  rowData?.status === "approved"
+                    ? "success"
+                    : rowData?.status === "disapproved"
+                      ? "danger"
+                      : "secondary"
+                }
+              >
+                {rowData?.status}
+              </Chip>
+            )}
+          </div>
         );
-      case "debitCredit":
+      case "leadName":
+        return <p className="text-sm capitalize">{rowData?.lead?.leadName}</p>;
+      case "gstNo":
         return (
-          <p className="text-sm capitalize">
-            {rowData?.debitCredit ? "True" : "False"}
-          </p>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs">{rowData?.gstNo}</span>
+            <span className="text-xs">Pan : {rowData?.panNo}</span>
+            <Chip color="default" size="sm">
+              {rowData?.gstType}
+            </Chip>
+          </div>
         );
-      case "usedForCalculation":
+      case "amount":
+        return <p className="text-sm font-medium">{inrCurrency(rowData?.amount)}</p>;
+      case "primaryContact":
         return (
-          <p className="text-sm capitalize">
-            {rowData?.usedForCalculation ? "True" : "False"}
-          </p>
+          <div className="flex flex-col">
+            <span className="text-sm">
+              {rowData.contactName || "-"}
+              {", "}
+              <Chip color="secondary" size="sm">
+                {rowData?.primaryDesignation?.name}
+              </Chip>
+            </span>
+            <span className="text-sm text-gray-400">
+              {admin
+                ? rowData?.contactEmails
+                : maskEmail(rowData?.contactEmails) || "-"}
+            </span>
+            <span className="text-sm text-gray-400">
+              {admin
+                ? rowData?.contactNo
+                : maskMobileNumber(rowData?.contactNo) || "-"}
+              ,
+            </span>
+          </div>
         );
-      case "subLeadger":
+      case "secondaryContact":
         return (
-          <p className="text-sm capitalize">
-            {rowData?.subLeadger ? "True" : "False"}
-          </p>
+          <div className="flex flex-col">
+            <span className="text-sm">
+              {rowData.secondaryContactName || "-"}
+              {", "}
+              <Chip color="secondary" size="sm">
+                {rowData?.secondaryDesignation?.name}
+              </Chip>
+            </span>
+            <span className="text-sm text-gray-400">
+              {admin
+                ? rowData?.secondaryContactEmails
+                : maskEmail(rowData?.secondaryContactEmails) || "-"}
+            </span>
+            <span className="text-sm text-gray-400">
+              {admin
+                ? rowData?.secondaryContactNo
+                : maskMobileNumber(rowData?.secondaryContactNo) || "-"}
+              ,
+            </span>
+          </div>
+        );
+      case "address":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal text-sm">
+              {rowData.address || "-"}
+            </span>
+            <span className="text-sm text-gray-400">
+              {rowData.city || ""},{rowData?.state},{rowData?.country}
+            </span>
+            <span className="text-sm text-gray-400">
+              {rowData.primaryPinCode || ""}
+            </span>
+          </div>
+        );
+      case "seconadryAddress":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal text-sm">
+              {rowData.sAddress || "-"}
+            </span>
+            <span className="text-sm text-gray-400">
+              {rowData.sCity || ""},{rowData?.sState},{rowData?.sCountry}
+            </span>
+            <span className="text-sm text-gray-400">
+              {rowData.secondaryPinCode || ""}
+            </span>
+          </div>
+        );
+      case "industry":
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="font-normal text-sm">
+              {rowData.industry || "-"}
+            </span>
+            <span className="text-xs  bg-amber-200 rounded p-1">
+              Sub : {rowData.subIndustry || ""}
+            </span>
+            <span className="text-xs  bg-blue-200 rounded p-1">
+              Category : {rowData.subSubIndustry || ""}
+            </span>
+            <span className="text-xs  bg-emerald-200 rounded p-1">
+              Business activity :{" "}
+              {rowData.industryData?.map((item) => item?.name)?.join(",") || ""}
+            </span>
+          </div>
+        );
+      case "updatedBy":
+        return (
+          <p className="text-sm capitalize">{rowData?.updatedBy?.fullName}</p>
         );
       case "actions":
         return (
@@ -300,6 +431,37 @@ const LedgerType = () => {
           />
           <div className="flex gap-3">
             <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  endContent={<ChevronDown />}
+                  variant="flat"
+                  className="capitalize"
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                selectionMode="single"
+                selectedKeys={[status]}
+                onSelectionChange={(selectedKeys) => {
+                  const selected = Array.from(selectedKeys)[0];
+                  setStatus(selected);
+                }}
+              >
+                {[
+                  { label: "Initiated", uid: "initiated" },
+                  { label: "Approved", uid: "approved" },
+                  { label: "Disapproved", uid: "disapproved" },
+                ].map((status) => (
+                  <DropdownItem key={status.uid} className="capitalize">
+                    {capitalize(status.label)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
                   Columns
@@ -334,7 +496,9 @@ const LedgerType = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {count} ledger type</span>
+          <span className="text-default-400 text-small">
+            Total {count} ledger type
+          </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -407,7 +571,8 @@ const LedgerType = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[55vh] max-w-[85vw]",
+          table:"overflow-scroll"
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -605,4 +770,4 @@ const LedgerType = () => {
   );
 };
 
-export default LedgerType;
+export default CompanyForm;

@@ -243,7 +243,7 @@ const Estimate = () => {
     let filteredData = [...data];
     if (hasSearchFilter) {
       filteredData = filteredData.filter((item) =>
-        item?.urlsName?.toLowerCase().includes(filterValue.toLowerCase())
+        item?.productName?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
     return filteredData;

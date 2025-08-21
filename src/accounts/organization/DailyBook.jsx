@@ -90,8 +90,8 @@ const DailyBook = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        item.ledgerName.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -220,10 +220,13 @@ const DailyBook = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <DateRangePicker value={dateRange} onChange={setDateRange} />
+            <div><DateRangePicker value={dateRange} onChange={setDateRange} /></div>
             <Dropdown>
-              <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  endContent={<ChevronDown className="text-small" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>

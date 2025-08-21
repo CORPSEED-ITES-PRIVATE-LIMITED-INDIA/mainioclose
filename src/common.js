@@ -131,3 +131,30 @@ export const getNameAndEmailById = (list, id) => {
     };
   }
 };
+
+export function maskMobileNumber(mobile) {
+  if (mobile) {
+    const start = mobile.substring(0, 3);
+    const stars = "****";
+    const end = mobile.substring(mobile.length - 3);
+    return `${start}${stars}${end}`;
+  }
+}
+
+export function maskEmail(email) {
+  if (email) {
+    const [localPart, domain] = email?.split("@"); // Split the email into local and domain parts
+    const localMasked =
+      localPart?.substring(0, 2) + "***" + localPart?.substring(6);
+    const domainMasked = domain?.substring(0, 2) + "***" + domain?.substring(5);
+    return `${localMasked}@${domainMasked}`;
+  }
+}
+
+export function inrCurrency(amount) {
+  const formatted = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(amount);
+  return formatted.replace("₹", "₹\u00A0");
+}

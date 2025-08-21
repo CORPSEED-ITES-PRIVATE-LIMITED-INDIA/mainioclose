@@ -123,6 +123,16 @@ export const createNewCompanyInLeads = createAsyncThunk(
   }
 );
 
+export const getAllCompanyByStatus = createAsyncThunk(
+  "getCompaniesByStatus",
+  async (data) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/getAllCompanyFormByStatus?status=${data.status}&userId=${data?.id}&page=${data?.page}&size=${data?.size}`
+    );
+    return response.data;
+  }
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -137,6 +147,7 @@ const CompanySlice = createSlice({
     companyProjectList: [],
     companyDetail: {},
     servingCompanyList: [],
+    allLeadCompanyList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllNewCompanies.pending, (state) => {
@@ -260,6 +271,17 @@ const CompanySlice = createSlice({
     builder.addCase(getAllServingCompanyList.rejected, (state, action) => {
       state.loading = "rejected";
       state.servingCompanyList = [];
+    });
+
+    builder.addCase(getAllCompanyByStatus.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCompanyByStatus.fulfilled, (state, action) => {
+      state.allLeadCompanyList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllCompanyByStatus.rejected, (state, action) => {
+      state.loading = "rejected";
     });
   },
 });

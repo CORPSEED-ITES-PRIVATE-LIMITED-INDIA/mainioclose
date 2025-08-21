@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "./home/HomePage";
 import Login from "./login/Login";
 import ProtectedRoute from "./ProtectedRoute";
@@ -46,6 +46,9 @@ import TDS from "./accounts/organization/TDS";
 import LedgerType from "./accounts/organization/settings/LedgerType";
 import VoucherType from "./accounts/organization/settings/VoucherType";
 import Statutory from "./accounts/organization/settings/Statutory";
+import CompanyFormPage from "./accounts/CompanyFormPage";
+import CompanyForm from "./accounts/CompanyForm";
+import CompaniesInAccount from "./accounts/CompaniesInAccount";
 
 function App() {
   return (
@@ -115,12 +118,27 @@ function App() {
             <Route path="bankStatement" element={<BankStatement />} />
             <Route path="paymentRegister" element={<PaymentRegister />} />
             <Route path="allInvoice" element={<AllInvoice />} />
-            <Route path="unbill" element={<Unbill />} />
+            <Route path="unbilled" element={<Unbill />} />
             <Route path="manageSales" element={<ManageSales />} />
             <Route path="tds" element={<TDS />} />
-            <Route path="/erp/:userId/accounts/organizations/settings/ledgerType" element={<LedgerType />} />
-            <Route path="/erp/:userId/accounts/organizations/settings/voucherType" element={<VoucherType />} />
-            <Route path="/erp/:userId/accounts/organizations/settings/statutory" element={<Statutory />} />
+            <Route
+              path="/erp/:userId/accounts/organizations/settings/ledgerType"
+              element={<LedgerType />}
+            />
+            <Route
+              path="/erp/:userId/accounts/organizations/settings/voucherType"
+              element={<VoucherType />}
+            />
+            <Route
+              path="/erp/:userId/accounts/organizations/settings/statutory"
+              element={<Statutory />}
+            />
+          </Route>
+
+          <Route path="accounts/companyhome" element={<CompanyFormPage />}>
+            <Route index element={<Navigate to="companyForm" replace />} />
+            <Route  path="companyForm" element={<CompanyForm />} />
+            <Route path="companies" element={<CompaniesInAccount />} />
           </Route>
 
           {/* HR */}
