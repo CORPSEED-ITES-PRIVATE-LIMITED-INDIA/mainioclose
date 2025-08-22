@@ -158,3 +158,15 @@ export function inrCurrency(amount) {
   }).format(amount);
   return formatted.replace("₹", "₹\u00A0");
 }
+
+function padZero(num) {
+  return String(num).padStart(2, "0");
+}
+
+export function formatedDateTime(calendarDateTime) {
+  if (!calendarDateTime) return null;
+
+  const { year, day, month, hour, minute } = calendarDateTime;
+
+  return `${year}-${padZero(month)}-${padZero(day)}T${padZero(hour)}:${padZero(minute)}`;
+}

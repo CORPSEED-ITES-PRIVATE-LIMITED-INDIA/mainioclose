@@ -248,6 +248,17 @@ export const getEstimateByLeadId = createAsyncThunk(
   }
 );
 
+export const getQualityLeadsReport = createAsyncThunk(
+  "getQualityLeadsReport",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/leadRepot/getAllAutoLeadQualityReport`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -268,6 +279,7 @@ export const LeadSlice = createSlice({
     brochureList: [],
     proposalDataDetail: {},
     estimateDetail: {},
+    qualityReportList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -427,6 +439,19 @@ export const LeadSlice = createSlice({
     builder.addCase(getEstimateByLeadId.rejected, (state, action) => {
       state.estimateDetail = {};
       state.loading = "rejected";
+    });
+
+    builder.addCase(getQualityLeadsReport.pending, (state) => {
+      state.loading = "pending";
+      state.qualityReportList = [];
+    });
+    builder.addCase(getQualityLeadsReport.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.qualityReportList = action?.payload;
+    });
+    builder.addCase(getQualityLeadsReport.rejected, (state) => {
+      state.loading = "rejected";
+      state.qualityReportList = [];
     });
   },
 });

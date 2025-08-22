@@ -85,6 +85,16 @@ const navItems = [
     ],
   },
   {
+    title: "Quality",
+    icon: "FlaskConical",
+    url: "/quality",
+    key: "quality",
+    children: [
+      { title: "IVR", icon: "", url: "quality/ivr", key: "ivr" },
+      { title: "Report", icon: "", url: "quality/report", key: "report" },
+    ],
+  },
+  {
     title: "Users",
     icon: "User2",
     url: "users",

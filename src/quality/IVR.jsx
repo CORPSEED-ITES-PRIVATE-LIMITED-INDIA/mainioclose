@@ -20,28 +20,28 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Select,
-  SelectItem,
+  TimeInput,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  Clock,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import {
-  createLedgerType,
-  getAllLedgerType,
-  updateLedgerType,
-} from "../../../toolkit/slices/organizationSlice";
-import NewSelect from "../../../components/NewSelect";
+import { createIvr, getAllIvrWithPage, getTotalIvrCount } from "../toolkit/slices/commonSlice";
+import dayjs from "dayjs";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
-  { name: "DEBIT CREDIT", uid: "debitCredit" },
-  { name: "USED FOR CALCULATION", uid: "usedForCalculation" },
-  { name: "SUB LEDGER", uid: "subLeadger" },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "AGENT NAME", uid: "agentName", sortable: true },
+  { name: "CALLER NAME", uid: "callerName" },
+  { name: "START TIME", uid: "startTime" },
+  { name: "DURATION", uid: "duration" },
+  { name: "RECORDINGS", uid: "recording" },
 ];
 
 export function capitalize(s) {
@@ -50,40 +50,38 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
-  "name",
-  "debitCredit",
-  "usedForCalculation",
-  "totalPaymentAmount",
-  "subLeadger",
-  "actions",
+  "agentName",
+  "callerName",
+  "startTime",
+  "duration",
+  "recording",
 ];
 
 const formSchema = z.object({
-  name: z.string().min(1, "Please enter ledger name."),
-  id: z.string().min(1, "Please select ledger group"),
-  subLeadger: z.string().min(1, "Please select sub ledger"),
-  isDebitCredit: z.string().min(1, "Please select option"),
-  usedForCalculation: z.string().min(1, "Please select option"),
+  agentName: z.string().min(1, "Please enter agent name."),
+  aggentNumber: z.string().min(1, "Please enter agent number."),
+  callerNumber: z.string().min(1, "Please enter caller number"),
+  startTime: z.string().min(1, "Please enter start time"),
+  endTime: z.string().min(1, "Please enter end time"),
+  duration: z.string().min(1, "Please enter duration"),
+  callRecordingUrl: z.string().min(1, "Please enter call recording url"),
 });
 
 const defaultValues = {
-  name: "",
-  id: "",
-  subLeadger: "",
-  isDebitCredit: "",
-  usedForCalculation: "",
+  agentName: "",
+  aggentNumber: "",
+  callerNumber: "",
+  startTime: "",
+  endTime: "",
+  duration: "",
+  callRecordingUrl: "",
 };
 
-const LedgerType = () => {
+const IVR = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.ledgerTypeList);
-  const ledgerTypeList = useSelector(
-    (state) => state.organization.ledgerTypeList
-  );
-  const count = useSelector(
-    (state) => state.organization.ledgerTypeList?.length
-  );
+  const data = useSelector((state) => state.common.allIvr);
+  const count = useSelector((state) => state.common.totalIvrCount);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -99,8 +97,12 @@ const LedgerType = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllLedgerType());
-  }, [dispatch]);
+    dispatch(getAllIvrWithPage({ page: page, size: rowsPerPage }));
+  }, [dispatch, page, rowsPerPage]);
+
+  useEffect(()=>{
+    dispatch(getTotalIvrCount())
+  },[dispatch])
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -115,7 +117,9 @@ const LedgerType = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item.name.toLowerCase().includes(filterValue.toLowerCase())
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
+        )
       );
     }
 
@@ -151,58 +155,25 @@ const LedgerType = () => {
     defaultValues,
   });
 
-  const handleEdit = (value) => {
-    reset({
-      name: value?.name,
-      usedForCalculation: value?.usedForCalculation,
-      isDebitCredit: value?.debitCredit,
-      subLeadger: value?.subLeadger,
-      id: value?.ledgerType,
-    });
-    onOpen();
-    setEditData(value);
-  };
-
   const onSubmit = useCallback(
     (values) => {
-      if (editData) {
-        dispatch(updateLedgerType({ ...values, id: editData?.id }))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              addToast({
-                title: "Ledger type updated successfully !.",
-                color: "success",
-              });
-              onOpenChange(false);
-              dispatch(getAllLedgerType());
-              reset(defaultValues);
-              setEditData(null);
-            } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
-            }
-          })
-          .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
-          );
-      } else {
-        dispatch(createLedgerType(values))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              addToast({
-                title: "Ledger type created successfully !.",
-                color: "success",
-              });
-              dispatch(getAllLedgerType());
-              onOpenChange(false);
-              reset(defaultValues);
-            } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
-            }
-          })
-          .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
-          );
-      }
+      dispatch(createIvr(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "IVR created successfully !.",
+              color: "success",
+            });
+            dispatch(getAllIvrWithPage({ page: page, size: rowsPerPage }));
+            onOpenChange(false);
+            reset(defaultValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
     },
     [dispatch, editData]
   );
@@ -210,47 +181,25 @@ const LedgerType = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "name":
+      case "agentName":
         return (
-          <p className="text-sm font-medium capitalize">{rowData?.name}</p>
+          <p className="text-sm font-medium capitalize">{rowData?.agentName}</p>
         );
-      case "debitCredit":
+      case "callerName":
+        return <p className="text-sm capitalize">{rowData?.callerName}</p>;
+      case "startTime":
         return (
           <p className="text-sm capitalize">
-            {rowData?.debitCredit ? "True" : "False"}
+            {dayjs(rowData?.startTime).format("DD-MM-YYYY ,  hh:mm a")}
           </p>
         );
-      case "usedForCalculation":
+      case "duration":
+        return <p className="text-sm">{rowData?.duration} minutes</p>;
+      case "recording":
         return (
-          <p className="text-sm capitalize">
-            {rowData?.usedForCalculation ? "True" : "False"}
-          </p>
-        );
-      case "subLeadger":
-        return (
-          <p className="text-sm capitalize">
-            {rowData?.subLeadger ? "True" : "False"}
-          </p>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={() => {
-                  handleEdit(rowData);
-                }}
-              >
-                <DropdownItem key="edit">Edit</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
+          <audio controls className="audio-player">
+            <source src={rowData?.recordingUrls} type="audio/mpeg" />
+          </audio>
         );
       default:
         return cellValue;
@@ -337,7 +286,7 @@ const LedgerType = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {count} ledger type</span>
+          <span className="text-default-400 text-small">Total {count} IVR</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -403,7 +352,7 @@ const LedgerType = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Ledger type list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">IVR list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -450,19 +399,19 @@ const LedgerType = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add TDS</ModalHeader>
+              <ModalHeader>Add IVR details</ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
                     <Controller
-                      name="name"
+                      name="agentName"
                       control={control}
                       render={({ field }) => (
                         <Input
                           isRequired
-                          errorMessage="please enter ledger name"
-                          label="Ledger name"
-                          name="name"
+                          errorMessage="please enter agent name"
+                          label="Agent name"
+                          name="agentName"
                           value={field.value}
                           onChange={(e) => {
                             field.onChange(e.target.value);
@@ -471,124 +420,99 @@ const LedgerType = () => {
                       )}
                     />
                     <Controller
-                      name="id"
+                      name="aggentNumber"
                       control={control}
                       render={({ field }) => (
-                        <NewSelect
-                          isRequired={true}
-                          data={ledgerTypeList}
-                          label={"Select ledger type"}
-                          name={"id"}
-                          labelKey={"name"}
-                          valueKey={"id"}
+                        <Input
+                          isRequired
+                          errorMessage="please enter agent number"
+                          label="Agent number"
+                          name="aggentNumber"
                           value={field.value}
-                          onChange={(selectedSet) => {
-                            field.onChange(selectedSet);
-                            getLedgerType(selectedSet);
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
                           }}
                         />
                       )}
                     />
                     <Controller
-                      name="subLeadger"
+                      name="callerNumber"
                       control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Sub ledger"
+                      render={({ field }) => (
+                        <Input
                           isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
+                          errorMessage="please enter caller number"
+                          label="Caller number"
+                          name="callerNumber"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
                           }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
+                        />
                       )}
                     />
                     <Controller
-                      name="isDebitCredit"
+                      name="startTime"
                       control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Debit credit"
+                      render={({ field }) => (
+                        <TimeInput
                           isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
+                          errorMessage="please enter start time"
+                          {...field}
+                          label="Start time"
+                          granularity="second"
+                          startContent={<Clock />}
+                          onChange={(val) => field.onChange(val)}
+                        />
                       )}
                     />
                     <Controller
-                      name="usedForCalculation"
+                      name="endTime"
                       control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Used for calculation"
+                      render={({ field }) => (
+                        <TimeInput
                           isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
+                          errorMessage="please enter end time"
+                          {...field}
+                          label="End time"
+                          granularity="second"
+                          startContent={<Clock />}
+                          onChange={(val) => field.onChange(val)}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="duration"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage="please enter call duration"
+                          label="Call duration"
+                          description="Please enter your duration in minutes"
+                          name="duration"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
                           }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="callRecordingUrl"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage="please enter call recording url"
+                          label="Call recording url"
+                          type="url"
+                          name="callRecordingUrl"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
                       )}
                     />
                   </div>
@@ -608,4 +532,4 @@ const LedgerType = () => {
   );
 };
 
-export default LedgerType;
+export default IVR;

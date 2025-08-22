@@ -260,6 +260,33 @@ export const editUserRatingAssignee = createAsyncThunk(
   }
 );
 
+export const getTotalIvrCount = createAsyncThunk(
+  "getTotalIvrCount",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/rating/getAllIvrDataCount`
+    );
+    return response.data;
+  }
+);
+
+export const getAllIvrWithPage = createAsyncThunk(
+  "getAllIvrWithPage",
+  async (data) => {
+    const response = await api.get(
+      `/leadService/api/v1/rating/getAllIvrDataWithPage?page=${data?.page}&size=${data?.size}`
+    );
+    return response.data;
+  }
+);
+
+export const createIvr = createAsyncThunk("createIvr", async (data) => {
+  const response = await api.get(
+    `/leadService/api/v1/rating/createIvrData?callerNumber=${data?.callerNumber}&agentName=${data?.agentName}&aggentNumber=${data?.aggentNumber}&startTime=${data?.startTime}&duration=${data?.duration}&endTime=${data?.endTime}&callRecordingUrl=${data?.callRecordingUrl}`
+  );
+  return response.data;
+});
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -285,6 +312,8 @@ const CommonSlice = createSlice({
     approvalUserList: [],
     urlList: [],
     usersListByServiceId: [],
+    allIvr: [],
+    totalIvrCount: 0,
   },
   reducers: {
     handleReset: (state) => {
@@ -560,6 +589,30 @@ const CommonSlice = createSlice({
     builder.addCase(getUsersListByServiceRatingId.rejected, (state) => {
       state.loading = "success";
       state.usersListByServiceId = [];
+    });
+
+    builder.addCase(getAllIvrWithPage.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllIvrWithPage.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allIvr = action.payload;
+    });
+    builder.addCase(getAllIvrWithPage.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.allIvr = [];
+    });
+
+    builder.addCase(getTotalIvrCount.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTotalIvrCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalIvrCount = action.payload;
+    });
+    builder.addCase(getTotalIvrCount.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.totalIvrCount = 0;
     });
   },
 });

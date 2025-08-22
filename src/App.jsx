@@ -49,6 +49,8 @@ import Statutory from "./accounts/organization/settings/Statutory";
 import CompanyFormPage from "./accounts/CompanyFormPage";
 import CompanyForm from "./accounts/CompanyForm";
 import CompaniesInAccount from "./accounts/CompaniesInAccount";
+import IVR from "./quality/IVR";
+import IVRReport from "./quality/IVRReport";
 
 function App() {
   return (
@@ -137,9 +139,13 @@ function App() {
 
           <Route path="accounts/companyhome" element={<CompanyFormPage />}>
             <Route index element={<Navigate to="companyForm" replace />} />
-            <Route  path="companyForm" element={<CompanyForm />} />
+            <Route path="companyForm" element={<CompanyForm />} />
             <Route path="companies" element={<CompaniesInAccount />} />
           </Route>
+
+          {/* IVR */}
+          <Route path="quality/ivr" element={<IVR />} />
+          <Route path="quality/report" element={<IVRReport />} />
 
           {/* HR */}
           <Route path="hr/usersList" element={<UsersList />} />

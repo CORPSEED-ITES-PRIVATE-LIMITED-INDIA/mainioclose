@@ -51,8 +51,12 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
-import { leadSource } from "../../common";
-import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
+import { formatedDateTime, leadSource } from "../../common";
+import {
+  parseDateTime,
+  parseZonedDateTime,
+  toCalendarDateTime,
+} from "@internationalized/date";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -180,6 +184,11 @@ const Leads = () => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
   }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(getAllLeadUser(userId));
+    dispatch(getAllStatusData());
+  }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -389,26 +398,32 @@ const Leads = () => {
                         }}
                       />
                       <DateRangePicker
-                        hourCycle={"24"}
+                        hideTimeZone
                         granularity="minute"
-                        value={{
-                          start: allMultiFilterData?.toDate
-                            ? parseDateTime(allMultiFilterData?.toDate)
-                            : null,
-                          end: allMultiFilterData?.fromDate
-                            ? parseDateTime(allMultiFilterData?.fromDate)
-                            : null,
-                        }}
-                        label="Created date"
+                        hourCycle={24}
                         visibleMonths={2}
-                        onChange={(e) =>
+                        // defaultValue={{
+                        //   start: allMultiFilterData?.toDate
+                        //     ? parseZonedDateTime(
+                        //         `${allMultiFilterData?.toDate}[Asia/Kolkata]`
+                        //       )
+                        //     : null,
+                        //   end: allMultiFilterData?.fromDate
+                        //     ? parseZonedDateTime(
+                        //         `${allMultiFilterData?.fromDate}[Asia/Kolkata]`
+                        //       )
+                        //     : null,
+                        // }}
+                        label="Created date"
+                        onChange={(range) => {
                           setAllMultiFilterData((prev) => ({
                             ...prev,
-                            toDate: toCalendarDateTime(e?.start).toString(),
-                            fromDate: toCalendarDateTime(e?.end).toString(),
-                          }))
-                        }
+                            toDate: formatedDateTime(range?.start),
+                            fromDate: formatedDateTime(range?.end),
+                          }));
+                        }}
                       />
+
                       <NewSelect
                         data={statusList}
                         label={"Status"}
@@ -425,30 +440,30 @@ const Leads = () => {
                         }}
                       />
                       <DateRangePicker
-                        hourCycle={"24"}
                         hideTimeZone
                         granularity="minute"
-                        value={{
-                          start: allMultiFilterData?.updatedToDate
-                            ? parseDateTime(allMultiFilterData?.updatedToDate)
-                            : null,
-                          end: allMultiFilterData?.updatedfromDate
-                            ? parseDateTime(allMultiFilterData?.updatedfromDate)
-                            : null,
-                        }}
-                        label="Updated date"
+                        hourCycle={24}
                         visibleMonths={2}
-                        onChange={(e) =>
+                        label="Updated date"
+                        // value={{
+                        //   start: allMultiFilterData?.updatedToDate
+                        //     ? parseZonedDateTime(
+                        //         `${allMultiFilterData?.updatedToDate}[Asia/Kolkata]`
+                        //       )
+                        //     : null,
+                        //   end: allMultiFilterData?.updatedfromDate
+                        //     ? parseZonedDateTime(
+                        //         `${allMultiFilterData?.updatedfromDate}[Asia/Kolkata]`
+                        //       )
+                        //     : null,
+                        // }}
+                        onChange={(range) => {
                           setAllMultiFilterData((prev) => ({
                             ...prev,
-                            updatedToDate: toCalendarDateTime(
-                              e?.start
-                            ).toString(),
-                            updatedfromDate: toCalendarDateTime(
-                              e?.end
-                            ).toString(),
-                          }))
-                        }
+                            updatedToDate: formatedDateTime(range?.start),
+                            updatedfromDate: formatedDateTime(range?.end),
+                          }));
+                        }}
                       />
 
                       <Select
@@ -560,9 +575,12 @@ const Leads = () => {
     statusFilter,
     visibleColumns,
     onRowsPerPageChange,
-    data.length,
+    count,
     onSearchChange,
     hasSearchFilter,
+    allLeadUser,
+    allMultiFilterData,
+    statusList,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -613,8 +631,6 @@ const Leads = () => {
   const handleOpenModal = () => {
     onOpen();
     dispatch(getAllCountries());
-    dispatch(getAllLeadUser(userId));
-    dispatch(getAllStatusData());
   };
 
   const handleFinish = (values) => {

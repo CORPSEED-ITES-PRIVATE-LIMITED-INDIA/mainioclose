@@ -16,6 +16,7 @@ const NewSelect = ({
   isVirtualized,
   value, // Controlled value from parent (array for multiple, string for single)
   errorMessage,
+  size,
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
@@ -29,7 +30,6 @@ const NewSelect = ({
   const [filteredData, setFilteredData] = useState(data);
   const triggerRef = useRef(null);
   const inputRef = useRef(null);
-
 
   useEffect(() => {
     if (selectionMode === "multiple") {
@@ -50,18 +50,15 @@ const NewSelect = ({
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-
   useEffect(() => {
     setFilteredData(data);
   }, [data]);
-
 
   useEffect(() => {
     if (filteredData.length > 0 && inputRef.current) {
       inputRef.current.focus();
     }
   }, [filteredData]);
-
 
   const handleSearchQuery = useCallback(
     (e) => {
@@ -77,7 +74,6 @@ const NewSelect = ({
     },
     [data, labelKey]
   );
-
 
   const topContent = useMemo(
     () => (
@@ -96,7 +92,6 @@ const NewSelect = ({
     ),
     [searchQuery, handleSearchQuery]
   );
-
 
   const handleSelectionChange = useCallback(
     (keys) => {
@@ -124,16 +119,15 @@ const NewSelect = ({
     [onChange, selectionMode, data, valueKey]
   );
 
-  
   const selectKeys =
     selectionMode === "multiple"
       ? new Set(selectedKeys.map(String))
       : new Set([selectedKeys].filter(Boolean));
 
-
   return (
     <div className="w-full">
       <Select
+        size={size}
         errorMessage={errorMessage}
         isRequired={isRequired}
         name={name}
@@ -147,6 +141,9 @@ const NewSelect = ({
         onSelectionChange={handleSelectionChange}
         disallowEmptySelection={false}
         aria-label="Searchable select"
+        classNames={{
+          trigger: "max-h-[150px] overflow-y-auto",
+        }}
         selectorIcon={<ChevronDownIcon className="w-5 h-5 text-default-500" />}
         ref={triggerRef}
         listboxProps={{
@@ -158,13 +155,15 @@ const NewSelect = ({
             return <span className="text-default-400">Select data</span>;
           }
           return (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-4">
               {items.map((item) => (
                 <div
                   key={item.key}
                   className="flex items-center gap-2 selectable-text"
                 >
-                  <span>{item.data?.[labelKey] || "Unknown"}</span>
+                  <span className="text-sm">
+                    {item.data?.[labelKey] || "Unknown"}
+                  </span>
                 </div>
               ))}
             </div>
@@ -172,12 +171,11 @@ const NewSelect = ({
         }}
       >
         {(item) => (
-          <SelectItem
-            key={String(item[valueKey])}
-            textValue={item?.[labelKey]}
-          >
+          <SelectItem key={String(item[valueKey])} textValue={item?.[labelKey]}>
             <div className="flex flex-col">
-              <span className="text-small">{item?.[labelKey] || "Unknown"}</span>
+              <span className="text-small">
+                {item?.[labelKey] || "Unknown"}
+              </span>
             </div>
           </SelectItem>
         )}
