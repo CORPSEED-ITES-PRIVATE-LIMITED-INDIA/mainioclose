@@ -180,7 +180,7 @@ const BankStatement = () => {
           </Form.Item>
           <Form.Item
             label="Payment date"
-            name="leftAmountleftAmount"
+            name="paymentDate"
             rules={[{ required: true, message: "please select payment date" }]}
           >
             <DatePicker style={{ width: "100%" }} />
