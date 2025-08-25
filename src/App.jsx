@@ -51,6 +51,7 @@ import CompanyForm from "./accounts/CompanyForm";
 import CompaniesInAccount from "./accounts/CompaniesInAccount";
 import IVR from "./quality/IVR";
 import IVRReport from "./quality/IVRReport";
+import AllProposal from "./sales/proposal/AllProposal";
 
 function App() {
   return (
@@ -86,6 +87,7 @@ function App() {
             element={<CompanyUnitDetails />}
           />
           <Route path="sales/estimate" element={<Estimate />} />
+          <Route path="sales/proposal" element={<AllProposal />} />
           <Route
             path="sales/discountedEstimate"
             element={<DiscountedEstimate />}

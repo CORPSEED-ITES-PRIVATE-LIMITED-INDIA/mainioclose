@@ -21,6 +21,7 @@ const navItems = [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
       { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
+      { title: "Proposal", icon: "", url: "sales/proposal", key: "proposal" },
       {
         title: "Discounted Estimate",
         icon: "",

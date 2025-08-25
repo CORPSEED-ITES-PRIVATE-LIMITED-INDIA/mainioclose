@@ -259,6 +259,36 @@ export const getQualityLeadsReport = createAsyncThunk(
   }
 );
 
+export const getAllProposalByUserIdForManager = createAsyncThunk(
+  "getAllProposalByUserIdForManager",
+  async ({ id, page, size, status }) => {
+    const response = await api.get(
+      `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllPropsalListCount = createAsyncThunk(
+  "getAllPropsalListCount",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/proposal/getAllProposalForMangerCount?userId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const proposalApprovalByManager = createAsyncThunk(
+  "proposalApprovalByManager",
+  async ({ proposalId, status, userId, comment }) => {
+    const response = await api.put(
+      `/leadService/api/v1/proposal/approvedProposalByManager?proposalId=${proposalId}&status=${status}&userId=${userId}&comment=${comment}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -280,6 +310,8 @@ export const LeadSlice = createSlice({
     proposalDataDetail: {},
     estimateDetail: {},
     qualityReportList: [],
+    proposalList: [],
+    proposalCount: 0,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -452,6 +484,33 @@ export const LeadSlice = createSlice({
     builder.addCase(getQualityLeadsReport.rejected, (state) => {
       state.loading = "rejected";
       state.qualityReportList = [];
+    });
+
+    builder.addCase(getAllProposalByUserIdForManager.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllProposalByUserIdForManager.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.proposalList = action?.payload;
+      }
+    );
+    builder.addCase(getAllProposalByUserIdForManager.rejected, (state) => {
+      state.proposalList = [];
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllPropsalListCount.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPropsalListCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.proposalCount = action?.payload;
+    });
+    builder.addCase(getAllPropsalListCount.rejected, (state, action) => {
+      state.proposalCount = 0;
+      state.loading = "rejected";
     });
   },
 });
