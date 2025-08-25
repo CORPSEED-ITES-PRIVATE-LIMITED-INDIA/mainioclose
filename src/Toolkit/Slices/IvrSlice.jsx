@@ -10,7 +10,7 @@ export const createIvr = createAsyncThunk("createIvr", async (data) => {
   const response = await getQuery(
     `/leadService/api/v1/rating/createIvrData?callerNumber=${data?.callerNumber}&agentName=${data?.agentName}&aggentNumber=${data?.aggentNumber}&startTime=${data?.startTime}&duration=${data?.duration}&endTime=${data?.endTime}&callRecordingUrl=${data?.callRecordingUrl}`
   );
-  return response.data;               
+  return response.data;
 });
 
 export const getAllIvrWithPage = createAsyncThunk(
@@ -18,6 +18,16 @@ export const getAllIvrWithPage = createAsyncThunk(
   async (data) => {
     const response = await getQuery(
       `/leadService/api/v1/rating/getAllIvrDataWithPage?page=${data?.page}&size=${data?.size}`
+    );
+    return response.data;
+  }
+);
+
+export const searchIvrLeads = createAsyncThunk(
+  "searchIvrLeads",
+  async (data) => {
+    const response = await getQuery(
+      `/leadService/api/v1/lead/leadSearchByQuality?searchParam=${data.input}&userId=${data.id}`
     );
     return response.data;
   }
@@ -63,6 +73,18 @@ const IvrSlice = createSlice({
       state.allIvr = action.payload;
     });
     builder.addCase(getAllIvrWithPage.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.allIvr = [];
+    });
+
+    builder.addCase(searchIvrLeads.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchIvrLeads.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allIvr = action.payload;
+    });
+    builder.addCase(searchIvrLeads.rejected, (state, action) => {
       state.loading = "rejected";
       state.allIvr = [];
     });

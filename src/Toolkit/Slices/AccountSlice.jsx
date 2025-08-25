@@ -338,6 +338,16 @@ export const getLedgerByGroupId = createAsyncThunk(
   }
 );
 
+export const getAmountByGroupId = createAsyncThunk(
+  "getLedgerCountByGroupId",
+  async (id) => {
+    const response = await getQuery(
+      `/accountService/api/v1/ledger/getAllAmountByGroupId?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const getEstimateByStatus = createAsyncThunk(
   "getEstimateByStatus",
   async ({ status, page, size, userId }) => {
@@ -486,13 +496,16 @@ export const getUnbillItemById = createAsyncThunk(
   }
 );
 
-export const createUnbillItems = createAsyncThunk("unbillItems", async (data) => {
-  const response = await postQuery(
-    `/accountService/api/v1/ledgerType/createUnbilled`,
-    data
-  );
-  return response.data;
-});
+export const createUnbillItems = createAsyncThunk(
+  "unbillItems",
+  async (data) => {
+    const response = await postQuery(
+      `/accountService/api/v1/ledgerType/createUnbilled`,
+      data
+    );
+    return response.data;
+  }
+);
 
 const AccountSlice = createSlice({
   name: "account",
@@ -780,6 +793,18 @@ const AccountSlice = createSlice({
     builder.addCase(getLedgerByGroupId.rejected, (state, action) => {
       state.loading = "rejected";
       state.groupLedgerList = [];
+    });
+
+    builder.addCase(getAmountByGroupId.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAmountByGroupId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.groupAmountDetail = action.payload;
+    });
+    builder.addCase(getAmountByGroupId.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.groupAmountDetail = {};
     });
 
     builder.addCase(getVoucherByGroupLedgerId.pending, (state, action) => {

@@ -1251,6 +1251,16 @@ export const getQualityLeadsReport = createAsyncThunk(
   }
 );
 
+export const docsUploadListInEstimate = createAsyncThunk(
+  "docsUploadListInEstimate",
+  async (estimateId) => {
+    const response = await getQuery(
+      `/leadService/api/v1/leadEstimate/getRequiredDocByEstimate?estimateId=${estimateId}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1331,6 +1341,7 @@ export const LeadSlice = createSlice({
     totalEstimateCount: 0,
     automationReportList: [],
     qualityReportList: [],
+    docsListInEstimate:[]
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -2026,6 +2037,16 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getQualityLeadsReport.rejected, (state) => {
       state.qualityReportList = [];
+    });
+
+    builder.addCase(docsUploadListInEstimate.pending, (state) => {
+      state.docsListInEstimate = [];
+    });
+    builder.addCase(docsUploadListInEstimate.fulfilled, (state, action) => {
+      state.docsListInEstimate = action?.payload;
+    });
+    builder.addCase(docsUploadListInEstimate.rejected, (state) => {
+      state.docsListInEstimate = [];
     });
   },
 });
