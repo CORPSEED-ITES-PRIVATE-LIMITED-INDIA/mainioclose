@@ -35,24 +35,25 @@ const CreateVoucher = ({
           idx: 2,
           perticulars: "CGST",
           rate: ledgerDetail?.cgst,
-          debitAmount: debitCgstAmount,
-          creditAmount: creditCgstAmount,
+          debitAmount: debitCgstAmount || 0,
+          creditAmount: creditCgstAmount || 0,
         },
         {
           idx: 3,
           perticulars: "SGST",
           rate: ledgerDetail?.sgst,
-          debitAmount: debitSgstAmount,
-          creditAmount: creditSgstAmount,
+          debitAmount: debitSgstAmount || 0,
+          creditAmount: creditSgstAmount || 0,
         },
         {
           idx: "",
           perticulars: "Total amount",
           rate: "",
           debitAmount:
-            debitCgstAmount + debitSgstAmount + voucherData?.debitAmount,
+            debitCgstAmount + debitSgstAmount + voucherData?.debitAmount || 0,
           creditAmount:
-            creditCgstAmount + creditSgstAmount + voucherData?.creditAmount,
+            creditCgstAmount + creditSgstAmount + voucherData?.creditAmount ||
+            0,
         },
       ]);
     }
@@ -62,15 +63,21 @@ const CreateVoucher = ({
           idx: 2,
           perticulars: "IGST",
           rate: ledgerDetail?.igst,
-          debitAmount: debitIgstAmount,
-          creditAmount: creditIgstAmount,
+          debitAmount: debitIgstAmount === "" ? 0 : debitIgstAmount,
+          creditAmount: creditIgstAmount === "" ? 0 : creditIgstAmount,
         },
         {
           idx: "",
           perticulars: "Total amount",
           rate: "",
-          debitAmount: debitIgstAmount + voucherData?.debitAmount,
-          creditAmount: creditIgstAmount + voucherData?.creditAmount,
+          debitAmount:
+            debitIgstAmount + voucherData?.debitAmount === ""
+              ? 0
+              : debitIgstAmount + voucherData?.debitAmount,
+          creditAmount:
+            creditIgstAmount + voucherData?.creditAmount === ""
+              ? 0
+              : creditIgstAmount + voucherData?.creditAmount,
         },
       ]);
     }
@@ -82,6 +89,8 @@ const CreateVoucher = ({
       cgst: ledgerDetail?.sgst,
     }));
   };
+
+  console.log("dsjhjdgjdg", voucherData);
 
   return (
     <>
