@@ -2,7 +2,7 @@ import { Button, Flex, Typography } from "antd";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import CommonTable from "../../../../components/CommonTable";
-import { getLedgerByGroupId } from "../../../../Toolkit/Slices/AccountSlice";
+import { getAmountByGroupId, getLedgerByGroupId } from "../../../../Toolkit/Slices/AccountSlice";
 import { Link, useParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 const { Text } = Typography;
@@ -11,9 +11,11 @@ const GroupLedger = () => {
   const dispatch = useDispatch();
   const { groupId } = useParams();
   const groupLedgerList = useSelector((state) => state.account.groupLedgerList);
+  const groupAmountDetail = useSelector((state) => state.account.groupAmountDetail);
 
   useEffect(() => {
     dispatch(getLedgerByGroupId(groupId));
+    dispatch(getAmountByGroupId(groupId));
   }, [groupId, dispatch]);
 
   const columns = [
@@ -51,7 +53,20 @@ const GroupLedger = () => {
     <Flex vertical gap={18} style={{ padding: "12px 0px" }}>
       <Flex justify="space-between" align="center">
         <Text className="heading-text">Group ledger list</Text>
-        <Flex gap={8}></Flex>
+        <Flex gap={8}>
+          <Flex gap={8}>
+            <Text type="secondary">Total amount :</Text>
+            <Text strong>{groupAmountDetail?.totalAmount}</Text>
+          </Flex>
+          <Flex gap={8}>
+            <Text type="secondary">Total credit :</Text>
+            <Text strong>{groupAmountDetail?.totalCredit}</Text>
+          </Flex>
+          <Flex gap={8}>
+            <Text type="secondary">Total debit :</Text>
+            <Text strong>{groupAmountDetail?.totalDebit}</Text>
+          </Flex>
+        </Flex>
       </Flex>
       <Flex vertical>
         <CommonTable

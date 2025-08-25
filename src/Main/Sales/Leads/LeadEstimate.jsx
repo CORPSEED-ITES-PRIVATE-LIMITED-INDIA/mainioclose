@@ -66,6 +66,7 @@ import {
   getAllProductCategoryById,
   getAllProductSubCategoryListByCategoryId,
 } from "../../../Toolkit/Slices/ProductSlice";
+import UploadDocumentsInEstimate from "./UploadDocumentsInEstimate";
 const { Text, Title } = Typography;
 
 const LeadEstimate = ({ leadid }) => {
@@ -643,6 +644,7 @@ const LeadEstimate = ({ leadid }) => {
             : "Create estimate"}
         </Title>
         <Flex justify="flex-end" gap={4}>
+          <UploadDocumentsInEstimate estimateId={details?.id} />
           {Object.keys(details)?.length > 0 && !editEstimate && (
             <Button onClick={generatePDF}>Export as pdf</Button>
           )}
