@@ -142,7 +142,7 @@ const LedgerTypePage = () => {
     <>
       <Flex vertical>
         <Flex className="vouchers-header">
-          <Text className="heading-text">Ledger type</Text>
+          <Text className="heading-text">Group list</Text>
         </Flex>
         <Flex
           justify="space-between"
@@ -158,7 +158,7 @@ const LedgerTypePage = () => {
             style={{ width: "30%" }}
           />
           <Button type="primary" onClick={() => setOpenModal(true)}>
-            Create ledger type
+            Add group
           </Button>
         </Flex>
         <CommonTable
@@ -168,7 +168,7 @@ const LedgerTypePage = () => {
         />
       </Flex>
       <Modal
-        title={editData ? "Edit ledger type" : "Create ledger type"}
+        title={editData ? "Edit group" : "Create group"}
         open={openModal}
         onCancel={() => setOpenModal(false)}
         onClose={() => setOpenModal(false)}
@@ -177,7 +177,7 @@ const LedgerTypePage = () => {
       >
         <Form layout="vertical" form={form} onFinish={handleFinish}>
           <Form.Item
-            label="Ledger name"
+            label="Group name"
             name="name"
             rules={[{ required: true, message: "please enter ledger name" }]}
           >
