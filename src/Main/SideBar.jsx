@@ -131,7 +131,9 @@ const SideBar = () => {
                     },
                     {
                       label: (
-                        <Link to={`${userid}/sales/discountedEstimates`}>Discounted estimate</Link>
+                        <Link to={`${userid}/sales/discountedEstimates`}>
+                          Discounted estimate
+                        </Link>
                       ),
                       key: "discountedEstimates",
                     },
@@ -232,20 +234,32 @@ const SideBar = () => {
               //   key: "vendors-request",
               // },
               {
-                label: <Link to={`${userid}/sales/autoHistory`}>Auto history</Link>,
+                label: (
+                  <Link to={`${userid}/sales/autoHistory`}>Auto history</Link>
+                ),
                 key: "autoHistory",
               },
               {
-                label: <Link to={`${userid}/sales/automationStatus`}>Automation status</Link>,
+                label: (
+                  <Link to={`${userid}/sales/automationStatus`}>
+                    Automation status
+                  </Link>
+                ),
                 key: "automationStatus",
               },
               {
-                label: <Link to={`${userid}/sales/qualityReport`}>Quality report</Link>,
+                label: (
+                  <Link to={`${userid}/sales/qualityReport`}>
+                    Quality report
+                  </Link>
+                ),
                 key: "qualityReport",
               },
               {
                 label: (
-                  <Link to={`${userid}/sales/discountedEstimates`}>Discounted estimate</Link>
+                  <Link to={`${userid}/sales/discountedEstimates`}>
+                    Discounted estimate
+                  </Link>
                 ),
                 key: "discountedEstimates",
               },
@@ -491,6 +505,17 @@ const SideBar = () => {
                   </Link>
                 ),
                 key: "companySearch",
+              },
+              {
+                key: "organizations",
+                label: (
+                  <Link
+                    className="link-four"
+                    to={`/erp/${userid}/account/organizations`}
+                  >
+                    Organizations
+                  </Link>
+                ),
               },
               // {
               //   key: "ledger",
