@@ -859,14 +859,14 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
+                  {/* <Route
                     path="manageSales"
                     element={
                       <ProtectedRoute>
                         <ManageSales />
                       </ProtectedRoute>
                     }
-                  />
+                  /> */}
 
                   {/* Settings Routes */}
                   <Route
@@ -894,7 +894,7 @@ function App() {
                       }
                     />
                     <Route
-                      path="ledgerType"
+                      path="addgroup"
                       element={
                         <ProtectedRoute>
                           <LedgerTypePage />

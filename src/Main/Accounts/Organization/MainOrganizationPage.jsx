@@ -44,12 +44,12 @@ const MainOrganizationPage = () => {
     },
     {
       key: "unbill",
-      label: <Link to="unbill">Unbill</Link>,
+      label: <Link to="unbill">Unbilled</Link>,
     },
-    {
-      key: "manageSales",
-      label: <Link to="manageSales">Manage sales</Link>,
-    },
+    // {
+    //   key: "manageSales",
+    //   label: <Link to="manageSales">Manage sales</Link>,
+    // },
     {
       key: "tds",
       label: <Link to="tds">TDS</Link>,
@@ -60,11 +60,12 @@ const MainOrganizationPage = () => {
       children: [
         {
           key: "voucherType",
-          label: <Link to="setting/voucherType">Voucher type</Link>,
+          label: <Link to="setting/voucherType">Add voucher type</Link>,
         },
         {
           key: "ledgerType",
-          label: <Link to="setting/ledgerType">Ledger type</Link>,
+          // label: <Link to="setting/ledgerType">Ledger type</Link>,
+          label: <Link to="setting/addgroup">Add group</Link>,
         },
         {
           key: "statutory",

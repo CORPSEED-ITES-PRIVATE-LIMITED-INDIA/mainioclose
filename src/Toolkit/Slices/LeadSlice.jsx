@@ -1734,12 +1734,9 @@ export const LeadSlice = createSlice({
       state.complianceDocumentList = [];
     });
 
-    builder.addCase(
-      getAllProposalByUserIdForManager.pending,
-      (state, action) => {
-        state.proposalLoading = "pending";
-      }
-    );
+    builder.addCase(getAllProposalByUserIdForManager.pending, (state) => {
+      state.proposalLoading = "pending";
+    });
     builder.addCase(
       getAllProposalByUserIdForManager.fulfilled,
       (state, action) => {
@@ -1747,13 +1744,10 @@ export const LeadSlice = createSlice({
         state.proposalList = action?.payload;
       }
     );
-    builder.addCase(
-      getAllProposalByUserIdForManager.rejected,
-      (state, action) => {
-        state.proposalList = [];
-        state.proposalLoading = "rejected";
-      }
-    );
+    builder.addCase(getAllProposalByUserIdForManager.rejected, (state) => {
+      state.proposalList = [];
+      state.proposalLoading = "rejected";
+    });
 
     builder.addCase(getAllEstimateByUserId.pending, (state, action) => {
       state.estimateLoading = "pending";

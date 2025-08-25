@@ -156,7 +156,7 @@ const AllInvoice = () => {
         width={"60%"}
         closeIcon={null}
       >
-        <ViewEstimate />
+        <ViewEstimate invoice={true}    />
       </Drawer>
     </>
   );
