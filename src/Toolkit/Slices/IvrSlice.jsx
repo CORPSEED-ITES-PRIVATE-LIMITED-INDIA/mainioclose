@@ -51,6 +51,7 @@ const IvrSlice = createSlice({
     ivrError: false,
     loading: "",
     totalCount: 0,
+    leadSearchList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllIvr.pending, (state, action) => {
@@ -82,11 +83,11 @@ const IvrSlice = createSlice({
     });
     builder.addCase(searchIvrLeads.fulfilled, (state, action) => {
       state.loading = "success";
-      state.allIvr = action.payload;
+      state.leadSearchList = action.payload;
     });
     builder.addCase(searchIvrLeads.rejected, (state, action) => {
       state.loading = "rejected";
-      state.allIvr = [];
+      state.leadSearchList = [];
     });
 
     builder.addCase(getTotalIvrCount.pending, (state, action) => {

@@ -742,6 +742,10 @@ const SideBar = () => {
                 label: <Link to={`${userid}/quality/ivr`}>Ivr</Link>,
                 key: "ivr",
               },
+              {
+                label: <Link to={`${userid}/quality/searchLeads`}>Lead search</Link>,
+                key: "searchLeads",
+              },
             ],
           },
         ]
@@ -761,6 +765,10 @@ const SideBar = () => {
               {
                 label: <Link to={`${userid}/quality/ivr`}>Ivr</Link>,
                 key: "ivr",
+              },
+               {
+                label: <Link to={`${userid}/quality/searchLeads`}>Lead search</Link>,
+                key: "searchLeads",
               },
             ],
           },

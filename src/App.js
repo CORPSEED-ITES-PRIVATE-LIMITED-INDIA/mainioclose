@@ -118,6 +118,7 @@ import LedgerDetail from "./Main/Accounts/Ledger/LedgerDetail";
 import AutomationLeads from "./Main/Sales/Leads/AutomationLeads";
 import QualityLeadReport from "./Main/Sales/Leads/QualityLeadReport";
 import Unbill from "./Main/Accounts/Organization/unbill/Unbill";
+import LeadSearchInQuality from "./Main/Quality/LeadSearchInQuality";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -1023,6 +1024,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <IVR />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="searchLeads"
+                  element={
+                    <ProtectedRoute>
+                      <LeadSearchInQuality/>
                     </ProtectedRoute>
                   }
                 />
