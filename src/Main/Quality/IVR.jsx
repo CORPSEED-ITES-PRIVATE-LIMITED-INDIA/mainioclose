@@ -10,18 +10,14 @@ import { Input, Typography } from "antd";
 import { Icon } from "@iconify/react";
 import {
   getAllIvrWithPage,
-  searchIvrLeads,
 } from "../../Toolkit/Slices/IvrSlice";
 import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
 const { Text } = Typography;
-const { Search } = Input;
 
 const IVR = () => {
   const { allIvr, ivrLoading, ivrError, totalCount } = useSelector(
     (prev) => prev?.ivr
   );
-  const {userid}=useParams()
   const dispatch = useDispatch();
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -102,15 +98,15 @@ const IVR = () => {
   }, [allIvr]);
 
 
-  const onSearchLead = (e, b, c) => {
-    if (e) {
-      setSearchText(e);
-      dispatch(searchIvrLeads({input:e,id:userid}));
-    }
-    if (!b) {
-      setSearchText("");
-      dispatch(getAllIvrWithPage(paginationData));
-    }
+  const handleSearch = (e) => {
+    const value = e.target.value.trim();
+    setSearchText(value);
+    const filtered = allIvr?.filter((item) =>
+      Object.values(item)?.some((val) =>
+        String(val)?.toLowerCase()?.includes(value?.toLowerCase())
+      )
+    );
+    setFilteredData(filtered);
   };
 
   return (
@@ -120,21 +116,13 @@ const IVR = () => {
         <CreateNEditIVR paginationData={paginationData} />
       </div>
       <div className="flex-verti-center-hori-start mt-2">
-        <Search
-          placeholder="Search"
-          allowClear
-          value={searchText}
-          onSearch={onSearchLead}
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            if (!e.target.value && !e.target.value.trim()) {
-              dispatch(getAllIvrWithPage(paginationData));
-              setSearchText("");
-            }
-          }}
-          enterButton="search"
-          style={{ width: "30%", marginBottom: "8px" }}
+        <Input
           prefix={<Icon icon="fluent:search-24-regular" />}
+          value={searchText}
+          size="small"
+          onChange={handleSearch}
+          placeholder="search"
+          style={{ width: "30%" }}
         />
       </div>
       <div>
