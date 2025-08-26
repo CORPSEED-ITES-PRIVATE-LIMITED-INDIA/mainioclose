@@ -28,7 +28,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useParams } from "react-router-dom";
-import { getAllCompanyByStatus } from "../toolkit/slices/companySlice";
+import {
+  getAllCompanyByStatus,
+  searchCompanyForm,
+} from "../toolkit/slices/companySlice";
 import { inrCurrency, maskEmail, maskMobileNumber } from "../common";
 
 export const columns = [
@@ -127,7 +130,9 @@ const CompanyForm = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item.name.toLowerCase().includes(filterValue.toLowerCase())
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
@@ -136,22 +141,22 @@ const CompanyForm = () => {
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
+  // const items = React.useMemo(() => {
+  //   const start = (page - 1) * rowsPerPage;
+  //   const end = start + rowsPerPage;
 
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
+  //   return filteredItems.slice(start, end);
+  // }, [page, filteredItems, rowsPerPage,data]);
 
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
   const {
     control,
@@ -174,8 +179,6 @@ const CompanyForm = () => {
     onOpen();
     setEditData(value);
   };
-
-  console.log("jdhgkjgdjkgd", admin);
 
   const onSubmit = useCallback(
     (values) => {
@@ -221,169 +224,179 @@ const CompanyForm = () => {
     [dispatch, editData]
   );
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-    switch (columnKey) {
-      case "leadId":
-        return <p className="text-sm capitalize">{rowData?.lead?.id}</p>;
-      case "companyName":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium capitalize">
-              {rowData?.companyName}
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
+      switch (columnKey) {
+        case "leadId":
+          return <p className="text-sm capitalize">{rowData?.lead?.id}</p>;
+        case "companyName":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium capitalize">
+                {rowData?.companyName}
+              </p>
+              <span className="text-muted-foreground text-xs">
+                Age : {rowData?.companyAge || "-"} yrs
+              </span>
+              {rowData?.status && (
+                <Chip
+                  color={
+                    rowData?.status === "approved"
+                      ? "success"
+                      : rowData?.status === "disapproved"
+                        ? "danger"
+                        : "secondary"
+                  }
+                >
+                  {rowData?.status}
+                </Chip>
+              )}
+            </div>
+          );
+        case "leadName":
+          return (
+            <p className="text-sm capitalize">{rowData?.lead?.leadName}</p>
+          );
+        case "gstNo":
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs">{rowData?.gstNo}</span>
+              <span className="text-xs">Pan : {rowData?.panNo}</span>
+              <Chip color="default" size="sm">
+                {rowData?.gstType}
+              </Chip>
+            </div>
+          );
+        case "amount":
+          return (
+            <p className="text-sm font-medium">
+              {inrCurrency(rowData?.amount)}
             </p>
-            <span className="text-muted-foreground text-xs">
-              Age : {rowData?.companyAge || "-"} yrs
-            </span>
-            {rowData?.status && (
-              <Chip
-                color={
-                  rowData?.status === "approved"
-                    ? "success"
-                    : rowData?.status === "disapproved"
-                      ? "danger"
-                      : "secondary"
-                }
-              >
-                {rowData?.status}
-              </Chip>
-            )}
-          </div>
-        );
-      case "leadName":
-        return <p className="text-sm capitalize">{rowData?.lead?.leadName}</p>;
-      case "gstNo":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="text-xs">{rowData?.gstNo}</span>
-            <span className="text-xs">Pan : {rowData?.panNo}</span>
-            <Chip color="default" size="sm">
-              {rowData?.gstType}
-            </Chip>
-          </div>
-        );
-      case "amount":
-        return <p className="text-sm font-medium">{inrCurrency(rowData?.amount)}</p>;
-      case "primaryContact":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm">
-              {rowData.contactName || "-"}
-              {", "}
-              <Chip color="secondary" size="sm">
-                {rowData?.primaryDesignation?.name}
-              </Chip>
-            </span>
-            <span className="text-sm text-gray-400">
-              {admin
-                ? rowData?.contactEmails
-                : maskEmail(rowData?.contactEmails) || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {admin
-                ? rowData?.contactNo
-                : maskMobileNumber(rowData?.contactNo) || "-"}
-              ,
-            </span>
-          </div>
-        );
-      case "secondaryContact":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm">
-              {rowData.secondaryContactName || "-"}
-              {", "}
-              <Chip color="secondary" size="sm">
-                {rowData?.secondaryDesignation?.name}
-              </Chip>
-            </span>
-            <span className="text-sm text-gray-400">
-              {admin
-                ? rowData?.secondaryContactEmails
-                : maskEmail(rowData?.secondaryContactEmails) || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {admin
-                ? rowData?.secondaryContactNo
-                : maskMobileNumber(rowData?.secondaryContactNo) || "-"}
-              ,
-            </span>
-          </div>
-        );
-      case "address":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal text-sm">
-              {rowData.address || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData.city || ""},{rowData?.state},{rowData?.country}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData.primaryPinCode || ""}
-            </span>
-          </div>
-        );
-      case "seconadryAddress":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal text-sm">
-              {rowData.sAddress || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData.sCity || ""},{rowData?.sState},{rowData?.sCountry}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData.secondaryPinCode || ""}
-            </span>
-          </div>
-        );
-      case "industry":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal text-sm">
-              {rowData.industry || "-"}
-            </span>
-            <span className="text-xs  bg-amber-200 rounded p-1">
-              Sub : {rowData.subIndustry || ""}
-            </span>
-            <span className="text-xs  bg-blue-200 rounded p-1">
-              Category : {rowData.subSubIndustry || ""}
-            </span>
-            <span className="text-xs  bg-emerald-200 rounded p-1">
-              Business activity :{" "}
-              {rowData.industryData?.map((item) => item?.name)?.join(",") || ""}
-            </span>
-          </div>
-        );
-      case "updatedBy":
-        return (
-          <p className="text-sm capitalize">{rowData?.updatedBy?.fullName}</p>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={() => {
-                  handleEdit(rowData);
-                }}
-              >
-                <DropdownItem key="edit">Edit</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-      default:
-        return cellValue;
-    }
-  }, []);
+          );
+        case "primaryContact":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm">
+                {rowData.contactName || "-"}
+                {", "}
+                <Chip color="secondary" size="sm">
+                  {rowData?.primaryDesignation?.name}
+                </Chip>
+              </span>
+              <span className="text-sm text-gray-400">
+                {admin
+                  ? rowData?.contactEmails
+                  : maskEmail(rowData?.contactEmails) || "-"}
+              </span>
+              <span className="text-sm text-gray-400">
+                {admin
+                  ? rowData?.contactNo
+                  : maskMobileNumber(rowData?.contactNo) || "-"}
+                ,
+              </span>
+            </div>
+          );
+        case "secondaryContact":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm">
+                {rowData.secondaryContactName || "-"}
+                {", "}
+                <Chip color="secondary" size="sm">
+                  {rowData?.secondaryDesignation?.name}
+                </Chip>
+              </span>
+              <span className="text-sm text-gray-400">
+                {admin
+                  ? rowData?.secondaryContactEmails
+                  : maskEmail(rowData?.secondaryContactEmails) || "-"}
+              </span>
+              <span className="text-sm text-gray-400">
+                {admin
+                  ? rowData?.secondaryContactNo
+                  : maskMobileNumber(rowData?.secondaryContactNo) || "-"}
+                ,
+              </span>
+            </div>
+          );
+        case "address":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal text-sm">
+                {rowData.address || "-"}
+              </span>
+              <span className="text-sm text-gray-400">
+                {rowData.city || ""},{rowData?.state},{rowData?.country}
+              </span>
+              <span className="text-sm text-gray-400">
+                {rowData.primaryPinCode || ""}
+              </span>
+            </div>
+          );
+        case "seconadryAddress":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal text-sm">
+                {rowData.sAddress || "-"}
+              </span>
+              <span className="text-sm text-gray-400">
+                {rowData.sCity || ""},{rowData?.sState},{rowData?.sCountry}
+              </span>
+              <span className="text-sm text-gray-400">
+                {rowData.secondaryPinCode || ""}
+              </span>
+            </div>
+          );
+        case "industry":
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="font-normal text-sm ">
+                {rowData.industry || "-"}
+              </span>
+              <span className="text-xs  bg-amber-200 rounded p-1 dark:text-black">
+                Sub : {rowData.subIndustry || ""}
+              </span>
+              <span className="text-xs  bg-blue-200 rounded p-1 dark:text-black">
+                Category : {rowData.subSubIndustry || ""}
+              </span>
+              <span className="text-xs  bg-emerald-200 rounded p-1 dark:text-black">
+                Business activity :{" "}
+                {rowData.industryData?.map((item) => item?.name)?.join(",") ||
+                  ""}
+              </span>
+            </div>
+          );
+        case "updatedBy":
+          return (
+            <p className="text-sm capitalize">{rowData?.updatedBy?.fullName}</p>
+          );
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  selectionMode="single"
+                  onSelectionChange={() => {
+                    handleEdit(rowData);
+                  }}
+                >
+                  <DropdownItem key="edit">Edit</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return cellValue;
+      }
+    },
+    [data]
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -402,14 +415,34 @@ const CompanyForm = () => {
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
-  }, []);
+  const onSearchChange = React.useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        dispatch(
+          searchCompanyForm({
+            inputText: value,
+            userId: userId,
+            page: page,
+            size: rowsPerPage,
+            status: status,
+          })
+        );
+        setPage(1);
+      } else {
+        setFilterValue("");
+        dispatch(
+          getAllCompanyByStatus({
+            id: userId,
+            status: status,
+            page: page,
+            size: rowsPerPage,
+          })
+        );
+      }
+    },
+    [page, rowsPerPage, status]
+  );
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
@@ -497,7 +530,7 @@ const CompanyForm = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} ledger type
+            Total {count} company form
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -560,19 +593,19 @@ const CompanyForm = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Ledger type list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Company form</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] max-w-[85vw]",
-          table:"overflow-scroll"
+          wrapper: "max-h-[65vh] max-w-[85vw]",
+          table: "overflow-scroll",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

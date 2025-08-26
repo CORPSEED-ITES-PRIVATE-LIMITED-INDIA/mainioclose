@@ -46,9 +46,7 @@ import TDS from "./accounts/organization/TDS";
 import LedgerType from "./accounts/organization/settings/LedgerType";
 import VoucherType from "./accounts/organization/settings/VoucherType";
 import Statutory from "./accounts/organization/settings/Statutory";
-import CompanyFormPage from "./accounts/CompanyFormPage";
 import CompanyForm from "./accounts/CompanyForm";
-import CompaniesInAccount from "./accounts/CompaniesInAccount";
 import IVR from "./quality/IVR";
 import IVRReport from "./quality/IVRReport";
 import AllProposal from "./sales/proposal/AllProposal";
@@ -104,6 +102,8 @@ function App() {
             path="accounts/paymentApprovals"
             element={<PaymentApprovals />}
           />
+          <Route path="accounts/companyForm" element={<CompanyForm />} />
+
           <Route path="accounts/organizations" element={<Organizations />}>
             <Route index element={<OrganizationDetail />} />
             <Route path="group" element={<Group />} />
@@ -137,12 +137,6 @@ function App() {
               path="/erp/:userId/accounts/organizations/settings/statutory"
               element={<Statutory />}
             />
-          </Route>
-
-          <Route path="accounts/companyhome" element={<CompanyFormPage />}>
-            <Route index element={<Navigate to="companyForm" replace />} />
-            <Route path="companyForm" element={<CompanyForm />} />
-            <Route path="companies" element={<CompaniesInAccount />} />
           </Route>
 
           {/* IVR */}

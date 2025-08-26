@@ -42,6 +42,8 @@ import {
   getAllLeadCount,
   getAllLeadsByFilter,
   getAllLeadUser,
+  handleDeleteSingleLead,
+  searchLeads,
 } from "../../toolkit/slices/leadSlice";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -148,6 +150,7 @@ const Leads = () => {
     column: "age",
     direction: "ascending",
   });
+  const deleteModal = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initialFilterValues = {
     userId: userId,
@@ -159,14 +162,15 @@ const Leads = () => {
     updatedfromDate: "",
     updatedById: null,
     source: [],
-    contactMobileNo: null,
-    contactEmail: null,
+    contactMobileNo: "",
+    contactEmail: "",
     sortBy: "id",
     page: 1,
     size: 50,
   };
   const [allMultiFilterData, setAllMultiFilterData] =
     useState(initialFilterValues);
+    const [itemId,setItemId]=useState(null)
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -206,36 +210,50 @@ const Leads = () => {
         user.leadName.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
-    // if (
-    //   statusFilter !== "all" &&
-    //   Array.from(statusFilter).length !== statusOptions.length
-    // ) {
-    //   filteredUsers = filteredUsers.filter((user) =>
-    //     Array.from(statusFilter).includes(user.status)
-    //   );
-    // }
-
     return filteredUsers;
   }, [data, filterValue, statusFilter]);
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
-  const items = useMemo(() => {
-    const start = (allMultiFilterData?.page - 1) * allMultiFilterData?.size;
-    const end = start + allMultiFilterData?.size;
-
-    return filteredItems.slice(start, end);
-  }, [allMultiFilterData, filteredItems]);
-
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
+
+  const openDeleteModal=(id)=>{
+    setItemId(id)
+    deleteModal.onOpen()
+  }
+
+  const leadDeleteResponse = useCallback(
+    () => {
+      let obj = {
+        id:itemId,
+        userId,
+      };
+      dispatch(handleDeleteSingleLead(obj))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Lead deleted successfully !.",
+              color: "success",
+            });
+            dispatch(getAllLeadsByFilter(allMultiFilterData));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() => {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        });
+    },
+    [userId, dispatch, allMultiFilterData,itemId]
+  );
 
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {
@@ -281,12 +299,24 @@ const Leads = () => {
                   <EllipsisVertical />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
+              <DropdownMenu
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  console.log('dsjgdkjgdjkgdkjgdjdg',e)
+                  let key = Array.from(e);
+                  if (key == "delete") {
+                    console.log('dsjgdkjgdjkgdkjgdjdg',key)
+                    openDeleteModal(lead?.id)
+                  }
+                }}
+              >
                 <DropdownItem key="history">
                   <Link to={`${lead?.id}/leadHistory`}>History</Link>
                 </DropdownItem>
                 <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete">Delete</DropdownItem>
+                <DropdownItem key="delete" color="danger">
+                  Delete
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -320,8 +350,10 @@ const Leads = () => {
     if (value) {
       setFilterValue(value);
       setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
+      searchLeads({ input: value, id: userId });
     } else {
       setFilterValue("");
+      dispatch(getAllLeadsByFilter(initialFilterValues));
     }
   }, []);
 
@@ -348,7 +380,7 @@ const Leads = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -589,7 +621,7 @@ const Leads = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -626,7 +658,7 @@ const Leads = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, allMultiFilterData, pages, hasSearchFilter]);
+  }, [selectedKeys, count, allMultiFilterData, pages, hasSearchFilter]);
 
   const handleOpenModal = () => {
     onOpen();
@@ -944,6 +976,28 @@ const Leads = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal isOpen={deleteModal.isOpen} onOpenChange={deleteModal.onOpenChange} backdrop="blur" >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Delete
+              </ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button   onPress={onClose}>
+                  No
+                </Button>
+                <Button color="primary" onPress={leadDeleteResponse}>
+                  Yes
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

@@ -102,8 +102,6 @@ const AllProposal = () => {
     control,
     handleSubmit,
     formState: { errors },
-    reset,
-    getValues,
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues,

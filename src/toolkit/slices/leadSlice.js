@@ -12,6 +12,13 @@ export const getAllLeadsByFilter = createAsyncThunk(
   }
 );
 
+export const searchLeads = createAsyncThunk("searchLeads", async (data) => {
+  const response = await api.get(
+    `/leadService/api/v1/lead/searchLead?searchParam=${data.input}&userId=${data.id}`
+  );
+  return response.data;
+});
+
 export const getAllLeadCount = createAsyncThunk(
   "getAllLeadCount",
   async (data) => {
@@ -27,6 +34,16 @@ export const createLeads = createAsyncThunk("createLeads", async (data) => {
   const response = await api.post(`/leadService/api/v1/lead/createLead`, data);
   return response.data;
 });
+
+export const handleDeleteSingleLead = createAsyncThunk(
+  "handleDeleteSingleLead",
+  async (data) => {
+    const response = await api.delete(
+      `/leadService/api/v1/lead/deleteLead?leadId=${data?.id}&userId=${data?.userid}`
+    );
+    return response.data;
+  }
+);
 
 export const getSingleLeadDataByLeadId = createAsyncThunk(
   "getSingleLeadData",
@@ -319,10 +336,21 @@ export const LeadSlice = createSlice({
       state.leadresponseStatus = "pending";
     });
     builder.addCase(getAllLeadsByFilter.fulfilled, (state, action) => {
-      state.allLeads = [...state.allLeads, ...action.payload];
+      state.allLeads = action.payload;
       state.leadresponseStatus = "success";
     });
     builder.addCase(getAllLeadsByFilter.rejected, (state) => {
+      state.leadresponseStatus = "rejected";
+    });
+
+    builder.addCase(searchLeads.pending, (state) => {
+      state.leadresponseStatus = "pending";
+    });
+    builder.addCase(searchLeads.fulfilled, (state, action) => {
+      state.allLeads = action.payload;
+      state.leadresponseStatus = "success";
+    });
+    builder.addCase(searchLeads.rejected, (state) => {
       state.leadresponseStatus = "rejected";
     });
 

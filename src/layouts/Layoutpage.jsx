@@ -50,10 +50,10 @@ const navItems = [
         key: "organizations",
       },
       {
-        title: "Company home",
+        title: "Company form",
         icon: "",
-        url: "accounts/companyhome",
-        key: "companyhome",
+        url: "accounts/companyForm",
+        key: "companyForm",
       },
       {
         title: "Company approvals",
