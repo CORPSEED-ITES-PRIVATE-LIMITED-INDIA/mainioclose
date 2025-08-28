@@ -507,7 +507,6 @@ export const createUnbillItems = createAsyncThunk(
   }
 );
 
-
 export const getAllTrailBalance = createAsyncThunk(
   "unbillItems",
   async (data) => {
@@ -519,7 +518,49 @@ export const getAllTrailBalance = createAsyncThunk(
   }
 );
 
+export const getAllProfitList = createAsyncThunk(
+  "getAllProfitList",
+  async (data) => {
+    const response = await getQuery(
+      `/accountService/api/v1/cashFlow/getAllProfit`,
+      data
+    );
+    return response.data;
+  }
+);
 
+export const getAllLossList = createAsyncThunk(
+  "getAllLossList",
+  async (data) => {
+    const response = await getQuery(
+      `/accountService/api/v1/cashFlow/getAllLoss`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllOutFlowList = createAsyncThunk(
+  "getAllOutFlowList",
+  async (data) => {
+    const response = await getQuery(
+      `/accountService/api/v1/cashFlow/getAllOutFlow`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllInFlowList = createAsyncThunk(
+  "getAllInFlowList",
+  async (data) => {
+    const response = await getQuery(
+      `/accountService/api/v1/cashFlow/getAllInFlow`,
+      data
+    );
+    return response.data;
+  }
+);
 
 const AccountSlice = createSlice({
   name: "account",
@@ -558,7 +599,11 @@ const AccountSlice = createSlice({
     ledgerCount: 0,
     unBillList: [],
     unBillItemDetail: {},
-    trailBalanceList:[]
+    trailBalanceList: [],
+    profitList: [],
+    lossList: [],
+    inFlowList: [],
+    outFlowList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -949,6 +994,54 @@ const AccountSlice = createSlice({
     builder.addCase(getAllTrailBalance.rejected, (state) => {
       state.loading = "rejected";
       state.trailBalanceList = [];
+    });
+
+    builder.addCase(getAllProfitList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllProfitList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.profitList = action.payload;
+    });
+    builder.addCase(getAllProfitList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.profitList = [];
+    });
+
+    builder.addCase(getAllLossList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLossList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.lossList = action.payload;
+    });
+    builder.addCase(getAllLossList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.lossList = [];
+    });
+
+    builder.addCase(getAllInFlowList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllInFlowList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.inFlowList = action.payload;
+    });
+    builder.addCase(getAllInFlowList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.inFlowList = [];
+    });
+
+    builder.addCase(getAllOutFlowList.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllOutFlowList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.outFlowList = action.payload;
+    });
+    builder.addCase(getAllOutFlowList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.outFlowList = [];
     });
   },
 });

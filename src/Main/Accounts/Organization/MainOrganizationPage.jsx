@@ -50,6 +50,14 @@ const MainOrganizationPage = () => {
       key: "trailBalance",
       label: <Link to="trailBalance">Trail balance</Link>,
     },
+    {
+      key: "profitLoss",
+      label: <Link to="profitLoss">Profit loss</Link>,
+    },
+    {
+      key: "cashflow",
+      label: <Link to="cashflow">Cashflow</Link>,
+    },
     // {
     //   key: "manageSales",
     //   label: <Link to="manageSales">Manage sales</Link>,
