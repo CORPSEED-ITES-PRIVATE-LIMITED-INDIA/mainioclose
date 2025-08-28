@@ -163,58 +163,6 @@ const LeadSearchInQuality = () => {
       checked: true,
       render: (_, data) => <OverFlowText>{data?.source}</OverFlowText>,
     },
-    {
-      title: "Industry",
-      dataIndex: "industries",
-      checked: false,
-      render: (data) => data?.name,
-    },
-    {
-      title: "Sub industry",
-      dataIndex: "subIndustry",
-      checked: false,
-      render: (data) => data?.name,
-    },
-    {
-      title: "Category",
-      dataIndex: "subsubIndustry",
-      checked: false,
-      render: (data) => data?.name,
-    },
-    {
-      title: "Business activity",
-      dataIndex: "industriesData",
-      checked: false,
-      render: (data) =>
-        data?.map((item) => (
-          <Tag key={`activity${item?.name}`}>{item?.name}</Tag>
-        )),
-    },
-    {
-      title: "Address",
-      dataIndex: "address",
-      checked: false,
-    },
-    {
-      title: "Country",
-      dataIndex: "country",
-      checked: false,
-    },
-    {
-      title: "State",
-      dataIndex: "state",
-      checked: false,
-    },
-    {
-      title: "City",
-      dataIndex: "city",
-      checked: false,
-    },
-    {
-      title: "Pin code",
-      dataIndex: "pinCode",
-      checked: false,
-    },
   ];
   return (
     <>
@@ -242,7 +190,7 @@ const LeadSearchInQuality = () => {
       <CommonTable
         data={data}
         columns={columns}
-        scroll={{ y: "70vh", x: 3000 }}
+        scroll={{ y: "70vh", x: 1800 }}
         rowClassName={(record) => (!record.view ? "light-gray-row" : "")}
         rowKey={(record) => record?.id}
       />

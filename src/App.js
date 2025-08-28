@@ -119,6 +119,7 @@ import AutomationLeads from "./Main/Sales/Leads/AutomationLeads";
 import QualityLeadReport from "./Main/Sales/Leads/QualityLeadReport";
 import Unbill from "./Main/Accounts/Organization/unbill/Unbill";
 import LeadSearchInQuality from "./Main/Quality/LeadSearchInQuality";
+import TrailBalance from "./Main/Accounts/TrailBalance/TrailBalance";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -857,6 +858,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <AllInvoice />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="trailBalance"
+                    element={
+                      <ProtectedRoute>
+                        <TrailBalance />
                       </ProtectedRoute>
                     }
                   />

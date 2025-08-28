@@ -46,6 +46,10 @@ const MainOrganizationPage = () => {
       key: "unbill",
       label: <Link to="unbill">Unbilled</Link>,
     },
+    {
+      key: "trailBalance",
+      label: <Link to="trailBalance">Trail balance</Link>,
+    },
     // {
     //   key: "manageSales",
     //   label: <Link to="manageSales">Manage sales</Link>,

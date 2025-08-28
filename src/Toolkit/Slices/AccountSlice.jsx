@@ -507,6 +507,20 @@ export const createUnbillItems = createAsyncThunk(
   }
 );
 
+
+export const getAllTrailBalance = createAsyncThunk(
+  "unbillItems",
+  async (data) => {
+    const response = await getQuery(
+      `/accountService/api/v1/trialBalance/getAllTrialBalance`,
+      data
+    );
+    return response.data;
+  }
+);
+
+
+
 const AccountSlice = createSlice({
   name: "account",
   initialState: {
@@ -544,6 +558,7 @@ const AccountSlice = createSlice({
     ledgerCount: 0,
     unBillList: [],
     unBillItemDetail: {},
+    trailBalanceList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -922,6 +937,18 @@ const AccountSlice = createSlice({
     builder.addCase(getUnbillItemById.rejected, (state) => {
       state.loading = "rejected";
       state.unBillItemDetail = {};
+    });
+
+    builder.addCase(getAllTrailBalance.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllTrailBalance.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.trailBalanceList = action.payload;
+    });
+    builder.addCase(getAllTrailBalance.rejected, (state) => {
+      state.loading = "rejected";
+      state.trailBalanceList = [];
     });
   },
 });
