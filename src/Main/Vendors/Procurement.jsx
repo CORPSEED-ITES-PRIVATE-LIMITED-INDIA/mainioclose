@@ -49,7 +49,6 @@ const Procurement = () => {
   const [openModal, setOpenModal] = useState(false)
   const [openModal1, setOpenModal1] = useState(false)
   const [openModal2, setOpenModal2] = useState(false)
-  const [openModal3, setOpenModal3] = useState(false)
   const [categoryData, setCategoryData] = useState(null)
   const [subCategoryData, setSubCategoryData] = useState(null)
   const [updateCategoryData, setUpDateCategoryData] = useState(null)
