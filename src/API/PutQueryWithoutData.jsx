@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios from "axios";
 
 const storageData = localStorage.getItem("userDetail");
 let localData = null;
@@ -13,14 +13,12 @@ if (storageData) {
 }
 
 
-export const putQueryNoData = (URL,data) =>{
-    return(
-        axios.put(URL, {
-            headers: {
-               "Authorization": `Bearer ${localData?.jwt}`,
-                "Access-Control-Allow-Origin": "*",
-                "Content-Type": "application/json",
-              },
-        })
-    )
-}
+export const putQueryNoData = (URL, data) => {
+  return axios.put(URL, data, {
+    headers: {
+      "Authorization": `Bearer ${localData?.jwt}`,
+      "Content-Type": "application/json",
+      // Remove 'Access-Control-Allow-Origin' — it should not be sent from the client
+    },
+  });
+};
