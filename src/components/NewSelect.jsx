@@ -14,9 +14,10 @@ const NewSelect = ({
   labelKey,
   isClearable = false,
   isVirtualized,
-  value, // Controlled value from parent (array for multiple, string for single)
+  value,
   errorMessage,
   size,
+  placeholder,
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
@@ -131,6 +132,7 @@ const NewSelect = ({
         errorMessage={errorMessage}
         isRequired={isRequired}
         name={name}
+        placeholder={placeholder}
         isVirtualized={isVirtualized}
         isClearable={isClearable}
         selectionMode={selectionMode}
@@ -154,18 +156,21 @@ const NewSelect = ({
           if (!items.length) {
             return <span className="text-default-400">Select data</span>;
           }
+
           return (
             <div className="flex flex-wrap gap-2 mt-4">
-              {items.map((item) => (
-                <div
-                  key={item.key}
-                  className="flex items-center gap-2 selectable-text"
-                >
-                  <span className="text-sm">
-                    {item.data?.[labelKey] || "Unknown"}
-                  </span>
-                </div>
-              ))}
+              {items.map((item) => {
+                return (
+                  <div
+                    key={item.key}
+                    className="flex items-center gap-2 selectable-text"
+                  >
+                    <span className="text-sm">
+                      {item.data?.[labelKey] || "Unknown"}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           );
         }}

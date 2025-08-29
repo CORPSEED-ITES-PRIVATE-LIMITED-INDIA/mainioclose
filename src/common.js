@@ -152,12 +152,22 @@ export function maskEmail(email) {
 }
 
 export function inrCurrency(amount) {
+  // Convert string to number if needed
+  const num = typeof amount === "string" ? Number(amount) : amount;
+
+  // Handle invalid numbers gracefully
+  if (isNaN(num)) return "Invalid amount";
+
   const formatted = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-  }).format(amount);
+    maximumFractionDigits: 2, // ensures 2 decimals if needed
+  }).format(num);
+
+  // Add non-breaking space after ₹
   return formatted.replace("₹", "₹\u00A0");
 }
+
 
 function padZero(num) {
   return String(num).padStart(2, "0");

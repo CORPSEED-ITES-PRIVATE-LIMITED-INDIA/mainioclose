@@ -497,7 +497,7 @@ const VendorRequests = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendors request list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Vendor's requests</h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"

@@ -451,7 +451,7 @@ const CompanyUnits = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add new GST</ModalHeader>
+              <ModalHeader>Add new unit</ModalHeader>
               <ModalBody>
                 <Form
                   className="w-full"

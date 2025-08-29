@@ -312,7 +312,62 @@ export const createLedgerType = createAsyncThunk(
   }
 );
 
+export const getAllTrailBalance = createAsyncThunk(
+  "unbillItems",
+  async (data) => {
+    const response = await api.get(
+      `/accountService/api/v1/trialBalance/getAllTrialBalance`,
+      data
+    );
+    return response.data;
+  }
+);
 
+export const getAllProfitList = createAsyncThunk(
+  "getAllProfitList",
+  async (data) => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllProfit`,
+      data
+    );
+    return response.data;
+  }
+)
+
+
+export const getAllLossList = createAsyncThunk(
+  "getAllLossList",
+  async (data) => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllLoss`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllOutFlowList = createAsyncThunk(
+  "getAllOutFlowList",
+  async (data) => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllOutFlow`,
+      data
+    );
+    return response.data;
+  }
+)
+
+
+export const getAllInFlowList = createAsyncThunk(
+  "getAllInFlowList",
+  async (data) => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllInFlow`,
+      data
+    );
+    return response.data;
+  }
+);
 
 const OrganizationSlice = createSlice({
   name: "organization",
@@ -339,6 +394,11 @@ const OrganizationSlice = createSlice({
     salesInvoiceList: [],
     tdsList: [],
     tdsAmount: {},
+    profitList:[],
+    lossList:[],
+    inFlowList:[],
+    outFlowList:[],
+    trailBalanceList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -572,28 +632,89 @@ const OrganizationSlice = createSlice({
       state.salesInvoiceList = [];
     });
 
-    builder.addCase(getAllTdsList.pending, (state, action) => {
+    builder.addCase(getAllTdsList.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllTdsList.fulfilled, (state, action) => {
       state.loading = "success";
       state.tdsList = action.payload;
     });
-    builder.addCase(getAllTdsList.rejected, (state, action) => {
+    builder.addCase(getAllTdsList.rejected, (state) => {
       state.loading = "rejected";
       state.tdsList = [];
     });
 
-    builder.addCase(getTdsAmounts.pending, (state, action) => {
+    builder.addCase(getTdsAmounts.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getTdsAmounts.fulfilled, (state, action) => {
       state.loading = "success";
       state.tdsAmount = action.payload;
     });
-    builder.addCase(getTdsAmounts.rejected, (state, action) => {
+    builder.addCase(getTdsAmounts.rejected, (state) => {
       state.loading = "rejected";
       state.tdsAmount = [];
+    });
+
+    builder.addCase(getAllProfitList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllProfitList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.profitList = action.payload;
+    });
+    builder.addCase(getAllProfitList.rejected, (state) => {
+      state.loading = "rejected";
+      state.profitList = [];
+    });
+
+    builder.addCase(getAllLossList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLossList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.lossList = action.payload;
+    });
+    builder.addCase(getAllLossList.rejected, (state) => {
+      state.loading = "rejected";
+      state.lossList = [];
+    });
+
+    builder.addCase(getAllInFlowList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllInFlowList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.inFlowList = action.payload;
+    });
+    builder.addCase(getAllInFlowList.rejected, (state) => {
+      state.loading = "rejected";
+      state.inFlowList = [];
+    });
+
+    builder.addCase(getAllOutFlowList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllOutFlowList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.outFlowList = action.payload;
+    });
+    builder.addCase(getAllOutFlowList.rejected, (state) => {
+      state.loading = "rejected";
+      state.outFlowList = [];
+    });
+
+    
+    builder.addCase(getAllTrailBalance.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllTrailBalance.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.trailBalanceList = action.payload;
+    });
+    builder.addCase(getAllTrailBalance.rejected, (state) => {
+      state.loading = "rejected";
+      state.trailBalanceList = [];
     });
   },
 });

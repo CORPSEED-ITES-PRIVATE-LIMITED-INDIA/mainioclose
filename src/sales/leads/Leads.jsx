@@ -33,16 +33,20 @@ import {
   ChevronDown,
   EllipsisVertical,
   ListFilter,
+  Navigation2,
   Plus,
   Search,
+  Section,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createLeads,
+  deleteMultipleLeads,
   getAllLeadCount,
   getAllLeadsByFilter,
   getAllLeadUser,
   handleDeleteSingleLead,
+  multiAssignedLeads,
   searchLeads,
 } from "../../toolkit/slices/leadSlice";
 import { Link, useParams } from "react-router-dom";
@@ -54,14 +58,10 @@ import {
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 import { formatedDateTime, leadSource } from "../../common";
-import {
-  parseDateTime,
-  parseZonedDateTime,
-  toCalendarDateTime,
-} from "@internationalized/date";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -140,15 +140,21 @@ const Leads = () => {
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
+  const heirarchyUserList = useSelector(
+    (state) => state.dashboard.dashboardUsers
+  );
   const [filterValue, setFilterValue] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [selectedKeys, setSelectedKeys] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
-  const [statusFilter, setStatusFilter] = useState("all");
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
     direction: "ascending",
+  });
+  const [assignedLeadInfo, setAssignedLeadInfo] = useState({
+    statusId: null,
+    assigneId: null,
   });
   const deleteModal = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -170,7 +176,7 @@ const Leads = () => {
   };
   const [allMultiFilterData, setAllMultiFilterData] =
     useState(initialFilterValues);
-    const [itemId,setItemId]=useState(null)
+  const [itemId, setItemId] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -192,6 +198,7 @@ const Leads = () => {
   useEffect(() => {
     dispatch(getAllLeadUser(userId));
     dispatch(getAllStatusData());
+    dispatch(getDashboardUsersByHeirarchy(userId));
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
@@ -211,7 +218,7 @@ const Leads = () => {
       );
     }
     return filteredUsers;
-  }, [data, filterValue, statusFilter]);
+  }, [data, filterValue]);
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
@@ -225,35 +232,32 @@ const Leads = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const openDeleteModal=(id)=>{
-    setItemId(id)
-    deleteModal.onOpen()
-  }
+  const openDeleteModal = (id) => {
+    setItemId(id);
+    deleteModal.onOpen();
+  };
 
-  const leadDeleteResponse = useCallback(
-    () => {
-      let obj = {
-        id:itemId,
-        userId,
-      };
-      dispatch(handleDeleteSingleLead(obj))
-        .then((response) => {
-          if (response.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Lead deleted successfully !.",
-              color: "success",
-            });
-            dispatch(getAllLeadsByFilter(allMultiFilterData));
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() => {
+  const leadDeleteResponse = useCallback(() => {
+    let obj = {
+      id: itemId,
+      userId,
+    };
+    dispatch(handleDeleteSingleLead(obj))
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Lead deleted successfully !.",
+            color: "success",
+          });
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
+        } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
-        });
-    },
-    [userId, dispatch, allMultiFilterData,itemId]
-  );
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [userId, dispatch, allMultiFilterData, itemId]);
 
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {
@@ -302,11 +306,11 @@ const Leads = () => {
               <DropdownMenu
                 selectionMode="single"
                 onSelectionChange={(e) => {
-                  console.log('dsjgdkjgdjkgdkjgdjdg',e)
+                  console.log("dsjgdkjgdjkgdkjgdjdg", e);
                   let key = Array.from(e);
                   if (key == "delete") {
-                    console.log('dsjgdkjgdjkgdkjgdjdg',key)
-                    openDeleteModal(lead?.id)
+                    console.log("dsjgdkjgdjkgdkjgdjdg", key);
+                    openDeleteModal(lead?.id);
                   }
                 }}
               >
@@ -373,20 +377,132 @@ const Leads = () => {
     setAllMultiFilterData(initialFilterValues);
   }, [initialFilterValues, dispatch]);
 
+  const handleDeleteMutipleLeads = useCallback(() => {
+    let obj = {
+      leadId: selectedKeys,
+      updatedById: Number(userId),
+    };
+    dispatch(deleteMultipleLeads(obj))
+      .then((response) => {
+        if (response?.meta?.requestStatus === "fulfilled") {
+          addToast({
+            title: "Leads deleted successfully !.",
+            color: "success",
+          });
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
+          setSelectedKeys([]);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [selectedKeys, userId, dispatch, allMultiFilterData]);
+
+  const handleMultipleAssignedLeads = useCallback(() => {
+    let obj = {
+      leadIds: selectedKeys,
+      updatedById: userId,
+      ...assignedLeadInfo,
+    };
+    dispatch(multiAssignedLeads(obj))
+      .then((response) => {
+        if (response?.meta?.requestStatus === "fulfilled") {
+          addToast({
+            title: "Leads assigned successfully !.",
+            color: "success",
+          });
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
+          setSelectedKeys([]);
+          setAssignedLeadInfo({
+            statusId: null,
+            assigneId: null,
+          });
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [dispatch, selectedKeys, userId, assignedLeadInfo, allMultiFilterData]);
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
+
           <div className="flex gap-3">
+            <Popover size="lg" showArrow>
+              <PopoverTrigger>
+                <Button variant="flat">Action</Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[500px] flex justify-start">
+                {(titleProps) => (
+                  <>
+                    <h3
+                      className="my-4 font-bold text-xl w-full"
+                      {...titleProps}
+                    >
+                      Lead actions
+                    </h3>
+                    <p className="text-muted-foreground w-full mb-2">{selectedKeys?.length===0?"Please select the table rows for action ." :`${selectedKeys?.length} rows are selected`} </p>
+                    <div className="flex flex-col gap-4 w-full">
+                      <NewSelect
+                        data={statusList}
+                        label={"Status"}
+                        name={"statusId"}
+                        labelKey={"name"}
+                        valueKey={"id"}
+                        value={assignedLeadInfo?.statusId}
+                        onChange={(e) =>
+                          setAssignedLeadInfo((prev) => ({
+                            ...prev,
+                            statusId: e,
+                          }))
+                        }
+                      />
+                      <NewSelect
+                        data={heirarchyUserList}
+                        label={"Assignee"}
+                        name={"statusId"}
+                        labelKey={"name"}
+                        valueKey={"id"}
+                        value={assignedLeadInfo?.assigneId}
+                        onChange={(selectedSet) => {
+                          setAssignedLeadInfo((prev) => ({
+                            ...prev,
+                            statusId: selectedSet,
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between gap-2 my-2 w-full">
+                      <Button color="danger" isDisabled={selectedKeys?.length===0} onPress={handleDeleteMutipleLeads}>
+                        Delete
+                      </Button>
+                      <Button
+                        color="primary"
+                        isDisabled={selectedKeys?.length===0}
+                        onPress={handleMultipleAssignedLeads}
+                      >
+                        Send
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </PopoverContent>
+            </Popover>
             <Popover size="lg" showArrow>
               <PopoverTrigger>
                 <Button variant="flat" endContent={<ListFilter />}>
@@ -604,7 +720,6 @@ const Leads = () => {
     );
   }, [
     filterValue,
-    statusFilter,
     visibleColumns,
     onRowsPerPageChange,
     count,
@@ -613,6 +728,8 @@ const Leads = () => {
     allLeadUser,
     allMultiFilterData,
     statusList,
+    selectedKeys,
+    heirarchyUserList
   ]);
 
   const bottomContent = useMemo(() => {
@@ -632,10 +749,8 @@ const Leads = () => {
           total={pages}
           onChange={(e) => {
             setAllMultiFilterData((prev) => ({ ...prev, page: e }));
-            if (e > allMultiFilterData?.page) {
-              dispatch(getAllLeadsByFilter({ ...allMultiFilterData, page: e }));
-              dispatch(getAllLeadCount({ ...allMultiFilterData, page: e }));
-            }
+            dispatch(getAllLeadsByFilter({ ...allMultiFilterData, page: e }));
+            dispatch(getAllLeadCount({ ...allMultiFilterData, page: e }));
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
@@ -703,7 +818,10 @@ const Leads = () => {
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        onSelectionChange={(e) => {
+          let keys = Array.from(e);
+          setSelectedKeys(keys);
+        }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -980,20 +1098,20 @@ const Leads = () => {
           )}
         </ModalContent>
       </Modal>
-      <Modal isOpen={deleteModal.isOpen} onOpenChange={deleteModal.onOpenChange} backdrop="blur" >
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        backdrop="blur"
+      >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Delete
-              </ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
               <ModalBody>
                 <p>Are you sure to delete this item ?</p>
               </ModalBody>
               <ModalFooter>
-                <Button   onPress={onClose}>
-                  No
-                </Button>
+                <Button onPress={onClose}>No</Button>
                 <Button color="primary" onPress={leadDeleteResponse}>
                   Yes
                 </Button>

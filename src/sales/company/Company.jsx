@@ -16,16 +16,13 @@ import {
   Tooltip,
   useDisclosure,
 } from "@heroui/react";
-import {
-  Award,
-  ChevronDown,
-  EllipsisVertical,
-  Search,
-} from "lucide-react";
+import { Award, ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import { getAllNewCompanies } from "../../toolkit/slices/companySlice";
+import NewSelect from "../../components/NewSelect";
+import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
@@ -59,7 +56,7 @@ const Company = () => {
     (state) => state.company.newCompaniesList?.[0]?.total
   );
   const data = useSelector((state) => state.company.newCompaniesList);
-  const allLeadUser = useSelector((state) => state.leads.allLeadUsers);
+  const allLeadUser = useSelector((state) => state.dashboard.dashboardUsers);
   const currentRoles = useSelector((state) => state?.auth?.roles);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -69,12 +66,10 @@ const Company = () => {
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
-  const [statusFilter, setStatusFilter] = useState("all");
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
     direction: "ascending",
   });
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [companyFilteration, setCompanyFilteration] = useState({
     userId: userId,
     page: 1,
@@ -88,7 +83,11 @@ const Company = () => {
 
   useEffect(() => {
     dispatch(getAllNewCompanies(companyFilteration));
-  }, [dispatch]);
+  }, [dispatch, companyFilteration]);
+
+  useEffect(() => {
+    dispatch(getDashboardUsersByHeirarchy(userId));
+  }, []);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -102,13 +101,15 @@ const Company = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.leadName.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
     return filteredUsers;
-  }, [data, filterValue, statusFilter]);
+  }, [data, filterValue]);
 
   const pages = Math.ceil(count / companyFilteration?.size) || 1;
 
@@ -141,17 +142,20 @@ const Company = () => {
                   company?.rating === "Gold"
                     ? "#FFD700"
                     : company?.rating === "Silver"
-                    ? "#C0C0C0"
-                    : "#CD7F32"
+                      ? "#C0C0C0"
+                      : "#CD7F32"
                 }
               />
             </Tooltip>
             <div className="flex flex-col">
-              <Link to={`${company?.companyId}/gstDetails`} className="font-semibold">
+              <Link
+                to={`${company?.companyId}/gstDetails`}
+                className="font-semibold"
+              >
                 {company?.companyName || "-"}
               </Link>
               <span className="text-sm text-gray-400">
-                Age:{company?.age || "---"}
+                Age:{company?.age || "---"} yrs
               </span>
             </div>
           </div>
@@ -160,7 +164,7 @@ const Company = () => {
       case "gstNo":
         return (
           <div className="flex flex-col gap-1">
-            <span className="font-semibold">{company.gstNo || "-"}</span>
+            <span className="font-normal">{company.gstNo || "-"}</span>
             {company?.gstType && (
               <Chip
                 className="capitalize text-tiny"
@@ -176,13 +180,13 @@ const Company = () => {
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.assignee || "-"}</span>
+            <span className="font-normal">{company.assignee || "-"}</span>
           </div>
         );
       case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">
+            <span className="font-normal">
               {company.clientContactEmail || "-"}
             </span>
             <span className="text-sm text-gray-400">
@@ -193,7 +197,7 @@ const Company = () => {
       case "primaryAddres":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.address || "-"}</span>
+            <span className="font-normal">{company.address || "-"}</span>
             <span className="text-sm text-gray-400">
               {company.city || ""},{company?.state},{company?.country}
             </span>
@@ -202,7 +206,7 @@ const Company = () => {
       case "secondaryAddress":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{company.secAddress || "-"}</span>
+            <span className="font-normal">{company.secAddress || "-"}</span>
             <span className="text-sm text-gray-400">
               {company.secCity || ""},{company?.secState},{company?.seCountry}
             </span>
@@ -274,15 +278,84 @@ const Company = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            className="w-full sm:max-w-[35%]"
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-           
+            <div className="w-[200px]">
+              {" "}
+              <NewSelect
+                data={allLeadUser}
+                value={companyFilteration?.filterUserId}
+                placeholder={"Users"}
+                label={null}
+                labelKey={"name"}
+                valueKey={"id"}
+                onChange={(e) => {
+                  setCompanyFilteration((prev) => ({
+                    ...prev,
+                    filterUserId: e,
+                  }));
+                }}
+              />
+            </div>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {companyFilteration?.type}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[companyFilteration?.type]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e);
+                  setCompanyFilteration((prev) => ({ ...prev, type: key }));
+                }}
+              >
+                <DropdownItem key="all">All</DropdownItem>
+                <DropdownItem key="company">Company</DropdownItem>
+                <DropdownItem key="consultant">Consultant</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {companyFilteration?.rating}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[companyFilteration?.rating]}
+                selectionMode="single"
+                variant="flat"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e);
+                  setCompanyFilteration((prev) => ({ ...prev, rating: key }));
+                }}
+              >
+                <DropdownItem key="all">All</DropdownItem>
+                <DropdownItem key="Gold">Gold</DropdownItem>
+                <DropdownItem key="Silver">Silver</DropdownItem>
+                <DropdownItem key="Bronze">Bronze</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -328,12 +401,13 @@ const Company = () => {
     );
   }, [
     filterValue,
-    statusFilter,
     visibleColumns,
     onRowsPerPageChange,
     data.length,
     onSearchChange,
     hasSearchFilter,
+    companyFilteration,
+    allLeadUser,
   ]);
 
   const bottomContent = useMemo(() => {

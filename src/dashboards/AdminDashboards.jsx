@@ -376,7 +376,7 @@ const AdminDashboards = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center w-full">
-            Converted Leads Data Chart{" "}
+            Projects Data Chart{" "}
             <Popover placement="bottom-end" showArrow={true}>
               <PopoverTrigger children>
                 <Button size="sm" variant="light" isIconOnly>

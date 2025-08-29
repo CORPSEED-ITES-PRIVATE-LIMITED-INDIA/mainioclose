@@ -23,6 +23,7 @@ import {
   DropdownTrigger,
   User,
 } from "@heroui/react";
+import { useSelector } from "react-redux";
 
 const icons = {
   LayoutDashboard,
@@ -37,6 +38,7 @@ const icons = {
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {
+  const userDetail=useSelector((state)=>state.auth.currentUser)
   const [openMenu, setOpenMenu] = useState({});
 
   const toggleMenu = (key) => {
@@ -123,8 +125,8 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                     <User2 className="w-5 h-5 text-neutral-700 dark:text-white" />
                   ),
                 }}
-                description={!collapsed && "Product Designer"}
-                name={!collapsed && "Jane Doe"}
+                description={!collapsed && userDetail?.roles?.join(",")}
+                name={!collapsed && userDetail?.username}
               />
               {!collapsed && (
                 <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-white" />
@@ -135,10 +137,10 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
             <DropdownItem>
               <div className="px-4 py-2">
                 <p className="text-sm font-medium text-neutral-700 dark:text-white">
-                  John Doe
+                  {userDetail?.username}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-gray-400">
-                  john.doe@example.com
+                  {userDetail?.email}
                 </p>
               </div>
             </DropdownItem>

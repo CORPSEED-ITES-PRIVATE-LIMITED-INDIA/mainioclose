@@ -15,7 +15,9 @@ import {
   createNewCompanyInLeads,
   getAllCompanyType,
   getAllGstTypeByCompanyTypeId,
+  getAllNewCompanies,
   getBusinessTypeByGstTypeId,
+  getCompanyByUnitId,
 } from "../../toolkit/slices/companySlice";
 import {
   getLocalTimeZone,
@@ -28,6 +30,9 @@ import {
   getAllContactDetails,
   getAllCountries,
   getAllMainIndustry,
+  getAllSecondaryCitiesBySecondaryStateName,
+  getAllSecondaryCountries,
+  getAllSecondaryStatesBySecondaryCountryName,
   getAllStatesByCountryName,
   getAllUsers,
   getIndustryDataBySubSubIndustryId,
@@ -42,6 +47,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useParams } from "react-router-dom";
+import dayjs from "dayjs";
 
 const formSchema = z.object({
   consultantOrCompany: z.enum(["consultant", "company"], {
@@ -395,7 +401,13 @@ const defaultCompanyValues = {
   secondaryPinCode: "",
 };
 
-const CreateCompanyForm = () => {
+const CreateCompanyForm = ({
+  edit,
+  onOpenChange,
+  companyFilteration,
+  editData,
+  setEditData,
+}) => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
   const allUsers = useSelector((state) => state.common.usersList);
@@ -516,31 +528,154 @@ const CreateCompanyForm = () => {
     dispatch(getAllCountries());
   }, [dispatch]);
 
-  const onSubmit = (data) => {
-    console.log("Form Data:", data);
-    data.leadId = leadId;
-    data.updatedBy = userId;
-    dispatch(createNewCompanyInLeads(data))
-      .then((resp) => {
+  useEffect(() => {
+    if (edit) {
+      dispatch(getCompanyByUnitId(editData?.companyId)).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Company created successfully !.",
-            color: "success",
+          dispatch(getAllMainIndustry());
+          dispatch(getAllCompanyType());
+          dispatch(getClientDesiginationList());
+          dispatch(getAllContactDetails());
+          dispatch(getAllCountries());
+          dispatch(getAllSecondaryCountries());
+          let compData = resp?.payload;
+          dispatch(getSubIndustryByIndustryId(compData?.industry?.id));
+          dispatch(getSubSubIndustryBySubIndustryId(compData?.subIndustry?.id));
+          dispatch(
+            getIndustryDataBySubSubIndustryId(compData?.subSubIndustry?.id)
+          );
+          dispatch(getAllStatesByCountryName(compData?.country));
+          dispatch(
+            getAllSecondaryStatesBySecondaryCountryName(compData?.sCountry)
+          );
+          dispatch(getAllCitiesByStateName(compData?.state));
+          dispatch(getAllSecondaryCitiesBySecondaryStateName(compData?.sState));
+          dispatch(getAllGstTypeByCompanyTypeId(compData?.companyType));
+          dispatch(getBusinessTypeByGstTypeId(compData?.gstType));
+          reset({
+            companyName: compData?.companyName,
+            companyType: compData?.companyType,
+            gstType: compData?.gstType,
+            businessType: compData?.bussinessType,
+            gstNo: compData?.gstNo,
+            panNo: compData?.panNo,
+            establishDate: dayjs(compData?.establishDate),
+            assigneeId: compData?.assigneeId,
+            industryId: compData?.industry?.id,
+            subIndustryId: compData?.subIndustry?.id,
+            subsubIndustryId: compData?.subSubIndustry?.id,
+            industrydataId: compData?.industryData?.map((item) => item?.id),
+            gstDocuments: [
+              {
+                uid: "-1",
+                name: getFileName(compData?.gstDoc),
+                status: "done",
+                response: compData?.gstDoc,
+              },
+            ],
+            rating: compData?.rating,
+            paymentTerm: compData?.paymentTerm,
+            aggrementPresent: compData?.aggrementPresent,
+            aggrement: [
+              {
+                uid: "-2",
+                name: getFileName(compData?.aggrement),
+                status: "done",
+                response: compData?.aggrement,
+              },
+            ],
+            ndaPresent: compData?.ndaPresent,
+            nda: [
+              {
+                uid: "-3",
+                name: getFileName(compData?.nda),
+                status: "done",
+                response: compData?.nda,
+              },
+            ],
+            primaryTitle: compData?.primaryContact?.title,
+            contactName: compData?.primaryContact?.name,
+            primaryDesignation: compData?.primaryContact?.clientDesignation?.id,
+            contactEmails: compData?.primaryContact?.emails,
+            contactNo: compData?.primaryContact?.contactNo,
+            contactWhatsappNo: compData?.primaryContact?.whatsappNo,
+            secondaryTitle: compData?.secondaryContact?.title,
+            secondaryContactName: compData?.secondaryContact?.name,
+            secondaryDesignation:
+              compData?.secondaryContact?.clientDesignation?.id,
+            secondaryContactEmails:
+              compData?.secondaryContact?.secondaryContactEmails,
+            secondaryContactNo: compData?.secondaryContact?.contactNo,
+            secondaryContactWhatsappNo: compData?.secondaryContact?.whatsappNo,
+            address: compData?.address,
+            country: compData?.country,
+            state: compData?.state,
+            city: compData?.city,
+            primaryPinCode: compData?.primaryPinCode,
+            secondaryAddress: compData?.sAddress,
+            secondaryCountry: compData?.sCountry,
+            secondaryState: compData?.sState,
+            secondaryCity: compData?.sCity,
+            secondaryPinCode: compData?.secondaryPinCode,
           });
-          reset();
-        } else {
+        }
+      });
+      onOpenChange(true);
+    }
+  }, []);
+
+  const onSubmit = (data) => {
+    data.updatedBy = userId;
+    if (edit) {
+      data.id = editData?.companyId;
+      dispatch(updateCompanyDetails(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Company updated successfully !.",
+              color: "success",
+            });
+            dispatch(dispatch(getAllNewCompanies(companyFilteration)));
+            setEditData(null);
+            onOpenChange(false);
+            reset(defaultValues);
+          } else {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() =>
           addToast({
             title: "Something went wrong !.",
             color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({
-          title: "Something went wrong !.",
-          color: "danger",
+          })
+        );
+    } else {
+      data.leadId = leadId;
+      dispatch(createNewCompanyInLeads(data))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Company created successfully !.",
+              color: "success",
+            });
+            reset();
+          } else {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
+          }
         })
-      );
+        .catch(() =>
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          })
+        );
+    }
   };
 
   return (

@@ -41,7 +41,6 @@ import BankStatement from "./accounts/organization/BankStatement";
 import PaymentRegister from "./accounts/organization/PaymentRegister";
 import AllInvoice from "./accounts/organization/AllInvoice";
 import Unbill from "./accounts/organization/Unbill";
-import ManageSales from "./accounts/organization/ManageSales";
 import TDS from "./accounts/organization/TDS";
 import LedgerType from "./accounts/organization/settings/LedgerType";
 import VoucherType from "./accounts/organization/settings/VoucherType";
@@ -50,6 +49,8 @@ import CompanyForm from "./accounts/CompanyForm";
 import IVR from "./quality/IVR";
 import IVRReport from "./quality/IVRReport";
 import AllProposal from "./sales/proposal/AllProposal";
+import ProfitLoss from "./accounts/organization/ProfitLoss";
+import CashFlow from "./accounts/organization/CashFlow";
 
 function App() {
   return (
@@ -123,7 +124,8 @@ function App() {
             <Route path="paymentRegister" element={<PaymentRegister />} />
             <Route path="allInvoice" element={<AllInvoice />} />
             <Route path="unbilled" element={<Unbill />} />
-            <Route path="manageSales" element={<ManageSales />} />
+            <Route path="profitLoss" element={<ProfitLoss />} />
+            <Route path="cashflow" element={<CashFlow />} />
             <Route path="tds" element={<TDS />} />
             <Route
               path="/erp/:userId/accounts/organizations/settings/ledgerType"

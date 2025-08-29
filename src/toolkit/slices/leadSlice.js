@@ -45,6 +45,28 @@ export const handleDeleteSingleLead = createAsyncThunk(
   }
 );
 
+export const deleteMultipleLeads = createAsyncThunk(
+  "deleteMultipleLeads",
+  async (data) => {
+    const response = await api.delete(
+      `/leadService/api/v1/lead/deleteMultiLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const multiAssignedLeads = createAsyncThunk(
+  "multiAssignedLeads",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/updateMultiLeadAssigne`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getSingleLeadDataByLeadId = createAsyncThunk(
   "getSingleLeadData",
   async ({ leadId, userId }) => {

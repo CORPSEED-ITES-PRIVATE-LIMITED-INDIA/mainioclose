@@ -61,7 +61,8 @@ const Organizations = () => {
           <Tab key="paymentRegister" title="Payment register" />
           <Tab key="allInvoice" title="All invoice" />
           <Tab key="unbilled" title="Unbilled" />
-          <Tab key="manageSales" title="Manage sales" />
+          <Tab key="profitLoss" title="Profit/Loss" />
+          <Tab key="cashflow" title="Cashflow" />
           <Tab key="tds" title="Tds" />
         </Tabs>
         <Dropdown>
