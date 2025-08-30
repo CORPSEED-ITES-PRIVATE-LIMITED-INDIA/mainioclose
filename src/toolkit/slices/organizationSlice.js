@@ -314,10 +314,9 @@ export const createLedgerType = createAsyncThunk(
 
 export const getAllTrailBalance = createAsyncThunk(
   "unbillItems",
-  async (data) => {
+  async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/trialBalance/getAllTrialBalance`,
-      data
+      `/accountService/api/v1/trialBalance/getAllTrialBalance?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
@@ -325,22 +324,19 @@ export const getAllTrailBalance = createAsyncThunk(
 
 export const getAllProfitList = createAsyncThunk(
   "getAllProfitList",
-  async (data) => {
+  async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllProfit`,
-      data
+      `/accountService/api/v1/cashFlow/getAllProfit?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
   }
-)
-
+);
 
 export const getAllLossList = createAsyncThunk(
   "getAllLossList",
-  async (data) => {
+  async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllLoss`,
-      data
+      `/accountService/api/v1/cashFlow/getAllLoss?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
   }
@@ -348,26 +344,44 @@ export const getAllLossList = createAsyncThunk(
 
 export const getAllOutFlowList = createAsyncThunk(
   "getAllOutFlowList",
-  async (data) => {
+  async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllOutFlow`,
-      data
-    );
-    return response.data;
-  }
-)
-
-
-export const getAllInFlowList = createAsyncThunk(
-  "getAllInFlowList",
-  async (data) => {
-    const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllInFlow`,
-      data
+      `/accountService/api/v1/cashFlow/getAllOutFlow?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
 );
+
+export const getAllInFlowList = createAsyncThunk(
+  "getAllInFlowList",
+  async ({ startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllInFlow?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBalanceSheetLiabilities = createAsyncThunk(
+  "getAllBalanceSheetLiabilities",
+  async ({ startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/balanceSheet/getAllBalanceSheetLiabilities?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBalanceSheetAssets = createAsyncThunk(
+  "getAllBalanceSheetAssets",
+  async ({ startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/balanceSheet/getAllBalanceSheetAssets?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
 
 const OrganizationSlice = createSlice({
   name: "organization",
@@ -394,11 +408,13 @@ const OrganizationSlice = createSlice({
     salesInvoiceList: [],
     tdsList: [],
     tdsAmount: {},
-    profitList:[],
-    lossList:[],
-    inFlowList:[],
-    outFlowList:[],
-    trailBalanceList:[]
+    profitDetail: {},
+    lossDetail: {},
+    inFlowList: [],
+    outFlowList: [],
+    trailBalanceList: [],
+    balanceSheetLiabilitiesList: [],
+    balanceSheetAssetsList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -661,11 +677,11 @@ const OrganizationSlice = createSlice({
     });
     builder.addCase(getAllProfitList.fulfilled, (state, action) => {
       state.loading = "success";
-      state.profitList = action.payload;
+      state.profitDetail = action.payload;
     });
     builder.addCase(getAllProfitList.rejected, (state) => {
       state.loading = "rejected";
-      state.profitList = [];
+      state.profitDetail = {};
     });
 
     builder.addCase(getAllLossList.pending, (state) => {
@@ -673,11 +689,11 @@ const OrganizationSlice = createSlice({
     });
     builder.addCase(getAllLossList.fulfilled, (state, action) => {
       state.loading = "success";
-      state.lossList = action.payload;
+      state.lossDetail = action.payload;
     });
     builder.addCase(getAllLossList.rejected, (state) => {
       state.loading = "rejected";
-      state.lossList = [];
+      state.lossDetail = {};
     });
 
     builder.addCase(getAllInFlowList.pending, (state) => {
@@ -704,7 +720,6 @@ const OrganizationSlice = createSlice({
       state.outFlowList = [];
     });
 
-    
     builder.addCase(getAllTrailBalance.pending, (state) => {
       state.loading = "pending";
     });
@@ -715,6 +730,33 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllTrailBalance.rejected, (state) => {
       state.loading = "rejected";
       state.trailBalanceList = [];
+    });
+
+    builder.addCase(getAllBalanceSheetLiabilities.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllBalanceSheetLiabilities.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.balanceSheetLiabilitiesList = action.payload;
+      }
+    );
+    builder.addCase(getAllBalanceSheetLiabilities.rejected, (state) => {
+      state.loading = "rejected";
+      state.balanceSheetLiabilitiesList = [];
+    });
+
+    builder.addCase(getAllBalanceSheetAssets.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllBalanceSheetAssets.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.balanceSheetAssetsList = action.payload;
+    });
+    builder.addCase(getAllBalanceSheetAssets.rejected, (state) => {
+      state.loading = "rejected";
+      state.balanceSheetAssetsList = [];
     });
   },
 });

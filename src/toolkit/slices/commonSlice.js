@@ -287,6 +287,159 @@ export const createIvr = createAsyncThunk("createIvr", async (data) => {
   return response.data;
 });
 
+export const createMainIndustry = createAsyncThunk(
+  "createMainIndustry",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/industryData/createIndustry`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllIndustriesWithPagination = createAsyncThunk(
+  "getAllIndustriesWithPagination",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllIndustryForIndustryPage?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const allIndstriesCount = createAsyncThunk(
+  "allIndstriesCount",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllIndustryCount`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSubIndustry = createAsyncThunk(
+  "getAllSubIndustry",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllSubIndustry`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSubIndustryWithPagination = createAsyncThunk(
+  "getAllSubIndustryWithPagination",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllSubIndustryForPage?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSubIndustyCount = createAsyncThunk(
+  "getAllSubIndustyCount",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllSubIndustryCount`
+    );
+    return response.data;
+  }
+);
+
+export const createSubIndustry = createAsyncThunk(
+  "createSubIndustry",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/industryData/createSubIndustry`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllSubsubIndustry = createAsyncThunk(
+  "getAllSubsubIndustry",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllSubSubIndustry`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSubSubIndustryWithPagination = createAsyncThunk(
+  "getAllSubSubIndustryWithPagination",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllSubSubIndustryForPage?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getTotalSubSubIndustryCount = createAsyncThunk(
+  "getTotalSubSubIndustryCount",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllSubSubIndustryCount`
+    );
+    return response.data;
+  }
+);
+
+export const createSubsubIndustry = createAsyncThunk(
+  "createSubsubIndustry",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/industryData/createSubSubIndustry`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllIndustriesData = createAsyncThunk(
+  "getAllIndustriesData",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllIndustryData`
+    );
+    return response.data;
+  }
+);
+
+export const getAllIndustryDataWithPagination = createAsyncThunk(
+  "getAllIndustryDataWithPagination",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllIndustryDataForPage?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getIndustryDataCount = createAsyncThunk(
+  "getIndustryDataCount",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/industryData/getAllIndustryDataCount`
+    );
+    return response.data;
+  }
+);
+
+export const createIndustry = createAsyncThunk(
+  "createIndustry",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/industryData/createIndustryData?name=${data?.name}`
+    )
+    return response.data
+  }
+)
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -314,6 +467,17 @@ const CommonSlice = createSlice({
     usersListByServiceId: [],
     allIvr: [],
     totalIvrCount: 0,
+    allIndustriesWithPage: [],
+    allIndustryCount: 0,
+    allSubIndustry: [],
+    allSubIndustryWithPage: [],
+    allSubIndustryCount: 0,
+    allSubsubIndustry: [],
+    allSubSubIndustryWithPage: [],
+    totalSubSubIndustryCount: 0,
+    allIndustriesData: [],
+    allIndustryDataWithPage: [],
+    allIndustryDataCount: 0,
   },
   reducers: {
     handleReset: (state) => {
@@ -552,7 +716,7 @@ const CommonSlice = createSlice({
       state.contactListByCompanyId = [];
     });
 
-    builder.addCase(getUserApprovalList.pending, (state, action) => {
+    builder.addCase(getUserApprovalList.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getUserApprovalList.fulfilled, (state, action) => {
@@ -591,28 +755,175 @@ const CommonSlice = createSlice({
       state.usersListByServiceId = [];
     });
 
-    builder.addCase(getAllIvrWithPage.pending, (state, action) => {
+    builder.addCase(getAllIvrWithPage.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllIvrWithPage.fulfilled, (state, action) => {
       state.loading = "success";
       state.allIvr = action.payload;
     });
-    builder.addCase(getAllIvrWithPage.rejected, (state, action) => {
+    builder.addCase(getAllIvrWithPage.rejected, (state) => {
       state.loading = "rejected";
       state.allIvr = [];
     });
 
-    builder.addCase(getTotalIvrCount.pending, (state, action) => {
+    builder.addCase(getTotalIvrCount.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getTotalIvrCount.fulfilled, (state, action) => {
       state.loading = "success";
       state.totalIvrCount = action.payload;
     });
-    builder.addCase(getTotalIvrCount.rejected, (state, action) => {
+    builder.addCase(getTotalIvrCount.rejected, (state) => {
       state.loading = "rejected";
       state.totalIvrCount = 0;
+    });
+
+    builder.addCase(getAllIndustriesWithPagination.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(
+      getAllIndustriesWithPagination.fulfilled,
+      (state, action) => {
+        state.industryLoading = "fulfilled";
+        state.allIndustriesWithPage = action.payload;
+      }
+    );
+    builder.addCase(getAllIndustriesWithPagination.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allIndustriesWithPage = [];
+    });
+
+    builder.addCase(allIndstriesCount.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(allIndstriesCount.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.allIndustryCount = action.payload;
+    });
+    builder.addCase(allIndstriesCount.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allIndustryCount = 0;
+    });
+
+    builder.addCase(getAllSubIndustry.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(getAllSubIndustry.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.allSubIndustry = action.payload;
+    });
+    builder.addCase(getAllSubIndustry.rejected, (state) => {
+      state.industryLoading = "rejected";
+    });
+
+    builder.addCase(getAllSubIndustryWithPagination.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(
+      getAllSubIndustryWithPagination.fulfilled,
+      (state, action) => {
+        state.industryLoading = "fulfilled";
+        state.allSubIndustryWithPage = action.payload;
+      }
+    );
+    builder.addCase(getAllSubIndustryWithPagination.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allSubIndustryWithPage = [];
+    });
+
+    builder.addCase(getAllSubIndustyCount.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(getAllSubIndustyCount.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.allSubIndustryCount = action.payload;
+    });
+    builder.addCase(getAllSubIndustyCount.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allSubIndustryCount = 0;
+    });
+
+    builder.addCase(getAllSubsubIndustry.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(getAllSubsubIndustry.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.allSubsubIndustry = action.payload;
+    });
+    builder.addCase(getAllSubsubIndustry.rejected, (state) => {
+      state.industryLoading = "rejected";
+    });
+
+    builder.addCase(getAllSubSubIndustryWithPagination.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(
+      getAllSubSubIndustryWithPagination.fulfilled,
+      (state, action) => {
+        state.industryLoading = "fulfilled";
+        state.allSubSubIndustryWithPage = action.payload;
+      }
+    );
+    builder.addCase(getAllSubSubIndustryWithPagination.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allSubSubIndustryWithPage = [];
+    });
+
+    builder.addCase(getTotalSubSubIndustryCount.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(getTotalSubSubIndustryCount.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.totalSubSubIndustryCount = action.payload;
+    });
+    builder.addCase(getTotalSubSubIndustryCount.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.totalSubSubIndustryCount = 0;
+    });
+
+    builder.addCase(getAllIndustriesData.pending, (state, action) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(getAllIndustriesData.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.allIndustriesData = action.payload;
+    });
+    builder.addCase(getAllIndustriesData.rejected, (state, action) => {
+      state.industryLoading = "rejected";
+    });
+
+    builder.addCase(
+      getAllIndustryDataWithPagination.pending,
+      (state, action) => {
+        state.industryLoading = "pending";
+      }
+    );
+    builder.addCase(
+      getAllIndustryDataWithPagination.fulfilled,
+      (state, action) => {
+        state.industryLoading = "fulfilled";
+        state.allIndustryDataWithPage = action.payload;
+      }
+    );
+    builder.addCase(
+      getAllIndustryDataWithPagination.rejected,
+      (state,) => {
+        state.industryLoading = "rejected";
+        state.allIndustryDataWithPage = [];
+      }
+    );
+
+    builder.addCase(getIndustryDataCount.pending, (state) => {
+      state.industryLoading = "pending";
+    });
+    builder.addCase(getIndustryDataCount.fulfilled, (state, action) => {
+      state.industryLoading = "fulfilled";
+      state.allIndustryDataCount = action.payload;
+    });
+    builder.addCase(getIndustryDataCount.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allIndustryDataCount = 0;
     });
   },
 });

@@ -328,6 +328,39 @@ export const proposalApprovalByManager = createAsyncThunk(
   }
 );
 
+export const getAllAutoHistoryList = createAsyncThunk(
+  "getAllAutoHistory",
+  async ({ page, size, data }) => {
+    const response = await api.post(
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterNew?page=${page}&size=${size}`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllAutoHistroryCount = createAsyncThunk(
+  "getAllAutoHistroryCount",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterCount`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllAutoHistoryForExportByDate = createAsyncThunk(
+  "getAllAutoHistoryForExportByDate",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilterNew`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -351,6 +384,8 @@ export const LeadSlice = createSlice({
     qualityReportList: [],
     proposalList: [],
     proposalCount: 0,
+    autoHistoryExportList: [],
+    autoExportLoading: "",
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -561,6 +596,46 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllPropsalListCount.rejected, (state, action) => {
       state.proposalCount = 0;
       state.loading = "rejected";
+    });
+
+    builder.addCase(getAllAutoHistoryList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllAutoHistoryList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.autoList = action?.payload;
+    });
+    builder.addCase(getAllAutoHistoryList.rejected, (state) => {
+      state.loading = "rejected";
+      state.autoList = [];
+    });
+
+    builder.addCase(getAllAutoHistroryCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllAutoHistroryCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalAutoListCount = action?.payload;
+    });
+    builder.addCase(getAllAutoHistroryCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.totalAutoListCount = 0;
+    });
+
+    builder.addCase(getAllAutoHistoryForExportByDate.pending, (state) => {
+      state.autoHistoryExportList = [];
+      state.autoExportLoading = "pending";
+    });
+    builder.addCase(
+      getAllAutoHistoryForExportByDate.fulfilled,
+      (state, action) => {
+        state.autoHistoryExportList = action?.payload;
+        state.autoExportLoading = "success";
+      }
+    );
+    builder.addCase(getAllAutoHistoryForExportByDate.rejected, (state) => {
+      state.autoHistoryExportList = [];
+      state.autoExportLoading = "error";
     });
   },
 });

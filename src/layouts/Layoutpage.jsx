@@ -28,6 +28,7 @@ const navItems = [
         url: "sales/discountedEstimate",
         key: "discountedEstimate",
       },
+      { title: "Auto history", icon: "", url: "sales/autoHistory", key: "autoHistory" },
       { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
       {
         title: "Serving Companies",
@@ -66,6 +67,38 @@ const navItems = [
         icon: "",
         url: "accounts/paymentApprovals",
         key: "paymentApprovals",
+      },
+    ],
+  },
+  {
+    title: "Industry",
+    icon: "Factory",
+    url: "/industry",
+    key: "industry",
+    children: [
+      {
+        title: "Industry",
+        icon: "",
+        url: "industry/industries",
+        key: "industries",
+      },
+      {
+        title: "Sub industries",
+        icon: "",
+        url: "industry/subindustries",
+        key: "subindustries",
+      },
+      {
+        title: "Category",
+        icon: "",
+        url: "industry/categories",
+        key: "categories",
+      },
+      {
+        title: "Business activity",
+        icon: "",
+        url: "industry/businessActivity",
+        key: "businessActivity",
       },
     ],
   },

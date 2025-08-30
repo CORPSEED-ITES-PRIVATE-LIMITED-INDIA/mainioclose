@@ -12,6 +12,7 @@ import {
   SquareUserRound,
   UserRound,
   FlaskConical,
+  Factory,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -35,6 +36,7 @@ const icons = {
   HandCoins,
   SquareUserRound,
   FlaskConical,
+  Factory
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {

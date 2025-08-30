@@ -20,31 +20,24 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  DatePicker,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addBankDetails,
-  getAllBankStatements,
-} from "../../toolkit/slices/organizationSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import dayjs from "dayjs";
 import * as z from "zod";
 import {
-  getLocalTimeZone,
-  parseDate,
-  toCalendarDate,
-  today,
-} from "@internationalized/date";
+  createSubIndustry,
+  getAllSubIndustry,
+  getAllSubIndustryWithPagination,
+  getAllSubIndustyCount,
+  getAllSubsubIndustry,
+} from "../toolkit/slices/commonSlice";
+import NewSelect from "../components/NewSelect";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "TRANSACTION ID", uid: "transaction" },
-  { name: "TRANSACTION NAME", uid: "name", sortable: true },
-  { name: "AMOUNT", uid: "amount" },
-  { name: "PAYMENT DATE", uid: "paymentDate" },
+  { name: "INDUSTRY NAME", uid: "name", sortable: true },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -52,36 +45,25 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
-  "transaction",
-  "name",
-  "amount",
-  "paymentDate",
-  "actions",
-];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
 const formSchema = z.object({
-  transactionId: z.string().min(1, "Please give a transaction id"),
-  name: z.string().min(1, "Please give a transaction name"),
-  totalAmount: z.string().min(1, "Please enter total amount"),
-  leftAmount: z.string().min(1, "Please enter left amount"),
-  paymentDate: z.string().min(1, "Please select payment date"),
+  name: z.string().min(1, "Please give a name"),
+  subsubIndustryId: z.array(z.string()).min(1, "Please select sub industry"),
 });
 
 const defaultValues = {
-  transactionId: "",
   name: "",
-  totalAmount: "",
-  leftAmount: "",
-  paymentDate: "",
+  subsubIndustryId: "",
 };
 
-const BankStatement = () => {
+const SubIndustries = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.bankStatementList);
-  const count = useSelector(
-    (state) => state.organization.bankStatementList?.length
+  const data = useSelector((state) => state.common.allSubIndustryWithPage);
+  const count = useSelector((state) => state.common.allSubIndustryCount);
+  const allSubsubIndustry = useSelector(
+    (state) => state.common.allSubsubIndustry
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -97,8 +79,9 @@ const BankStatement = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllBankStatements());
-  }, [dispatch]);
+    dispatch(getAllSubIndustryWithPagination({ page, size: rowsPerPage }));
+    dispatch(getAllSubIndustyCount());
+  }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -153,15 +136,18 @@ const BankStatement = () => {
 
   const onSubmit = useCallback(
     (values) => {
-      dispatch(addBankDetails(values))
+      dispatch(createSubIndustry(values))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Voucher created successfully !.",
+              title: "Sub industry created successfully !.",
               color: "success",
             });
-            dispatch(getAllBankStatements());
+            dispatch(
+              getAllSubIndustryWithPagination({ page, size: rowsPerPage })
+            );
             onOpenChange(false);
+            reset(defaultValues);
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -170,7 +156,7 @@ const BankStatement = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     },
-    [dispatch]
+    [dispatch,onOpenChange]
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -180,20 +166,6 @@ const BankStatement = () => {
         return (
           <p className="text-sm font-medium capitalize">{rowData?.name}</p>
         );
-      case "paymentDate":
-        return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.paymentDate).format("YYYY-MM-DD")}
-          </p>
-        );
-      case "amount":
-        return (
-          <div className="flex flex-col gap-2">
-            <span className="text-sm">Total : ₹ {rowData?.totalAmount}</span>
-            <span className="text-sm">Remaining : ₹ {rowData?.leftAmount}</span>
-          </div>
-        );
-
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -281,14 +253,21 @@ const BankStatement = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button endContent={<Plus />} color="primary" onPress={onOpen}>
-              Add bank statement
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={() => {
+                dispatch(getAllSubsubIndustry());
+                onOpen();
+              }}
+            >
+              Add
             </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} bank statements
+            Total {count} sub industries
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -356,7 +335,7 @@ const BankStatement = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
-        Bank statements list
+        Sub industries list
       </h1>
       <Table
         isHeaderSticky
@@ -404,33 +383,19 @@ const BankStatement = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add bank statement</ModalHeader>
+              <ModalHeader>Add sub industry</ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
-                    <Controller
-                      name="transactionId"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Transaction id"
-                          name="transactionId"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
+                  <div className="flex flex-col gap-4 max-h-[60vh] overflow-auto">
                     <Controller
                       name="name"
                       control={control}
                       render={({ field }) => (
                         <Input
                           isRequired
-                          label="Transaction name"
+                          label="Sub industry name"
                           name="name"
+                          errorMessage="please enter the name"
                           value={field.value}
                           onChange={(e) => {
                             field.onChange(e.target.value);
@@ -438,51 +403,24 @@ const BankStatement = () => {
                         />
                       )}
                     />
+
                     <Controller
-                      name="totalAmount"
+                      name="subsubIndustryId"
                       control={control}
                       render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Total amount"
-                          name="totalAmount"
+                        <NewSelect
+                          selectionMode="multiple"
+                          isRequired={true}
+                          errorMessage={"please select the sub sub industry"}
+                          data={allSubsubIndustry}
+                          label={"Category"}
+                          name={"subsubIndustryId"}
+                          labelKey={"name"}
+                          valueKey={"id"}
                           value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
+                          onChange={(selectedSet) => {
+                            field.onChange(selectedSet);
                           }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="leftAmount"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Remaining amount"
-                          value={field.value}
-                          name="leftAmount"
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="paymentDate"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          isRequired
-                          label="Payment date"
-                          showMonthAndYearPickers
-                          maxValue={today(getLocalTimeZone())}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
-                          }
                         />
                       )}
                     />
@@ -503,4 +441,4 @@ const BankStatement = () => {
   );
 };
 
-export default BankStatement;
+export default SubIndustries;

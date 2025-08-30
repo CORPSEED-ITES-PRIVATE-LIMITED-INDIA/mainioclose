@@ -51,6 +51,12 @@ import IVRReport from "./quality/IVRReport";
 import AllProposal from "./sales/proposal/AllProposal";
 import ProfitLoss from "./accounts/organization/ProfitLoss";
 import CashFlow from "./accounts/organization/CashFlow";
+import BalanceSheet from "./accounts/organization/BalanceSheet";
+import Industries from "./industry/Industries";
+import SubIndustries from "./industry/SubIndustries";
+import Categories from "./industry/Categories";
+import BusinessActivity from "./industry/BusinessActivity";
+import AutoHistory from "./sales/leads/AutoHistory";
 
 function App() {
   return (
@@ -91,8 +97,32 @@ function App() {
             path="sales/discountedEstimate"
             element={<DiscountedEstimate />}
           />
+          <Route path="sales/autoHistory" element={<AutoHistory />} />
+             <Route
+            path="sales/autoHistory/:leadId/leadDetail"
+            element={<LeadDetail />}
+          />
           <Route path="sales/projects" element={<Projects />} />
           <Route path="sales/servingCompanies" element={<ServingCompanies />} />
+
+          {/* Industry */}
+
+          <Route
+            path="industry/industries"
+            element={<Industries />}
+          />
+          <Route
+            path="industry/subindustries"
+            element={<SubIndustries />}
+          />
+          <Route
+            path="industry/categories"
+            element={<Categories />}
+          />
+          <Route
+            path="industry/businessActivity"
+            element={<BusinessActivity />}
+          />
 
           {/* Accounts */}
           <Route
@@ -126,6 +156,7 @@ function App() {
             <Route path="unbilled" element={<Unbill />} />
             <Route path="profitLoss" element={<ProfitLoss />} />
             <Route path="cashflow" element={<CashFlow />} />
+            <Route path="balanceSheet" element={<BalanceSheet />} />
             <Route path="tds" element={<TDS />} />
             <Route
               path="/erp/:userId/accounts/organizations/settings/ledgerType"

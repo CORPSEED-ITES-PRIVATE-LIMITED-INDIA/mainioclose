@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  getAllInFlowList,
-  getAllOutFlowList,
+  getAllBalanceSheetAssets,
+  getAllBalanceSheetLiabilities,
 } from "../../toolkit/slices/organizationSlice";
 import {
   DateRangePicker,
@@ -15,14 +15,18 @@ import {
 } from "@heroui/react";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import { parseDate, toCalendarDate } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 
-const CashFlow = () => {
+const BalanceSheet = () => {
   const dispatch = useDispatch();
   const today = dayjs().format("YYYY-MM-DD");
   const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DD");
-  const inFlowList = useSelector((state) => state.organization.inFlowList);
-  const outFlowList = useSelector((state) => state.organization.outFlowList);
+  const balanceSheetLiabilitiesList = useSelector(
+    (state) => state.organization.balanceSheetLiabilitiesList
+  );
+  const balanceSheetAssetsList = useSelector(
+    (state) => state.organization.balanceSheetAssetsList
+  );
   const [dateRange, setDateRange] = useState({
     startDate: twoMonthsAgo,
     endDate: today,
@@ -34,12 +38,12 @@ const CashFlow = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllInFlowList(dateRange));
-  }, [dispatch, dateRange]);
+    dispatch(getAllBalanceSheetLiabilities(dateRange));
+  }, [dispatch,dateRange]);
 
   useEffect(() => {
-    dispatch(getAllOutFlowList(dateRange2));
-  }, [dispatch, dateRange2]);
+    dispatch(getAllBalanceSheetAssets(dateRange2));
+  }, [dispatch,dateRange2]);
 
   const columns = [
     {
@@ -98,19 +102,23 @@ const CashFlow = () => {
     }
   }, []);
 
+
+  console.log('sdahgskjgskjgg',dateRange2)
+
+
   return (
     <div className="grid grid-cols-2 gap-2">
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
-          <h1 className="font-medium text-2xl">In flow</h1>
+          <h1 className="font-medium text-2xl">Liabilities</h1>
           <DateRangePicker
             showMonthAndYearPickers
             label="Date range"
-            className="w-[35%]"
             value={{
               start: parseDate(dateRange?.startDate),
               end: parseDate(dateRange?.endDate),
             }}
+            className="w-[35%]"
             onChange={(value) => {
               const formattedStart = value.start
                 ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
@@ -135,7 +143,7 @@ const CashFlow = () => {
               <TableColumn key={column.key}>{column.label}</TableColumn>
             )}
           </TableHeader>
-          <TableBody items={inFlowList || []}>
+          <TableBody items={balanceSheetLiabilitiesList || []}>
             {(item) => (
               <TableRow key={`${item.groupName}profit`}>
                 {(columnKey) => (
@@ -148,15 +156,15 @@ const CashFlow = () => {
       </div>
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
-          <h1 className="font-medium text-2xl">Out flow</h1>
+          <h1 className="font-medium text-2xl">Assets</h1>
           <DateRangePicker
             showMonthAndYearPickers
             label="Date range"
-            className="w-[35%]"
             value={{
               start: parseDate(dateRange2?.startDate),
               end: parseDate(dateRange2?.endDate),
             }}
+            className="w-[35%]"
             onChange={(value) => {
               const formattedStart = value.start
                 ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
@@ -171,14 +179,13 @@ const CashFlow = () => {
             }}
           />
         </div>
-
         <Table>
           <TableHeader columns={columns}>
             {(column) => (
               <TableColumn key={column.key}>{column.label}</TableColumn>
             )}
           </TableHeader>
-          <TableBody items={outFlowList || []}>
+          <TableBody items={balanceSheetAssetsList || []}>
             {(item) => (
               <TableRow key={`${item.groupName}loss`}>
                 {(columnKey) => (
@@ -193,4 +200,4 @@ const CashFlow = () => {
   );
 };
 
-export default CashFlow;
+export default BalanceSheet;
