@@ -58,6 +58,10 @@ const MainOrganizationPage = () => {
       key: "cashflow",
       label: <Link to="cashflow">Cashflow</Link>,
     },
+    {
+      key: "balanceSheet",
+      label: <Link to="balanceSheet">Balance sheet</Link>,
+    },
     // {
     //   key: "manageSales",
     //   label: <Link to="manageSales">Manage sales</Link>,

@@ -3,11 +3,9 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllDailyBookRecord,
-  getAllTrailBalance,
-} from "../../../Toolkit/Slices/AccountSlice";
+import { getAllTrailBalance } from "../../../Toolkit/Slices/AccountSlice";
 import dayjs from "dayjs";
+import { rangePresets } from "../../Common/Commons";
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -18,10 +16,13 @@ const TrailBalance = () => {
   const trailBalanceList = useSelector(
     (state) => state.account.trailBalanceList
   );
-
+  const [dateRange, setDateRange] = useState({
+    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
+  });
   useEffect(() => {
-    dispatch(getAllTrailBalance());
-  }, [dispatch]);
+    dispatch(getAllTrailBalance(dateRange));
+  }, [dispatch,dateRange]);
 
   useEffect(() => {
     setFilteredData(trailBalanceList);
@@ -58,8 +59,6 @@ const TrailBalance = () => {
     },
   ];
 
-
-
   return (
     <>
       <Flex vertical gap={12}>
@@ -79,6 +78,27 @@ const TrailBalance = () => {
             onChange={handleSearch}
             placeholder="search"
             style={{ width: "25%" }}
+          />
+          <RangePicker
+            size="small"
+            allowClear={true}
+            presets={rangePresets}
+            value={[
+              dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
+              dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
+            ]}
+            disabledDate={(current) =>
+              current && current > dayjs().endOf("day")
+            }
+            onChange={(dates, dateStrings) => {
+              if (dates) {
+                setDateRange((prev) => ({
+                  ...prev,
+                  startDate: dateStrings[0],
+                  endDate: dateStrings[1],
+                }));
+              }
+            }}
           />
         </Flex>
         <CommonTable

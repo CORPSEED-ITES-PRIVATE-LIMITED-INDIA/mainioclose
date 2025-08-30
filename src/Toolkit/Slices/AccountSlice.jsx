@@ -511,8 +511,7 @@ export const getAllTrailBalance = createAsyncThunk(
   "unbillItems",
   async (data) => {
     const response = await getQuery(
-      `/accountService/api/v1/trialBalance/getAllTrialBalance`,
-      data
+      `/accountService/api/v1/trialBalance/getAllTrialBalance?startDate=${data?.startDate}&endDate=${data?.endDate}`
     );
     return response.data;
   }
@@ -522,8 +521,7 @@ export const getAllProfitList = createAsyncThunk(
   "getAllProfitList",
   async (data) => {
     const response = await getQuery(
-      `/accountService/api/v1/cashFlow/getAllProfit`,
-      data
+      `/accountService/api/v1/cashFlow/getAllProfit?startDate=${data?.startDate}&endDate=${data?.endDate}`
     );
     return response.data;
   }
@@ -533,8 +531,7 @@ export const getAllLossList = createAsyncThunk(
   "getAllLossList",
   async (data) => {
     const response = await getQuery(
-      `/accountService/api/v1/cashFlow/getAllLoss`,
-      data
+      `/accountService/api/v1/cashFlow/getAllLoss?startDate=${data?.startDate}&endDate=${data?.endDate}`
     );
     return response.data;
   }
@@ -544,8 +541,7 @@ export const getAllOutFlowList = createAsyncThunk(
   "getAllOutFlowList",
   async (data) => {
     const response = await getQuery(
-      `/accountService/api/v1/cashFlow/getAllOutFlow`,
-      data
+      `/accountService/api/v1/cashFlow/getAllOutFlow?startDate=${data?.startDate}&endDate=${data?.endDate}`
     );
     return response.data;
   }
@@ -555,8 +551,27 @@ export const getAllInFlowList = createAsyncThunk(
   "getAllInFlowList",
   async (data) => {
     const response = await getQuery(
-      `/accountService/api/v1/cashFlow/getAllInFlow`,
-      data
+      `/accountService/api/v1/cashFlow/getAllInFlow?startDate=${data?.startDate}&endDate=${data?.endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBalanceSheetLiabilities = createAsyncThunk(
+  "getAllBalanceSheetLiabilities",
+  async ({ startDate, endDate }) => {
+    const response = await getQuery(
+      `/accountService/api/v1/balanceSheet/getAllBalanceSheetLiabilities?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBalanceSheetAssets = createAsyncThunk(
+  "getAllBalanceSheetAssets",
+  async ({ startDate, endDate }) => {
+    const response = await getQuery(
+      `/accountService/api/v1/balanceSheet/getAllBalanceSheetAssets?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
@@ -604,6 +619,8 @@ const AccountSlice = createSlice({
     lossList: [],
     inFlowList: [],
     outFlowList: [],
+    balanceSheetLiabilitiesList: [],
+    balanceSheetAssetsList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -1042,6 +1059,33 @@ const AccountSlice = createSlice({
     builder.addCase(getAllOutFlowList.rejected, (state, action) => {
       state.loading = "rejected";
       state.outFlowList = [];
+    });
+
+    builder.addCase(getAllBalanceSheetLiabilities.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllBalanceSheetLiabilities.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.balanceSheetLiabilitiesList = action.payload;
+      }
+    );
+    builder.addCase(getAllBalanceSheetLiabilities.rejected, (state) => {
+      state.loading = "rejected";
+      state.balanceSheetLiabilitiesList = [];
+    });
+
+    builder.addCase(getAllBalanceSheetAssets.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllBalanceSheetAssets.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.balanceSheetAssetsList = action.payload;
+    });
+    builder.addCase(getAllBalanceSheetAssets.rejected, (state) => {
+      state.loading = "rejected";
+      state.balanceSheetAssetsList = [];
     });
   },
 });

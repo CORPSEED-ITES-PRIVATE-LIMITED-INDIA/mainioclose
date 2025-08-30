@@ -1,29 +1,31 @@
-import { Flex, Input, Typography } from "antd";
+import { DatePicker, Flex, Input, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllLossList,
-} from "../../../Toolkit/Slices/AccountSlice";
+import { getAllLossList } from "../../../Toolkit/Slices/AccountSlice";
+import dayjs from "dayjs";
+import { rangePresets } from "../../Common/Commons";
 const { Text } = Typography;
+const { RangePicker } = DatePicker;
 
 const Loss = () => {
   const dispatch = useDispatch();
   const [searchLossText, setLossSearchText] = useState("");
   const [lossFilteredData, setLossFilteredData] = useState([]);
   const lossList = useSelector((state) => state.account.lossList);
-
+  const [dateRange, setDateRange] = useState({
+    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
+  });
 
   useEffect(() => {
-    dispatch(getAllLossList());
-  }, [dispatch]);
-
+    dispatch(getAllLossList(dateRange));
+  }, [dispatch,dateRange]);
 
   useEffect(() => {
     setLossFilteredData(lossList);
   }, [lossList]);
-
 
   const handleLossSearch = (e) => {
     const value = e.target.value?.trim();
@@ -69,6 +71,25 @@ const Loss = () => {
           onChange={handleLossSearch}
           placeholder="search"
           style={{ width: "25%" }}
+        />
+        <RangePicker
+          size="small"
+          allowClear={true}
+          presets={rangePresets}
+          value={[
+            dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
+            dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
+          ]}
+          disabledDate={(current) => current && current > dayjs().endOf("day")}
+          onChange={(dates, dateStrings) => {
+            if (dates) {
+              setDateRange((prev) => ({
+                ...prev,
+                startDate: dateStrings[0],
+                endDate: dateStrings[1],
+              }));
+            }
+          }}
         />
       </Flex>
       <CommonTable

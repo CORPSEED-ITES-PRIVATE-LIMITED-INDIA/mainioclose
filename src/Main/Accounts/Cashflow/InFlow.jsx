@@ -1,29 +1,31 @@
-import {Flex, Input, Typography } from "antd";
-import  { useEffect, useState } from "react";
+import { DatePicker, Flex, Input, Typography } from "antd";
+import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllInFlowList,
-} from "../../../Toolkit/Slices/AccountSlice";
+import { getAllInFlowList } from "../../../Toolkit/Slices/AccountSlice";
+import { rangePresets } from "../../Common/Commons";
+import dayjs from "dayjs";
 const { Text } = Typography;
+const { RangePicker } = DatePicker;
 
 const InFlow = () => {
-
   const dispatch = useDispatch();
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const inFlowList = useSelector((state) => state.account.inFlowList);
+  const [dateRange, setDateRange] = useState({
+    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
+  });
 
   useEffect(() => {
-    dispatch(getAllInFlowList());
-  }, [dispatch]);
+    dispatch(getAllInFlowList(dateRange));
+  }, [dispatch,dateRange]);
 
   useEffect(() => {
     setFilteredData(inFlowList);
   }, [inFlowList]);
-
-
 
   const handleSearch = (e) => {
     const value = e.target.value?.trim();
@@ -35,8 +37,6 @@ const InFlow = () => {
     );
     setFilteredData(filtered);
   };
-
-
 
   const columns = [
     {
@@ -60,8 +60,9 @@ const InFlow = () => {
 
   return (
     <Flex vertical gap={12} style={{ width: "100%" }}>
-      <Flex className="vouchers-header">
+      <Flex className="vouchers-header" justify="space-between">
         <Text className="heading-text">In flow</Text>
+        
       </Flex>
 
       <Flex justify="space-between" align="center" className="vouchers-header">
@@ -72,6 +73,25 @@ const InFlow = () => {
           onChange={handleSearch}
           placeholder="search"
           style={{ width: "25%" }}
+        />
+        <RangePicker
+          size="small"
+          allowClear={true}
+          presets={rangePresets}
+          value={[
+            dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
+            dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
+          ]}
+          disabledDate={(current) => current && current > dayjs().endOf("day")}
+          onChange={(dates, dateStrings) => {
+            if (dates) {
+              setDateRange((prev) => ({
+                ...prev,
+                startDate: dateStrings[0],
+                endDate: dateStrings[1],
+              }));
+            }
+          }}
         />
       </Flex>
       <CommonTable

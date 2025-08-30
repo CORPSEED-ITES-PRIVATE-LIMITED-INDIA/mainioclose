@@ -3,34 +3,34 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllProfitList } from "../../../Toolkit/Slices/AccountSlice";
-import dayjs from "dayjs";
+import { getAllBalanceSheetAssets, getAllBalanceSheetLiabilities, getAllInFlowList } from "../../../Toolkit/Slices/AccountSlice";
 import { rangePresets } from "../../Common/Commons";
+import dayjs from "dayjs";
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
-const Profit = () => {
+const Assets = () => {
   const dispatch = useDispatch();
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
-  const profitList = useSelector((state) => state.account.profitList);
+  const balanceSheetAssetsList = useSelector((state) => state.account.balanceSheetAssetsList);
   const [dateRange, setDateRange] = useState({
     startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
     endDate: dayjs().format('YYYY-MM-DD'),
   });
 
   useEffect(() => {
-    dispatch(getAllProfitList(dateRange));
-  }, [dispatch, dateRange]);
+    dispatch(getAllBalanceSheetAssets(dateRange));
+  }, [dispatch,dateRange]);
 
   useEffect(() => {
-    setFilteredData(profitList);
-  }, [profitList]);
+    setFilteredData(balanceSheetAssetsList);
+  }, [balanceSheetAssetsList]);
 
   const handleSearch = (e) => {
     const value = e.target.value?.trim();
     setSearchText(value);
-    const filtered = profitList?.filter((item) =>
+    const filtered = balanceSheetAssetsList?.filter((item) =>
       Object.values(item)?.some((val) =>
         String(val)?.toLowerCase()?.includes(value?.toLowerCase())
       )
@@ -57,10 +57,11 @@ const Profit = () => {
       title: "Total amount",
     },
   ];
+
   return (
-    <Flex vertical gap={12}>
-      <Flex className="vouchers-header">
-        <Text className="heading-text">Profit</Text>
+    <Flex vertical gap={12} style={{ width: "100%" }}>
+      <Flex className="vouchers-header" justify="space-between">
+        <Text className="heading-text">Assets</Text>
       </Flex>
 
       <Flex justify="space-between" align="center" className="vouchers-header">
@@ -95,10 +96,10 @@ const Profit = () => {
       <CommonTable
         data={filteredData}
         columns={columns}
-        scroll={{ y: "70vh", x: 800 }}
+        scroll={{ y: "70vh" }}
       />
     </Flex>
   );
 };
 
-export default Profit;
+export default Assets;
