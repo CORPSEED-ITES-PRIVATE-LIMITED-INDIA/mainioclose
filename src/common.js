@@ -169,7 +169,7 @@ export function inrCurrency(amount) {
 }
 
 
-function padZero(num) {
+export function padZero(num) {
   return String(num).padStart(2, "0");
 }
 

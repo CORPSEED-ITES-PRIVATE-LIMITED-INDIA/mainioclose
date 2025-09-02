@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -13,18 +13,22 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Chip,
+  DatePicker,
 } from "@heroui/react";
-import { ChevronDown,  Search} from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import  {useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
-import { getAllHistory } from "../../toolkit/slices/leadSlice";
+import { getAllTaskData } from "../../toolkit/slices/leadSlice";
+import { padZero } from "../../common";
+import { parseDate } from "@internationalized/date";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "CREATED DATE", uid: "createdDate", sortable: true },
-  { name: "CREATED BY", uid: "createdBy" },
-  { name: "EVENT", uid: "event" },
+  { name: "NAME", uid: "name", sortable: true },
+  { name: "STATUS", uid: "statusName" },
+  { name: "EXPECTED DATE", uid: "expectedDate" },
   { name: "DESCRIPTION", uid: "description" },
 ];
 
@@ -34,22 +38,23 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
-  "createdDate",
-  "createdBy",
-  "event",
+  "name",
+  "statusName",
+  "expectedDate",
   "description",
 ];
 
-const LeadHistory = () => {
+const LeadTask = () => {
   const dispatch = useDispatch();
   const { leadId } = useParams();
-  const data = useSelector((state) => state.leads.allLeadHistory);
-  const count = useSelector((state) => state.leads.allLeadHistory?.length);
+  const data = useSelector((state) => state.leads.getSingleLeadTask);
+  const count = useSelector((state) => state.leads.getSingleLeadTask?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
+  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "age",
@@ -59,9 +64,8 @@ const LeadHistory = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllHistory(leadId));
+    dispatch(getAllTaskData(leadId));
   }, [dispatch]);
-
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -107,10 +111,26 @@ const LeadHistory = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "createdDate":
+      case "statusName":
         return (
           <div className="flex flex-col">
-           <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY")}</p>
+            <Chip
+              color={
+                rowData?.taskStatus === "Re-Open"
+                  ? "danger"
+                  : rowData?.status === "Done"
+                    ? "success"
+                    : "default"
+              }
+            >
+              {rowData?.statusName}
+            </Chip>
+          </div>
+        );
+      case "expectedDate":
+        return (
+          <div className="flex flex-col">
+            <p>{dayjs(rowData?.expectedDate).format("DD-MM-YYYY")}</p>
           </div>
         );
       default:
@@ -149,9 +169,6 @@ const LeadHistory = () => {
     setPage(1);
   }, []);
 
-
-
-
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -166,6 +183,17 @@ const LeadHistory = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <div>
+              <DatePicker
+                size="md"
+                showMonthAndYearPickers
+                value={parseDate(date)}
+                onChange={(e) => {
+                  let date = `${e.year}-${padZero(e.month)}-${padZero(e.day)}`;
+                  setDate(date);
+                }}
+              />
+            </div>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -191,7 +219,7 @@ const LeadHistory = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} lead history
+            Total {count} lead tasks
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -258,7 +286,7 @@ const LeadHistory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead history list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Lead tasks list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -298,4 +326,4 @@ const LeadHistory = () => {
   );
 };
 
-export default LeadHistory;
+export default LeadTask;

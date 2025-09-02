@@ -68,7 +68,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const Ledger = () => {
+const OrganizationEstimate = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -579,4 +579,4 @@ const Ledger = () => {
   );
 };
 
-export default Ledger;
+export default OrganizationEstimate;

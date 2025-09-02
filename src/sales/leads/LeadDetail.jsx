@@ -1,66 +1,71 @@
 import { Tab, Tabs } from "@heroui/react";
-import React, { useEffect } from "react";
-import LeadInfo from "./LeadInfo";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getSingleLeadDataByLeadId } from "../../toolkit/slices/leadSlice";
-import CreateCompanyForm from "../company/CreateCompanyForm";
-import Vendors from "../vendors/vendors";
-import Proposal from "../proposal/Proposal";
 
 const LeadDetail = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
+  const path = useLocation();
+  const pathKey = path?.pathname?.split("/");
   const leadData = useSelector((state) => state.leads.singleLeadData);
+  const [selectedKey, setSelectedKey] = useState("leadEstimate");
 
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
   }, [dispatch]);
 
+  useEffect(() => {
+    setSelectedKey(pathKey[pathKey?.length-1]);
+  }, []);
+
+  const handleSelect = (e) => {
+    navigate(e);
+    setSelectedKey(e);
+  };
+
+
   let tabs = [
     {
-      id: "details",
+      id: "leadDetail",
       label: "Details",
-      content: <LeadInfo leadData={leadData} />,
     },
     {
-      id: "activities",
-      label: "Activities",
-      content:
-        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-    },
-    {
-      id: "company",
+      id: "companyForm",
       label: "Company",
-      content: <CreateCompanyForm leadData={leadData} />,
     },
     {
       id: "vendors",
       label: "Vendors",
-      content:<Vendors/>
     },
     {
       id: "proposal",
       label: "Proposal",
-      content:<Proposal/>
     },
     {
-      id: "estimate",
+      id: "leadEstimate",
       label: "Estimate",
-      content:
-        "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
     },
   ];
+  
   return (
-    <div>
+    <div className="flex flex-col gap-1">
       <h1 className="mb-1 text-xl font-medium">{leadData?.leadName}</h1>
-      <Tabs aria-label="Dynamic tabs" items={tabs}>
+      <Tabs
+        aria-label="Dynamic tabs"
+        items={tabs}
+        selectedKey={selectedKey}
+        onSelectionChange={handleSelect}
+      >
         {(item) => (
           <Tab key={item.id} title={item.label}>
             {item?.content}
           </Tab>
         )}
       </Tabs>
+      <Outlet />
     </div>
   );
 };

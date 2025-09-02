@@ -1,0 +1,163 @@
+export const navItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "dashboard",
+    key: "dashboard",
+  },
+  {
+    title: "Sales",
+    icon: "Briefcase",
+    url: "/sales",
+    key: "sales",
+    children: [
+      { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
+      { title: "Company", icon: "", url: "sales/company", key: "company" },
+      { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
+      { title: "Proposal", icon: "", url: "sales/proposal", key: "proposal" },
+      {
+        title: "Discounted Estimate",
+        icon: "",
+        url: "sales/discountedEstimate",
+        key: "discountedEstimate",
+      },
+      { title: "Auto history", icon: "", url: "sales/autoHistory", key: "autoHistory" },
+      { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
+      {
+        title: "Serving Companies",
+        icon: "",
+        url: "sales/servingCompanies",
+        key: "servingCompanies",
+      },
+    ],
+  },
+  {
+    title: "Accounts",
+    icon: "HandCoins",
+    url: "/accounts",
+    key: "accounts",
+    children: [
+      {
+        title: "Organization",
+        icon: "",
+        url: "accounts/organizations",
+        key: "organizations",
+      },
+      {
+        title: "Company form",
+        icon: "",
+        url: "accounts/companyForm",
+        key: "companyForm",
+      },
+      {
+        title: "Company approvals",
+        icon: "",
+        url: "accounts/companyApprovals",
+        key: "companyApprovals",
+      },
+      {
+        title: "Payment approvals",
+        icon: "",
+        url: "accounts/paymentApprovals",
+        key: "paymentApprovals",
+      },
+    ],
+  },
+  {
+    title: "Industry",
+    icon: "Factory",
+    url: "/industry",
+    key: "industry",
+    children: [
+      {
+        title: "Industry",
+        icon: "",
+        url: "industry/industries",
+        key: "industries",
+      },
+      {
+        title: "Sub industries",
+        icon: "",
+        url: "industry/subindustries",
+        key: "subindustries",
+      },
+      {
+        title: "Category",
+        icon: "",
+        url: "industry/categories",
+        key: "categories",
+      },
+      {
+        title: "Business activity",
+        icon: "",
+        url: "industry/businessActivity",
+        key: "businessActivity",
+      },
+    ],
+  },
+  {
+    title: "HR",
+    icon: "SquareUserRound",
+    url: "/hr",
+    key: "hr",
+    children: [
+      { title: "Users list", icon: "", url: "hr/usersList", key: "usersList" },
+      {
+        title: "Users approval list",
+        icon: "",
+        url: "hr/usersApprovalList",
+        key: "usersApprovalList",
+      },
+      { title: "Services", icon: "", url: "hr/services", key: "services" },
+    ],
+  },
+  {
+    title: "Quality",
+    icon: "FlaskConical",
+    url: "/quality",
+    key: "quality",
+    children: [
+      { title: "IVR", icon: "", url: "quality/ivr", key: "ivr" },
+      { title: "Report", icon: "", url: "quality/report", key: "report" },
+    ],
+  },
+  {
+    title: "Users",
+    icon: "User2",
+    url: "users",
+    key: "users",
+  },
+  {
+    title: "Vendor's",
+    icon: "SquareUserRound",
+    url: "vendors-requests",
+    key: "vendors-requests",
+  },
+  {
+    title: "Settings",
+    icon: "Settings",
+    url: "/settings",
+    key: "settings",
+    children: [
+      { title: "Status", icon: "", url: "settings/status", key: "status" },
+      {
+        title: "Products",
+        icon: "",
+        url: "settings/products",
+        key: "products",
+      },
+      {
+        title: "Comments",
+        icon: "",
+        url: "settings/comments",
+        key: "comments",
+      },
+      {
+        title: "IP",
+        icon: "",
+        url: "settings/ipAddress",
+        key: "ipAddress",
+      },
+    ],
+  },
+];

@@ -143,6 +143,36 @@ export const searchCompanyForm = createAsyncThunk(
   }
 );
 
+export const searchCompaniesForCompany = createAsyncThunk(
+  "searchCompaniesForCompany",
+  async ({ searchText, userId, searchField }) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/companySearchByGstAndContactDetailsNew?searchNameAndGSt=${searchText}&userId=${userId}&fieldSearch=${searchField}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllCompanyUnits = createAsyncThunk(
+  "getAllCompanyUnits",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/getAllCompanyUnit?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllContactListByCompanyId = createAsyncThunk(
+  "getAllContactListByCompanyId",
+  async (companyId) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`
+    );
+    return response.data;
+  }
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -158,6 +188,9 @@ const CompanySlice = createSlice({
     companyDetail: {},
     servingCompanyList: [],
     allLeadCompanyList: [],
+    seachCompniesList: [],
+    allCompanyUnits: [],
+    contactListByCompanyId:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllNewCompanies.pending, (state) => {
@@ -302,6 +335,41 @@ const CompanySlice = createSlice({
       state.loading = "success";
     });
     builder.addCase(searchCompanyForm.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(searchCompaniesForCompany.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchCompaniesForCompany.fulfilled, (state, action) => {
+      state.seachCompniesList = action?.payload;
+      state.loading = "success";
+    });
+    builder.addCase(searchCompaniesForCompany.rejected, (state) => {
+      state.seachCompniesList = [];
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllCompanyUnits.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCompanyUnits.fulfilled, (state, action) => {
+      state.allCompanyUnits = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllCompanyUnits.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllContactListByCompanyId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllContactListByCompanyId.fulfilled, (state, action) => {
+      state.contactListByCompanyId = action?.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllContactListByCompanyId.rejected, (state) => {
+      state.contactListByCompanyId = [];
       state.loading = "rejected";
     });
   },

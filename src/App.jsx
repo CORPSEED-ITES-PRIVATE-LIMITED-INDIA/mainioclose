@@ -1,62 +1,18 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import HomePage from "./home/HomePage";
 import Login from "./login/Login";
 import ProtectedRoute from "./ProtectedRoute";
 import Layoutpage from "./layouts/Layoutpage";
 import AdminDashboards from "./dashboards/AdminDashboards";
-import Leads from "./sales/leads/Leads";
-import LeadDetail from "./sales/leads/LeadDetail";
-import LeadHistory from "./sales/leads/LeadHistory";
-import Company from "./sales/company/Company";
-import CompanyGstList from "./sales/company/CompanyGstList";
-import CompanyUnits from "./sales/company/CompanyUnits";
-import CompanyUnitDetails from "./sales/company/CompanyUnitDetails";
-import Estimate from "./sales/estimate/Estimate";
-import DiscountedEstimate from "./sales/leads/DiscountedEstimate";
-import Projects from "./sales/leads/Projects";
-import ServingCompanies from "./sales/leads/ServingCompanies";
-import CompanyApprovals from "./accounts/CompanyApprovals";
-import PaymentApprovals from "./accounts/PaymentApprovals";
-import UsersList from "./hr/UsersList";
-import UserApprovals from "./hr/UserApprovals";
-import Services from "./hr/Services";
-import Rating from "./hr/Rating";
 import Users from "./users/Users";
 import VendorRequests from "./vendor-request/VendorRequests";
-import LeadStatus from "./setting/status/LeadStatus";
-import LeadProducts from "./setting/products/LeadProducts";
-import ProductDetails from "./setting/products/ProductDetails";
-import LeadComments from "./setting/comments/LeadComments";
-import IpAddress from "./setting/ipaddress/IpAddress";
-import Organizations from "./accounts/organization/Organizations";
-import OrganizationDetail from "./accounts/organization/OrganizationDetail";
-import GroupLedger from "./accounts/organization/GroupLedger";
-import Group from "./accounts/organization/Group";
-import Voucher from "./accounts/organization/Voucher";
-import Ledger from "./accounts/organization/Ledger";
-import LedgerDetail from "./accounts/organization/LedgerDetail";
-import OrganizationEstimate from "./accounts/organization/OrganizationEstimate";
-import DailyBook from "./accounts/organization/DailyBook";
-import BankStatement from "./accounts/organization/BankStatement";
-import PaymentRegister from "./accounts/organization/PaymentRegister";
-import AllInvoice from "./accounts/organization/AllInvoice";
-import Unbill from "./accounts/organization/Unbill";
-import TDS from "./accounts/organization/TDS";
-import LedgerType from "./accounts/organization/settings/LedgerType";
-import VoucherType from "./accounts/organization/settings/VoucherType";
-import Statutory from "./accounts/organization/settings/Statutory";
-import CompanyForm from "./accounts/CompanyForm";
-import IVR from "./quality/IVR";
-import IVRReport from "./quality/IVRReport";
-import AllProposal from "./sales/proposal/AllProposal";
-import ProfitLoss from "./accounts/organization/ProfitLoss";
-import CashFlow from "./accounts/organization/CashFlow";
-import BalanceSheet from "./accounts/organization/BalanceSheet";
-import Industries from "./industry/Industries";
-import SubIndustries from "./industry/SubIndustries";
-import Categories from "./industry/Categories";
-import BusinessActivity from "./industry/BusinessActivity";
-import AutoHistory from "./sales/leads/AutoHistory";
+import AccountsModuleRouting from "./routings/AccountsModuleRouting";
+import SalesModuleRouting from "./routings/SalesModuleRouting";
+import IndustryModuleRouting from "./routings/IndustryModuleRouting";
+import HRModuleRouting from "./routings/HRModuleRouting";
+import ERPSettingRouting from "./routings/ERPSettingRouting";
+import IVRRouting from "./routings/IVRRouting";
+import DashboardRouting from "./routings/DashboardRouting";
 
 function App() {
   return (
@@ -66,135 +22,31 @@ function App() {
 
       <Route path="/erp" element={<ProtectedRoute />}>
         <Route path=":userId" element={<Layoutpage />}>
-          <Route path="dashboard" element={<AdminDashboards />} />
+
+        {/*Dashboard */}
+         {DashboardRouting()}
 
           {/* Sales */}
-          <Route path="sales/leads" element={<Leads />} />
-          <Route
-            path="sales/leads/:leadId/leadDetail"
-            element={<LeadDetail />}
-          />
-          <Route
-            path="sales/leads/:leadId/leadHistory"
-            element={<LeadHistory />}
-          />
-          <Route path="sales/company" element={<Company />} />
-          <Route
-            path="sales/company/:companyId/gstDetails"
-            element={<CompanyGstList />}
-          />
-          <Route
-            path="sales/company/:companyId/gstDetails/:stateName/companyUnits"
-            element={<CompanyUnits />}
-          />
-          <Route
-            path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/unitDetails"
-            element={<CompanyUnitDetails />}
-          />
-          <Route path="sales/estimate" element={<Estimate />} />
-          <Route path="sales/proposal" element={<AllProposal />} />
-          <Route
-            path="sales/discountedEstimate"
-            element={<DiscountedEstimate />}
-          />
-          <Route path="sales/autoHistory" element={<AutoHistory />} />
-             <Route
-            path="sales/autoHistory/:leadId/leadDetail"
-            element={<LeadDetail />}
-          />
-          <Route path="sales/projects" element={<Projects />} />
-          <Route path="sales/servingCompanies" element={<ServingCompanies />} />
+          {SalesModuleRouting()}
 
           {/* Industry */}
-
-          <Route
-            path="industry/industries"
-            element={<Industries />}
-          />
-          <Route
-            path="industry/subindustries"
-            element={<SubIndustries />}
-          />
-          <Route
-            path="industry/categories"
-            element={<Categories />}
-          />
-          <Route
-            path="industry/businessActivity"
-            element={<BusinessActivity />}
-          />
+          {IndustryModuleRouting()} 
 
           {/* Accounts */}
-          <Route
-            path="accounts/companyApprovals"
-            element={<CompanyApprovals />}
-          />
-          <Route
-            path="accounts/paymentApprovals"
-            element={<PaymentApprovals />}
-          />
-          <Route path="accounts/companyForm" element={<CompanyForm />} />
-
-          <Route path="accounts/organizations" element={<Organizations />}>
-            <Route index element={<OrganizationDetail />} />
-            <Route path="group" element={<Group />} />
-            <Route
-              path="group/:groupId/groupLedger"
-              element={<GroupLedger />}
-            />
-            <Route path="ledger" element={<Ledger />} />
-            <Route
-              path="ledger/:ledgerId/ledgerDetail"
-              element={<LedgerDetail />}
-            />
-            <Route path="voucher" element={<Voucher />} />
-            <Route path="orgEstimate" element={<OrganizationEstimate />} />
-            <Route path="dailyBook" element={<DailyBook />} />
-            <Route path="bankStatement" element={<BankStatement />} />
-            <Route path="paymentRegister" element={<PaymentRegister />} />
-            <Route path="allInvoice" element={<AllInvoice />} />
-            <Route path="unbilled" element={<Unbill />} />
-            <Route path="profitLoss" element={<ProfitLoss />} />
-            <Route path="cashflow" element={<CashFlow />} />
-            <Route path="balanceSheet" element={<BalanceSheet />} />
-            <Route path="tds" element={<TDS />} />
-            <Route
-              path="/erp/:userId/accounts/organizations/settings/ledgerType"
-              element={<LedgerType />}
-            />
-            <Route
-              path="/erp/:userId/accounts/organizations/settings/voucherType"
-              element={<VoucherType />}
-            />
-            <Route
-              path="/erp/:userId/accounts/organizations/settings/statutory"
-              element={<Statutory />}
-            />
-          </Route>
+          {AccountsModuleRouting ()}
 
           {/* IVR */}
-          <Route path="quality/ivr" element={<IVR />} />
-          <Route path="quality/report" element={<IVRReport />} />
+          {IVRRouting ()}
 
           {/* HR */}
-          <Route path="hr/usersList" element={<UsersList />} />
-          <Route path="hr/usersApprovalList" element={<UserApprovals />} />
-          <Route path="hr/services" element={<Services />} />
-          <Route path="hr/services/:serviceId/rating" element={<Rating />} />
+          {HRModuleRouting()} 
 
           {/* Others */}
           <Route path="users" element={<Users />} />
           <Route path="vendors-requests" element={<VendorRequests />} />
 
           {/* Settings */}
-          <Route path="settings/status" element={<LeadStatus />} />
-          <Route path="settings/products" element={<LeadProducts />} />
-          <Route
-            path="settings/products/:productId/productDetail"
-            element={<ProductDetails />}
-          />
-          <Route path="settings/comments" element={<LeadComments />} />
-          <Route path="settings/ipAddress" element={<IpAddress />} />
+          {ERPSettingRouting()} 
         </Route>
       </Route>
 

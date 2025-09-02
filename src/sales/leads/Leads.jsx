@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import  { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -28,15 +28,21 @@ import {
   Popover,
   DateRangePicker,
   addToast,
+  Listbox,
+  ListboxItem,
 } from "@heroui/react";
 import {
+  ArrowDownNarrowWide,
+  ArrowDownToLine,
+  ArrowUpDown,
+  ArrowUpNarrowWide,
+  ArrowUpToLine,
   ChevronDown,
   EllipsisVertical,
   ListFilter,
-  Navigation2,
   Plus,
   Search,
-  Section,
+  Zap,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -44,6 +50,7 @@ import {
   deleteMultipleLeads,
   getAllLeadCount,
   getAllLeadsByFilter,
+  getAllLeadsForExport,
   getAllLeadUser,
   handleDeleteSingleLead,
   multiAssignedLeads,
@@ -62,17 +69,19 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
+import { CSVLink } from "react-csv";
+import dayjs from "dayjs";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "LEAD NAME", uid: "leadName", sortable: true },
-  { name: "MOBILE", uid: "mobileNo" },
-  { name: "EMAIL", uid: "email" },
+  { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status", sortable: true },
   { name: "ASSIGNEE", uid: "assignee" },
+  { name: "UPDATED BY", uid: "updatedBy" },
   { name: "SOURCE", uid: "source" },
   { name: "INDUSTRY", uid: "industry" },
-  { name: "CITY", uid: "city" },
+  { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -82,13 +91,13 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "leadName",
-  "mobileNo",
-  "email",
+  "contact",
   "assignee",
   "source",
+  "updatedBy",
   "status",
   "industry",
-  "city",
+  "address",
   "actions",
 ];
 const formSchema = z.object({
@@ -134,6 +143,9 @@ const Leads = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.leads.allLeads);
   const count = useSelector((state) => state.leads.totalCount);
+  const allLeadsForExport = useSelector(
+    (state) => state.leads.allLeadsForExport
+  );
   const roles = useSelector((state) => state.auth.currentUser?.roles);
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
   const statusList = useSelector((state) => state?.setting?.statusList);
@@ -143,6 +155,8 @@ const Leads = () => {
   const heirarchyUserList = useSelector(
     (state) => state.dashboard.dashboardUsers
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState(
@@ -171,6 +185,7 @@ const Leads = () => {
     contactMobileNo: "",
     contactEmail: "",
     sortBy: "id",
+    sortDirection: "",
     page: 1,
     size: 50,
   };
@@ -232,6 +247,63 @@ const Leads = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const exportData = allLeadsForExport?.map((row) => ({
+    Id: row?.id,
+    "Lead name": row?.leadName,
+    "Missed task": row?.missedTaskName,
+    Frequency: row?.count,
+    Status: row?.status,
+    "Client name": row?.clientName,
+    Email: row?.clientEmail,
+    "Mobile no.": row?.clientMobNo,
+    "Assignee person": row?.assigneeName,
+    "Assignee email": row?.assigneeEmail,
+    "Created by": row?.createdBy,
+    Source: row?.source,
+    Industry: row?.industry,
+    "Sub industry": row?.subIndustry,
+    Category: row?.subSubIndustry,
+    "Business activity": row?.industryData,
+    Address: row?.address,
+    Country: row?.country,
+    State: row?.state,
+    City: row?.city,
+    "Pin code": row?.pincode,
+    "Updated By": row?.updatedBy,
+    "Reopen By": row?.reopenBy,
+    "Reopen By Quality": row?.isReopenByQuality,
+    "Created Date": dayjs(row?.createDate).format("YYYY-MM-DD"),
+  }));
+
+  const headers = [
+    "Id",
+    "Lead name",
+    "Missed task",
+    "Frequency",
+    "Status",
+    "Client name",
+    "Email",
+    "Mobile no.",
+    "Assignee person",
+    "Assignee email",
+    "Created by",
+    "Helper",
+    "Source",
+    "Industry",
+    "Sub industry",
+    "Category",
+    "Business activity",
+    "Address",
+    "Country",
+    "State",
+    "City",
+    "Pin code",
+    "Updated By",
+    "Reopen By",
+    "Reopen By Quality",
+    "Created Date",
+  ];
+
   const openDeleteModal = (id) => {
     setItemId(id);
     deleteModal.onOpen();
@@ -267,10 +339,20 @@ const Leads = () => {
             <Link to={`${lead?.id}/leadDetail`} className="font-semibold">
               {lead.leadName || "-"}
             </Link>
-            <span className="text-sm text-gray-400">{lead.mobileNo}</span>
+            <span className="text-sm text-gray-400">
+              {dayjs(lead.createDate).format("DD-MM-YYYY")}
+            </span>
           </div>
         );
-
+      case "contact":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">{lead?.email || "-"}</span>
+            <span className="text-sm text-gray-400">
+              {lead?.mobileNo || "-"}
+            </span>
+          </div>
+        );
       case "status":
         return (
           <Chip className="capitalize" color="primary" size="sm" variant="flat">
@@ -284,7 +366,7 @@ const Leads = () => {
               {lead.assignee?.fullName || "-"}
             </span>
             <span className="text-sm text-gray-400">
-              {lead.assignee?.email || ""}
+              {lead.assignee?.email || "-"}
             </span>
           </div>
         );
@@ -294,6 +376,26 @@ const Leads = () => {
         return lead.city || "-";
       case "source":
         return lead.source || "-";
+      case "updatedBy":
+        return (
+          <div>
+            <span className="font-normal">{lead?.updatedBy}</span>
+            <span className="font-normal text-muted-foreground">
+              {lead?.updatedDate
+                ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
+                : "-"}
+            </span>
+          </div>
+        );
+      case "Address":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">{lead.address || "-"}</span>
+            <span className="text-sm text-gray-400">
+              {lead.city || ""},{lead?.state},{lead?.country}
+            </span>
+          </div>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -306,18 +408,25 @@ const Leads = () => {
               <DropdownMenu
                 selectionMode="single"
                 onSelectionChange={(e) => {
-                  console.log("dsjgdkjgdjkgdkjgdjdg", e);
                   let key = Array.from(e);
                   if (key == "delete") {
-                    console.log("dsjgdkjgdjkgdkjgdjdg", key);
                     openDeleteModal(lead?.id);
                   }
                 }}
               >
-                <DropdownItem key="history">
-                  <Link to={`${lead?.id}/leadHistory`}>History</Link>
+                <DropdownItem
+                  key="history"
+                  href={`erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
+                >
+                  History
                 </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
+                <DropdownItem
+                  key="tasks"
+                  href={`erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
+                >
+                  Lead tasks
+                </DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
                 <DropdownItem key="delete" color="danger">
                   Delete
                 </DropdownItem>
@@ -428,6 +537,14 @@ const Leads = () => {
       });
   }, [dispatch, selectedKeys, userId, assignedLeadInfo, allMultiFilterData]);
 
+  const handleSort = (sortBy, sortDirection) => {
+    const updatedData = { ...allMultiFilterData, sortBy, sortDirection };
+    setAllMultiFilterData(updatedData);
+    dispatch(getAllLeadsByFilter(updatedData));
+    dispatch(getAllLeadsForExport(updatedData));
+    dispatch(getAllLeadCount(updatedData));
+  };
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -445,7 +562,9 @@ const Leads = () => {
           <div className="flex gap-3">
             <Popover size="lg" showArrow>
               <PopoverTrigger>
-                <Button variant="flat">Action</Button>
+                <Button variant="flat" endContent={<Zap />}>
+                  Action
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[500px] flex justify-start">
                 {(titleProps) => (
@@ -456,7 +575,11 @@ const Leads = () => {
                     >
                       Lead actions
                     </h3>
-                    <p className="text-muted-foreground w-full mb-2">{selectedKeys?.length===0?"Please select the table rows for action ." :`${selectedKeys?.length} rows are selected`} </p>
+                    <p className="text-muted-foreground w-full mb-2">
+                      {selectedKeys?.length === 0
+                        ? "Please select the table rows for action ."
+                        : `${selectedKeys?.length} rows are selected`}{" "}
+                    </p>
                     <div className="flex flex-col gap-4 w-full">
                       <NewSelect
                         data={statusList}
@@ -488,16 +611,103 @@ const Leads = () => {
                       />
                     </div>
                     <div className="flex justify-between gap-2 my-2 w-full">
-                      <Button color="danger" isDisabled={selectedKeys?.length===0} onPress={handleDeleteMutipleLeads}>
+                      <Button
+                        color="danger"
+                        isDisabled={selectedKeys?.length === 0}
+                        onPress={handleDeleteMutipleLeads}
+                      >
                         Delete
                       </Button>
                       <Button
                         color="primary"
-                        isDisabled={selectedKeys?.length===0}
+                        isDisabled={selectedKeys?.length === 0}
                         onPress={handleMultipleAssignedLeads}
                       >
                         Send
                       </Button>
+                    </div>
+                  </>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            <Popover size="lg" showArrow>
+              <PopoverTrigger>
+                <Button variant="flat" endContent={<ArrowUpDown />}>
+                  Sort
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] flex justify-start">
+                {(titleProps) => (
+                  <>
+                    <h3
+                      className="my-4 font-bold text-xl w-full"
+                      {...titleProps}
+                    >
+                      Sort
+                    </h3>
+                    <div className="flex flex-col gap-4 w-[220px]">
+                      <Listbox
+                        aria-label="Actions"
+                        selectionMode="single"
+                        selectedKeys={[
+                          `${allMultiFilterData?.sortBy}${allMultiFilterData?.sortDirection}`,
+                        ]}
+                        onSelectionChange={(e) => {
+                          let key = Array.from(e)[0];
+                          if (key === "idasc") {
+                            handleSort("id", "asc");
+                          } else if (key === "iddesc") {
+                            handleSort("id", "desc");
+                          } else if (key === "createdDateasc") {
+                            handleSort("createdDate", "asc");
+                          } else if (key === "createdDatedesc") {
+                            handleSort("createdDate", "desc");
+                          } else if (key === "updatedDateasc") {
+                            handleSort("updatedDate", "asc");
+                          } else if (key === "updatedDatedesc") {
+                            handleSort("updatedDate", "desc");
+                          }
+                        }}
+                        onAction={(key) => alert(key)}
+                      >
+                        <ListboxItem
+                          key="idasc"
+                          endContent={<ArrowDownNarrowWide />}
+                        >
+                          Id (Asc)
+                        </ListboxItem>
+                        <ListboxItem
+                          key="iddesc"
+                          endContent={<ArrowUpNarrowWide />}
+                        >
+                          Id (Desc)
+                        </ListboxItem>
+                        <ListboxItem
+                          key="createdDateasc"
+                          endContent={<ArrowDownNarrowWide />}
+                        >
+                          Created date (Asc)
+                        </ListboxItem>
+                        <ListboxItem
+                          key="createdDatedesc"
+                          endContent={<ArrowUpNarrowWide />}
+                        >
+                          Created date (Desc)
+                        </ListboxItem>
+                        <ListboxItem
+                          key="updatedDateasc"
+                          endContent={<ArrowDownNarrowWide />}
+                        >
+                          Updated date (Asc)
+                        </ListboxItem>
+                        <ListboxItem
+                          key="updatedDatedesc"
+                          endContent={<ArrowUpNarrowWide />}
+                        >
+                          Updated date (Desc)
+                        </ListboxItem>
+                      </Listbox>
                     </div>
                   </>
                 )}
@@ -550,18 +760,6 @@ const Leads = () => {
                         granularity="minute"
                         hourCycle={24}
                         visibleMonths={2}
-                        // defaultValue={{
-                        //   start: allMultiFilterData?.toDate
-                        //     ? parseZonedDateTime(
-                        //         `${allMultiFilterData?.toDate}[Asia/Kolkata]`
-                        //       )
-                        //     : null,
-                        //   end: allMultiFilterData?.fromDate
-                        //     ? parseZonedDateTime(
-                        //         `${allMultiFilterData?.fromDate}[Asia/Kolkata]`
-                        //       )
-                        //     : null,
-                        // }}
                         label="Created date"
                         onChange={(range) => {
                           setAllMultiFilterData((prev) => ({
@@ -593,18 +791,6 @@ const Leads = () => {
                         hourCycle={24}
                         visibleMonths={2}
                         label="Updated date"
-                        // value={{
-                        //   start: allMultiFilterData?.updatedToDate
-                        //     ? parseZonedDateTime(
-                        //         `${allMultiFilterData?.updatedToDate}[Asia/Kolkata]`
-                        //       )
-                        //     : null,
-                        //   end: allMultiFilterData?.updatedfromDate
-                        //     ? parseZonedDateTime(
-                        //         `${allMultiFilterData?.updatedfromDate}[Asia/Kolkata]`
-                        //       )
-                        //     : null,
-                        // }}
                         onChange={(range) => {
                           setAllMultiFilterData((prev) => ({
                             ...prev,
@@ -689,13 +875,48 @@ const Leads = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button
-              color="primary"
-              onPress={() => handleOpenModal()}
-              endContent={<Plus />}
-            >
-              Add New
-            </Button>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button radius="full" variant="flat" isIconOnly>
+                  <EllipsisVertical />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                aria-label="Static Actions"
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  if (key === "add") {
+                    handleOpenModal();
+                  }
+                }}
+              >
+                <DropdownItem key="add" endContent={<Plus />}>
+                  Add lead
+                </DropdownItem>
+                {adminRole && (
+                  <DropdownItem key="export" endContent={<ArrowDownToLine />}>
+                    <CSVLink
+                      className="text-white"
+                      data={exportData}
+                      headers={headers}
+                      filename={"exported_data.csv"}
+                    >
+                      <Button
+                        variant="light"
+                        size="sm"
+                        className="w-full flex justify-start p-0 m-0"
+                      >
+                        Export
+                      </Button>
+                    </CSVLink>
+                  </DropdownItem>
+                )}
+                <DropdownItem key="import" endContent={<ArrowUpToLine />}>
+                  Import
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -729,7 +950,7 @@ const Leads = () => {
     allMultiFilterData,
     statusList,
     selectedKeys,
-    heirarchyUserList
+    heirarchyUserList,
   ]);
 
   const bottomContent = useMemo(() => {

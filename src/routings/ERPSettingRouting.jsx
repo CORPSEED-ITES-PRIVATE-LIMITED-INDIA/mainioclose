@@ -1,0 +1,24 @@
+import React from "react";
+import { Route } from "react-router-dom";
+import LeadStatus from "../setting/status/LeadStatus";
+import LeadProducts from "../setting/products/LeadProducts";
+import ProductDetails from "../setting/products/ProductDetails";
+import LeadComments from "../setting/comments/LeadComments";
+import IpAddress from "../setting/ipaddress/IpAddress";
+
+const ERPSettingRouting = () => {
+  return (
+    <>
+      <Route path="settings/status" element={<LeadStatus />} />
+      <Route path="settings/products" element={<LeadProducts />} />
+      <Route
+        path="settings/products/:productId/productDetail"
+        element={<ProductDetails />}
+      />
+      <Route path="settings/comments" element={<LeadComments />} />
+      <Route path="settings/ipAddress" element={<IpAddress />} />
+    </>
+  );
+};
+
+export default ERPSettingRouting;

@@ -30,6 +30,17 @@ export const getAllLeadCount = createAsyncThunk(
   }
 );
 
+export const getAllLeadsForExport = createAsyncThunk(
+  "getAllLeadsForExport",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/lead/getAllLeadForImport`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const createLeads = createAsyncThunk("createLeads", async (data) => {
   const response = await api.post(`/leadService/api/v1/lead/createLead`, data);
   return response.data;
@@ -361,6 +372,25 @@ export const getAllAutoHistoryForExportByDate = createAsyncThunk(
   }
 );
 
+export const getAllHistory = createAsyncThunk(
+  "allLeadsDataHistorys",
+  async (id) => {
+    const allHistoryRes = await api.get(
+      `/leadService/api/v1/rating/getAllUserHistory?userId=${id}`
+    );
+    return allHistoryRes?.data;
+  }
+);
+
+export const getAllTaskData = createAsyncThunk("getAllTaskData", async (id) => {
+  const response = await api.get(
+    `/leadService/api/v1/task/getAllTaskByLead?leadId=${id}`
+  );
+  return response.data;
+});
+
+
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -370,6 +400,7 @@ export const LeadSlice = createSlice({
     leadsLoading: "",
     loading: "",
     totalCount: 0,
+    allLeadsForExport: [],
     singleLeadData: {},
     remarkData: [],
     estimateListByUserId: [],
@@ -386,6 +417,8 @@ export const LeadSlice = createSlice({
     proposalCount: 0,
     autoHistoryExportList: [],
     autoExportLoading: "",
+    allLeadHistory: [],
+    getSingleLeadTask: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -420,6 +453,18 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAllLeadCount.rejected, (state) => {
       state.historyLoading = "rejected";
+    });
+
+    builder.addCase(getAllLeadsForExport.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLeadsForExport.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allLeadsForExport = action?.payload;
+    });
+    builder.addCase(getAllLeadsForExport.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.allLeadsForExport = [];
     });
 
     builder.addCase(getSingleLeadDataByLeadId.pending, (state) => {
@@ -636,6 +681,28 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllAutoHistoryForExportByDate.rejected, (state) => {
       state.autoHistoryExportList = [];
       state.autoExportLoading = "error";
+    });
+
+    builder.addCase(getAllHistory.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllHistory.fulfilled, (state, action) => {
+      state.allLeadHistory = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllHistory.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllTaskData.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllTaskData.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.getSingleLeadTask = action.payload;
+    });
+    builder.addCase(getAllTaskData.rejected, (state, action) => {
+      state.loading = "rejected";
     });
   },
 });
