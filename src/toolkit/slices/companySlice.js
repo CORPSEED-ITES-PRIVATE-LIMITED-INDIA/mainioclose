@@ -173,6 +173,8 @@ export const getAllContactListByCompanyId = createAsyncThunk(
   }
 );
 
+
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {

@@ -161,3 +161,17 @@ export const navItems = [
     ],
   },
 ];
+
+
+
+export const operationNavItems=[{
+     
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "dashboard",
+    key: "dashboard",
+
+}]
+
+
+
