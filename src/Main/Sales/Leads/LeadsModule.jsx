@@ -53,6 +53,7 @@ import LeadsDetailsMainPage from "./LeadsDetailsMainPage";
 import dayjs from "dayjs";
 import AllNotificationPage from "./AllNotificationPage";
 import { leadSource } from "../../../data/FakeData";
+import { getAllUrlList } from "../../../Toolkit/Slices/LeadUrlSlice";
 const { Text, Title } = Typography;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
@@ -83,6 +84,7 @@ const LeadsModule = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
+  const allLeadUrl = useSelector((prev) => prev?.leadurls.allUrlList);
   const [openNotificationDrawer, setOpenNotificationDrawer] = useState(false);
   const onSelectChange = (newSelectedRowKeys, rowsData) => {
     setSelectedRowKeys(newSelectedRowKeys);
@@ -96,6 +98,7 @@ const LeadsModule = () => {
     fromDate: "",
     updatedToDate: "",
     updatedfromDate: "",
+    originalName: null,
     updatedById: null,
     source: [],
     contactMobileNo: null,
@@ -909,7 +912,14 @@ const LeadsModule = () => {
             </Button>
           </Dropdown>
 
-          <Button onClick={() => setFilterDrawer(true)}>Filter data</Button>
+          <Button
+            onClick={() => {
+              setFilterDrawer(true);
+              dispatch(getAllUrlList());
+            }}
+          >
+            Filter data
+          </Button>
 
           {adminRole && (
             <Popover
@@ -1284,6 +1294,27 @@ const LeadsModule = () => {
                   source: e,
                 }))
               }
+            />
+          </Flex>
+          <Flex vertical gap={8}>
+            <Text>Service </Text>
+            <Select
+              showSearch
+              allowClear
+              options={allLeadUrl?.map((item) => ({
+                label: item?.urlsName,
+                value: item?.urlsName,
+              }))}
+              value={allMultiFilterData?.originalName}
+              onChange={(e) =>
+                setAllMultiFilterData((prev) => ({
+                  ...prev,
+                  originalName: e,
+                }))
+              }
+              // filterOption={(input, option) =>
+              //   option.label.toLowerCase().includes(input.toLowerCase())
+              // }
             />
           </Flex>
 
