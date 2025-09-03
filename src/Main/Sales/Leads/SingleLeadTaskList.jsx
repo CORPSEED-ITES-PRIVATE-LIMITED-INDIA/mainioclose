@@ -99,7 +99,7 @@ const SingleLeadTaskList = () => {
       )
       setFilteredData(filtered)
     } else {
-      setFilteredData(taskData) // Reset to original data if date is cleared
+      setFilteredData(taskData)
     }
   }
 
