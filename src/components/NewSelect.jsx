@@ -18,6 +18,7 @@ const NewSelect = ({
   errorMessage,
   size,
   placeholder,
+  onItemSelect=()=>{},
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
@@ -176,7 +177,15 @@ const NewSelect = ({
         }}
       >
         {(item) => (
-          <SelectItem key={String(item[valueKey])} textValue={item?.[labelKey]}>
+          <SelectItem
+            key={String(item[valueKey])}
+            textValue={item?.[labelKey]}
+            onPress={() => {
+              if (onItemSelect) {
+                onItemSelect(item);
+              }
+            }}
+          >
             <div className="flex flex-col">
               <span className="text-small">
                 {item?.[labelKey] || "Unknown"}

@@ -11,6 +11,7 @@ import accountReducer from "./slices/accountSlice";
 import vendorsReducer from "./slices/vendorsSlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import organizationReducer from "./slices/organizationSlice";
+import productReducer from "./slices/productSlice";
 
 const reducers = combineReducers({
   auth: authReducer,
@@ -21,7 +22,8 @@ const reducers = combineReducers({
   account: accountReducer,
   vendors: vendorsReducer,
   dashboard: dashboardReducer,
-  organization:organizationReducer
+  organization: organizationReducer,
+  product: productReducer,
 });
 
 const persistConfig = {

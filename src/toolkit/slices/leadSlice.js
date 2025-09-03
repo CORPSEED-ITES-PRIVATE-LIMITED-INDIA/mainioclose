@@ -389,6 +389,50 @@ export const getAllTaskData = createAsyncThunk("getAllTaskData", async (id) => {
   return response.data;
 });
 
+export const createEstimateForApprovals = createAsyncThunk(
+  "createEstimateForApprovals",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/leadEstimate/createEstimateForm`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editEstimateForApprovals = createAsyncThunk(
+  "editEstimateForApprovals",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/editEstimateForm`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editLeadEstimate = createAsyncThunk(
+  "editEstimate",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/editEstimateInvoice`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const createEstimate = createAsyncThunk(
+  "createEstimate",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/leadEstimate/createEstimate`,
+      data
+    );
+    return response.data;
+  }
+);
+
 
 
 export const LeadSlice = createSlice({

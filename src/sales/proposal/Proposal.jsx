@@ -48,7 +48,13 @@ const defaultValues = {
   template: "<h2>Your proposal </h2>",
 };
 
-function TagsInput({ value = [], onChange, placeholder }) {
+export function TagsInput({
+  value = [],
+  onChange,
+  placeholder,
+  className,
+  inputClassName,
+}) {
   const [inputValue, setInputValue] = useState("");
 
   const handleKeyDown = (e) => {
@@ -66,11 +72,11 @@ function TagsInput({ value = [], onChange, placeholder }) {
   };
 
   return (
-    <div className="flex flex-wrap gap-2 border rounded p-2">
+    <div className={`$${className} flex flex-wrap gap-2 border rounded p-2`}>
       {value.map((tag, index) => (
         <div
           key={index}
-          className="bg-gray-300 dark:text-black px-2 py-1 rounded flex items-center gap-1"
+          className={`bg-gray-300 dark:text-black px-2 py-1 rounded flex items-center gap-1`}
         >
           {tag}
           <button onClick={() => removeTag(index)}>&times;</button>
@@ -81,7 +87,7 @@ function TagsInput({ value = [], onChange, placeholder }) {
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="flex-grow outline-none"
+        className={`${inputClassName} flex-grow outline-none`}
       />
     </div>
   );
@@ -239,7 +245,9 @@ const Proposal = () => {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="font-medium">To <span className="text-red-500">*</span></label>
+            <label className="font-medium">
+              To <span className="text-red-500">*</span>
+            </label>
             <Controller
               name="mailTo"
               control={control}
@@ -299,7 +307,9 @@ const Proposal = () => {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-medium">Subject <span className="text-red-500">*</span></label>
+            <label className="font-medium">
+              Subject <span className="text-red-500">*</span>
+            </label>
             <Controller
               name="mailSubject"
               control={control}
@@ -331,7 +341,9 @@ const Proposal = () => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-medium">Mail body <span className="text-red-500">*</span></label>
+            <label className="font-medium">
+              Mail body <span className="text-red-500">*</span>
+            </label>
             <Controller
               name="mailBody"
               control={control}
@@ -356,7 +368,9 @@ const Proposal = () => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-medium">Proposal <span className="text-red-500">*</span></label>
+            <label className="font-medium">
+              Proposal <span className="text-red-500">*</span>
+            </label>
             <Controller
               name="template"
               control={control}

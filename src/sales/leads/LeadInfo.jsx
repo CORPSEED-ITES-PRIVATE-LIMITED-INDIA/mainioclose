@@ -151,6 +151,10 @@ const LeadInfo = ({ leadData }) => {
   const [editContact, setEditContact] = useState(null);
 
   useEffect(() => {
+    dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+  }, [dispatch]);
+
+  useEffect(() => {
     dispatch(getAllSlugList());
     dispatch(getAllComments());
     dispatch(getAllUsers());

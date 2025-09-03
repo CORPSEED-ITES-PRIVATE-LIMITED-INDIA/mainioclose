@@ -1,31 +1,23 @@
 import { Tab, Tabs } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { getSingleLeadDataByLeadId } from "../../toolkit/slices/leadSlice";
+import { useSelector } from "react-redux";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const LeadDetail = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { leadId, userId } = useParams();
   const path = useLocation();
   const pathKey = path?.pathname?.split("/");
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const [selectedKey, setSelectedKey] = useState("leadEstimate");
 
   useEffect(() => {
-    dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
-  }, [dispatch]);
-
-  useEffect(() => {
-    setSelectedKey(pathKey[pathKey?.length-1]);
+    setSelectedKey(pathKey[pathKey?.length - 1]);
   }, []);
 
   const handleSelect = (e) => {
     navigate(e);
     setSelectedKey(e);
   };
-
 
   let tabs = [
     {
@@ -49,7 +41,7 @@ const LeadDetail = () => {
       label: "Estimate",
     },
   ];
-  
+
   return (
     <div className="flex flex-col gap-1">
       <h1 className="mb-1 text-xl font-medium">{leadData?.leadName}</h1>

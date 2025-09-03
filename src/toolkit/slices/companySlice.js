@@ -192,7 +192,7 @@ const CompanySlice = createSlice({
     allLeadCompanyList: [],
     seachCompniesList: [],
     allCompanyUnits: [],
-    contactListByCompanyId:[]
+    contactListByCompanyId: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllNewCompanies.pending, (state) => {
@@ -374,6 +374,8 @@ const CompanySlice = createSlice({
       state.contactListByCompanyId = [];
       state.loading = "rejected";
     });
+
+   
   },
 });
 
