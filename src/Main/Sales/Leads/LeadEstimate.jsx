@@ -291,8 +291,8 @@ const LeadEstimate = ({ leadid }) => {
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactDetailsById(details?.companyId));
     dispatch(getSecondaryContactListByCompanyId(details?.companyId));
-    getAllStatesByCountryId(details?.primaryCountry?.id);
-    getAllCitiesByStateId(details?.primaryState?.id);
+    dispatch(getAllStatesByCountryId(details?.primaryCountry?.id));
+    dispatch(getAllCitiesByStateId(details?.primaryState?.id));
     dispatch(getAllProductCategoryById(details?.businessArrangmentId));
     dispatch(
       getAllProductSubCategoryListByCategoryId(details?.productCategoryId)
@@ -373,12 +373,12 @@ const LeadEstimate = ({ leadid }) => {
       originalEmail: details?.consultantByCompany?.originalEmail,
       originalAddress: details?.consultantByCompany?.address,
     });
-    addressForm.setFieldsValue({
-      address: details?.address,
-      city: details?.city,
-      state: details?.state,
-      country: details?.country,
-      primaryPinCode: details?.primaryPinCode,
+    gstForm.setFieldsValue({
+      companyType: details?.companyType,
+      gstType: details?.gstType,
+      businessType: details?.businessType,
+      gstNo: details?.gstNo,
+      panNo: details?.panNo,
     });
 
     addressForm.setFieldsValue({
