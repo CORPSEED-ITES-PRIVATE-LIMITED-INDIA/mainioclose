@@ -13,7 +13,7 @@ const Loss = () => {
   const dispatch = useDispatch();
   const [searchLossText, setLossSearchText] = useState("");
   const [lossFilteredData, setLossFilteredData] = useState([]);
-  const lossList = useSelector((state) => state.account.lossList);
+  const lossList = useSelector((state) => state.account.lossList?.data);
   const [dateRange, setDateRange] = useState({
     startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
     endDate: dayjs().format('YYYY-MM-DD'),

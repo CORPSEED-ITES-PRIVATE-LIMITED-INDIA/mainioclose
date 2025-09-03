@@ -13,7 +13,8 @@ const Profit = () => {
   const dispatch = useDispatch();
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
-  const profitList = useSelector((state) => state.account.profitList);
+  const profitList = useSelector((state) => state.account.profitList?.data);
+  // const  = useSelector((state) => state.account.profitList);
   const [dateRange, setDateRange] = useState({
     startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
     endDate: dayjs().format('YYYY-MM-DD'),
