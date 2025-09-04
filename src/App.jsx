@@ -13,6 +13,7 @@ import HRModuleRouting from "./routings/HRModuleRouting";
 import ERPSettingRouting from "./routings/ERPSettingRouting";
 import IVRRouting from "./routings/IVRRouting";
 import DashboardRouting from "./routings/DashboardRouting";
+import OperationModuleRouting from "./routings/OperationModuleRouting";
 
 function App() {
   return (
@@ -22,31 +23,33 @@ function App() {
 
       <Route path="/erp" element={<ProtectedRoute />}>
         <Route path=":userId" element={<Layoutpage />}>
-
-        {/*Dashboard */}
-         {DashboardRouting()}
+          {/*Dashboard */}
+          {DashboardRouting()}
 
           {/* Sales */}
           {SalesModuleRouting()}
 
           {/* Industry */}
-          {IndustryModuleRouting()} 
+          {IndustryModuleRouting()}
 
           {/* Accounts */}
-          {AccountsModuleRouting ()}
+          {AccountsModuleRouting()}
 
           {/* IVR */}
-          {IVRRouting ()}
+          {IVRRouting()}
 
           {/* HR */}
-          {HRModuleRouting()} 
+          {HRModuleRouting()}
+
+          {/*Operations */}
+          {OperationModuleRouting()}
 
           {/* Others */}
           <Route path="users" element={<Users />} />
           <Route path="vendors-requests" element={<VendorRequests />} />
 
           {/* Settings */}
-          {ERPSettingRouting()} 
+          {ERPSettingRouting()}
         </Route>
       </Route>
 

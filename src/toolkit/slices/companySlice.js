@@ -173,6 +173,16 @@ export const getAllContactListByCompanyId = createAsyncThunk(
   }
 );
 
+export const updateCompanyAddress = createAsyncThunk(
+  "updateCompanyAddress",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/company/updateCompanyAddress`,
+      data
+    );
+    return response.data;
+  }
+);
 
 
 const CompanySlice = createSlice({

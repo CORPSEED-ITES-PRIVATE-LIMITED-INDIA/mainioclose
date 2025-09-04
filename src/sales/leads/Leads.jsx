@@ -37,6 +37,7 @@ import {
   ArrowUpDown,
   ArrowUpNarrowWide,
   ArrowUpToLine,
+  ArrowUpWideNarrow,
   ChevronDown,
   EllipsisVertical,
   ListFilter,
@@ -679,7 +680,7 @@ const Leads = () => {
                         </ListboxItem>
                         <ListboxItem
                           key="iddesc"
-                          endContent={<ArrowUpNarrowWide />}
+                          endContent={<ArrowUpWideNarrow />}
                         >
                           Id (Desc)
                         </ListboxItem>
@@ -691,7 +692,7 @@ const Leads = () => {
                         </ListboxItem>
                         <ListboxItem
                           key="createdDatedesc"
-                          endContent={<ArrowUpNarrowWide />}
+                          endContent={<ArrowUpWideNarrow />}
                         >
                           Created date (Desc)
                         </ListboxItem>
@@ -703,7 +704,7 @@ const Leads = () => {
                         </ListboxItem>
                         <ListboxItem
                           key="updatedDatedesc"
-                          endContent={<ArrowUpNarrowWide />}
+                          endContent={<ArrowUpWideNarrow />}
                         >
                           Updated date (Desc)
                         </ListboxItem>

@@ -433,6 +433,16 @@ export const createEstimate = createAsyncThunk(
   }
 );
 
+export const updateGstTypeInEstimate = createAsyncThunk(
+  "updateGstTypeInEstimate",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/company/updateCompanyGst?companyId=${data?.companyId}&companyType=${data?.companyType}&gstType=${data?.gstType}&bussinessType=${data?.businessType}&gstNo=${data?.gstNo}&panNo=${data?.panNo}`
+    );
+    return response.data;
+  }
+);
+
 
 
 export const LeadSlice = createSlice({

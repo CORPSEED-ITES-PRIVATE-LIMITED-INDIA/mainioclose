@@ -5,10 +5,14 @@ import LeadProducts from "../setting/products/LeadProducts";
 import ProductDetails from "../setting/products/ProductDetails";
 import LeadComments from "../setting/comments/LeadComments";
 import IpAddress from "../setting/ipaddress/IpAddress";
+import OperationsSettings from "../operation/Settings/OperationsSettings";
 
 const ERPSettingRouting = () => {
   return (
     <>
+      <Route path="settings/operations" element={<OperationsSettings />}>
+  
+      </Route>
       <Route path="settings/status" element={<LeadStatus />} />
       <Route path="settings/products" element={<LeadProducts />} />
       <Route

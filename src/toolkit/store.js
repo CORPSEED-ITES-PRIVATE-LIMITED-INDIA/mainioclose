@@ -12,6 +12,7 @@ import vendorsReducer from "./slices/vendorsSlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import organizationReducer from "./slices/organizationSlice";
 import productReducer from "./slices/productSlice";
+import operationReducer from "./slices/operationSlice";
 
 const reducers = combineReducers({
   auth: authReducer,
@@ -24,6 +25,7 @@ const reducers = combineReducers({
   dashboard: dashboardReducer,
   organization: organizationReducer,
   product: productReducer,
+  operation: operationReducer,
 });
 
 const persistConfig = {

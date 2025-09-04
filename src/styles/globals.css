@@ -137,4 +137,85 @@ table td {
 
 
 
+.container {
+  max-height: 84vh;
+  overflow: auto;
+  margin-top: 12px;
+  padding: 24px;
+}
+
+.flex {
+  display: flex;
+}
+
+.vertical {
+  display: flex;
+  flex-direction: column;
+}
+
+.space {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gap-4 { gap: 4px; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-24 { gap: 24px; }
+.gap-60 { gap: 60px; }
+
+.align-center {
+  align-items: center;
+}
+
+.space-between {
+  justify-content: space-between;
+}
+
+.card {
+  border: 1px solid #ccc;
+  padding: 16px;
+  width: 40%;
+  border-radius: 4px;
+}
+
+.invoice-box {
+  padding: 60px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 8px rgba(9, 30, 66, 0.25);
+}
+
+.ribbon {
+  position: relative;
+  background: green;
+  color: white;
+  padding: 4px 12px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.custom-table,
+.gst-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.custom-table th,
+.custom-table td,
+.gst-table th,
+.gst-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.total-row {
+  font-weight: bold;
+}
+
+
+
 

@@ -8,10 +8,16 @@ import {
   CardHeader,
   DatePicker,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   NumberInput,
   Select,
   SelectItem,
   Switch,
+  useDisclosure,
 } from "@heroui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,6 +28,7 @@ import {
   getAllGstTypeByCompanyTypeId,
   getBusinessTypeByGstTypeId,
   searchCompaniesForCompany,
+  updateCompanyAddress,
 } from "../../toolkit/slices/companySlice";
 import { useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
@@ -45,6 +52,7 @@ import {
   getAllLeadUser,
   getEstimateByLeadId,
   getSingleLeadDataByLeadId,
+  updateGstTypeInEstimate,
 } from "../../toolkit/slices/leadSlice";
 import {
   getLocalTimeZone,
@@ -58,59 +66,114 @@ import {
   getAllStatesByCountryId,
 } from "../../toolkit/slices/commonSlice";
 import dayjs from "dayjs";
+import EstimateView from "../../components/EstimateView";
 
-const formSchema = z.object({
-  performaInvoice: z.boolean(),
-  unitId: z.string().min(1, "Please select the company unit."),
-  companyType: z.string().min(1, "Please select the company type."),
-  gstType: z.string().min(1, "Please select the gst type."),
-  businessType: z.string().min(1, "Please select the gst type."),
-  gstNo: z.string().min(15, "please enter GST number."),
-  panNo: z.string().min(10, "please enter pan number."),
-  gstDocuments: z.string().optional(),
-  cc: z.array(z.string()).optional(),
-  primaryContact: z.string().min(1, "Please select the contact."),
-  secondaryContact: z.string().min(1, "Please select the contact."),
-  businessArrangmentId: z
-    .string()
-    .min(1, "Please select business arrangement."),
-  productCategoryId: z.string().min(1, "Please select the product category."),
-  productSubCategoryId: z
-    .string()
-    .min(1, "Please select the product sub category."),
-  actualPrice: z.string().min(1, "Please enter actual price."),
-  gstCode: z.string().min(1, "Please enter gst code."),
-  gst: z.string().min(1, "Please enter gst percentage."),
-  quantity: z.string().min(1, "Please enter quantity."),
-  totalPrice: z.string().min(1, "Please enter total price."),
-  professionalFees: z.string().min(1, "Please enter professional fee."),
-  professionalCode: z.string().min(1, "Please enter professional code."),
-  profesionalGst: z.string().min(1, "Please enter professional gst."),
-  serviceCharge: z.string().min(1, "Please enter service charge."),
-  serviceCode: z.string().min(1, "Please enter service code."),
-  serviceGst: z.string().min(1, "Please enter service Gst."),
-  govermentfees: z.string().min(1, "Please enter government fee."),
-  govermentCode: z.string().min(1, "Please enter government code."),
-  govermentGst: z.string().min(1, "Please enter government gst."),
-  otherFees: z.string().min(1, "Please enter other fee."),
-  otherCode: z.string().min(1, "Please enter other code."),
-  otherGst: z.string().min(1, "Please enter other gst."),
-  assigneeId: z.string().min(1, "Please select assignee id."),
-  orderNumber: z.string().min(1, "Please enter Order number."),
-  purchaseDate: z.string().min(1, "Please select purchase date."),
-  invoiceNote: z.string().min(1, "Please write invoice note."),
-  remarksForOption: z.string().min(1, "Please enter remark."),
-  address: z.string().min(1, "Please enter address."),
-  country: z.string().min(1, "Please select country."),
-  state: z.string().min(1, "Please select state."),
-  city: z.string().min(1, "Please select city."),
-  primaryPinCode: z.string().min(1, "Please enter primary pincode."),
-  secondaryAddress: z.string().optional(),
-  secondaryCountry: z.string().optional(),
-  secondaryState: z.string().optional(),
-  secondaryCity: z.string().optional(),
-  secondaryPinCode: z.string().optional(),
-});
+function formCondition(data) {
+  let result = {
+    professional: false,
+    service: false,
+    government: false,
+    other: false,
+  };
+  data?.productAmount?.forEach((item) => {
+    if (item?.name === "Professional fees") {
+      result["professional"] = true;
+    }
+    if (item?.name === "Service charges") {
+      result["service"] = true;
+    }
+    if (item?.name === "Government") {
+      result["government"] = true;
+    }
+    if (item?.name === "Other fees") {
+      result["other"] = true;
+    }
+  });
+  return result;
+}
+
+const formSchema = ({ productData, productSubCategoryData }) =>
+  z.object({
+    performaInvoice: z.boolean(),
+    unitId: z.string().min(1, "Please select the company unit."),
+    companyType: z.string().min(1, "Please select the company type."),
+    gstType: z.string().min(1, "Please select the gst type."),
+    businessType: z.string().min(1, "Please select the gst type."),
+    gstNo: z.string().min(15, "please enter GST number."),
+    panNo: z.string().min(10, "please enter pan number."),
+    gstDocuments: z.string().optional(),
+    cc: z.array(z.string()).optional(),
+    primaryContact: z.string().min(1, "Please select the contact."),
+    secondaryContact: z.string().min(1, "Please select the contact."),
+    ...(productData?.type === "Product"
+      ? {
+          businessArrangmentId: z
+            .string()
+            .min(1, "Please select business arrangement."),
+          productCategoryId: z
+            .string()
+            .min(1, "Please select the product category."),
+          productSubCategoryId: z
+            .string()
+            .min(1, "Please select the product sub category."),
+        }
+      : {}),
+    ...(Object.keys(productSubCategoryData || {})?.length > 0
+      ? {
+          actualPrice: z.string().min(1, "Please enter actual price."),
+          gstCode: z.string().min(1, "Please enter gst code."),
+          gst: z.string().min(1, "Please enter gst percentage."),
+          quantity: z.string().min(1, "Please enter quantity."),
+          totalPrice: z.string().min(1, "Please enter total price."),
+        }
+      : {}),
+
+    ...(formCondition(productData).professional
+      ? {
+          professionalFees: z.string().min(1, "Please enter professional fee."),
+          professionalCode: z
+            .string()
+            .min(1, "Please enter professional code."),
+          profesionalGst: z.string().min(1, "Please enter professional gst."),
+        }
+      : {}),
+    ...(formCondition(productData).service
+      ? {
+          serviceCharge: z.string().min(1, "Please enter service charge."),
+          serviceCode: z.string().min(1, "Please enter service code."),
+          serviceGst: z.string().min(1, "Please enter service Gst."),
+        }
+      : {}),
+    ...(formCondition(productData).government
+      ? {
+          govermentfees: z.string().min(1, "Please enter government fee."),
+          govermentCode: z.string().min(1, "Please enter government code."),
+          govermentGst: z.string().min(1, "Please enter government gst."),
+        }
+      : {}),
+    ...(formCondition(productData).other
+      ? {
+          otherFees: z.string().min(1, "Please enter other fee."),
+          otherCode: z.string().min(1, "Please enter other code."),
+          otherGst: z.string().min(1, "Please enter other gst."),
+        }
+      : {}),
+    assigneeId: z.string().min(1, "Please select assignee id."),
+    orderNumber: z.string().min(1, "Please enter Order number."),
+    purchaseDate: z.string().min(1, "Please select purchase date."),
+    invoiceNote: z.string().min(1, "Please write invoice note."),
+    remarksForOption: z.string().min(1, "Please enter remark."),
+    address: z.string().min(1, "Please enter address."),
+    country: z.string().min(1, "Please select country."),
+    state: z.string().min(1, "Please select state."),
+    city: z.string().min(1, "Please select city."),
+    primaryPinCode: z.string().min(1, "Please enter primary pincode."),
+    secondaryAddress: z.string().optional(),
+    secondaryCountry: z.string().optional(),
+    secondaryState: z.string().optional(),
+    secondaryCity: z.string().optional(),
+    secondaryPinCode: z.string().optional(),
+  });
 
 const defaultValues = {
   performaInvoice: false,
@@ -198,6 +261,8 @@ const gstFormDefaultValues = {
 const LeadEstimate = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
+  const addressFormModal = useDisclosure();
+  const gstFormModal = useDisclosure();
   const searchCompaniesList = useSelector(
     (state) => state.company.seachCompniesList
   );
@@ -251,6 +316,8 @@ const LeadEstimate = () => {
   });
   const [gstMand, setGstMand] = useState({ gst: false, pan: false });
   const [discount, setDiscount] = useState(false);
+  const [panError, setPanError] = useState("");
+  const [gstError, setGstError] = useState("");
   const [productFees, setProductFees] = useState({
     professionalFees: 0,
     serviceCharge: 0,
@@ -271,7 +338,7 @@ const LeadEstimate = () => {
     reset,
     getValues,
   } = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema({ productData, productSubCategoryData })),
     defaultValues,
   });
 
@@ -316,6 +383,10 @@ const LeadEstimate = () => {
       dispatch(getAllBusinessArrangement(productData?.id));
     }
   }, [dispatch, productData]);
+
+  useEffect(() => {
+    dispatch(getEstimateByLeadId(leadId));
+  }, [dispatch]);
 
   useEffect(() => {
     if (details?.discountEstimate) {
@@ -513,6 +584,131 @@ const LeadEstimate = () => {
     setDiscountError(`Value should be greater than or equal to ${minValue}`);
   };
 
+  const validateGST = (gstNo, stateName) => {
+    if (!gstNo) return "";
+    if (
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNo)
+    ) {
+      return "Invalid GST Number";
+    }
+    const selectedState = statesList?.find((s) => s.name === stateName);
+    if (selectedState && gstNo.slice(0, 2) !== selectedState.gstCode) {
+      return "GST code does not match selected state";
+    }
+    return "";
+  };
+
+  const handlePanChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatPANInput(rawValue);
+    setValue("panNo", formattedValue);
+    if (
+      formattedValue.length === 10 &&
+      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedValue)
+    ) {
+      setPanError("Invalid PAN Number");
+    } else {
+      setPanError("");
+    }
+  };
+
+  const handleGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    setValue("gstNo", formattedValue);
+    const error = validateGST(formattedValue, state);
+    setGstError(error);
+  };
+
+  const handleStateChange = (stateName) => {
+    setValue("state", stateName);
+    dispatch(getAllCitiesByStateName(stateName));
+    const error = validateGST(gstNo, stateName);
+    setGstError(error);
+  };
+
+  const handleGstUpdate = (values) => {
+    values.companyId = companyAndUnitData?.companyId;
+    dispatch(updateGstTypeInEstimate(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          const compData = resp?.payload;
+          dispatch(getAllGstTypeByCompanyTypeId(compData?.companyGstType?.id));
+          dispatch(getBusinessTypeByGstTypeId(compData?.gstType?.id));
+          reset({
+            companyType: compData?.companyGstType?.id,
+            businessType: compData?.BussiessType?.id,
+            gstType: compData?.gstType?.id,
+            gstNo: compData?.gstNo,
+            panNo: compData?.panNo,
+          });
+          addToast({ title: "Gst updated successfully !.", color: "success" });
+          setGstModal(false);
+          gstForm.reset(gstFormDefaultValues);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
+  const handleAddressFinish = (values) => {
+    values.companyId = companyAndUnitData?.companyId;
+    dispatch(updateCompanyAddress(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          const compUnit = resp.payload;
+          reset({
+            gstType: compUnit?.gstType,
+            gstNo: compUnit?.gstNo,
+            companyType: compUnit?.companyType,
+            businessType: compUnit?.bussinessType,
+            companyAge: compUnit?.companyAge,
+            address: compUnit?.address,
+            city: compUnit?.city,
+            country: compUnit?.country,
+            state: compUnit?.state,
+            panNo: compUnit?.panNo,
+            primaryContact: compUnit?.primaryContact?.id,
+            secondaryContact: compUnit?.secondaryContact?.id,
+            assigneeId: compUnit?.assignee?.id,
+            primaryPinCode: compUnit?.primaryPinCode,
+            secondaryAddress: compUnit?.sAddress,
+            secondaryCity: compUnit?.sCity,
+            secondaryState: compUnit?.sState,
+            secondaryCountry: compUnit?.sCountry,
+            secondaryPinCode: compUnit?.secondaryPinCode,
+          });
+          reset({
+            companyType: compUnit?.companyType,
+            gstType: compUnit?.gstType,
+            businessType: compUnit?.bussinessType,
+            gstNo: compUnit?.gstNo,
+            panNo: compUnit?.panNo,
+          });
+          reset({
+            address: compUnit?.address,
+            city: compUnit?.city,
+            state: compUnit?.state,
+            country: compUnit?.country,
+            pinCode: compUnit?.primaryPinCode,
+          });
+          addToast({
+            title: "Address updated successfully !.",
+            color: "success",
+          });
+          addressFormModal.onOpenChange(false);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ message: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const handleFinish = useCallback(
     (values) => {
       values.leadId = leadId;
@@ -633,551 +829,1105 @@ const LeadEstimate = () => {
   );
 
   return (
-    <div>
-      <div className="flex items-center w-full my-2">
-        <Select
-          size="lg"
-          className="w-[15%]"
-          selectedKeys={[seachFields?.searchField]}
-          items={[
-            { label: "GST", value: "gstNumber" },
-            { label: "Name", value: "searchNameAndGSt" },
-            { label: "Contact no.", value: "contactNumber" },
-            { label: "Email", value: "contactEmail" },
-          ]}
-          onSelectionChange={(e) => {
-            let key = Array.from(e);
-            setSearchFields((prev) => ({ ...prev, searchField: key }));
-          }}
-        >
-          {(item) => <SelectItem key={item?.value}>{item?.label}</SelectItem>}
-        </Select>
-        <Autocomplete
-          size="lg"
-          className="max-w-[85%]"
-          classNames={{ base: "rounded-tr-none rounded-br-none" }}
-          items={searchCompaniesList || []}
-          placeholder="Search companies"
-          onInputChange={(e) =>
-            setSearchFields((prev) => ({ ...prev, searchText: e }))
-          }
-          onSelectionChange={(e) => {
-            dispatch(getAllCompanyUnits(e));
-            dispatch(getAllContactListByCompanyId(e));
-          }}
-        >
-          {(item) => (
-            <AutocompleteItem
-              key={item.companyId}
-              onPress={() => {
-                setCompanyAndUnitData((prev) => ({
-                  ...prev,
-                  companyName: item?.companyName,
-                  companyId: item?.companyId,
-                }));
+    <>
+      <div className="flex justify-between items-center">
+        <h1>
+          {Object.keys(details)?.length > 0 && !editEstimate
+            ? `${
+                details?.performaInvoice
+                  ? "Proforma Invoice details"
+                  : "Estimate details"
+              }`
+            : editEstimate
+              ? "Edit estimate"
+              : "Create estimate"}
+        </h1>
+
+        {Object.keys(details)?.length > 0 && (
+          <Button onPress={handleEditEstimate}>
+            {editEstimate ? "Show estimate" : "Edit"}
+          </Button>
+        )}
+      </div>
+      {Object.keys(details)?.length === 0 || editEstimate ? (
+        <div>
+          <div className="flex items-center w-full my-2">
+            <Select
+              size="lg"
+              className="w-[15%]"
+              selectedKeys={[seachFields?.searchField]}
+              items={[
+                { label: "GST", value: "gstNumber" },
+                { label: "Name", value: "searchNameAndGSt" },
+                { label: "Contact no.", value: "contactNumber" },
+                { label: "Email", value: "contactEmail" },
+              ]}
+              onSelectionChange={(e) => {
+                let key = Array.from(e);
+                setSearchFields((prev) => ({ ...prev, searchField: key }));
               }}
             >
-              {item.companyName}
-            </AutocompleteItem>
-          )}
-        </Autocomplete>
-      </div>
-      <form className="max-h-[70vh] overflow-auto px-4 py-2">
-        <Card className="my-2">
-          <CardHeader>Company info</CardHeader>
-          <CardBody className="grid grid-cols-3 gap-2">
-            <Controller
-              name="unitId"
-              control={control}
-              render={({ field, fieldState: { error } }) => {
-                return (
-                  <NewSelect
-                    isRequired
-                    data={allCompanyUnits||[]}
-                    errorMessage="please select company unit"
-                    label={"Select company unit "}
-                    value={field?.value}
-                    labelKey={"companyName"}
-                    valueKey={"id"}
-                    onSelectionChange={(e) => {
-                      field.onChange(e);
-                    }}
-                    onItemSelect={(compUnit) => {
-                      setCompanyAndUnitData((prev) => ({
-                        ...prev,
-                        unitName: compUnit?.companyName,
-                        unitId: compUnit?.id,
-                        oneTimeUpdateGst: compUnit?.oneTimeUpdateGst,
-                        oneTimeUpdateAddress: compUnit?.oneTimeUpdateAddress,
-                      }));
-                      dispatch(
-                        getAllGstTypeByCompanyTypeId(compUnit?.companyType)
-                      );
-                      dispatch(getBusinessTypeByGstTypeId(compUnit?.gstType));
-                      reset({
-                        gstType: compUnit?.gstType,
-                        gstNo: compUnit?.gstNo,
-                        companyType: compUnit?.companyType,
-                        businessType: compUnit?.bussinessType,
-                        companyAge: compUnit?.companyAge,
-                        address: compUnit?.address,
-                        city: compUnit?.city,
-                        country: compUnit?.country,
-                        state: compUnit?.state,
-                        panNo: compUnit?.panNo,
-                        primaryContact: compUnit?.primaryContact?.id,
-                        secondaryContact: compUnit?.secondaryContact?.id,
-                        assigneeId: compUnit?.assignee?.id,
-                        primaryPinCode: compUnit?.pinCode,
-                        secondaryAddress: compUnit?.sAddress,
-                        secondaryCity: compUnit?.sCity,
-                        secondaryState: compUnit?.sState,
-                        secondaryCountry: compUnit?.sCountry,
-                        secondaryPinCode: compUnit?.secondaryPinCode,
-                      });
-                      gstForm.reset({
-                        companyType: compUnit?.companyType,
-                        gstType: compUnit?.gstType,
-                        businessType: compUnit?.bussinessType,
-                        gstNo: compUnit?.gstNo,
-                        panNo: compUnit?.panNo,
-                      });
-                      addressForm.reset({
-                        revenue: compUnit?.revenue,
-                        address: compUnit?.address,
-                        city: compUnit?.city,
-                        state: compUnit?.state,
-                        country: compUnit?.country,
-                        pinCode: compUnit?.pinCode,
-                      });
-                    }}
-                  />
-                );
+              {(item) => (
+                <SelectItem key={item?.value}>{item?.label}</SelectItem>
+              )}
+            </Select>
+            <Autocomplete
+              size="lg"
+              className="max-w-[85%]"
+              classNames={{ base: "rounded-tr-none rounded-br-none" }}
+              items={searchCompaniesList || []}
+              placeholder="Search companies"
+              onInputChange={(e) =>
+                setSearchFields((prev) => ({ ...prev, searchText: e }))
+              }
+              onSelectionChange={(e) => {
+                dispatch(getAllCompanyUnits(e));
+                dispatch(getAllContactListByCompanyId(e));
               }}
-            />
-
-            <Controller
-              name="companyType"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  isRequired
-                  label="Company structure"
-                  errorMessage={"please select the company type."}
-                  data={companyTypeList || []}
-                  labelKey="name"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getAllGstTypeByCompanyTypeId(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="gstType"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  isRequired
-                  label="GST type"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={gstTypeList?.gstBussinessType || []}
-                  labelKey="name"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getBusinessTypeByGstTypeId(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="businessType"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  isRequired
-                  label="Business type"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={businessTypeList?.gstTypePrice || []}
-                  labelKey="name"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                    const foundObject = businessTypeList?.gstTypePrice?.find(
-                      (item) => item.id == value
-                    );
-                    setGstMand((prev) => ({
+            >
+              {(item) => (
+                <AutocompleteItem
+                  key={item.companyId}
+                  onPress={() => {
+                    setCompanyAndUnitData((prev) => ({
                       ...prev,
-                      gst: foundObject?.gstPresent,
-                      pan: foundObject?.panPresent,
+                      companyName: item?.companyName,
+                      companyId: item?.companyId,
                     }));
                   }}
-                />
+                >
+                  {item.companyName}
+                </AutocompleteItem>
               )}
-            />
-            {gstMand?.gst && (
+            </Autocomplete>
+          </div>
+          <form
+            className="max-h-[67vh] overflow-auto px-4 py-2"
+            onSubmit={handleSubmit(handleFinish)}
+          >
+            <div className="px-2 py-2 my-2">
               <Controller
-                name="gstNo"
+                name="performaInvoice"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <Input
-                    isRequired
-                    label="GST number"
-                    maxLength={15}
-                    errorMessage={error?.message }
-                    isInvalid={!!error }
-                    {...field}
-                    onChange={(e) => {
-                      handleGstChange(e);
-                    }}
-                  />
-                )}
-              />
-            )}
-            {gstMand?.pan && (
-              <Controller
-                name="panNo"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <Input
-                    isRequired
-                    label="Pan number"
-                    maxLength={10}
-                    errorMessage={error?.message }
-                    isInvalid={!!error}
-                    {...field}
-                    onChange={(e) => {
-                      handlePanChange(e);
-                    }}
-                  />
-                )}
-              />
-            )}
-
-            <Controller
-              name="gstDocuments"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <SingleFileUploader
-                  label="GST document"
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                  }}
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                />
-              )}
-            />
-
-            <div className="flex flex-col gap-1">
-              {/* <label className="font-medium">Cc</label> */}
-              <Controller
-                name="cc"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <>
-                    <TagsInput
-                      {...field}
-                      placeholder="CC"
-                      className="rounded-lg h-[50px]"
-                    />
-                    {error && (
-                      <span className="text-red-500 text-sm">
-                        {error.message ||
-                          error.root?.message ||
-                          "Invalid input"}
-                      </span>
-                    )}
-                  </>
+                  <Switch
+                    value={field.value}
+                    onValueChange={(e) => field.onChange(e)}
+                  >
+                    Performa invoice
+                  </Switch>
                 )}
               />
             </div>
-          </CardBody>
-        </Card>
-        <Card className="my-2">
-          <CardHeader>Contact</CardHeader>
-          <CardBody className="grid grid-cols-2 gap-2">
-            <Controller
-              name="primaryContact"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  isRequired
-                  label="Primary contact"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={contactListByCompanyId || []}
-                  labelKey="contactNo"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getBusinessTypeByGstTypeId(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-            <Controller
-              name="secondaryContact"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  isRequired
-                  label="Secondary contact"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={contactListByCompanyId || []}
-                  labelKey="contactNo"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getBusinessTypeByGstTypeId(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-          </CardBody>
-        </Card>
-        <Card className="my-2">
-          <CardHeader>Product info</CardHeader>
-          <CardBody>
-            <div className="my-2">
-              <Switch
-                onChange={(e) => {
-                  let values = getValues();
-                  setDiscount(e);
-                  reset({
-                    ...values,
-                    professionalFees: "",
-                    serviceCharge: "",
-                    govermentfees: "",
-                    otherFees: "",
-                    actualPrice: "",
-                  });
-                }}
-              >
-                Discount approval
-              </Switch>
-            </div>
-            {productData?.type === "Product" ? (
-              <>
-                <div className="grid grid-cols-3 gap-2">
-                  <Controller
-                    name="businessArrangmentId"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
+            <Card className="my-2">
+              <CardHeader className="flex justify-between">
+                Company info{" "}
+                <Button variant="light" size="sm" onPress={gstFormModal.onOpen}>
+                  Update gst
+                </Button>
+              </CardHeader>
+
+              <CardBody className="grid grid-cols-3 gap-2">
+                <Controller
+                  name="unitId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => {
+                    return (
                       <NewSelect
                         isRequired
-                        label="Select business arrangement"
-                        errorMessage={error?.message}
-                        isInvalid={!!error}
-                        data={businessArrangementList || []}
-                        labelKey="name"
-                        valueKey="id"
-                        value={field.value}
-                        onChange={(value) => {
-                          dispatch(getAllProductCategoryById(value));
-                          field.onChange(value);
+                        data={allCompanyUnits || []}
+                        errorMessage="please select company unit"
+                        label={"Select company unit "}
+                        value={field?.value}
+                        labelKey={"companyName"}
+                        valueKey={"id"}
+                        onSelectionChange={(e) => {
+                          field.onChange(e);
                         }}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="productCategoryId"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        isRequired
-                        label="Select product category"
-                        errorMessage={error?.message}
-                        isInvalid={!!error}
-                        data={productCategoryList || []}
-                        labelKey="name"
-                        valueKey="id"
-                        value={field.value}
-                        onChange={(value) => {
-                          dispatch(
-                            getAllProductSubCategoryListByCategoryId(value)
-                          );
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="productSubCategoryId"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        isRequired
-                        label="Select product category"
-                        errorMessage={error?.message}
-                        isInvalid={!!error}
-                        data={productSubcategoryList || []}
-                        labelKey="name"
-                        valueKey="id"
-                        value={field.value}
-                        onChange={(value) => {
-                          dispatch(
-                            getAllProductSubCategoryListByCategoryId(value)
-                          );
-                          field.onChange(value);
-                        }}
-                        onItemSelect={(item) => {
-                          const currentValues = getValues();
-                          setProductSubCategoryData(item);
-                          reset({
-                            ...currentValues,
-                            actualPrice: item?.productFees,
-                            gstCode: item?.productCode,
-                            gst: item?.productGst,
-                          });
-                          setProductSubCategoryFees((prev) => ({
+                        onItemSelect={(compUnit) => {
+                          setCompanyAndUnitData((prev) => ({
                             ...prev,
-                            actualPrice: item?.productFees,
-                            gst: item?.productGst,
-                            roundOff: item?.roundValue,
+                            unitName: compUnit?.companyName,
+                            unitId: compUnit?.id,
+                            oneTimeUpdateGst: compUnit?.oneTimeUpdateGst,
+                            oneTimeUpdateAddress:
+                              compUnit?.oneTimeUpdateAddress,
                           }));
+                          dispatch(
+                            getAllGstTypeByCompanyTypeId(compUnit?.companyType)
+                          );
+                          dispatch(
+                            getBusinessTypeByGstTypeId(compUnit?.gstType)
+                          );
+                          reset({
+                            gstType: compUnit?.gstType,
+                            gstNo: compUnit?.gstNo,
+                            companyType: compUnit?.companyType,
+                            businessType: compUnit?.bussinessType,
+                            companyAge: compUnit?.companyAge,
+                            address: compUnit?.address,
+                            city: compUnit?.city,
+                            country: compUnit?.country,
+                            state: compUnit?.state,
+                            panNo: compUnit?.panNo,
+                            primaryContact: compUnit?.primaryContact?.id,
+                            secondaryContact: compUnit?.secondaryContact?.id,
+                            assigneeId: compUnit?.assignee?.id,
+                            primaryPinCode: compUnit?.pinCode,
+                            secondaryAddress: compUnit?.sAddress,
+                            secondaryCity: compUnit?.sCity,
+                            secondaryState: compUnit?.sState,
+                            secondaryCountry: compUnit?.sCountry,
+                            secondaryPinCode: compUnit?.secondaryPinCode,
+                          });
+                          gstForm.reset({
+                            companyType: compUnit?.companyType,
+                            gstType: compUnit?.gstType,
+                            businessType: compUnit?.bussinessType,
+                            gstNo: compUnit?.gstNo,
+                            panNo: compUnit?.panNo,
+                          });
+                          addressForm.reset({
+                            revenue: compUnit?.revenue,
+                            address: compUnit?.address,
+                            city: compUnit?.city,
+                            state: compUnit?.state,
+                            country: compUnit?.country,
+                            pinCode: compUnit?.pinCode,
+                          });
                         }}
                       />
+                    );
+                  }}
+                />
+
+                <Controller
+                  name="companyType"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="Company structure"
+                      errorMessage={"please select the company type."}
+                      data={companyTypeList || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllGstTypeByCompanyTypeId(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="gstType"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="GST type"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={gstTypeList?.gstBussinessType || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getBusinessTypeByGstTypeId(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="businessType"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="Business type"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={businessTypeList?.gstTypePrice || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        const foundObject =
+                          businessTypeList?.gstTypePrice?.find(
+                            (item) => item.id == value
+                          );
+                        setGstMand((prev) => ({
+                          ...prev,
+                          gst: foundObject?.gstPresent,
+                          pan: foundObject?.panPresent,
+                        }));
+                      }}
+                    />
+                  )}
+                />
+                {gstMand?.gst && (
+                  <Controller
+                    name="gstNo"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        label="GST number"
+                        maxLength={15}
+                        errorMessage={error?.message || gstError}
+                        isInvalid={!!error || !!gstError}
+                        {...field}
+                        onChange={(e) => {
+                          handleGstChange(e);
+                        }}
+                      />
+                    )}
+                  />
+                )}
+                {gstMand?.pan && (
+                  <Controller
+                    name="panNo"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        label="Pan number"
+                        maxLength={10}
+                        errorMessage={error?.message || panError}
+                        isInvalid={!!error || !!panError}
+                        {...field}
+                        onChange={(e) => {
+                          handlePanChange(e);
+                        }}
+                      />
+                    )}
+                  />
+                )}
+
+                <div className="flex flex-col gap-1">
+                  {/* <label className="font-medium">Cc</label> */}
+                  <Controller
+                    name="cc"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <TagsInput
+                          {...field}
+                          placeholder="CC"
+                          className="rounded-lg h-[50px]"
+                        />
+                        {error && (
+                          <span className="text-red-500 text-sm">
+                            {error.message ||
+                              error.root?.message ||
+                              "Invalid input"}
+                          </span>
+                        )}
+                      </>
                     )}
                   />
                 </div>
+                <Controller
+                  name="gstDocuments"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <SingleFileUploader
+                      label="GST document"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                      }}
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                    />
+                  )}
+                />
+              </CardBody>
+            </Card>
+            <Card className="my-2">
+              <CardHeader>Contact</CardHeader>
+              <CardBody className="grid grid-cols-2 gap-2">
+                <Controller
+                  name="primaryContact"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="Primary contact"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={contactListByCompanyId || []}
+                      labelKey="contactNo"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getBusinessTypeByGstTypeId(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+                <Controller
+                  name="secondaryContact"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="Secondary contact"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={contactListByCompanyId || []}
+                      labelKey="contactNo"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getBusinessTypeByGstTypeId(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+              </CardBody>
+            </Card>
+            <Card className="my-2">
+              <CardHeader>Product info</CardHeader>
+              <CardBody>
+                <div className="my-2">
+                  <Switch
+                    onChange={(e) => {
+                      let values = getValues();
+                      setDiscount(e);
+                      reset({
+                        ...values,
+                        professionalFees: "",
+                        serviceCharge: "",
+                        govermentfees: "",
+                        otherFees: "",
+                        actualPrice: "",
+                      });
+                    }}
+                  >
+                    Discount approval
+                  </Switch>
+                </div>
+                {productData?.type === "Product" ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Controller
+                        name="businessArrangmentId"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
+                            isRequired
+                            label="Select business arrangement"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            data={businessArrangementList || []}
+                            labelKey="name"
+                            valueKey="id"
+                            value={field.value}
+                            onChange={(value) => {
+                              dispatch(getAllProductCategoryById(value));
+                              field.onChange(value);
+                            }}
+                          />
+                        )}
+                      />
+                      <Controller
+                        name="productCategoryId"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
+                            isRequired
+                            label="Select product category"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            data={productCategoryList || []}
+                            labelKey="name"
+                            valueKey="id"
+                            value={field.value}
+                            onChange={(value) => {
+                              dispatch(
+                                getAllProductSubCategoryListByCategoryId(value)
+                              );
+                              field.onChange(value);
+                            }}
+                          />
+                        )}
+                      />
+                      <Controller
+                        name="productSubCategoryId"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
+                            isRequired
+                            label="Select product category"
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            data={productSubcategoryList || []}
+                            labelKey="name"
+                            valueKey="id"
+                            value={field.value}
+                            onChange={(value) => {
+                              dispatch(
+                                getAllProductSubCategoryListByCategoryId(value)
+                              );
+                              field.onChange(value);
+                            }}
+                            onItemSelect={(item) => {
+                              const currentValues = getValues();
+                              setProductSubCategoryData(item);
+                              reset({
+                                ...currentValues,
+                                actualPrice: item?.productFees,
+                                gstCode: item?.productCode,
+                                gst: item?.productGst,
+                              });
+                              setProductSubCategoryFees((prev) => ({
+                                ...prev,
+                                actualPrice: item?.productFees,
+                                gst: item?.productGst,
+                                roundOff: item?.roundValue,
+                              }));
+                            }}
+                          />
+                        )}
+                      />
+                    </div>
 
-                {Object.keys(productSubCategoryData || {})?.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    <Controller
-                      name="actualPrice"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NumberInput
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          isRequired
-                          label="Actual price"
-                          errorMessage={discountError}
-                          {...field}
-                          onChange={(e) => {
-                            let { quantity, gst } = getValues();
-                            field.onChange(e);
-                            calculateTotalPriceWithGST(e, quantity, gst);
-                            validateGreaterThanOrEqual(
-                              e,
-                              productSubCategoryFees?.actualPrice,
-                              discount
-                            );
-                          }}
+                    {Object.keys(productSubCategoryData || {})?.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        <Controller
+                          name="actualPrice"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NumberInput
+                              startContent={<IndianRupee className="h-4 w-4" />}
+                              isRequired
+                              label="Actual price"
+                              errorMessage={discountError}
+                              {...field}
+                              onChange={(e) => {
+                                let { quantity, gst } = getValues();
+                                field.onChange(e);
+                                calculateTotalPriceWithGST(e, quantity, gst);
+                                validateGreaterThanOrEqual(
+                                  e,
+                                  productSubCategoryFees?.actualPrice,
+                                  discount
+                                );
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
 
-                    <Controller
-                      name="gstCode"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="HSN code"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                          }}
+                        <Controller
+                          name="gstCode"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="HSN code"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="gst"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="GST %"
-                          endContent={<Percent className="h-4 w-4" />}
-                          {...field}
-                          onChange={(e) => {
-                            let { actualPrice, quantity } = getValues();
-                            calculateTotalPriceWithGST(
-                              actualPrice,
-                              quantity,
-                              e
-                            );
-                            field.onChange(e);
-                          }}
+                        <Controller
+                          name="gst"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="GST %"
+                              endContent={<Percent className="h-4 w-4" />}
+                              {...field}
+                              onChange={(e) => {
+                                let { actualPrice, quantity } = getValues();
+                                calculateTotalPriceWithGST(
+                                  actualPrice,
+                                  quantity,
+                                  e
+                                );
+                                field.onChange(e);
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="quantity"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NumberInput
-                          isRequired
-                          label="Quantity in kg"
-                          {...field}
-                          onChange={(e) => {
-                            let { actualPrice, gst } = getValues();
-                            calculateTotalPriceWithGST(actualPrice, e, gst);
-                            field.onChange(e);
-                          }}
+                        <Controller
+                          name="quantity"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NumberInput
+                              isRequired
+                              label="Quantity in kg"
+                              {...field}
+                              onChange={(e) => {
+                                let { actualPrice, gst } = getValues();
+                                calculateTotalPriceWithGST(actualPrice, e, gst);
+                                field.onChange(e);
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="totalPrice"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NumberInput
-                          isRequired
-                          label="Total price (₹)"
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                          }}
+                        <Controller
+                          name="totalPrice"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NumberInput
+                              isRequired
+                              label="Total price (₹)"
+                              startContent={<IndianRupee className="h-4 w-4" />}
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                  </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {productData?.productAmount?.map((ele, idx) => {
+                      if (ele?.name === "Professional fees") {
+                        return (
+                          <div className="grid grid-cols-3 gap-3">
+                            <Controller
+                              name="professionalFees"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Professional fees"
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="professionalCode"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Hsn number"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="profesionalGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Professional gst"
+                                  isDisabled={
+                                    productFees?.profesionalGst == 0
+                                      ? false
+                                      : true
+                                  }
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                        );
+                      }
+                      if (ele?.name === "Service charges") {
+                        return (
+                          <div className="grid grid-cols-3 gap-3">
+                            <Controller
+                              name="serviceCharge"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Service charges"
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="serviceCode"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Hsn number"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="serviceGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Service gst"
+                                  isDisabled={
+                                    productFees?.profesionalGst == 0
+                                      ? false
+                                      : true
+                                  }
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                        );
+                      }
+                      if (ele?.name === "Government") {
+                        return (
+                          <div className="grid grid-cols-3 gap-3">
+                            <Controller
+                              name="govermentfees"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Government fees"
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="govermentCode"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Hsn number"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="govermentGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Government gst"
+                                  isDisabled={
+                                    productFees?.govermentGst == 0
+                                      ? false
+                                      : true
+                                  }
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                        );
+                      }
+                      if (ele?.name === "Other fees") {
+                        return (
+                          <div className="grid grid-cols-3 gap-3">
+                            <Controller
+                              name="otherFees"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Other fees"
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="otherCode"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Hsn number"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="otherGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <NumberInput
+                                  isRequired
+                                  label="Government gst"
+                                  isDisabled={
+                                    productFees?.otherGst == 0 ? false : true
+                                  }
+                                  startContent={
+                                    <IndianRupee className="h-4 w-4" />
+                                  }
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                        );
+                      }
+                    })}
+                  </>
                 )}
-              </>
-            ) : (
-              <>
-                {productData?.productAmount?.map((ele, idx) => {
-                  if (ele?.name === "Professional fees") {
-                    return (
-                      <div className="grid grid-cols-3 gap-3">
+              </CardBody>
+            </Card>
+            <Card className="my-2">
+              <CardHeader>Purchasing info</CardHeader>
+              <CardBody className="grid grid-cols-3 gap-3">
+                <Controller
+                  name="assigneeId"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="Select product category"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={leadUsersList || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+                <Controller
+                  name="orderNumber"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Order number"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                      }}
+                    />
+                  )}
+                />
+                <Controller
+                  name="purchaseDate"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <DatePicker
+                      isRequired
+                      label="Purchase date"
+                      showMonthAndYearPickers
+                      maxValue={today(getLocalTimeZone())}
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      value={field.value ? parseDate(field.value) : null}
+                      onChange={(e) =>
+                        field.onChange(toCalendarDate(e).toString())
+                      }
+                    />
+                  )}
+                />
+                <Controller
+                  name="invoiceNote"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Invoice note"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                      }}
+                    />
+                  )}
+                />
+                <Controller
+                  name="remarksForOption"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Remark"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                      }}
+                    />
+                  )}
+                />
+              </CardBody>
+            </Card>
+            <Card className="my-2">
+              <CardHeader className="flex justify-between">
+                Address{" "}
+                <Button variant="light" onPress={addressFormModal.onOpen}>
+                  Update address
+                </Button>
+              </CardHeader>
+              <CardBody className="grid grid-cols-3 gap-3">
+                <Controller
+                  name="address"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Address"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                      }}
+                    />
+                  )}
+                />
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Country"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={countryList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllStatesByCountryName(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="state"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="State"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={statesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        handleStateChange(value);
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="City"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={citiesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="primaryPinCode"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Pin code"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+              </CardBody>
+            </Card>
+            <Card className="my-2">
+              <CardHeader>Secondary address</CardHeader>
+              <CardBody className="grid grid-cols-3 gap-3">
+                <Controller
+                  name="secondaryAddress"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Address"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryCountry"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Country"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={countryList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllStatesByCountryName(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryState"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="State"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={statesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getAllCitiesByStateName(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryCity"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="City"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      data={citiesList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="secondaryPinCode"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      label="Pin code"
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                      {...field}
+                    />
+                  )}
+                />
+              </CardBody>
+            </Card>
+            <div className="flex justify-end px-4 my-2 w-full">
+              <Button type="submit" color="primary">
+                Submit
+              </Button>
+            </div>
+          </form>
+          <Modal
+            size="2xl"
+            isOpen={addressFormModal.isOpen}
+            onOpenChange={addressFormModal.onOpenChange}
+          >
+            <ModalContent>
+              {(onClose) => (
+                <>
+                  <ModalHeader className="flex flex-col gap-1">
+                    Update address
+                  </ModalHeader>
+                  <ModalBody>
+                    <form onSubmit={handleSubmit(handleAddressFinish)}>
+                      <div className="grid grid-cols-2 gap-4">
                         <Controller
-                          name="professionalFees"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NumberInput
-                              isRequired
-                              label="Professional fees"
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="professionalCode"
-                          control={control}
+                          name="revenue"
+                          control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
                               isRequired
-                              label="Hsn number"
+                              label="Revenue"
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e);
@@ -1186,454 +1936,240 @@ const LeadEstimate = () => {
                           )}
                         />
                         <Controller
-                          name="profesionalGst"
-                          control={control}
+                          name="address"
+                          control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
-                            <NumberInput
+                            <Input
                               isRequired
-                              label="Professional gst"
-                              isDisabled={
-                                productFees?.profesionalGst == 0 ? false : true
-                              }
-                              startContent={<IndianRupee className="h-4 w-4" />}
+                              label="Address"
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e);
                               }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="country"
+                          control={addressForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NewSelect
+                              label="Country"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={countryList || []}
+                              labelKey="name"
+                              valueKey="name"
+                              value={field.value}
+                              onChange={(value) => {
+                                dispatch(getAllStatesByCountryName(value));
+                                field.onChange(value);
+                              }}
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="state"
+                          control={addressForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NewSelect
+                              label="State"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={statesList || []}
+                              labelKey="name"
+                              valueKey="name"
+                              value={field.value}
+                              onChange={(value) => {
+                                handleStateChange(value);
+                                field.onChange(value);
+                              }}
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="city"
+                          control={addressForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <NewSelect
+                              label="City"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={citiesList || []}
+                              labelKey="name"
+                              valueKey="name"
+                              value={field.value}
+                              onChange={(value) => field.onChange(value)}
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="pinCode"
+                          control={addressForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              label="Pin code"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              {...field}
                             />
                           )}
                         />
                       </div>
-                    );
-                  }
-                  if (ele?.name === "Service charges") {
-                    return (
-                      <div className="grid grid-cols-3 gap-3">
+                      <ModalFooter className="flex justify-end">
+                        <Button onPress={onClose}>Cancel</Button>
+                        <Button color="primary" type="submit">
+                          Submit
+                        </Button>
+                      </ModalFooter>
+                    </form>
+                  </ModalBody>
+                </>
+              )}
+            </ModalContent>
+          </Modal>
+          <Modal
+            size="2xl"
+            isOpen={gstFormModal.isOpen}
+            onOpenChange={gstFormModal.onOpenChange}
+          >
+            <ModalContent>
+              {(onClose) => (
+                <>
+                  <ModalHeader className="flex flex-col gap-1">
+                    Update Gst
+                  </ModalHeader>
+                  <ModalBody>
+                    <form onSubmit={handleSubmit(handleGstUpdate)}>
+                      <div className="grid grid-cols-2 gap-4">
                         <Controller
-                          name="serviceCharge"
-                          control={control}
+                          name="companyType"
+                          control={gstForm.control}
                           render={({ field, fieldState: { error } }) => (
-                            <NumberInput
+                            <NewSelect
                               isRequired
-                              label="Service charges"
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
+                              label="Company structure"
+                              errorMessage={"please select the company type."}
+                              data={companyTypeList || []}
+                              labelKey="name"
+                              valueKey="id"
+                              value={field.value}
+                              onChange={(value) => {
+                                dispatch(getAllGstTypeByCompanyTypeId(value));
+                                field.onChange(value);
                               }}
                             />
                           )}
                         />
+
                         <Controller
-                          name="serviceCode"
-                          control={control}
+                          name="gstType"
+                          control={gstForm.control}
                           render={({ field, fieldState: { error } }) => (
-                            <Input
+                            <NewSelect
                               isRequired
-                              label="Hsn number"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
+                              label="GST type"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={gstTypeList?.gstBussinessType || []}
+                              labelKey="name"
+                              valueKey="id"
+                              value={field.value}
+                              onChange={(value) => {
+                                dispatch(getBusinessTypeByGstTypeId(value));
+                                field.onChange(value);
                               }}
                             />
                           )}
                         />
+
                         <Controller
-                          name="serviceGst"
-                          control={control}
+                          name="businessType"
+                          control={gstForm.control}
                           render={({ field, fieldState: { error } }) => (
-                            <NumberInput
+                            <NewSelect
                               isRequired
-                              label="Service gst"
-                              isDisabled={
-                                productFees?.profesionalGst == 0 ? false : true
-                              }
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
+                              label="Business type"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              data={businessTypeList?.gstTypePrice || []}
+                              labelKey="name"
+                              valueKey="id"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                                const foundObject =
+                                  businessTypeList?.gstTypePrice?.find(
+                                    (item) => item.id == value
+                                  );
+                                setGstMand((prev) => ({
+                                  ...prev,
+                                  gst: foundObject?.gstPresent,
+                                  pan: foundObject?.panPresent,
+                                }));
                               }}
                             />
                           )}
                         />
+                        {gstMand?.gst && (
+                          <Controller
+                            name="gstNo"
+                            control={gstForm.control}
+                            render={({ field, fieldState: { error } }) => (
+                              <Input
+                                isRequired
+                                label="GST number"
+                                maxLength={15}
+                                errorMessage={error?.message}
+                                isInvalid={!!error}
+                                {...field}
+                                onChange={(e) => {
+                                  handleGstChange(e);
+                                }}
+                              />
+                            )}
+                          />
+                        )}
+                        {gstMand?.pan && (
+                          <Controller
+                            name="panNo"
+                            control={gstForm.control}
+                            render={({ field, fieldState: { error } }) => (
+                              <Input
+                                isRequired
+                                label="Pan number"
+                                maxLength={10}
+                                errorMessage={error?.message}
+                                isInvalid={!!error}
+                                {...field}
+                                onChange={(e) => {
+                                  handlePanChange(e);
+                                }}
+                              />
+                            )}
+                          />
+                        )}
                       </div>
-                    );
-                  }
-                  if (ele?.name === "Government") {
-                    return (
-                      <div className="grid grid-cols-3 gap-3">
-                        <Controller
-                          name="govermentfees"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NumberInput
-                              isRequired
-                              label="Government fees"
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="govermentCode"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Hsn number"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="govermentGst"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NumberInput
-                              isRequired
-                              label="Government gst"
-                              isDisabled={
-                                productFees?.govermentGst == 0 ? false : true
-                              }
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                      </div>
-                    );
-                  }
-                  if (ele?.name === "Other fees") {
-                    return (
-                      <div className="grid grid-cols-3 gap-3">
-                        <Controller
-                          name="otherFees"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NumberInput
-                              isRequired
-                              label="Other fees"
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="otherCode"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Hsn number"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="otherGst"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NumberInput
-                              isRequired
-                              label="Government gst"
-                              isDisabled={
-                                productFees?.otherGst == 0 ? false : true
-                              }
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                      </div>
-                    );
-                  }
-                })}
-              </>
-            )}
-          </CardBody>
-        </Card>
-        <Card className="my-2">
-          <CardHeader>Purchasing info</CardHeader>
-          <CardBody className="grid grid-cols-3 gap-3">
-            <Controller
-              name="assigneeId"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  isRequired
-                  label="Select product category"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={leadUsersList || []}
-                  labelKey="name"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                  }}
-                />
+                      <ModalFooter className="flex justify-end">
+                        <Button onPress={onClose}>Cancel</Button>
+                        <Button color="primary" type="submit">
+                          Submit
+                        </Button>
+                      </ModalFooter>
+                    </form>
+                  </ModalBody>
+                </>
               )}
-            />
-            <Controller
-              name="orderNumber"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  isRequired
-                  label="Order number"
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e);
-                  }}
-                />
-              )}
-            />
-            <Controller
-              name="purchaseDate"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <DatePicker
-                  isRequired
-                  label="Purchase date"
-                  showMonthAndYearPickers
-                  maxValue={today(getLocalTimeZone())}
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  value={field.value ? parseDate(field.value) : null}
-                  onChange={(e) => field.onChange(toCalendarDate(e).toString())}
-                />
-              )}
-            />
-            <Controller
-              name="invoiceNote"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  isRequired
-                  label="Invoice note"
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e);
-                  }}
-                />
-              )}
-            />
-            <Controller
-              name="remarksForOption"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  isRequired
-                  label="Remark"
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e);
-                  }}
-                />
-              )}
-            />
-          </CardBody>
-        </Card>
-        <Card className="my-2">
-          <CardHeader>Address</CardHeader>
-          <CardBody className="grid grid-cols-3 gap-3">
-            <Controller
-              name="address"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  isRequired
-                  label="Address"
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e);
-                  }}
-                />
-              )}
-            />
-            <Controller
-              name="country"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="Country"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={countryList || []}
-                  labelKey="name"
-                  valueKey="name"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getAllStatesByCountryName(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="state"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="State"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={statesList || []}
-                  labelKey="name"
-                  valueKey="name"
-                  value={field.value}
-                  onChange={(value) => {
-                    handleStateChange(value);
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="city"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="City"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={citiesList || []}
-                  labelKey="name"
-                  valueKey="name"
-                  value={field.value}
-                  onChange={(value) => field.onChange(value)}
-                />
-              )}
-            />
-
-            <Controller
-              name="primaryPinCode"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  label="Pin code"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  {...field}
-                />
-              )}
-            />
-          </CardBody>
-        </Card>
-        <Card className="my-2">
-          <CardHeader>Secondary address</CardHeader>
-          <CardBody className="grid grid-cols-3 gap-3">
-            <Controller
-              name="secondaryAddress"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  label="Address"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  {...field}
-                />
-              )}
-            />
-
-            <Controller
-              name="secondaryCountry"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="Country"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={countryList || []}
-                  labelKey="name"
-                  valueKey="name"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getAllStatesByCountryName(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="secondaryState"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="State"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={statesList || []}
-                  labelKey="name"
-                  valueKey="name"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getAllCitiesByStateName(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="secondaryCity"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="City"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={citiesList || []}
-                  labelKey="name"
-                  valueKey="name"
-                  value={field.value}
-                  onChange={(value) => field.onChange(value)}
-                />
-              )}
-            />
-
-            <Controller
-              name="secondaryPinCode"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  label="Pin code"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  {...field}
-                />
-              )}
-            />
-          </CardBody>
-        </Card>
-        <div className="flex justify-end px-4 my-2 w-full">
-          <Button type="submit" color="primary">
-            Submit
-          </Button>
+            </ModalContent>
+          </Modal>
         </div>
-      </form>
-    </div>
+      ) : (
+        <EstimateView  details={details}  />
+      )}
+    </>
   );
 };
 

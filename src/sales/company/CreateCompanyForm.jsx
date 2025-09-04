@@ -48,6 +48,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
+import {
+  createCompanyInOperations,
+  updateCompanyInOperations,
+} from "../../toolkit/slices/operationSlice";
+import { getOperationCompanyFormValues } from "../../operation/components/commonFunctions";
 
 const formSchema = z.object({
   consultantOrCompany: z.enum(["consultant", "company"], {
@@ -565,34 +570,13 @@ const CreateCompanyForm = ({
             subIndustryId: compData?.subIndustry?.id,
             subsubIndustryId: compData?.subSubIndustry?.id,
             industrydataId: compData?.industryData?.map((item) => item?.id),
-            gstDocuments: [
-              {
-                uid: "-1",
-                name: getFileName(compData?.gstDoc),
-                status: "done",
-                response: compData?.gstDoc,
-              },
-            ],
+            gstDocuments: compData?.gstDoc,
             rating: compData?.rating,
             paymentTerm: compData?.paymentTerm,
             aggrementPresent: compData?.aggrementPresent,
-            aggrement: [
-              {
-                uid: "-2",
-                name: getFileName(compData?.aggrement),
-                status: "done",
-                response: compData?.aggrement,
-              },
-            ],
+            aggrement: compData?.aggrement,
             ndaPresent: compData?.ndaPresent,
-            nda: [
-              {
-                uid: "-3",
-                name: getFileName(compData?.nda),
-                status: "done",
-                response: compData?.nda,
-              },
-            ],
+            nda: compData?.nda,
             primaryTitle: compData?.primaryContact?.title,
             contactName: compData?.primaryContact?.name,
             primaryDesignation: compData?.primaryContact?.clientDesignation?.id,
@@ -628,17 +612,42 @@ const CreateCompanyForm = ({
     data.updatedBy = userId;
     if (edit) {
       data.id = editData?.companyId;
-      dispatch(updateCompanyDetails(values))
+      dispatch(updateCompanyDetails(data))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Company updated successfully !.",
               color: "success",
             });
-            dispatch(dispatch(getAllNewCompanies(companyFilteration)));
+            dispatch(getAllNewCompanies(companyFilteration));
             setEditData(null);
             onOpenChange(false);
             reset(defaultValues);
+            dispatch(
+              updateCompanyInOperations({
+                companyId: editData?.companyId,
+                ...getOperationCompanyFormValues(data),
+              })
+            )
+              .then((res) => {
+                if (res.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "Company updated successfully in operations !.",
+                    color: "success",
+                  });
+                } else {
+                  addToast({
+                    title: "Something went wrong !.",
+                    color: "danger",
+                  });
+                }
+              })
+              .catch(() =>
+                addToast({
+                  title: "Something went wrong !.",
+                  color: "danger",
+                })
+              );
           } else {
             addToast({
               title: "Something went wrong !.",
@@ -654,6 +663,7 @@ const CreateCompanyForm = ({
         );
     } else {
       data.leadId = leadId;
+      data.createdBy = userId;
       dispatch(createNewCompanyInLeads(data))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -662,6 +672,28 @@ const CreateCompanyForm = ({
               color: "success",
             });
             reset();
+            dispatch(
+              createCompanyInOperations(getOperationCompanyFormValues(data))
+            )
+              .then((res) => {
+                if (res.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "Company created in operations successfully !.",
+                    color: "success",
+                  });
+                } else {
+                  addToast({
+                    title: "Something went wrong !.",
+                    color: "danger",
+                  });
+                }
+              })
+              .catch(() =>
+                addToast({
+                  title: "Something went wrong !.",
+                  color: "danger",
+                })
+              );
           } else {
             addToast({
               title: "Something went wrong !.",

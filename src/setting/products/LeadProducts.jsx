@@ -285,7 +285,6 @@ const LeadProducts = () => {
                     type: status,
                   }));
                 }}
-                // onSelectionChange={setStatusFilter}
               >
                 {statusOptions.map((status) => (
                   <DropdownItem key={status.uid} className="capitalize">
@@ -325,13 +324,14 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {data.length} products
+            Total {count} products
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-hidden text-default-400 text-small"
               onChange={onRowsPerPageChange}
+              value={initialFilteration?.size}
             >
               <option value="15">15</option>
               <option value="25">25</option>
@@ -346,7 +346,7 @@ const LeadProducts = () => {
     initialFilteration,
     visibleColumns,
     onRowsPerPageChange,
-    data.length,
+    count,
     onSearchChange,
     hasSearchFilter,
   ]);
@@ -357,7 +357,7 @@ const LeadProducts = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -392,10 +392,10 @@ const LeadProducts = () => {
     );
   }, [
     selectedKeys,
-    items.length,
     initialFilteration?.page,
     pages,
     hasSearchFilter,
+    count
   ]);
 
   return (

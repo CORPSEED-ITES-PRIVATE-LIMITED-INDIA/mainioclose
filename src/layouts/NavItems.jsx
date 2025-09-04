@@ -122,6 +122,15 @@ export const navItems = [
     ],
   },
   {
+    title: "Operation",
+    icon: "GitCommitHorizontal",
+    url: "/operation",
+    key: "operation",
+    children: [
+      { title: "Project", icon: "", url: "operation/project", key: "project" },
+    ],
+  },
+  {
     title: "Users",
     icon: "User2",
     url: "users",
@@ -161,17 +170,5 @@ export const navItems = [
     ],
   },
 ];
-
-
-
-export const operationNavItems=[{
-     
-    title: "Dashboard",
-    icon: "LayoutDashboard",
-    url: "dashboard",
-    key: "dashboard",
-
-}]
-
 
 
