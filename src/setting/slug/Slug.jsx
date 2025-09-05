@@ -18,25 +18,53 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  Form,
-  Select,
-  SelectItem,
   addToast,
   ModalFooter,
+  Switch,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createProduct,
-  getAllProductListByType,
-  getAllProductListCount,
+  createPlantSetup,
+  createSlug,
+  editSulg,
+  getAllSlugCount,
+  getAllSlugList,
+  getAllSlugs,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import * as z from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import NewSelect from "../../components/NewSelect";
+
+const formSchema = z.object({
+  name: z.string().min(1, "please enter the name"),
+});
+
+const defaultValues = {
+  name: "",
+};
+
+const plantFormSchema = (isPlantSetup) =>
+  z.object({
+    flag: z.boolean(),
+    ...(isPlantSetup
+      ? {
+          slugId: z.array(z.string()).min(1, "please select the slug list"),
+        }
+      : {}),
+  });
+
+const plantFormDefaultValues = {
+  flag: false,
+  slugId: [],
+};
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName", sortable: true },
-  { name: "TYPE", uid: "type" },
+  { name: "NAME", uid: "name" },
+  { name: "SLUG LIST", uid: "slugList" },
+  { name: "PLANT SETUP", uid: "isPlantSetup" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -50,13 +78,13 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type", "actions"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "slugList", "actions"];
 
-const LeadProducts = () => {
+const Slug = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const data = useSelector((state) => state.setting.productList);
-  const count = useSelector((state) => state.setting.productListCount);
+  const data = useSelector((state) => state.setting.slugListWithPage);
+  const count = useSelector((state) => state.setting.slugCount);
+  const slugList = useSelector((state) => state.setting.slugList);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
@@ -65,25 +93,39 @@ const LeadProducts = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "productName",
+    column: "name",
     direction: "ascending",
   });
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-  });
-
+  const [isPlantSetup, setIsPlantSetup] = useState(false);
+  const [item, setItem] = useState(null);
   const [initialFilteration, setInitialFilteration] = useState({
-    type: "all",
     page: 1,
     size: 50,
   });
 
   const hasSearchFilter = Boolean(filterValue);
 
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultValues,
+  });
+
+  const plantForm = useForm({
+    resolver: zodResolver(plantFormSchema(isPlantSetup)),
+    defaultValues: plantFormDefaultValues,
+  });
+
   useEffect(() => {
-    dispatch(getAllProductListByType(initialFilteration));
-    dispatch(getAllProductListCount(initialFilteration));
+    dispatch(getAllSlugs(initialFilteration));
+    dispatch(getAllSlugCount());
+    dispatch(getAllSlugList());
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -126,37 +168,60 @@ const LeadProducts = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handleDelete = () => {
-    // dispatch((deleteId))
-    //   .then((resp) => {
-    //     if (resp.meta.requestStatus === "fulfilled") {
-    //       addToast({
-    //         title: "Status deleted successfully !.",
-    //         color: "success",
-    //       });
-    //       modal.onOpenChange(false);
-    //       setDeleteId(null);
-    //       dispatch(getAllStatusData());
-    //     } else {
-    //       addToast({ title: "Something went wrong !.", color: "danger" });
-    //     }
-    //   })
-    //   .catch(() =>
-    //     addToast({ title: "Something went wrong !.", color: "danger" })
-    //   );
+  const handleFinish = (values) => {
+    if (item?.id) {
+      dispatch(editSulg({ id: item?.id, ...values }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Slug updated successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getAllSlugs(initialFilteration));
+            reset(defaultValues);
+            setItem(null);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(createSlug(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Slug created successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getAllSlugs(initialFilteration));
+            reset(defaultValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    }
   };
 
-  const handleSubmit = (values) => {
-    dispatch(createProduct({ userId, ...values }))
+  const handlePlantFormSubmit = (values) => {
+    values.id = item?.id;
+    dispatch(createPlantSetup(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Product created successfully !.",
+            title: "Plant setup created successfully !.",
             color: "success",
           });
-          onOpenChange(false);
-          dispatch(getAllProductListByType(initialFilteration));
-          setFormData({ name: "", type: "" });
+          modal.onOpenChange(false);
+          dispatch(getAllSlugs(initialFilteration));
+          plantForm.reset(defaultValues);
+          setItem(null);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -171,11 +236,15 @@ const LeadProducts = () => {
 
     switch (columnKey) {
       case "productName":
+        return <p>{rowData?.name}</p>;
+
+      case "slugList":
         return (
-          <Link to={`${rowData?.id}/productDetail`}>
-            {rowData?.productName}
-          </Link>
+          <p>{rowData?.slugList?.map((item) => item?.name)?.join(" , ")}</p>
         );
+
+      case "isPlantSetup":
+        return <p>{rowData?.isPlantSetup ? "True" : "False"}</p>;
 
       case "actions":
         return (
@@ -186,15 +255,23 @@ const LeadProducts = () => {
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
+              <DropdownMenu
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  if (key === "plantSetup") {
+                    modal.onOpen();
+                    plantForm.setValue("isPlantSetup", rowData?.isPlantSetup);
+                    setItem(rowData);
+                  }
+                  if (key === "edit") {
+                    onOpen();
+                    setValue("name", rowData?.name);
+                  }
+                }}
+              >
+                <DropdownItem key="plantSetup">Plant setup</DropdownItem>
                 <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem
-                  key="delete"
-                  color="danger"
-                  onClick={modal.onOpen}
-                >
-                  Delete
-                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -267,37 +344,6 @@ const LeadProducts = () => {
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  className="capitalize"
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                >
-                  {initialFilteration?.type}
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Single selection example"
-                selectedKeys={[initialFilteration?.type]}
-                selectionMode="single"
-                onSelectionChange={(event) => {
-                  const [status] = [...event];
-                  setInitialFilteration((prev) => ({
-                    ...prev,
-                    type: status,
-                  }));
-                }}
-              >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
                   endContent={<ChevronDown className="text-small" />}
                   variant="flat"
                 >
@@ -326,7 +372,7 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} products
+            Total {count} slugs
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -396,14 +442,14 @@ const LeadProducts = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead products</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Slugs</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -446,81 +492,95 @@ const LeadProducts = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create product
+                {item ? "Update slug" : "Create Slug"}
               </ModalHeader>
               <ModalBody>
-                <Form
+                <form
                   className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
-                    );
-                    handleSubmit(data);
-                  }}
+                  onSubmit={handleSubmit(handleFinish)}
                 >
-                  <Input
-                    isRequired
-                    errorMessage="Please enter product name"
-                    label="Product name"
+                  <Controller
                     name="name"
-                    type="text"
-                    value={formData?.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        errorMessage="Please enter slug name"
+                        label="Slug name"
+                        {...field}
+                      />
+                    )}
                   />
-
-                  <Select
-                    isRequired
-                    errorMessage="please select the product type"
-                    label="Select product type"
-                    name="type"
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, type: e }))
-                    }
-                  >
-                    {[
-                      { label: "Product", value: "Product" },
-                      { label: "Service", value: "Service" },
-                    ].map((info) => (
-                      <SelectItem key={info.value}>{info.label}</SelectItem>
-                    ))}
-                  </Select>
-
                   <ModalFooter className="w-full flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>
                     <Button color="primary" type="submit">
                       Submit
                     </Button>
                   </ModalFooter>
-                </Form>
+                </form>
               </ModalBody>
             </>
           )}
         </ModalContent>
       </Modal>
-      <Modal
-        isOpen={modal.isOpen}
-        backdrop="blur"
-        onOpenChange={modal.onOpenChange}
-      >
+      <Modal size="xl" isOpen={modal.isOpen} onOpenChange={modal.onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
-                </Button>
-              </ModalFooter>
+              <ModalHeader className="flex flex-col gap-1">
+                Plant setup
+              </ModalHeader>
+              <ModalBody>
+                <form
+                  className="flex flex-col gap-3"
+                  onSubmit={plantForm.handleSubmit(handlePlantFormSubmit)}
+                >
+                  <Controller
+                    name="flag"
+                    control={plantForm.control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Switch
+                        value={field.value}
+                        onValueChange={(e) => {
+                          setIsPlantSetup(e);
+                          field.onChange(e);
+                        }}
+                      >
+                        Plant setup
+                      </Switch>
+                    )}
+                  />
+                  {isPlantSetup && (
+                    <Controller
+                      name="slugId"
+                      control={plantForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          label="Slugs"
+                          selectionMode="multiple"
+                          errorMessage={"please select the slugs."}
+                          data={slugList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+                  )}
+                  <ModalFooter>
+                    <Button variant="light" onPress={onClose}>
+                      Cancel
+                    </Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
             </>
           )}
         </ModalContent>
@@ -529,4 +589,4 @@ const LeadProducts = () => {
   );
 };
 
-export default LeadProducts;
+export default Slug;

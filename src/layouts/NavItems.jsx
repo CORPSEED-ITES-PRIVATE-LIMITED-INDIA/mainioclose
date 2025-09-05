@@ -167,6 +167,30 @@ export const navItems = [
         url: "settings/ipAddress",
         key: "ipAddress",
       },
+      {
+        title: "Slug",
+        icon: "",
+        url: "settings/slug",
+        key: "slug",
+      },
+      {
+        title: "Urls",
+        icon: "",
+        url: "settings/urls",
+        key: "urls",
+      },
+      {
+        title: "Department",
+        icon: "",
+        url: "settings/department",
+        key: "department",
+      },
+      {
+        title: "Desigination",
+        icon: "",
+        url: "settings/designation",
+        key: "designation",
+      },
     ],
   },
 ];

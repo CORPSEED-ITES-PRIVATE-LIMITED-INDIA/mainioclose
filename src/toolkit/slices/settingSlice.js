@@ -223,6 +223,152 @@ export const getClientDesiginationList = createAsyncThunk(
   }
 );
 
+export const createSlug = createAsyncThunk("createSlug", async (data) => {
+  const response = await api.post(
+    `/leadService/api/v1/slug/createSlug?name=${data?.name}`
+  );
+  return response.data;
+});
+
+export const editSulg = createAsyncThunk("editSlug", async (data) => {
+  const response = await api.put(
+    `/leadService/api/v1/slug/updateSlug?name=${data?.name}&id=${data?.id}`
+  );
+  return response.data;
+});
+
+export const getAllSlugs = createAsyncThunk(
+  "getAllSlugs",
+  async ({ size, page }) => {
+    const response = await api.get(
+      `/leadService/api/v1/slug/getSlug?pageSize=${size}&pageNo=${page}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllSlugCount = createAsyncThunk(
+  "allTotalSlugCount",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/urls/getTotalSlugCount`
+    );
+    return response.data;
+  }
+);
+
+export const createPlantSetup = createAsyncThunk(
+  "createPlantSetup",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/slug/createPlantSetUp`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllUrlsList = createAsyncThunk(
+  "getAllUrlsList",
+  async ({ page, size }) => {
+    const showLeadUrl = await api.get(
+      `/leadService/api/v1/urls/getUrls?pageSize=${size}&pageNo=${page}`
+    );
+    return showLeadUrl?.data;
+  }
+);
+
+export const getAllUrlCount = createAsyncThunk("getTotalUrlCount", async () => {
+  const response = await api.get(`/leadService/api/v1/urls/getTotalUrlsCount`);
+  return response.data;
+});
+
+export const createUrl = createAsyncThunk("createUrl", async (data) => {
+  const createLeadUrl = await api.post(
+    `/leadService/api/v1/urls/createUrls`,
+    data
+  );
+  return createLeadUrl?.data;
+});
+
+export const editUrls = createAsyncThunk("editUrls", async (data) => {
+  const respose = await api.put("/leadService/api/v1/urls/updateUrls", data);
+  return respose.data;
+});
+
+export const convertUrlsToProduct = createAsyncThunk(
+  "convertUrlsToProduct",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/product/importProductByUrls`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getAllDepartment = createAsyncThunk(
+  "getAllDepartment",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/designation/getAllDepartment`
+    );
+    return response.data;
+  }
+);
+
+export const createDepartment = createAsyncThunk(
+  "createDepartment",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/designation/createDepartment?name=${data?.name}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllDesiginations = createAsyncThunk(
+  "allDesiginations",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/designation/getAllDesignation`
+    );
+    return response.data;
+  }
+);
+
+export const createDesiginationByDepartmentId = createAsyncThunk(
+  "createDesiginationByDepartmentId",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/designation/createDepartmentInDesignation`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const addStatusInDepartment = createAsyncThunk(
+  "addStatusInDepartment",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/status/addStatusInDepartment`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const createDesigination = createAsyncThunk(
+  "createDesination",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`
+    );
+    return response.data;
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -236,6 +382,12 @@ export const SettingSlice = createSlice({
     singleProductDetail: {},
     salesTatList: [],
     clientDesiginationList: [],
+    slugListWithPage: [],
+    slugCount: 0,
+    urlsList: [],
+    urlCount: 0,
+    departmentList: [],
+    designationList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -302,26 +454,26 @@ export const SettingSlice = createSlice({
       state.productListCount = 0;
     });
 
-    builder.addCase(getSingleProductByProductId.pending, (state, action) => {
+    builder.addCase(getSingleProductByProductId.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getSingleProductByProductId.fulfilled, (state, action) => {
       state.loading = "success";
       state.singleProductDetail = action.payload;
     });
-    builder.addCase(getSingleProductByProductId.rejected, (state, action) => {
+    builder.addCase(getSingleProductByProductId.rejected, (state) => {
       state.loading = "rejected";
       state.singleProductDetail = {};
     });
 
-    builder.addCase(getAllIpAddress.pending, (state, action) => {
+    builder.addCase(getAllIpAddress.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllIpAddress.fulfilled, (state, action) => {
       state.loading = "success";
       state.ipAddressList = action.payload;
     });
-    builder.addCase(getAllIpAddress.rejected, (state, action) => {
+    builder.addCase(getAllIpAddress.rejected, (state) => {
       state.loading = "rejected";
       state.ipAddressList = [];
     });
@@ -338,14 +490,80 @@ export const SettingSlice = createSlice({
       state.salesTatList = [];
     });
 
-    builder.addCase(getClientDesiginationList.pending, (state, action) => {
+    builder.addCase(getClientDesiginationList.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getClientDesiginationList.fulfilled, (state, action) => {
       state.loading = "success";
       state.clientDesiginationList = action.payload;
     });
-    builder.addCase(getClientDesiginationList.rejected, (state, action) => {
+    builder.addCase(getClientDesiginationList.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllSlugs.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSlugs.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.slugListWithPage = action.payload;
+    });
+    builder.addCase(getAllSlugs.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllSlugCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSlugCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.slugCount = action.payload;
+    });
+    builder.addCase(getAllSlugCount.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllUrlsList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUrlsList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.urlsList = action.payload;
+    });
+    builder.addCase(getAllUrlsList.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllUrlCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUrlCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.urlCount = action.payload;
+    });
+    builder.addCase(getAllUrlCount.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllDepartment.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllDepartment.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.departmentList = action.payload;
+    });
+    builder.addCase(getAllDepartment.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllDesiginations.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllDesiginations.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.designationList = action.payload;
+    });
+    builder.addCase(getAllDesiginations.rejected, (state) => {
       state.loading = "rejected";
     });
   },

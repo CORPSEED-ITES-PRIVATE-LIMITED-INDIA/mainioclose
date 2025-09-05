@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { ListFilter, TrendingUp } from "lucide-react";
+import {
+  Building2,
+  ListFilter,
+  MonitorDown,
+  SquareChartGantt,
+  TrendingUp,
+  User,
+  Users,
+} from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -28,8 +36,12 @@ import {
   getConversionReport,
   getDashboardUsersByHeirarchy,
   getLeadsDataByMonth,
+  getTotalLeadCountForGraph,
+  getTotalProjectCounts,
+  totalCompanyForGraph,
+  totalUserCount,
 } from "../toolkit/slices/dashboardSlice";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import NewSelect from "../components/NewSelect";
 import {
   Button,
@@ -113,6 +125,7 @@ const barChartConfig = {
 const AdminDashboards = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
+  const navigate = useNavigate();
   const today = dayjs();
   const sixMonthsAgo = dayjs().subtract(6, "month");
   const leadsData = useSelector((state) => state.dashboard.leadDataMonthWise);
@@ -120,6 +133,20 @@ const AdminDashboards = () => {
     (state) => state.dashboard.conversionReport
   );
   const dashboardUsers = useSelector((state) => state.dashboard.dashboardUsers);
+  const totalLeadCount = useSelector(
+    (state) => state.dashboard.totalLeadCountForGraph
+  );
+  const totalProjectCount = useSelector(
+    (state) => state.dashboard.totalProjectCountForGraph
+  );
+  const leadData = useSelector((state) => state.dashboard.leadDataMonthWise);
+  const userCount = useSelector(
+    (state) => state.dashboard.totalUserCountForGraph
+  );
+  const companyCount = useSelector(
+    (state) => state.dashboard.totalCompanyForGraph
+  );
+
   const [leadDataFilter, setLeadDataFilter] = useState({
     toDate: sixMonthsAgo.toDate(),
     fromDate: today.toDate(),
@@ -127,6 +154,7 @@ const AdminDashboards = () => {
     currentUserId: userId,
     userId: userId,
   });
+
   const [convertedLeadDataFilter, setConvertedLeadDataFilter] = useState({
     toDate: sixMonthsAgo.toDate(),
     fromDate: today.toDate(),
@@ -134,6 +162,13 @@ const AdminDashboards = () => {
     currentUserId: userId,
     userId: userId,
   });
+
+  useEffect(() => {
+    dispatch(getTotalLeadCountForGraph());
+    dispatch(getTotalProjectCounts());
+    dispatch(totalUserCount());
+    dispatch(totalCompanyForGraph());
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(getLeadsDataByMonth(leadDataFilter));
@@ -154,26 +189,292 @@ const AdminDashboards = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4 max-h-[85vh] overflow-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center w-full">
-            Leads Data Chart{" "}
-            <div className="flex gap-1">
-              <div>
-                <p className="text-sm font-medium">
-                  {
-                    getNameAndEmailById(dashboardUsers, leadDataFilter?.userId)
-                      ?.name
-                  }
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {
-                    getNameAndEmailById(dashboardUsers, leadDataFilter?.userId)
-                      ?.email
-                  }
-                </p>
+    <div className="max-h-[85vh] overflow-auto p-3">
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+              Total leads
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <h1 className="font-medium text-2xl m-0">{totalLeadCount}</h1>
+            <MonitorDown />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+              Total users
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <h1 className="font-medium text-2xl m-0">{userCount}</h1>
+            <Users />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+              Total projects
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <h1 className="font-medium text-2xl m-0">{totalProjectCount}</h1>
+            <SquareChartGantt />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+              Total company
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <h1 className="font-medium text-2xl m-0">{companyCount}</h1>
+            <Building2 />
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full">
+              Leads Data Chart{" "}
+              <div className="flex gap-1">
+                <div>
+                  <p className="text-sm font-medium">
+                    {
+                      getNameAndEmailById(
+                        dashboardUsers,
+                        leadDataFilter?.userId
+                      )?.name
+                    }
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {
+                      getNameAndEmailById(
+                        dashboardUsers,
+                        leadDataFilter?.userId
+                      )?.email
+                    }
+                  </p>
+                </div>
+                <Popover placement="bottom-end" showArrow={true}>
+                  <PopoverTrigger children>
+                    <Button size="sm" variant="light" isIconOnly>
+                      <ListFilter />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div className="flex flex-col gap-2">
+                      <NewSelect
+                        label={"Users"}
+                        data={dashboardUsers}
+                        labelKey={"name"}
+                        valueKey={"id"}
+                        value={leadDataFilter?.userId}
+                        onChange={(e) =>
+                          setLeadDataFilter((prev) => ({ ...prev, userId: e }))
+                        }
+                      />
+                      <DateRangePicker
+                        showMonthAndYearPickers
+                        label="Date range"
+                        value={{
+                          start: toCalendarDate(leadDataFilter?.toDate),
+                          end: toCalendarDate(leadDataFilter?.fromDate),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                            : null;
+                          setLeadDataFilter((prev) => ({
+                            ...prev,
+                            toDate: formattedStart,
+                            fromDate: formattedEnd,
+                          }));
+                        }}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
+            </CardTitle>
+            <CardDescription>
+              {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
+              {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <ChartContainer config={chartConfig}>
+              <BarChart
+                accessibilityLayer
+                data={leadsData}
+                onClick={(e) => {
+                  const inputDate = dayjs(e.activeLabel);
+                  const month = inputDate.format("YYYY-MM");
+                  navigate(`${month}/leadData`);
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) => dayjs(value).format("MMM")}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="value" fill="var(--color-desktop)" radius={8} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-2 text-sm">
+            <div className="flex gap-2 leading-none font-medium">
+              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="text-muted-foreground leading-none">
+              Showing total visitors for the last 6 months
+            </div>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full">
+              Converted Leads Data Chart{" "}
+              <div className="flex gap-1">
+                <div>
+                  <p className="text-sm font-medium">
+                    {
+                      getNameAndEmailById(
+                        dashboardUsers,
+                        convertedLeadDataFilter?.userId
+                      )?.name
+                    }
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {
+                      getNameAndEmailById(
+                        dashboardUsers,
+                        convertedLeadDataFilter?.userId
+                      )?.email
+                    }
+                  </p>
+                </div>
+                <Popover placement="bottom-end" showArrow={true}>
+                  <PopoverTrigger children>
+                    <Button size="sm" variant="light" isIconOnly>
+                      <ListFilter />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div className="flex flex-col gap-2">
+                      <NewSelect
+                        label={"Users"}
+                        data={dashboardUsers}
+                        labelKey={"name"}
+                        valueKey={"id"}
+                        value={convertedLeadDataFilter?.userId}
+                        onChange={(e) =>
+                          setConvertedLeadDataFilter((prev) => ({
+                            ...prev,
+                            userId: e,
+                          }))
+                        }
+                      />
+                      <DateRangePicker
+                        showMonthAndYearPickers
+                        label="Date range"
+                        value={{
+                          start: toCalendarDate(
+                            convertedLeadDataFilter?.toDate
+                          ),
+                          end: toCalendarDate(
+                            convertedLeadDataFilter?.fromDate
+                          ),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                            : null;
+                          setConvertedLeadDataFilter((prev) => ({
+                            ...prev,
+                            toDate: formattedStart,
+                            fromDate: formattedEnd,
+                          }));
+                        }}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </CardTitle>
+            <CardDescription>
+              {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
+              {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={areaChartConfig}>
+              <AreaChart
+                accessibilityLayer
+                data={areaChartData}
+                margin={{
+                  left: 12,
+                  right: 12,
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => value.slice(0, 3)}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="line" />}
+                />
+                <Area
+                  dataKey="desktop"
+                  type="natural"
+                  fill="var(--color-desktop)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-desktop)"
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+          <CardFooter>
+            <div className="flex w-full items-start gap-2 text-sm">
+              <div className="grid gap-2">
+                <div className="flex items-center gap-2 leading-none font-medium">
+                  Trending up by 5.2% this month{" "}
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div className="text-muted-foreground flex items-center gap-2 leading-none">
+                  January - June 2024
+                </div>
+              </div>
+            </div>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full">
+              Projects Data Chart{" "}
               <Popover placement="bottom-end" showArrow={true}>
                 <PopoverTrigger children>
                   <Button size="sm" variant="light" isIconOnly>
@@ -190,110 +491,6 @@ const AdminDashboards = () => {
                       value={leadDataFilter?.userId}
                       onChange={(e) =>
                         setLeadDataFilter((prev) => ({ ...prev, userId: e }))
-                      }
-                    />
-                    <DateRangePicker
-                      showMonthAndYearPickers
-                      label="Date range"
-                      value={{
-                        start: toCalendarDate(leadDataFilter?.toDate),
-                        end: toCalendarDate(leadDataFilter?.fromDate),
-                      }}
-                      onChange={(value) => {
-                        const formattedStart = value.start
-                          ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
-                          : null;
-                        const formattedEnd = value.end
-                          ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
-                          : null;
-                        setLeadDataFilter((prev) => ({
-                          ...prev,
-                          toDate: formattedStart,
-                          fromDate: formattedEnd,
-                        }));
-                      }}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </CardTitle>
-          <CardDescription>
-            {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
-            {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <ChartContainer config={chartConfig}>
-            <BarChart accessibilityLayer data={leadsData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value) => dayjs(value).format("MMM")}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Bar dataKey="value" fill="var(--color-desktop)" radius={8} />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-        <CardFooter className="flex-col items-start gap-2 text-sm">
-          <div className="flex gap-2 leading-none font-medium">
-            Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-          </div>
-          <div className="text-muted-foreground leading-none">
-            Showing total visitors for the last 6 months
-          </div>
-        </CardFooter>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center w-full">
-            Converted Leads Data Chart{" "}
-            <div className="flex gap-1">
-              <div>
-                <p className="text-sm font-medium">
-                  {
-                    getNameAndEmailById(
-                      dashboardUsers,
-                      convertedLeadDataFilter?.userId
-                    )?.name
-                  }
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {
-                    getNameAndEmailById(
-                      dashboardUsers,
-                      convertedLeadDataFilter?.userId
-                    )?.email
-                  }
-                </p>
-              </div>
-              <Popover placement="bottom-end" showArrow={true}>
-                <PopoverTrigger children>
-                  <Button size="sm" variant="light" isIconOnly>
-                    <ListFilter />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  <div className="flex flex-col gap-2">
-                    <NewSelect
-                      label={"Users"}
-                      data={dashboardUsers}
-                      labelKey={"name"}
-                      valueKey={"id"}
-                      value={convertedLeadDataFilter?.userId}
-                      onChange={(e) =>
-                        setConvertedLeadDataFilter((prev) => ({
-                          ...prev,
-                          userId: e,
-                        }))
                       }
                     />
                     <DateRangePicker
@@ -320,236 +517,138 @@ const AdminDashboards = () => {
                   </div>
                 </PopoverContent>
               </Popover>
-            </div>
-          </CardTitle>
-          <CardDescription>
-            {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
-            {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={areaChartConfig}>
-            <AreaChart
-              accessibilityLayer
-              data={areaChartData}
-              margin={{
-                left: 12,
-                right: 12,
-              }}
-            >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value) => value.slice(0, 3)}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="line" />}
-              />
-              <Area
-                dataKey="desktop"
-                type="natural"
-                fill="var(--color-desktop)"
-                fillOpacity={0.4}
-                stroke="var(--color-desktop)"
-              />
-            </AreaChart>
-          </ChartContainer>
-        </CardContent>
-        <CardFooter>
-          <div className="flex w-full items-start gap-2 text-sm">
-            <div className="grid gap-2">
-              <div className="flex items-center gap-2 leading-none font-medium">
-                Trending up by 5.2% this month{" "}
-                <TrendingUp className="h-4 w-4" />
-              </div>
-              <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                January - June 2024
-              </div>
-            </div>
-          </div>
-        </CardFooter>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center w-full">
-            Projects Data Chart{" "}
-            <Popover placement="bottom-end" showArrow={true}>
-              <PopoverTrigger children>
-                <Button size="sm" variant="light" isIconOnly>
-                  <ListFilter />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <div className="flex flex-col gap-2">
-                  <NewSelect
-                    label={"Users"}
-                    data={dashboardUsers}
-                    labelKey={"name"}
-                    valueKey={"id"}
-                    value={leadDataFilter?.userId}
-                    onChange={(e) =>
-                      setLeadDataFilter((prev) => ({ ...prev, userId: e }))
-                    }
-                  />
-                  <DateRangePicker
-                    showMonthAndYearPickers
-                    label="Date range"
-                    value={{
-                      start: toCalendarDate(convertedLeadDataFilter?.toDate),
-                      end: toCalendarDate(convertedLeadDataFilter?.fromDate),
-                    }}
-                    onChange={(value) => {
-                      const formattedStart = value.start
-                        ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
-                        : null;
-                      const formattedEnd = value.end
-                        ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
-                        : null;
-                      setConvertedLeadDataFilter((prev) => ({
-                        ...prev,
-                        toDate: formattedStart,
-                        fromDate: formattedEnd,
-                      }));
-                    }}
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-          </CardTitle>
-          <CardDescription>
-            {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
-            {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
-          </CardDescription>
-        </CardHeader>
+            </CardTitle>
+            <CardDescription>
+              {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
+              {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
+            </CardDescription>
+          </CardHeader>
 
-        <CardContent>
-          <ChartContainer config={chartConfig}>
-            <BarChart accessibilityLayer data={[]}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value) => dayjs(value).format("MMM")}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Bar dataKey="value" fill="var(--color-desktop)" radius={8} />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-        <CardFooter className="flex-col items-start gap-2 text-sm">
-          <div className="flex gap-2 leading-none font-medium">
-            Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-          </div>
-          <div className="text-muted-foreground leading-none">
-            Showing total visitors for the last 6 months
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center w-full">
-            Status Conversion
-            <Popover placement="bottom-end" showArrow={true}>
-              <PopoverTrigger children>
-                <Button size="sm" variant="light" isIconOnly>
-                  <ListFilter />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <div className="flex flex-col gap-2">
-                  <NewSelect
-                    label={"Users"}
-                    data={dashboardUsers}
-                    labelKey={"name"}
-                    valueKey={"id"}
-                    value={leadDataFilter?.userId}
-                    onChange={(e) =>
-                      setLeadDataFilter((prev) => ({ ...prev, userId: e }))
-                    }
-                  />
-                  <DateRangePicker
-                    showMonthAndYearPickers
-                    label="Date range"
-                    value={{
-                      start: toCalendarDate(convertedLeadDataFilter?.toDate),
-                      end: toCalendarDate(convertedLeadDataFilter?.fromDate),
-                    }}
-                    onChange={(value) => {
-                      const formattedStart = value.start
-                        ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
-                        : null;
-                      const formattedEnd = value.end
-                        ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
-                        : null;
-                      setConvertedLeadDataFilter((prev) => ({
-                        ...prev,
-                        toDate: formattedStart,
-                        fromDate: formattedEnd,
-                      }));
-                    }}
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-          </CardTitle>
-          <CardDescription>
-            {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
-            {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 pb-0">
-          <ChartContainer
-            config={pieChartConfig}
-            className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[250px]"
-          >
-            <PieChart>
-              <CartesianGrid vertical={false} />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    nameKey="value"
-                    labelKey="value"
-                    hideLabel
-                  />
-                }
-              />
-              <Pie
-                data={conversionData?.map((item, idx) => ({
-                  ...item,
-                  value: (idx + 1 + item.value) * 6,
-                  fill: pieChartData[idx]?.fill,
-                }))}
-                dataKey="value"
-              >
-                <LabelList
-                  dataKey="key"
-                  className="fill-background"
-                  stroke="none"
-                  fontSize={12}
-                  formatter={(value) => value}
+          <CardContent>
+            <ChartContainer config={chartConfig}>
+              <BarChart accessibilityLayer data={[]}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) => dayjs(value).format("MMM")}
                 />
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-        </CardContent>
-        <CardFooter className="flex-col gap-2 text-sm">
-          <div className="flex items-center gap-2 leading-none font-medium">
-            Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-          </div>
-          <div className="text-muted-foreground leading-none">
-            Showing total visitors for the last 6 months
-          </div>
-        </CardFooter>
-      </Card>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="value" fill="var(--color-desktop)" radius={8} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-2 text-sm">
+            <div className="flex gap-2 leading-none font-medium">
+              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="text-muted-foreground leading-none">
+              Showing total visitors for the last 6 months
+            </div>
+          </CardFooter>
+        </Card>
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center w-full">
+              Status Conversion
+              <Popover placement="bottom-end" showArrow={true}>
+                <PopoverTrigger children>
+                  <Button size="sm" variant="light" isIconOnly>
+                    <ListFilter />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="flex flex-col gap-2">
+                    <NewSelect
+                      label={"Users"}
+                      data={dashboardUsers}
+                      labelKey={"name"}
+                      valueKey={"id"}
+                      value={leadDataFilter?.userId}
+                      onChange={(e) =>
+                        setLeadDataFilter((prev) => ({ ...prev, userId: e }))
+                      }
+                    />
+                    <DateRangePicker
+                      showMonthAndYearPickers
+                      label="Date range"
+                      value={{
+                        start: toCalendarDate(convertedLeadDataFilter?.toDate),
+                        end: toCalendarDate(convertedLeadDataFilter?.fromDate),
+                      }}
+                      onChange={(value) => {
+                        const formattedStart = value.start
+                          ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                          : null;
+                        const formattedEnd = value.end
+                          ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                          : null;
+                        setConvertedLeadDataFilter((prev) => ({
+                          ...prev,
+                          toDate: formattedStart,
+                          fromDate: formattedEnd,
+                        }));
+                      }}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </CardTitle>
+            <CardDescription>
+              {dayjs(leadDataFilter?.toDate).format("MMMM YYYY")} -{" "}
+              {dayjs(leadDataFilter?.fromDate).format("MMMM YYYY")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 pb-0">
+            <ChartContainer
+              config={pieChartConfig}
+              className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[250px]"
+            >
+              <PieChart>
+                <CartesianGrid vertical={false} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      nameKey="value"
+                      labelKey="value"
+                      hideLabel
+                    />
+                  }
+                />
+                <Pie
+                  data={conversionData?.map((item, idx) => ({
+                    ...item,
+                    value: (idx + 1 + item.value) * 6,
+                    fill: pieChartData[idx]?.fill,
+                  }))}
+                  dataKey="value"
+                >
+                  <LabelList
+                    dataKey="key"
+                    className="fill-background"
+                    stroke="none"
+                    fontSize={12}
+                    formatter={(value) => value}
+                  />
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+          <CardFooter className="flex-col gap-2 text-sm">
+            <div className="flex items-center gap-2 leading-none font-medium">
+              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="text-muted-foreground leading-none">
+              Showing total visitors for the last 6 months
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 };

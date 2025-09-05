@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -18,72 +18,103 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  Form,
-  Select,
-  SelectItem,
   addToast,
   ModalFooter,
+  Switch,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createProduct,
-  getAllProductListByType,
-  getAllProductListCount,
+  convertUrlsToProduct,
+  createUrl,
+  editSulg,
+  editUrls,
+  getAllSlugList,
+  getAllSlugs,
+  getAllUrlCount,
+  getAllUrlsList,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import * as z from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import NewSelect from "../../components/NewSelect";
+
+const formSchema = z.object({
+  name: z.string().min(1, "please enter the name."),
+  urlSlug: z.array(z.string()).min(1, "please select the url slug."),
+  quality: z.boolean(),
+});
+
+const defaultValues = {
+  name: "",
+  urlSlug: [],
+  quality: false,
+};
 
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName", sortable: true },
-  { name: "TYPE", uid: "type" },
+  { name: "ID", uid: "id" },
+  { name: "URL NAME", uid: "urlsName", sortable: true },
+  { name: "URL SLUG", uid: "urlSlug" },
+  { name: "PRODUCT", uid: "product" },
+  { name: "QUALITY", uid: "quality" },
   { name: "ACTIONS", uid: "actions" },
-];
-
-export const statusOptions = [
-  { name: "All", uid: "all" },
-  { name: "Product", uid: "Product" },
-  { name: "Service", uid: "Service" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type", "actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "urlsName",
+  "urlSlug",
+  "product",
+  "quality",
+  "actions",
+];
 
-const LeadProducts = () => {
+const Urls = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const data = useSelector((state) => state.setting.productList);
-  const count = useSelector((state) => state.setting.productListCount);
+  const data = useSelector((state) => state.setting.urlsList);
+  const count = useSelector((state) => state.setting.urlCount);
+  const slugList = useSelector((state) => state.setting.slugList);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const modal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "productName",
+    column: "urlsName",
     direction: "ascending",
   });
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-  });
 
+  const [item, setItem] = useState(null);
   const [initialFilteration, setInitialFilteration] = useState({
-    type: "all",
     page: 1,
     size: 50,
   });
 
   const hasSearchFilter = Boolean(filterValue);
 
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultValues,
+  });
+
   useEffect(() => {
-    dispatch(getAllProductListByType(initialFilteration));
-    dispatch(getAllProductListCount(initialFilteration));
+    dispatch(getAllUrlsList(initialFilteration));
+    dispatch(getAllUrlCount());
+    dispatch(getAllSlugList());
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -126,56 +157,87 @@ const LeadProducts = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handleDelete = () => {
-    // dispatch((deleteId))
-    //   .then((resp) => {
-    //     if (resp.meta.requestStatus === "fulfilled") {
-    //       addToast({
-    //         title: "Status deleted successfully !.",
-    //         color: "success",
-    //       });
-    //       modal.onOpenChange(false);
-    //       setDeleteId(null);
-    //       dispatch(getAllStatusData());
-    //     } else {
-    //       addToast({ title: "Something went wrong !.", color: "danger" });
-    //     }
-    //   })
-    //   .catch(() =>
-    //     addToast({ title: "Something went wrong !.", color: "danger" })
-    //   );
+  const handleFinish = (values) => {
+    if (item?.id) {
+      dispatch(editUrls({ urlsId: item?.id, ...values }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Url updated successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getAllUrlsList(initialFilteration));
+            reset(defaultValues);
+            setItem(null);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(createUrl(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Url created successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getAllUrlsList(initialFilteration));
+            reset(defaultValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    }
   };
 
-  const handleSubmit = (values) => {
-    dispatch(createProduct({ userId, ...values }))
+  const handleConvertToProduct = useCallback(() => {
+    dispatch(
+      convertUrlsToProduct({
+        urlsId: selectedKeys,
+      })
+    )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Product created successfully !.",
+            title: "Urls converted to product successfully !.",
             color: "success",
           });
-          onOpenChange(false);
-          dispatch(getAllProductListByType(initialFilteration));
-          setFormData({ name: "", type: "" });
+          dispatch(getAllUrlsList(initialFilteration));
+          setSelectedKeys([]);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
-  };
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [dispatch, selectedKeys]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
 
     switch (columnKey) {
-      case "productName":
+      case "urlsName":
+        return <p>{rowData?.urlsName}</p>;
+
+      case "urlSlug":
         return (
-          <Link to={`${rowData?.id}/productDetail`}>
-            {rowData?.productName}
-          </Link>
+          <p>{rowData?.urlSlug?.map((item) => item?.name)?.join(" , ")}</p>
         );
+
+      case "product":
+        return <p>{rowData?.product ? "True" : "False"}</p>;
+
+      case "quality":
+        return <p>{rowData?.quality ? "True" : "False"}</p>;
 
       case "actions":
         return (
@@ -186,15 +248,23 @@ const LeadProducts = () => {
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
+              <DropdownMenu
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  if (key === "edit") {
+                    onOpen();
+                    setItem(rowData);
+                    setValue("name", rowData?.urlsName);
+                    setValue(
+                      "urlSlug",
+                      rowData?.urlSlug?.map((item) => item?.id)
+                    );
+                    setValue("quality", rowData?.quality);
+                  }
+                }}
+              >
                 <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem
-                  key="delete"
-                  color="danger"
-                  onClick={modal.onOpen}
-                >
-                  Delete
-                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -264,37 +334,13 @@ const LeadProducts = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  className="capitalize"
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                >
-                  {initialFilteration?.type}
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Single selection example"
-                selectedKeys={[initialFilteration?.type]}
-                selectionMode="single"
-                onSelectionChange={(event) => {
-                  const [status] = [...event];
-                  setInitialFilteration((prev) => ({
-                    ...prev,
-                    type: status,
-                  }));
-                }}
-              >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
+            <Button
+              variant="flat"
+              onPress={handleConvertToProduct}
+              isDisabled={selectedKeys?.length === 0}
+            >
+              Convert to product
+            </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -326,7 +372,7 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} products
+            Total {count} Urls
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -351,6 +397,7 @@ const LeadProducts = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    selectedKeys,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -396,21 +443,24 @@ const LeadProducts = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead products</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Urls list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        onSelectionChange={(e) => {
+          let rowKeys = Array.from(e);
+          setSelectedKeys(rowKeys);
+        }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -446,81 +496,79 @@ const LeadProducts = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create product
+                {item?.id ? "Update url" : "Create url"}
               </ModalHeader>
               <ModalBody>
-                <Form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
-                    );
-                    handleSubmit(data);
-                  }}
+                <form
+                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
+                  onSubmit={handleSubmit(handleFinish)}
                 >
-                  <Input
-                    isRequired
-                    errorMessage="Please enter product name"
-                    label="Product name"
+                  <Controller
                     name="name"
-                    type="text"
-                    value={formData?.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        errorMessage="Please enter url name"
+                        label="Urls name"
+                        {...field}
+                      />
+                    )}
                   />
-
-                  <Select
-                    isRequired
-                    errorMessage="please select the product type"
-                    label="Select product type"
-                    name="type"
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, type: e }))
-                    }
-                  >
-                    {[
-                      { label: "Product", value: "Product" },
-                      { label: "Service", value: "Service" },
-                    ].map((info) => (
-                      <SelectItem key={info.value}>{info.label}</SelectItem>
-                    ))}
-                  </Select>
-
+                  <Controller
+                    name="urlSlug"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        isRequired
+                        label="Slugs"
+                        selectionMode="multiple"
+                        errorMessage={"please select the slugs."}
+                        data={slugList || []}
+                        labelKey="name"
+                        valueKey="id"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="quality"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => {
+                      return (
+                        <Select
+                          isRequired={true}
+                          label="Quality"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          selectedKeys={[String(field.value)]}
+                          onSelectionChange={(e) => {
+                            let key = Array.from(e)[0] == "true";
+                            field.onChange(key);
+                          }}
+                          items={[
+                            { label: "True", key: true },
+                            { label: "False", key: false },
+                          ]}
+                        >
+                          {(item) => (
+                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                          )}
+                        </Select>
+                      );
+                    }}
+                  />
                   <ModalFooter className="w-full flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>
                     <Button color="primary" type="submit">
                       Submit
                     </Button>
                   </ModalFooter>
-                </Form>
+                </form>
               </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      <Modal
-        isOpen={modal.isOpen}
-        backdrop="blur"
-        onOpenChange={modal.onOpenChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>
@@ -529,4 +577,4 @@ const LeadProducts = () => {
   );
 };
 
-export default LeadProducts;
+export default Urls;

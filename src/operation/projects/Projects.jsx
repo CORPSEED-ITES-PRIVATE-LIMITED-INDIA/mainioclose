@@ -74,7 +74,6 @@ const Projects = () => {
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
-
     return columns.filter((column) =>
       Array.from(visibleColumns).includes(column.uid)
     );
@@ -125,21 +124,7 @@ const Projects = () => {
             </span>
           </div>
         );
-      // case "actions":
-      //   return (
-      //     <div className="relative flex justify-center items-center gap-2">
-      //       <Dropdown>
-      //         <DropdownTrigger>
-      //           <Button isIconOnly size="sm" variant="light">
-      //             <EllipsisVertical className="text-default-300" />
-      //           </Button>
-      //         </DropdownTrigger>
-      //         <DropdownMenu>
-      //           <DropdownItem key="edit">Edit</DropdownItem>
-      //         </DropdownMenu>
-      //       </Dropdown>
-      //     </div>
-      //   );
+
       default:
         return cellValue;
     }

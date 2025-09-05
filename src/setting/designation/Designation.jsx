@@ -18,73 +18,83 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  Form,
-  Select,
-  SelectItem,
   addToast,
   ModalFooter,
+  SelectItem,
+  Select,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createProduct,
-  getAllProductListByType,
-  getAllProductListCount,
+  createDesigination,
+  getAllDesiginations,
 } from "../../toolkit/slices/settingSlice";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { ChevronDown, Plus, Search } from "lucide-react";
+import * as z from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createAuthDesigination } from "../../toolkit/slices/authSlice";
+
+const formSchema = z.object({
+  name: z.string().min(1, "please enter the name."),
+  weight: z.string().min(1, "please select weight."),
+});
+
+const defaultValues = {
+  name: "",
+  weight: "",
+};
 
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName", sortable: true },
-  { name: "TYPE", uid: "type" },
+  { name: "ID", uid: "id" },
+  { name: "DESIGNATION NAME", uid: "name", sortable: true },
+  { name: "WEIGHT VALUE", uid: "weightValue" },
   { name: "ACTIONS", uid: "actions" },
-];
-
-export const statusOptions = [
-  { name: "All", uid: "all" },
-  { name: "Product", uid: "Product" },
-  { name: "Service", uid: "Service" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type", "actions"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "weightValue", "actions"];
 
-const LeadProducts = () => {
+const Designation = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const data = useSelector((state) => state.setting.productList);
-  const count = useSelector((state) => state.setting.productListCount);
+  const data = useSelector((state) => state.setting.designationList);
+  const count = useSelector((state) => state.setting.designationList?.length);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const modal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "productName",
+    column: "name",
     direction: "ascending",
   });
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-  });
 
+  const [item, setItem] = useState(null);
   const [initialFilteration, setInitialFilteration] = useState({
-    type: "all",
     page: 1,
     size: 50,
   });
 
   const hasSearchFilter = Boolean(filterValue);
 
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultValues,
+  });
+
   useEffect(() => {
-    dispatch(getAllProductListByType(initialFilteration));
-    dispatch(getAllProductListCount(initialFilteration));
-  }, [dispatch, initialFilteration]);
+    dispatch(getAllDesiginations());
+  }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -126,37 +136,31 @@ const LeadProducts = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handleDelete = () => {
-    // dispatch((deleteId))
-    //   .then((resp) => {
-    //     if (resp.meta.requestStatus === "fulfilled") {
-    //       addToast({
-    //         title: "Status deleted successfully !.",
-    //         color: "success",
-    //       });
-    //       modal.onOpenChange(false);
-    //       setDeleteId(null);
-    //       dispatch(getAllStatusData());
-    //     } else {
-    //       addToast({ title: "Something went wrong !.", color: "danger" });
-    //     }
-    //   })
-    //   .catch(() =>
-    //     addToast({ title: "Something went wrong !.", color: "danger" })
-    //   );
-  };
-
-  const handleSubmit = (values) => {
-    dispatch(createProduct({ userId, ...values }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
+  const handleFinish = (values) => {
+    dispatch(createAuthDesigination(values))
+      .then((res) => {
+        if (res.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Product created successfully !.",
+            title: "Designation created successfully in Auth !.",
             color: "success",
           });
-          onOpenChange(false);
-          dispatch(getAllProductListByType(initialFilteration));
-          setFormData({ name: "", type: "" });
+          dispatch(createDesigination(values))
+            .then((resp) => {
+              if (resp.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Designation created successfully !.",
+                  color: "success",
+                });
+                onOpenChange(false);
+                dispatch(getAllDesiginations());
+                reset(defaultValues);
+              } else {
+                addToast({ title: "Something went wrong !.", color: "danger" });
+              }
+            })
+            .catch(() =>
+              addToast({ title: "Something went wrong !.", color: "danger" })
+            );
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -170,35 +174,11 @@ const LeadProducts = () => {
     const cellValue = rowData[columnKey];
 
     switch (columnKey) {
-      case "productName":
-        return (
-          <Link to={`${rowData?.id}/productDetail`}>
-            {rowData?.productName}
-          </Link>
-        );
+      case "name":
+        return <p>{rowData?.name}</p>;
 
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem
-                  key="delete"
-                  color="danger"
-                  onClick={modal.onOpen}
-                >
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+      case "weightValue":
+        return <p>{rowData?.weightValue}</p>;
       default:
         return cellValue;
     }
@@ -267,37 +247,6 @@ const LeadProducts = () => {
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  className="capitalize"
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                >
-                  {initialFilteration?.type}
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Single selection example"
-                selectedKeys={[initialFilteration?.type]}
-                selectionMode="single"
-                onSelectionChange={(event) => {
-                  const [status] = [...event];
-                  setInitialFilteration((prev) => ({
-                    ...prev,
-                    type: status,
-                  }));
-                }}
-              >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
                   endContent={<ChevronDown className="text-small" />}
                   variant="flat"
                 >
@@ -326,7 +275,7 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} products
+            Total {count} designation
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -351,6 +300,7 @@ const LeadProducts = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    selectedKeys,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -396,21 +346,24 @@ const LeadProducts = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead products</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Designation list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        onSelectionChange={(e) => {
+          let rowKeys = Array.from(e);
+          setSelectedKeys(rowKeys);
+        }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -446,81 +399,96 @@ const LeadProducts = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create product
+                {item?.id ? "Update slug" : "Create designation"}
               </ModalHeader>
               <ModalBody>
-                <Form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
-                    );
-                    handleSubmit(data);
-                  }}
+                <form
+                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
+                  onSubmit={handleSubmit(handleFinish)}
                 >
-                  <Input
-                    isRequired
-                    errorMessage="Please enter product name"
-                    label="Product name"
+                  <Controller
                     name="name"
-                    type="text"
-                    value={formData?.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        errorMessage="Please enter designation"
+                        label="Designation"
+                        {...field}
+                      />
+                    )}
                   />
-
-                  <Select
-                    isRequired
-                    errorMessage="please select the product type"
-                    label="Select product type"
-                    name="type"
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, type: e }))
-                    }
-                  >
-                    {[
-                      { label: "Product", value: "Product" },
-                      { label: "Service", value: "Service" },
-                    ].map((info) => (
-                      <SelectItem key={info.value}>{info.label}</SelectItem>
-                    ))}
-                  </Select>
-
+                  <Controller
+                    name="weight"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Select
+                        isRequired={true}
+                        label="Weight"
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        {...field}
+                        value={[field.value]}
+                        onSelectionChange={(e) =>
+                          field.onChange(Array.from(e)[0])
+                        }
+                        items={[
+                          {
+                            label: "1",
+                            key: 1,
+                          },
+                          {
+                            label: "2",
+                            key: 2,
+                          },
+                          {
+                            label: "3",
+                            key: 3,
+                          },
+                          {
+                            label: "4",
+                            key: 4,
+                          },
+                          {
+                            label: "5",
+                            key: 5,
+                          },
+                          {
+                            label: "6",
+                            key: 6,
+                          },
+                          {
+                            label: "7",
+                            key: 7,
+                          },
+                          {
+                            label: "8",
+                            key: 8,
+                          },
+                          {
+                            label: "9",
+                            key: 9,
+                          },
+                          {
+                            label: "10",
+                            key: 10,
+                          },
+                        ]}
+                      >
+                        {(item) => (
+                          <SelectItem key={item.key}>{item.label}</SelectItem>
+                        )}
+                      </Select>
+                    )}
+                  />
                   <ModalFooter className="w-full flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>
                     <Button color="primary" type="submit">
                       Submit
                     </Button>
                   </ModalFooter>
-                </Form>
+                </form>
               </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      <Modal
-        isOpen={modal.isOpen}
-        backdrop="blur"
-        onOpenChange={modal.onOpenChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>
@@ -529,4 +497,4 @@ const LeadProducts = () => {
   );
 };
 
-export default LeadProducts;
+export default Designation;
