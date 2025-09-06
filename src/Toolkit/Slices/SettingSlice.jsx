@@ -32,6 +32,7 @@ export const getAllDepartment = createAsyncThunk(
     return response.data;
   }
 );
+
 export const createDepartment = createAsyncThunk(
   "createDepartment",
   async (data) => {
