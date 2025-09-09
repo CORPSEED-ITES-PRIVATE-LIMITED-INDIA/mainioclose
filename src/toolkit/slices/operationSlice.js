@@ -30,7 +30,7 @@ export const getAllOperationsProject = createAsyncThunk(
 export const getAllUserMappedWithProduct = createAsyncThunk(
   "getAllUserMappedWithProduct",
   async () => {
-    const response = await api.get(`/api/user-product-mappings`);
+    const response = await api.get(`/api/user-product-mappings/list`);
     return response.data;
   }
 );
@@ -75,6 +75,14 @@ export const addDocumentsInProductsForOperation = createAsyncThunk(
   }
 );
 
+export const getOperationProjectDetailById = createAsyncThunk(
+  "getOperationProjectDetailById",
+  async ({projectId,userId}) => {
+    const response = await api.get(`/api/projects/${projectId}/milestones?userId=${userId}`);
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -82,6 +90,7 @@ const OperationSlice = createSlice({
     operationProjectList: [],
     userMappedWithProductList: [],
     mileStoneList: [],
+    operationProjectDetail:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -118,6 +127,18 @@ const OperationSlice = createSlice({
     builder.addCase(getAllMilestones.rejected, (state) => {
       state.loading = "rejected";
       state.mileStoneList = [];
+    });
+
+    builder.addCase(getOperationProjectDetailById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getOperationProjectDetailById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.operationProjectDetail = action?.payload;
+    });
+    builder.addCase(getOperationProjectDetailById.rejected, (state) => {
+      state.loading = "rejected";
+      state.operationProjectDetail = [];
     });
   },
 });

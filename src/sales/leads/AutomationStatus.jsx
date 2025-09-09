@@ -392,7 +392,7 @@ const AutomationStatus = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, page, pages, hasSearchFilter]);
 
   return (
     <>

@@ -3,7 +3,6 @@ import HomePage from "./home/HomePage";
 import Login from "./login/Login";
 import ProtectedRoute from "./ProtectedRoute";
 import Layoutpage from "./layouts/Layoutpage";
-import AdminDashboards from "./dashboards/AdminDashboards";
 import Users from "./users/Users";
 import VendorRequests from "./vendor-request/VendorRequests";
 import AccountsModuleRouting from "./routings/AccountsModuleRouting";
