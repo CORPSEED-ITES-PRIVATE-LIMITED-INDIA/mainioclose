@@ -93,13 +93,6 @@ const MainPage = () => {
 
   const [openKeys, setOpenKeys] = useState(getSecondLastKey());
 
-  // useEffect(() => {
-  //   const key = getSecondLastKey();
-  //   setOpenKeys(key);
-  // }, []);
-
-  console.log("fkdjbsdkjfkj", [openKeys]);
-
   return (
     <>
       <Layout
