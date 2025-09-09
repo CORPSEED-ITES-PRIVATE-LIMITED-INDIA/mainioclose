@@ -22,6 +22,7 @@ export const navItems = [
         key: "discountedEstimate",
       },
       { title: "Auto history", icon: "", url: "sales/autoHistory", key: "autoHistory" },
+      { title: "Automation status", icon: "", url: "sales/autoStatus", key: "autoStatus" },
       { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
       {
         title: "Serving Companies",
@@ -127,7 +128,12 @@ export const navItems = [
     url: "/operation",
     key: "operation",
     children: [
-      { title: "Project", icon: "", url: "operation/project", key: "project" },
+      { title: "CRT", icon: "", url: "operation/crt", key: "crt" },
+      { title: "Filing", icon: "", url: "operation/filing", key: "filing" },
+      { title: "Legal", icon: "", url: "operation/legal", key: "legal" },
+      { title: "Liaisoning", icon: "", url: "operation/liaisoning", key: "liaisoning" },
+      { title: "Certification", icon: "", url: "operation/certification", key: "certification" },
+      { title: "Settings", icon: "", url: "operation/settings", key: "settings" },
     ],
   },
   {

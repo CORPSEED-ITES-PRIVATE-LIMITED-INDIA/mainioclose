@@ -13,48 +13,20 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  addToast,
-  useDisclosure,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  TimeInput,
   Popover,
   PopoverTrigger,
   PopoverContent,
   DateRangePicker,
 } from "@heroui/react";
-import {
-  ChevronDown,
-  Clock,
-  Import,
-  ListFilter,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ChevronDown, Import, ListFilter, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { Controller, useForm } from "react-hook-form";
-import { getAllIvrWithPage } from "../toolkit/slices/commonSlice";
-import dayjs from "dayjs";
-import {
-  getAllLeadUser,
-  getQualityLeadsReport,
-} from "../toolkit/slices/leadSlice";
 import { useParams } from "react-router-dom";
-import NewSelect from "../components/NewSelect";
-import {
-  getLocalTimeZone,
-  now,
-  parseDateTime,
-  parseZonedDateTime,
-  toCalendarDateTime,
-  today,
-} from "@internationalized/date";
-import { getDashboardUsersByHeirarchy } from "../toolkit/slices/dashboardSlice";
-import { formatedDateTime } from "../common";
+import { now, parseZonedDateTime } from "@internationalized/date";
+import { getAutomationLeads } from "../../toolkit/slices/leadSlice";
 import { CSVLink } from "react-csv";
+import NewSelect from "../../components/NewSelect";
+import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
+import { formatedDateTime } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -70,13 +42,13 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = ["id", "name", "email", "percentage", "status"];
 
-const IVRReport = () => {
+const AutomationStatus = () => {
   const tz = "Asia/Kolkata";
   const end = now(tz);
   const dispatch = useDispatch();
   const { userId } = useParams();
-  const data = useSelector((state) => state.leads.qualityReportList);
-  const count = useSelector((state) => state.leads.qualityReportList?.length);
+  const data = useSelector((state) => state.leads.autoStatusList);
+  const count = useSelector((state) => state.leads.autoStatusList?.length);
   const leadUsersList = useSelector((state) => state.dashboard.dashboardUsers);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -102,7 +74,7 @@ const IVRReport = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getQualityLeadsReport(dateFilter));
+    dispatch(getAutomationLeads(dateFilter));
   }, [dispatch]);
 
   useEffect(() => {
@@ -217,12 +189,11 @@ const IVRReport = () => {
   }, []);
 
   const handleApplyFilter = () => {
-    console.log("dfkjhdkljfhdfjkhdjk", dateFilter);
-    dispatch(getQualityLeadsReport(dateFilter));
+    dispatch(getAutomationLeads(dateFilter));
   };
 
   const handleResetFilter = useCallback(() => {
-    dispatch(getQualityLeadsReport(initialValues));
+    dispatch(getAutomationLeads(initialValues));
     setDateFilter(initialValues);
   }, [dispatch, initialValues]);
 
@@ -266,7 +237,9 @@ const IVRReport = () => {
               filename={"auto-history.csv"}
               variant="flat"
             >
-              <Button endContent={<Import />}>Export</Button>
+              <Button endContent={<Import />}>
+                Export
+              </Button>
             </CSVLink>
             <Popover size="lg" showArrow>
               <PopoverTrigger>
@@ -355,7 +328,7 @@ const IVRReport = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} IVR report
+            Total {count} auto status
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -423,7 +396,7 @@ const IVRReport = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">IVR report list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Auto status list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -463,4 +436,4 @@ const IVRReport = () => {
   );
 };
 
-export default IVRReport;
+export default AutomationStatus;

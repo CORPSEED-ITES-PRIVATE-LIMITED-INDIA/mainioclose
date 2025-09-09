@@ -444,6 +444,18 @@ export const updateGstTypeInEstimate = createAsyncThunk(
 );
 
 
+export const getAutomationLeads = createAsyncThunk(
+  "getAutomationLeads",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/leadRepot/getAllAutoReport`,
+      data
+    );
+    return response.data;
+  }
+);
+
+
 
 export const LeadSlice = createSlice({
   name: "leads",
@@ -473,6 +485,7 @@ export const LeadSlice = createSlice({
     autoExportLoading: "",
     allLeadHistory: [],
     getSingleLeadTask: [],
+    autoStatusList:[]
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -756,6 +769,17 @@ export const LeadSlice = createSlice({
       state.getSingleLeadTask = action.payload;
     });
     builder.addCase(getAllTaskData.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAutomationLeads.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAutomationLeads.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.autoStatusList = action.payload;
+    });
+    builder.addCase(getAutomationLeads.rejected, (state, action) => {
       state.loading = "rejected";
     });
   },

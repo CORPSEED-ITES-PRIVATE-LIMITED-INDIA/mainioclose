@@ -1,4 +1,3 @@
-import React from "react";
 import { Route } from "react-router-dom";
 import Leads from "../sales/leads/Leads";
 import LeadDetail from "../sales/leads/LeadDetail";
@@ -19,6 +18,7 @@ import CreateCompanyForm from "../sales/company/CreateCompanyForm";
 import Vendors from "../sales/vendors/vendors";
 import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
+import AutomationStatus from "../sales/leads/AutomationStatus";
 
 const SalesModuleRouting = () => {
   return (
@@ -50,6 +50,7 @@ const SalesModuleRouting = () => {
       <Route path="sales/proposal" element={<AllProposal />} />
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />
       <Route path="sales/autoHistory" element={<AutoHistory />} />
+      <Route path="sales/autoStatus" element={<AutomationStatus />} />
       <Route
         path="sales/autoHistory/:leadId/leadDetail"
         element={<LeadDetail />}

@@ -32,6 +32,7 @@ import {
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { addProductsInOperations } from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -150,12 +151,26 @@ const LeadProducts = () => {
     dispatch(createProduct({ userId, ...values }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
+          const productInfo = resp.payload;
           addToast({
             title: "Product created successfully !.",
             color: "success",
           });
           onOpenChange(false);
           dispatch(getAllProductListByType(initialFilteration));
+          dispatch(
+            addProductsInOperations([
+              {
+                productId: productInfo?.id,
+                productName: productInfo?.productName,
+                description: productInfo?.description,
+                createdBy: productInfo?.createdBy?.id,
+                updatedBy: productInfo?.createdBy?.id,
+                date: productInfo?.createdDate,
+                active: true,
+              },
+            ])
+          );
           setFormData({ name: "", type: "" });
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
@@ -403,7 +418,7 @@ const LeadProducts = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

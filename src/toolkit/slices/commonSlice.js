@@ -144,6 +144,22 @@ export const getAllUsers = createAsyncThunk("allUsers", async () => {
   return allUser?.data;
 });
 
+export const getAllRoles = createAsyncThunk("allRoles", async () => {
+  const response = await api.get(`/securityService/api/v1/roles/getRole`);
+  return response.data;
+});
+
+export const createUserByHr = createAsyncThunk(
+  "createUserByHr",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/users/createUserByHr`,
+      data
+    );
+    return response;
+  }
+);
+
 export const getAllMainIndustry = createAsyncThunk(
   "getAllMainIndustry",
   async () => {
@@ -435,10 +451,11 @@ export const createIndustry = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/industryData/createIndustryData?name=${data?.name}`
-    )
-    return response.data
+    );
+    return response.data;
   }
-)
+);
+
 
 const CommonSlice = createSlice({
   name: "common",
@@ -478,6 +495,7 @@ const CommonSlice = createSlice({
     allIndustriesData: [],
     allIndustryDataWithPage: [],
     allIndustryDataCount: 0,
+    allRoles:[]
   },
   reducers: {
     handleReset: (state) => {
@@ -906,13 +924,10 @@ const CommonSlice = createSlice({
         state.allIndustryDataWithPage = action.payload;
       }
     );
-    builder.addCase(
-      getAllIndustryDataWithPagination.rejected,
-      (state,) => {
-        state.industryLoading = "rejected";
-        state.allIndustryDataWithPage = [];
-      }
-    );
+    builder.addCase(getAllIndustryDataWithPagination.rejected, (state) => {
+      state.industryLoading = "rejected";
+      state.allIndustryDataWithPage = [];
+    });
 
     builder.addCase(getIndustryDataCount.pending, (state) => {
       state.industryLoading = "pending";
@@ -924,6 +939,18 @@ const CommonSlice = createSlice({
     builder.addCase(getIndustryDataCount.rejected, (state) => {
       state.industryLoading = "rejected";
       state.allIndustryDataCount = 0;
+    });
+
+    builder.addCase(getAllRoles.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllRoles.fulfilled, (state, action) => {
+      state.loading = "fulfilled";
+      state.allRoles = action.payload;
+    });
+    builder.addCase(getAllRoles.rejected, (state) => {
+      state.loading = "rejected";
+      state.allRoles = [];
     });
   },
 });

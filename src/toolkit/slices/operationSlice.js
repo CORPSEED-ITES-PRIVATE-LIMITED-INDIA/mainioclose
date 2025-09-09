@@ -27,11 +27,61 @@ export const getAllOperationsProject = createAsyncThunk(
   }
 );
 
+export const getAllUserMappedWithProduct = createAsyncThunk(
+  "getAllUserMappedWithProduct",
+  async () => {
+    const response = await api.get(`/api/user-product-mappings`);
+    return response.data;
+  }
+);
+
+export const mappedUserWithProductForOperation = createAsyncThunk(
+  "mappedUserWithProductForOperation",
+  async (data) => {
+    const response = await api.post(`/api/user-product-mappings`, data);
+    return response.data;
+  }
+);
+
+export const getAllMilestones = createAsyncThunk(
+  "getAllMilestones",
+  async () => {
+    const response = await api.get(`/api/milestones`);
+    return response.data;
+  }
+);
+
+export const createUsersInOperations = createAsyncThunk(
+  "createUsersInOperations",
+  async (data) => {
+    const response = await api.post(`/api/users`, data);
+    return response.data;
+  }
+);
+
+export const addProductsInOperations = createAsyncThunk(
+  "addProductsInOperations",
+  async (data) => {
+    const response = await api.post(`/api/products`, data);
+    return response.data;
+  }
+);
+
+export const addDocumentsInProductsForOperation = createAsyncThunk(
+  "addDocumentsInProductsForOperation",
+  async (data) => {
+    const response = await api.post(`/api/required-documents`, data);
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
     loading: "",
     operationProjectList: [],
+    userMappedWithProductList: [],
+    mileStoneList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -44,6 +94,30 @@ const OperationSlice = createSlice({
     builder.addCase(getAllOperationsProject.rejected, (state) => {
       state.loading = "rejected";
       state.operationProjectList = [];
+    });
+
+    builder.addCase(getAllUserMappedWithProduct.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUserMappedWithProduct.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.userMappedWithProductList = action?.payload;
+    });
+    builder.addCase(getAllUserMappedWithProduct.rejected, (state) => {
+      state.loading = "rejected";
+      state.userMappedWithProductList = [];
+    });
+
+    builder.addCase(getAllMilestones.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllMilestones.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.mileStoneList = action?.payload;
+    });
+    builder.addCase(getAllMilestones.rejected, (state) => {
+      state.loading = "rejected";
+      state.mileStoneList = [];
     });
   },
 });

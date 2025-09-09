@@ -93,6 +93,14 @@ export const getAutomationStatus = createAsyncThunk(
   }
 );
 
+
+export const createNewUserInAuth = createAsyncThunk("createNewUserInAuth", async (data) => {
+  const response = await api.post(`/securityService/api/auth/createNewUserByEmail`,
+    data
+  )
+  return response
+})
+
 export const AuthSlice = createSlice({
   name: "auth",
   initialState: {

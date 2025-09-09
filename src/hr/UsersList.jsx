@@ -24,6 +24,7 @@ import {
   TableRow,
   Textarea,
   useDisclosure,
+  addToast,
 } from "@heroui/react";
 import {
   ChevronDown,
@@ -35,10 +36,21 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { getAllUsers } from "../toolkit/slices/commonSlice"; // Adjust import path as needed
+import {
+  createUserByHr,
+  getAllRoles,
+  getAllUsers,
+  getDesiginationById,
+  getManagerById,
+} from "../toolkit/slices/commonSlice"; // Adjust import path as needed
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { createNewUserInAuth } from "../toolkit/slices/authSlice";
+import { createUsersInOperations } from "../toolkit/slices/operationSlice";
+import { getAllDepartment } from "../toolkit/slices/settingSlice";
+import { padZero } from "../common";
+import { parseDate } from "@internationalized/date";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -70,24 +82,14 @@ const INITIAL_VISIBLE_COLUMNS = [
   "role",
   "experience",
   "managers",
-  "residentialAddress",
-  "fatherInfo",
   "actions",
 ];
 
-const formSchema = z
-  .object({
-    userName: z
-      .string()
-      .min(1, "Please enter username")
-      .refine((val) => /^[a-zA-Z0-9_]+$/.test(val), {
-        message: "Username can only contain letters, numbers, and underscores",
-      }),
+const formSchema = (flags) =>
+  z.object({
+    userName: z.string().min(1, "Please enter username"),
     email: z.string().email("Please enter a valid email"),
-    personalEmail: z
-      .string()
-      .email("Please enter a valid personal email")
-      .optional(),
+    personalEmail: z.string().optional(),
     contactNo: z.string().min(10, "Please enter a valid contact number"),
     companyMobile: z.string().optional(),
     role: z.array(z.string()).min(1, "Please select at least one role"),
@@ -101,15 +103,17 @@ const formSchema = z
     lockerSize: z.string().optional(),
     expInYear: z.string().min(1, "Please enter experience in years"),
     expInMonth: z.string().min(1, "Please enter experience in months"),
-    dateOfJoining: z.date({ required_error: "Please select date of joining" }),
+    dateOfJoining: z.string().min(1, "please select date of joining."),
     type: z.enum(["male", "female", "others"], {
       errorMap: () => ({ message: "Please select gender" }),
     }),
-    maritalStatus: z.enum(["Married", "Unmarried"], {
-      errorMap: () => ({ message: "Please select marital status" }),
-    }),
-    spouseName: z.string().optional(),
-    spouseContactNo: z.string().optional(),
+    maritalStatus: z.string().min(1, "please select the status."),
+    ...(flags?.maritalStatus
+      ? {
+          spouseName: z.string().optional(),
+          spouseContactNo: z.string().optional(),
+        }
+      : {}),
     fatherName: z.string().min(1, "Please enter father's name"),
     fatherOccupation: z.string().optional(),
     fatherContactNo: z.string().optional(),
@@ -117,32 +121,58 @@ const formSchema = z
     motherContactNo: z.string().optional(),
     nationality: z.string().optional(),
     language: z.string().optional(),
-    master: z.boolean().optional(),
-    backupTeam: z.boolean().optional(),
+    ...(flags?.master
+      ? {
+          master: z.boolean().optional(),
+          backupTeam: z.boolean().optional(),
+        }
+      : {}),
     emergencyNumber: z.string().optional(),
     permanentAddress: z.string().min(1, "Please enter permanent address"),
     residentialAddress: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.maritalStatus === "Married") {
-        return !!data.spouseName && !!data.spouseContactNo;
-      }
-      return true;
-    },
-    {
-      message: "Spouse name and contact number are required for married status",
-      path: ["spouseName"],
-    }
-  );
+  });
 
-const UsersList = ({ edit }) => {
+const defaultValues = {
+  userName: "",
+  email: "",
+  personalEmail: "",
+  contactNo: "",
+  companyMobile: "",
+  role: [],
+  departmentId: "",
+  designationId: "",
+  epfNo: "",
+  aadharCard: "",
+  managerId: "",
+  lockerSize: "",
+  expInYear: "",
+  expInMonth: "",
+  dateOfJoining: null,
+  type: "",
+  maritalStatus: "",
+  spouseName: "",
+  spouseContactNo: "",
+  fatherName: "",
+  fatherOccupation: "",
+  fatherContactNo: "",
+  motherName: "",
+  motherContactNo: "",
+  nationality: "",
+  language: "",
+  master: false,
+  backupTeam: false,
+  emergencyNumber: "",
+  permanentAddress: "",
+  residentialAddress: "",
+};
+
+const UsersList = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector((state) => state.common.usersList?.length || 0);
   const data = useSelector((state) => state.common.usersList || []);
   const departmentList = useSelector(
-    (state) => state?.setting?.allDepartment || []
+    (state) => state?.setting?.departmentList || []
   );
   const allRoles = useSelector((state) => state.common.allRoles || []);
   const allDesiginationListById = useSelector(
@@ -165,12 +195,22 @@ const UsersList = ({ edit }) => {
     page: 1,
     size: 50,
   });
+  const [edit, setEdit] = useState(null);
+  const [formFlags, setFormFlags] = useState({
+    maritalStatus: false,
+    master: false,
+  });
 
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
     dispatch(getAllUsers(filteration));
   }, [dispatch, filteration]);
+
+  useEffect(() => {
+    dispatch(getAllRoles());
+    dispatch(getAllDepartment());
+  }, []);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -213,54 +253,144 @@ const UsersList = ({ edit }) => {
     watch,
     reset,
   } = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      userName: "",
-      email: "",
-      personalEmail: "",
-      contactNo: "",
-      companyMobile: "",
-      role: [],
-      departmentId: "",
-      designationId: "",
-      epfNo: "",
-      aadharCard: "",
-      managerId: "",
-      lockerSize: "",
-      expInYear: "",
-      expInMonth: "",
-      dateOfJoining: null,
-      type: "",
-      maritalStatus: "",
-      spouseName: "",
-      spouseContactNo: "",
-      fatherName: "",
-      fatherOccupation: "",
-      fatherContactNo: "",
-      motherName: "",
-      motherContactNo: "",
-      nationality: "",
-      language: "",
-      master: false,
-      backupTeam: false,
-      emergencyNumber: "",
-      permanentAddress: "",
-      residentialAddress: "",
-    },
+    resolver: zodResolver(formSchema(formFlags)),
+    defaultValues,
   });
 
-  const maritalStatus = watch("maritalStatus");
-
-  // Debug form values and errors
   useEffect(() => {
     console.log("Current form values:", watch());
     console.log("Form errors:", errors);
   }, [watch, errors]);
 
-  const onSubmit = (data) => {
-    console.log("Form submitted:", data);
-    reset();
-    onClose();
+  const onSubmit = (values) => {
+    console.log("Form submitted:", values);
+    if (edit) {
+      values.id = data?.id;
+      let tempObj = {
+        id: edit?.id,
+        userName: values?.userName,
+        email: values?.email,
+        designationId: values?.designationId,
+        departmentId: values?.departmentId,
+        role: values?.role,
+      };
+      dispatch(updateUserData(tempObj))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            dispatch(updateLeadByHr(values))
+              .then((res) => {
+                if (res.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "User updated successfully !.",
+                    color: "success",
+                  });
+                  onOpenChange(false);
+                  reset(defaultValues);
+                  dispatch(getAllUsers());
+                } else {
+                  addToast({
+                    title: "Something went wrong !.",
+                    color: "danger",
+                  });
+                  onOpenChange(false);
+                  reset(defaultValues);
+                }
+              })
+              .catch(() => {
+                addToast({
+                  title: "Something went wrong !.",
+                  color: "danger",
+                });
+                onOpenChange(false);
+                reset(defaultValues);
+              });
+          } else {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
+            onOpenChange(false);
+            reset(defaultValues);
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+          onOpenChange(false);
+          reset(defaultValues);
+        });
+    } else {
+      dispatch(createNewUserInAuth(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            const temp = resp?.payload?.data?.data;
+            console.log("sdjkgsjkgsjkg", temp);
+            const obj = {
+              id: temp.userId,
+              ...values,
+            };
+            dispatch(createUserByHr(obj))
+              .then((info) => {
+                if (info.meta.requestStatus === "fulfilled") {
+                  const userInfo=info?.payload
+                  addToast({
+                    title: "User created successfully !.",
+                    color: "success",
+                  });
+                  dispatch(
+                    createUsersInOperations({
+                      id: userInfo?.id,
+                      fullName: userInfo?.fullName,
+                      email: userInfo?.email,
+                      contactNo: userInfo?.contactNo,
+                      designationId:userInfo?.userDesignation?.id,
+                      departmentIds: [userInfo?.userDepartment?.id],
+                      roleIds: userInfo?.role,
+                      managerId: managers?.id,
+                      managerFlag: true,
+                    })
+                  );
+                  onOpenChange(false);
+                  reset(defaultValues);
+                  dispatch(getAllUsers());
+                } else {
+                  addToast({
+                    title: "Something went wrong !.",
+                    color: "danger",
+                  });
+                  onOpenChange(false);
+                  reset(defaultValues);
+                }
+              })
+              .catch(() => {
+                addToast({
+                  title: "Something went wrong !.",
+                  color: "danger",
+                });
+                onOpenChange(false);
+                reset(defaultValues);
+              });
+          } else {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
+
+            onOpenChange(false);
+            reset(defaultValues);
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+          onOpenChange(false);
+          reset(defaultValues);
+        });
+    }
   };
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -268,7 +398,7 @@ const UsersList = ({ edit }) => {
       case "userName":
         return (
           <div className="flex items-start gap-2">
-            <Avatar size="sm" classNames={{icon:'text-gray-500'}} />
+            <Avatar size="sm" classNames={{ icon: "text-gray-500" }} />
             <div className="flex flex-col">
               <p className="font-normal capitalize">
                 {rowData?.fullName || "-"}
@@ -282,9 +412,7 @@ const UsersList = ({ edit }) => {
       case "email":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.email || "Unknown"}
-            </span>
+            <span className="font-normal">{rowData?.email || "Unknown"}</span>
             {rowData?.contactNo && (
               <Chip
                 size="sm"
@@ -685,6 +813,7 @@ const UsersList = ({ edit }) => {
                             isRequired
                             value={field.value}
                             onChange={field.onChange}
+                            maxLength={10}
                             errorMessage={errors.contactNo?.message}
                             isInvalid={!!errors.contactNo}
                           />
@@ -698,6 +827,7 @@ const UsersList = ({ edit }) => {
                             label="Company mobile number"
                             value={field.value}
                             onChange={field.onChange}
+                            maxLength={10}
                             errorMessage={errors.companyMobile?.message}
                             isInvalid={!!errors.companyMobile}
                           />
@@ -739,9 +869,12 @@ const UsersList = ({ edit }) => {
                           <Select
                             label="Department"
                             isRequired
+                            selectionMode="single"
                             selectedKeys={field.value ? [field.value] : []}
                             onSelectionChange={(keys) => {
+                              console.log("dkjshjksgjkg", keys);
                               const value = Array.from(keys)[0];
+                              console.log("dkjshjksgjkg", keys, value);
                               if (value) {
                                 field.onChange(value);
                                 dispatch(getDesiginationById(value));
@@ -822,6 +955,7 @@ const UsersList = ({ edit }) => {
                           <Input
                             label="Aadhar card no."
                             isRequired
+                            maxLength={12}
                             value={field.value}
                             onChange={field.onChange}
                             errorMessage={errors.aadharCard?.message}
@@ -901,19 +1035,23 @@ const UsersList = ({ edit }) => {
                       <Controller
                         name="dateOfJoining"
                         control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            label="Date of joining"
-                            isRequired
-                            value={field.value}
-                            onChange={(value) => {
-                              const date = new Date(value);
-                              if (!isNaN(date)) field.onChange(date);
-                            }}
-                            errorMessage={errors.dateOfJoining?.message}
-                            isInvalid={!!errors.dateOfJoining}
-                          />
-                        )}
+                        render={({ field }) => {
+                          return (
+                            <DatePicker
+                              label="Date of joining"
+                              isRequired
+                              value={
+                                field.value ? parseDate(field.value) : null
+                              }
+                              onChange={(value) => {
+                                const date = `${value?.year}-${padZero(value?.month)}-${padZero(value?.day)}`;
+                                field.onChange(date);
+                              }}
+                              errorMessage={errors.dateOfJoining?.message}
+                              isInvalid={!!errors.dateOfJoining}
+                            />
+                          );
+                        }}
                       />
                       <Controller
                         name="type"
@@ -952,7 +1090,15 @@ const UsersList = ({ edit }) => {
                             selectedKeys={field.value ? [field.value] : []}
                             onSelectionChange={(keys) => {
                               const value = Array.from(keys)[0];
-                              if (value) field.onChange(value);
+                              if (value) {
+                                field.onChange(value);
+                                if (value === "Married") {
+                                  setFormFlags((prev) => ({
+                                    ...prev,
+                                    maritalStatus: true,
+                                  }));
+                                }
+                              }
                             }}
                             errorMessage={errors.maritalStatus?.message}
                             isInvalid={!!errors.maritalStatus}
@@ -968,21 +1114,7 @@ const UsersList = ({ edit }) => {
                           </Select>
                         )}
                       />
-                      <Controller
-                        name="fatherName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Father's name"
-                            isRequired
-                            value={field.value}
-                            onChange={field.onChange}
-                            errorMessage={errors.fatherName?.message}
-                            isInvalid={!!errors.fatherName}
-                          />
-                        )}
-                      />
-                      {maritalStatus === "Married" && (
+                      {formFlags?.maritalStatus && (
                         <>
                           <Controller
                             name="spouseName"
@@ -1006,6 +1138,7 @@ const UsersList = ({ edit }) => {
                                 label="Spouse contact number"
                                 isRequired
                                 value={field.value}
+                                maxLength={10}
                                 onChange={field.onChange}
                                 errorMessage={errors.spouseContactNo?.message}
                                 isInvalid={!!errors.spouseContactNo}
@@ -1014,7 +1147,21 @@ const UsersList = ({ edit }) => {
                           />
                         </>
                       )}
-                      {!maritalStatus && <div />}
+                      <Controller
+                        name="fatherName"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            label="Father's name"
+                            isRequired
+                            value={field.value}
+                            onChange={field.onChange}
+                            errorMessage={errors.fatherName?.message}
+                            isInvalid={!!errors.fatherName}
+                          />
+                        )}
+                      />
+
                       <Controller
                         name="fatherOccupation"
                         control={control}
@@ -1035,6 +1182,7 @@ const UsersList = ({ edit }) => {
                           <Input
                             label="Father's contact no."
                             value={field.value}
+                            maxLength={10}
                             onChange={field.onChange}
                             errorMessage={errors.fatherContactNo?.message}
                             isInvalid={!!errors.fatherContactNo}
@@ -1062,6 +1210,7 @@ const UsersList = ({ edit }) => {
                           <Input
                             label="Mother's contact no."
                             value={field.value}
+                            maxLength={10}
                             onChange={field.onChange}
                             errorMessage={errors.motherContactNo?.message}
                             isInvalid={!!errors.motherContactNo}
@@ -1094,7 +1243,7 @@ const UsersList = ({ edit }) => {
                           />
                         )}
                       />
-                      {edit && (
+                      {formFlags?.master && (
                         <>
                           <Controller
                             name="master"
@@ -1166,7 +1315,6 @@ const UsersList = ({ edit }) => {
                           />
                         </>
                       )}
-                      {!edit && <div />}
                       <Controller
                         name="emergencyNumber"
                         control={control}

@@ -39,6 +39,7 @@ import {
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
 import SingleFileUploader from "../../components/SingleFileUploader";
+import { addDocumentsInProductsForOperation } from "../../toolkit/slices/operationSlice";
 const iconClass = "w-5 h-5";
 
 const ProductDocument = ({ data, details }) => {
@@ -71,10 +72,27 @@ const ProductDocument = ({ data, details }) => {
       dispatch(addDocumentProduct(formData))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
+            const docInfo = resp.payload;
             addToast({
               title: "Document added successfully !.",
               color: "success",
             });
+            dispatch(
+              addDocumentsInProductsForOperation([
+                {
+                  id: 0,
+                  name: "string",
+                  description: "string",
+                  type: "string",
+                  country: "string",
+                  centralName: "string",
+                  stateName: "string",
+                  createdBy: 0,
+                  updatedBy: 0,
+                  productIds: [0],
+                },
+              ])
+            );
             onOpenChange(false);
             dispatch(getSingleProductByProductId(productId));
             setFormData(formValues);

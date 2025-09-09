@@ -13,7 +13,7 @@ export const getAllCompaniesForApprovals = createAsyncThunk(
 
 export const getAllPaymentApprovals = createAsyncThunk(
   "getAllPaymentApprovals",
-  async ({userId}) => {
+  async ({ userId }) => {
     const response = await api.get(
       `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithCompany?userId=${userId}`
     );
@@ -32,12 +32,23 @@ export const createPurchaseOrder = createAsyncThunk(
   }
 );
 
+export const getPaymentDetailListByEstimateId = createAsyncThunk(
+  "getPaymentDetailListByEstimateId",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getPaymentRegisterByEstimateId?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
     loading: "",
     approvalCompanyList: [],
     paymentApprovalList: [],
+    estimatePaymentList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -52,16 +63,28 @@ const AccountSlice = createSlice({
       state.approvalCompanyList = [];
     });
 
-    builder.addCase(getAllPaymentApprovals.pending, (state, action) => {
+    builder.addCase(getAllPaymentApprovals.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllPaymentApprovals.fulfilled, (state, action) => {
       state.loading = "success";
       state.paymentApprovalList = action.payload;
     });
-    builder.addCase(getAllPaymentApprovals.rejected, (state, action) => {
+    builder.addCase(getAllPaymentApprovals.rejected, (state,) => {
       state.loading = "rejected";
       state.paymentApprovalList = [];
+    });
+
+    builder.addCase(getPaymentDetailListByEstimateId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getPaymentDetailListByEstimateId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimatePaymentList = action.payload;
+    });
+    builder.addCase(getPaymentDetailListByEstimateId.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimatePaymentList = [];
     });
   },
 });

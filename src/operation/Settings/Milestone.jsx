@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -13,67 +13,49 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  useDisclosure,
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerBody,
-  DrawerFooter,
+  User,
 } from "@heroui/react";
-import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Search } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
-import { getAllOperationsProject } from "../../toolkit/slices/operationSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllMilestones } from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "name", sortable: true },
-  { name: "PROJECT NO.", uid: "projectNo" },
-  { name: "DATE", uid: "date" },
-  { name: "ADDRESS", uid: "address" },
-  // { name: "ACTIONS", uid: "actions" },
+  { name: "DEPARTMENTS", uid: "departments" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "projectNo", "date", "address"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "departments"];
 
-const Projects = () => {
+const Milestone = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data =
-    useSelector((state) => state.operation.operationProjectList.content) || [];
-  const count =
-    useSelector(
-      (state) => state.operation.operationProjectList?.totalElements
-    ) || "";
+  const data = useSelector((state) => state.operation.mileStoneList);
+  const count = useSelector((state) => state.operation.mileStoneList?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
+
+  const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "name",
     direction: "ascending",
   });
-
-  const [paginationData, setPaginationData] = useState({
-    userId,
-    page: 1,
-    size: 50,
-  });
-
+  const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllOperationsProject(paginationData));
-  }, [dispatch, userId]);
+    dispatch(getAllMilestones());
+  }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
+
     return columns.filter((column) =>
       Array.from(visibleColumns).includes(column.uid)
     );
@@ -81,95 +63,70 @@ const Projects = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
+
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        Object.values(item?.project)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
         )
       );
     }
+
     return filteredUsers;
   }, [data, filterValue]);
 
-  const pages = Math.ceil(count / paginationData?.size) || 1;
+  const pages = Math.ceil(count / rowsPerPage) || 1;
+
+  const items = React.useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    return filteredItems.slice(start, end);
+  }, [page, filteredItems, rowsPerPage]);
 
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a?.project[sortDescriptor.column];
-      const second = b?.project[sortDescriptor.column];
+    return [...items].sort((a, b) => {
+      const first = a[sortDescriptor.column];
+      const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, items]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData?.project[columnKey];
+    const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
-        return (
-          <Link
-            className="font-medium"
-           to={`${rowData?.project?.id}/projectDetail`}
-          >
-            {rowData?.project?.name}
-          </Link>
-        );
-      case "projectNo":
-        return <p>{rowData?.project?.projectNo}</p>;
-      case "date":
-        return <p>{rowData?.project?.date}</p>;
-      case "address":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.project.address || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData?.project.city || ""},{rowData?.project?.state},
-              {rowData?.project?.country}
-            </span>
-          </div>
-        );
-
+        return <p>{rowData?.name} </p>;
+      case "departments":
+        return <p>{rowData?.departmentResponseDtos?.map((item)=>item?.name)?.join(", ")} </p>;
       default:
         return cellValue;
     }
   }, []);
 
   const onNextPage = React.useCallback(() => {
-    if (paginationData?.page < pages) {
-      setPaginationData((prev) => ({
-        ...prev,
-        page: paginationData?.page + 1,
-      }));
+    if (page < pages) {
+      setPage(page + 1);
     }
-  }, [paginationData?.page, pages]);
+  }, [page, pages]);
 
   const onPreviousPage = React.useCallback(() => {
-    if (paginationData?.page > 1) {
-      setPaginationData((prev) => ({
-        ...prev,
-        page: paginationData?.page - 1,
-      }));
+    if (page > 1) {
+      setPage(page - 1);
     }
-  }, [paginationData?.page]);
+  }, [page]);
 
   const onRowsPerPageChange = React.useCallback((e) => {
-    setPaginationData((prev) => ({
-      ...prev,
-      size: Number(e.target.value),
-      page: 1,
-    }));
+    setRowsPerPage(Number(e.target.value));
+    setPage(1);
   }, []);
 
   const onSearchChange = React.useCallback((value) => {
     if (value) {
       setFilterValue(value);
-      setPaginationData((prev) => ({
-        ...prev,
-        page: 1,
-      }));
+      setPage(1);
     } else {
       setFilterValue("");
     }
@@ -177,10 +134,7 @@ const Projects = () => {
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
-    setPaginationData((prev) => ({
-      ...prev,
-      page: 1,
-    }));
+    setPage(1);
   }, []);
 
   const topContent = React.useMemo(() => {
@@ -190,7 +144,7 @@ const Projects = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search ..."
+            placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -198,11 +152,8 @@ const Projects = () => {
           />
           <div className="flex gap-3">
             <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                >
+              <DropdownTrigger>
+                <Button endContent={<ChevronDown />} variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -225,14 +176,14 @@ const Projects = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} projects
+            Total {count} milestones
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-hidden text-default-400 text-small"
-              value={paginationData?.size}
               onChange={onRowsPerPageChange}
+              value={rowsPerPage}
             >
               <option value="15">15</option>
               <option value="25">25</option>
@@ -244,7 +195,6 @@ const Projects = () => {
     );
   }, [
     filterValue,
-    paginationData,
     visibleColumns,
     onRowsPerPageChange,
     count,
@@ -265,9 +215,9 @@ const Projects = () => {
           showControls
           showShadow
           color="primary"
-          page={paginationData?.page}
+          page={page}
           total={pages}
-          onChange={(e) => setPaginationData((prev) => ({ ...prev, page: e }))}
+          onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
@@ -289,21 +239,19 @@ const Projects = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, paginationData?.page, pages, hasSearchFilter]);
+  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Projects</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Milestones list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
@@ -321,9 +269,9 @@ const Projects = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item?.project.id}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -331,28 +279,8 @@ const Projects = () => {
           )}
         </TableBody>
       </Table>
-      <Drawer isOpen={isOpen} onOpenChange={onOpenChange} size="5xl">
-        <DrawerContent>
-          {(onClose) => (
-            <>
-              <DrawerHeader className="flex flex-col gap-1">
-                Milestone
-              </DrawerHeader>
-              <DrawerBody></DrawerBody>
-              <DrawerFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
-                </Button>
-              </DrawerFooter>
-            </>
-          )}
-        </DrawerContent>
-      </Drawer>
     </>
   );
 };
 
-export default Projects;
+export default Milestone;

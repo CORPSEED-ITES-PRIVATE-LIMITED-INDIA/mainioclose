@@ -124,6 +124,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
           <DropdownTrigger>
             <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-1 py-1 rounded-md">
               <User
+              className="font-medium"
                 avatarProps={{
                   icon: (
                     <User2 className="w-5 h-5 text-neutral-700 dark:text-white" />

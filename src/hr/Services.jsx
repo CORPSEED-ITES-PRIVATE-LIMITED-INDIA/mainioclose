@@ -43,6 +43,7 @@ import { Controller, useForm } from "react-hook-form";
 import NewSelect from "../components/NewSelect";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { mappedUserWithProductForOperation } from "../toolkit/slices/operationSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -167,10 +168,40 @@ const Services = () => {
             title: "Rating updated successfully !.",
             color: "success",
           });
-          dispatch(getAllUrlList());
-          reset(defaultValues);
-          onOpenChange(false);
-          setSelectedKeys(new Set([]));
+          dispatch(
+            mappedUserWithProductForOperation({
+              userIds: [data?.ratingsUser],
+              productIds: Array.from(selectedKeys),
+              rating: data?.rating,
+              createdBy: userId,
+              updatedBy: userId,
+            })
+          )
+            .then((resp) => {
+              if (resp.meta.requestStatus === "fulfilled") {
+                dispatch(getAllUrlList());
+                reset(defaultValues);
+                onOpenChange(false);
+                setSelectedKeys(new Set([]));
+                addToast({
+                  title: "Rating updated successfully in Operations !.",
+                  color: "success",
+                });
+              } else {
+                addToast({
+                  title:
+                    "Either user is already present or empty in Operations !.",
+                  color: "danger",
+                });
+              }
+            })
+            .catch(() =>
+              addToast({
+                title:
+                  "Either user is already present or empty in Operations !.",
+                color: "danger",
+              })
+            );
         } else {
           addToast({
             title: "Either user is already present or empty !.",

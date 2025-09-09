@@ -47,7 +47,10 @@ import NewSelect from "../../components/NewSelect";
 import { getAllUrlList } from "../../toolkit/slices/commonSlice";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { paymentTermDays } from "../../common";
-import { createPurchaseOrder } from "../../toolkit/slices/accountSlice";
+import {
+  createPurchaseOrder,
+  getPaymentDetailListByEstimateId,
+} from "../../toolkit/slices/accountSlice";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import InvoiceView from "../../components/InvoiceView";
 
@@ -87,7 +90,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const formSchema = z.object({
-  companyType: z.enum(["Fully", "Partial", "Milestone"], {
+  paymentType: z.enum(["Fully", "Partial", "Milestone"], {
     required_error: "Company type is required",
   }),
   docPersent: z
@@ -118,9 +121,6 @@ const formSchema = z.object({
     })
     .min(0, "Certificate rate must be at least 0")
     .max(100, "Certificate rate cannot exceed 100"),
-  paymentType: z.enum(["Purchase order", "Payment register"], {
-    required_error: "Payment type is required",
-  }),
   purchaseNumber: z.string().min(1, "PO number cannot be empty"),
   serviceName: z.string().min(1, "Service name cannot be empty"),
   purchaseAttach: z.string().optional(),
@@ -157,12 +157,11 @@ const formSchema = z.object({
 });
 
 const defaultValues = {
-  companyType: "",
+  paymentType: "",
   docPersent: "",
   filingPersent: 0,
   liasoningPersent: 0,
   certificatePersent: 0,
-  paymentType: "",
   purchaseNumber: "",
   serviceName: "",
   purchaseAttach: "",
@@ -197,6 +196,7 @@ const Estimate = () => {
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
   const urlList = useSelector((state) => state.common.urlList);
+  const paymentList = useSelector((state) => state.account.estimatePaymentList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [companyType, setCompanyType] = useState("");
@@ -221,6 +221,7 @@ const Estimate = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    getValues,
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues,
@@ -271,8 +272,21 @@ const Estimate = () => {
     viewModal.onOpen();
   };
 
-  const handleActionsPress = (e) => {
-    setRowItem(e);
+  const handleChangePaymentType = (e) => {};
+
+  const handleActionsPress = (rowItem) => {
+    setRowItem(rowItem);
+    dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
+    const values = getValues();
+    reset({
+      ...values,
+      serviceName: rowItem?.productName,
+      profesionalGst: rowItem?.profesionalGst ? rowItem?.profesionalGst : 0,
+      companyName: rowItem?.companyName,
+      govermentGst: rowItem?.govermentGst ? rowItem?.govermentGst : 0,
+      serviceGst: rowItem?.serviceGst ? rowItem?.serviceGst : 0,
+      otherGst: rowItem?.otherGst ? rowItem?.otherGst : 0,
+    });
     onOpen();
   };
 
@@ -443,11 +457,11 @@ const Estimate = () => {
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
-                  console.log('dskjfhdkjbdjbdj   000000',item)
+                  console.log("dskjfhdkjbdjbdj   000000", item);
                   if (item === "paymentRegister") {
                     handleActionsPress(rowData);
                   } else if (item === "viewEstimate") {
-                    console.log('dskjfhdkjbdjbdj   111111',item)
+                    console.log("dskjfhdkjbdjbdj   111111", item);
                     handleViewEstimate(rowData);
                   }
                 }}
@@ -666,19 +680,35 @@ const Estimate = () => {
             <>
               <ModalHeader>Add payment details</ModalHeader>
               <ModalBody>
+                <div className="my-3 flex justify-between px-3">
+                  <div className="flex flex-col">
+                    <h5 className="font-medium text-medium">
+                      Total paid amount
+                    </h5>
+                    {paymentList?.map((item, idx) => (
+                      <p className="text-sm" key={`paym${idx}`}>
+                        Payment {idx + 1} : {item?.totalAmount}
+                      </p>
+                    ))}
+                  </div>
+
+                  <h5 className="font-medium text-medium">
+                    Total amount : {rowItem?.totalAmount}
+                  </h5>
+                </div>
                 <form
                   onSubmit={handleSubmit(onSubmit)}
                   className="flex flex-col gap-4"
                 >
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
                     <Controller
-                      name="companyType"
+                      name="paymentType"
                       control={control}
                       defaultValue={[]}
                       render={({ field }) => (
                         <Select
                           isRequired
-                          label="Company type"
+                          label="Payment type"
                           {...field}
                           selectedKeys={[field.value]}
                           onSelectionChange={(e) => {
@@ -758,8 +788,6 @@ const Estimate = () => {
                       />
                     )}
                     <Controller
-                      name="paymentType"
-                      control={control}
                       defaultValue={[]}
                       render={({ field }) => (
                         <Select
@@ -769,7 +797,6 @@ const Estimate = () => {
                           selectedKeys={[field.value]}
                           onSelectionChange={(e) => {
                             setPaymentType(Array.from(e)[0]);
-                            field.onChange(Array.from(e)[0]);
                           }}
                           items={[
                             { label: "Purchase order", key: "Purchase order" },
@@ -901,6 +928,7 @@ const Estimate = () => {
                           render={({ field, fieldState: { error } }) => (
                             <Input
                               isRequired
+                              isDisabled
                               label="Company name"
                               errorMessage={error?.message}
                               isInvalid={!!error}
