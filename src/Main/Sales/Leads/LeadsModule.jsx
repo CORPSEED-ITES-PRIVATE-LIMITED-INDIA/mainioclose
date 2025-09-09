@@ -23,6 +23,7 @@ import {
 } from "../../../Toolkit/Slices/LeadSlice";
 import MainHeading from "../../../components/design/MainHeading";
 import {
+  Badge,
   Button,
   DatePicker,
   Drawer,
@@ -373,6 +374,9 @@ const LeadsModule = () => {
       fixed: "left",
       width: 80,
       checked: true,
+      render: (_, dta) => (
+        <Badge size="5" status={dta?.auto ? "success" : "processing"} />
+      ),
     },
     {
       dataIndex: "leadName",
