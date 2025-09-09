@@ -66,7 +66,6 @@ const GraphMainPage = () => {
     fromDate: dayjs().format("YYYY-MM-DD"),
   });
 
-
   useEffect(() => {
     dispatch(getTotalLeadCountForGraph());
     dispatch(getTotalProjectCounts());
@@ -386,7 +385,8 @@ const GraphMainPage = () => {
             <Text className="card-title-text">Leads data </Text>
             <RangePicker
               size="small"
-              // allowClear={true}
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
               presets={rangePresets}
               value={[
                 leadMonthDate?.toDate ? dayjs(leadMonthDate?.toDate) : "",
@@ -405,7 +405,8 @@ const GraphMainPage = () => {
             <Text className="card-title-text">Leads distribution status </Text>
             <RangePicker
               size="small"
-              // allowClear={true}
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
               presets={rangePresets}
               value={[
                 leadStatusDate?.toDate ? dayjs(leadStatusDate?.toDate) : "",
@@ -427,7 +428,8 @@ const GraphMainPage = () => {
             <Text className="card-title-text">Leads </Text>
             <RangePicker
               size="small"
-              // allowClear={true}
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
               presets={rangePresets}
               value={[
                 leadCategoryDate?.toDate ? dayjs(leadCategoryDate?.toDate) : "",
@@ -497,7 +499,8 @@ const GraphMainPage = () => {
             <Text className="card-title-text">Projects data</Text>
             <RangePicker
               size="small"
-              // allowClear={true}
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
               presets={rangePresets}
               value={[
                 projectsDate?.toDate ? dayjs(projectsDate?.toDate) : "",
