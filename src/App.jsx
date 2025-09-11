@@ -5,7 +5,6 @@ import ProtectedRoute from "./ProtectedRoute";
 import Layoutpage from "./layouts/Layoutpage";
 import Users from "./users/Users";
 import VendorRequests from "./vendor-request/VendorRequests";
-import AccountsModuleRouting from "./routings/AccountsModuleRouting";
 import SalesModuleRouting from "./routings/SalesModuleRouting";
 import IndustryModuleRouting from "./routings/IndustryModuleRouting";
 import HRModuleRouting from "./routings/HRModuleRouting";
@@ -13,6 +12,7 @@ import ERPSettingRouting from "./routings/ERPSettingRouting";
 import IVRRouting from "./routings/IVRRouting";
 import DashboardRouting from "./routings/DashboardRouting";
 import OperationModuleRouting from "./routings/OperationModuleRouting";
+import { accountLoginModuleRouting, AccountsModuleRouting } from "./routings/AccountsModuleRouting";
 
 function App() {
   return (
@@ -33,6 +33,8 @@ function App() {
 
           {/* Accounts */}
           {AccountsModuleRouting()}
+
+          {accountLoginModuleRouting()}
 
           {/* IVR */}
           {IVRRouting()}

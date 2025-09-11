@@ -77,9 +77,19 @@ export const addDocumentsInProductsForOperation = createAsyncThunk(
 
 export const getOperationProjectDetailById = createAsyncThunk(
   "getOperationProjectDetailById",
-  async ({projectId,userId}) => {
-    const response = await api.get(`/api/projects/${projectId}/milestones?userId=${userId}`);
+  async ({ projectId, userId }) => {
+    const response = await api.get(
+      `/api/projects/${projectId}/milestones?userId=${userId}`
+    );
     return response.data;
+  }
+);
+
+export const getRequiredDocumentsByProductId = createAsyncThunk(
+  "getRequiredDocumentsByProductId",
+  async ({ userId, productId, projectId}) => {
+    const response = await api.get(`/api/required-documents/project/${projectId}/product/${productId}?userId=${userId}`);
+    return response.data
   }
 );
 
@@ -90,7 +100,8 @@ const OperationSlice = createSlice({
     operationProjectList: [],
     userMappedWithProductList: [],
     mileStoneList: [],
-    operationProjectDetail:[]
+    operationProjectDetail: [],
+    requiredDoucmentListOfProduct:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -132,13 +143,31 @@ const OperationSlice = createSlice({
     builder.addCase(getOperationProjectDetailById.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getOperationProjectDetailById.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.operationProjectDetail = action?.payload;
-    });
+    builder.addCase(
+      getOperationProjectDetailById.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.operationProjectDetail = action?.payload;
+      }
+    );
     builder.addCase(getOperationProjectDetailById.rejected, (state) => {
       state.loading = "rejected";
       state.operationProjectDetail = [];
+    });
+
+    builder.addCase(getRequiredDocumentsByProductId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getRequiredDocumentsByProductId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.requiredDoucmentListOfProduct = action?.payload;
+      }
+    );
+    builder.addCase(getRequiredDocumentsByProductId.rejected, (state) => {
+      state.loading = "rejected";
+      state.requiredDoucmentListOfProduct = [];
     });
   },
 });

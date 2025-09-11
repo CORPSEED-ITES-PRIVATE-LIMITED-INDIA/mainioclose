@@ -1,4 +1,4 @@
-import  { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -148,7 +148,7 @@ const Leads = () => {
     (state) => state.leads.allLeadsForExport
   );
   const roles = useSelector((state) => state.auth.currentUser?.roles);
-  const allLeadUser = useSelector((state) => state.leads.leadUsersList);
+  const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
   const statusList = useSelector((state) => state?.setting?.statusList);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -172,6 +172,7 @@ const Leads = () => {
     assigneId: null,
   });
   const deleteModal = useDisclosure();
+  const filterPopOver = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initialFilterValues = {
     userId: userId,
@@ -196,6 +197,8 @@ const Leads = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
+  console.log('dskljghskjgsajgs',allLeadUser)
+
   const {
     control,
     handleSubmit,
@@ -209,6 +212,7 @@ const Leads = () => {
   useEffect(() => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
+    dispatch(getAllLeadsForExport(allMultiFilterData));
   }, [dispatch]);
 
   useEffect(() => {
@@ -338,10 +342,10 @@ const Leads = () => {
         return (
           <div className="flex flex-col">
             <Link to={`${lead?.id}/leadDetail`} className="font-semibold">
-              {lead.leadName || "-"}
+              {lead?.leadName || "-"}
             </Link>
             <span className="text-sm text-gray-400">
-              {dayjs(lead.createDate).format("DD-MM-YYYY")}
+              {dayjs(lead?.createDate).format("DD-MM-YYYY")}
             </span>
           </div>
         );
@@ -357,26 +361,26 @@ const Leads = () => {
       case "status":
         return (
           <Chip className="capitalize" color="primary" size="sm" variant="flat">
-            {lead.status?.name || "Unknown"}
+            {lead?.status?.name || "Unknown"}
           </Chip>
         );
       case "assignee":
         return (
           <div className="flex flex-col">
             <span className="font-semibold">
-              {lead.assignee?.fullName || "-"}
+              {lead?.assignee?.fullName || "-"}
             </span>
             <span className="text-sm text-gray-400">
-              {lead.assignee?.email || "-"}
+              {lead?.assignee?.email || "-"}
             </span>
           </div>
         );
       case "industry":
-        return lead.industries?.name || "-";
+        return lead?.industries?.name || "-";
       case "city":
-        return lead.city || "-";
+        return lead?.city || "-";
       case "source":
-        return lead.source || "-";
+        return lead?.source || "-";
       case "updatedBy":
         return (
           <div>
@@ -464,7 +468,7 @@ const Leads = () => {
     if (value) {
       setFilterValue(value);
       setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
-      searchLeads({ input: value, id: userId });
+      dispatch(searchLeads({ input: value, id: userId }));
     } else {
       setFilterValue("");
       dispatch(getAllLeadsByFilter(initialFilterValues));
@@ -479,11 +483,14 @@ const Leads = () => {
   const handleApplyFilter = useCallback(() => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
-  }, [allMultiFilterData, dispatch]);
+    dispatch(getAllLeadsForExport(allMultiFilterData));
+    filterPopOver.onClose();
+  }, [allMultiFilterData, dispatch, filterPopOver]);
 
   const handleResetFilter = useCallback(() => {
     dispatch(getAllLeadsByFilter(initialFilterValues));
     dispatch(getAllLeadCount(initialFilterValues));
+    dispatch(getAllLeadsForExport(initialFilterValues));
     setAllMultiFilterData(initialFilterValues);
   }, [initialFilterValues, dispatch]);
 
@@ -714,21 +721,25 @@ const Leads = () => {
                 )}
               </PopoverContent>
             </Popover>
-            <Popover size="lg" showArrow>
+            <Popover
+              showArrow
+              isOpen={filterPopOver.isOpen}
+              onOpenChange={(e) => filterPopOver.onOpenChange(e)}
+            >
               <PopoverTrigger>
                 <Button variant="flat" endContent={<ListFilter />}>
                   Filter
                 </Button>
               </PopoverTrigger>
-              <PopoverContent>
+              <PopoverContent className="min-w-[550px]">
                 {(titleProps) => (
                   <div className="px-1 py-2">
                     <h3 className="my-4 font-bold text-xl" {...titleProps}>
                       Lead filter
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 min-w-[500px]">
                       <NewSelect
-                        data={allLeadUser}
+                        data={allLeadUser || []}
                         selectionMode="multiple"
                         label={"Select users"}
                         name={"userIdFilter"}
@@ -743,7 +754,7 @@ const Leads = () => {
                         }}
                       />
                       <NewSelect
-                        data={allLeadUser}
+                        data={allLeadUser || []}
                         label={"Updated by"}
                         name={"updatedById"}
                         labelKey={"fullName"}
@@ -756,50 +767,61 @@ const Leads = () => {
                           }));
                         }}
                       />
-                      <DateRangePicker
-                        hideTimeZone
-                        granularity="minute"
-                        hourCycle={24}
-                        visibleMonths={2}
-                        label="Created date"
-                        onChange={(range) => {
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            toDate: formatedDateTime(range?.start),
-                            fromDate: formatedDateTime(range?.end),
-                          }));
-                        }}
-                      />
+                      <div>
+                        <DateRangePicker
+                          hideTimeZone
+                          granularity="minute"
+                          hourCycle={24}
+                          visibleMonths={2}
+                          label="Created date"
+                          onChange={(range) => {
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              toDate: formatedDateTime(range?.start),
+                              fromDate: formatedDateTime(range?.end),
+                            }));
+                          }}
+                        />
+                      </div>
 
-                      <NewSelect
-                        data={statusList}
-                        label={"Status"}
-                        name={"statusId"}
-                        selectionMode="multiple"
-                        labelKey={"name"}
-                        valueKey={"id"}
-                        value={allMultiFilterData?.statusId}
-                        onChange={(selectedSet) => {
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            statusId: selectedSet,
-                          }));
-                        }}
-                      />
-                      <DateRangePicker
-                        hideTimeZone
-                        granularity="minute"
-                        hourCycle={24}
-                        visibleMonths={2}
-                        label="Updated date"
-                        onChange={(range) => {
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            updatedToDate: formatedDateTime(range?.start),
-                            updatedfromDate: formatedDateTime(range?.end),
-                          }));
-                        }}
-                      />
+                      <div>
+                        <Select
+                          label={"Status"}
+                          name={"statusId"}
+                          selectionMode="multiple"
+                          selectedKeys={allMultiFilterData?.statusId}
+                          onSelectionChange={(e) => {
+                            let values = Array.from(e);
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              statusId: values,
+                            }));
+                          }}
+                        >
+                          {statusList.map((status) => (
+                            <SelectItem key={status?.id}>
+                              {status?.name}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      </div>
+
+                      <div>
+                        <DateRangePicker
+                          hideTimeZone
+                          granularity="minute"
+                          hourCycle={24}
+                          visibleMonths={2}
+                          label="Updated date"
+                          onChange={(range) => {
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              updatedToDate: formatedDateTime(range?.start),
+                              updatedfromDate: formatedDateTime(range?.end),
+                            }));
+                          }}
+                        />
+                      </div>
 
                       <Select
                         label="Source"
@@ -952,6 +974,7 @@ const Leads = () => {
     statusList,
     selectedKeys,
     heirarchyUserList,
+    filterPopOver,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -960,7 +983,7 @@ const Leads = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys?.length} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -1015,6 +1038,7 @@ const Leads = () => {
           dispatch(getAllLeadsByFilter(allMultiFilterData));
           dispatch(getAllLeadCount(allMultiFilterData));
           onOpenChange(false);
+          reset(defaultValues);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -1032,8 +1056,12 @@ const Leads = () => {
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
+        // classNames={{
+        //   wrapper: "max-h-[65vh]",
+        // }}
         classNames={{
-          wrapper: "max-h-[500px]",
+          wrapper:
+            "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -1228,7 +1256,7 @@ const Leads = () => {
                       render={({ field }) => (
                         <NewSelect
                           isRequired={true}
-                          data={allLeadUser}
+                          data={allLeadUser || []}
                           label="Select users"
                           name="assigneeId"
                           labelKey="fullName"

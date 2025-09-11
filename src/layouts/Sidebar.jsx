@@ -14,6 +14,22 @@ import {
   FlaskConical,
   Factory,
   GitCommitHorizontal,
+  Building2,
+  BookCheck,
+  BookText,
+  BadgeCheck,
+  PanelBottomClose,
+  Building,
+  BookOpenText,
+  FileText,
+  FileMinus,
+  History,
+  ChartNoAxesCombined,
+  FolderKanban,
+  University,
+  PhoneCall,
+  NotepadTextDashed,
+  FileSearch2,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -38,7 +54,23 @@ const icons = {
   SquareUserRound,
   FlaskConical,
   GitCommitHorizontal,
-  Factory
+  Factory,
+  Building2,
+  BookCheck,
+  BookText,
+  BadgeCheck,
+  PanelBottomClose,
+  Building,
+  BookOpenText,
+  FileText,
+  FileMinus,
+  History,
+  ChartNoAxesCombined,
+  FolderKanban,
+  University,
+  PhoneCall,
+  NotepadTextDashed,
+  FileSearch2
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {
@@ -123,7 +155,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
         <Dropdown placement="right-end">
           <DropdownTrigger>
             <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-1 py-1 rounded-md">
-              <User
+              {/* <User
               className="font-medium"
                 avatarProps={{
                   icon: (
@@ -132,7 +164,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                 }}
                 description={!collapsed && userDetail?.roles?.join(",")}
                 name={!collapsed && userDetail?.username}
-              />
+              /> */}
               {!collapsed && (
                 <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-white" />
               )}
@@ -140,14 +172,14 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
           </DropdownTrigger>
           <DropdownMenu aria-label="Static Actions">
             <DropdownItem>
-              <div className="px-4 py-2">
+              {/* <div className="px-4 py-2">
                 <p className="text-sm font-medium text-neutral-700 dark:text-white">
                   {userDetail?.username}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-gray-400">
                   {userDetail?.email}
                 </p>
-              </div>
+              </div> */}
             </DropdownItem>
             <DropdownItem key="new">
               <div className="flex items-center gap-4 text-neutral-700 dark:text-gray-100">

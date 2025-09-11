@@ -161,13 +161,14 @@ const NewSelect = ({
           return (
             <div className="flex flex-wrap gap-2 mt-4">
               {items.map((item) => {
+                console.log("sdjkgsjkgjsgs",item)
                 return (
                   <div
-                    key={item.key}
+                    key={item?.key}
                     className="flex items-center gap-2 selectable-text"
                   >
                     <span className="text-sm">
-                      {item.data?.[labelKey] || "Unknown"}
+                      {item?.data?.[labelKey] || "Unknown"}
                     </span>
                   </div>
                 );

@@ -239,18 +239,14 @@ const CompanyForm = () => {
               <span className="text-muted-foreground text-xs">
                 Age : {rowData?.companyAge || "-"} yrs
               </span>
-              {rowData?.status && (
-                <Chip
-                  color={
-                    rowData?.status === "approved"
-                      ? "success"
-                      : rowData?.status === "disapproved"
-                        ? "danger"
-                        : "secondary"
-                  }
-                >
+              {rowData?.status === "approved" ? (
+                <span className="text-green-500 text-xs">
                   {rowData?.status}
-                </Chip>
+                </span>
+              ) : rowData?.status === "disapproved" ? (
+                <span className="text-red-500 text-xs">{rowData?.status}</span>
+              ) : (
+                <span className="text-default-500 text-xs">{rowData?.status}</span>
               )}
             </div>
           );
@@ -277,19 +273,13 @@ const CompanyForm = () => {
         case "primaryContact":
           return (
             <div className="flex flex-col">
-              <span className="text-sm">
-                {rowData.contactName || "-"}
-                {", "}
-                <Chip color="secondary" size="sm">
-                  {rowData?.primaryDesignation?.name}
-                </Chip>
-              </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm">{rowData.contactName || "-"}</span>
+              <span className="text-sm text-default-500">
                 {admin
                   ? rowData?.contactEmails
                   : maskEmail(rowData?.contactEmails) || "-"}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500 ">
                 {admin
                   ? rowData?.contactNo
                   : maskMobileNumber(rowData?.contactNo) || "-"}
@@ -307,12 +297,12 @@ const CompanyForm = () => {
                   {rowData?.secondaryDesignation?.name}
                 </Chip>
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500">
                 {admin
                   ? rowData?.secondaryContactEmails
                   : maskEmail(rowData?.secondaryContactEmails) || "-"}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500">
                 {admin
                   ? rowData?.secondaryContactNo
                   : maskMobileNumber(rowData?.secondaryContactNo) || "-"}
@@ -326,10 +316,10 @@ const CompanyForm = () => {
               <span className="font-normal text-sm">
                 {rowData.address || "-"}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500">
                 {rowData.city || ""},{rowData?.state},{rowData?.country}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500">
                 {rowData.primaryPinCode || ""}
               </span>
             </div>
@@ -340,10 +330,10 @@ const CompanyForm = () => {
               <span className="font-normal text-sm">
                 {rowData.sAddress || "-"}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500">
                 {rowData.sCity || ""},{rowData?.sState},{rowData?.sCountry}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-default-500">
                 {rowData.secondaryPinCode || ""}
               </span>
             </div>

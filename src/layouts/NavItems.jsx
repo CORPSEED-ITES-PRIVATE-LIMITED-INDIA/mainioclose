@@ -216,3 +216,212 @@ export const navItems = [
     ],
   },
 ];
+
+export const accoountNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "accounts/dashboard",
+    key: "dashboard",
+  },
+  {
+    title: "Company form",
+    icon: "BookText",
+    url: "accounts/companyForm",
+    key: "companyForm",
+  },
+  {
+    title: "Company approvals",
+    icon: "BookCheck",
+    url: "accounts/companyApprovals",
+    key: "companyApprovals",
+  },
+  {
+    title: "Payment approvals",
+    icon: "BadgeCheck",
+    url: "accounts/paymentApprovals",
+    key: "paymentApprovals",
+  },
+  {
+    title: "Organization",
+    icon: "Building2",
+    url: "accounts/organizations",
+    key: "organizations",
+    children: [
+      {
+        title: "Group",
+        url: "accounts/organizations/group",
+        key: "group",
+      },
+      {
+        title: "Ledger",
+        url: "accounts/organizations/ledger",
+        key: "ledger",
+      },
+      {
+        title: "Voucher",
+        url: "accounts/organizations/voucher",
+        key: "voucher",
+      },
+      {
+        title: "Estimate",
+        url: "accounts/organizations/orgEstimate",
+        key: "accounts/orgEstimate",
+      },
+      {
+        title: "Daily book",
+        url: "accounts/organizations/dailyBook",
+        key: "dailyBook",
+      },
+      {
+        title: "Bank statement",
+        url: "accounts/organizations/bankStatement",
+        key: "bankStatement",
+      },
+      {
+        title: "Payment register",
+        url: "accounts/organizations/paymentRegister",
+        key: "paymentRegister",
+      },
+      {
+        title: "All invoice",
+        url: "accounts/organizations/allInvoice",
+        key: "allInvoice",
+      },
+      {
+        title: "Unbilled",
+        url: "accounts/organizations/unbilled",
+        key: "unbilled",
+      },
+      {
+        title: "Profit/Loss",
+        url: "accounts/organizations/profitLoss",
+        key: "profitLoss",
+      },
+      {
+        title: "Cashflow",
+        url: "accounts/organizations/cashflow",
+        key: "cashflow",
+      },
+      {
+        title: "Balance sheet",
+        url: "accounts/organizations/balanceSheet",
+        key: "organizations/balanceSheet",
+      },
+      {
+        title: "Tds",
+        url: "accounts/organizations/tds",
+        key: "tds",
+      },
+    ],
+  },
+  {
+    title: "Setting",
+    icon: "Settings",
+    key: "settings",
+    children: [
+      {
+        title: "Ledger type",
+        url: "accounts/settings/ledgerType",
+        key: "ledgerType",
+      },
+      {
+        title: "Voucher type",
+        url: "accounts/settings/voucherType",
+        key: "voucherType",
+      },
+      {
+        title: "Statutory",
+        url: "accounts/settings/statutory",
+        key: "statutory",
+      },
+    ],
+  },
+];
+
+export const salesNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "sales/dashboard",
+    key: "dashboard",
+  },
+
+  {
+    title: "Leads",
+    icon: "PanelBottomClose",
+    url: "sales/leads",
+    key: "leads",
+  },
+  { title: "Company", icon: "Building", url: "sales/company", key: "company" },
+  {
+    title: "Estimate",
+    icon: "FileText",
+    url: "sales/estimate",
+    key: "estimate",
+  },
+  {
+    title: "Proposal",
+    icon: "BookOpenText",
+    url: "sales/proposal",
+    key: "proposal",
+  },
+  {
+    title: "Discounted Estimate",
+    icon: "FileMinus",
+    url: "sales/discountedEstimate",
+    key: "discountedEstimate",
+  },
+  {
+    title: "Auto history",
+    icon: "History",
+    url: "sales/autoHistory",
+    key: "autoHistory",
+  },
+  {
+    title: "Automation status",
+    icon: "ChartNoAxesCombined",
+    url: "sales/autoStatus",
+    key: "autoStatus",
+  },
+  {
+    title: "Projects",
+    icon: "FolderKanban",
+    url: "sales/projects",
+    key: "projects",
+  },
+  {
+    title: "Serving Companies",
+    icon: "University",
+    url: "sales/servingCompanies",
+    key: "servingCompanies",
+  },
+];
+
+export const qualityNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "quality/dashboard",
+    key: "dashboard",
+  },
+  {
+    title: "Leads",
+    icon: "PanelBottomClose",
+    url: "quality/leads",
+    key: "leads",
+  },
+  {
+    title: "Lead search",
+    icon: "FileSearch2",
+    url: "quality/leadsSearch",
+    key: "leadsSearch",
+  },
+  { title: "IVR", icon: "PhoneCall", url: "quality/ivr", key: "ivr" },
+  {
+    title: "Report",
+    icon: "NotepadTextDashed",
+    url: "quality/report",
+    key: "report",
+  },
+];

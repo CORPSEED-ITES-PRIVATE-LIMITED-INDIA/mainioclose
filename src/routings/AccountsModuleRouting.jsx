@@ -24,7 +24,7 @@ import VoucherType from "../accounts/organization/settings/VoucherType";
 import Statutory from "../accounts/organization/settings/Statutory";
 import OrganizationEstimate from "../accounts/organization/OrganizationEstimate";
 
-const AccountsModuleRouting = () => {
+export const AccountsModuleRouting = () => {
   return (
     <>
       <Route path="accounts/companyApprovals" element={<CompanyApprovals />} />
@@ -40,7 +40,7 @@ const AccountsModuleRouting = () => {
           path="ledger/:ledgerId/ledgerDetail"
           element={<LedgerDetail />}
         />
-        <Route path="voucher" element={<Voucher  />} />
+        <Route path="voucher" element={<Voucher />} />
         <Route path="orgEstimate" element={<OrganizationEstimate />} />
         <Route path="dailyBook" element={<DailyBook />} />
         <Route path="bankStatement" element={<BankStatement />} />
@@ -68,4 +68,49 @@ const AccountsModuleRouting = () => {
   );
 };
 
-export default AccountsModuleRouting;
+export const accountLoginModuleRouting = () => {
+  return (
+    <>
+      <Route path="accounts/organizations/detail" element={<OrganizationDetail />} />
+      <Route path="accounts/organizations/group" element={<Group />} />
+      <Route
+        path="accounts/organizations/group/:groupId/groupLedger"
+        element={<GroupLedger />}
+      />
+      <Route path="accounts/organizations/ledger" element={<Ledger />} />
+      <Route
+        path="accounts/organizations/ledger/:ledgerId/ledgerDetail"
+        element={<LedgerDetail />}
+      />
+      <Route path="accounts/organizations/voucher" element={<Voucher />} />
+      <Route
+        path="accounts/organizations/orgEstimate"
+        element={<OrganizationEstimate />}
+      />
+      <Route path="accounts/organizations/dailyBook" element={<DailyBook />} />
+      <Route path="accounts/organizations/bankStatement" element={<BankStatement />} />
+      <Route
+        path="accounts/organizations/paymentRegister"
+        element={<PaymentRegister />}
+      />
+      <Route path="accounts/organizations/allInvoice" element={<AllInvoice />} />
+      <Route path="accounts/organizations/unbilled" element={<Unbill />} />
+      <Route path="accounts/organizations/profitLoss" element={<ProfitLoss />} />
+      <Route path="accounts/organizations/cashflow" element={<CashFlow />} />
+      <Route path="accounts/organizations/balanceSheet" element={<BalanceSheet />} />
+      <Route path="accounts/organizations/tds" element={<TDS />} />
+      <Route
+        path="accounts/settings/ledgerType"
+        element={<LedgerType />}
+      />
+      <Route
+        path="accounts/settings/voucherType"
+        element={<VoucherType />}
+      />
+      <Route
+        path="accounts/settings/statutory"
+        element={<Statutory />}
+      />
+    </>
+  );
+};

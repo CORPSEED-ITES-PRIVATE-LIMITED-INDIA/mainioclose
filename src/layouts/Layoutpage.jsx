@@ -4,23 +4,29 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Badge, BreadcrumbItem, Breadcrumbs, Button } from "@heroui/react";
 import { ThemeSwitch } from "../components/theme-switch";
-import { navItems } from "./NavItems";
+import { accoountNavItems, navItems, qualityNavItems, salesNavItems } from "./NavItems";
+import { useSelector } from "react-redux";
 
 
 
 const Layoutpage = () => {
   const location = useLocation();
+  const user=useSelector((state)=>state.auth.currentUser)
+  const roles=useSelector((state)=>state.auth.getDepartmentDetail)
   const pathname = location.pathname;
   const segments = pathname.split("/");
   const userIndex = segments.indexOf("erp");
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
 
+
+  console.log("dsjhgsjgsjsgj",user, roles)
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          items={navItems}
+          items={qualityNavItems}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
         />

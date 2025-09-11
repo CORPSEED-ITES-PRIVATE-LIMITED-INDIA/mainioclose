@@ -443,7 +443,6 @@ export const updateGstTypeInEstimate = createAsyncThunk(
   }
 );
 
-
 export const getAutomationLeads = createAsyncThunk(
   "getAutomationLeads",
   async (data) => {
@@ -455,7 +454,15 @@ export const getAutomationLeads = createAsyncThunk(
   }
 );
 
-
+export const searchIvrLeads = createAsyncThunk(
+  "searchIvrLeads",
+  async (data) => {
+    const response = await api.get(
+      `/leadService/api/v1/lead/leadSearchByQuality?searchParam=${data.input}&userId=${data.id}`
+    );
+    return response.data;
+  }
+);
 
 export const LeadSlice = createSlice({
   name: "leads",
@@ -485,7 +492,8 @@ export const LeadSlice = createSlice({
     autoExportLoading: "",
     allLeadHistory: [],
     getSingleLeadTask: [],
-    autoStatusList:[]
+    autoStatusList: [],
+    leadSearchList:[]
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -781,6 +789,18 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(getAutomationLeads.rejected, (state, action) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(searchIvrLeads.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchIvrLeads.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadSearchList = action.payload;
+    });
+    builder.addCase(searchIvrLeads.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.leadSearchList = [];
     });
   },
 });
