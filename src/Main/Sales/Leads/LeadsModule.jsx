@@ -55,6 +55,7 @@ import dayjs from "dayjs";
 import AllNotificationPage from "./AllNotificationPage";
 import { leadSource } from "../../../data/FakeData";
 import { getAllUrlList } from "../../../Toolkit/Slices/LeadUrlSlice";
+import { toggleAutoOnFeature } from "../../../Toolkit/Slices/AuthSlice";
 const { Text, Title } = Typography;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
@@ -119,6 +120,7 @@ const LeadsModule = () => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
+    dispatch(toggleAutoOnFeature({ userId: userid, flag: true }));
   }, [dispatch]);
 
   useEffect(() => {
@@ -375,7 +377,10 @@ const LeadsModule = () => {
       width: 80,
       checked: true,
       render: (_, dta) => (
-        <Badge size="5" status={dta?.auto ? "success" : "processing"} />
+        <Flex gap={4}>
+          <Text>{dta?.id}</Text>
+          <Badge size="5" status={dta?.auto ? "success" : "processing"} />
+        </Flex>
       ),
     },
     {

@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllBalanceSheetAssets, getAllBalanceSheetLiabilities, getAllInFlowList } from "../../../Toolkit/Slices/AccountSlice";
+import {
+  getAllBalanceSheetAssets,
+  getAllBalanceSheetLiabilities,
+  getAllInFlowList,
+} from "../../../Toolkit/Slices/AccountSlice";
 import { rangePresets } from "../../Common/Commons";
 import dayjs from "dayjs";
 const { Text } = Typography;
@@ -13,15 +17,20 @@ const Assets = () => {
   const dispatch = useDispatch();
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
-  const balanceSheetAssetsList = useSelector((state) => state.account.balanceSheetAssetsList);
+  const balanceSheetAssetsList = useSelector(
+    (state) => state.account.balanceSheetAssetsList?.data
+  );
+  const balanceSheetAssets = useSelector(
+    (state) => state.account.balanceSheetAssetsList
+  );
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD'),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD"),
   });
 
   useEffect(() => {
     dispatch(getAllBalanceSheetAssets(dateRange));
-  }, [dispatch,dateRange]);
+  }, [dispatch, dateRange]);
 
   useEffect(() => {
     setFilteredData(balanceSheetAssetsList);
@@ -73,25 +82,30 @@ const Assets = () => {
           placeholder="search"
           style={{ width: "25%" }}
         />
-        <RangePicker
-          size="small"
-          allowClear={true}
-          presets={rangePresets}
-          value={[
-            dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
-            dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
-          ]}
-          disabledDate={(current) => current && current > dayjs().endOf("day")}
-          onChange={(dates, dateStrings) => {
-            if (dates) {
-              setDateRange((prev) => ({
-                ...prev,
-                startDate: dateStrings[0],
-                endDate: dateStrings[1],
-              }));
+        <Flex gap={8}>
+          <Text strong>Total amount : {balanceSheetAssets?.totalPrice}</Text>
+          <RangePicker
+            size="small"
+            allowClear={true}
+            presets={rangePresets}
+            value={[
+              dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
+              dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
+            ]}
+            disabledDate={(current) =>
+              current && current > dayjs().endOf("day")
             }
-          }}
-        />
+            onChange={(dates, dateStrings) => {
+              if (dates) {
+                setDateRange((prev) => ({
+                  ...prev,
+                  startDate: dateStrings[0],
+                  endDate: dateStrings[1],
+                }));
+              }
+            }}
+          />
+        </Flex>
       </Flex>
       <CommonTable
         data={filteredData}
