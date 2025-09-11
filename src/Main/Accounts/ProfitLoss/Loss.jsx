@@ -1,4 +1,4 @@
-import { DatePicker, Flex, Input, Typography } from "antd";
+import { Button, DatePicker, Flex, Input, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllLossList } from "../../../Toolkit/Slices/AccountSlice";
 import dayjs from "dayjs";
 import { rangePresets } from "../../Common/Commons";
+import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants";
+import { CSVLink } from "react-csv";
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -15,13 +17,13 @@ const Loss = () => {
   const [lossFilteredData, setLossFilteredData] = useState([]);
   const lossList = useSelector((state) => state.account.lossList?.data);
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD'),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD"),
   });
 
   useEffect(() => {
     dispatch(getAllLossList(dateRange));
-  }, [dispatch,dateRange]);
+  }, [dispatch, dateRange]);
 
   useEffect(() => {
     setLossFilteredData(lossList);
@@ -37,6 +39,15 @@ const Loss = () => {
     );
     setLossFilteredData(filtered);
   };
+
+  const exportData = lossList?.map((row) => ({
+    "Group name": row?.groupName,
+    "Total credit": row?.totalCredit,
+    "Total debit": row?.totalDebit,
+    "Total amount": row?.totalAmount,
+  }));
+
+  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 
   const columns = [
     {
@@ -72,25 +83,44 @@ const Loss = () => {
           placeholder="search"
           style={{ width: "25%" }}
         />
-        <RangePicker
-          size="small"
-          allowClear={true}
-          presets={rangePresets}
-          value={[
-            dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
-            dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
-          ]}
-          disabledDate={(current) => current && current > dayjs().endOf("day")}
-          onChange={(dates, dateStrings) => {
-            if (dates) {
-              setDateRange((prev) => ({
-                ...prev,
-                startDate: dateStrings[0],
-                endDate: dateStrings[1],
-              }));
+        <Flex gap={6}>
+          <CSVLink
+            className="text-white"
+            data={exportData}
+            headers={headers}
+            filename={"loss.csv"}
+          >
+            <Button>
+              <Icon
+                icon="fluent:arrow-upload-16-filled"
+                height={BTN_ICON_HEIGHT}
+                width={BTN_ICON_WIDTH}
+              />{" "}
+              Export
+            </Button>
+          </CSVLink>
+          <RangePicker
+            size="small"
+            allowClear={true}
+            presets={rangePresets}
+            value={[
+              dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
+              dateRange?.endDate ? dayjs(dateRange?.endDate) : "",
+            ]}
+            disabledDate={(current) =>
+              current && current > dayjs().endOf("day")
             }
-          }}
-        />
+            onChange={(dates, dateStrings) => {
+              if (dates) {
+                setDateRange((prev) => ({
+                  ...prev,
+                  startDate: dateStrings[0],
+                  endDate: dateStrings[1],
+                }));
+              }
+            }}
+          />
+        </Flex>
       </Flex>
       <CommonTable
         data={lossFilteredData}

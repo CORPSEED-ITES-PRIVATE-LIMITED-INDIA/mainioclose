@@ -1,4 +1,4 @@
-import { DatePicker, Flex, Input, Typography } from "antd";
+import { Button, DatePicker, Flex, Input, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
@@ -10,6 +10,8 @@ import {
 } from "../../../Toolkit/Slices/AccountSlice";
 import { rangePresets } from "../../Common/Commons";
 import dayjs from "dayjs";
+import { CSVLink } from "react-csv";
+import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants";
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -47,6 +49,15 @@ const Assets = () => {
     setFilteredData(filtered);
   };
 
+  const exportData = balanceSheetAssetsList?.map((row) => ({
+    "Group name": row?.groupName,
+    "Total credit": row?.totalCredit,
+    "Total debit": row?.totalDebit,
+    "Total amount": row?.totalAmount,
+  }));
+
+  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
+
   const columns = [
     {
       dataIndex: "groupName",
@@ -82,8 +93,23 @@ const Assets = () => {
           placeholder="search"
           style={{ width: "25%" }}
         />
-        <Flex gap={8}>
+        <Flex gap={6}>
           <Text strong>Total amount : {balanceSheetAssets?.totalPrice}</Text>
+          <CSVLink
+            className="text-white"
+            data={exportData}
+            headers={headers}
+            filename={"assets.csv"}
+          >
+            <Button>
+              <Icon
+                icon="fluent:arrow-upload-16-filled"
+                height={BTN_ICON_HEIGHT}
+                width={BTN_ICON_WIDTH}
+              />{" "}
+              Export
+            </Button>
+          </CSVLink>
           <RangePicker
             size="small"
             allowClear={true}

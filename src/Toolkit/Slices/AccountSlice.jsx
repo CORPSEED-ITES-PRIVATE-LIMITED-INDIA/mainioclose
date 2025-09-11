@@ -577,6 +577,13 @@ export const getAllBalanceSheetAssets = createAsyncThunk(
   }
 );
 
+export const getAllVouchersForExport = createAsyncThunk("", async () => {
+  const response = await getQuery(
+    `/accountService/api/v1/voucher/getAllVoucherForExport`
+  );
+  return response.data;
+});
+
 const AccountSlice = createSlice({
   name: "account",
   initialState: {
@@ -621,6 +628,7 @@ const AccountSlice = createSlice({
     outFlowList: [],
     balanceSheetLiabilitiesList: [],
     balanceSheetAssetsList: [],
+    voucherListForExport:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -1086,6 +1094,18 @@ const AccountSlice = createSlice({
     builder.addCase(getAllBalanceSheetAssets.rejected, (state) => {
       state.loading = "rejected";
       state.balanceSheetAssetsList = [];
+    });
+
+    builder.addCase(getAllVouchersForExport.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVouchersForExport.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.voucherListForExport = action.payload;
+    });
+    builder.addCase(getAllVouchersForExport.rejected, (state) => {
+      state.loading = "rejected";
+      state.voucherListForExport = [];
     });
   },
 });

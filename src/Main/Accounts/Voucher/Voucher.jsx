@@ -8,15 +8,22 @@ import {
   createVoucher,
   getAllLedger,
   getAllVoucher,
+  getAllVouchersForExport,
   getAllVoucherType,
   getLedgerById,
 } from "../../../Toolkit/Slices/AccountSlice";
 import CreateVoucher from "./CreateVoucher";
+import { CSVLink } from "react-csv";
+import { BTN_ICON_HEIGHT, BTN_ICON_WIDTH } from "../../../components/Constants";
+import dayjs from "dayjs";
 const { Text } = Typography;
 
 const Voucher = () => {
   const dispatch = useDispatch();
   const voucherList = useSelector((state) => state.account.voucherList);
+  const voucherListForExport = useSelector(
+    (state) => state.account.voucherListForExport
+  );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -41,8 +48,9 @@ const Voucher = () => {
 
   useEffect(() => {
     dispatch(getAllVoucherType());
-    dispatch(getAllLedger({page:1,size:100}));
+    dispatch(getAllLedger({ page: 1, size: 100 }));
     dispatch(getAllVoucher());
+    dispatch(getAllVouchersForExport());
   }, [dispatch]);
 
   useEffect(() => {
@@ -274,6 +282,52 @@ const Voucher = () => {
     },
   ];
 
+  const exportData = voucherListForExport?.map((row) => ({
+    Id: row?.id,
+    Ledger: row?.ledgerName,
+    "Ledger type": row?.ledgerType?.name,
+    "Voucher type": row?.voucherType?.name,
+    Group: row?.group,
+    "Credit amount": row?.creditAmount,
+    "Debit amount": row?.debitAmount,
+    SGST: row?.sgst,
+    "SGST Credit amount": row?.sgstCreditAmount,
+    "SGST Debit amount": row?.sgstDebitAmount,
+    CGST: row?.cgst,
+    "CGST Credit amount": row?.cgstCreditAmount,
+    "CGST Debit amount": row?.cgstDebitAmount,
+    IGST: row?.igst,
+    "IGST Credit amount": row?.igstCreditAmount,
+    "IGST Debit amount": row?.igstDebitAmount,
+    "Payment type": row?.paymentType,
+    Product: row?.product,
+    "Total amount": row?.totalAmount,
+    Date: dayjs(row?.createDate).format("DD-MM-YYYY"),
+  }));
+
+  const headers = [
+    "Id",
+    "Ledger",
+    "Ledger type",
+    "Voucher type",
+    "Group",
+    "Credit amount",
+    "Debit amount",
+    "SGST",
+    "SGST Credit amount",
+    "SGST Debit amount",
+    "CGST",
+    "CGST Credit amount",
+    "CGST Debit amount",
+    "IGST",
+    "IGST Credit amount",
+    "IGST Debit amount",
+    "Payment type",
+    "Product",
+    "Total amount",
+    "Date",
+  ];
+
   return (
     <>
       <Flex vertical gap={12}>
@@ -294,19 +348,36 @@ const Voucher = () => {
             placeholder="search"
             style={{ width: "25%" }}
           />
-          <Button
-            type="primary"
-            onClick={() => {
-              setOpenModal(true);
-            }}
-          >
-            Create voucher
-          </Button>
+          <Flex gap={6}>
+            <CSVLink
+              className="text-white"
+              data={exportData}
+              headers={headers}
+              filename={"voucher.csv"}
+            >
+              <Button>
+                <Icon
+                  icon="fluent:arrow-upload-16-filled"
+                  height={BTN_ICON_HEIGHT}
+                  width={BTN_ICON_WIDTH}
+                />{" "}
+                Export
+              </Button>
+            </CSVLink>
+            <Button
+              type="primary"
+              onClick={() => {
+                setOpenModal(true);
+              }}
+            >
+              Create voucher
+            </Button>
+          </Flex>
         </Flex>
         <CommonTable
           data={filteredData}
           columns={columns}
-          scroll={{ y: "70vh",x:1500 }}
+          scroll={{ y: "70vh", x: 1500 }}
         />
       </Flex>
       <Modal

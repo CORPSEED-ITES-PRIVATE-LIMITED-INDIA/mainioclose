@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./MainPage.scss";
 import SideBar from "./SideBar";
 import { Outlet, useNavigate, useParams } from "react-router";
@@ -28,9 +28,9 @@ const MainPage = () => {
     token: { colorBgContainer },
   } = theme.useToken();
 
-  const resetInactivityTimer = () => {
+  const resetInactivityTimer = useCallback(() => {
     lastActiveRef.current = Date.now();
-  };
+  }, []);
 
   useEffect(() => {
     const events = [
@@ -62,7 +62,9 @@ const MainPage = () => {
       );
       clearInterval(intervalRef.current);
     };
-  }, [dispatch,navigate]);
+  }, [dispatch, navigate, resetInactivityTimer]);
+
+
 
   useEffect(() => {
     dispatch(getDepartmentOfUser(userid));
@@ -91,13 +93,6 @@ const MainPage = () => {
 
   const [openKeys, setOpenKeys] = useState(getSecondLastKey());
 
-  // useEffect(() => {
-  //   const key = getSecondLastKey();
-  //   setOpenKeys(key);
-  // }, []);
-
-  console.log("fkdjbsdkjfkj", [openKeys]);
-
   return (
     <>
       <Layout
@@ -110,10 +105,10 @@ const MainPage = () => {
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
           style={{
-            maxHeight: '95vh',
-            overflowY: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
+            maxHeight: "95vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
           className="custom-scroll"
         >
