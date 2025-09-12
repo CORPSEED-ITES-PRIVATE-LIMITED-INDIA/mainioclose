@@ -62,7 +62,7 @@ const LedgerTypePage = () => {
 
   const handleFinish = (values) => {
     if (editData) {
-      dispatch(updateLedgerType({ ...values, id: editData?.id }))
+      dispatch(updateLedgerType({ ...values, subLedgerId: editData?.id }))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             notification.success({
