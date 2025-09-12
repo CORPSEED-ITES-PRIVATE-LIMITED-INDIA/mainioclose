@@ -1261,6 +1261,39 @@ export const docsUploadListInEstimate = createAsyncThunk(
   }
 );
 
+export const getSaleReportByFilter = createAsyncThunk(
+  "getSaleReportByFilter",
+  async ({ page, size, data }) => {
+    const response = await postQuery(
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReport?page=${page}&size=${size}`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getSaleReportByFilterCount = createAsyncThunk(
+  "getSaleReportByFilterCount",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReportCount`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getSalesReportByFilterForExport = createAsyncThunk(
+  "getSalesReportByFilterForExport",
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReportForExport`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "lead",
   initialState: {
@@ -1341,7 +1374,10 @@ export const LeadSlice = createSlice({
     totalEstimateCount: 0,
     automationReportList: [],
     qualityReportList: [],
-    docsListInEstimate:[]
+    docsListInEstimate: [],
+    salesReportCount:0,
+    salesReportList:[],
+    salesReportListForExport:[]
   },
   reducers: {
     handleLoadingState: (state, action) => {
@@ -2047,6 +2083,45 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(docsUploadListInEstimate.rejected, (state) => {
       state.docsListInEstimate = [];
+    });
+
+    builder.addCase(getSalesReportByFilterForExport.pending, (state) => {
+      state.salesReportExportLoading = "pending";
+    });
+    builder.addCase(
+      getSalesReportByFilterForExport.fulfilled,
+      (state, action) => {
+        state.salesReportExportLoading = "success";
+        state.salesReportListForExport = action.payload;
+      }
+    );
+    builder.addCase(getSalesReportByFilterForExport.rejected, (state) => {
+      state.salesReportExportLoading = "rejected";
+      state.salesReportListForExport = [];
+    });
+
+    builder.addCase(getSaleReportByFilter.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSaleReportByFilter.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportList = action.payload;
+    });
+    builder.addCase(getSaleReportByFilter.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportList = [];
+    });
+
+    builder.addCase(getSaleReportByFilterCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSaleReportByFilterCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportCount = action.payload;
+    });
+    builder.addCase(getSaleReportByFilterCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportCount = 0;
     });
   },
 });

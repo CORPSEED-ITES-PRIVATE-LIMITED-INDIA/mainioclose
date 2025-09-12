@@ -123,6 +123,7 @@ import TrailBalance from "./Main/Accounts/TrailBalance/TrailBalance";
 import ProfitLoss from "./Main/Accounts/ProfitLoss/ProfitLoss";
 import Cashflow from "./Main/Accounts/Cashflow/Cashflow";
 import BalanceSheet from "./Main/Accounts/BalanceSheet/BalanceSheet";
+import SalesReport from "./Main/Sales/Leads/SalesReport";
 
 const SpinLoading = lazy(() => import("./components/SpinLoading"));
 
@@ -569,6 +570,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AutoHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="salesReport"
+                  element={
+                    <ProtectedRoute>
+                      <SalesReport />
                     </ProtectedRoute>
                   }
                 />
