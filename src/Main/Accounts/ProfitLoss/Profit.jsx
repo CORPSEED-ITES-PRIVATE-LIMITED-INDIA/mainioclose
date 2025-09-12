@@ -60,23 +60,14 @@ const Profit = () => {
     },
   ];
 
+  const exportData = (profitList || [])?.map((row) => ({
+    "Group name": row?.groupName,
+    "Total credit": row?.totalCredit,
+    "Total debit": row?.totalDebit,
+    "Total amount": row?.totalAmount,
+  }));
 
-
-  const exportData = profitList?.map((row) => ({
-      "Group name": row?.groupName,
-      "Total credit": row?.totalCredit,
-      "Total debit": row?.totalDebit,
-      "Total amount": row?.totalAmount,
-    }));
-  
-    const headers = [
-      "Group name",
-      "Total credit",
-      "Total debit",
-      "Total amount",
-    ];
-
-
+  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 
   return (
     <Flex vertical gap={12}>

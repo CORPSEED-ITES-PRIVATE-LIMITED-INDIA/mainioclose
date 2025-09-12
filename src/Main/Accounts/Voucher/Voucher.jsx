@@ -282,7 +282,7 @@ const Voucher = () => {
     // },
   ];
 
-  const exportData = voucherListForExport?.map((row) => ({
+  const exportData = (voucherListForExport || [])?.map((row) => ({
     Id: row?.id,
     Ledger: row?.ledgerName,
     "Ledger type": row?.ledgerType?.name,

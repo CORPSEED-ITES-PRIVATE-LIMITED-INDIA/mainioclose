@@ -40,7 +40,7 @@ const Loss = () => {
     setLossFilteredData(filtered);
   };
 
-  const exportData = lossList?.map((row) => ({
+  const exportData = (lossList || [])?.map((row) => ({
     "Group name": row?.groupName,
     "Total credit": row?.totalCredit,
     "Total debit": row?.totalDebit,

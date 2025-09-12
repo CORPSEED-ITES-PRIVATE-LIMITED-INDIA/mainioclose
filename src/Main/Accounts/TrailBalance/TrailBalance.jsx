@@ -41,19 +41,14 @@ const TrailBalance = () => {
     setFilteredData(filtered);
   };
 
-    const exportData = trailBalanceList?.map((row) => ({
-      "Group name": row?.groupName,
-      "Total credit": row?.totalCredit,
-      "Total debit": row?.totalDebit,
-      "Total amount": row?.totalAmount,
-    }));
-  
-    const headers = [
-      "Group name",
-      "Total credit",
-      "Total debit",
-      "Total amount",
-    ];
+  const exportData = (trailBalanceList || [])?.map((row) => ({
+    "Group name": row?.groupName,
+    "Total credit": row?.totalCredit,
+    "Total debit": row?.totalDebit,
+    "Total amount": row?.totalAmount,
+  }));
+
+  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 
   const columns = [
     {
