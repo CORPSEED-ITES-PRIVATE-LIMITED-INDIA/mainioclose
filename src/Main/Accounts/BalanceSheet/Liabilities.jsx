@@ -5,7 +5,6 @@ import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllBalanceSheetLiabilities,
-  getAllInFlowList,
 } from "../../../Toolkit/Slices/AccountSlice";
 import { rangePresets } from "../../Common/Commons";
 import dayjs from "dayjs";
@@ -48,12 +47,13 @@ const Liabilities = () => {
     setFilteredData(filtered);
   };
 
-  const exportData = balanceSheetLiabilitiesList?.map((row) => ({
+  const exportData = (balanceSheetLiabilitiesList||[])?.map((row) => ({
     "Group name": row?.groupName,
     "Total credit": row?.totalCredit,
     "Total debit": row?.totalDebit,
     "Total amount": row?.totalAmount,
   }));
+
 
   const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 

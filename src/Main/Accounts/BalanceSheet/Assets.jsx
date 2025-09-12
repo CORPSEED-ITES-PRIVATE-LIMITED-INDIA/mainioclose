@@ -3,11 +3,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllBalanceSheetAssets,
-  getAllBalanceSheetLiabilities,
-  getAllInFlowList,
-} from "../../../Toolkit/Slices/AccountSlice";
+import { getAllBalanceSheetAssets } from "../../../Toolkit/Slices/AccountSlice";
 import { rangePresets } from "../../Common/Commons";
 import dayjs from "dayjs";
 import { CSVLink } from "react-csv";
@@ -49,12 +45,14 @@ const Assets = () => {
     setFilteredData(filtered);
   };
 
-  const exportData = balanceSheetAssetsList?.map((row) => ({
+  const exportData = (balanceSheetAssetsList || [])?.map((row) => ({
     "Group name": row?.groupName,
     "Total credit": row?.totalCredit,
     "Total debit": row?.totalDebit,
     "Total amount": row?.totalAmount,
   }));
+
+  console.log("dsjgjgssjgs", exportData);
 
   const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 

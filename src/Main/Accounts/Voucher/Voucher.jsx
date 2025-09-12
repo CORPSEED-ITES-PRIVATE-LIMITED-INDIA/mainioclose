@@ -271,15 +271,15 @@ const Voucher = () => {
       dataIndex: "product",
       title: "Product",
     },
-    {
-      dataIndex: "edit",
-      title: "Edit",
-      render: (_, data) => (
-        <Button size="small" onClick={() => handleEditVoucher(data)}>
-          Edit
-        </Button>
-      ),
-    },
+    // {
+    //   dataIndex: "edit",
+    //   title: "Edit",
+    //   render: (_, data) => (
+    //     <Button size="small" onClick={() => handleEditVoucher(data)}>
+    //       Edit
+    //     </Button>
+    //   ),
+    // },
   ];
 
   const exportData = voucherListForExport?.map((row) => ({
