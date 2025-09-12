@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -18,25 +18,21 @@ import {
   PopoverTrigger,
   PopoverContent,
   DateRangePicker,
-  Select,
-  addToast,
-  SelectItem,
   useDisclosure,
 } from "@heroui/react";
 import { ChevronDown, ListFilter, Search, Upload } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  getAllAutoHistoryForExportByDate,
-  getAllAutoHistoryList,
-  getAllAutoHistroryCount,
   getAllLeadUser,
+  getSaleReportByFilter,
+  getSaleReportByFilterCount,
+  getSalesReportByFilterForExport,
 } from "../../toolkit/slices/leadSlice";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
-import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 import { CSVLink } from "react-csv";
-import { formatedDateTime, leadSource } from "../../common";
+import { formatedDateTime } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -63,19 +59,18 @@ const INITIAL_VISIBLE_COLUMNS = [
   "assignDate",
 ];
 
-const AutoHistory = () => {
+const SalesReport = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpenChange, onClose } = useDisclosure();
-  const data = useSelector((state) => state.leads.autoList);
-  const count = useSelector((state) => state.leads.totalAutoListCount);
+  const data = useSelector((state) => state.leads.salesReportList);
+  const count = useSelector((state) => state.leads.salesReportCount);
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
-  const statusList = useSelector((state) => state?.setting?.statusList);
-  const autoHistoryExportList = useSelector(
-    (state) => state.leads.autoHistoryExportList
+  const salesReportExportLoading = useSelector(
+    (state) => state.leads.salesReportExportLoading
   );
-  const autoExportLoading = useSelector(
-    (state) => state.leads.autoExportLoading
+  const salesReportExport = useSelector(
+    (state) => state.leads.salesReportListForExport
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -87,24 +82,21 @@ const AutoHistory = () => {
     column: "age",
     direction: "ascending",
   });
-  const [department, setDepartment] = useState("All");
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const [department, setDepartment] = useState("All");
   const [dateFilter, setDateFilter] = useState({
     toDate: "",
     fromDate: "",
     departmentId: null,
-    assignType: "",
-    statusIds: [],
     assigneeIds: [],
-    source: [],
   });
 
   useEffect(() => {
     dispatch(
-      getAllAutoHistoryList({ page, size: rowsPerPage, data: dateFilter })
+      getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter })
     );
-    dispatch(getAllAutoHistroryCount(dateFilter));
+    dispatch(getSaleReportByFilterCount(dateFilter));
   }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
@@ -154,12 +146,7 @@ const AutoHistory = () => {
       case "leadname":
         return (
           <div className="flex flex-col">
-            <Link
-              to={`${rowData?.leadId}/leadDetail`}
-              className="font-semibold"
-            >
-              {rowData.leadOriginalName || "-"}
-            </Link>
+            <p>{rowData.leadOriginalName || "-"}</p>
             <Chip
               size="sm"
               className="text-sm"
@@ -253,43 +240,31 @@ const AutoHistory = () => {
     setPage(1);
   }, []);
 
-  const handleApplyFilter = () => {
+  const handleApplyFilter = useCallback(() => {
     dispatch(
-      getAllAutoHistoryList({ page, size: rowsPerPage, data: dateFilter })
+      getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter })
     );
-    dispatch(getAllAutoHistroryCount(dateFilter));
-    dispatch(getAllAutoHistoryForExportByDate(dateFilter))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Data is ready to export !.", color: "success" });
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch((err) =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+    dispatch(getSaleReportByFilterCount(dateFilter));
+    dispatch(getSalesReportByFilterForExport(dateFilter));
     onClose();
-  };
+  }, [dateFilter, rowsPerPage, page, onClose]);
 
   const handleResetFilter = () => {
     dispatch(
-      getAllAutoHistoryList({
+      getSaleReportByFilter({
         page,
         size: rowsPerPage,
         data: {
           toDate: "",
           fromDate: "",
           departmentId: "",
-          assignType: "",
-          statusIds: [],
           assigneeIds: [],
         },
       })
     );
   };
 
-  const exportData = autoHistoryExportList?.map((row) => ({
+  const exportData = salesReportExport?.map((row) => ({
     Id: row?.id,
     "Lead Id": row?.leadId,
     "Lead name": row?.leadOriginalName,
@@ -351,14 +326,14 @@ const AutoHistory = () => {
                   let value = Array.from(e)[0];
                   setDateFilter((prev) => ({ ...prev, departmentId: value }));
                   dispatch(
-                    getAllAutoHistoryList({
+                    getSaleReportByFilter({
                       page,
                       size: rowsPerPage,
                       data: { ...dateFilter, departmentId: value },
                     })
                   );
                   dispatch(
-                    getAllAutoHistroryCount({
+                    getSaleReportByFilterCount({
                       ...dateFilter,
                       departmentId: value,
                     })
@@ -388,7 +363,6 @@ const AutoHistory = () => {
                 onOpenChange(e);
                 if (e) {
                   dispatch(getAllLeadUser(userId));
-                  dispatch(getAllStatusData());
                 }
               }}
             >
@@ -403,7 +377,7 @@ const AutoHistory = () => {
                     <h3 className="my-4 font-bold text-xl" {...titleProps}>
                       Lead filter
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <NewSelect
                         data={allLeadUser || []}
                         selectionMode="multiple"
@@ -419,7 +393,6 @@ const AutoHistory = () => {
                           }));
                         }}
                       />
-
                       <DateRangePicker
                         hideTimeZone
                         granularity="minute"
@@ -434,67 +407,6 @@ const AutoHistory = () => {
                           }));
                         }}
                       />
-
-                      <NewSelect
-                        data={statusList}
-                        label={"Status"}
-                        name={"statusIds"}
-                        selectionMode="multiple"
-                        labelKey={"name"}
-                        valueKey={"id"}
-                        value={dateFilter?.statusIds}
-                        onChange={(selectedSet) => {
-                          setDateFilter((prev) => ({
-                            ...prev,
-                            statusIds: selectedSet,
-                          }));
-                        }}
-                      />
-
-                      <Select
-                        label="Source"
-                        selectionMode="multiple"
-                        items={
-                          leadSource?.map((item) => ({
-                            label: item,
-                            key: item,
-                          })) || []
-                        }
-                        selectedKeys={dateFilter?.source}
-                        onSelectionChange={(e) =>
-                          setDateFilter((prev) => ({
-                            ...prev,
-                            source: Array.from(e),
-                          }))
-                        }
-                      >
-                        {(source) => (
-                          <SelectItem key={source.key}>
-                            {source.label}
-                          </SelectItem>
-                        )}
-                      </Select>
-                      <Select
-                        label="Assign type"
-                        selectionMode="multiple"
-                        items={[
-                          { label: "Manual", key: "Manual" },
-                          { label: "Auto", key: "Auto" },
-                        ]}
-                        selectedKeys={dateFilter?.assignType}
-                        onSelectionChange={(e) =>
-                          setDateFilter((prev) => ({
-                            ...prev,
-                            assignType: Array.from(e),
-                          }))
-                        }
-                      >
-                        {(source) => (
-                          <SelectItem key={source.key}>
-                            {source.label}
-                          </SelectItem>
-                        )}
-                      </Select>
                     </div>
                     <div className="flex justify-end gap-2 my-2">
                       <Button onPress={handleResetFilter}>Reset</Button>
@@ -509,10 +421,10 @@ const AutoHistory = () => {
             <CSVLink
               data={exportData}
               headers={headers}
-              filename={"history.csv"}
+              filename={"salesReport.csv"}
             >
               <Button
-                isDisabled={autoExportLoading !== "success"}
+                isDisabled={salesReportExportLoading !== "success"}
                 endContent={<Upload />}
               >
                 Export
@@ -543,7 +455,7 @@ const AutoHistory = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} auto history
+            Total {count} sales report
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -614,7 +526,7 @@ const AutoHistory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Auto history list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Sales report</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -654,4 +566,4 @@ const AutoHistory = () => {
   );
 };
 
-export default AutoHistory;
+export default SalesReport;

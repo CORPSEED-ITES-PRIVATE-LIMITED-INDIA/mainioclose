@@ -197,7 +197,7 @@ const Leads = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
-  console.log('dskljghskjgsajgs',allLeadUser)
+  console.log("dskljghskjgsajgs", allLeadUser);
 
   const {
     control,
@@ -344,7 +344,7 @@ const Leads = () => {
             <Link to={`${lead?.id}/leadDetail`} className="font-semibold">
               {lead?.leadName || "-"}
             </Link>
-            <span className="text-sm text-gray-400">
+            <span className="text-xs text-gray-400">
               {dayjs(lead?.createDate).format("DD-MM-YYYY")}
             </span>
           </div>
@@ -352,8 +352,8 @@ const Leads = () => {
       case "contact":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{lead?.email || "-"}</span>
-            <span className="text-sm text-gray-400">
+            <span className="font-normal text-sm">{lead?.email || "-"}</span>
+            <span className="text-xs text-gray-400">
               {lead?.mobileNo || "-"}
             </span>
           </div>
@@ -367,25 +367,27 @@ const Leads = () => {
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">
+            <span className="font-semibold text-sm">
               {lead?.assignee?.fullName || "-"}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-xm text-gray-400">
               {lead?.assignee?.email || "-"}
             </span>
           </div>
         );
       case "industry":
-        return lead?.industries?.name || "-";
+        return <p className="text-sm">{lead?.industries?.name}</p> || "-";
       case "city":
-        return lead?.city || "-";
+        return <p className="text-sm">{lead?.city}</p> || "-";
       case "source":
-        return lead?.source || "-";
+        return <p className="text-sm">{lead?.source}</p> || "-";
       case "updatedBy":
         return (
-          <div>
-            <span className="font-normal">{lead?.updatedBy}</span>
-            <span className="font-normal text-muted-foreground">
+          <div className="flex flex-col gap-1">
+            <span className="font-normal text-sm">
+              {lead?.updatedBy?.fullName}
+            </span>
+            <span className="font-normal text-xs text-default-500">
               {lead?.updatedDate
                 ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
                 : "-"}
@@ -395,8 +397,8 @@ const Leads = () => {
       case "Address":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{lead.address || "-"}</span>
-            <span className="text-sm text-gray-400">
+            <span className="font-normal text-sm">{lead.address || "-"}</span>
+            <span className="text-xs text-default-500">
               {lead.city || ""},{lead?.state},{lead?.country}
             </span>
           </div>
@@ -1069,7 +1071,7 @@ const Leads = () => {
         topContent={topContent}
         topContentPlacement="outside"
         onSelectionChange={(e) => {
-          let keys = Array.from(e);
+          let keys = Array?.from(e);
           setSelectedKeys(keys);
         }}
         onSortChange={setSortDescriptor}
@@ -1077,11 +1079,11 @@ const Leads = () => {
         <TableHeader columns={headerColumns}>
           {(column) => (
             <TableColumn
-              key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
-              allowsSorting={column.sortable}
+              key={column?.uid}
+              align={column?.uid === "actions" ? "center" : "start"}
+              allowsSorting={column?.sortable}
             >
-              {column.name}
+              {column?.name}
             </TableColumn>
           )}
         </TableHeader>

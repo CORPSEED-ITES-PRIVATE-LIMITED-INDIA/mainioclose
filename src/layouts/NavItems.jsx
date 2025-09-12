@@ -28,6 +28,12 @@ export const navItems = [
         key: "autoHistory",
       },
       {
+        title: "Sales report",
+        icon: "",
+        url: "sales/salesReport",
+        key: "salesReport",
+      },
+      {
         title: "Automation status",
         icon: "",
         url: "sales/autoStatus",

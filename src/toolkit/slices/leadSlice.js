@@ -464,6 +464,38 @@ export const searchIvrLeads = createAsyncThunk(
   }
 );
 
+export const getSaleReportByFilter = createAsyncThunk(
+  "getSaleReportByFilter",
+  async ({ page, size, data }) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReport?page=${page}&size=${size}`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getSaleReportByFilterCount = createAsyncThunk(
+  "getSaleReportByFilterCount",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReportCount`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getSalesReportByFilterForExport = createAsyncThunk(
+  "getSalesReportByFilterForExport",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReportForExport`,data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -493,7 +525,11 @@ export const LeadSlice = createSlice({
     allLeadHistory: [],
     getSingleLeadTask: [],
     autoStatusList: [],
-    leadSearchList:[]
+    leadSearchList: [],
+    salesReportList: [],
+    salesReportListForExport: [],
+    salesReportCount: 0,
+    salesReportExportLoading: "",
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -758,49 +794,88 @@ export const LeadSlice = createSlice({
       state.autoExportLoading = "error";
     });
 
-    builder.addCase(getAllHistory.pending, (state, action) => {
+    builder.addCase(getAllHistory.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllHistory.fulfilled, (state, action) => {
       state.allLeadHistory = action.payload;
       state.loading = "success";
     });
-    builder.addCase(getAllHistory.rejected, (state, action) => {
+    builder.addCase(getAllHistory.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAllTaskData.pending, (state, action) => {
+    builder.addCase(getAllTaskData.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllTaskData.fulfilled, (state, action) => {
       state.loading = "success";
       state.getSingleLeadTask = action.payload;
     });
-    builder.addCase(getAllTaskData.rejected, (state, action) => {
+    builder.addCase(getAllTaskData.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(getAutomationLeads.pending, (state, action) => {
+    builder.addCase(getAutomationLeads.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAutomationLeads.fulfilled, (state, action) => {
       state.loading = "success";
       state.autoStatusList = action.payload;
     });
-    builder.addCase(getAutomationLeads.rejected, (state, action) => {
+    builder.addCase(getAutomationLeads.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(searchIvrLeads.pending, (state, action) => {
+    builder.addCase(searchIvrLeads.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(searchIvrLeads.fulfilled, (state, action) => {
       state.loading = "success";
       state.leadSearchList = action.payload;
     });
-    builder.addCase(searchIvrLeads.rejected, (state, action) => {
+    builder.addCase(searchIvrLeads.rejected, (state) => {
       state.loading = "rejected";
       state.leadSearchList = [];
+    });
+
+    builder.addCase(getSalesReportByFilterForExport.pending, (state) => {
+      state.salesReportExportLoading = "pending";
+    });
+    builder.addCase(
+      getSalesReportByFilterForExport.fulfilled,
+      (state, action) => {
+        state.salesReportExportLoading = "success";
+        state.salesReportListForExport = action.payload;
+      }
+    );
+    builder.addCase(getSalesReportByFilterForExport.rejected, (state) => {
+      state.salesReportExportLoading = "rejected";
+      state.salesReportListForExport = [];
+    });
+
+    builder.addCase(getSaleReportByFilter.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSaleReportByFilter.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportList = action.payload;
+    });
+    builder.addCase(getSaleReportByFilter.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportList = [];
+    });
+
+    builder.addCase(getSaleReportByFilterCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSaleReportByFilterCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportCount = action.payload;
+    });
+    builder.addCase(getSaleReportByFilterCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportCount = 0;
     });
   },
 });

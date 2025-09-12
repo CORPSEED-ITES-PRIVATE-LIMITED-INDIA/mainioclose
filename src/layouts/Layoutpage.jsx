@@ -4,15 +4,31 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Badge, BreadcrumbItem, Breadcrumbs, Button } from "@heroui/react";
 import { ThemeSwitch } from "../components/theme-switch";
-import { accoountNavItems, navItems, qualityNavItems, salesNavItems } from "./NavItems";
+import {
+  accoountNavItems,
+  navItems,
+  qualityNavItems,
+  salesNavItems,
+} from "./NavItems";
 import { useSelector } from "react-redux";
 
 
+const getNavItemsByDepartment = (department) => {
+  let items = {
+    Sales: salesNavItems,
+    "Quality Team": qualityNavItems,
+    Accounts: accoountNavItems,
+    NA: navItems,
+  };
+  return items[department];
+};
 
 const Layoutpage = () => {
   const location = useLocation();
-  const user=useSelector((state)=>state.auth.currentUser)
-  const roles=useSelector((state)=>state.auth.getDepartmentDetail)
+  // const user = useSelector((state) => state.auth.currentUser);
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department
+  );
   const pathname = location.pathname;
   const segments = pathname.split("/");
   const userIndex = segments.indexOf("erp");
@@ -20,13 +36,11 @@ const Layoutpage = () => {
   const [collapsed, setCollapsed] = useState(false);
 
 
-  console.log("dsjhgsjgsjsgj",user, roles)
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          items={qualityNavItems}
+          items={getNavItemsByDepartment(department)}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
         />

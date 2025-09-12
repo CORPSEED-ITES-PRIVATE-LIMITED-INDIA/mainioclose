@@ -19,6 +19,7 @@ import Vendors from "../sales/vendors/vendors";
 import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import AutomationStatus from "../sales/leads/AutomationStatus";
+import SalesReport from "../sales/leads/SalesReport";
 
 const SalesModuleRouting = () => {
   return (
@@ -50,6 +51,7 @@ const SalesModuleRouting = () => {
       <Route path="sales/proposal" element={<AllProposal />} />
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />
       <Route path="sales/autoHistory" element={<AutoHistory />} />
+      <Route path="sales/salesReport" element={<SalesReport />} />
       <Route path="sales/autoStatus" element={<AutomationStatus />} />
       <Route
         path="sales/autoHistory/:leadId/leadDetail"
