@@ -5,6 +5,7 @@ import {
   getAllOutFlowList,
 } from "../../toolkit/slices/organizationSlice";
 import {
+  Button,
   DateRangePicker,
   Table,
   TableBody,
@@ -15,12 +16,14 @@ import {
 } from "@heroui/react";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import { parseDate, toCalendarDate } from "@internationalized/date";
+import { parseZonedDateTime } from "@internationalized/date";
+import { CSVLink } from "react-csv";
+import { FileUp } from "lucide-react";
 
 const CashFlow = () => {
   const dispatch = useDispatch();
-  const today = dayjs().format("YYYY-MM-DD");
-  const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DD");
+  const today = dayjs().format("YYYY-MM-DDTHH:mm");
+  const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
   const inFlowList = useSelector((state) => state.organization.inFlowList);
   const outFlowList = useSelector((state) => state.organization.outFlowList);
   const [dateRange, setDateRange] = useState({
@@ -40,6 +43,27 @@ const CashFlow = () => {
   useEffect(() => {
     dispatch(getAllOutFlowList(dateRange2));
   }, [dispatch, dateRange2]);
+
+  const exportData = (inFlowList || [])?.map((row) => ({
+    "Group name": row?.groupName,
+    "Total credit": row?.totalCredit,
+    "Total debit": row?.totalDebit,
+    "Total amount": row?.totalAmount,
+  }));
+  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
+
+  const exportData2 = (outFlowList || [])?.map((row) => ({
+    "Group name": row?.groupName,
+    "Total credit": row?.totalCredit,
+    "Total debit": row?.totalDebit,
+    "Total amount": row?.totalAmount,
+  }));
+  const headers2 = [
+    "Group name",
+    "Total credit",
+    "Total debit",
+    "Total amount",
+  ];
 
   const columns = [
     {
@@ -103,27 +127,41 @@ const CashFlow = () => {
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
           <h1 className="font-medium text-2xl">In flow</h1>
-          <DateRangePicker
-            showMonthAndYearPickers
-            label="Date range"
-            className="w-[35%]"
-            value={{
-              start: parseDate(dateRange?.startDate),
-              end: parseDate(dateRange?.endDate),
-            }}
-            onChange={(value) => {
-              const formattedStart = value.start
-                ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
-                : null;
-              const formattedEnd = value.end
-                ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
-                : null;
-              setDateRange({
-                startDate: formattedStart,
-                endDate: formattedEnd,
-              });
-            }}
-          />
+          <div className="flex gap-2 items-center">
+            <DateRangePicker
+              hideTimeZone
+              visibleMonths={2}
+              size="md"
+              value={{
+                start: parseZonedDateTime(
+                  `${dateRange?.startDate}[Asia/kolkata]`
+                ),
+                end: parseZonedDateTime(`${dateRange?.endDate}[Asia/kolkata]`),
+              }}
+              onChange={(value) => {
+                const formattedStart = value.start
+                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                  : null;
+                const formattedEnd = value.end
+                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                  : null;
+                setDateRange({
+                  startDate: formattedStart,
+                  endDate: formattedEnd,
+                });
+              }}
+            />
+            <CSVLink
+              className="text-white"
+              data={exportData}
+              headers={headers}
+              filename={"inflow.csv"}
+            >
+              <Button size="sm" isIconOnly>
+                <FileUp className="h-4 w-4" />
+              </Button>
+            </CSVLink>
+          </div>
         </div>
         <Table
           classNames={{
@@ -149,27 +187,41 @@ const CashFlow = () => {
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
           <h1 className="font-medium text-2xl">Out flow</h1>
-          <DateRangePicker
-            showMonthAndYearPickers
-            label="Date range"
-            className="w-[35%]"
-            value={{
-              start: parseDate(dateRange2?.startDate),
-              end: parseDate(dateRange2?.endDate),
-            }}
-            onChange={(value) => {
-              const formattedStart = value.start
-                ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
-                : null;
-              const formattedEnd = value.end
-                ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
-                : null;
-              setDateRange2({
-                startDate: formattedStart,
-                endDate: formattedEnd,
-              });
-            }}
-          />
+          <div className="flex gap-2 items-center">
+            <DateRangePicker
+              hideTimeZone
+              visibleMonths={2}
+              size="md"
+              value={{
+                start: parseZonedDateTime(
+                  `${dateRange2?.startDate}[Asia/kolkata]`
+                ),
+                end: parseZonedDateTime(`${dateRange2?.endDate}[Asia/kolkata]`),
+              }}
+              onChange={(value) => {
+                const formattedStart = value.start
+                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                  : null;
+                const formattedEnd = value.end
+                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                  : null;
+                setDateRange2({
+                  startDate: formattedStart,
+                  endDate: formattedEnd,
+                });
+              }}
+            />
+            <CSVLink
+              className="text-white"
+              data={exportData2}
+              headers={headers2}
+              filename={"outflow.csv"}
+            >
+              <Button size="sm" isIconOnly>
+                <FileUp className="h-4 w-4" />
+              </Button>
+            </CSVLink>
+          </div>
         </div>
 
         <Table>

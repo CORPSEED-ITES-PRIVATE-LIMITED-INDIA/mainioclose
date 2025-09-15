@@ -162,6 +162,7 @@ const BankStatement = () => {
             });
             dispatch(getAllBankStatements());
             onOpenChange(false);
+            reset(defaultValues);
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -172,6 +173,15 @@ const BankStatement = () => {
     },
     [dispatch]
   );
+
+  const exportData = (data || [])?.map((row) => ({
+    Name: row?.name,
+    "Payment date": dayjs(row?.paymentDate).format("DD-MM-YYYY"),
+    "Total amount": row?.totalAmount,
+    "Remaining amount": row?.leftAmount,
+  }));
+
+  const headers = ["Name", "Payment date", "Total amount", "Remaining amount"];
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -260,6 +270,16 @@ const BankStatement = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <CSVLink
+              className="text-white"
+              data={exportData}
+              headers={headers}
+              filename={"bank-statement.csv"}
+            >
+              <Button isIconOnly>
+                <FileUp className="h-5 w-5" />
+              </Button>
+            </CSVLink>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">

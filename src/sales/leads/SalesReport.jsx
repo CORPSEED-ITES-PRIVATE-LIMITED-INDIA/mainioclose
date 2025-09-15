@@ -38,11 +38,9 @@ export const columns = [
   { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadname", sortable: true },
   { name: "STATUS", uid: "status" },
-  { name: "CLIENT", uid: "client" },
   { name: "ASSIGNEE", uid: "assignee" },
-  { name: "PREV.ASSIGNEE", uid: "prevassignee" },
   { name: "ASS.DATE", uid: "assignDate" },
-  { name: "DESCRIPTION", uid: "description" },
+  { name: "REOPEN-BY", uid: "reopenBy" },
 ];
 
 export function capitalize(s) {
@@ -53,10 +51,9 @@ const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "leadname",
   "status",
-  "client",
   "assignee",
-  "prevassignee",
   "assignDate",
+  "reopenBy"
 ];
 
 const SalesReport = () => {
@@ -162,33 +159,6 @@ const SalesReport = () => {
             <span className="font-normal">{rowData.status || "-"}</span>
           </div>
         );
-      case "client":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData.clientEmail || "-"}</span>
-            <span className="text-sm text-muted-foreground">
-              {rowData.mobileNo}
-            </span>
-          </div>
-        );
-      case "assignee":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData.currName || "-"}</span>
-            <span className="text-sm text-muted-foreground">
-              {rowData.currEmail}
-            </span>
-          </div>
-        );
-      case "prevassignee":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData.paName || "-"}</span>
-            <span className="text-sm text-muted-foreground">
-              {rowData.paEmail}
-            </span>
-          </div>
-        );
       case "assignDate":
         return (
           <div className="flex flex-col">
@@ -197,10 +167,10 @@ const SalesReport = () => {
             </span>
           </div>
         );
-      case "description":
+      case "reopenBy":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.description}</span>
+            <span className="font-normal">{rowData.reopenBy?.fullName}</span>
           </div>
         );
 
@@ -278,6 +248,7 @@ const SalesReport = () => {
     "Current Assignee person": row?.currName,
     "Current Assignee email": row?.currEmail,
     "Created Date": dayjs(row?.assignDate).format("YYYY-MM-DD"),
+    "Reopen by": row?.reopenBy?.fullName,
   }));
 
   const headers = [
@@ -294,6 +265,7 @@ const SalesReport = () => {
     "Current Assignee person",
     "Current Assignee email",
     "Created Date",
+    "Reopen by",
   ];
 
   const topContent = React.useMemo(() => {
@@ -522,7 +494,7 @@ const SalesReport = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, page, pages, hasSearchFilter,count]);
+  }, [selectedKeys, page, pages, hasSearchFilter, count]);
 
   return (
     <>

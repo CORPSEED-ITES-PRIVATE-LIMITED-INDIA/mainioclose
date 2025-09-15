@@ -15,11 +15,12 @@ import {
   Pagination,
   DateRangePicker,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, FileUp, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllDailyBookRecord } from "../../toolkit/slices/organizationSlice";
 import dayjs from "dayjs";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { parseZonedDateTime } from "@internationalized/date";
+import { CSVLink } from "react-csv";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -66,10 +67,11 @@ const DailyBook = () => {
     column: "age",
     direction: "ascending",
   });
-  const [dateRange, setDateRange] = useState(() => {
-    const end = today(getLocalTimeZone());
-    const start = end.subtract({ months: 6 });
-    return { start, end };
+  const today = dayjs().format("YYYY-MM-DDTHH:mm");
+  const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
+  const [dateRange, setDateRange] = useState({
+    startDate: twoMonthsAgo,
+    endDate: today,
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
@@ -116,6 +118,26 @@ const DailyBook = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
+
+  const exportData = (data || [])?.map((row) => ({
+    "Ledger name": row?.ledgerName,
+    "Company name": row?.companyName,
+    "Voucher type": row?.voucherType?.name,
+    "Payment type": row?.paymentType,
+    Date: dayjs(rowData?.date).format("DD-MM-YYYY"),
+    "Credit amount": row?.creditAmount,
+    "Debit amount": row?.debitAmount,
+  }));
+
+  const headers = [
+    "Ledger name",
+    "Company name",
+    "Voucher type",
+    "Payment type",
+    "Date",
+    "Credit amount",
+    "Debit amount",
+  ];
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -220,7 +242,41 @@ const DailyBook = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <div><DateRangePicker value={dateRange} onChange={setDateRange} /></div>
+            <CSVLink
+              className="text-white"
+              data={exportData}
+              headers={headers}
+              filename={"daybook.csv"}
+            >
+              <Button variant="flat">
+                <FileUp className="h-4 w-4" />
+                Export
+              </Button>
+            </CSVLink>
+            <DateRangePicker
+              hideTimeZone
+              visibleMonths={2}
+              size="md"
+              value={{
+                start: parseZonedDateTime(
+                  `${dateRange?.startDate}[Asia/kolkata]`
+                ),
+                end: parseZonedDateTime(`${dateRange?.endDate}[Asia/kolkata]`),
+              }}
+              onChange={(value) => {
+                const formattedStart = value.start
+                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                  : null;
+                const formattedEnd = value.end
+                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                  : null;
+                setDateRange({
+                  startDate: formattedStart,
+                  endDate: formattedEnd,
+                });
+              }}
+            />
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -249,7 +305,7 @@ const DailyBook = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} daily book items
+            Total {count} day book items
           </span>
           <div className="flex gap-4">
             <div className="flex gap-1">
@@ -345,7 +401,7 @@ const DailyBook = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Daily book list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Day book list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
