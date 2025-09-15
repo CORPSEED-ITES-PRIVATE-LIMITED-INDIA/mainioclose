@@ -22,8 +22,8 @@ const Assets = () => {
     (state) => state.account.balanceSheetAssetsList
   );
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD"),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm"),
+    endDate: dayjs().format("YYYY-MM-DDTHH:mm"),
   });
 
   useEffect(() => {
@@ -111,6 +111,9 @@ const Assets = () => {
           <RangePicker
             size="small"
             allowClear={true}
+            showTime={{ format: "HH:mm" }}
+            placement="bottomRight"
+            format="YYYY-MM-DD HH:mm"
             presets={rangePresets}
             value={[
               dateRange?.startDate ? dayjs(dateRange?.startDate) : "",

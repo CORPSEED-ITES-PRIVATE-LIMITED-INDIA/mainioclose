@@ -1,4 +1,12 @@
-import { Button, Flex, Input, Modal, notification, Typography } from "antd";
+import {
+  Button,
+  Flex,
+  Input,
+  Modal,
+  notification,
+  Popconfirm,
+  Typography,
+} from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import "../Accounts.scss";
 import { useDispatch, useSelector } from "react-redux";
@@ -128,6 +136,8 @@ const Voucher = () => {
       cgst: ledgerDetail?.sgst,
     }));
   };
+
+  const handleDeleteVoucher = () => {};
 
   const handleEditVoucher = (value) => {
     setEditData(value);
@@ -280,6 +290,19 @@ const Voucher = () => {
     //     </Button>
     //   ),
     // },
+    {
+      dataIndex: "edit",
+      title: "Edit",
+      render: (_, data) => (
+        <Popconfirm
+          title="Delete."
+          description="Are you sure to delete the item ?."
+          onConfirm={handleEditVoucher(data?.id)}
+        >
+          <Button size="small">Delete</Button>
+        </Popconfirm>
+      ),
+    },
   ];
 
   const exportData = (voucherListForExport || [])?.map((row) => ({

@@ -64,21 +64,17 @@ const SalesReport = () => {
   useEffect(() => {
     dispatch(getAllLeadUser(userid));
     dispatch(getAllStatusData());
-    dispatch(getAllDepartment())
+    dispatch(getAllDepartment());
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(
-      getSaleReportByFilter({ ...paginationData, data: dateFilter })
-    );
+    dispatch(getSaleReportByFilter({ ...paginationData, data: dateFilter }));
     dispatch(getSaleReportByFilterCount(dateFilter));
   }, [dispatch]);
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(
-        getSaleReportByFilter({ ...paginationData, data: dateFilter })
-      );
+      dispatch(getSaleReportByFilter({ ...paginationData, data: dateFilter }));
       setPaginationData({ size: size, page: dataPage });
     },
     [dispatch, userid, dateFilter]
@@ -128,34 +124,10 @@ const SalesReport = () => {
       title: "Manual",
       render: (data) => (data ? "Manual" : "Auto"),
     },
-
-    {
-      dataIndex: "mobileNo",
-      title: "Client mobile",
-    },
     {
       dataIndex: "assignee",
       title: "Assignee name",
       render: (_, data) => <Text>{data?.currName}</Text>,
-    },
-    {
-      dataIndex: "email",
-      title: "Assignee email",
-      render: (_, data) => <Text>{data?.currEmail}</Text>,
-    },
-    {
-      dataIndex: "paName",
-      title: "Previous assignee name",
-      render: (_, data) => <Text>{data?.paName}</Text>,
-    },
-    {
-      dataIndex: "previousemail",
-      title: "Previous assignee email",
-      render: (_, data) => <Text>{data?.paEmail}</Text>,
-    },
-    {
-      dataIndex: "clientEmail",
-      title: "Client email",
     },
     {
       title: "Status",
@@ -166,6 +138,13 @@ const SalesReport = () => {
       title: "Description",
       dataIndex: "description",
       render: (_, data) => <OverFlowText>{data?.description}</OverFlowText>,
+    },
+    {
+      title: "Reopen by",
+      dataIndex: "reopenBy",
+      render: (_, data) => (
+        <OverFlowText>{data?.reopenBy?.fullName}</OverFlowText>
+      ),
     },
     {
       title: "Assigned date",
@@ -190,6 +169,7 @@ const SalesReport = () => {
     "Current Assignee person": row?.currName,
     "Current Assignee email": row?.currEmail,
     "Created Date": dayjs(row?.assignDate).format("YYYY-MM-DD"),
+    "Reopen by": row?.reopenBy?.fullName,
   }));
 
   const headers = [
@@ -206,12 +186,11 @@ const SalesReport = () => {
     "Current Assignee person",
     "Current Assignee email",
     "Created Date",
+    "Reopen by"
   ];
 
   const handleApplyFilter = () => {
-    dispatch(
-      getSaleReportByFilter({ ...paginationData, data: dateFilter })
-    );
+    dispatch(getSaleReportByFilter({ ...paginationData, data: dateFilter }));
     dispatch(getSaleReportByFilterCount(dateFilter));
     dispatch(getSalesReportByFilterForExport(dateFilter))
       .then((resp) => {

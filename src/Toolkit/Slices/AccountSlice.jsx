@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { postQuery } from "../../API/PostQuery";
 import { getQuery } from "../../API/GetQuery";
 import { putQuery } from "../../API/PutQuery";
+import { deleteQuery } from "../../API/DeleteQuery";
 
 export const createVoucherType = createAsyncThunk(
   "createVoucherType",
@@ -583,6 +584,16 @@ export const getAllVouchersForExport = createAsyncThunk("", async () => {
   );
   return response.data;
 });
+
+export const deleteVoucherById = createAsyncThunk(
+  "deleteVoucherById",
+  async (id) => {
+    const response = await deleteQuery(
+      `/accountService/api/v1/voucher/deleteVoucherById?id=${id}`
+    );
+    return response.data;
+  }
+);
 
 const AccountSlice = createSlice({
   name: "account",

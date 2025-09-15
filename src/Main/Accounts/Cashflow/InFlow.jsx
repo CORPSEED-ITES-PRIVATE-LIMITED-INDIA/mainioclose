@@ -15,13 +15,13 @@ const InFlow = () => {
   const [filteredData, setFilteredData] = useState([]);
   const inFlowList = useSelector((state) => state.account.inFlowList);
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD'),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm"),
+    endDate: dayjs().format("YYYY-MM-DDTHH:mm"),
   });
 
   useEffect(() => {
     dispatch(getAllInFlowList(dateRange));
-  }, [dispatch,dateRange]);
+  }, [dispatch, dateRange]);
 
   useEffect(() => {
     setFilteredData(inFlowList);
@@ -62,7 +62,6 @@ const InFlow = () => {
     <Flex vertical gap={12} style={{ width: "100%" }}>
       <Flex className="vouchers-header" justify="space-between">
         <Text className="heading-text">In flow</Text>
-        
       </Flex>
 
       <Flex justify="space-between" align="center" className="vouchers-header">
@@ -77,6 +76,9 @@ const InFlow = () => {
         <RangePicker
           size="small"
           allowClear={true}
+          showTime={{ format: "HH:mm" }}
+          placement="bottomRight"
+          format="YYYY-MM-DD HH:mm"
           presets={rangePresets}
           value={[
             dateRange?.startDate ? dayjs(dateRange?.startDate) : "",

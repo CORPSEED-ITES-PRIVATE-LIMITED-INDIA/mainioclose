@@ -15,8 +15,8 @@ const OutFlow = () => {
   const [outFilteredData, setOutFilteredData] = useState([]);
   const outFlowList = useSelector((state) => state.account.outFlowList);
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD'),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm"),
+    endDate: dayjs().format("YYYY-MM-DDTHH:mm"),
   });
 
   useEffect(() => {
@@ -75,6 +75,9 @@ const OutFlow = () => {
         <RangePicker
           size="small"
           allowClear={true}
+          showTime={{ format: "HH:mm" }}
+          placement="bottomRight"
+          format="YYYY-MM-DD HH:mm"
           presets={rangePresets}
           value={[
             dateRange?.startDate ? dayjs(dateRange?.startDate) : "",

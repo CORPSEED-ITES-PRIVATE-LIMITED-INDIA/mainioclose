@@ -103,6 +103,9 @@ const Profit = () => {
           <RangePicker
             size="small"
             allowClear={true}
+            showTime={{ format: "HH:mm" }}
+            placement="bottomRight"
+            format="YYYY-MM-DD HH:mm"
             presets={rangePresets}
             value={[
               dateRange?.startDate ? dayjs(dateRange?.startDate) : "",

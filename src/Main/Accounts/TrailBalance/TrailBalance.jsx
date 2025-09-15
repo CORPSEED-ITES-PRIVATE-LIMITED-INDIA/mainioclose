@@ -19,8 +19,8 @@ const TrailBalance = () => {
     (state) => state.account.trailBalanceList
   );
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD"),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm"),
+    endDate: dayjs().format("YYYY-MM-DDTHH:mm"),
   });
   useEffect(() => {
     dispatch(getAllTrailBalance(dateRange));
@@ -110,6 +110,9 @@ const TrailBalance = () => {
               size="small"
               allowClear={true}
               presets={rangePresets}
+              showTime={{ format: "HH:mm" }}
+              placement="bottomRight"
+              format="YYYY-MM-DD HH:mm"
               value={[
                 dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
                 dateRange?.endDate ? dayjs(dateRange?.endDate) : "",

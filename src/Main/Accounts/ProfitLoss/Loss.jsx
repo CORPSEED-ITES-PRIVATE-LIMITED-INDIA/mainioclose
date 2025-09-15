@@ -101,6 +101,9 @@ const Loss = () => {
           </CSVLink>
           <RangePicker
             size="small"
+            showTime={{ format: "HH:mm" }}
+            placement="bottomRight"
+            format="YYYY-MM-DD HH:mm"
             allowClear={true}
             presets={rangePresets}
             value={[

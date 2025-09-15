@@ -3,9 +3,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllBalanceSheetLiabilities,
-} from "../../../Toolkit/Slices/AccountSlice";
+import { getAllBalanceSheetLiabilities } from "../../../Toolkit/Slices/AccountSlice";
 import { rangePresets } from "../../Common/Commons";
 import dayjs from "dayjs";
 import { CSVLink } from "react-csv";
@@ -24,8 +22,8 @@ const Liabilities = () => {
     (state) => state.account.balanceSheetLiabilitiesList
   );
   const [dateRange, setDateRange] = useState({
-    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD"),
+    startDate: dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm"),
+    endDate: dayjs().format("YYYY-MM-DDTHH:mm"),
   });
 
   useEffect(() => {
@@ -47,13 +45,12 @@ const Liabilities = () => {
     setFilteredData(filtered);
   };
 
-  const exportData = (balanceSheetLiabilitiesList||[])?.map((row) => ({
+  const exportData = (balanceSheetLiabilitiesList || [])?.map((row) => ({
     "Group name": row?.groupName,
     "Total credit": row?.totalCredit,
     "Total debit": row?.totalDebit,
     "Total amount": row?.totalAmount,
   }));
-
 
   const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 
@@ -115,6 +112,9 @@ const Liabilities = () => {
           <RangePicker
             size="small"
             allowClear={true}
+            showTime={{ format: "HH:mm" }}
+            placement="bottomRight"
+            format="YYYY-MM-DD HH:mm"
             presets={rangePresets}
             value={[
               dateRange?.startDate ? dayjs(dateRange?.startDate) : "",
