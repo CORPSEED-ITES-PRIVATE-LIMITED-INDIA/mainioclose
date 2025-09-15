@@ -457,11 +457,9 @@ const Estimate = () => {
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
-                  console.log("dskjfhdkjbdjbdj   000000", item);
                   if (item === "paymentRegister") {
                     handleActionsPress(rowData);
                   } else if (item === "viewEstimate") {
-                    console.log("dskjfhdkjbdjbdj   111111", item);
                     handleViewEstimate(rowData);
                   }
                 }}
@@ -657,7 +655,7 @@ const Estimate = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id || item.companyId}>
               {(columnKey) => (

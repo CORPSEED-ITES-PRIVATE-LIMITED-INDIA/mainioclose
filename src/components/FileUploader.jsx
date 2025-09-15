@@ -138,8 +138,6 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
   }, []);
 
 
-  console.log('dfskljdflkjfkljdfh',files)
-
   return (
     <div className="w-full">
       <input

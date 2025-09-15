@@ -843,12 +843,6 @@ const CreateCompanyForm = ({
                           businessTypeList?.gstTypePrice?.find(
                             (item) => item.id == value
                           );
-                        console.log(
-                          "sdkjhdjkhdjk",
-                          value,
-                          businessTypeList?.gstTypePrice,
-                          foundObject
-                        );
                         setGstAndPanData({
                           pan: foundObject?.panPresent || false,
                           gst: foundObject?.gstPresent || false,

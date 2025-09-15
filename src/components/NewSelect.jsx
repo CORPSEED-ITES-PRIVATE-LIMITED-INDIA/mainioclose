@@ -161,7 +161,6 @@ const NewSelect = ({
           return (
             <div className="flex flex-wrap gap-2 mt-4">
               {items.map((item) => {
-                console.log("sdjkgsjkgjsgs",item)
                 return (
                   <div
                     key={item?.key}

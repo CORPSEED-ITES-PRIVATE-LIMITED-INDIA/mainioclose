@@ -33,6 +33,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   createVoucher,
+  deleteVoucherById,
   getAllLedger,
   getAllLedgerType,
   getAllVoucher,
@@ -71,6 +72,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 const Voucher = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const deleteModal = useDisclosure();
   const data = useSelector((state) => state.organization.voucherList);
   const count = useSelector((state) => state.organization.voucherList)?.length;
   const ledgerList = useSelector((state) => state.organization.ledgerList);
@@ -106,6 +108,7 @@ const Voucher = () => {
     creditDebit: true,
   });
   const [editData, setEditData] = useState(null);
+  const [itemId, setItemId] = useState(null);
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
 
@@ -232,7 +235,6 @@ const Voucher = () => {
   };
 
   const handleSetGst = (ledgerDetail, voucherData) => {
-    console.log("asdkjsdbkjdsahb", ledgerDetail, voucherData);
     const creditCgstAmount =
       (Number(voucherData?.creditAmount) * Number(ledgerDetail?.cgst)) / 100;
     const creditSgstAmount =
@@ -302,6 +304,29 @@ const Voucher = () => {
       cgst: ledgerDetail?.sgst,
     }));
   };
+
+  const openDeleteModal = (id) => {
+    setItemId(id);
+    deleteModal.onOpen();
+  };
+
+  const handleDeleteVoucher = useCallback(() => {
+    dispatch(deleteVoucherById(itemId))
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Voucher deleted successfully !.",
+            color: "success",
+          });
+          dispatch(getAllVoucher());
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [dispatch, itemId]);
 
   const handleEdit = (value) => {
     setEditData(value);
@@ -441,9 +466,15 @@ const Voucher = () => {
                   if (Array.from(e)[0] == "edit") {
                     handleEdit(rowData);
                   }
+                  if (Array.from(e)[0] == "delete") {
+                    openDeleteModal(rowData?.id);
+                  }
                 }}
               >
-                <DropdownItem key="edit">Edit</DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
+                <DropdownItem key="delete" color="danger">
+                  Delete
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -522,7 +553,15 @@ const Voucher = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" endContent={<Plus />} onPress={onOpen}>
+            <Button
+              color="primary"
+              endContent={<Plus />}
+              onPress={() => {
+                onOpen();
+                setEditData(null);
+                setItemId(null)
+              }}
+            >
               Add voucher
             </Button>
           </div>
@@ -646,8 +685,6 @@ const Voucher = () => {
     );
   }, [voucherTypeListOption, ledgerDetail, voucherData]);
 
-  console.log("sdjhgkjsgkjs", voucherData);
-
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Vouchers list</h1>
@@ -676,7 +713,7 @@ const Voucher = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -798,6 +835,28 @@ const Voucher = () => {
                   </Button>
                 </ModalFooter>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteVoucher}>
+                  Yes
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

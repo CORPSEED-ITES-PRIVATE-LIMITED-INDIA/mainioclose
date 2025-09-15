@@ -103,7 +103,6 @@ const BalanceSheet = () => {
   }, []);
 
 
-  console.log('sdahgskjgskjgg',dateRange2)
 
 
   return (

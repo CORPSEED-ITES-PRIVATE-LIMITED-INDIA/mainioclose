@@ -384,7 +384,6 @@ const CompanyGstList = () => {
     );
   }, [selectedKeys, items.length, companyFilteration, pages, hasSearchFilter]);
 
-  console.log("dksghdjkgdjgdjg", formData);
 
   const handleFinish = useCallback(
     (values) => {
@@ -439,7 +438,7 @@ const CompanyGstList = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.stateId}>
               {(columnKey) => (
@@ -484,7 +483,6 @@ const CompanyGstList = () => {
                         valueKey={"id"}
                         value={formData?.industryId}
                         onChange={(e) => {
-                          console.log("sdfhdfjhkjgjhgd", e);
                           dispatch(getSubIndustryByIndustryId(e));
                           setFormData((prev) => ({ ...prev, industryId: e }));
                         }}
@@ -537,7 +535,6 @@ const CompanyGstList = () => {
                         valueKey={"id"}
                         value={formData?.industrydataId}
                         onChange={(e) => {
-                          console.log("adsjhbdsaljhsaldkjhsdk", e);
                           setFormData((prev) => ({
                             ...prev,
                             industrydataId: e,

@@ -430,7 +430,7 @@ const CompanyUnits = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.companyId}>
               {(columnKey) => (
@@ -475,7 +475,6 @@ const CompanyUnits = () => {
                         valueKey={"id"}
                         value={formData?.industryId}
                         onChange={(e) => {
-                          console.log("sdfhdfjhkjgjhgd", e);
                           dispatch(getSubIndustryByIndustryId(e));
                           setFormData((prev) => ({ ...prev, industryId: e }));
                         }}
@@ -528,7 +527,6 @@ const CompanyUnits = () => {
                         valueKey={"id"}
                         value={formData?.industrydataId}
                         onChange={(e) => {
-                          console.log("adsjhbdsaljhsaldkjhsdk", e);
                           setFormData((prev) => ({
                             ...prev,
                             industrydataId: e,
