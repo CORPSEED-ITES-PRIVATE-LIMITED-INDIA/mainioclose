@@ -14,6 +14,7 @@ import { Icon } from "@iconify/react";
 import CommonTable from "../../../components/CommonTable";
 import {
   createVoucher,
+  deleteVoucherById,
   getAllLedger,
   getAllVoucher,
   getAllVouchersForExport,
@@ -137,7 +138,36 @@ const Voucher = () => {
     }));
   };
 
-  const handleDeleteVoucher = () => {};
+  const handleDeleteVoucher = (id) => {
+    dispatch(deleteVoucherById(id))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          notification.success({ message: "Voucher deleted successfully !." });
+          dispatch(getAllVoucher());
+          setOpenModal(false);
+          setRenderedGstData([]);
+          setVoucherData({
+            companyName: "",
+            ledgerId: null,
+            ledgerTypeId: null,
+            voucherTypeId: null,
+            productId: null,
+            creditAmount: 0,
+            debitAmount: 0,
+            createDate: 0,
+            paymentType: null,
+            igst: "",
+            cgst: "",
+            sgst: "",
+            cgstsgst: false,
+            creditDebit: true,
+          });
+        } else {
+          notification.error({ message: "Something went wrong !." });
+        }
+      })
+      .catch(() => notification.error({ message: "Something went wrong !." }));
+  };
 
   const handleEditVoucher = (value) => {
     setEditData(value);
@@ -297,7 +327,7 @@ const Voucher = () => {
         <Popconfirm
           title="Delete."
           description="Are you sure to delete the item ?."
-          onConfirm={handleEditVoucher(data?.id)}
+          onConfirm={() => handleDeleteVoucher(data?.id)}
         >
           <Button size="small">Delete</Button>
         </Popconfirm>
