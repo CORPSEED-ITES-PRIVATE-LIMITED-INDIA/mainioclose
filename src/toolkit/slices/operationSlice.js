@@ -87,9 +87,31 @@ export const getOperationProjectDetailById = createAsyncThunk(
 
 export const getRequiredDocumentsByProductId = createAsyncThunk(
   "getRequiredDocumentsByProductId",
-  async ({ userId, productId, projectId}) => {
-    const response = await api.get(`/api/required-documents/project/${projectId}/product/${productId}?userId=${userId}`);
-    return response.data
+  async ({ userId, productId, projectId }) => {
+    const response = await api.get(
+      `/api/required-documents/project/${projectId}/product/${productId}?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const updateMilestoneAssignment = createAsyncThunk(
+  "updateMilestoneAssignment",
+  async (assignmentId) => {
+    const response = await api.put(
+      `/api/milestone-assignments/${assignmentId}/status`
+    );
+    return response.data;
+  }
+);
+
+export const updateMilestoneReAssignment = createAsyncThunk(
+  "updateMilestoneReAssignment",
+  async (assignmentId) => {
+    const response = await api.put(
+      `/api/milestone-assignments/${assignmentId}/reassign`
+    );
+    return response.data;
   }
 );
 
@@ -101,7 +123,7 @@ const OperationSlice = createSlice({
     userMappedWithProductList: [],
     mileStoneList: [],
     operationProjectDetail: [],
-    requiredDoucmentListOfProduct:[]
+    requiredDoucmentListOfProduct: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {

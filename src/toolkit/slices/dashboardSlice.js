@@ -81,6 +81,50 @@ export const getLeadDataMonthWise = createAsyncThunk(
   }
 );
 
+export const getLeadsDistributionStatusWise = createAsyncThunk(
+  "getLeadsDistributionStatusWise",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesDashboard/getAllLeadCountStatusWise`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const projectMontWiseDataForGraph = createAsyncThunk(
+  "projectMontWiseDataForGraph",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesDashboard/getAllProjectMonthWise`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getLeadCategoryWise = createAsyncThunk(
+  "getLeadCategoryWise",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesDashboard/getAllTypeLeadCount`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getTopSellLeadsData = createAsyncThunk(
+  "getTopSellLeadsData",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesDashboard/getAllTopSellLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const DashboardSlice = createSlice({
   name: "dashboard",
   initialState: {
@@ -92,7 +136,11 @@ const DashboardSlice = createSlice({
     totalProjectCountForGraph: 0,
     totalUserCountForGraph: 0,
     totalCompanyForGraph: 0,
-    leadMonthWiseData:[]
+    leadMonthWiseData: [],
+    leadStatusWiseData: [],
+    projectDataForGraph: [],
+    leadDataCategoryWise: [],
+    topSellLeadsList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -128,58 +176,105 @@ const DashboardSlice = createSlice({
       state.loading = "rejected";
     });
 
-    builder.addCase(getTotalLeadCountForGraph.pending, (state, action) => {
+    builder.addCase(getTotalLeadCountForGraph.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getTotalLeadCountForGraph.fulfilled, (state, action) => {
       state.loading = "success";
       state.totalLeadCountForGraph = action?.payload;
     });
-    builder.addCase(getTotalLeadCountForGraph.rejected, (state, action) => {
+    builder.addCase(getTotalLeadCountForGraph.rejected, (state) => {
       state.loading = "error";
     });
 
-    builder.addCase(getTotalProjectCounts.pending, (state, action) => {
+    builder.addCase(getTotalProjectCounts.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getTotalProjectCounts.fulfilled, (state, action) => {
       state.loading = "success";
       state.totalProjectCountForGraph = action?.payload;
     });
-    builder.addCase(getTotalProjectCounts.rejected, (state, action) => {
+    builder.addCase(getTotalProjectCounts.rejected, (state) => {
       state.loading = "error";
     });
 
-    builder.addCase(totalUserCount.pending, (state, action) => {
+    builder.addCase(totalUserCount.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(totalUserCount.fulfilled, (state, action) => {
       state.loading = "success";
       state.totalUserCountForGraph = action?.payload;
     });
-    builder.addCase(totalUserCount.rejected, (state, action) => {
+    builder.addCase(totalUserCount.rejected, (state) => {
       state.loading = "error";
     });
 
-    builder.addCase(totalCompanyForGraph.pending, (state, action) => {
+    builder.addCase(totalCompanyForGraph.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(totalCompanyForGraph.fulfilled, (state, action) => {
       state.loading = "success";
       state.totalCompanyForGraph = action?.payload;
     });
-    builder.addCase(totalCompanyForGraph.rejected, (state, action) => {
+    builder.addCase(totalCompanyForGraph.rejected, (state) => {
       state.loading = "error";
     });
 
-    builder.addCase(getLeadDataMonthWise.pending, (state, action) => {
+    builder.addCase(getLeadDataMonthWise.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getLeadDataMonthWise.fulfilled, (state, action) => {
       state.loading = "success";
       state.leadMonthWiseData = action?.payload;
     });
-    builder.addCase(getLeadDataMonthWise.rejected, (state, action) => {
+    builder.addCase(getLeadDataMonthWise.rejected, (state) => {
+      state.loading = "error";
+    });
+
+    builder.addCase(getLeadsDistributionStatusWise.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getLeadsDistributionStatusWise.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.leadStatusWiseData = action?.payload;
+      }
+    );
+    builder.addCase(getLeadsDistributionStatusWise.rejected, (state) => {
+      state.loading = "error";
+    });
+
+    builder.addCase(projectMontWiseDataForGraph.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(projectMontWiseDataForGraph.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectDataForGraph = action?.payload;
+    });
+    builder.addCase(projectMontWiseDataForGraph.rejected, (state) => {
+      state.loading = "error";
+    });
+
+    builder.addCase(getLeadCategoryWise.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getLeadCategoryWise.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadDataCategoryWise = action?.payload;
+    });
+    builder.addCase(getLeadCategoryWise.rejected, (state, action) => {
+      state.loading = "error";
+    });
+
+    builder.addCase(getTopSellLeadsData.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTopSellLeadsData.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.topSellLeadsList = action?.payload;
+    });
+    builder.addCase(getTopSellLeadsData.rejected, (state, action) => {
       state.loading = "error";
     });
   },

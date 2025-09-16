@@ -56,7 +56,7 @@ const Organizations = () => {
           <Tab key="ledger" title="Ledger" />
           <Tab key="voucher" title="Voucher" />
           <Tab key="orgEstimate" title="Estimate" />
-          <Tab key="dailyBook" title="Daily book" />
+          <Tab key="dayBook" title="Day book" />
           <Tab key="bankStatement" title="Bank statement" />
           <Tab key="paymentRegister" title="Payment register" />
           <Tab key="allInvoice" title="All invoice" />
