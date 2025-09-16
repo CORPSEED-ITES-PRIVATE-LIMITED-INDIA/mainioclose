@@ -20,7 +20,6 @@ const Login = () => {
       dispatch(getCurrentUser(values))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            console.log('dfjhjksdhkdfjj',resp)
             if (resp?.payload?.id !== undefined) {
               setLoading("fulfilled");
               dispatch(getDepartmentOfUser(resp?.payload?.id)).then(
@@ -91,7 +90,6 @@ const Login = () => {
           onSubmit={(e) => {
             e.preventDefault();
             let data = Object.fromEntries(new FormData(e.currentTarget));
-            console.log("datataatatat", data);
             handleLoginUsers(data);
           }}
         >

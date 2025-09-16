@@ -326,7 +326,7 @@ export const getAllProfitList = createAsyncThunk(
   "getAllProfitList",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllProfit?startDate=${startDate}&endDate=${endDate}`,
+      `/accountService/api/v1/cashFlow/getAllProfit?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
@@ -336,7 +336,7 @@ export const getAllLossList = createAsyncThunk(
   "getAllLossList",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllLoss?startDate=${startDate}&endDate=${endDate}`,
+      `/accountService/api/v1/cashFlow/getAllLoss?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
@@ -382,6 +382,15 @@ export const getAllBalanceSheetAssets = createAsyncThunk(
   }
 );
 
+export const deleteVoucherById = createAsyncThunk(
+  "deleteVoucherById",
+  async (id) => {
+    const response = await api.delete(
+      `/accountService/api/v1/voucher/deleteVoucherById?id=${id}`
+    );
+    return response.data;
+  }
+);
 
 const OrganizationSlice = createSlice({
   name: "organization",
@@ -402,7 +411,7 @@ const OrganizationSlice = createSlice({
     dailybookDetail: {},
     bankStatementList: [],
     allPaymentRegisterList: [],
-    paymentRegistercont: null,
+    paymentRegistercont: 0,
     allInvoiceList: [],
     unBillList: [],
     salesInvoiceList: [],

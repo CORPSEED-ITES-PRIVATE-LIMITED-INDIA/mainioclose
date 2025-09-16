@@ -173,6 +173,7 @@ const Leads = () => {
   });
   const deleteModal = useDisclosure();
   const filterPopOver = useDisclosure();
+  const actionPopOver = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initialFilterValues = {
     userId: userId,
@@ -196,8 +197,6 @@ const Leads = () => {
   const [itemId, setItemId] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
-
-  console.log("dskljghskjgsajgs", allLeadUser);
 
   const {
     control,
@@ -538,6 +537,7 @@ const Leads = () => {
             statusId: null,
             assigneId: null,
           });
+          actionPopOver.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -545,7 +545,14 @@ const Leads = () => {
       .catch(() => {
         addToast({ title: "Something went wrong !.", color: "danger" });
       });
-  }, [dispatch, selectedKeys, userId, assignedLeadInfo, allMultiFilterData]);
+  }, [
+    dispatch,
+    selectedKeys,
+    userId,
+    assignedLeadInfo,
+    allMultiFilterData,
+    actionPopOver,
+  ]);
 
   const handleSort = (sortBy, sortDirection) => {
     const updatedData = { ...allMultiFilterData, sortBy, sortDirection };
@@ -570,7 +577,12 @@ const Leads = () => {
           />
 
           <div className="flex gap-3">
-            <Popover size="lg" showArrow>
+            <Popover
+              size="lg"
+              showArrow
+              isOpen={actionPopOver.isOpen}
+              onOpenChange={(e) => actionPopOver.onOpenChange(e)}
+            >
               <PopoverTrigger>
                 <Button variant="flat" endContent={<Zap />}>
                   Action
@@ -585,7 +597,7 @@ const Leads = () => {
                     >
                       Lead actions
                     </h3>
-                    <p className="text-muted-foreground w-full mb-2">
+                    <p className="text-default-500 text-sm w-full mb-2">
                       {selectedKeys?.length === 0
                         ? "Please select the table rows for action ."
                         : `${selectedKeys?.length} rows are selected`}{" "}
@@ -628,13 +640,16 @@ const Leads = () => {
                       >
                         Delete
                       </Button>
-                      <Button
-                        color="primary"
-                        isDisabled={selectedKeys?.length === 0}
-                        onPress={handleMultipleAssignedLeads}
-                      >
-                        Send
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button onPress={actionPopOver.onClose}>Cancel</Button>
+                        <Button
+                          color="primary"
+                          isDisabled={selectedKeys?.length === 0}
+                          onPress={handleMultipleAssignedLeads}
+                        >
+                          Send
+                        </Button>
+                      </div>
                     </div>
                   </>
                 )}
@@ -977,6 +992,7 @@ const Leads = () => {
     selectedKeys,
     heirarchyUserList,
     filterPopOver,
+    actionPopOver,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -1087,7 +1103,7 @@ const Leads = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (

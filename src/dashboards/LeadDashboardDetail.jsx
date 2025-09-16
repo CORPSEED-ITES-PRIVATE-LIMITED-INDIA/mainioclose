@@ -10,8 +10,6 @@ const LeadDashboardDetail = () => {
   const [yearStr, monthName] = monthDate?.split("-");
 
 
-  console.log('djhdsjhgjhgsj',monthDate)
-
   useEffect(() => {
     if (monthDate) {
       const year = parseInt(yearStr);
@@ -28,8 +26,6 @@ const LeadDashboardDetail = () => {
         currentUserId: userId,
         userId: userId,
       };
-
-      console.log('dgasdgasdfgsdfsdfh',startOfMonth,monthIndex,year,monthIndex)
 
 
       dispatch(getLeadDataMonthWise(data));

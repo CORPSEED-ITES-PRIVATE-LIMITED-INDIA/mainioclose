@@ -263,7 +263,6 @@ const UsersList = () => {
   }, [watch, errors]);
 
   const onSubmit = (values) => {
-    console.log("Form submitted:", values);
     if (edit) {
       values.id = data?.id;
       let tempObj = {
@@ -326,7 +325,6 @@ const UsersList = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             const temp = resp?.payload?.data?.data;
-            console.log("sdjkgsjkgsjkg", temp);
             const obj = {
               id: temp.userId,
               ...values,
@@ -740,7 +738,7 @@ const UsersList = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No users found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id || item.companyId}>
               {(columnKey) => (
@@ -872,9 +870,7 @@ const UsersList = () => {
                             selectionMode="single"
                             selectedKeys={field.value ? [field.value] : []}
                             onSelectionChange={(keys) => {
-                              console.log("dkjshjksgjkg", keys);
                               const value = Array.from(keys)[0];
-                              console.log("dkjshjksgjkg", keys, value);
                               if (value) {
                                 field.onChange(value);
                                 dispatch(getDesiginationById(value));
