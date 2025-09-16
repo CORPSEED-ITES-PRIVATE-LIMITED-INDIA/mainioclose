@@ -1,4 +1,3 @@
-import React from "react";
 import { Route } from "react-router-dom";
 import CompanyApprovals from "../accounts/CompanyApprovals";
 import PaymentApprovals from "../accounts/PaymentApprovals";
@@ -42,7 +41,7 @@ export const AccountsModuleRouting = () => {
         />
         <Route path="voucher" element={<Voucher />} />
         <Route path="orgEstimate" element={<OrganizationEstimate />} />
-        <Route path="dailyBook" element={<DailyBook />} />
+        <Route path="dayBook" element={<DailyBook />} />
         <Route path="bankStatement" element={<BankStatement />} />
         <Route path="paymentRegister" element={<PaymentRegister />} />
         <Route path="allInvoice" element={<AllInvoice />} />
@@ -87,7 +86,7 @@ export const accountLoginModuleRouting = () => {
         path="accounts/organizations/orgEstimate"
         element={<OrganizationEstimate />}
       />
-      <Route path="accounts/organizations/dailyBook" element={<DailyBook />} />
+      <Route path="accounts/organizations/dayBook" element={<DailyBook />} />
       <Route path="accounts/organizations/bankStatement" element={<BankStatement />} />
       <Route
         path="accounts/organizations/paymentRegister"
