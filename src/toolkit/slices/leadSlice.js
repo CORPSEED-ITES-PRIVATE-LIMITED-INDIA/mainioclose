@@ -490,7 +490,38 @@ export const getSalesReportByFilterForExport = createAsyncThunk(
   "getSalesReportByFilterForExport",
   async (data) => {
     const response = await api.post(
-      `/leadService/api/v1/salesReport/getAllSalesAssigneeReportForExport`,data
+      `/leadService/api/v1/salesReport/getAllSalesAssigneeReportForExport`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const handleViewHistory = createAsyncThunk(
+  "viewHistory",
+  async ({ userId, leadId }) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/viewHistoryCreate?userId=${userId}&leadId=${leadId}`
+    );
+    return response.data;
+  }
+);
+
+export const handleFlagByQualityTeam = createAsyncThunk(
+  "handleFlagByQualityTeam",
+  async ({ currentUerId, leadId, isMarked }) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/addReopenByQuality?currentUerId=${currentUerId}&leadId=${leadId}&isMarked=${isMarked}`
+    );
+    return response.data;
+  }
+);
+
+export const docsUploadListInEstimate = createAsyncThunk(
+  "docsUploadListInEstimate",
+  async (estimateId) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getRequiredDocByEstimate?estimateId=${estimateId}`
     );
     return response.data;
   }
@@ -530,6 +561,7 @@ export const LeadSlice = createSlice({
     salesReportListForExport: [],
     salesReportCount: 0,
     salesReportExportLoading: "",
+    docsListInEstimate: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -876,6 +908,16 @@ export const LeadSlice = createSlice({
     builder.addCase(getSaleReportByFilterCount.rejected, (state) => {
       state.loading = "rejected";
       state.salesReportCount = 0;
+    });
+
+    builder.addCase(docsUploadListInEstimate.pending, (state) => {
+      state.docsListInEstimate = [];
+    });
+    builder.addCase(docsUploadListInEstimate.fulfilled, (state, action) => {
+      state.docsListInEstimate = action?.payload;
+    });
+    builder.addCase(docsUploadListInEstimate.rejected, (state) => {
+      state.docsListInEstimate = [];
     });
   },
 });

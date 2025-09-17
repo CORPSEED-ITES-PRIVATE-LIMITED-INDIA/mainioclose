@@ -30,6 +30,7 @@ import {
   addToast,
   Listbox,
   ListboxItem,
+  Badge,
 } from "@heroui/react";
 import {
   ArrowDownNarrowWide,
@@ -40,6 +41,7 @@ import {
   ArrowUpWideNarrow,
   ChevronDown,
   EllipsisVertical,
+  Flag,
   ListFilter,
   Plus,
   Search,
@@ -54,6 +56,8 @@ import {
   getAllLeadsForExport,
   getAllLeadUser,
   handleDeleteSingleLead,
+  handleFlagByQualityTeam,
+  handleViewHistory,
   multiAssignedLeads,
   searchLeads,
 } from "../../toolkit/slices/leadSlice";
@@ -73,11 +77,18 @@ import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlic
 import { CSVLink } from "react-csv";
 import dayjs from "dayjs";
 
+const getRowClassName = (item) => {
+  if (!item.view) {
+    return "bg-default-200";
+  }
+  return "";
+};
+
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
+  { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadName", sortable: true },
   { name: "CONTACT", uid: "contact" },
-  { name: "STATUS", uid: "status", sortable: true },
+  { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "UPDATED BY", uid: "updatedBy" },
   { name: "SOURCE", uid: "source" },
@@ -157,9 +168,10 @@ const Leads = () => {
     (state) => state.dashboard.dashboardUsers
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const department = useSelector((state) => state.auth.getDepartmentDetail);
   const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState([]);
+  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
@@ -251,6 +263,17 @@ const Leads = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const handleSelectionChange = (selection) => {
+    if (selection === "all") {
+      // If 'all' is selected, create a Set of all keys from your data
+      const allKeys = new Set(sortedItems.map((item) => item.id));
+      setSelectedKeys(allKeys);
+    } else {
+      // The selection is already a Set, so you can directly set it
+      setSelectedKeys(selection);
+    }
+  };
+
   const exportData = allLeadsForExport?.map((row) => ({
     Id: row?.id,
     "Lead name": row?.leadName,
@@ -308,6 +331,8 @@ const Leads = () => {
     "Created Date",
   ];
 
+  console.log("jdhdkjgdjdjhvdjhdv", department);
+
   const openDeleteModal = (id) => {
     setItemId(id);
     deleteModal.onOpen();
@@ -335,17 +360,69 @@ const Leads = () => {
       });
   }, [userId, dispatch, allMultiFilterData, itemId]);
 
+  const handleFlag = useCallback(
+    (data) => {
+      dispatch(
+        handleFlagByQualityTeam({
+          currentUerId: userId,
+          leadId: data?.id,
+          isMarked: data?.reopenByQuality ? false : true,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Lead status updated successfully !.",
+              color: "success",
+            });
+            dispatch(getAllLeadsByFilter(allMultiFilterData));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    },
+    [dispatch, userId, allMultiFilterData]
+  );
+
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {
       case "leadName":
         return (
-          <div className="flex flex-col">
-            <Link to={`${lead?.id}/leadDetail`} className="font-semibold">
-              {lead?.leadName || "-"}
-            </Link>
-            <span className="text-xs text-gray-400">
-              {dayjs(lead?.createDate).format("DD-MM-YYYY")}
-            </span>
+          <div className="flex  gap-1">
+            {department?.department === "Quality Team" && (
+              <Flag
+                className="h-4 w-4 cursor-pointer"
+                color={lead?.reopenByQuality ? "red" : "black"}
+                onClick={() => handleFlag(lead)}
+              />
+            )}
+
+            <div className="flex flex-col">
+              <Link
+                to={`${lead?.id}/leadDetail`}
+                className="font-semibold"
+                onClick={() =>
+                  dispatch(handleViewHistory({ leadId: lead?.id, userId }))
+                }
+              >
+                {lead?.leadName || "-"}
+              </Link>
+              <div className="flex gap-3">
+                <Badge
+                  color={lead?.auto ? "success" : "danger"}
+                  content=""
+                  placement="center-left"
+                  shape="circle"
+                  size="sm"
+                />
+                <span className="text-xs text-gray-400">
+                  {dayjs(lead?.createDate).format("DD-MM-YYYY")}
+                </span>
+              </div>
+            </div>
           </div>
         );
       case "contact":
@@ -495,9 +572,10 @@ const Leads = () => {
     setAllMultiFilterData(initialFilterValues);
   }, [initialFilterValues, dispatch]);
 
+
   const handleDeleteMutipleLeads = useCallback(() => {
     let obj = {
-      leadId: selectedKeys,
+      leadId: Array.from(selectedKeys),
       updatedById: Number(userId),
     };
     dispatch(deleteMultipleLeads(obj))
@@ -520,7 +598,7 @@ const Leads = () => {
 
   const handleMultipleAssignedLeads = useCallback(() => {
     let obj = {
-      leadIds: selectedKeys,
+      leadIds: Array.from(selectedKeys),
       updatedById: userId,
       ...assignedLeadInfo,
     };
@@ -598,9 +676,9 @@ const Leads = () => {
                       Lead actions
                     </h3>
                     <p className="text-default-500 text-sm w-full mb-2">
-                      {selectedKeys?.length === 0
+                      {selectedKeys?.size === 0
                         ? "Please select the table rows for action ."
-                        : `${selectedKeys?.length} rows are selected`}{" "}
+                        : `${selectedKeys?.size} rows are selected`}{" "}
                     </p>
                     <div className="flex flex-col gap-4 w-full">
                       <NewSelect
@@ -635,7 +713,7 @@ const Leads = () => {
                     <div className="flex justify-between gap-2 my-2 w-full">
                       <Button
                         color="danger"
-                        isDisabled={selectedKeys?.length === 0}
+                        isDisabled={selectedKeys?.size === 0}
                         onPress={handleDeleteMutipleLeads}
                       >
                         Delete
@@ -644,7 +722,7 @@ const Leads = () => {
                         <Button onPress={actionPopOver.onClose}>Cancel</Button>
                         <Button
                           color="primary"
-                          isDisabled={selectedKeys?.length === 0}
+                          isDisabled={selectedKeys?.size === 0}
                           onPress={handleMultipleAssignedLeads}
                         >
                           Send
@@ -1001,7 +1079,7 @@ const Leads = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys?.length} of ${count} selected`}
+            : `${selectedKeys?.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -1081,15 +1159,14 @@ const Leads = () => {
           wrapper:
             "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
         }}
-        selectedKeys={selectedKeys}
+        selectedKeys={
+          selectedKeys?.size === allMultiFilterData?.size ? "all" : selectedKeys
+        }
         selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={(e) => {
-          let keys = Array?.from(e);
-          setSelectedKeys(keys);
-        }}
+        onSelectionChange={handleSelectionChange}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -1105,7 +1182,7 @@ const Leads = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item?.id} className={getRowClassName(item)}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}

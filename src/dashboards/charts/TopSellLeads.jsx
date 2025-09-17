@@ -9,9 +9,16 @@ import {
 import {
   Button,
   DateRangePicker,
+  getKeyValue,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
 } from "@heroui/react";
 import { ListFilter } from "lucide-react";
 import NewSelect from "../../components/NewSelect";
@@ -22,7 +29,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "../../components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getTopSellLeadsData } from "../../toolkit/slices/dashboardSlice";
@@ -42,6 +56,9 @@ const TopSellLeads = () => {
   const today = dayjs().format("YYYY-MM-DDTHH:mm");
   const sixMonthsAgo = dayjs().subtract(6, "month").format("YYYY-MM-DDTHH:mm");
   const dashboardUsers = useSelector((state) => state.dashboard.dashboardUsers);
+  const topSellLeadsList = useSelector(
+    (state) => state.dashboard.topSellLeadsList
+  );
 
   const [topSellLeadsFilter, setTopSellLeadsFilter] = useState({
     toDate: sixMonthsAgo,
@@ -54,6 +71,8 @@ const TopSellLeads = () => {
   useEffect(() => {
     dispatch(getTopSellLeadsData(topSellLeadsFilter));
   }, [dispatch, topSellLeadsFilter]);
+
+  console.log("xkcnjxkhndsikhnsdihd", topSellLeadsList);
 
   return (
     <Card>
@@ -138,25 +157,40 @@ const TopSellLeads = () => {
           </div>
         </CardTitle>
       </CardHeader>
-
       <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={[]}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="name"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => dayjs(value).format("MMM")}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
-            <Bar dataKey="value" fill="var(--color-desktop)" radius={8} />
-          </BarChart>
-        </ChartContainer>
+        <Table
+          isHeaderSticky
+          aria-label="Example table with dynamic content"
+          classNames={{
+            wrapper: "max-h-[300px]",
+          }}
+        >
+          <TableHeader
+            columns={[
+              {
+                key: "key",
+                label: "SERVICE",
+              },
+              {
+                key: "Value",
+                label: "VALUE",
+              },
+            ]}
+          >
+            {(column) => (
+              <TableColumn key={column.key}>{column.label}</TableColumn>
+            )}
+          </TableHeader>
+          <TableBody items={topSellLeadsList?.slice(0, 10)}>
+            {(item) => (
+              <TableRow key={item.key}>
+                {(columnKey) => (
+                  <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                )}
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

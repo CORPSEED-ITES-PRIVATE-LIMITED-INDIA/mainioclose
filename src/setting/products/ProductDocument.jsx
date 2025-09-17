@@ -253,7 +253,7 @@ const ProductDocument = ({ data, details }) => {
                       />
                     )}
 
-                    {details?.serviceType === "central" && (
+                    {details?.serviceType === "state" && (
                       <NewSelect
                         isRequired={true}
                         errorMessage={"please select state"}

@@ -98,7 +98,7 @@ const AdminDashboards = () => {
           </CardContent>
         </Card>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
         <LeadDataChart />
         <LeadStatusChart />
         <TopSellLeads />
