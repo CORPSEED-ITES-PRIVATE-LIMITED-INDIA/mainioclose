@@ -12,7 +12,6 @@ import {
 } from "./NavItems";
 import { useSelector } from "react-redux";
 
-
 const getNavItemsByDepartment = (department) => {
   let items = {
     Sales: salesNavItems,
@@ -35,7 +34,6 @@ const Layoutpage = () => {
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
 
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
       <div className="flex flex-1 overflow-hidden">
@@ -43,6 +41,7 @@ const Layoutpage = () => {
           items={getNavItemsByDepartment(department)}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
+          className="hidden lg:flex"
         />
         <main className="w-full">
           <header className="dark:bg-black dark:text-white bg-white h-[40px] shadow px-4 py-2 flex items-center justify-between">
@@ -52,7 +51,7 @@ const Layoutpage = () => {
                 size="sm"
                 isIconOnly
                 onPress={() => setCollapsed(!collapsed)}
-                className="w-1"
+                className="w-1 lg:hidden"
               >
                 <PanelLeft color="gray" className="h-4 w-4" />
               </Button>
