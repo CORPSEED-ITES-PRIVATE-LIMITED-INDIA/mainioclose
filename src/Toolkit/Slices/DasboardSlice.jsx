@@ -68,9 +68,10 @@ export const getTotalProjectCounts = createAsyncThunk(
 
 export const getLeadsDataByMonth = createAsyncThunk(
   "getLeadsDataByMonth",
-  async ({ toDate, fromDate }) => {
-    const response = await getQuery(
-      `/leadService/api/v1/salesDashboard/getAllLeadsMonthWise?toDate=${toDate}&fromDate=${fromDate}`
+  async (data) => {
+    const response = await postQuery(
+      `/leadService/api/v1/salesDashboard/getAllLeadsMonthWise`,
+      data
     );
     return response.data;
   }
@@ -141,7 +142,7 @@ const DashboardSlice = createSlice({
     totalUserCountForGraph: 0,
     totalCompanyForGraph: 0,
     projectDataForGraph: [],
-    leadStatusWiseData:{}
+    leadStatusWiseData: {},
   },
   extraReducers: (builders) => {
     builders.addCase(projectGraphData.pending, (state, action) => {
@@ -265,16 +266,25 @@ const DashboardSlice = createSlice({
       state.loading = "error";
     });
 
-    builders.addCase(getLeadsDistributionStatusWise.pending, (state, action) => {
-      state.loading = "pending";
-    });
-    builders.addCase(getLeadsDistributionStatusWise.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.leadStatusWiseData = action?.payload;
-    });
-    builders.addCase(getLeadsDistributionStatusWise.rejected, (state, action) => {
-      state.loading = "error";
-    });
+    builders.addCase(
+      getLeadsDistributionStatusWise.pending,
+      (state, action) => {
+        state.loading = "pending";
+      }
+    );
+    builders.addCase(
+      getLeadsDistributionStatusWise.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.leadStatusWiseData = action?.payload;
+      }
+    );
+    builders.addCase(
+      getLeadsDistributionStatusWise.rejected,
+      (state, action) => {
+        state.loading = "error";
+      }
+    );
   },
 });
 

@@ -858,6 +858,10 @@ const LeadEstimate = ({ leadid }) => {
                         country: compUnit?.country,
                         pinCode: compUnit?.pinCode,
                       });
+                      setGstMand({
+                        gst: compUnit?.gstPresent,
+                        pan: compUnit?.panPresent,
+                      });
                     }}
                   />
                 </Form.Item>

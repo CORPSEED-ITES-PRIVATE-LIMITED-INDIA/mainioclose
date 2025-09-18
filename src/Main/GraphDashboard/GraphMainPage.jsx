@@ -16,11 +16,13 @@ import {
 import { Area, Column, Pie } from "@ant-design/plots";
 import dayjs from "dayjs";
 import { rangePresets } from "../Common/Commons";
+import { useParams } from "react-router-dom";
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 const GraphMainPage = () => {
   const dispatch = useDispatch();
+  const { userid } = useParams();
   const totalLeadCount = useSelector(
     (state) => state.dashboard.totalLeadCountForGraph
   );
@@ -49,6 +51,8 @@ const GraphMainPage = () => {
   const [leadMonthDate, setLeadMonthData] = useState({
     toDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
     fromDate: dayjs().format("YYYY-MM-DD"),
+    currentUserId: userid,
+    userId: userid,
   });
 
   const [leadCategoryDate, setLeadCategoryDate] = useState({
@@ -64,6 +68,8 @@ const GraphMainPage = () => {
   const [projectsDate, setProjectDates] = useState({
     toDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
     fromDate: dayjs().format("YYYY-MM-DD"),
+    currentUserId: userid,
+    userId: userid,
   });
 
   useEffect(() => {

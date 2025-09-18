@@ -264,6 +264,16 @@ export const createPurchaseOrder = createAsyncThunk(
   }
 );
 
+export const paymentRegisterRemainingAmount = createAsyncThunk(
+  "paymentRegisterRemainingAmount",
+  async (id) => {
+    const response = await getQuery(
+      `/accountService/api/v1/paymentRegister/getRemainingAmount?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllPaymentRegister = createAsyncThunk(
   "getAllPaymentRegister",
   async () => {
@@ -639,7 +649,8 @@ const AccountSlice = createSlice({
     outFlowList: [],
     balanceSheetLiabilitiesList: [],
     balanceSheetAssetsList: [],
-    voucherListForExport:[]
+    voucherListForExport: [],
+    remainingAmountDetail:{}
   },
   extraReducers: (builder) => {
     builder.addCase(getAllVoucherType.pending, (state, action) => {
@@ -1117,6 +1128,18 @@ const AccountSlice = createSlice({
     builder.addCase(getAllVouchersForExport.rejected, (state) => {
       state.loading = "rejected";
       state.voucherListForExport = [];
+    });
+
+    builder.addCase(paymentRegisterRemainingAmount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(paymentRegisterRemainingAmount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.remainingAmountDetail = action.payload;
+    });
+    builder.addCase(paymentRegisterRemainingAmount.rejected, (state) => {
+      state.loading = "rejected";
+      state.remainingAmountDetail = {};
     });
   },
 });

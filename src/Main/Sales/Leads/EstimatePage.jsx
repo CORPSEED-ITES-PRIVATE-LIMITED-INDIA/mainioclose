@@ -33,6 +33,7 @@ import {
   createPaymentRegister,
   createPurchaseOrder,
   getPaymentDetailListByEstimateId,
+  paymentRegisterRemainingAmount,
 } from "../../../Toolkit/Slices/AccountSlice";
 import { getAllUrlList } from "../../../Toolkit/Slices/LeadUrlSlice";
 import { paymentTermDays } from "../../Common/Commons";
@@ -46,6 +47,9 @@ const EstimatePage = () => {
   const estimateLoading = useSelector((state) => state.leads.estimateLoading);
   const estimateCount = useSelector((state) => state.leads.totalEstimateCount);
   const paymentList = useSelector((state) => state.account.paymentList);
+  const remainingAmountDetail = useSelector(
+    (state) => state.account.remainingAmountDetail
+  );
   const allLeadUrl = useSelector((prev) => prev?.leadurls.allUrlList);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
@@ -56,7 +60,9 @@ const EstimatePage = () => {
     page: 1,
     size: 50,
   });
-  const [paymentType, setPaymentType] = useState("Payment register");
+  const [paymentSelectionType, setPaymentSelectionType] =
+    useState("Payment register");
+  const [paymentType, setPaymentType] = useState("");
   const [gstsAmount, setGstsAmount] = useState({
     govermentGstPercent: 0,
     profesionalGstPercent: 0,
@@ -83,6 +89,7 @@ const EstimatePage = () => {
   const handleSetData = (data) => {
     setOpenModal(true);
     setEstimateData(data);
+    console.log("dskjhksdjhskhskhs", data);
     form.setFieldsValue({
       serviceName: data?.productName,
       profesionalGst: data?.profesionalGst ? data?.profesionalGst : 0,
@@ -92,6 +99,39 @@ const EstimatePage = () => {
       otherGst: data?.otherGst ? data?.otherGst : 0,
     });
   };
+
+  useEffect(() => {
+    if (!remainingAmountDetail?.primary) {
+      form.setFieldsValue({
+        professionalFees: remainingAmountDetail?.proffees,
+        govermentFees: remainingAmountDetail?.govfees,
+        otherFees: remainingAmountDetail?.otherFees,
+        serviceCharge: remainingAmountDetail?.serviceCharge,
+      });
+    }
+  }, [remainingAmountDetail,form]);
+
+  const handleSetPayment = useCallback(
+    (e) => {
+      if (e === "Partial") {
+        form.setFieldsValue({
+          professionalFees: estimateData?.professionalFees / 2,
+          govermentFees: estimateData?.govermentFees / 2,
+          otherFees: estimateData?.otherFees / 2,
+          serviceCharge: estimateData?.serviceCharge / 2,
+        });
+      }
+      if (e === "Fully") {
+        form.setFieldsValue({
+          professionalFees: estimateData?.professionalFees,
+          govermentFees: estimateData?.govermentFees,
+          otherFees: estimateData?.otherFees,
+          serviceCharge: estimateData?.serviceCharge,
+        });
+      }
+    },
+    [estimateData, form]
+  );
 
   const columns = [
     {
@@ -269,7 +309,7 @@ const EstimatePage = () => {
           onClick={() => {
             handleSetData(data);
             dispatch(getPaymentDetailListByEstimateId(data?.id));
-            console.log("dshajsdhaskljdasdj", data);
+            dispatch(paymentRegisterRemainingAmount(data?.id));
           }}
         >
           Add
@@ -331,7 +371,7 @@ const EstimatePage = () => {
 
   const handleSubmit = useCallback(
     (values) => {
-      if (paymentType === "Purchase order") {
+      if (paymentSelectionType === "Purchase order") {
         values.purchaseAttach = values?.purchaseAttach?.map(
           (item) => item?.response
         );
@@ -357,8 +397,11 @@ const EstimatePage = () => {
           .catch(() =>
             notification.error({ message: "Something went wrong !." })
           );
-      } else if (paymentType === "Payment register") {
+      } else if (paymentSelectionType === "Payment register") {
         values.doc = values?.doc?.map((item) => item?.response);
+        values.paymentType = values.paymentType
+          ? values.paymentType
+          : remainingAmountDetail?.paymentType;
         let obj = { ...values, ...gstsAmount, estimateId: estimateData?.id };
         dispatch(createPaymentRegister(obj))
           .then((resp) => {
@@ -378,8 +421,10 @@ const EstimatePage = () => {
           );
       }
     },
-    [form, dispatch, estimateData, gstsAmount]
+    [form, dispatch, estimateData, gstsAmount, remainingAmountDetail]
   );
+
+  console.log("dshdksjgsjgsjgs", remainingAmountDetail);
 
   return (
     <>
@@ -402,6 +447,7 @@ const EstimatePage = () => {
             <CommonTable
               data={filteredData}
               columns={columns}
+              rowKey={(row) => row?.id}
               scroll={{ y: "65vh", x: 5000 }}
               page={paginationData?.page}
               pageSize={paginationData?.size}
@@ -437,26 +483,29 @@ const EstimatePage = () => {
               gap: "16px",
             }}
           >
-            <Form.Item
-              label="Payment type"
-              name="paymentType"
-              rules={[
-                { required: true, message: "Please select payment type" },
-              ]}
-            >
-              <Select
-                onChange={(e) =>
-                  e === "Milestone"
-                    ? setIsMilestone(true)
-                    : setIsMilestone(false)
-                }
-                options={[
-                  { label: "Fully", value: "Fully" },
-                  { label: "Partial", value: "Partial" },
-                  { label: "Milestone", value: "Milestone" },
+            {remainingAmountDetail?.primary && (
+              <Form.Item
+                label="Payment type"
+                name="paymentType"
+                rules={[
+                  { required: true, message: "Please select payment type" },
                 ]}
-              />
-            </Form.Item>
+              >
+                <Select
+                  onChange={(e) => {
+                    setIsMilestone(e === "Milestone");
+                    handleSetPayment(e);
+                    setPaymentType(e);
+                  }}
+                  options={[
+                    { label: "Fully", value: "Fully" },
+                    { label: "Partial", value: "Partial" },
+                    { label: "Milestone", value: "Milestone" },
+                  ]}
+                />
+              </Form.Item>
+            )}
+
             {isMilestone && (
               <Form.Item
                 label="Document"
@@ -545,17 +594,17 @@ const EstimatePage = () => {
           >
             <Form.Item>
               <Select
-                value={paymentType}
+                value={paymentSelectionType}
                 options={[
                   { label: "Purchase order", value: "Purchase order" },
                   { label: "Payment register", value: "Payment register" },
                 ]}
-                onChange={(e) => setPaymentType(e)}
+                onChange={(e) => setPaymentSelectionType(e)}
               />
             </Form.Item>
           </div>
 
-          {paymentType === "Purchase order" ? (
+          {paymentSelectionType === "Purchase order" ? (
             <div
               style={{
                 display: "grid",
@@ -779,6 +828,9 @@ const EstimatePage = () => {
                 <InputNumber
                   style={{ width: "100%" }}
                   controls={false}
+                  disabled={
+                    paymentType === "Partial" || paymentType === "Fully"
+                  }
                   prefix={
                     <Icon icon="material-symbols:currency-rupee-rounded" />
                   }
@@ -815,6 +867,9 @@ const EstimatePage = () => {
                 <InputNumber
                   style={{ width: "100%" }}
                   controls={false}
+                  disabled={
+                    paymentType === "Partial" || paymentType === "Fully"
+                  }
                   prefix={
                     <Icon icon="material-symbols:currency-rupee-rounded" />
                   }
@@ -852,6 +907,9 @@ const EstimatePage = () => {
                 <InputNumber
                   style={{ width: "100%" }}
                   controls={false}
+                  disabled={
+                    paymentType === "Partial" || paymentType === "Fully"
+                  }
                   prefix={
                     <Icon icon="material-symbols:currency-rupee-rounded" />
                   }
@@ -884,6 +942,9 @@ const EstimatePage = () => {
                 <InputNumber
                   style={{ width: "100%" }}
                   controls={false}
+                  disabled={
+                    paymentType === "Partial" || paymentType === "Fully"
+                  }
                   prefix={
                     <Icon icon="material-symbols:currency-rupee-rounded" />
                   }
@@ -959,6 +1020,7 @@ const EstimatePage = () => {
                 name="doc"
                 getValueFromEvent={normFile}
                 valuePropName="fileList"
+                rules={[{ required: true, message: "please upload document" }]}
               >
                 <Upload
                   action="/leadService/api/v1/upload/uploadimageToFileSystem"
