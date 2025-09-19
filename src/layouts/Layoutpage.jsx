@@ -5,28 +5,31 @@ import { useState } from "react";
 import { Badge, BreadcrumbItem, Breadcrumbs, Button } from "@heroui/react";
 import { ThemeSwitch } from "../components/theme-switch";
 import {
-  accoountNavItems,
+  accountNavItems,
   navItems,
   qualityNavItems,
   salesNavItems,
 } from "./NavItems";
 import { useSelector } from "react-redux";
 
-const getNavItemsByDepartment = (department) => {
-  let items = {
+const getNavItemsByDepartment = (department, admin) => {
+  if (admin) return navItems;
+  const trimmed = department.trim();
+  const items = {
     Sales: salesNavItems,
     "Quality Team": qualityNavItems,
-    Accounts: accoountNavItems,
+    Accounts: accountNavItems,
     NA: navItems,
   };
-  return items[department];
+  return items[trimmed] || navItems;
 };
 
 const Layoutpage = () => {
   const location = useLocation();
-  // const user = useSelector((state) => state.auth.currentUser);
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
-    (state) => state.auth.getDepartmentDetail?.department
+    (state) => state?.auth?.getDepartmentDetail?.department
   );
   const pathname = location.pathname;
   const segments = pathname.split("/");
@@ -38,7 +41,7 @@ const Layoutpage = () => {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          items={getNavItemsByDepartment(department)}
+          items={getNavItemsByDepartment(department, adminRole)}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           className="hidden lg:flex"

@@ -1,7 +1,9 @@
 import { Button } from "@heroui/button";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import  { useRef } from "react";
+import { useRef } from "react";
+import logo from "../assets/CORPSEED.webp";
+import dayjs from "dayjs";
 
 const EstimateView = ({ details }) => {
   const pdfRef = useRef();
@@ -28,66 +30,95 @@ const EstimateView = ({ details }) => {
     pdf.save("estimate.pdf");
   };
   return (
-    <div class="container">
-      <div className="flex justify-end">
-        <Button onPress={generatePDF}>Pdf download</Button>
-      </div>
-      <div class="content">
+    <div className="max-h-[84vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
+      <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
+        {/* Product Name */}
         {details?.productName && (
-          <div class="flex align-center gap-4">
-            <strong>Product name</strong>
-            <span>:</span>
-            <span>{details.productName}</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-1">
+            <h3 className="font-semibold text-lg">Product name</h3>
+            <span className="hidden md:inline mx-1">:</span>
+            <p>{details?.productName}</p>
           </div>
         )}
 
-        <div class="flex gap-60">
+        {/* Contacts */}
+        <div className="flex flex-col md:flex-row md:gap-15 gap-6">
+          {/* Primary Contact */}
           {details?.primaryContact && (
-            <div class="card">
-              <div class="vertical gap-12">
-                <strong>Primary contact detail</strong>
-                <div class="vertical">
-                  <div class="space">
-                    <span>Name:</span>
-                    <span>{details.primaryContact.name}</span>
+            <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
+              <div className="flex flex-col gap-3">
+                <h4 className="font-semibold text-lg">
+                  Primary contact detail
+                </h4>
+                <div className="flex flex-col gap-2 text-gray-500">
+                  <div className="flex gap-2">
+                    <span>Name</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.primaryContact?.name}
+                    </span>
                   </div>
-                  <div class="space">
-                    <span>Email:</span>
-                    <span>{details.primaryContact.emails}</span>
+                  <div className="flex gap-2">
+                    <span>Email</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.primaryContact?.emails}
+                    </span>
                   </div>
-                  <div class="space">
-                    <span>Contact number:</span>
-                    <span>{details.primaryContact.contactNo}</span>
+                  <div className="flex gap-2">
+                    <span>Contact number</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.primaryContact?.contactNo}
+                    </span>
                   </div>
-                  <div class="space">
-                    <span>Whatsapp number:</span>
-                    <span>{details.primaryContact.whatsappNo}</span>
+                  <div className="flex gap-2">
+                    <span>Whatsapp number</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.primaryContact?.whatsappNo}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Secondary Contact */}
           {details?.secondaryContact && (
-            <div class="card">
-              <div class="vertical gap-12">
-                <strong>Secondary contact detail</strong>
-                <div class="vertical">
-                  <div class="space">
-                    <span>Name:</span>
-                    <span>{details.secondaryContact.name}</span>
+            <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
+              <div className="flex flex-col gap-3">
+                <h4 className="font-semibold text-lg">
+                  Secondary contact detail
+                </h4>
+                <div className="flex flex-col gap-2 text-gray-500">
+                  <div className="flex gap-2">
+                    <span>Name</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.secondaryContact?.name}
+                    </span>
                   </div>
-                  <div class="space">
-                    <span>Email:</span>
-                    <span>{details.secondaryContact.emails}</span>
+                  <div className="flex gap-2">
+                    <span>Email</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.secondaryContact?.emails}
+                    </span>
                   </div>
-                  <div class="space">
-                    <span>Contact number:</span>
-                    <span>{details.secondaryContact.contactNo}</span>
+                  <div className="flex gap-2">
+                    <span>Contact number</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.secondaryContact?.contactNo}
+                    </span>
                   </div>
-                  <div class="space">
-                    <span>Whatsapp number:</span>
-                    <span>{details.secondaryContact.whatsappNo}</span>
+                  <div className="flex gap-2">
+                    <span>Whatsapp number</span>
+                    <span>:</span>
+                    <span className="text-black">
+                      {details?.secondaryContact?.whatsappNo}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -95,178 +126,211 @@ const EstimateView = ({ details }) => {
           )}
         </div>
 
-        <div class="invoice-wrapper" ref={pdfRef}>
-          <div class="ribbon">
-            <span class="ribbon-text">
-              {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
-            </span>
+        {/* Main PDF Content */}
+        <div ref={pdfRef} className="relative">
+          {/* Badge */}
+          <div className="absolute left-0 top-0 bg-green-500 text-white px-3 py-1 rounded-r text-sm md:text-base z-10">
+            {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
           </div>
 
-          <div class="invoice-box">
-            <div class="flex space-between">
-              <div>
-                <img src={logo} alt="corpseed" />
-                <div>
-                  <small>Corpseed Ites Private Limited</small>
-                  <div>CN U74999UP2018PTC101873</div>
-                  <div>2nd floor, A-154A, A Block, sector 63</div>
-                  <div>Noida, Uttar Pradesh - 2013</div>
+          {/* Content Box */}
+          <div className="flex flex-col gap-6 p-6 md:p-10 shadow-md rounded-md mb-6 bg-white">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:justify-between">
+              <div className="flex flex-col gap-2">
+                <img
+                  src={logo}
+                  alt="corpseed"
+                  className="max-w-[100px] md:max-w-[130px]"
+                />
+                <div className="flex flex-col text-gray-500 text-sm md:text-base mt-2 leading-relaxed">
+                  <p className="font-medium">Corpseed Ites Private Limited</p>
+                  <p>CN U74999UP2018PTC101873</p>
+                  <p>GST : 09AAHCC4539J1ZC</p>
+                  <p>2nd floor, A-154A, A Block, sector 63</p>
+                  <p>Noida, Uttar Pradesh - 2013</p>
                 </div>
               </div>
 
-              <div class="vertical gap-24">
-                <div>
-                  <h4>
+              <div className="flex flex-row md:flex-col md:items-end gap-6 mt-6 md:mt-0 text-green-500">
+                <div className="flex flex-col items-start md:items-end">
+                  <h4 className="text-green-500 text-xl font-semibold">
                     {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
                   </h4>
                   <strong>{`#ESTD0${details?.id}`}</strong>
                 </div>
-                <div>
-                  <h4>Order No.</h4>
+                <div className="flex flex-col items-start md:items-end">
+                  <h4 className="text-green-500 text-xl font-semibold">
+                    Order No.
+                  </h4>
                   <strong>{details?.orderNumber}</strong>
                 </div>
               </div>
             </div>
 
-            <div>
-              <small>Bill To:</small>
-              <div class="vertical">
-                {details?.companyName && <strong>{details.companyName}</strong>}
-                {details?.address && <div>{details.address}</div>}
+            {/* Addresses and Dates */}
+            <div className="flex justify-between gap-6 md:gap-0 text-gray-500 text-sm md:text-base">
+              <div className="flex flex-col gap-4">
                 <div>
-                  {details?.city && <span>{details.city}, </span>}
-                  {details?.state && <span>{details.state}, </span>}
-                  {details?.country && <span>{details.country}</span>}
+                  <p className="font-semibold mb-1">Bill To :</p>
+                  <div className="font-bold leading-tight">
+                    {details?.companyName && <p>{details?.companyName}</p>}
+                    {details?.address && (
+                      <p className="font-normal">{details?.address}</p>
+                    )}
+                    <p className="font-normal">
+                      {[details?.city, details?.state, details?.country]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                    {details?.primaryPinCode && (
+                      <p>{details?.primaryPinCode}</p>
+                    )}
+                  </div>
                 </div>
-                {details?.primaryPinCode && <div>{details.primaryPinCode}</div>}
-              </div>
-            </div>
 
-            <div class="flex space-between">
-              <div class="vertical">
-                <small>Ship To:</small>
-                {details?.companyName && <div>{details.companyName}</div>}
-                {details?.secondaryAddress && (
-                  <div>{details.secondaryAddress}</div>
-                )}
                 <div>
-                  {details?.secondaryCity && (
-                    <span>{details.secondaryCity}, </span>
-                  )}
-                  {details?.secondaryState && (
-                    <span>{details.secondaryState}, </span>
-                  )}
-                  {details?.secondaryCountry && (
-                    <span>{details.secondaryCountry?.name}</span>
-                  )}
+                  <p className="font-semibold mb-1">Ship To :</p>
+                  <div className="leading-tight">
+                    {details?.companyName && <p>{details?.companyName}</p>}
+                    {details?.secondaryAddress && (
+                      <p>{details?.secondaryAddress}</p>
+                    )}
+                    <p>
+                      {[
+                        details?.secondaryCity,
+                        details?.secondaryState,
+                        details?.secondaryCountry?.name,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                    {details?.secondaryPinCode && (
+                      <p>{details?.secondaryPinCode}</p>
+                    )}
+                  </div>
                 </div>
-                {details?.secondaryPinCode && (
-                  <div>{details.secondaryPinCode}</div>
-                )}
               </div>
-              <div class="vertical">
-                <div>
-                  <span>Estimate Date:</span>{" "}
+
+              <div className="flex flex-col gap-2 text-gray-500 text-sm md:text-base whitespace-nowrap">
+                <div className="flex gap-2">
+                  <span className="font-semibold">Estimate Date:</span>
                   <span>
                     {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
                   </span>
                 </div>
-                <div>
-                  <span>Order Date:</span>{" "}
+                <div className="flex gap-2">
+                  <span className="font-semibold">Order Date:</span>
                   <span>{dayjs(details?.createDate).format("DD-MM-YYYY")}</span>
                 </div>
               </div>
             </div>
 
-            <div>
-              <table class="custom-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Item and description</th>
-                    <th>HSN</th>
-                    <th>Rate</th>
-                    <th>GST %</th>
-                    <th>GST Amount</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>
-                      <strong>{details?.productName}</strong>
-                    </td>
-                    <td>{details?.gstCode}</td>
-                    <td>{details?.actualPrice}</td>
-                    <td>{details?.gst}</td>
-                    <td>
-                      {(details?.actualPrice *
-                        details?.quantity *
-                        details?.gst) /
-                        100}
-                    </td>
-                    <td>{details?.totalPrice}</td>
-                  </tr>
-                  <tr class="total-row">
-                    <td colspan="6">Total</td>
-                    <td>
-                      <strong>{details?.totalPrice}</strong>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            {/* Table */}
+            <div className="overflow-x-auto">
+              {details?.Type === "Product" ? (
+                <table className="w-full border-collapse border border-black text-xs md:text-sm">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-1">#</th>
+                      <th className="border border-black p-1">
+                        Item and description
+                      </th>
+                      <th className="border border-black p-1">HSN</th>
+                      <th className="border border-black p-1">Rate/kg</th>
+                      <th className="border border-black p-1">Quantity (kg)</th>
+                      <th className="border border-black p-1">GST %</th>
+                      <th className="border border-black p-1">GST amount(₹)</th>
+                      <th className="border border-black p-1">Amount(₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {details?.products?.map((item, index) => (
+                      <tr key={index}>
+                        <td className="border border-black p-1 text-center">
+                          {index + 1}
+                        </td>
+                        <td className="border border-black p-1">
+                          {item?.name}
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {item?.hsnCode}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.ratePerKg}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.quantity}
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {item?.gstPercent}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.gstAmount}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.amount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full border-collapse border border-black text-xs md:text-sm">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-1">#</th>
+                      <th className="border border-black p-1">
+                        Item and description
+                      </th>
+                      <th className="border border-black p-1">HSN</th>
+                      <th className="border border-black p-1">Rate</th>
+                      <th className="border border-black p-1">GST %</th>
+                      <th className="border border-black p-1">GST amount</th>
+                      <th className="border border-black p-1">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {details?.services?.map((item, index) => (
+                      <tr key={index}>
+                        <td className="border border-black p-1 text-center">
+                          {index + 1}
+                        </td>
+                        <td className="border border-black p-1">
+                          {item?.name}
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {item?.hsnCode}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.rate}
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {item?.gstPercent}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.gstAmount}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {item?.amount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
+            {/* Total Amount in Words */}
             {details?.totalAmount > 0 && (
-              <div class="flex justify-end">
-                <span>Total in words:</span>
+              <div className="flex justify-end gap-1 text-gray-500 mt-4 text-sm md:text-base">
+                <span>Total in words :</span>
                 <span>{numWords(details?.totalAmount)}</span>
               </div>
             )}
 
-            <div>
-              <table class="gst-table">
-                <thead>
-                  <tr>
-                    <th>HSN</th>
-                    <th>SGST %</th>
-                    <th>CGST %</th>
-                    <th>IGST %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {details?.gstCode && (
-                    <tr>
-                      <td>{details?.gstCode}</td>
-                      <td>0.0%</td>
-                      <td>0.0%</td>
-                      <td>{details?.gst}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div class="vertical gap-8">
-              <div class="vertical">
-                <strong>Notes:</strong>
-                <small>
-                  This Estimate & price quotation is valid for 7 calendar days
-                  from the date of issue.
-                </small>
-                <small>{details?.invoiceNote}</small>
-                <small>Remark: {details?.getRemarkForOperation}</small>
-              </div>
-              <hr />
-              <div>
-                <small>
-                  Note: Government fee and corpseed professional fee may differ
-                  depending on any additional changes advised by the client in
-                  the application or due to changes in government policies.
-                </small>
-              </div>
-            </div>
+            {/* Additional Text Details (if any) */}
+            {/* Add here if you have other tables or details */}
           </div>
         </div>
       </div>

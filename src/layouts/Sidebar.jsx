@@ -30,6 +30,10 @@ import {
   PhoneCall,
   NotepadTextDashed,
   FileSearch2,
+  NotebookText,
+  BanknoteArrowDown,
+  Book,
+  ReceiptText,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -72,6 +76,10 @@ const icons = {
   PhoneCall,
   NotepadTextDashed,
   FileSearch2,
+  NotebookText,
+  BanknoteArrowDown,
+  ReceiptText,
+  Book
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {
@@ -103,7 +111,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
       </div>
 
       <nav className="p-3 space-y-1 font-medium text-neutral-700 dark:text-white max-h-[85vh] overflow-auto">
-        {items.map((item) => {
+        {items?.map((item) => {
           const Icon = item.icon ? icons[item.icon] : null;
           const isOpen = openMenu[item.key];
 
@@ -128,7 +136,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                     ))}
                 </div>
                 {!collapsed &&
-                  item.children &&
+                  item?.children &&
                   (isOpen ? (
                     <ChevronDown className="w-4 h-4 dark:text-white" />
                   ) : (
@@ -136,9 +144,9 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                   ))}
               </div>
 
-              {item.children && isOpen && !collapsed && (
+              {item?.children && isOpen && !collapsed && (
                 <div className="ml-6 space-y-1">
-                  {item.children.map((child) => (
+                  {item?.children?.map((child) => (
                     <Link
                       to={child.url}
                       key={child.key}

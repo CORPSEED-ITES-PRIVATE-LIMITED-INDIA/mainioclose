@@ -78,6 +78,32 @@ export const navItems = [
         url: "accounts/paymentApprovals",
         key: "paymentApprovals",
       },
+      {
+        title: "Bank statement",
+        url: "accounts/bankStatement",
+        key: "bankStatement",
+      },
+      {
+        title: "Payment register",
+        url: "accounts/paymentRegister",
+        key: "paymentRegister",
+      },
+      {
+        title: "All invoice",
+        url: "accounts/allInvoice",
+        key: "allInvoice",
+      },
+      {
+        title: "Unbilled",
+        url: "accounts/unbilled",
+        key: "unbilled",
+      },
+      {
+        title: "Estimate",
+        url: "accounts/orgEstimate",
+        key: "accounts/orgEstimate",
+        icon: "",
+      },
     ],
   },
   {
@@ -223,7 +249,7 @@ export const navItems = [
   },
 ];
 
-export const accoountNavItems = [
+export const accountNavItems = [
   {
     title: "Dashboard",
     icon: "LayoutDashboard",
@@ -249,6 +275,36 @@ export const accoountNavItems = [
     key: "paymentApprovals",
   },
   {
+    title: "Bank statement",
+    url: "accounts/bankStatement",
+    key: "bankStatement",
+    icon: "NotebookText",
+  },
+  {
+    title: "Payment register",
+    url: "accounts/paymentRegister",
+    key: "paymentRegister",
+    icon: "BanknoteArrowDown",
+  },
+  {
+    title: "All invoice",
+    url: "accounts/allInvoice",
+    key: "allInvoice",
+    icon: "FileText",
+  },
+  {
+    title: "Unbilled",
+    url: "accounts/unbilled",
+    key: "unbilled",
+    icon: "ReceiptText",
+  },
+  {
+    title: "Estimate",
+    url: "accounts/orgEstimate",
+    key: "accounts/orgEstimate",
+    icon: "Book",
+  },
+  {
     title: "Organization",
     icon: "Building2",
     url: "accounts/organizations",
@@ -270,35 +326,11 @@ export const accoountNavItems = [
         key: "voucher",
       },
       {
-        title: "Estimate",
-        url: "accounts/organizations/orgEstimate",
-        key: "accounts/orgEstimate",
-      },
-      {
         title: "Daily book",
         url: "accounts/organizations/dailyBook",
         key: "dailyBook",
       },
-      {
-        title: "Bank statement",
-        url: "accounts/organizations/bankStatement",
-        key: "bankStatement",
-      },
-      {
-        title: "Payment register",
-        url: "accounts/organizations/paymentRegister",
-        key: "paymentRegister",
-      },
-      {
-        title: "All invoice",
-        url: "accounts/organizations/allInvoice",
-        key: "allInvoice",
-      },
-      {
-        title: "Unbilled",
-        url: "accounts/organizations/unbilled",
-        key: "unbilled",
-      },
+
       {
         title: "Profit/Loss",
         url: "accounts/organizations/profitLoss",

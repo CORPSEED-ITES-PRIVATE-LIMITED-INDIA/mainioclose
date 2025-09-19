@@ -21,8 +21,28 @@ import {
   ModalBody,
   ModalFooter,
   DatePicker,
+  Tooltip,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  Textarea,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  EllipsisVertical,
+  FileText,
+  Mail,
+  MapPin,
+  Phone,
+  Search,
+  TrendingUp,
+  View,
+} from "lucide-react";
+import gstIcon from "../../assets/save.png";
+import panIcon from "../../assets/pan-card.png";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addBankDetails,
@@ -40,20 +60,22 @@ import {
   toCalendarDate,
   today,
 } from "@internationalized/date";
+import { inrCurrency } from "../../common";
+import { GstIcon, PanCardIcon } from "../../components/icons";
+import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
+import EstimateView from "../../components/EstimateView";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "IDENTITY", uid: "identity" },
-  { name: "SERVICE", uid: "serviceName" },
+  { name: "DATE", uid: "date" },
+  { name: "ESTIMATE", uid: "estimateNo" },
+  { name: "CLIENT", uid: "client" },
   { name: "COMPANY NAME", uid: "companyName" },
-  { name: "BILLING QUANTITY", uid: "billingQuantity" },
-  { name: "TOTAL AMOUNT", uid: "totalAmount" },
-  { name: "PROF.FEE", uid: "professionalFees" },
-  { name: "GOVT.FEE", uid: "govermentfees" },
-  { name: "SER.FEE", uid: "serviceCharge" },
-  { name: "OTH.FEE", uid: "otherFees" },
+  { name: "ORDERS AMOUNTS", uid: "orderAmounts" },
+  { name: "PAYMENT AMOUNTS", uid: "paymentAmounts" },
+  { name: "WORK %", uid: "workPercent" },
+  { name: "STATUS", uid: "status" },
   { name: "PAYMENT DATE", uid: "paymentDate" },
-  { name: "REMARK", uid: "remark" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -62,16 +84,15 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "identity",
-  "serviceName",
+  "date",
+  "estimateNo",
+  "client",
   "companyName",
-  "billingQuantity",
-  "totalAmount",
-  "professionalFees",
-  "govermentfees",
-  "serviceCharge",
-  "otherFees",
-  "paymentDate",
+  "orderAmounts",
+  "paymentAmounts",
+  "workPercent",
+  "status",
+  "workPercent",
   "actions",
 ];
 
@@ -94,10 +115,14 @@ const defaultValues = {
 const PaymentRegister = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const drawer = useDisclosure();
+  const estimateModal = useDisclosure();
+  const paymentModal = useDisclosure();
   const data = useSelector(
     (state) => state.organization.allPaymentRegisterList
   );
   const count = useSelector((state) => state.organization.paymentRegistercont);
+  const details = useSelector((state) => state.leads.estimateDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -110,6 +135,7 @@ const PaymentRegister = () => {
   });
   const [status, setStatus] = useState("all");
   const [page, setPage] = React.useState(1);
+  const [rowItem, setRowItem] = useState(null);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -133,13 +159,13 @@ const PaymentRegister = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
-
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item.serviceName.toLowerCase().includes(filterValue.toLowerCase())
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
-
     return filteredUsers;
   }, [data, filterValue]);
 
@@ -194,80 +220,93 @@ const PaymentRegister = () => {
     [dispatch]
   );
 
+  const handleViewEstimate = (rowData) => {
+    setRowItem(rowData);
+    dispatch(getEstimateByLeadId(rowData?.leadId));
+    estimateModal.onOpen();
+  };
+
+  const handlePaymentAction = (rowData) => {
+    setRowItem(rowData);
+    paymentModal.onOpen();
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "identity":
+      case "date":
         return (
           <div className="flex flex-col gap-1">
-            <span className="text-sm">Estimate id : {rowData?.estimateId}</span>
             <span className="text-sm">
-              Estimate no. : {rowData?.estimateNo}
-            </span>
-            <span className="text-sm">
-              Transation id : {rowData?.transactionId}
+              {" "}
+              {rowData?.estimateCreateDate
+                ? dayjs(rowData?.estimateCreateDate).format("DD-MM-YYYY")
+                : "DD-MM-YYYY"}{" "}
             </span>
           </div>
         );
-      case "serviceName":
+      case "estimateNo":
         return (
-          <p className="text-sm font-medium capitalize">
-            {rowData?.serviceName}
-          </p>
+          <div className="flex flex-col gap-1">
+            <span
+              className="text-sm text-primary-400 cursor-pointer"
+              onClick={() => handleViewEstimate(rowData)}
+            >
+              {" "}
+              {rowData?.estimateNo}
+            </span>
+          </div>
+        );
+      case "client":
+        return (
+          <Tooltip
+            content={
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2 items-center">
+                  <Mail className="w-4 h-4" />
+                  <span>rahul@121.com</span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <Phone className="w-4 h-4" />
+                  <span>7586421538</span>
+                </div>
+              </div>
+            }
+          >
+            <p className="text-sm font-medium capitalize">
+              {rowData?.client || "Rahul"}
+            </p>
+          </Tooltip>
         );
       case "companyName":
         return (
-          <p className="text-sm font-medium capitalize">
+          <p
+            className="text-sm font-medium capitalize cursor-pointer"
+            onClick={drawer.onOpen}
+          >
             {rowData?.companyName}
           </p>
         );
-      case "billingQuantity":
-        return (
-          <p className="text-sm font-medium capitalize">
-            {rowData?.billingQuantity}
-          </p>
-        );
-
-      case "totalAmount":
-        return (
-          <div className="flex flex-col gap-2">
-            <span className="text-sm"> ₹ {rowData?.totalAmount}</span>
-          </div>
-        );
-      case "professionalFees":
+      case "orderAmounts":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.professionalFees || "-"}</span>
-            <span className="text-tiny text-gray-400">
-              GST : {rowData?.profesionalGst || "-"}%
-            </span>
+            <p className="text-sm font-medium capitalize">
+              Txn. : {inrCurrency(rowData?.txnAmount || 0)}
+            </p>
+            <p className="text-sm font-medium capitalize">
+              Order : {inrCurrency(rowData?.orderAmount || 0)}
+            </p>
           </div>
         );
-      case "govermentfees":
+      case "paymentAmounts":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.govermentfees || "-"}</span>
-            <span className="text-tiny text-gray-400">
-              GST : {rowData?.govermentGst || "-"}%
-            </span>
-          </div>
-        );
-      case "serviceCharge":
-        return (
-          <div className="flex flex-col">
-            <span className="">₹{rowData?.serviceCharge || "-"}</span>
-            <span className="text-tiny text-gray-400">
-              GST : {rowData?.serviceGst || "-"}%
-            </span>
-          </div>
-        );
-      case "otherFees":
-        return (
-          <div className="flex flex-col">
-            <span className="">₹ {rowData?.otherFees || "-"}</span>
-            <span className="text-tiny text-gray-400">
-              GST : {rowData?.otherGst || "-"}%
-            </span>
+            <p className="text-sm font-medium capitalize">
+              Due : {inrCurrency(rowData?.dueAmount || 0)}
+            </p>
+            <p className="text-sm font-medium capitalize">
+              Paid : {inrCurrency(rowData?.paidAmount || 0)}
+            </p>
           </div>
         );
       case "paymentDate":
@@ -276,7 +315,8 @@ const PaymentRegister = () => {
             {dayjs(rowData?.paymentDate).format("YYYY-MM-DD")}
           </p>
         );
-
+      case "status":
+        return <p className="text-sm capitalize">{rowData?.status}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -287,8 +327,12 @@ const PaymentRegister = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                {/* <DropdownItem key="viewEstimate">View estimate</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem> */}
+                <DropdownItem
+                  key="paymentAction"
+                  onPress={() => handlePaymentAction(rowData)}
+                >
+                  Payment action
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -335,8 +379,8 @@ const PaymentRegister = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            className="w-full sm:max-w-[35%]"
+            placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -366,6 +410,7 @@ const PaymentRegister = () => {
                 {[
                   { label: "All", uid: "all" },
                   { label: "Initiated", uid: "initiated" },
+                  { label: "Hold", uid: "hold" },
                   { label: "Approved", uid: "approved" },
                   { label: "Disapproved", uid: "disapproved" },
                 ].map((status) => (
@@ -607,6 +652,133 @@ const PaymentRegister = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Drawer isOpen={drawer.isOpen} onOpenChange={drawer.onOpenChange}>
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1">
+                Company details
+              </DrawerHeader>
+              <DrawerBody>
+                <div className="flex items-center gap-2">
+                  <Building2 />
+                  <p className="text-lg font-medium">Google private limited.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp />
+                  <p className="text-md text-default-500">5 years.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <MapPin />
+                  <p className="text-medium">
+                    2nd floor,Noida extension,Greater noida ,Noida ,Uttar
+                    Pradesh,India
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img src={panIcon} height={30} width={40} />
+                  <p className="text-medium">KUJYK9063F</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img src={gstIcon} height={30} width={40} />
+                  <p className="text-medium">09AAHCC4539J1ZC</p>
+                </div>
+              </DrawerBody>
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+
+      <Modal
+        isOpen={estimateModal.isOpen}
+        onOpenChange={estimateModal.onOpenChange}
+        size="5xl"
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Estimate view
+              </ModalHeader>
+              <ModalBody>
+                <EstimateView details={details} />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={paymentModal.isOpen}
+        onOpenChange={paymentModal.onOpenChange}
+        size="4xl"
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Mark payment as paid
+              </ModalHeader>
+              <ModalBody>
+                <div class="grid grid-cols-[repeat(4,_auto)_1fr] gap-0 max-w-full overflow-x-auto border border-gray-300 rounded-2xl">
+                  <div class="border-b border-r p-4">Column 1</div>
+                  <div class="border-b border-r p-4">Column 2</div>
+                  <div class="border-b border-r p-4">Column 3</div>
+                  <div class="border-b border-r p-4">Column 4</div>
+                  <div class="border-b p-4 flex gap-1">
+                    <Tooltip content="Attached document view">
+                      <Button color="primary" variant="light" isIconOnly>
+                        <FileText />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Estimate view">
+                      <Button
+                        color="primary"
+                        variant="light"
+                        isIconOnly
+                        onPress={() => handleViewEstimate(rowItem)}
+                      >
+                        <View />
+                      </Button>
+                    </Tooltip>
+                    <Button color="success">Approve</Button>
+                    <Button color="warning">Hold</Button>
+                    <Button color="danger">Disapprove</Button>
+                  </div>
+                </div>
+                <Textarea className="max-w-xs" label="Description" />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

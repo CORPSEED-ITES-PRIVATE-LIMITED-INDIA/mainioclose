@@ -142,3 +142,124 @@ export const SearchIcon = (props) => (
     />
   </svg>
 );
+
+export const GstIcon = ({ size = 24, width, height, ...props }) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height={size || height}
+    role="img"
+    viewBox="0 0 64 64"
+    width={size || width}
+    {...props}
+  >
+    <path
+      d="M8 8h40l8 8v32a6 6 0 01-6 6H8a6 6 0 01-6-6V14a6 6 0 016-6z"
+      stroke="currentColor"
+      strokeWidth="3"
+      fill="none"
+    />
+    {/* Letter G */}
+    <path
+      d="M22 44a10 10 0 1116-8v4h-6"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Letter S */}
+    <path
+      d="M42 38a6 6 0 00-6-6h-4a6 6 0 006-6"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Letter T */}
+    <line
+      x1="46"
+      y1="20"
+      x2="54"
+      y2="20"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+    />
+    <line
+      x1="50"
+      y1="20"
+      x2="50"
+      y2="44"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+
+
+export const PanCardIcon = ({ size = 24, width, height, ...props }) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height={size || height}
+    role="img"
+    viewBox="0 0 64 64"
+    width={size || width}
+    {...props}
+  >
+    <rect
+      x="4"
+      y="8"
+      width="56"
+      height="48"
+      rx="6"
+      ry="6"
+      stroke="currentColor"
+      strokeWidth="3"
+      fill="none"
+    />
+    {/* Letter P */}
+    <path
+      d="M18 44V20h12a6 6 0 110 12H18"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Letter A */}
+    <path
+      d="M38 44L44 20L50 44"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <line
+      x1="40"
+      y1="36"
+      x2="48"
+      y2="36"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+    />
+    {/* Letter N */}
+    <path
+      d="M54 44V20L62 44"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
