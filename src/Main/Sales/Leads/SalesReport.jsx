@@ -284,7 +284,7 @@ const SalesReport = () => {
             headers={headers}
             filename={"history.csv"}
           >
-            <Button disabled={autoExportLoading === "success"}>
+            <Button >
               <Icon
                 icon="fluent:arrow-upload-16-filled"
                 height={BTN_ICON_HEIGHT}
