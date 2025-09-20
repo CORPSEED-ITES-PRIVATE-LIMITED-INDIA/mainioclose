@@ -21,7 +21,7 @@ import {
   getRequiredDocumentsByProductId,
 } from "../../toolkit/slices/operationSlice";
 import { useParams } from "react-router-dom";
-import { BookText, Phone } from "lucide-react";
+import { BookText, Building, Mail, MapPin, Phone } from "lucide-react";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -63,7 +63,6 @@ export const PdfIcon = (props) => {
   );
 };
 
-
 const ProjectDetails = () => {
   const dispatch = useDispatch();
   const { projectId, userId } = useParams();
@@ -82,7 +81,38 @@ const ProjectDetails = () => {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-medium">{detailedData?.projectDetails?.name}</h1>
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-2">
+            <div>
+              <h1 className="font-medium">
+                {detailedData?.projectDetails?.name}
+              </h1>
+              <h3 className="text-default-500 text-xs">
+                {detailedData?.projectDetails?.projectNo}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4" />{" "}
+              <h3 className="text-sm font-medium">
+                {detailedData?.projectDetails?.companyName}
+              </h3>
+            </div>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4" />{" "}
+              <div className="flex flex-col ">
+                <p className="text-xs text-default-500">
+                  {detailedData?.projectDetails?.address} ,{" "}
+                  {detailedData?.projectDetails?.city},
+                </p>
+                <p className="text-xs text-default-500">
+                  {detailedData?.projectDetails?.state},
+                  {detailedData?.projectDetails?.country}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <Button
           endContent={<BookText className="h-4 w-4" />}
           onPress={() => {
@@ -100,7 +130,7 @@ const ProjectDetails = () => {
         </Button>
       </div>
 
-      <Accordion variant="bordered" defaultExpandedKeys={["0"]}>
+      <Accordion variant="splitted" defaultExpandedKeys={["0"]}>
         {detailedData?.milestones?.length > 0 &&
           detailedData?.milestones?.map((detail, idx) => {
             return (
@@ -120,33 +150,29 @@ const ProjectDetails = () => {
               >
                 <div className="grid grid-cols-4 border-t border-gray-300 max-h-[60vh] overflow-auto">
                   <div className="col-span-1 border-r border-gray-300 p-4">
-                    {detailedData?.projectDetails?.contacts?.map(
-                      (item, idx) => (
-                        <Card key={`contact${idx}`}>
-                          <CardHeader>
-                            <User
-                              description={item?.designation}
-                              name={item?.name}
-                              classNames={{ name: "font-medium font-sans" }}
-                            />
-                          </CardHeader>
-                          <CardBody>
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4" />
-                              <p className="text-muted-foreground text-sm">
-                                {item?.contactNo}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
+                    <Card key={`contact${idx}`}>
+                      <CardHeader>
+                        <User
+                          description={detail?.assignedUser?.email}
+                          name={detail?.assignedUser?.fullName}
+                          classNames={{ name: "font-medium font-sans" }}
+                        />
+                      </CardHeader>
+                      <CardBody>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          <p className="text-muted-foreground text-sm">
+                            {detail?.assignedUser?.contactNo}
+                          </p>
+                        </div>
+                        {/* <div className="flex items-center gap-2">
                               <WhatsAppIcon className="w-4 h-4" />
                               <p className="text-muted-foreground text-sm">
                                 {item?.contactNo}
                               </p>
-                            </div>
-                          </CardBody>
-                        </Card>
-                      )
-                    )}
+                            </div> */}
+                      </CardBody>
+                    </Card>
                   </div>
 
                   <div className="col-span-3 p-4">
@@ -173,7 +199,10 @@ const ProjectDetails = () => {
               </DrawerHeader>
               <DrawerBody className="max-h-[90vh] overflow-auto">
                 {requiredDocsList?.map((doc, idx) => (
-                  <Card key={`doc${idx}`} className="min-h-[150px] max-h-[200px]" >
+                  <Card
+                    key={`doc${idx}`}
+                    className="min-h-[150px] max-h-[200px]"
+                  >
                     <CardBody className="flex flex-col gap-2">
                       <div>
                         <p className="text-small font-sans">{doc?.name}</p>
@@ -182,7 +211,7 @@ const ProjectDetails = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button startContent={<PdfIcon/>}>Document</Button>
+                        <Button startContent={<PdfIcon />}>Document</Button>
                       </div>
                     </CardBody>
                   </Card>

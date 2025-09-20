@@ -30,6 +30,10 @@ import {
   PhoneCall,
   NotepadTextDashed,
   FileSearch2,
+  NotebookText,
+  BanknoteArrowDown,
+  Book,
+  ReceiptText,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -41,7 +45,8 @@ import {
   DropdownTrigger,
   User,
 } from "@heroui/react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutFun } from "../toolkit/slices/authSlice";
 
 const icons = {
   LayoutDashboard,
@@ -70,11 +75,16 @@ const icons = {
   University,
   PhoneCall,
   NotepadTextDashed,
-  FileSearch2
+  FileSearch2,
+  NotebookText,
+  BanknoteArrowDown,
+  ReceiptText,
+  Book
 };
 
 const Sidebar = ({ items, collapsed, setCollapsed }) => {
-  const userDetail=useSelector((state)=>state.auth.currentUser)
+  const dispatch = useDispatch();
+  const userDetail = useSelector((state) => state.auth.currentUser);
   const [openMenu, setOpenMenu] = useState({});
 
   const toggleMenu = (key) => {
@@ -101,7 +111,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
       </div>
 
       <nav className="p-3 space-y-1 font-medium text-neutral-700 dark:text-white max-h-[85vh] overflow-auto">
-        {items.map((item) => {
+        {items?.map((item) => {
           const Icon = item.icon ? icons[item.icon] : null;
           const isOpen = openMenu[item.key];
 
@@ -126,7 +136,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                     ))}
                 </div>
                 {!collapsed &&
-                  item.children &&
+                  item?.children &&
                   (isOpen ? (
                     <ChevronDown className="w-4 h-4 dark:text-white" />
                   ) : (
@@ -134,9 +144,9 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                   ))}
               </div>
 
-              {item.children && isOpen && !collapsed && (
+              {item?.children && isOpen && !collapsed && (
                 <div className="ml-6 space-y-1">
-                  {item.children.map((child) => (
+                  {item?.children?.map((child) => (
                     <Link
                       to={child.url}
                       key={child.key}
@@ -155,8 +165,8 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
         <Dropdown placement="right-end">
           <DropdownTrigger>
             <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-1 py-1 rounded-md">
-              {/* <User
-              className="font-medium"
+              <User
+                className="font-medium"
                 avatarProps={{
                   icon: (
                     <User2 className="w-5 h-5 text-neutral-700 dark:text-white" />
@@ -164,7 +174,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                 }}
                 description={!collapsed && userDetail?.roles?.join(",")}
                 name={!collapsed && userDetail?.username}
-              /> */}
+              />
               {!collapsed && (
                 <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-white" />
               )}
@@ -172,21 +182,21 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
           </DropdownTrigger>
           <DropdownMenu aria-label="Static Actions">
             <DropdownItem>
-              {/* <div className="px-4 py-2">
+              <div className="px-4 py-2">
                 <p className="text-sm font-medium text-neutral-700 dark:text-white">
                   {userDetail?.username}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-gray-400">
                   {userDetail?.email}
                 </p>
-              </div> */}
+              </div>
             </DropdownItem>
             <DropdownItem key="new">
               <div className="flex items-center gap-4 text-neutral-700 dark:text-gray-100">
                 <UserCircle2 className="w-5 h-5" /> Profile
               </div>
             </DropdownItem>
-            <DropdownItem key="copy">
+            <DropdownItem key="logout" onPress={() => dispatch(logoutFun())}>
               <div className="flex items-center gap-4 text-neutral-700 dark:text-gray-100">
                 <LogOut className="w-5 h-5" /> Logout
               </div>

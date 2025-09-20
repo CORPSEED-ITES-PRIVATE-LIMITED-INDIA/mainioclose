@@ -72,6 +72,7 @@ const LeadProducts = () => {
   const [formData, setFormData] = useState({
     name: "",
     type: "",
+    serviceType: "",
   });
 
   const [initialFilteration, setInitialFilteration] = useState({
@@ -271,8 +272,8 @@ const LeadProducts = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            className="w-full sm:max-w-[35%]"
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -465,7 +466,6 @@ const LeadProducts = () => {
               </ModalHeader>
               <ModalBody>
                 <Form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto p-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
@@ -474,37 +474,57 @@ const LeadProducts = () => {
                     handleSubmit(data);
                   }}
                 >
-                  <Input
-                    isRequired
-                    errorMessage="Please enter product name"
-                    label="Product name"
-                    name="name"
-                    type="text"
-                    value={formData?.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                  />
+                  <div className="w-full grid grid-cols-2 gap-5 max-h-[65vh] overflow-auto p-4">
+                    <Input
+                      isRequired
+                      errorMessage="Please enter product name"
+                      label="Product name"
+                      name="name"
+                      type="text"
+                      value={formData?.name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                    />
 
-                  <Select
-                    isRequired
-                    errorMessage="please select the product type"
-                    label="Select product type"
-                    name="type"
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, type: e }))
-                    }
-                  >
-                    {[
-                      { label: "Product", value: "Product" },
-                      { label: "Service", value: "Service" },
-                    ].map((info) => (
-                      <SelectItem key={info.value}>{info.label}</SelectItem>
-                    ))}
-                  </Select>
+                    <Select
+                      isRequired
+                      errorMessage="please select the product type"
+                      label="Select product type"
+                      name="type"
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, type: e }))
+                      }
+                    >
+                      {[
+                        { label: "Product", value: "Product" },
+                        { label: "Service", value: "Service" },
+                      ].map((info) => (
+                        <SelectItem key={info.value}>{info.label}</SelectItem>
+                      ))}
+                    </Select>
+
+                    <Select
+                      isRequired
+                      errorMessage="please select the product type"
+                      label="Select product type"
+                      name="serviceType"
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, serviceType: e }))
+                      }
+                    >
+                      {[
+                        { label: "International", value: "international" },
+                        { label: "Central", value: "central" },
+                        { label: "State", value: "state" },
+                      ].map((info) => (
+                        <SelectItem key={info.value}>{info.label}</SelectItem>
+                      ))}
+                    </Select>
+                  </div>
 
                   <ModalFooter className="w-full flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>

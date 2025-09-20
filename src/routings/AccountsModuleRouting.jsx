@@ -29,6 +29,11 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/companyApprovals" element={<CompanyApprovals />} />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
+      <Route path="accounts/orgEstimate" element={<OrganizationEstimate />} />
+      <Route path="accounts/bankStatement" element={<BankStatement />} />
+      <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
+      <Route path="accounts/allInvoice" element={<AllInvoice />} />
+      <Route path="accounts/unbilled" element={<Unbill />} />
 
       <Route path="accounts/organizations" element={<Organizations />}>
         <Route index element={<OrganizationDetail />} />
@@ -40,12 +45,7 @@ export const AccountsModuleRouting = () => {
           element={<LedgerDetail />}
         />
         <Route path="voucher" element={<Voucher />} />
-        <Route path="orgEstimate" element={<OrganizationEstimate />} />
         <Route path="dayBook" element={<DailyBook />} />
-        <Route path="bankStatement" element={<BankStatement />} />
-        <Route path="paymentRegister" element={<PaymentRegister />} />
-        <Route path="allInvoice" element={<AllInvoice />} />
-        <Route path="unbilled" element={<Unbill />} />
         <Route path="profitLoss" element={<ProfitLoss />} />
         <Route path="cashflow" element={<CashFlow />} />
         <Route path="balanceSheet" element={<BalanceSheet />} />
@@ -70,7 +70,10 @@ export const AccountsModuleRouting = () => {
 export const accountLoginModuleRouting = () => {
   return (
     <>
-      <Route path="accounts/organizations/detail" element={<OrganizationDetail />} />
+      <Route
+        path="accounts/organizations/detail"
+        element={<OrganizationDetail />}
+      />
       <Route path="accounts/organizations/group" element={<Group />} />
       <Route
         path="accounts/organizations/group/:groupId/groupLedger"
@@ -82,34 +85,37 @@ export const accountLoginModuleRouting = () => {
         element={<LedgerDetail />}
       />
       <Route path="accounts/organizations/voucher" element={<Voucher />} />
-      <Route
+      {/* <Route
         path="accounts/organizations/orgEstimate"
         element={<OrganizationEstimate />}
-      />
+      /> */}
       <Route path="accounts/organizations/dayBook" element={<DailyBook />} />
-      <Route path="accounts/organizations/bankStatement" element={<BankStatement />} />
+      {/* <Route
+        path="accounts/organizations/bankStatement"
+        element={<BankStatement />}
+      />
       <Route
         path="accounts/organizations/paymentRegister"
         element={<PaymentRegister />}
       />
-      <Route path="accounts/organizations/allInvoice" element={<AllInvoice />} />
-      <Route path="accounts/organizations/unbilled" element={<Unbill />} />
-      <Route path="accounts/organizations/profitLoss" element={<ProfitLoss />} />
+      <Route
+        path="accounts/organizations/allInvoice"
+        element={<AllInvoice />}
+      />
+      <Route path="accounts/organizations/unbilled" element={<Unbill />} /> */}
+      <Route
+        path="accounts/organizations/profitLoss"
+        element={<ProfitLoss />}
+      />
       <Route path="accounts/organizations/cashflow" element={<CashFlow />} />
-      <Route path="accounts/organizations/balanceSheet" element={<BalanceSheet />} />
+      <Route
+        path="accounts/organizations/balanceSheet"
+        element={<BalanceSheet />}
+      />
       <Route path="accounts/organizations/tds" element={<TDS />} />
-      <Route
-        path="accounts/settings/ledgerType"
-        element={<LedgerType />}
-      />
-      <Route
-        path="accounts/settings/voucherType"
-        element={<VoucherType />}
-      />
-      <Route
-        path="accounts/settings/statutory"
-        element={<Statutory />}
-      />
+      <Route path="accounts/settings/ledgerType" element={<LedgerType />} />
+      <Route path="accounts/settings/voucherType" element={<VoucherType />} />
+      <Route path="accounts/settings/statutory" element={<Statutory />} />
     </>
   );
 };

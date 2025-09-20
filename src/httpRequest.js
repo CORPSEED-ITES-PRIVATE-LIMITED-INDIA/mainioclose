@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const storageData = localStorage.getItem("userDetail");
+const storageData = localStorage?.getItem("userDetail");
 let localData = null;
 if (storageData) {
   try {
@@ -11,6 +11,7 @@ if (storageData) {
 } else {
   console.warn("user detail not found in localStorage");
 }
+
 
 export const api = axios.create({
   baseURL: `http://localhost:3000`,

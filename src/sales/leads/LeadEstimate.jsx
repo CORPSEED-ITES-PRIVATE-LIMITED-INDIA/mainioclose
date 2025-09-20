@@ -7,6 +7,12 @@ import {
   CardBody,
   CardHeader,
   DatePicker,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  getKeyValue,
   Input,
   Modal,
   ModalBody,
@@ -17,6 +23,12 @@ import {
   Select,
   SelectItem,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
   useDisclosure,
 } from "@heroui/react";
 import { useCallback, useEffect, useState } from "react";
@@ -260,6 +272,7 @@ const gstFormDefaultValues = {
 
 const LeadEstimate = () => {
   const dispatch = useDispatch();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { userId, leadId } = useParams();
   const addressFormModal = useDisclosure();
   const gstFormModal = useDisclosure();
@@ -292,6 +305,7 @@ const LeadEstimate = () => {
     (state) => state.product.productDataByLeadName
   );
   const leadUsersList = useSelector((state) => state.leads.leadUsersList);
+  const docsListInEstimate = useSelector((state) => state.leads.docsListInEstimate);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -844,9 +858,12 @@ const LeadEstimate = () => {
         </h1>
 
         {Object.keys(details)?.length > 0 && (
-          <Button onPress={handleEditEstimate}>
-            {editEstimate ? "Show estimate" : "Edit"}
-          </Button>
+          <div>
+            <Button onPress={onOpen}>Upload document</Button>
+            <Button onPress={handleEditEstimate}>
+              {editEstimate ? "Show estimate" : "Edit"}
+            </Button>
+          </div>
         )}
       </div>
       {Object.keys(details)?.length === 0 || editEstimate ? (
@@ -2167,8 +2184,69 @@ const LeadEstimate = () => {
           </Modal>
         </div>
       ) : (
-        <EstimateView  details={details}  />
+        <EstimateView details={details} />
       )}
+
+      <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1">
+                Document list
+              </DrawerHeader>
+              <DrawerBody>
+                <Table aria-label="Example table with dynamic content">
+                  <TableHeader
+                    columns={[
+                      {
+                        key: "id",
+                        label: "ID",
+                      },
+                      {
+                        key: "certificates",
+                        label: "CERTIFICATE",
+                      },
+                      {
+                        key: "docs",
+                        label: "UPLOAD DOCUMENT",
+                      },
+                    ]}
+                  >
+                    {(column) => (
+                      <TableColumn key={column.key}>{column.label}</TableColumn>
+                    )}
+                  </TableHeader>
+                  <TableBody items={rows}>
+                    {(item) => (
+                      <TableRow key={item.key}>
+                        {(columnKey) =>
+                          columnKey === "docs" ? (
+                            <TableCell>
+                              <SingleFileUploader/>
+                            </TableCell>
+                          ) : (
+                            <TableCell>
+                              {getKeyValue(item, columnKey)}
+                            </TableCell>
+                          )
+                        }
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </DrawerBody>
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };

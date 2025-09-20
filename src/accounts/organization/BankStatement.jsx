@@ -22,7 +22,7 @@ import {
   ModalFooter,
   DatePicker,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, FileUp, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addBankDetails,
@@ -38,6 +38,7 @@ import {
   toCalendarDate,
   today,
 } from "@internationalized/date";
+import { CSVLink } from "react-csv";
 
 export const columns = [
   { name: "ID", uid: "id" },
