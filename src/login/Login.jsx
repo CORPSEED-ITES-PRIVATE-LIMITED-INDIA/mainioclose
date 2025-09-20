@@ -32,7 +32,7 @@ const Login = () => {
                     })
                   );
                   if (resp?.payload?.roles?.includes("ADMIN")) {
-                    navigate(`/erp/${resp?.payload?.id}/sales/leads`);
+                    navigate(`/erp/${resp?.payload?.id}/dashboard`);
                   } else {
                     if (response.payload?.department === "Procurement") {
                       navigate(`/erp/${resp?.payload?.id}/vendors`);
@@ -41,9 +41,9 @@ const Login = () => {
                       navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
                     }
                     if (response.payload?.department === "Accounts") {
-                      navigate(`/erp/${resp?.payload?.id}/account/companyForm`);
+                      navigate(`/erp/${resp?.payload?.id}/account/accounts`);
                     } else {
-                      navigate(`/erp/${resp?.payload?.id}/sales/leads`);
+                      navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
                     }
                   }
                 }

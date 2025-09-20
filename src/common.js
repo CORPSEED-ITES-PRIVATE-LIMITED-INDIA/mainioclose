@@ -1,4 +1,5 @@
 import { parseAbsolute } from "@internationalized/date";
+import { ToWords } from 'to-words';
 
 export const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 export const gstRegex =
@@ -181,5 +182,16 @@ export function formatedDateTime(calendarDateTime) {
   return `${year}-${padZero(month)}-${padZero(day)}T${padZero(hour)}:${padZero(minute)}`;
 }
 
+
+
+export const toWords = new ToWords({
+  localeCode: 'en-IN',
+  converterOptions: {
+    currency: true,
+    ignoreDecimal: false,
+    ignoreZeroCurrency: false,
+    doNotAddOnly: false,
+  },
+});
 
 

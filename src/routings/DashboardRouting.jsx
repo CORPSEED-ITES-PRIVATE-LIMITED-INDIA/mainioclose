@@ -1,6 +1,7 @@
 import { Route } from "react-router-dom";
 import AdminDashboards from "../dashboards/AdminDashboards";
 import LeadDashboardDetail from "../dashboards/LeadDashboardDetail";
+import SalesDashboard from "../dashboards/SalesDashboard";
 
 const DashboardRouting = () => {
   return (
@@ -13,7 +14,7 @@ const DashboardRouting = () => {
       />
 
       {/* Sales dashboard */}
-      <Route path="sales/dashboard" element={<AdminDashboards />} />
+      <Route path="sales/dashboard" element={<SalesDashboard />} />
       <Route
         path="sales/dashboard/:monthDate/leadData"
         element={<LeadDashboardDetail />}

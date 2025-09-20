@@ -35,9 +35,9 @@ export const getDashboardUsersByHeirarchy = createAsyncThunk(
 
 export const getTotalLeadCountForGraph = createAsyncThunk(
   "getTotalLeadCountForGraph",
-  async () => {
+  async (userId) => {
     const response = await api.get(
-      `/leadService/api/v1/salesDashboard/getTotalLeadCount`
+      `/leadService/api/v1/salesDashboard/getTotalLeadCount?currentUserId=${userId}`
     );
     return response.data;
   }
@@ -45,26 +45,26 @@ export const getTotalLeadCountForGraph = createAsyncThunk(
 
 export const getTotalProjectCounts = createAsyncThunk(
   "getTotalProjectCounts",
-  async () => {
+  async (userId) => {
     const response = await api.get(
-      `/leadService/api/v1/salesDashboard/getTotalProjectCount`
+      `/leadService/api/v1/salesDashboard/getTotalProjectCount?currentUserId=${userId}`
     );
     return response.data;
   }
 );
 
-export const totalUserCount = createAsyncThunk("totalUserCount", async () => {
+export const totalUserCount = createAsyncThunk("totalUserCount", async (userId) => {
   const response = await api.get(
-    `/leadService/api/v1/salesDashboard/getTotalUserCount`
+    `/leadService/api/v1/salesDashboard/getTotalUserCount?currentUserId=${userId}`
   );
   return response.data;
 });
 
 export const totalCompanyForGraph = createAsyncThunk(
   "totalCompanyForGraph",
-  async () => {
+  async (userId) => {
     const response = await api.get(
-      `/leadService/api/v1/salesDashboard/getTotalCompanyCount`
+      `/leadService/api/v1/salesDashboard/getTotalCompanyCount?currentUserId=${userId}`
     );
     return response.data;
   }
@@ -125,6 +125,17 @@ export const getTopSellLeadsData = createAsyncThunk(
   }
 );
 
+export const getAllUserLeadDataMonthWise = createAsyncThunk(
+  "getAllUserLeadDataMonthWise",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/salesDashboard/getAllUserAssignLeadsMonthWise`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const DashboardSlice = createSlice({
   name: "dashboard",
   initialState: {
@@ -140,7 +151,8 @@ const DashboardSlice = createSlice({
     leadStatusWiseData: [],
     projectDataForGraph: [],
     leadDataCategoryWise: [],
-    topSellLeadsList:[]
+    topSellLeadsList: [],
+    userLeadDataMonthWiseList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -256,25 +268,36 @@ const DashboardSlice = createSlice({
       state.loading = "error";
     });
 
-    builder.addCase(getLeadCategoryWise.pending, (state, action) => {
+    builder.addCase(getLeadCategoryWise.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getLeadCategoryWise.fulfilled, (state, action) => {
       state.loading = "success";
       state.leadDataCategoryWise = action?.payload;
     });
-    builder.addCase(getLeadCategoryWise.rejected, (state, action) => {
+    builder.addCase(getLeadCategoryWise.rejected, (state) => {
       state.loading = "error";
     });
 
-    builder.addCase(getTopSellLeadsData.pending, (state, action) => {
+    builder.addCase(getTopSellLeadsData.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getTopSellLeadsData.fulfilled, (state, action) => {
       state.loading = "success";
       state.topSellLeadsList = action?.payload;
     });
-    builder.addCase(getTopSellLeadsData.rejected, (state, action) => {
+    builder.addCase(getTopSellLeadsData.rejected, (state) => {
+      state.loading = "error";
+    });
+
+    builder.addCase(getAllUserLeadDataMonthWise.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUserLeadDataMonthWise.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.userLeadDataMonthWiseList = action?.payload;
+    });
+    builder.addCase(getAllUserLeadDataMonthWise.rejected, (state) => {
       state.loading = "error";
     });
   },

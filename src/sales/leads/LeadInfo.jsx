@@ -118,12 +118,13 @@ const contactFormDefault = z.object({
   contactNo: "",
 });
 
-const LeadInfo = ({ leadData }) => {
+const LeadInfo = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
   const industryModal = useDisclosure();
   const addressModal = useDisclosure();
   const contactModal = useDisclosure();
+  const leadData = useSelector((state) => state.leads.singleLeadData);
   const allUsers = useSelector((state) => state.common.usersList);
   const slugList = useSelector((state) => state.setting.slugList);
   const statusList = useSelector((state) => state.setting.statusList);
