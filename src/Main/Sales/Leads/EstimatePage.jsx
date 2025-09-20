@@ -106,7 +106,7 @@ const EstimatePage = () => {
         professionalFees: remainingAmountDetail?.proffees,
         govermentFees: remainingAmountDetail?.govfees,
         otherFees: remainingAmountDetail?.otherFees,
-        serviceCharge: remainingAmountDetail?.serviceCharge,
+        serviceCharge: remainingAmountDetail?.serviceCharge, 
       });
     }
   }, [remainingAmountDetail,form]);

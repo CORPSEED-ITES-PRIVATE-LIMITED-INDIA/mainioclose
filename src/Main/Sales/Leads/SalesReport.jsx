@@ -44,8 +44,8 @@ const SalesReport = () => {
   const autoExportLoading = useSelector(
     (state) => state.leads.autoExportLoading
   );
-  const totalAutoListCount = useSelector(
-    (state) => state.leads.totalAutoListCount
+  const salesReportCount = useSelector(
+    (state) => state.leads.salesReportCount
   );
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
@@ -306,7 +306,7 @@ const SalesReport = () => {
             page={paginationData?.page}
             pageSize={paginationData?.size}
             pagination={true}
-            totalCount={totalAutoListCount}
+            totalCount={salesReportCount}
             handlePagination={handlePagination}
           />
         </Suspense>
