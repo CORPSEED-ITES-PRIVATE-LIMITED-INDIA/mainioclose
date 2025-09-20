@@ -70,6 +70,7 @@ const SalesReport = () => {
   useEffect(() => {
     dispatch(getSaleReportByFilter({ ...paginationData, data: dateFilter }));
     dispatch(getSaleReportByFilterCount(dateFilter));
+    dispatch(getSalesReportByFilterForExport(dateFilter));
   }, [dispatch]);
 
   const handlePagination = useCallback(
