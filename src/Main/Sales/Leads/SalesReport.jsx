@@ -74,7 +74,7 @@ const SalesReport = () => {
 
   const handlePagination = useCallback(
     (dataPage, size) => {
-      dispatch(getSaleReportByFilter({ ...paginationData, data: dateFilter }));
+      dispatch(getSaleReportByFilter({ size: size, page: dataPage, data: dateFilter }));
       setPaginationData({ size: size, page: dataPage });
     },
     [dispatch, userid, dateFilter]
@@ -161,15 +161,10 @@ const SalesReport = () => {
     "Lead name": row?.leadOriginalName,
     Status: row?.status,
     Manual: row?.manual ? "Manual" : "Auto",
-    Description: row?.description,
-    "Client Email": row?.clientEmail,
-    "Mobile no.": row?.mobileNo,
-    "Previous Assignee person": row?.paName,
-    "Previous Assignee email": row?.paEmail,
     "Current Assignee person": row?.currName,
     "Current Assignee email": row?.currEmail,
     "Created Date": dayjs(row?.assignDate).format("YYYY-MM-DD"),
-    "Reopen by": row?.reopenBy?.fullName,
+    "Reopen by": row?.reopenBy?"True":"False",
   }));
 
   const headers = [
@@ -178,11 +173,6 @@ const SalesReport = () => {
     "Lead name",
     "Status",
     "Manual",
-    "Description",
-    "Client Email",
-    "Mobile no.",
-    "Previous Assignee person",
-    "Previous Assignee email",
     "Current Assignee person",
     "Current Assignee email",
     "Created Date",
