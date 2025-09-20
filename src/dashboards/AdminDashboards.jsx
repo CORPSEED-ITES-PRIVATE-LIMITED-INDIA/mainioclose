@@ -40,11 +40,11 @@ const AdminDashboards = () => {
   );
 
   useEffect(() => {
-    dispatch(getTotalLeadCountForGraph());
-    dispatch(getTotalProjectCounts());
-    dispatch(totalUserCount());
-    dispatch(totalCompanyForGraph());
-  }, [dispatch]);
+    dispatch(getTotalLeadCountForGraph(userId));
+    dispatch(getTotalProjectCounts(userId));
+    dispatch(totalUserCount(userId));
+    dispatch(totalCompanyForGraph(userId));
+  }, [dispatch,userId]);
 
   useEffect(() => {
     dispatch(getDashboardUsersByHeirarchy(userId));
@@ -104,7 +104,7 @@ const AdminDashboards = () => {
         <TopSellLeads />
         <ProjectsDataChart />
         <ConversionStatus />
-        <ConvertedLeadsDataChart />
+        {/* <ConvertedLeadsDataChart /> */}
         <RevenueChart/>
       </div>
     </div>

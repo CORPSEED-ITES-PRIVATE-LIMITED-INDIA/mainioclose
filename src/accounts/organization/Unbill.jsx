@@ -13,16 +13,20 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  useDisclosure,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalContent,
+  ModalHeader,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllUnbillList,
-} from "../../toolkit/slices/organizationSlice";
+import { getAllUnbillList } from "../../toolkit/slices/organizationSlice";
+import TaxInvoice from "../../components/TaxInvoice";
 
 export const columns = [
-  { name: "ID", uid: "id" },
-  { name: "ESTIMATE ID", uid: "estimateId" },
+  { name: "ID", uid: "estimateId" },
   { name: "COMPANY", uid: "company", sortable: true },
   { name: "CLIENT", uid: "client" },
   { name: "TAX AMOUNT", uid: "txnAmount" },
@@ -38,7 +42,7 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "id",
+  "estimateId",
   "company",
   "client",
   "txnAmount",
@@ -51,6 +55,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const Unbill = () => {
   const dispatch = useDispatch();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillList?.length);
   const [filterValue, setFilterValue] = React.useState("");
@@ -142,8 +147,10 @@ const Unbill = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                {/* <DropdownItem key="viewEstimate">View estimate</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem> */}
+                <DropdownItem key="viewEstimate" onPress={onOpen}>
+                  View estimate
+                </DropdownItem>
+                <DropdownItem key="edit">Edit</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -190,8 +197,8 @@ const Unbill = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            className="w-full sm:max-w-[35%]"
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -320,7 +327,7 @@ const Unbill = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={`${item.estimateId}unbill`}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -328,6 +335,34 @@ const Unbill = () => {
           )}
         </TableBody>
       </Table>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size="5xl"
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Tax invoice
+              </ModalHeader>
+              <ModalBody>
+                <TaxInvoice />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

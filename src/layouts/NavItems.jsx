@@ -72,12 +72,12 @@ export const navItems = [
         url: "accounts/companyApprovals",
         key: "companyApprovals",
       },
-      {
-        title: "Payment approvals",
-        icon: "",
-        url: "accounts/paymentApprovals",
-        key: "paymentApprovals",
-      },
+      // {
+      //   title: "Payment approvals",
+      //   icon: "",
+      //   url: "accounts/paymentApprovals",
+      //   key: "paymentApprovals",
+      // },
       {
         title: "Bank statement",
         url: "accounts/bankStatement",
@@ -268,12 +268,12 @@ export const accountNavItems = [
     url: "accounts/companyApprovals",
     key: "companyApprovals",
   },
-  {
-    title: "Payment approvals",
-    icon: "BadgeCheck",
-    url: "accounts/paymentApprovals",
-    key: "paymentApprovals",
-  },
+  // {
+  //   title: "Payment approvals",
+  //   icon: "BadgeCheck",
+  //   url: "accounts/paymentApprovals",
+  //   key: "paymentApprovals",
+  // },
   {
     title: "Bank statement",
     url: "accounts/bankStatement",

@@ -106,7 +106,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "contact",
   "assignee",
   "source",
-  "updatedBy",
   "status",
   "industry",
   "address",
@@ -200,7 +199,7 @@ const Leads = () => {
     contactMobileNo: "",
     contactEmail: "",
     sortBy: "id",
-    sortDirection: "",
+    sortDirection: "desc",
     page: 1,
     size: 50,
   };
@@ -571,7 +570,6 @@ const Leads = () => {
     dispatch(getAllLeadsForExport(initialFilterValues));
     setAllMultiFilterData(initialFilterValues);
   }, [initialFilterValues, dispatch]);
-
 
   const handleDeleteMutipleLeads = useCallback(() => {
     let obj = {
