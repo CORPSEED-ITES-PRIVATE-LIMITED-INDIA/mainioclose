@@ -135,15 +135,10 @@ const SalesReport = () => {
       render: (_, data) => <OverFlowText>{data?.status}</OverFlowText>,
     },
     {
-      title: "Description",
-      dataIndex: "description",
-      render: (_, data) => <OverFlowText>{data?.description}</OverFlowText>,
-    },
-    {
       title: "Reopen by",
       dataIndex: "reopenBy",
       render: (_, data) => (
-        <OverFlowText>{data?.reopenBy?.fullName}</OverFlowText>
+        <OverFlowText>{data?.reopenBy?"True":"False"}</OverFlowText>
       ),
     },
     {
@@ -291,7 +286,7 @@ const SalesReport = () => {
           <CommonTable
             data={filteredData}
             columns={columns}
-            scroll={{ y: "70vh", x: 1800 }}
+            scroll={{ y: "70vh", x: 800 }}
             rowKey={(record) => record?.id}
             page={paginationData?.page}
             pageSize={paginationData?.size}
