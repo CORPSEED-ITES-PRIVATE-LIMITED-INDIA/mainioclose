@@ -53,12 +53,15 @@ export const getTotalProjectCounts = createAsyncThunk(
   }
 );
 
-export const totalUserCount = createAsyncThunk("totalUserCount", async (userId) => {
-  const response = await api.get(
-    `/leadService/api/v1/salesDashboard/getTotalUserCount?currentUserId=${userId}`
-  );
-  return response.data;
-});
+export const totalUserCount = createAsyncThunk(
+  "totalUserCount",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/v1/salesDashboard/getTotalUserCount?currentUserId=${userId}`
+    );
+    return response.data;
+  }
+);
 
 export const totalCompanyForGraph = createAsyncThunk(
   "totalCompanyForGraph",
@@ -136,6 +139,17 @@ export const getAllUserLeadDataMonthWise = createAsyncThunk(
   }
 );
 
+export const getAllRevenueDataMonthWise = createAsyncThunk(
+  "getAllRevenueDataMonthWise",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/balanceSheet/getSalesDashboardRevenueMonthly`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const DashboardSlice = createSlice({
   name: "dashboard",
   initialState: {
@@ -152,7 +166,8 @@ const DashboardSlice = createSlice({
     projectDataForGraph: [],
     leadDataCategoryWise: [],
     topSellLeadsList: [],
-    userLeadDataMonthWiseList:[]
+    userLeadDataMonthWiseList: [],
+    revenueDataList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -298,6 +313,17 @@ const DashboardSlice = createSlice({
       state.userLeadDataMonthWiseList = action?.payload;
     });
     builder.addCase(getAllUserLeadDataMonthWise.rejected, (state) => {
+      state.loading = "error";
+    });
+
+    builder.addCase(getAllRevenueDataMonthWise.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllRevenueDataMonthWise.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.revenueDataList = action?.payload;
+    });
+    builder.addCase(getAllRevenueDataMonthWise.rejected, (state) => {
       state.loading = "error";
     });
   },
