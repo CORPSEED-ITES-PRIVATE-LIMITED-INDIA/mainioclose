@@ -48,9 +48,9 @@ export const getGraphDataByUser = createAsyncThunk(
 
 export const getTotalLeadCountForGraph = createAsyncThunk(
   "getTotalLeadCountForGraph",
-  async () => {
+  async (userId) => {
     const response = await getQuery(
-      `/leadService/api/v1/salesDashboard/getTotalLeadCount`
+      `/leadService/api/v1/salesDashboard/getTotalLeadCount?currentUserId=${userId}`
     );
     return response.data;
   }
@@ -58,9 +58,9 @@ export const getTotalLeadCountForGraph = createAsyncThunk(
 
 export const getTotalProjectCounts = createAsyncThunk(
   "getTotalProjectCounts",
-  async () => {
+  async (userId) => {
     const response = await getQuery(
-      `/leadService/api/v1/salesDashboard/getTotalProjectCount`
+      `/leadService/api/v1/salesDashboard/getTotalProjectCount?currentUserId=${userId}`
     );
     return response.data;
   }
@@ -88,18 +88,18 @@ export const getLeadCategoryWise = createAsyncThunk(
   }
 );
 
-export const totalUserCount = createAsyncThunk("totalUserCount", async () => {
+export const totalUserCount = createAsyncThunk("totalUserCount", async (userId) => {
   const response = await getQuery(
-    `/leadService/api/v1/salesDashboard/getTotalUserCount`
+    `/leadService/api/v1/salesDashboard/getTotalUserCount?currentUserId=${userId}`
   );
   return response.data;
 });
 
 export const totalCompanyForGraph = createAsyncThunk(
   "totalCompanyForGraph",
-  async () => {
+  async (userId) => {
     const response = await getQuery(
-      `/leadService/api/v1/salesDashboard/getTotalCompanyCount`
+      `/leadService/api/v1/salesDashboard/getTotalCompanyCount?currentUserId=${userId}`
     );
     return response.data;
   }

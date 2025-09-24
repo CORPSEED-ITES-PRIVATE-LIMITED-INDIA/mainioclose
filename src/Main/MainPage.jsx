@@ -32,37 +32,37 @@ const MainPage = () => {
     lastActiveRef.current = Date.now();
   }, []);
 
-  useEffect(() => {
-    const events = [
-      "mousemove",
-      "mousedown",
-      "keypress",
-      "scroll",
-      "touchstart",
-    ];
-    events.forEach((event) =>
-      window.addEventListener(event, resetInactivityTimer)
-    );
+  // useEffect(() => {
+  //   const events = [
+  //     "mousemove",
+  //     "mousedown",
+  //     "keypress",
+  //     "scroll",
+  //     "touchstart",
+  //   ];
+  //   events.forEach((event) =>
+  //     window.addEventListener(event, resetInactivityTimer)
+  //   );
 
-    intervalRef.current = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastActivity = now - lastActiveRef.current;
+  //   intervalRef.current = setInterval(() => {
+  //     const now = Date.now();
+  //     const timeSinceLastActivity = now - lastActiveRef.current;
 
-      if (timeSinceLastActivity >= MAX_INACTIVITY_TIME) {
-        dispatch(logoutFun());
-        navigate("/erp/login");
-        toast.success("Logout Succesfully");
-        lastActiveRef.current = Date.now();
-      }
-    }, CHECK_INTERVAL);
+  //     if (timeSinceLastActivity >= MAX_INACTIVITY_TIME) {
+  //       dispatch(logoutFun());
+  //       navigate("/erp/login");
+  //       toast.success("Logout Succesfully");
+  //       lastActiveRef.current = Date.now();
+  //     }
+  //   }, CHECK_INTERVAL);
 
-    return () => {
-      events.forEach((event) =>
-        window.removeEventListener(event, resetInactivityTimer)
-      );
-      clearInterval(intervalRef.current);
-    };
-  }, [dispatch, navigate, resetInactivityTimer]);
+  //   return () => {
+  //     events.forEach((event) =>
+  //       window.removeEventListener(event, resetInactivityTimer)
+  //     );
+  //     clearInterval(intervalRef.current);
+  //   };
+  // }, [dispatch, navigate, resetInactivityTimer]);
 
 
 

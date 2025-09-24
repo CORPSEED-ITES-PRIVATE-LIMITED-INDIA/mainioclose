@@ -73,12 +73,12 @@ const GraphMainPage = () => {
   });
 
   useEffect(() => {
-    dispatch(getTotalLeadCountForGraph());
-    dispatch(getTotalProjectCounts());
+    dispatch(getTotalLeadCountForGraph(userid));
+    dispatch(getTotalProjectCounts(userid));
     dispatch(getLeadsDataByMonth(leadMonthDate));
     dispatch(getLeadCategoryWise(leadCategoryDate));
-    dispatch(totalUserCount());
-    dispatch(totalCompanyForGraph());
+    dispatch(totalUserCount(userid));
+    dispatch(totalCompanyForGraph(userid));
     dispatch(projectMontWiseDataForGraph(projectsDate));
     dispatch(getLeadsDistributionStatusWise(leadStatusDate));
   }, [dispatch]);
