@@ -32,6 +32,7 @@ import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import InvoiceView from "../../components/InvoiceView";
 import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
+import { inrCurrency } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -61,8 +62,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "gst",
   "professionalFees",
   "govermentfees",
-  "serviceCharge",
-  "otherFees",
   "primaryContact",
   "address",
   "actions",
@@ -238,7 +237,7 @@ const OrganizationEstimate = () => {
       case "professionalFees":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.professionalFees || "-"}</span>
+            <span className="font-medium">{inrCurrency(rowData?.professionalFees) || "-"}</span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.profesionalGst || "-"}%
             </span>
@@ -247,7 +246,7 @@ const OrganizationEstimate = () => {
       case "govermentfees":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.govermentfees || "-"}</span>
+            <span className="font-medium">{inrCurrency(rowData?.govermentfees)|| "-"}</span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.govermentGst || "-"}%
             </span>
@@ -256,7 +255,7 @@ const OrganizationEstimate = () => {
       case "serviceCharge":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.serviceCharge || "-"}</span>
+            <span className="font-medium">{inrCurrency(rowData?.serviceCharge) || "-"}</span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.serviceGst || "-"}%
             </span>
@@ -265,7 +264,7 @@ const OrganizationEstimate = () => {
       case "otherFees":
         return (
           <div className="flex flex-col">
-            <span className="">₹ {rowData?.otherFees || "-"}</span>
+            <span className="font-medium">{inrCurrency(rowData?.otherFees )|| "-"}</span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.otherGst || "-"}%
             </span>

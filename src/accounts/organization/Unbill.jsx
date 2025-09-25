@@ -22,18 +22,23 @@ import {
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllUnbillList } from "../../toolkit/slices/organizationSlice";
+import {
+  getAllUnbillCount,
+  getAllUnbillList,
+} from "../../toolkit/slices/organizationSlice";
 import TaxInvoice from "../../components/TaxInvoice";
+import { inrCurrency } from "../../common";
+import dayjs from "dayjs";
+import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
 
 export const columns = [
-  { name: "ID", uid: "estimateId" },
-  { name: "COMPANY", uid: "company", sortable: true },
+  { name: "DATE", uid: "date" },
+  { name: "UNBILL NO.", uid: "unbillNo", sortable: true },
+  { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
-  { name: "TAX AMOUNT", uid: "txnAmount" },
-  { name: "ORDER AMOUNT", uid: "orderAmount" },
-  { name: "DUE AMOUNT", uid: "dueAmount" },
-  { name: "PAID AMOUNT", uid: "paidAmount" },
-  { name: "STATUS", uid: "status" },
+  { name: "COMPANY", uid: "company" },
+  { name: "TXN. AMOUNT", uid: "txnAmount" },
+  { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -42,14 +47,13 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "estimateId",
-  "company",
+  "date",
+  "unbillNo",
+  "service",
   "client",
+  "company",
   "txnAmount",
-  "orderAmount",
-  "dueAmount",
-  "paidAmount",
-  "status",
+  "addedBy",
   "actions",
 ];
 
@@ -57,7 +61,8 @@ const Unbill = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
-  const count = useSelector((state) => state.organization.unBillList?.length);
+  const count = useSelector((state) => state.organization.unBillCount);
+  const invoiceDetail = useSelector((state) => state.account.invoiceDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -72,8 +77,9 @@ const Unbill = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllUnbillList());
-  }, [dispatch]);
+    dispatch(getAllUnbillList({ page, size: rowsPerPage }));
+    dispatch(getAllUnbillCount());
+  }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -117,26 +123,30 @@ const Unbill = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "company":
+      case "date":
+        return <p className="text-sm capitalize">{dayjs(rowData?.date).format("DD-MM-YYYY")}</p>;
+      case "unbillNo":
         return (
-          <p className="text-sm font-medium capitalize">{rowData?.company}</p>
+          <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>
         );
+      case "service":
+        return <p className="text-sm capitalize">{rowData?.productName}</p>;
+      case "company":
+        return <p className="text-sm capitalize">{rowData?.company}</p>;
       case "client":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium capitalize">{rowData?.client}</p>
+            <p className="text-sm capitalize">{rowData?.clientName}</p>
           </div>
         );
       case "txnAmount":
-        return <p className="text-sm capitalize">{rowData?.txnAmount}</p>;
-      case "orderAmount":
-        return <p className="text-sm capitalize">{rowData?.orderAmount}</p>;
-      case "dueAmount":
-        return <p className="text-sm capitalize">{rowData?.dueAmount}</p>;
-      case "paidAmount":
-        return <p className="text-sm capitalize">{rowData?.paidAmount}</p>;
-      case "status":
-        return <p className="text-sm capitalize">{rowData?.status}</p>;
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.txnAmount)}
+          </p>
+        );
+      case "addedBy":
+        return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -147,8 +157,11 @@ const Unbill = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="viewEstimate" onPress={onOpen}>
-                  View estimate
+                <DropdownItem key="view" onPress={()=>{
+                  onOpen()
+                  dispatch(getInvoiceDetailById(rowData?.id))
+                }}>
+                  View
                 </DropdownItem>
                 <DropdownItem key="edit">Edit</DropdownItem>
               </DropdownMenu>
@@ -327,7 +340,7 @@ const Unbill = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={`${item.estimateId}unbill`}>
+            <TableRow key={`${item?.id}unbill`}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -349,7 +362,7 @@ const Unbill = () => {
                 Tax invoice
               </ModalHeader>
               <ModalBody>
-                <TaxInvoice />
+                <TaxInvoice detail={invoiceDetail} />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>

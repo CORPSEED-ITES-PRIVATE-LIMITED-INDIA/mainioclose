@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import CustomSearchInput from "../../components/CustomSearchInput";
 import {
   addToast,
+  Autocomplete,
+  AutocompleteItem,
   Button,
   Checkbox,
   DatePicker,
@@ -18,6 +20,7 @@ import {
   getAllNewCompanies,
   getBusinessTypeByGstTypeId,
   getCompanyByUnitId,
+  searchCompaniesForCompany,
 } from "../../toolkit/slices/companySlice";
 import {
   getLocalTimeZone,
@@ -437,6 +440,9 @@ const CreateCompanyForm = ({
   const desiginationList = useSelector(
     (state) => state.setting.clientDesiginationList
   );
+  const searchCompaniesList = useSelector(
+    (state) => state.company.seachCompniesList
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewCompany, setIsNewCompany] = useState(true);
   const [gstAndPanData, setGstAndPanData] = useState({
@@ -446,6 +452,11 @@ const CreateCompanyForm = ({
   const [isConsultant, setIsConsultant] = useState(false);
   const [panError, setPanError] = useState("");
   const [gstError, setGstError] = useState("");
+  const [seachFields, setSearchFields] = useState({
+    searchText: "",
+    userId: userId,
+    searchField: "searchNameAndGSt",
+  });
 
   const {
     control,
@@ -464,7 +475,6 @@ const CreateCompanyForm = ({
   const state = watch("state");
   const gstNo = watch("gstNo");
 
-  // Debug form state changes for file fields
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (
@@ -525,6 +535,18 @@ const CreateCompanyForm = ({
   };
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      if (seachFields.searchText) {
+        dispatch(searchCompaniesForCompany(seachFields));
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [seachFields.searchText, dispatch]);
+
+  useEffect(() => {
     dispatch(getAllCompanyType());
     dispatch(getAllUsers());
     dispatch(getAllMainIndustry());
@@ -564,7 +586,7 @@ const CreateCompanyForm = ({
             businessType: compData?.bussinessType,
             gstNo: compData?.gstNo,
             panNo: compData?.panNo,
-            establishDate: dayjs(compData?.establishDate),
+            // establishDate: dayjs(compData?.establishDate),
             assigneeId: compData?.assigneeId,
             industryId: compData?.industry?.id,
             subIndustryId: compData?.subIndustry?.id,
@@ -604,7 +626,6 @@ const CreateCompanyForm = ({
           });
         }
       });
-      onOpenChange(true);
     }
   }, []);
 
@@ -713,33 +734,78 @@ const CreateCompanyForm = ({
   return (
     <>
       <div className="flex items-center gap-2 my-2">
-        <Button
-          size="sm"
-          isIconOnly
-          variant="light"
-          onPress={() => setIsNewCompany(false)}
-        >
-          <ArrowLeft />
-        </Button>
-        <h1 className="font-medium">Company details</h1>
+        {!edit && (
+          <Button
+            size="sm"
+            isIconOnly
+            variant="light"
+            onPress={() => setIsNewCompany(false)}
+          >
+            <ArrowLeft />
+          </Button>
+        )}
+        {!edit && <h1 className="font-medium text-2xl">Company details</h1>}
       </div>
       <div>
         {!isNewCompany && (
-          <CustomSearchInput
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e)}
-            onSelect={(e) => setSearchTerm(e)}
-            isButton={true}
-            buttonText={"Add new"}
-            onButtonClick={() => setIsNewCompany(true)}
-          />
+          <div className="flex items-center w-full my-2">
+            <Select
+              size="lg"
+              className="w-[15%]"
+              selectedKeys={[seachFields?.searchField]}
+              items={[
+                { label: "GST", value: "gstNumber" },
+                { label: "Name", value: "searchNameAndGSt" },
+                { label: "Contact no.", value: "contactNumber" },
+                { label: "Email", value: "contactEmail" },
+              ]}
+              onSelectionChange={(e) => {
+                let key = Array.from(e);
+                setSearchFields((prev) => ({ ...prev, searchField: key }));
+              }}
+            >
+              {(item) => (
+                <SelectItem key={item?.value}>{item?.label}</SelectItem>
+              )}
+            </Select>
+            <Autocomplete
+              size="lg"
+              className="max-w-[85%]"
+              classNames={{ base: "rounded-tr-none rounded-br-none" }}
+              items={searchCompaniesList || []}
+              placeholder="Search companies"
+              endContent={
+                <Button variant="light" onPress={() => setIsNewCompany(true)}>
+                  New company
+                </Button>
+              }
+              onInputChange={(e) =>
+                setSearchFields((prev) => ({ ...prev, searchText: e }))
+              }
+            >
+              {(item) => (
+                <AutocompleteItem
+                  key={item.companyId}
+                  onPress={() => {
+                    setCompanyAndUnitData((prev) => ({
+                      ...prev,
+                      companyName: item?.companyName,
+                      companyId: item?.companyId,
+                    }));
+                  }}
+                >
+                  {item.companyName}
+                </AutocompleteItem>
+              )}
+            </Autocomplete>
+          </div>
         )}
       </div>
       {isNewCompany && (
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="max-h-[64vh] overflow-auto p-4 mb-2">
-            <div className="mt-4">
-              <h2>Company info</h2>
+          <div className="max-h-[64vh] overflow-auto p-3 flex flex-col gap-12">
+            <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+              <h2 className="mb-2 font-medium text-lg">Company info</h2>
               <div className="grid grid-cols-3 gap-4">
                 <Controller
                   name="consultantOrCompany"
@@ -1020,8 +1086,8 @@ const CreateCompanyForm = ({
                 />
               </div>
             </div>
-            <div className="mt-4">
-              <h2>Arrangement detail</h2>
+            <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+              <h2 className="mb-2 font-medium text-lg">Arrangement detail</h2>
               <div className="grid grid-cols-3 gap-4">
                 <Controller
                   name="rating"
@@ -1175,8 +1241,8 @@ const CreateCompanyForm = ({
                 )}
               </div>
             </div>
-            <div className="mt-4">
-              <h2>Contacts</h2>
+            <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+              <h2 className="mb-2 font-medium text-lg">Contacts</h2>
               <h3 className="font-medium my-3">Primary contacts</h3>
               <div className="grid grid-cols-3 gap-4 w-full">
                 <Controller
@@ -1366,8 +1432,8 @@ const CreateCompanyForm = ({
                 />
               </div>
             </div>
-            <div className="mt-4">
-              <h2>Address</h2>
+            <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+              <h2 className="mb-2 font-medium text-lg">Address</h2>
               <h3 className="font-medium my-3">Billing address</h3>
               <div className="grid grid-cols-3 gap-4">
                 <Controller
@@ -1557,8 +1623,8 @@ const CreateCompanyForm = ({
                     Serving company details
                   </h1>
                 </div>
-                <div className="mt-4">
-                  <h2>Company info</h2>
+                <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+                  <h2 className="mb-2 font-medium text-lg">Company info</h2>
                   <div className="grid grid-cols-3 gap-4">
                     <Controller
                       name="servingName"
@@ -1730,8 +1796,8 @@ const CreateCompanyForm = ({
                     />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <h2>Contacts</h2>
+                <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+                  <h2 className="mb-2 font-medium text-lg">Contacts</h2>
                   <h3 className="font-medium my-3">Primary contacts</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <Controller
@@ -1925,8 +1991,8 @@ const CreateCompanyForm = ({
                     />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <h2>Address</h2>
+                <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
+                  <h2 className="mb-2 font-medium text-lg">Address</h2>
                   <h3 className="font-medium my-3">Billing address</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <Controller
@@ -2101,7 +2167,7 @@ const CreateCompanyForm = ({
               </div>
             )}
           </div>
-          <Button size="lg" color="primary" type="submit">
+          <Button size="lg" color="primary" type="submit" className="mt-2">
             Submit
           </Button>
         </form>

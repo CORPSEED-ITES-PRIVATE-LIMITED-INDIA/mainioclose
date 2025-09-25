@@ -184,6 +184,26 @@ export const updateCompanyAddress = createAsyncThunk(
   }
 );
 
+export const getHistoryByCompanyId = createAsyncThunk(
+  "getCompanyByHistoryId",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/companyHistory/getAllCompanyHistory?companyId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const convertServingCompanyToCompany = createAsyncThunk(
+  "convertServingCompanyToCompany",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/company/importServingIntoCompany`,
+      data
+    );
+    return response.data;
+  }
+);
 
 const CompanySlice = createSlice({
   name: "company",
@@ -203,6 +223,7 @@ const CompanySlice = createSlice({
     seachCompniesList: [],
     allCompanyUnits: [],
     contactListByCompanyId: [],
+    companyHistoryList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllNewCompanies.pending, (state) => {
@@ -385,7 +406,17 @@ const CompanySlice = createSlice({
       state.loading = "rejected";
     });
 
-   
+    builder.addCase(getHistoryByCompanyId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getHistoryByCompanyId.fulfilled, (state, action) => {
+      state.companyHistoryList = action?.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getHistoryByCompanyId.rejected, (state) => {
+      state.companyHistoryList = [];
+      state.loading = "rejected";
+    });
   },
 });
 

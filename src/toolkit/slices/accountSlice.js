@@ -42,13 +42,67 @@ export const getPaymentDetailListByEstimateId = createAsyncThunk(
   }
 );
 
+export const getAllVendorsPaymentList = createAsyncThunk(
+  "getAllVendorsPaymentList",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegister?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllVendorsPaymentCount = createAsyncThunk(
+  "getAllVendorsPaymentCount",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCount`
+    );
+    return response.data;
+  }
+);
+
+export const getAllTdsReportInAccounts = createAsyncThunk(
+  "getAllTdsReportInAccounts",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/tds/getAllTdsReport`
+    );
+    return response.data;
+  }
+);
+
+export const paymentRegisterRemainingAmount = createAsyncThunk(
+  "paymentRegisterRemainingAmount",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getRemainingAmount?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const getInvoiceDetailById = createAsyncThunk(
+  "getInvoiceDetailById",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/invoice/getInvoiceById?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
     loading: "",
     approvalCompanyList: [],
     paymentApprovalList: [],
-    estimatePaymentList:[]
+    estimatePaymentList: [],
+    vendorsPaymentList: [],
+    vendorsPaymentCount: 0,
+    remainingAmountDetail: {},
+    invoiceDetail: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -70,7 +124,7 @@ const AccountSlice = createSlice({
       state.loading = "success";
       state.paymentApprovalList = action.payload;
     });
-    builder.addCase(getAllPaymentApprovals.rejected, (state,) => {
+    builder.addCase(getAllPaymentApprovals.rejected, (state) => {
       state.loading = "rejected";
       state.paymentApprovalList = [];
     });
@@ -78,13 +132,67 @@ const AccountSlice = createSlice({
     builder.addCase(getPaymentDetailListByEstimateId.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getPaymentDetailListByEstimateId.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.estimatePaymentList = action.payload;
-    });
+    builder.addCase(
+      getPaymentDetailListByEstimateId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.estimatePaymentList = action.payload;
+      }
+    );
     builder.addCase(getPaymentDetailListByEstimateId.rejected, (state) => {
       state.loading = "rejected";
       state.estimatePaymentList = [];
+    });
+
+    builder.addCase(getAllVendorsPaymentList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorsPaymentList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorsPaymentList = action.payload;
+    });
+    builder.addCase(getAllVendorsPaymentList.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsPaymentList = [];
+    });
+
+    builder.addCase(getAllVendorsPaymentCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorsPaymentCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorsPaymentCount = action.payload;
+    });
+    builder.addCase(getAllVendorsPaymentCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsPaymentCount = 0;
+    });
+
+    builder.addCase(paymentRegisterRemainingAmount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      paymentRegisterRemainingAmount.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.remainingAmountDetail = action.payload;
+      }
+    );
+    builder.addCase(paymentRegisterRemainingAmount.rejected, (state) => {
+      state.loading = "rejected";
+      state.remainingAmountDetail = {};
+    });
+
+    builder.addCase(getInvoiceDetailById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getInvoiceDetailById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.invoiceDetail = action.payload;
+    });
+    builder.addCase(getInvoiceDetailById.rejected, (state) => {
+      state.loading = "rejected";
+      state.invoiceDetail = {};
     });
   },
 });

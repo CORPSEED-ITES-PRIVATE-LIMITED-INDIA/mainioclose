@@ -46,10 +46,11 @@ import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
 import { getAllUrlList } from "../../toolkit/slices/commonSlice";
 import SingleFileUploader from "../../components/SingleFileUploader";
-import { paymentTermDays } from "../../common";
+import { inrCurrency, paymentTermDays } from "../../common";
 import {
   createPurchaseOrder,
   getPaymentDetailListByEstimateId,
+  paymentRegisterRemainingAmount,
 } from "../../toolkit/slices/accountSlice";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import InvoiceView from "../../components/InvoiceView";
@@ -63,8 +64,8 @@ const columns = [
   { name: "GST NUMBER", uid: "gstNo" },
   { name: "PRIMARY CONTACT", uid: "primaryContact" },
   { name: "SECONDARY CONTACT", uid: "secondaryContact" },
-  { name: "GOVT. FEE", uid: "govermentfees" },
   { name: "PROF. FEE", uid: "professionalFees" },
+  { name: "GOVT. FEE", uid: "govermentfees" },
   { name: "SERVICE FEE", uid: "serviceCharge" },
   { name: "OTHER FEE", uid: "otherFees" },
   { name: "INVOICE NOTE", uid: "invoiceNote" },
@@ -84,8 +85,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "gstNo",
   "govermentfees",
   "professionalFees",
-  "serviceCharge",
-  "otherFees",
   "actions",
 ];
 
@@ -197,10 +196,15 @@ const Estimate = () => {
   const data = useSelector((state) => state.leads.estimateList);
   const urlList = useSelector((state) => state.common.urlList);
   const paymentList = useSelector((state) => state.account.estimatePaymentList);
+  const remainingAmountDetail = useSelector(
+    (state) => state.account.remainingAmountDetail
+  );
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
-  const [companyType, setCompanyType] = useState("");
   const [paymentType, setPaymentType] = useState("");
+  const [isMilestone, setIsMilestone] = useState(false);
+  const [paymentSelectionType, setPaymentSelectionType] =
+    useState("Payment register");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
@@ -272,11 +276,43 @@ const Estimate = () => {
     viewModal.onOpen();
   };
 
-  const handleChangePaymentType = (e) => {};
+  useEffect(() => {
+    if (!remainingAmountDetail?.primary) {
+      reset({
+        professionalFees: remainingAmountDetail?.proffees,
+        govermentFees: remainingAmountDetail?.govfees,
+        otherFees: remainingAmountDetail?.otherFees,
+        serviceCharge: remainingAmountDetail?.serviceCharge,
+      });
+    }
+  }, [remainingAmountDetail, reset]);
+
+  const handleSetPayment = useCallback(
+    (e) => {
+      if (e === "Partial") {
+        reset({
+          professionalFees: rowItem?.professionalFees / 2,
+          govermentFees: rowItem?.govermentFees / 2,
+          otherFees: rowItem?.otherFees / 2,
+          serviceCharge: rowItem?.serviceCharge / 2,
+        });
+      }
+      if (e === "Fully") {
+        reset({
+          professionalFees: rowItem?.professionalFees,
+          govermentFees: rowItem?.govermentFees,
+          otherFees: rowItem?.otherFees,
+          serviceCharge: rowItem?.serviceCharge,
+        });
+      }
+    },
+    [rowItem, reset]
+  );
 
   const handleActionsPress = (rowItem) => {
     setRowItem(rowItem);
     dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
+    dispatch(paymentRegisterRemainingAmount(rowItem?.id));
     const values = getValues();
     reset({
       ...values,
@@ -366,7 +402,9 @@ const Estimate = () => {
       case "professionalFees":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.professionalFees || "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.professionalFees) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.profesionalGst || "-"}%
             </span>
@@ -375,7 +413,9 @@ const Estimate = () => {
       case "govermentfees":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.govermentfees || "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.govermentfees) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.govermentGst || "-"}%
             </span>
@@ -384,7 +424,9 @@ const Estimate = () => {
       case "serviceCharge":
         return (
           <div className="flex flex-col">
-            <span className="">₹{rowData?.serviceCharge || "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.serviceCharge) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.serviceGst || "-"}%
             </span>
@@ -393,7 +435,9 @@ const Estimate = () => {
       case "otherFees":
         return (
           <div className="flex flex-col">
-            <span className="">₹ {rowData?.otherFees || "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.otherFees) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.otherGst || "-"}%
             </span>
@@ -666,7 +710,7 @@ const Estimate = () => {
         </TableBody>
       </Table>
       <Modal
-        size="3xl"
+        size="5xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}
@@ -699,33 +743,41 @@ const Estimate = () => {
                   className="flex flex-col gap-4"
                 >
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="paymentType"
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <Select
-                          isRequired
-                          label="Payment type"
-                          {...field}
-                          selectedKeys={[field.value]}
-                          onSelectionChange={(e) => {
-                            setCompanyType(Array.from(e)[0]);
-                            field.onChange(Array.from(e)[0]);
-                          }}
-                          items={[
-                            { label: "Fully", key: "Fully" },
-                            { label: "Partial", key: "Partial" },
-                            { label: "Milestone", key: "Milestone" },
-                          ]}
-                        >
-                          {(item) => (
-                            <SelectItem key={item.key}>{item.label}</SelectItem>
-                          )}
-                        </Select>
-                      )}
-                    />
-                    {companyType === "Milestone" && (
+                    {remainingAmountDetail?.primary && (
+                      <Controller
+                        name="paymentType"
+                        control={control}
+                        defaultValue={[]}
+                        render={({ field }) => (
+                          <Select
+                            isRequired
+                            label="Payment type"
+                            {...field}
+                            selectedKeys={[field.value]}
+                            onSelectionChange={(e) => {
+                              let key = Array.from(e)[0];
+                              setPaymentType(key);
+                              setIsMilestone(key === "Milestone");
+                              handleSetPayment(key);
+                              field.onChange(key);
+                            }}
+                            items={[
+                              { label: "Fully", key: "Fully" },
+                              { label: "Partial", key: "Partial" },
+                              { label: "Milestone", key: "Milestone" },
+                            ]}
+                          >
+                            {(item) => (
+                              <SelectItem key={item.key}>
+                                {item.label}
+                              </SelectItem>
+                            )}
+                          </Select>
+                        )}
+                      />
+                    )}
+
+                    {isMilestone && (
                       <Controller
                         name="docPersent"
                         control={control}
@@ -740,7 +792,7 @@ const Estimate = () => {
                         )}
                       />
                     )}
-                    {companyType === "Milestone" && (
+                    {isMilestone && (
                       <Controller
                         name="filingPersent"
                         control={control}
@@ -755,7 +807,7 @@ const Estimate = () => {
                         )}
                       />
                     )}
-                    {companyType === "Milestone" && (
+                    {isMilestone && (
                       <Controller
                         name="liasoningPersent"
                         control={control}
@@ -770,7 +822,7 @@ const Estimate = () => {
                         )}
                       />
                     )}
-                    {companyType === "Milestone" && (
+                    {isMilestone && (
                       <Controller
                         name="certificatePersent"
                         control={control}
@@ -785,32 +837,28 @@ const Estimate = () => {
                         )}
                       />
                     )}
-                    <Controller
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <Select
-                          isRequired
-                          label="Payment type"
-                          {...field}
-                          selectedKeys={[field.value]}
-                          onSelectionChange={(e) => {
-                            setPaymentType(Array.from(e)[0]);
-                          }}
-                          items={[
-                            { label: "Purchase order", key: "Purchase order" },
-                            {
-                              label: "Payment register",
-                              key: "Payment register",
-                            },
-                          ]}
-                        >
-                          {(item) => (
-                            <SelectItem key={item.key}>{item.label}</SelectItem>
-                          )}
-                        </Select>
+
+                    <Select
+                      isRequired
+                      label="Payment selection type"
+                      selectedKeys={[paymentSelectionType]}
+                      onSelectionChange={(e) => {
+                        setPaymentSelectionType(Array.from(e)[0]);
+                      }}
+                      items={[
+                        { label: "Purchase order", key: "Purchase order" },
+                        {
+                          label: "Payment register",
+                          key: "Payment register",
+                        },
+                      ]}
+                    >
+                      {(item) => (
+                        <SelectItem key={item.key}>{item.label}</SelectItem>
                       )}
-                    />
-                    {paymentType === "Purchase order" ? (
+                    </Select>
+
+                    {paymentSelectionType === "Purchase order" ? (
                       <>
                         <Controller
                           name="purchaseNumber"
@@ -1045,6 +1093,10 @@ const Estimate = () => {
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               {...field}
+                              isDisabled={
+                                paymentType === "Partial" ||
+                                paymentType === "Fully"
+                              }
                               type="number"
                             />
                           )}
@@ -1059,6 +1111,7 @@ const Estimate = () => {
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               {...field}
+                              isDisabled
                               type="number"
                             />
                           )}
@@ -1073,6 +1126,10 @@ const Estimate = () => {
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               {...field}
+                              isDisabled={
+                                paymentType === "Partial" ||
+                                paymentType === "Fully"
+                              }
                               type="number"
                             />
                           )}
@@ -1087,6 +1144,7 @@ const Estimate = () => {
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               {...field}
+                              isDisabled
                               type="number"
                             />
                           )}
@@ -1100,6 +1158,10 @@ const Estimate = () => {
                               label="Service charge"
                               errorMessage={error?.message}
                               isInvalid={!!error}
+                              isDisabled={
+                                paymentType === "Partial" ||
+                                paymentType === "Fully"
+                              }
                               {...field}
                               type="number"
                             />
@@ -1115,6 +1177,7 @@ const Estimate = () => {
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               {...field}
+                              isDisabled
                               type="number"
                             />
                           )}
@@ -1128,6 +1191,10 @@ const Estimate = () => {
                               label="Other fees"
                               errorMessage={error?.message}
                               isInvalid={!!error}
+                              isDisabled={
+                                paymentType === "Partial" ||
+                                paymentType === "Fully"
+                              }
                               {...field}
                               type="number"
                             />
@@ -1139,6 +1206,7 @@ const Estimate = () => {
                           render={({ field, fieldState: { error } }) => (
                             <Input
                               isRequired
+                              isDisabled
                               label="Other GST %"
                               errorMessage={error?.message}
                               isInvalid={!!error}
@@ -1157,6 +1225,7 @@ const Estimate = () => {
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               {...field}
+                              isDisabled
                               type="number"
                             />
                           )}
