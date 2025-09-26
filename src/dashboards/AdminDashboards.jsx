@@ -19,7 +19,6 @@ import LeadDataChart from "./charts/LeadDataChart";
 import LeadStatusChart from "./charts/LeadStatusChart";
 import ProjectsDataChart from "./charts/ProjectsDataChart";
 import ConversionStatus from "./charts/conversionStatus";
-import ConvertedLeadsDataChart from "./charts/convertedLeadsDataChart";
 import TopSellLeads from "./charts/TopSellLeads";
 import RevenueChart from "./charts/RevenueChart";
 
