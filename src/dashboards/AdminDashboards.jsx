@@ -18,7 +18,7 @@ import { useParams } from "react-router-dom";
 import LeadDataChart from "./charts/LeadDataChart";
 import LeadStatusChart from "./charts/LeadStatusChart";
 import ProjectsDataChart from "./charts/ProjectsDataChart";
-import ConversionStatus from "./charts/conversionStatus";
+import ConversionStatus from "./charts/ConversionStatus";
 import TopSellLeads from "./charts/TopSellLeads";
 import RevenueChart from "./charts/RevenueChart";
 
