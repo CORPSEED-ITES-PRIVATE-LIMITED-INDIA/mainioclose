@@ -105,7 +105,7 @@ const AutoHistory = () => {
       getAllAutoHistoryList({ page, size: rowsPerPage, data: dateFilter })
     );
     dispatch(getAllAutoHistroryCount(dateFilter));
-  }, [dispatch, page, rowsPerPage]);
+  }, [dispatch, page, rowsPerPage, dateFilter]); // Added dateFilter to dependencies
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -132,11 +132,8 @@ const AutoHistory = () => {
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
   const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
+    return filteredItems; // Removed client-side slice; use server-paginated data directly
+  }, [filteredItems]);
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
@@ -206,7 +203,7 @@ const AutoHistory = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal">
-              {dayjs(rowData.assignDate).format("DD-MM-YYYY HH:mm ")}
+              {dayjs(rowData?.assignDate).format("DD-MM-YYYY HH:mm ")}
             </span>
           </div>
         );
@@ -254,8 +251,9 @@ const AutoHistory = () => {
   }, []);
 
   const handleApplyFilter = () => {
+    setPage(1); // Reset to page 1 on filter apply
     dispatch(
-      getAllAutoHistoryList({ page, size: rowsPerPage, data: dateFilter })
+      getAllAutoHistoryList({ page: 1, size: rowsPerPage, data: dateFilter })
     );
     dispatch(getAllAutoHistroryCount(dateFilter));
     dispatch(getAllAutoHistoryForExportByDate(dateFilter))
@@ -273,9 +271,10 @@ const AutoHistory = () => {
   };
 
   const handleResetFilter = () => {
+    setPage(1); // Reset to page 1 on reset
     dispatch(
       getAllAutoHistoryList({
-        page,
+        page: 1,
         size: rowsPerPage,
         data: {
           toDate: "",
@@ -350,9 +349,10 @@ const AutoHistory = () => {
                 onSelectionChange={(e) => {
                   let value = Array.from(e)[0];
                   setDateFilter((prev) => ({ ...prev, departmentId: value }));
+                  setPage(1); // Reset to page 1 on department change
                   dispatch(
                     getAllAutoHistoryList({
-                      page,
+                      page: 1,
                       size: rowsPerPage,
                       data: { ...dateFilter, departmentId: value },
                     })
