@@ -1080,7 +1080,7 @@ const Leads = () => {
     allLeadUser,
     filterPopOver,
     actionPopOver,
-    filteredItems,
+    sortedItems,
     data,
   ]);
 
