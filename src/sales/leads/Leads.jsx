@@ -1008,9 +1008,9 @@ const Leads = () => {
                   key="allTask"
                   href={`erp/${userId}/sales/allTask`}
                 >
-                  Add task
+                  All task
                 </DropdownItem>
-                {department?.department === "Quality Team" && (
+                {(department?.department === "Quality Team" || adminRole) && (
                   <DropdownItem key="add" endContent={<Plus />}>
                     Add lead
                   </DropdownItem>
