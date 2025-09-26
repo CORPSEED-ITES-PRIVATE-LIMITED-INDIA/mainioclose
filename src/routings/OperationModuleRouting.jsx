@@ -1,7 +1,7 @@
 import { Route } from "react-router-dom";
 import OperationsSettings from "../operation/Settings/OperationsSettings";
 import UserMapWithProduct from "../operation/Settings/UserMapWithProduct";
-import ProjectDetails from "../operation/projects/projectDetails";
+import ProjectDetails from "../operation/projects/ProjectDetails";
 import Milestone from "../operation/Settings/Milestone";
 
 const OperationModuleRouting = () => {

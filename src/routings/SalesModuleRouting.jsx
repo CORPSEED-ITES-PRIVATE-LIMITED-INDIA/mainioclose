@@ -15,7 +15,7 @@ import ServingCompanies from "../sales/leads/ServingCompanies";
 import LeadTask from "../sales/leads/LeadTask";
 import LeadInfo from "../sales/leads/LeadInfo";
 import CreateCompanyForm from "../sales/company/CreateCompanyForm";
-import Vendors from "../sales/vendors/vendors";
+import Vendors from "../sales/vendors/Vendors";
 import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import AutomationStatus from "../sales/leads/AutomationStatus";

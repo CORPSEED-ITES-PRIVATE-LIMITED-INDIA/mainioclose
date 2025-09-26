@@ -6,7 +6,7 @@ import Leads from "../sales/leads/Leads";
 import LeadDetail from "../sales/leads/LeadDetail";
 import LeadInfo from "../sales/leads/LeadInfo";
 import CreateCompanyForm from "../sales/company/CreateCompanyForm";
-import Vendors from "../sales/vendors/vendors";
+import Vendors from "../sales/vendors/Vendors";
 import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import LeadSearch from "../quality/LeadSearch";
