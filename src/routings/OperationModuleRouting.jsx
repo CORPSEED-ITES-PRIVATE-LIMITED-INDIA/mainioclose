@@ -3,7 +3,6 @@ import OperationsSettings from "../operation/Settings/OperationsSettings";
 import UserMapWithProduct from "../operation/Settings/UserMapWithProduct";
 import ProjectDetails from "../operation/projects/projectDetails";
 import Milestone from "../operation/Settings/Milestone";
-import Projects from "../operation/projects/Projects";
 
 const OperationModuleRouting = () => {
   return (
