@@ -15,14 +15,25 @@ import {
   TableRow,
   Tooltip,
   useDisclosure,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  getKeyValue,
 } from "@heroui/react";
 import { Award, ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getAllNewCompanies } from "../../toolkit/slices/companySlice";
+import {
+  getAllNewCompanies,
+  getHistoryByCompanyId,
+} from "../../toolkit/slices/companySlice";
 import NewSelect from "../../components/NewSelect";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
+import dayjs from "dayjs";
+import CreateCompanyForm from "./CreateCompanyForm";
 
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
@@ -52,10 +63,15 @@ const INITIAL_VISIBLE_COLUMNS = [
 const Company = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const historyDrawer = useDisclosure();
   const count = useSelector(
     (state) => state.company.newCompaniesList?.[0]?.total
   );
   const data = useSelector((state) => state.company.newCompaniesList);
+  const companyHistory = useSelector(
+    (state) => state.company.companyHistoryList
+  );
   const allLeadUser = useSelector((state) => state.dashboard.dashboardUsers);
   const currentRoles = useSelector((state) => state?.auth?.roles);
   const countryList = useSelector((state) => state.common.countriesList);
@@ -78,6 +94,7 @@ const Company = () => {
     type: "all",
     rating: "all",
   });
+  const [editData, setEditData] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -222,12 +239,23 @@ const Company = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="history">
-                  <Link>History</Link>
+                <DropdownItem
+                  key="history"
+                  onPress={() => {
+                    historyDrawer.onOpen();
+                    dispatch(getHistoryByCompanyId(company?.companyId));
+                  }}
+                >
+                  History
                 </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
-                  Delete
+                <DropdownItem
+                  key="edit"
+                  onPress={() => {
+                    onOpen();
+                    setEditData(company);
+                  }}
+                >
+                  Edit
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -462,7 +490,7 @@ const Company = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[500px]",
+          wrapper: "max-h-[70vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -493,6 +521,90 @@ const Company = () => {
           )}
         </TableBody>
       </Table>
+      <Drawer
+        isOpen={historyDrawer.isOpen}
+        onOpenChange={historyDrawer.onOpenChange}
+        size="4xl"
+      >
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1">
+                Company history
+              </DrawerHeader>
+              <DrawerBody>
+                <Table aria-label="Example table with dynamic content">
+                  <TableHeader
+                    columns={[
+                      {
+                        key: "createDate",
+                        label: "DATE",
+                      },
+                      {
+                        key: "eventType",
+                        label: "EVENT",
+                      },
+                      {
+                        key: "description",
+                        label: "DESCRIPTION",
+                      },
+                    ]}
+                  >
+                    {(column) => (
+                      <TableColumn key={column.key}>{column.label}</TableColumn>
+                    )}
+                  </TableHeader>
+                  <TableBody items={companyHistory || []}>
+                    {(item) => (
+                      <TableRow key={item.id}>
+                        {(columnKey) => (
+                          <TableCell>
+                            {columnKey === "createDate"
+                              ? dayjs(item?.createDate).format(
+                                  "DD-MM-YYYY , HH:mm a"
+                                )
+                              : getKeyValue(item, columnKey)}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </DrawerBody>
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+      <Drawer isOpen={isOpen} onOpenChange={onOpenChange} size="full">
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1">
+                Edit company details
+              </DrawerHeader>
+              <DrawerBody>
+                <CreateCompanyForm
+                  edit={true}
+                  editData={editData}
+                  onOpenChange={onOpenChange}
+                  companyFilteration={companyFilteration}
+                  setEditData={setEditData}
+                />
+              </DrawerBody>
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };

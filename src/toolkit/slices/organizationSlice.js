@@ -228,18 +228,41 @@ export const getAllPaymentRegisterCount = createAsyncThunk(
   }
 );
 
-export const getAllInvoice = createAsyncThunk("getAllInvoice", async (id) => {
-  const response = await api.get(
-    `/accountService/api/v1/paymentRegister/getAllInvoice?userId=${id}`
-  );
-  return response.data;
-});
+export const getAllInvoice = createAsyncThunk(
+  "getAllInvoice",
+  async ({ userId, page, size }) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllInvoice?userId=${userId}&page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllInvoiceCount = createAsyncThunk(
+  "getAllInvoiceCount",
+  async (userId) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllInvoiceCount?userId=${userId}`
+    );
+    return response.data;
+  }
+);
 
 export const getAllUnbillList = createAsyncThunk(
   "getAllUnbillList",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/accountService/api/v1/ledgerType/getAllUnbilled?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllUnbillCount = createAsyncThunk(
+  "getAllUnbillCount",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/ledgerType/getAllUnbilled`
+      `/accountService/api/v1/ledgerType/getAllUnbilledCount`
     );
     return response.data;
   }
@@ -413,7 +436,9 @@ const OrganizationSlice = createSlice({
     allPaymentRegisterList: [],
     paymentRegistercont: 0,
     allInvoiceList: [],
+    allInvoiceCount:0,
     unBillList: [],
+    unBillCount: 0,
     salesInvoiceList: [],
     tdsList: [],
     tdsAmount: {},
@@ -633,6 +658,18 @@ const OrganizationSlice = createSlice({
       state.allInvoiceList = [];
     });
 
+    builder.addCase(getAllInvoiceCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllInvoiceCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allInvoiceCount = action.payload;
+    });
+    builder.addCase(getAllInvoiceCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.allInvoiceCount =0;
+    });
+
     builder.addCase(getAllUnbillList.pending, (state) => {
       state.loading = "pending";
     });
@@ -643,6 +680,18 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllUnbillList.rejected, (state) => {
       state.loading = "rejected";
       state.unBillList = [];
+    });
+
+    builder.addCase(getAllUnbillCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUnbillCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.unBillCount = action.payload;
+    });
+    builder.addCase(getAllUnbillCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.unBillCount = [];
     });
 
     builder.addCase(getAllInvoiceForSale.pending, (state) => {

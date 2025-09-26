@@ -61,7 +61,7 @@ const Layoutpage = () => {
                 size="sm"
                 isIconOnly
                 onPress={() => setCollapsed(!collapsed)}
-                className="w-1 lg:hidden"
+                className="w-1"
               >
                 <PanelLeft color="gray" className="h-4 w-4" />
               </Button>

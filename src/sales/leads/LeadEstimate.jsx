@@ -845,7 +845,7 @@ const LeadEstimate = () => {
   return (
     <>
       <div className="flex justify-between items-center">
-        <h1>
+        <h1 className="text-2xl font-semibold">
           {Object.keys(details)?.length > 0 && !editEstimate
             ? `${
                 details?.performaInvoice
@@ -937,7 +937,7 @@ const LeadEstimate = () => {
               />
             </div>
             <Card className="my-2">
-              <CardHeader className="flex justify-between">
+              <CardHeader className="flex justify-between font-medium">
                 Company info{" "}
                 <Button variant="light" size="sm" onPress={gstFormModal.onOpen}>
                   Update gst
@@ -1167,7 +1167,7 @@ const LeadEstimate = () => {
               </CardBody>
             </Card>
             <Card className="my-2">
-              <CardHeader>Contact</CardHeader>
+              <CardHeader className="font-medium">Contact</CardHeader>
               <CardBody className="grid grid-cols-2 gap-2">
                 <Controller
                   name="primaryContact"
@@ -1212,7 +1212,7 @@ const LeadEstimate = () => {
               </CardBody>
             </Card>
             <Card className="my-2">
-              <CardHeader>Product info</CardHeader>
+              <CardHeader className="font-medium">Product info</CardHeader>
               <CardBody>
                 <div className="my-2">
                   <Switch
@@ -1655,7 +1655,7 @@ const LeadEstimate = () => {
               </CardBody>
             </Card>
             <Card className="my-2">
-              <CardHeader>Purchasing info</CardHeader>
+              <CardHeader className="font-medium">Purchasing info</CardHeader>
               <CardBody className="grid grid-cols-3 gap-3">
                 <Controller
                   name="assigneeId"
@@ -1739,7 +1739,7 @@ const LeadEstimate = () => {
               </CardBody>
             </Card>
             <Card className="my-2">
-              <CardHeader className="flex justify-between">
+              <CardHeader className="flex justify-between font-medium">
                 Address{" "}
                 <Button variant="light" onPress={addressFormModal.onOpen}>
                   Update address
@@ -1832,7 +1832,7 @@ const LeadEstimate = () => {
               </CardBody>
             </Card>
             <Card className="my-2">
-              <CardHeader>Secondary address</CardHeader>
+              <CardHeader className="font-medium">Secondary address</CardHeader>
               <CardBody className="grid grid-cols-3 gap-3">
                 <Controller
                   name="secondaryAddress"

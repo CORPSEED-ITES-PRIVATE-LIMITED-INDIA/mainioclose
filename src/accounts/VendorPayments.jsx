@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -13,31 +13,30 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  addToast,
   useDisclosure,
   Modal,
+  ModalBody,
+  ModalFooter,
   ModalContent,
   ModalHeader,
-  ModalBody,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  getAllInvoice,
-  getAllInvoiceCount,
+  getAllUnbillCount,
+  getAllUnbillList,
 } from "../../toolkit/slices/organizationSlice";
-import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
-import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
-import InvoiceView from "../../components/InvoiceView";
+import TaxInvoice from "../../components/TaxInvoice";
 import { inrCurrency } from "../../common";
+import dayjs from "dayjs";
+import { getAllVendorsPaymentCount, getAllVendorsPaymentList } from "../toolkit/slices/accountSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "INVOICE NO.", uid: "invoiceNo" },
+  { name: "UNBILL NO.", uid: "unbillNo", sortable: true },
   { name: "SERVICE", uid: "service" },
-  { name: "CLIENT", uid: "clientName" },
-  { name: "COMPANY", uid: "companyName" },
+  { name: "CLIENT", uid: "client" },
+  { name: "COMPANY", uid: "company" },
   { name: "TXN. AMOUNT", uid: "txnAmount" },
   { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
@@ -49,24 +48,20 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
-  "invoiceNo",
+  "unbillNo",
   "service",
-  "clientName",
-  "companyName",
+  "client",
+  "company",
   "txnAmount",
   "addedBy",
   "actions",
 ];
 
-const AllInvoice = () => {
+const VendorPayments = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.allInvoiceList);
-  const count = useSelector(
-    (state) => state.organization.allInvoiceList?.length
-  );
-  const [estimateDetail, setEstimateDetail] = useState(null);
+  const data = useSelector((state) => state.accounts.vendorsPaymentList);
+  const count = useSelector((state) => state.accounts.vendorsPaymentCount);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -81,9 +76,9 @@ const AllInvoice = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage }));
-    dispatch(getAllInvoiceCount(userId));
-  }, [dispatch, userId]);
+    dispatch(getAllVendorsPaymentList({ page, size: rowsPerPage }));
+    dispatch(getAllVendorsPaymentCount());
+  }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -98,7 +93,7 @@ const AllInvoice = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item.productName.toLowerCase().includes(filterValue.toLowerCase())
+        item.company.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -124,55 +119,24 @@ const AllInvoice = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handleViewEstimate = (value) => {
-    dispatch(getEstimateByLeadId(value?.leadId))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          let data = resp?.payload;
-          setEstimateDetail(data);
-          onOpen();
-        } else {
-          addToast({
-            title: "There is Some Issue in estimate",
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" })
-      );
-  };
-
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "date":
+        return <p className="text-sm capitalize">{dayjs(rowData?.date).format("DD-MM-YYYY")}</p>;
+      case "unbillNo":
         return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.createDate).format("DD-MM-YYYY")}
-          </p>
-        );
-      case "invoiceNo":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{`INV000${rowData?.invoiceNo}`}</p>
-          </div>
+          <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>
         );
       case "service":
+        return <p className="text-sm capitalize">{rowData?.productName}</p>;
+      case "company":
+        return <p className="text-sm capitalize">{rowData?.company}</p>;
+      case "client":
         return (
-          <p className="text-sm capitalize">{rowData?.service}</p>
-        );
-      case "clientName":
-        return (
-          <p className="text-sm capitalize">
-            {rowData?.clientName}
-          </p>
-        );
-      case "companyName":
-        return (
-          <p className="text-sm capitalize">
-            {rowData?.companyName}
-          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm capitalize">{rowData?.clientName}</p>
+          </div>
         );
       case "txnAmount":
         return (
@@ -181,9 +145,7 @@ const AllInvoice = () => {
           </p>
         );
       case "addedBy":
-        return (
-          <p className="text-sm capitalize">{rowData?.addedBy?.fullName}</p>
-        );
+        return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -193,16 +155,11 @@ const AllInvoice = () => {
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
-                  if (key == "viewEstimate") {
-                    handleViewEstimate(rowData);
-                  }
-                }}
-              >
-                <DropdownItem key="viewEstimate">View estimate</DropdownItem>
+              <DropdownMenu>
+                <DropdownItem key="view" onPress={onOpen}>
+                  View
+                </DropdownItem>
+                <DropdownItem key="edit">Edit</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -282,20 +239,22 @@ const AllInvoice = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} invoice
+            Total {count} vendor's payments
           </span>
-          <label className="flex items-center text-default-400 text-small">
-            Rows per page:
-            <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
-              onChange={onRowsPerPageChange}
-              value={rowsPerPage}
-            >
-              <option value="15">15</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-          </label>
+          <div className="flex gap-4">
+            <label className="flex items-center text-default-400 text-small">
+              Rows per page:
+              <select
+                className="bg-transparent outline-hidden text-default-400 text-small"
+                onChange={onRowsPerPageChange}
+                value={rowsPerPage}
+              >
+                <option value="15">15</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </label>
+          </div>
         </div>
       </div>
     );
@@ -345,11 +304,11 @@ const AllInvoice = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Vendor's payment list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -377,7 +336,7 @@ const AllInvoice = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={`${item.estimateId}unbill`}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -386,22 +345,35 @@ const AllInvoice = () => {
         </TableBody>
       </Table>
       <Modal
-        size="full"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
         isOpen={isOpen}
         onOpenChange={onOpenChange}
+        size="5xl"
         placement="top-center"
+        backdrop="blur"
       >
         <ModalContent>
-          <ModalHeader>Estimate</ModalHeader>
-          <ModalBody className="max-h-[90vh] overflow-auto">
-            <InvoiceView details={estimateDetail} />
-          </ModalBody>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Tax invoice
+              </ModalHeader>
+              <ModalBody>
+                <TaxInvoice />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </>
   );
 };
 
-export default AllInvoice;
+export default VendorPayments;

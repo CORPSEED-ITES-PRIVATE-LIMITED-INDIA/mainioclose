@@ -1,7 +1,7 @@
 import React from "react";
 import { toWords } from "../common";
 
-const TaxInvoice = () => {
+const TaxInvoice = ({ detail }) => {
   const items = [
     {
       particulars: "Consulting Services",
@@ -72,16 +72,14 @@ const TaxInvoice = () => {
             </div>
             <div className="border-b-1 border-gray-400 flex flex-col gap-0.5 p-2">
               <p className="text-xs">Consignee (Ship to)</p>
-              <h3 className="font-medium">
-                EMERSON PROCESS MANAGEMENT (INDIA) PVT LTD
-              </h3>
+              <h3 className="font-medium">{detail?.companyName}</h3>
               <p className="text-sm">
-                Klauke Division, No. 1785 ,Ground floor, 19th main,HSR Layout
-                Sector-1 , Bengaluru Karnataka - 560102,India
+                {detail?.address}, {detail?.city}, {detail?.state},{" "}
+                {detail?.Country} -{detail?.primaryPinCode}
               </p>
-              <p className="text-sm">GSTIN/UIN : 29AAACF1667M2Z8</p>
-              <p className="text-sm">State name : Karnataka, code : 29</p>
-              <p className="text-sm">E-mail : info@corpseed.com</p>
+              <p className="text-sm">GSTIN/UIN : {detail?.gstNo}</p>
+              <p className="text-sm">State name : {detail?.State}, code : 29</p>
+              <p className="text-sm">E-mail : {detail?.primaryContactemails}</p>
             </div>
             <div className="flex flex-col gap-0.5 p-2">
               <p className="text-xs">Buyer (Bill to)</p>
@@ -155,28 +153,28 @@ const TaxInvoice = () => {
         </div>
         <div>
           <table className="w-full border border-gray-300 text-sm text-left">
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-100 dark:bg-gray-600">
               <tr>
-                <th className="border border-gray-300 px-4 py-2 text-center">
+                <th className="border border-gray-300 dark:text-white px-4 py-2 text-center">
                   S.No
                 </th>
-                <th className="border border-gray-300 px-4 py-2">
+                <th className="border border-gray-300 dark:text-white px-4 py-2">
                   Particulars
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
+                <th className="border border-gray-300 dark:text-white px-4 py-2 text-center">
                   GST
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
+                <th className="border border-gray-300 dark:text-white px-4 py-2 text-center">
                   HSN/SAC
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-right">
+                <th className="border border-gray-300 dark:text-white px-4 py-2 text-right">
                   Amount (₹)
                 </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={`${index}invoice`} className="hover:bg-gray-50">
+                <tr key={`${index}invoice`}>
                   <td className="border border-gray-300 px-4 py-2 text-center">
                     {index + 1}
                   </td>
@@ -196,7 +194,7 @@ const TaxInvoice = () => {
               ))}
 
               {/* Total Row */}
-              <tr className="font-semibold bg-gray-100">
+              <tr className="font-semibold bg-gray-100 dark:bg-gray-600">
                 <td
                   colSpan="4"
                   className="border border-gray-300 px-4 py-2 text-right"
@@ -220,7 +218,7 @@ const TaxInvoice = () => {
         <table className="w-full border border-gray-300 text-sm text-center">
           <thead>
             {/* First row with grouped IGST column */}
-            <tr className="bg-gray-100">
+            <tr className="bg-gray-100 dark:bg-gray-600">
               <th className="border border-gray-300 px-4 py-2" rowSpan={2}>
                 HSN/SAC
               </th>
@@ -235,7 +233,7 @@ const TaxInvoice = () => {
               </th>
             </tr>
             {/* Second row under IGST */}
-            <tr className="bg-gray-100">
+            <tr className="bg-gray-100 dark:bg-gray-600">
               <th className="border border-gray-300 px-4 py-2">Rate (%)</th>
               <th className="border border-gray-300 px-4 py-2">Amount (₹)</th>
             </tr>
@@ -243,7 +241,7 @@ const TaxInvoice = () => {
 
           <tbody>
             {taxAbleItems.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+              <tr key={index}>
                 <td className="border border-gray-300 px-4 py-2">{item.hsn}</td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
                   {item.taxable.toLocaleString("en-IN")}
@@ -261,7 +259,7 @@ const TaxInvoice = () => {
             ))}
 
             {/* Total Row */}
-            <tr className="font-semibold bg-gray-100">
+            <tr className="font-semibold bg-gray-100 dark:bg-gray-600">
               <td className="border border-gray-300 px-4 py-2">Total</td>
               <td className="border border-gray-300 px-4 py-2 text-right">
                 {totalTaxable.toLocaleString("en-IN")}
@@ -278,7 +276,7 @@ const TaxInvoice = () => {
         </table>
         <div className="p-4 flex flex-col gap-0.5 border-b-1 border-gray-300">
           <div className="flex gap-1">
-            <p className="text-default-500 text-md">Tax amount (in wors)</p> :{" "}
+            <p className="text-default-500 text-md">Tax amount (in words)</p> :{" "}
             <p className="text-md font-semibold">
               {toWords.convert(totalTaxAmount, { currency: true })}{" "}
             </p>

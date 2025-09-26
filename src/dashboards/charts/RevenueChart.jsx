@@ -1,5 +1,5 @@
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
@@ -25,6 +25,7 @@ import {
 } from "@heroui/react";
 import { ListFilter } from "lucide-react";
 import { getNameAndEmailById } from "../../common";
+import { getAllRevenueDataMonthWise } from "../../toolkit/slices/dashboardSlice";
 export const description = "A line chart";
 const chartData = [
   { month: "January", desktop: 186 },
@@ -48,6 +49,7 @@ const RevenueChart = () => {
   const today = dayjs().format("YYYY-MM-DDTHH:mm");
   const sixMonthsAgo = dayjs().subtract(12, "month").format("YYYY-MM-DDTHH:mm");
   const dashboardUsers = useSelector((state) => state.dashboard.dashboardUsers);
+  const data = useSelector((state) => state.dashboard.revenueDataList);
   const [revenueDataFilter, setRevenueDataFilter] = useState({
     toDate: sixMonthsAgo,
     fromDate: today,
@@ -55,6 +57,18 @@ const RevenueChart = () => {
     currentUserId: userId,
     userId: userId,
   });
+
+  useEffect(() => {
+    dispatch(getAllRevenueDataMonthWise(revenueDataFilter));
+  }, [dispatch, revenueDataFilter]);
+
+  const revenueData = data?.map((item) => ({
+    name: dayjs(item?.name).format("MMM"),
+    value:item?.value,
+  }));
+
+  console.log("revenueData",revenueData)
+
   return (
     <Card>
       <CardHeader>
@@ -70,18 +84,14 @@ const RevenueChart = () => {
             <div>
               <p className="text-sm font-medium">
                 {
-                  getNameAndEmailById(
-                    dashboardUsers,
-                    revenueDataFilter?.userId
-                  )?.name
+                  getNameAndEmailById(dashboardUsers, revenueDataFilter?.userId)
+                    ?.name
                 }
               </p>
               <p className="text-xs text-muted-foreground">
                 {
-                  getNameAndEmailById(
-                    dashboardUsers,
-                    revenueDataFilter?.userId
-                  )?.email
+                  getNameAndEmailById(dashboardUsers, revenueDataFilter?.userId)
+                    ?.email
                 }
               </p>
             </div>
@@ -142,7 +152,7 @@ const RevenueChart = () => {
         <ChartContainer config={chartConfig}>
           <LineChart
             accessibilityLayer
-            data={chartData}
+            data={revenueData}
             margin={{
               left: 12,
               right: 12,
@@ -150,7 +160,7 @@ const RevenueChart = () => {
           >
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="name"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
@@ -161,7 +171,7 @@ const RevenueChart = () => {
               content={<ChartTooltipContent hideLabel />}
             />
             <Line
-              dataKey="desktop"
+              dataKey="value"
               type="natural"
               stroke="var(--color-desktop)"
               strokeWidth={2}
