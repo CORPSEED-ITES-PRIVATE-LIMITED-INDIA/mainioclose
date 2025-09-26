@@ -236,15 +236,8 @@ const Leads = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.leadName.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-    return filteredUsers;
-  }, [data, filterValue]);
+    return [...(data || [])];
+  }, [data]);
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
@@ -535,16 +528,19 @@ const Leads = () => {
     setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
-      dispatch(searchLeads({ input: value, id: userId }));
-    } else {
-      setFilterValue("");
-      dispatch(getAllLeadsByFilter(initialFilterValues));
-    }
-  }, [data,sortedItems]);
+  const onSearchChange = useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
+        dispatch(searchLeads({ input: value, id: userId }));
+      } else {
+        setFilterValue("");
+        dispatch(getAllLeadsByFilter(initialFilterValues));
+      }
+    },
+    [dispatch, userId, initialFilterValues]
+  );
 
   const onClear = useCallback(() => {
     setFilterValue("");
@@ -1163,9 +1159,6 @@ const Leads = () => {
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
-        // classNames={{
-        //   wrapper: "max-h-[65vh]",
-        // }}
         classNames={{
           wrapper:
             "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
