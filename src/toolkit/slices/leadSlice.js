@@ -116,6 +116,18 @@ export const getAllRemarkAndCommnts = createAsyncThunk(
   }
 );
 
+export const updateRemarks = createAsyncThunk("updateRemarks", async (data) => {
+  const response = await api.put(`/leadService/api/v1/updateRemark`, data);
+  return response.data;
+});
+
+export const deleteRemarks = createAsyncThunk("deleteRemarks", async (data) => {
+  const response = await api.delete(
+    `/leadService/api/v1/deleteRemark?remarkId=${data?.remarkId}&currentUser=${data?.userId}&leadId=${data?.leadId}`
+  );
+  return response.data;
+});
+
 export const getEstimateListByUserId = createAsyncThunk(
   "getEstimateListByUserId",
   async ({ userId, status }) => {
@@ -389,6 +401,17 @@ export const getAllTaskData = createAsyncThunk("getAllTaskData", async (id) => {
   return response.data;
 });
 
+export const createNewLeadTask = createAsyncThunk(
+  "newLeadTask",
+  async (taskData) => {
+    const response = await api.post(
+      `/leadService/api/v1/task/createTask`,
+      taskData
+    );
+    return response.data;
+  }
+);
+
 export const createEstimateForApprovals = createAsyncThunk(
   "createEstimateForApprovals",
   async (data) => {
@@ -527,6 +550,16 @@ export const docsUploadListInEstimate = createAsyncThunk(
   }
 );
 
+export const getAllLeadsTask = createAsyncThunk(
+  "getAllLeadsTask",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/v1/task/getAllTaskByAssignee?assigneeId=${userId}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -562,6 +595,7 @@ export const LeadSlice = createSlice({
     salesReportCount: 0,
     salesReportExportLoading: "",
     docsListInEstimate: [],
+    allLeadsTaskList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -918,6 +952,18 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(docsUploadListInEstimate.rejected, (state) => {
       state.docsListInEstimate = [];
+    });
+
+    builder.addCase(getAllLeadsTask.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLeadsTask.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allLeadsTaskList = action?.payload;
+    });
+    builder.addCase(getAllLeadsTask.rejected, (state) => {
+      state.loading = "rejected";
+      state.allLeadsTaskList = [];
     });
   },
 });

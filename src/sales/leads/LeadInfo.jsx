@@ -16,9 +16,9 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  Snippet,
   Textarea,
   useDisclosure,
+  User,
 } from "@heroui/react";
 import {
   ChartBarDecreasing,
@@ -33,7 +33,7 @@ import {
   Phone,
   Plus,
   Trash,
-  User,
+  User2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -48,12 +48,16 @@ import {
   changeLeadAssigneeLeads,
   createLeadContacts,
   createRemakWithFile,
+  deleteLeadContact,
+  deleteRemarks,
+  getAllLeadUser,
   getAllRemarkAndCommnts,
   getSingleLeadDataByLeadId,
   updateAddressInLeads,
   updateIndustriesInLeads,
   updateLeadsContact,
   updateLeadStatus,
+  updateRemarks,
   updateSingleLeadName,
 } from "../../toolkit/slices/leadSlice";
 import { useParams } from "react-router-dom";
@@ -64,7 +68,6 @@ import {
   getAllCountries,
   getAllMainIndustry,
   getAllStatesByCountryName,
-  getAllUsers,
   getIndustryDataBySubSubIndustryId,
   getSubIndustryByIndustryId,
   getSubSubIndustryBySubIndustryId,
@@ -72,6 +75,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import BulkFileUploader from "../../components/BulkFileUploader";
+import dayjs from "dayjs";
 const iconClass = "h-4 w-4";
 
 const addressFormSchema = z.object({
@@ -118,14 +122,29 @@ const contactFormDefault = z.object({
   contactNo: "",
 });
 
+const remarkFormSchema = (flag) =>
+  z.object({
+    ...(flag ? { textMessage: z.string().min(1, "Please enter comment") } : {}),
+    message: z.string().min(1, "Please enter message"),
+  });
+
+const remarkFormDefault = z.object({
+  name: "",
+  email: "",
+  contactNo: "",
+});
+
 const LeadInfo = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
   const industryModal = useDisclosure();
   const addressModal = useDisclosure();
   const contactModal = useDisclosure();
+  const deleteModal = useDisclosure();
+  const remarkModal = useDisclosure();
+  const deleteRemarkModal = useDisclosure();
   const leadData = useSelector((state) => state.leads.singleLeadData);
-  const allUsers = useSelector((state) => state.common.usersList);
+  const allUsers = useSelector((state) => state.leads.leadUsersList);
   const slugList = useSelector((state) => state.setting.slugList);
   const statusList = useSelector((state) => state.setting.statusList);
   const allComments = useSelector((state) => state.setting.allComments);
@@ -143,6 +162,9 @@ const LeadInfo = () => {
   const industryDataListById = useSelector(
     (state) => state.common.industryDataListBySubSubIndustryId
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const department = useSelector((state) => state.auth.getDepartmentDetail);
+  const adminRole = userRole.includes("ADMIN");
   const [toggleSlug, setToggleSlug] = useState(true);
   const [toggleAssignee, setToggleAssignee] = useState(true);
   const [customComment, setCustomComment] = useState("");
@@ -150,6 +172,7 @@ const LeadInfo = () => {
   const [toggleStatus, setToggleStatus] = useState(true);
   const [files, setFiles] = useState([]);
   const [editContact, setEditContact] = useState(null);
+  const [remarkDataItem, setRemarkDataItem] = useState(null);
 
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
@@ -158,9 +181,9 @@ const LeadInfo = () => {
   useEffect(() => {
     dispatch(getAllSlugList());
     dispatch(getAllComments());
-    dispatch(getAllUsers());
+    dispatch(getAllLeadUser(userId));
     dispatch(getAllRemarkAndCommnts(leadId));
-  }, [dispatch, leadId]);
+  }, [dispatch, leadId,userId]);
 
   const handleUpdateLeadName = (leadName) => {
     dispatch(updateSingleLeadName({ leadName, leadId, userId }))
@@ -281,6 +304,10 @@ const LeadInfo = () => {
     resolver: zodResolver(contactFormSchema),
     defaultValues: contactFormDefault,
   });
+  const remarkForm = useForm({
+    resolver: zodResolver(remarkFormSchema(remarkDataItem?.type === "Other")),
+    defaultValues: remarkFormDefault,
+  });
 
   const industryModalPress = () => {
     dispatch(getAllMainIndustry());
@@ -292,6 +319,69 @@ const LeadInfo = () => {
     addressModal.onOpen();
   };
 
+  const updateRemarkModalPress = (item) => {
+    remarkForm.reset({
+      message: item?.type === "selected" ? item?.message : "Other",
+      textMessage: item?.type === "Other" ? item?.message : "",
+    });
+    remarkModal.onOpen();
+    setRemarkDataItem(item);
+  };
+
+  const deleteRemarkModalPress = (item) => {
+    deleteRemarkModal.onOpen();
+    setRemarkDataItem(item);
+  };
+
+  const conFirmDeleteRemark = () => {
+    dispatch(deleteRemarks({ remarkId: remarkDataItem?.id, leadId, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Remark deleted successfully !.",
+            color: "success",
+          });
+          dispatch(getAllRemarkAndCommnts(leadId));
+          deleteRemarkModal.onOpenChange(false);
+          setRemarkDataItem(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
+  const handleUpdateRemark = (values) => {
+    let obj = {
+      remarkId: remarkDataItem?.id,
+      userId: userId,
+      message:
+        values?.message === "Other" ? values?.textMessage : values?.message,
+      type: values?.message === "Other" ? "Other" : "selected",
+      leadId: leadId,
+    };
+    dispatch(updateRemarks(obj))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Remark updated successfully !.",
+            color: "success",
+          });
+          dispatch(getAllRemarkAndCommnts(leadId));
+          remarkModal.onOpenChange(false);
+          setRemarkDataItem(null);
+          remarkForm.reset(remarkFormDefault);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const editContactModalPress = (value) => {
     contactModal.onOpen();
     contactForm.reset({
@@ -300,6 +390,33 @@ const LeadInfo = () => {
       contactNo: value?.contactNo,
     });
     setEditContact(value);
+  };
+
+  const handleDeleteContact = (value) => {
+    deleteModal.onOpen();
+    setEditContact(value);
+  };
+
+  const confirmDeleteContact = () => {
+    dispatch(
+      deleteLeadContact({ leadId, clientId: editContact?.clientId, userId })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Contact deleted successfully !.",
+            color: "success",
+          });
+          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+          deleteModal.onOpenChange(false);
+          setEditContact(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
   };
 
   const handleAddressFinish = (values) => {
@@ -532,7 +649,7 @@ const LeadInfo = () => {
             <CardHeader>
               <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                  <User className={iconClass} />{" "}
+                  <User2 className={iconClass} />{" "}
                   <h3 className="font-medium">Assignee</h3>
                 </div>
 
@@ -651,11 +768,11 @@ const LeadInfo = () => {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Link className={iconClass} />{" "}
-                <h3 className="font-medium">Website link</h3>
+                <h3 className="font-medium">Link</h3>
               </div>
             </CardHeader>
             <CardBody>
-              <Snippet>https://www.corpseed.com</Snippet>
+              <p className="text-sm font-medium">{leadData?.urls}</p>
             </CardBody>
           </Card>
           <Card className="my-2">
@@ -684,13 +801,13 @@ const LeadInfo = () => {
                     className="flex justify-between items-center border rounded-md mb-2 px-2"
                   >
                     <div className="flex flex-col p-2">
-                      <span className="font-semibold text-sm">
+                      <span className="font-medium text-sm">
                         {item?.clientName || "-"}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-sm text-gray-400">
                         {item?.email || ""}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-sm text-gray-400">
                         {item?.contactNo || ""}
                       </span>
                     </div>
@@ -700,29 +817,27 @@ const LeadInfo = () => {
                           <EllipsisVertical className={iconClass} />
                         </Button>
                       </DropdownTrigger>
-                      <DropdownMenu
-                        aria-label="Static Actions"
-                        selectionMode="single"
-                        onSelectionChange={(e) =>
-                          Array.from(e)[0] === "edit"
-                            ? editContactModalPress(item)
-                            : ""
-                        }
-                      >
+                      <DropdownMenu aria-label="Static Actions">
                         <DropdownItem
                           key="edit"
                           startContent={<Pencil className={iconClass} />}
+                          onPress={() => editContactModalPress(item)}
                         >
                           Edit
                         </DropdownItem>
-                        <DropdownItem
-                          key="delete"
-                          color="danger"
-                          className="text-danger"
-                          startContent={<Trash className={iconClass} />}
-                        >
-                          Delete
-                        </DropdownItem>
+                        {adminRole && (
+                          <DropdownItem
+                            key="delete"
+                            color="danger"
+                            className="text-danger"
+                            startContent={<Trash className={iconClass} />}
+                            onPress={() => {
+                              handleDeleteContact(item);
+                            }}
+                          >
+                            Delete
+                          </DropdownItem>
+                        )}
                       </DropdownMenu>
                     </Dropdown>
                   </div>
@@ -788,12 +903,12 @@ const LeadInfo = () => {
                   <div className="flex justify-between items-center">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <Avatar className="w-5 h-5 text-xs">
-                          {remark?.updatedBy?.fullName?.[0]}
-                        </Avatar>
-                        <span className="font-medium text-xs">
-                          {remark?.updatedBy?.fullName}
-                        </span>
+                        <User
+                          description={dayjs(remark?.latestUpdated)?.format(
+                            "DD-MM-YYYY, HH:mm A"
+                          )}
+                          name={remark?.updatedBy?.fullName}
+                        />
                       </div>
                       <p className="text-xs text-gray-500">{remark?.message}</p>
                     </div>
@@ -806,12 +921,24 @@ const LeadInfo = () => {
                         />
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button isIconOnly size="sm" variant="light">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          onPress={() => updateRemarkModalPress(remark)}
+                        >
                           <Pencil className={iconClass} />
                         </Button>
-                        <Button isIconOnly size="sm" variant="light">
-                          <Trash className={iconClass} color="red" />
-                        </Button>
+                        {adminRole && (
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => deleteRemarkModalPress(remark)}
+                          >
+                            <Trash className={iconClass} color="red" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1091,6 +1218,122 @@ const LeadInfo = () => {
                         />
                       )}
                     />
+                  </div>
+                  <ModalFooter className="w-full flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <h3>Are you sure you want to delete this Item?</h3>
+              </ModalBody>
+              <ModalFooter className="w-full flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
+                <Button color="primary" onPress={confirmDeleteContact}>
+                  Submit
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={deleteRemarkModal.isOpen}
+        onOpenChange={deleteRemarkModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <h3>Are you sure you want to delete this Item?</h3>
+              </ModalBody>
+              <ModalFooter className="w-full flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
+                <Button color="primary" onPress={conFirmDeleteRemark}>
+                  Submit
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={remarkModal.isOpen}
+        onOpenChange={remarkModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update remark
+              </ModalHeader>
+              <ModalBody>
+                <form
+                  className="w-full flex flex-col gap-4 "
+                  onSubmit={remarkForm.handleSubmit(handleUpdateRemark)}
+                >
+                  <div className="w-full grid gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                    <Controller
+                      name="message"
+                      control={remarkForm.control}
+                      render={({ field }) => (
+                        <NewSelect
+                          placeholder="Select comment..."
+                          data={[{ name: "Other" }, ...allComments]}
+                          valueKey={"name"}
+                          labelKey={"name"}
+                          label={"Comments"}
+                          value={field.value}
+                          isClearable
+                          onChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      )}
+                    />
+                    {remarkDataItem?.type === "Other" && (
+                      <Controller
+                        name="textMessage"
+                        control={remarkForm.control}
+                        render={({ field }) => (
+                          <Textarea
+                            isRequired
+                            className="my-2"
+                            value={field.value}
+                            placeholder="Please write your remarks"
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+                    )}
                   </div>
                   <ModalFooter className="w-full flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>

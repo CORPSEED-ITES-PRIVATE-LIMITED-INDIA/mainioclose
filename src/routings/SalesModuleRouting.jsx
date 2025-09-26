@@ -20,10 +20,12 @@ import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import AutomationStatus from "../sales/leads/AutomationStatus";
 import SalesReport from "../sales/leads/SalesReport";
+import AllTasks from "../sales/leads/AllTasks";
 
 const SalesModuleRouting = () => {
   return (
     <>
+      <Route path="sales/allTask" element={<AllTasks />} />
       <Route path="sales/leads" element={<Leads />} />
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />

@@ -411,18 +411,6 @@ export const salesNavItems = [
     key: "discountedEstimate",
   },
   {
-    title: "Auto history",
-    icon: "History",
-    url: "sales/autoHistory",
-    key: "autoHistory",
-  },
-  {
-    title: "Automation status",
-    icon: "ChartNoAxesCombined",
-    url: "sales/autoStatus",
-    key: "autoStatus",
-  },
-  {
     title: "Projects",
     icon: "FolderKanban",
     url: "sales/projects",
