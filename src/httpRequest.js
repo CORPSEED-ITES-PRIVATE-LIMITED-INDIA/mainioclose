@@ -14,7 +14,7 @@ if (storageData) {
 
 
 export const api = axios.create({
-  baseURL: `http://localhost:3000`,
+  baseURL: `/`,
   headers: {
     Authorization: `Bearer ${localData?.jwt}`,
     "Access-Control-Allow-Origin": "*",

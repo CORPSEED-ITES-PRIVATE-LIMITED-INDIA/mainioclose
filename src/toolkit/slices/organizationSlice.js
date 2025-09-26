@@ -228,6 +228,17 @@ export const getAllPaymentRegisterCount = createAsyncThunk(
   }
 );
 
+export const paymentRegisterAction = createAsyncThunk(
+  "paymentRegisterAction",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/paymentRegister/paymentApproveManual`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllInvoice = createAsyncThunk(
   "getAllInvoice",
   async ({ userId, page, size }) => {
@@ -436,7 +447,7 @@ const OrganizationSlice = createSlice({
     allPaymentRegisterList: [],
     paymentRegistercont: 0,
     allInvoiceList: [],
-    allInvoiceCount:0,
+    allInvoiceCount: 0,
     unBillList: [],
     unBillCount: 0,
     salesInvoiceList: [],
@@ -667,7 +678,7 @@ const OrganizationSlice = createSlice({
     });
     builder.addCase(getAllInvoiceCount.rejected, (state) => {
       state.loading = "rejected";
-      state.allInvoiceCount =0;
+      state.allInvoiceCount = 0;
     });
 
     builder.addCase(getAllUnbillList.pending, (state) => {
