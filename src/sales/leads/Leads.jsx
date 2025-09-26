@@ -544,7 +544,7 @@ const Leads = () => {
       setFilterValue("");
       dispatch(getAllLeadsByFilter(initialFilterValues));
     }
-  }, []);
+  }, [data,sortedItems]);
 
   const onClear = useCallback(() => {
     setFilterValue("");
