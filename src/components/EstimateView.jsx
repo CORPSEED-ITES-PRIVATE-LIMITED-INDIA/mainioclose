@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 import { useRef } from "react";
 import logo from "../assets/CORPSEED.webp";
 import dayjs from "dayjs";
+import numWords from "num-words";
+import { inrCurrency } from "../common";
 
 const EstimateView = ({ details }) => {
   const pdfRef = useRef();
@@ -309,10 +311,10 @@ const EstimateView = ({ details }) => {
                           {item?.gstPercent}
                         </td>
                         <td className="border border-black p-1 text-right">
-                          {item?.gstAmount}
+                          {inrCurrency(item?.gstAmount)}
                         </td>
                         <td className="border border-black p-1 text-right">
-                          {item?.amount}
+                          {inrCurrency(item?.amount)}
                         </td>
                       </tr>
                     ))}
@@ -328,9 +330,6 @@ const EstimateView = ({ details }) => {
                 <span>{numWords(details?.totalAmount)}</span>
               </div>
             )}
-
-            {/* Additional Text Details (if any) */}
-            {/* Add here if you have other tables or details */}
           </div>
         </div>
       </div>

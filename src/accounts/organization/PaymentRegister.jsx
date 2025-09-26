@@ -49,6 +49,7 @@ import {
   getAllBankStatements,
   getAllPaymentRegisterCount,
   getAllPaymentRegisterWithPagination,
+  paymentRegisterAction,
 } from "../../toolkit/slices/organizationSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -118,6 +119,7 @@ const PaymentRegister = () => {
   const drawer = useDisclosure();
   const estimateModal = useDisclosure();
   const paymentModal = useDisclosure();
+  const paymentAction = useDisclosure();
   const data = useSelector(
     (state) => state.organization.allPaymentRegisterList
   );
@@ -136,6 +138,12 @@ const PaymentRegister = () => {
   const [status, setStatus] = useState("all");
   const [page, setPage] = React.useState(1);
   const [rowItem, setRowItem] = useState(null);
+  const [paymentActionData, setPaymentActionData] = useState({
+    paymentRegisterId: 0,
+    estimateId: 0,
+    comment: "",
+    status: "",
+  });
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -229,6 +237,44 @@ const PaymentRegister = () => {
   const handlePaymentAction = (rowData) => {
     setRowItem(rowData);
     paymentModal.onOpen();
+    setPaymentActionData((prev) => ({
+      ...prev,
+      paymentRegisterId: rowData?.id,
+      estimateId: rowData?.estimateId,
+    }));
+  };
+
+  const handleSubmitPaymentAction = () => {
+    dispatch(paymentRegisterAction(paymentActionData))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Payment register updated successfully !.",
+            color: "success",
+          });
+          setPaymentActionData({
+            paymentRegisterId: 0,
+            estimateId: 0,
+            comment: "",
+            status: "",
+          });
+          dispatch(
+            getAllPaymentRegisterWithPagination({
+              page: page,
+              size: rowsPerPage,
+              status: status,
+            })
+          );
+          setRowItem(null);
+          paymentAction.onClose();
+          paymentModal.onClose();
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -764,9 +810,42 @@ const PaymentRegister = () => {
                         <View />
                       </Button>
                     </Tooltip>
-                    <Button color="success">Approve</Button>
-                    <Button color="warning">Hold</Button>
-                    <Button color="danger">Disapprove</Button>
+                    <Button
+                      color="success"
+                      onPress={() => {
+                        setPaymentActionData((prev) => ({
+                          ...prev,
+                          status: "approved",
+                        }));
+                        paymentAction.onOpen();
+                      }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      color="warning"
+                      onPress={() => {
+                        setPaymentActionData((prev) => ({
+                          ...prev,
+                          status: "hold",
+                        }));
+                        paymentAction.onOpen();
+                      }}
+                    >
+                      Hold
+                    </Button>
+                    <Button
+                      color="danger"
+                      onPress={() => {
+                        setPaymentActionData((prev) => ({
+                          ...prev,
+                          status: "disapproved",
+                        }));
+                        paymentAction.onOpen();
+                      }}
+                    >
+                      Disapprove
+                    </Button>
                   </div>
                 </div>
                 <Textarea className="max-w-xs" label="Description" />
@@ -777,6 +856,44 @@ const PaymentRegister = () => {
                 </Button>
                 <Button color="primary" onPress={onClose}>
                   Action
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={paymentAction.isOpen}
+        onOpenChange={paymentAction.onOpenChange}
+        size="2xl"
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Payment action
+              </ModalHeader>
+              <ModalBody>
+                <Textarea
+                  className="max-w-xs"
+                  label="Remark"
+                  onChange={(e) => {
+                    setPaymentActionData((prev) => ({
+                      ...prev,
+                      comment: e.target.value,
+                    }));
+                  }}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={handleSubmitPaymentAction}>
+                  Submit
                 </Button>
               </ModalFooter>
             </>
