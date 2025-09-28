@@ -30,6 +30,10 @@ const LeadDetail = () => {
       label: "Company",
     },
     {
+      id: "leadCompanyForm",
+      label: "Lead company",
+    },
+    {
       id: "vendors",
       label: "Vendors",
     },

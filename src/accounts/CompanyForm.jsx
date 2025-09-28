@@ -21,6 +21,8 @@ import {
   ModalBody,
   ModalFooter,
   Chip,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,7 +32,9 @@ import * as z from "zod";
 import { useParams } from "react-router-dom";
 import {
   getAllCompanyByStatus,
+  getFormComment,
   searchCompanyForm,
+  updateStatusById,
 } from "../toolkit/slices/companySlice";
 import { inrCurrency, maskEmail, maskMobileNumber } from "../common";
 
@@ -66,31 +70,26 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const formSchema = z.object({
-  name: z.string().min(1, "Please enter ledger name."),
-  id: z.string().min(1, "Please select ledger group"),
-  subLeadger: z.string().min(1, "Please select sub ledger"),
-  isDebitCredit: z.string().min(1, "Please select option"),
-  usedForCalculation: z.string().min(1, "Please select option"),
+  status: z.string().min(1, "Please select the status."),
+  comment: z.string().min(1, "Please enter comment"),
 });
 
 const defaultValues = {
-  name: "",
-  id: "",
-  subLeadger: "",
-  isDebitCredit: "",
-  usedForCalculation: "",
+  status: "",
+  comment: "",
 };
 
 const CompanyForm = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen,onClose ,onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.company.allLeadCompanyList);
   const count = useSelector(
     (state) => state.company.allLeadCompanyList?.[0]?.totalLeadFor
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const admin = userRole.includes("ADMIN");
+  const department = useSelector((state) => state.auth.getDepartmentDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -169,12 +168,13 @@ const CompanyForm = () => {
   });
 
   const handleEdit = (value) => {
-    reset({
-      name: value?.name,
-      usedForCalculation: value?.usedForCalculation,
-      isDebitCredit: value?.debitCredit,
-      subLeadger: value?.subLeadger,
-      id: value?.ledgerType,
+    dispatch(getFormComment(value?.id)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        reset({
+          comment: resp?.payload,
+          status: value?.status,
+        });
+      }
     });
     onOpen();
     setEditData(value);
@@ -182,46 +182,64 @@ const CompanyForm = () => {
 
   const onSubmit = useCallback(
     (values) => {
-      if (editData) {
-        dispatch(updateLedgerType({ ...values, id: editData?.id }))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              addToast({
-                title: "Ledger type updated successfully !.",
-                color: "success",
-              });
-              onOpenChange(false);
-              dispatch(getAllLedgerType());
-              reset(defaultValues);
-              setEditData(null);
-            } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
-            }
-          })
-          .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
-          );
-      } else {
-        dispatch(createLedgerType(values))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              addToast({
-                title: "Ledger type created successfully !.",
-                color: "success",
-              });
-              dispatch(getAllLedgerType());
-              onOpenChange(false);
-              reset(defaultValues);
-            } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
-            }
-          })
-          .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
-          );
-      }
+      dispatch(
+        updateStatusById({
+          status: values?.status,
+          id: editData?.id,
+          userid: userId,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Status update successfully",
+              color: "success",
+            });
+            onClose();
+            dispatch(
+              getAllCompanyByStatus({
+                id: userId,
+                status: status,
+                page: page,
+                size: rowsPerPage,
+              })
+            );
+          } else {
+            addToast({
+              title: "Something went wrong in status !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Something went wrong in status !.",
+            color: "danger",
+          });
+        });
+      dispatch(addCommentCompanyForm({ id: formId, comment: values?.comment }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Comment update successfully",
+              color: "success",
+            });
+            onClose();
+          } else {
+            addToast({
+              title: "Something went wrong in comment !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Something went wrong in comment !.",
+            color: "danger",
+          });
+        });
     },
-    [dispatch, editData]
+    [editData, userId, dispatch]
   );
 
   const renderCell = React.useCallback(
@@ -240,13 +258,15 @@ const CompanyForm = () => {
                 Age : {rowData?.companyAge || "-"} yrs
               </span>
               {rowData?.status === "approved" ? (
-                <span className="text-green-500 text-xs">
+                <span className="text-green-500 text-xs capitalize">
                   {rowData?.status}
                 </span>
               ) : rowData?.status === "disapproved" ? (
-                <span className="text-red-500 text-xs">{rowData?.status}</span>
+                <span className="text-red-500 text-xs capitalize">{rowData?.status}</span>
               ) : (
-                <span className="text-default-500 text-xs">{rowData?.status}</span>
+                <span className="text-default-500 text-xs capitalize">
+                  {rowData?.status}
+                </span>
               )}
             </div>
           );
@@ -370,13 +390,18 @@ const CompanyForm = () => {
                     <EllipsisVertical className="text-default-300" />
                   </Button>
                 </DropdownTrigger>
-                <DropdownMenu
-                  selectionMode="single"
-                  onSelectionChange={() => {
-                    handleEdit(rowData);
-                  }}
-                >
-                  <DropdownItem key="edit">Edit</DropdownItem>
+                <DropdownMenu selectionMode="single">
+                  {department?.department === "Accounts" ||
+                    (admin && (
+                      <DropdownItem
+                        key="action"
+                        onPress={() => {
+                          handleEdit(rowData);
+                        }}
+                      >
+                        Action
+                      </DropdownItem>
+                    ))}
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -505,17 +530,6 @@ const CompanyForm = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button
-              endContent={<Plus />}
-              color="primary"
-              onPress={() => {
-                setEditData(null);
-                reset(defaultValues);
-                onOpen();
-              }}
-            >
-              Add
-            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -638,142 +652,54 @@ const CompanyForm = () => {
               <ModalHeader>Add TDS</ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
+                  <div className="grid gap-4 max-h-[60vh] overflow-auto">
                     <Controller
-                      name="name"
+                      name="status"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Status"
+                          isRequired
+                          selectedKeys={
+                            field.value !== undefined
+                              ? [field.value.toString()]
+                              : []
+                          }
+                          onSelectionChange={(keys) => {
+                            const value = Array.from(keys)[0];
+                            if (value !== undefined) field.onChange(value);
+                          }}
+                          errorMessage={"please select status"}
+                          isInvalid={!!error}
+                        >
+                          {[
+                            { label: "Approved", value: "approved" },
+                            { label: "Disapproved", value: "disapproved" },
+                          ].map((item) => (
+                            <SelectItem
+                              key={item.value.toString()}
+                              value={item.value}
+                            >
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                    <Controller
+                      name="comment"
                       control={control}
                       render={({ field }) => (
                         <Input
                           isRequired
-                          errorMessage="please enter ledger name"
-                          label="Ledger name"
-                          name="name"
+                          errorMessage="please enter comment"
+                          label="Comment"
+                          name="comment"
                           value={field.value}
                           onChange={(e) => {
                             field.onChange(e.target.value);
                           }}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="id"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          isRequired={true}
-                          data={ledgerTypeList}
-                          label={"Select ledger type"}
-                          name={"id"}
-                          labelKey={"name"}
-                          valueKey={"id"}
-                          value={field.value}
-                          onChange={(selectedSet) => {
-                            field.onChange(selectedSet);
-                            getLedgerType(selectedSet);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="subLeadger"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Sub ledger"
-                          isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-                    <Controller
-                      name="isDebitCredit"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Debit credit"
-                          isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-                    <Controller
-                      name="usedForCalculation"
-                      control={statForm.control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Used for calculation"
-                          isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
                       )}
                     />
                   </div>

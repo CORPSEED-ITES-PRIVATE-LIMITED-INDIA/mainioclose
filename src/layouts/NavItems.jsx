@@ -13,6 +13,7 @@ export const navItems = [
     children: [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
+      { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
       { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
       { title: "Proposal", icon: "", url: "sales/proposal", key: "proposal" },
       {
@@ -392,6 +393,7 @@ export const salesNavItems = [
     key: "leads",
   },
   { title: "Company", icon: "Building", url: "sales/company", key: "company" },
+  { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
   {
     title: "Estimate",
     icon: "FileText",

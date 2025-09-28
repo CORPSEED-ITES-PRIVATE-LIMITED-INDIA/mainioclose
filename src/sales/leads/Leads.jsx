@@ -688,7 +688,7 @@ const Leads = () => {
                           data={allLeadUser}
                           label={"Assignee"}
                           name={"statusId"}
-                          labelKey={"name"}
+                          labelKey={"fullName"}
                           valueKey={"id"}
                           value={assignedLeadInfo?.assigneId}
                           onChange={(selectedSet) => {

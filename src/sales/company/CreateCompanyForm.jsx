@@ -57,7 +57,7 @@ import {
 } from "../../toolkit/slices/operationSlice";
 import { getOperationCompanyFormValues } from "../../operation/components/commonFunctions";
 
-const formSchema = z.object({
+const formSchema = (isConsultant) => z.object({
   consultantOrCompany: z.enum(["consultant", "company"], {
     required_error: "Please select role as",
   }),
@@ -126,168 +126,99 @@ const formSchema = z.object({
   secondaryState: z.string().optional(),
   secondaryCity: z.string().optional(),
   secondaryPinCode: z.string().optional(),
-  servingName: z
-    .string()
-    .min(1, "Please enter serving company name")
-    .optional(),
-  servingCompanyType: z
-    .string()
-    .min(1, "Please select the company structure")
-    .optional(),
-  servingGstNo: z
-    .string()
-    .min(1, "Please enter serving company GST number")
-    .optional(),
-  servingPanNo: z
-    .string()
-    .min(10, "Please enter serving company PAN number")
-    .optional(),
-  servingEstablishDate: z
-    .string()
-    .min(1, "Please enter serving company incorporate date")
-    .optional(),
-  industries: z.string().min(1, "Please select the industry").optional(),
-  subIndustry: z.string().min(1, "Please select the sub industry").optional(),
-  subsubIndustry: z.string().min(1, "Please select the category").optional(),
-  industriesData: z
-    .string()
-    .min(1, "Please select the business activity")
-    .optional(),
-  servingCompanyFileUrl: z.string().optional(),
-  servingPrimaryTitle: z
-    .enum(["master", "mr", "mrs", "miss"], {
-      required_error: "Please select the salutation",
-    })
-    .optional(),
-  servingContactName: z
-    .string()
-    .min(1, "Please enter contact person name")
-    .optional(),
-  servingPrimaryDesignation: z
-    .string()
-    .min(1, "Please select the designation")
-    .optional(),
-  servingContactEmails: z
-    .string()
-    .email("Please enter a valid email address")
-    .optional(),
-  servingContactNo: z.string().min(1, "Please enter contact number").optional(),
-  servingContactWhatsappNo: z
-    .string()
-    .min(1, "Please enter whatsapp number")
-    .optional(),
-  servingSecondaryTitle: z
-    .enum(["master", "mr", "mrs", "miss"], {
-      required_error: "Please select the salutation",
-    })
-    .optional(),
-  servingSecondaryContactName: z
-    .string()
-    .min(1, "Please enter contact person name")
-    .optional(),
-  servingSecondaryDesignation: z
-    .string()
-    .min(1, "Please select the designation")
-    .optional(),
-  servingSecondaryContactEmails: z
-    .string()
-    .email("Please enter a valid email address")
-    .optional(),
-  servingSecondaryContactNo: z
-    .string()
-    .min(1, "Please enter contact number")
-    .optional(),
-  servingSecondaryContactWhatsappNo: z
-    .string()
-    .min(1, "Please enter whatsapp number")
-    .optional(),
-  servingAddress: z.string().min(1, "Please enter primary address").optional(),
-  servingCountry: z.string().min(1, "Please select the country").optional(),
-  servingState: z.string().min(1, "Please select the state").optional(),
-  servingCity: z.string().min(1, "Please select the city").optional(),
-  servingprimaryPinCode: z
-    .string()
-    .min(1, "Please enter primary pin code")
-    .optional(),
-  servingSecondaryAddress: z.string().optional(),
-  servingSecondaryCountry: z.string().optional(),
-  servingSecondaryState: z.string().optional(),
-  servingsecondaryCity: z.string().optional(),
-  servingSecondaryPinCode: z.string().optional(),
+  ...(isConsultant ? (
+    {
+      servingName: z
+        .string()
+        .min(1, "Please enter serving company name")
+        .optional(),
+      servingCompanyType: z
+        .string()
+        .min(1, "Please select the company structure")
+        .optional(),
+      servingGstNo: z
+        .string()
+        .min(1, "Please enter serving company GST number")
+        .optional(),
+      servingPanNo: z
+        .string()
+        .min(10, "Please enter serving company PAN number")
+        .optional(),
+      servingEstablishDate: z
+        .string()
+        .min(1, "Please enter serving company incorporate date")
+        .optional(),
+      industries: z.string().min(1, "Please select the industry"),
+      subIndustry: z.string().min(1, "Please select the sub industry"),
+      subsubIndustry: z.string().min(1, "Please select the category"),
+      industriesData: z.array(z.string()).min(1, "Please select the business activity"),
+      servingCompanyFileUrl: z.string().optional(),
+      servingPrimaryTitle: z
+        .enum(["master", "mr", "mrs", "miss"], {
+          required_error: "Please select the salutation",
+        })
+        .optional(),
+      servingContactName: z
+        .string()
+        .min(1, "Please enter contact person name")
+        .optional(),
+      servingPrimaryDesignation: z
+        .string()
+        .min(1, "Please select the designation")
+        .optional(),
+      servingContactEmails: z
+        .string()
+        .email("Please enter a valid email address")
+        .optional(),
+      servingContactNo: z.string().min(1, "Please enter contact number").optional(),
+      servingContactWhatsappNo: z
+        .string()
+        .min(1, "Please enter whatsapp number")
+        .optional(),
+      servingSecondaryTitle: z
+        .enum(["master", "mr", "mrs", "miss"], {
+          required_error: "Please select the salutation",
+        })
+        .optional(),
+      servingSecondaryContactName: z
+        .string()
+        .min(1, "Please enter contact person name")
+        .optional(),
+      servingSecondaryDesignation: z
+        .string()
+        .min(1, "Please select the designation")
+        .optional(),
+      servingSecondaryContactEmails: z
+        .string()
+        .email("Please enter a valid email address")
+        .optional(),
+      servingSecondaryContactNo: z
+        .string()
+        .min(1, "Please enter contact number")
+        .optional(),
+      servingSecondaryContactWhatsappNo: z
+        .string()
+        .min(1, "Please enter whatsapp number")
+        .optional(),
+      servingAddress: z.string().min(1, "Please enter primary address").optional(),
+      servingCountry: z.string().min(1, "Please select the country").optional(),
+      servingState: z.string().min(1, "Please select the state").optional(),
+      servingCity: z.string().min(1, "Please select the city").optional(),
+      servingprimaryPinCode: z
+        .string()
+        .min(1, "Please enter primary pin code")
+        .optional(),
+      servingSecondaryAddress: z.string().optional(),
+      servingSecondaryCountry: z.string().optional(),
+      servingSecondaryState: z.string().optional(),
+      servingsecondaryCity: z.string().optional(),
+      servingSecondaryPinCode: z.string().optional(),
+    }
+  ) : {})
+
 });
 
-const companyFormSchema = z.object({
-  consultantOrCompany: z.enum(["consultant", "company"], {
-    required_error: "Please select role as",
-  }),
-  companyName: z.string().min(1, "Please enter company name"),
-  companyType: z.string().min(1, "Please select the company structure"),
-  gstType: z.string().min(1, "Please select the gst type"),
-  businessType: z.string().optional(),
-  gstNo: z.string().min(15, "please enter GST number"),
-  panNo: z.string().min(10, "please enter pan number"),
-  establishDate: z.string().min(1, "Please enter company incorporate date"),
-  assigneeId: z.string().min(1, "Please select the assignee"),
-  industryId: z.string().min(1, "Please select the industry"),
-  subIndustryId: z.string().min(1, "Please select the sub industry"),
-  subsubIndustryId: z.string().min(1, "Please select the category"),
-  industrydataId: z
-    .array(z.string())
-    .min(1, "Please select the business activity"),
-  companyFileUrl: z.string().optional(),
-  rating: z.enum(["Gold", "Silver", "Bronze"], {
-    required_error: "Please select rating",
-  }),
-  paymentTerm: z.enum(
-    [
-      "Net 30",
-      "Net 60",
-      "Net 90",
-      "2/10 Net 30",
-      "EOM (End of Month)",
-      "COD (Cash on Delivery)",
-      "CIA (Cash in Advance)",
-      "Installments",
-      "Milestone-based",
-      "Due on Receipt",
-    ],
-    { required_error: "Please select payment term" }
-  ),
-  aggrementPresent: z.boolean(),
-  agreementFileUrl: z.string().optional(),
-  ndaPresent: z.boolean(),
-  ndaFileUrl: z.string().optional(),
-  primaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
-    required_error: "Please select the salutation",
-  }),
-  contactName: z.string().min(1, "Please enter contact person name"),
-  primaryDesignation: z.string().min(1, "Please select the designation"),
-  contactEmails: z.string().email("Please enter a valid email address"),
-  contactNo: z.string().min(1, "Please enter contact number"),
-  contactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
-  secondaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
-    required_error: "Please select the salutation",
-  }),
-  secondaryContactName: z.string().min(1, "Please enter contact person name"),
-  secondaryDesignation: z.string().min(1, "Please select the designation"),
-  secondaryContactEmails: z
-    .string()
-    .email("Please enter a valid email address"),
-  secondaryContactNo: z.string().min(1, "Please enter contact number"),
-  secondaryContactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
-  address: z.string().min(1, "Please enter primary address"),
-  country: z.string().min(1, "Please select the country"),
-  state: z.string().min(1, "Please select the state"),
-  city: z.string().min(1, "Please select the city"),
-  primaryPinCode: z.string().min(1, "Please enter primary pin code"),
-  secondaryAddress: z.string().optional(),
-  secondaryCountry: z.string().optional(),
-  secondaryState: z.string().optional(),
-  secondaryCity: z.string().optional(),
-  secondaryPinCode: z.string().optional(),
-});
-
-const defaultValues = {
+const defaultValues = (isConsultant) => ({
   consultantOrCompany: "",
   companyName: "",
   companyType: "",
@@ -330,84 +261,44 @@ const defaultValues = {
   secondaryState: "",
   secondaryCity: "",
   secondaryPinCode: "",
-  servingName: "",
-  servingCompanyType: "",
-  servingGstNo: "",
-  servingPanNo: "",
-  servingEstablishDate: "",
-  industries: "",
-  subIndustry: "",
-  subsubIndustry: "",
-  industriesData: "",
-  servingCompanyFileUrl: "",
-  servingPrimaryTitle: "",
-  servingContactName: "",
-  servingPrimaryDesignation: "",
-  servingContactEmails: "",
-  servingContactNo: "",
-  servingContactWhatsappNo: "",
-  servingSecondaryTitle: "",
-  servingSecondaryContactName: "",
-  servingSecondaryDesignation: "",
-  servingSecondaryContactEmails: "",
-  servingSecondaryContactNo: "",
-  servingSecondaryContactWhatsappNo: "",
-  servingAddress: "",
-  servingCountry: "",
-  servingState: "",
-  servingCity: "",
-  servingprimaryPinCode: "",
-  servingSecondaryAddress: "",
-  servingSecondaryCountry: "",
-  servingSecondaryState: "",
-  servingsecondaryCity: "",
-  servingSecondaryPinCode: "",
-};
+  ...(isConsultant ? ({
+    servingName: "",
+    servingCompanyType: "",
+    servingGstNo: "",
+    servingPanNo: "",
+    servingEstablishDate: "",
+    industries: "",
+    subIndustry: "",
+    subsubIndustry: "",
+    industriesData: "",
+    servingCompanyFileUrl: "",
+    servingPrimaryTitle: "",
+    servingContactName: "",
+    servingPrimaryDesignation: "",
+    servingContactEmails: "",
+    servingContactNo: "",
+    servingContactWhatsappNo: "",
+    servingSecondaryTitle: "",
+    servingSecondaryContactName: "",
+    servingSecondaryDesignation: "",
+    servingSecondaryContactEmails: "",
+    servingSecondaryContactNo: "",
+    servingSecondaryContactWhatsappNo: "",
+    servingAddress: "",
+    servingCountry: "",
+    servingState: "",
+    servingCity: "",
+    servingprimaryPinCode: "",
+    servingSecondaryAddress: "",
+    servingSecondaryCountry: "",
+    servingSecondaryState: "",
+    servingsecondaryCity: "",
+    servingSecondaryPinCode: "",
+  }) : {})
 
-const defaultCompanyValues = {
-  consultantOrCompany: "",
-  companyName: "",
-  companyType: "",
-  gstType: "",
-  businessType: "",
-  gstNo: "",
-  panNo: "",
-  establishDate: "",
-  assigneeId: "",
-  industryId: "",
-  subIndustryId: "",
-  subsubIndustryId: "",
-  industrydataId: [],
-  companyFileUrl: "",
-  rating: "",
-  paymentTerm: "",
-  aggrementPresent: false,
-  agreementFileUrl: "",
-  ndaPresent: false,
-  ndaFileUrl: "",
-  primaryTitle: "",
-  contactName: "",
-  primaryDesignation: "",
-  contactEmails: "",
-  contactNo: "",
-  contactWhatsappNo: "",
-  secondaryTitle: "",
-  secondaryContactName: "",
-  secondaryDesignation: "",
-  secondaryContactEmails: "",
-  secondaryContactNo: "",
-  secondaryContactWhatsappNo: "",
-  address: "",
-  country: "",
-  state: "",
-  city: "",
-  primaryPinCode: "",
-  secondaryAddress: "",
-  secondaryCountry: "",
-  secondaryState: "",
-  secondaryCity: "",
-  secondaryPinCode: "",
-};
+
+});
+
 
 const CreateCompanyForm = ({
   edit,
@@ -466,8 +357,8 @@ const CreateCompanyForm = ({
     formState: { errors },
     reset,
   } = useForm({
-    resolver: zodResolver(isConsultant ? formSchema : companyFormSchema),
-    defaultValues: isConsultant ? defaultValues : defaultCompanyValues,
+    resolver: zodResolver(formSchema(isConsultant)),
+    defaultValues:defaultValues(isConsultant),
   });
 
   const aggrementPresent = watch("aggrementPresent");
@@ -1769,6 +1660,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="Select business activity"
+                          selectionMode="multiple"
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={industryDataListById || []}
