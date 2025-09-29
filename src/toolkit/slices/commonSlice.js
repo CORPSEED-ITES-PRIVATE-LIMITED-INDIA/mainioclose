@@ -456,6 +456,10 @@ export const createIndustry = createAsyncThunk(
   }
 );
 
+export const getAllTaskStatus = createAsyncThunk("allTaskStatus", async () => {
+  const response = await api.get(`/leadService/api/v1/getAllTaskStatus`);
+  return response.data;
+});
 
 const CommonSlice = createSlice({
   name: "common",
@@ -495,7 +499,8 @@ const CommonSlice = createSlice({
     allIndustriesData: [],
     allIndustryDataWithPage: [],
     allIndustryDataCount: 0,
-    allRoles:[]
+    allRoles: [],
+    allTaskStatusData: [],
   },
   reducers: {
     handleReset: (state) => {
@@ -951,6 +956,17 @@ const CommonSlice = createSlice({
     builder.addCase(getAllRoles.rejected, (state) => {
       state.loading = "rejected";
       state.allRoles = [];
+    });
+
+    builder.addCase(getAllTaskStatus.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllTaskStatus.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allTaskStatusData = action.payload;
+    });
+    builder.addCase(getAllTaskStatus.rejected, (state, action) => {
+      state.loading = "rejected";
     });
   },
 });

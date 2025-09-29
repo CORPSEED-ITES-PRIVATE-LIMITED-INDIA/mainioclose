@@ -205,6 +205,55 @@ export const convertServingCompanyToCompany = createAsyncThunk(
   }
 );
 
+export const getCompanyExistData = createAsyncThunk(
+  "getCompanyExistData",
+  async (leadId) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/searchCompanyByLeadId?leadId=${leadId}`
+    );
+    return response.data;
+  }
+);
+
+export const createCompanyForm = createAsyncThunk(
+  "createCompanyForm",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/company/createCompanyForm`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getFormComment = createAsyncThunk("getFormComment", async (id) => {
+  const response = await api.get(
+    `/leadService/api/v1/company/getCompanyComment?companyFormId=${id}`
+  );
+  return response.data;
+});
+
+export const updateStatusById = createAsyncThunk(
+  "updateStatebyid",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/company/updateCompanyStatus?status=${data?.status}&id=${data?.id}&currentUserId=${data?.userid}`
+    );
+    return response.data;
+  }
+);
+
+
+export const addCommentCompanyForm = createAsyncThunk(
+  "addCommentCompanyForm",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/company/addComment?companyFormId=${data?.id}&comment=${data?.comment}`
+    );
+    return response.data;
+  }
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -224,6 +273,7 @@ const CompanySlice = createSlice({
     allCompanyUnits: [],
     contactListByCompanyId: [],
     companyHistoryList: [],
+    existingCompanyList:[],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllNewCompanies.pending, (state) => {
@@ -416,6 +466,18 @@ const CompanySlice = createSlice({
     builder.addCase(getHistoryByCompanyId.rejected, (state) => {
       state.companyHistoryList = [];
       state.loading = "rejected";
+    });
+
+        builder.addCase(getCompanyExistData.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getCompanyExistData.fulfilled, (state, action) => {
+      state.existingCompanyList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getCompanyExistData.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.existingCompanyList = [];
     });
   },
 });

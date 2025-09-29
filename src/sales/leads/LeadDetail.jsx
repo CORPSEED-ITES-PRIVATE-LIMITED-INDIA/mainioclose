@@ -1,4 +1,5 @@
 import { Tab, Tabs } from "@heroui/react";
+import { Dot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -29,6 +30,10 @@ const LeadDetail = () => {
       label: "Company",
     },
     {
+      id: "leadCompanyForm",
+      label: "Lead company",
+    },
+    {
       id: "vendors",
       label: "Vendors",
     },
@@ -44,7 +49,17 @@ const LeadDetail = () => {
 
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="mb-1 text-xl font-medium">{leadData?.leadName}</h1>
+      <div className="flex items-center">
+        {leadData?.originalName ? (
+          <Dot className="h-8 w-8" color="red" />
+        ) : (
+          <Dot className="h-8 w-8" color="green" />
+        )}
+
+        <h1 className="mb-1 text-xl font-medium">
+          {leadData?.originalName ? leadData?.originalName : "NA"}
+        </h1>
+      </div>
       <Tabs
         aria-label="Dynamic tabs"
         items={tabs}

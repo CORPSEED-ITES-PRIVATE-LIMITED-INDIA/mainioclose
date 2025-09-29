@@ -20,14 +20,19 @@ import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import AutomationStatus from "../sales/leads/AutomationStatus";
 import SalesReport from "../sales/leads/SalesReport";
+import AllTasks from "../sales/leads/AllTasks";
+import CreateLeadCompanyForm from "../sales/company/CreateLeadCompanyForm";
+import CompanyForm from "../accounts/CompanyForm";
 
 const SalesModuleRouting = () => {
   return (
     <>
+      <Route path="sales/allTask" element={<AllTasks />} />
       <Route path="sales/leads" element={<Leads />} />
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
@@ -47,6 +52,7 @@ const SalesModuleRouting = () => {
         path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/unitDetails"
         element={<CompanyUnitDetails />}
       />
+      <Route path="sales/leadForm" element={<CompanyForm />} />
       <Route path="sales/estimate" element={<Estimate />} />
       <Route path="sales/proposal" element={<AllProposal />} />
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />

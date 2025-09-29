@@ -27,13 +27,9 @@ const getNavItemsByDepartment = (department, admin) => {
 const Layoutpage = () => {
   const location = useLocation();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
-  const userRoleaaa = useSelector((state) => state.auth.currentUser);
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department
-  );
-  const departmentssss = useSelector(
-    (state) => state?.auth?.getDepartmentDetail
   );
   const pathname = location.pathname;
   const segments = pathname.split("/");
@@ -41,8 +37,6 @@ const Layoutpage = () => {
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
 
-
-  // console.log("dskjhskhskshskj",userRoleaaa,departmentssss)
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">

@@ -15,14 +15,43 @@ import {
   Pagination,
   Chip,
   DatePicker,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+  addToast,
 } from "@heroui/react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
-import { getAllTaskData } from "../../toolkit/slices/leadSlice";
+import {
+  createNewLeadTask,
+  getAllTaskData,
+} from "../../toolkit/slices/leadSlice";
 import { padZero } from "../../common";
-import { parseDate } from "@internationalized/date";
+import { parseDate, parseZonedDateTime } from "@internationalized/date";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import NewSelect from "../../components/NewSelect";
+import { getAllTaskStatus } from "../../toolkit/slices/commonSlice";
+
+const formSchema = z.object({
+  name: z.string().min(1, "Please enter title"),
+  description: z.string().min(1, "Please enter description"),
+  expectedDate: z.string().min(1, "Please select date"),
+  statusId: z.string().min(1, "Please select status"),
+});
+
+const defaultValues = {
+  name: "",
+  description: "",
+  expectedDate: "",
+  statusId: "",
+};
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -47,14 +76,18 @@ const INITIAL_VISIBLE_COLUMNS = [
 const LeadTask = () => {
   const dispatch = useDispatch();
   const { leadId } = useParams();
+  const { onClose, onOpen, isOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.leads.getSingleLeadTask);
   const count = useSelector((state) => state.leads.getSingleLeadTask?.length);
+  const allTaskStatusData = useSelector(
+    (state) => state.common.allTaskStatusData
+  );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
-  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "age",
@@ -65,6 +98,7 @@ const LeadTask = () => {
 
   useEffect(() => {
     dispatch(getAllTaskData(leadId));
+    dispatch(getAllTaskStatus());
   }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
@@ -107,6 +141,37 @@ const LeadTask = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
+
+  const { control, handleSubmit, reset } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultValues,
+  });
+
+  const handleFinish = (values) => {
+    dispatch(createNewLeadTask(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Task created successfully.",
+            color: "success",
+          });
+          dispatch(getAllTaskData(leadId));
+          onClose();
+          reset(defaultValues);
+        } else {
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Something went wrong !.",
+          color: "danger",
+        });
+      });
+  };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -175,7 +240,7 @@ const LeadTask = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
@@ -215,6 +280,15 @@ const LeadTask = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+            <Button
+              startContent={<Plus />}
+              onPress={() => {
+                onOpen();
+                reset(defaultValues);
+              }}
+            >
+              Add task
+            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -322,6 +396,95 @@ const LeadTask = () => {
           )}
         </TableBody>
       </Table>
+
+      <Modal
+        size="3xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Create task
+              </ModalHeader>
+              <ModalBody>
+                <form
+                  className="w-full flex flex-col gap-4 "
+                  onSubmit={handleSubmit(handleFinish)}
+                >
+                  <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                    <Controller
+                      name="name"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage="please enter the name "
+                          label="Name"
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="description"
+                      control={control}
+                      render={({ field }) => (
+                        <Input label="Description" isRequired {...field} />
+                      )}
+                    />
+                    <Controller
+                      name="expectedDate"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          label="Expected date"
+                          isRequired
+                          hideTimeZone
+                          showMonthAndYearPickers
+                          value={field?.value ? parseZonedDateTime(`${field?.value}[Asia/kolkata]`) : null}
+                          onChange={(value) => {
+                            let date = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}T${String(value.hour).padStart(2, "0")}:${String(value.minute).padStart(2, "0")}`;
+                            field.onChange(date);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="statusId"
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          isRequired={true}
+                          data={allTaskStatusData || []}
+                          label="Select category"
+                          name="subsubIndustryId"
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(selectedValue) => {
+                            field.onChange(selectedValue);
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+                  <ModalFooter className="w-full flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

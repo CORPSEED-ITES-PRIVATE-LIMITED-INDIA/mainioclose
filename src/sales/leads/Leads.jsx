@@ -163,9 +163,6 @@ const Leads = () => {
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
-  const heirarchyUserList = useSelector(
-    (state) => state.dashboard.dashboardUsers
-  );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const department = useSelector((state) => state.auth.getDepartmentDetail);
   const adminRole = userRole.includes("ADMIN");
@@ -189,7 +186,7 @@ const Leads = () => {
   const initialFilterValues = {
     userId: userId,
     userIdFilter: [],
-    statusId: [1],
+    statusId: ["1"],
     toDate: "",
     fromDate: "",
     updatedToDate: "",
@@ -228,7 +225,6 @@ const Leads = () => {
   useEffect(() => {
     dispatch(getAllLeadUser(userId));
     dispatch(getAllStatusData());
-    dispatch(getDashboardUsersByHeirarchy(userId));
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
@@ -240,15 +236,8 @@ const Leads = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.leadName.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-    return filteredUsers;
-  }, [data, filterValue]);
+    return [...(data || [])];
+  }, [data]);
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
@@ -264,11 +253,9 @@ const Leads = () => {
 
   const handleSelectionChange = (selection) => {
     if (selection === "all") {
-      // If 'all' is selected, create a Set of all keys from your data
       const allKeys = new Set(sortedItems.map((item) => item.id));
       setSelectedKeys(allKeys);
     } else {
-      // The selection is already a Set, so you can directly set it
       setSelectedKeys(selection);
     }
   };
@@ -329,8 +316,6 @@ const Leads = () => {
     "Reopen By Quality",
     "Created Date",
   ];
-
-  console.log("jdhdkjgdjdjhvdjhdv", department);
 
   const openDeleteModal = (id) => {
     setItemId(id);
@@ -407,7 +392,9 @@ const Leads = () => {
                   dispatch(handleViewHistory({ leadId: lead?.id, userId }))
                 }
               >
-                {lead?.leadName || "-"}
+                {lead?.originalName
+                  ? lead?.originalName
+                  : lead?.leadName || "-"}
               </Link>
               <div className="flex gap-3">
                 <Badge
@@ -541,16 +528,19 @@ const Leads = () => {
     setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
-      dispatch(searchLeads({ input: value, id: userId }));
-    } else {
-      setFilterValue("");
-      dispatch(getAllLeadsByFilter(initialFilterValues));
-    }
-  }, []);
+  const onSearchChange = useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
+        dispatch(searchLeads({ input: value, id: userId }));
+      } else {
+        setFilterValue("");
+        dispatch(getAllLeadsByFilter(initialFilterValues));
+      }
+    },
+    [dispatch, userId, initialFilterValues]
+  );
 
   const onClear = useCallback(() => {
     setFilterValue("");
@@ -584,7 +574,7 @@ const Leads = () => {
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
-          setSelectedKeys([]);
+          setSelectedKeys(new Set([]));
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -608,7 +598,7 @@ const Leads = () => {
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
-          setSelectedKeys([]);
+          setSelectedKeys(new Set([]));
           setAssignedLeadInfo({
             statusId: null,
             assigneId: null,
@@ -653,84 +643,88 @@ const Leads = () => {
           />
 
           <div className="flex gap-3">
-            <Popover
-              size="lg"
-              showArrow
-              isOpen={actionPopOver.isOpen}
-              onOpenChange={(e) => actionPopOver.onOpenChange(e)}
-            >
-              <PopoverTrigger>
-                <Button variant="flat" endContent={<Zap />}>
-                  Action
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[500px] flex justify-start">
-                {(titleProps) => (
-                  <>
-                    <h3
-                      className="my-4 font-bold text-xl w-full"
-                      {...titleProps}
-                    >
-                      Lead actions
-                    </h3>
-                    <p className="text-default-500 text-sm w-full mb-2">
-                      {selectedKeys?.size === 0
-                        ? "Please select the table rows for action ."
-                        : `${selectedKeys?.size} rows are selected`}{" "}
-                    </p>
-                    <div className="flex flex-col gap-4 w-full">
-                      <NewSelect
-                        data={statusList}
-                        label={"Status"}
-                        name={"statusId"}
-                        labelKey={"name"}
-                        valueKey={"id"}
-                        value={assignedLeadInfo?.statusId}
-                        onChange={(e) =>
-                          setAssignedLeadInfo((prev) => ({
-                            ...prev,
-                            statusId: e,
-                          }))
-                        }
-                      />
-                      <NewSelect
-                        data={heirarchyUserList}
-                        label={"Assignee"}
-                        name={"statusId"}
-                        labelKey={"name"}
-                        valueKey={"id"}
-                        value={assignedLeadInfo?.assigneId}
-                        onChange={(selectedSet) => {
-                          setAssignedLeadInfo((prev) => ({
-                            ...prev,
-                            statusId: selectedSet,
-                          }));
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between gap-2 my-2 w-full">
-                      <Button
-                        color="danger"
-                        isDisabled={selectedKeys?.size === 0}
-                        onPress={handleDeleteMutipleLeads}
+            {adminRole && (
+              <Popover
+                size="lg"
+                showArrow
+                isOpen={actionPopOver.isOpen}
+                onOpenChange={(e) => actionPopOver.onOpenChange(e)}
+              >
+                <PopoverTrigger>
+                  <Button variant="flat" endContent={<Zap />}>
+                    Action
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[500px] flex justify-start">
+                  {(titleProps) => (
+                    <>
+                      <h3
+                        className="my-4 font-bold text-xl w-full"
+                        {...titleProps}
                       >
-                        Delete
-                      </Button>
-                      <div className="flex items-center gap-2">
-                        <Button onPress={actionPopOver.onClose}>Cancel</Button>
-                        <Button
-                          color="primary"
-                          isDisabled={selectedKeys?.size === 0}
-                          onPress={handleMultipleAssignedLeads}
-                        >
-                          Send
-                        </Button>
+                        Lead actions
+                      </h3>
+                      <p className="text-default-500 text-sm w-full mb-2">
+                        {selectedKeys?.size === 0
+                          ? "Please select the table rows for action ."
+                          : `${selectedKeys?.size} rows are selected`}{" "}
+                      </p>
+                      <div className="flex flex-col gap-4 w-full">
+                        <NewSelect
+                          data={statusList}
+                          label={"Status"}
+                          name={"statusId"}
+                          labelKey={"name"}
+                          valueKey={"id"}
+                          value={assignedLeadInfo?.statusId}
+                          onChange={(e) =>
+                            setAssignedLeadInfo((prev) => ({
+                              ...prev,
+                              statusId: e,
+                            }))
+                          }
+                        />
+                        <NewSelect
+                          data={allLeadUser}
+                          label={"Assignee"}
+                          name={"statusId"}
+                          labelKey={"fullName"}
+                          valueKey={"id"}
+                          value={assignedLeadInfo?.assigneId}
+                          onChange={(selectedSet) => {
+                            setAssignedLeadInfo((prev) => ({
+                              ...prev,
+                              statusId: selectedSet,
+                            }));
+                          }}
+                        />
                       </div>
-                    </div>
-                  </>
-                )}
-              </PopoverContent>
-            </Popover>
+                      <div className="flex justify-between gap-2 my-2 w-full">
+                        <Button
+                          color="danger"
+                          isDisabled={selectedKeys?.size === 0}
+                          onPress={handleDeleteMutipleLeads}
+                        >
+                          Delete
+                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button onPress={actionPopOver.onClose}>
+                            Cancel
+                          </Button>
+                          <Button
+                            color="primary"
+                            isDisabled={selectedKeys?.size === 0}
+                            onPress={handleMultipleAssignedLeads}
+                          >
+                            Send
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </PopoverContent>
+              </Popover>
+            )}
 
             <Popover size="lg" showArrow>
               <PopoverTrigger>
@@ -882,12 +876,15 @@ const Leads = () => {
                           label={"Status"}
                           name={"statusId"}
                           selectionMode="multiple"
-                          selectedKeys={allMultiFilterData?.statusId}
+                          selectedKeys={
+                            new Set(allMultiFilterData?.statusId || [])
+                          }
                           onSelectionChange={(e) => {
                             let values = Array.from(e);
+                            console.log("values", values);
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              statusId: values,
+                              statusId: values.length > 0 ? values : [],
                             }));
                           }}
                         >
@@ -1007,9 +1004,17 @@ const Leads = () => {
                   }
                 }}
               >
-                <DropdownItem key="add" endContent={<Plus />}>
-                  Add lead
+                <DropdownItem
+                  key="allTask"
+                  href={`erp/${userId}/sales/allTask`}
+                >
+                  All task
                 </DropdownItem>
+                {(department?.department === "Quality Team" || adminRole) && (
+                  <DropdownItem key="add" endContent={<Plus />}>
+                    Add lead
+                  </DropdownItem>
+                )}
                 {adminRole && (
                   <DropdownItem key="export" endContent={<ArrowDownToLine />}>
                     <CSVLink
@@ -1028,9 +1033,11 @@ const Leads = () => {
                     </CSVLink>
                   </DropdownItem>
                 )}
-                <DropdownItem key="import" endContent={<ArrowUpToLine />}>
-                  Import
-                </DropdownItem>
+                {adminRole && (
+                  <DropdownItem key="import" endContent={<ArrowUpToLine />}>
+                    Import
+                  </DropdownItem>
+                )}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -1066,9 +1073,11 @@ const Leads = () => {
     allMultiFilterData,
     statusList,
     selectedKeys,
-    heirarchyUserList,
+    allLeadUser,
     filterPopOver,
     actionPopOver,
+    sortedItems,
+    data,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -1150,9 +1159,6 @@ const Leads = () => {
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
-        // classNames={{
-        //   wrapper: "max-h-[65vh]",
-        // }}
         classNames={{
           wrapper:
             "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
