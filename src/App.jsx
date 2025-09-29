@@ -12,50 +12,56 @@ import ERPSettingRouting from "./routings/ERPSettingRouting";
 import IVRRouting from "./routings/IVRRouting";
 import DashboardRouting from "./routings/DashboardRouting";
 import OperationModuleRouting from "./routings/OperationModuleRouting";
-import { accountLoginModuleRouting, AccountsModuleRouting } from "./routings/AccountsModuleRouting";
+import {
+  accountLoginModuleRouting,
+  AccountsModuleRouting,
+} from "./routings/AccountsModuleRouting";
+import { AliveScope } from "react-activation";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<Login />} />
+    <AliveScope>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
 
-      <Route path="/erp" element={<ProtectedRoute />}>
-        <Route path=":userId" element={<Layoutpage />}>
-          {/*Dashboard */}
-          {DashboardRouting()}
+        <Route path="/erp" element={<ProtectedRoute />}>
+          <Route path=":userId" element={<Layoutpage />}>
+            {/*Dashboard */}
+            {DashboardRouting()}
 
-          {/* Sales */}
-          {SalesModuleRouting()}
+            {/* Sales */}
+            {SalesModuleRouting()}
 
-          {/* Industry */}
-          {IndustryModuleRouting()}
+            {/* Industry */}
+            {IndustryModuleRouting()}
 
-          {/* Accounts */}
-          {AccountsModuleRouting()}
+            {/* Accounts */}
+            {AccountsModuleRouting()}
 
-          {accountLoginModuleRouting()}
+            {accountLoginModuleRouting()}
 
-          {/* IVR */}
-          {IVRRouting()}
+            {/* IVR */}
+            {IVRRouting()}
 
-          {/* HR */}
-          {HRModuleRouting()}
+            {/* HR */}
+            {HRModuleRouting()}
 
-          {/*Operations */}
-          {OperationModuleRouting()}
+            {/*Operations */}
+            {OperationModuleRouting()}
 
-          {/* Others */}
-          <Route path="users" element={<Users />} />
-          <Route path="vendors-requests" element={<VendorRequests />} />
+            {/* Others */}
+            <Route path="users" element={<Users />} />
+            <Route path="vendors-requests" element={<VendorRequests />} />
 
-          {/* Settings */}
-          {ERPSettingRouting()}
+            {/* Settings */}
+            {ERPSettingRouting()}
+          </Route>
         </Route>
-      </Route>
 
-      <Route path="/unauthorized" element={<div>Unauthorized</div>} />
-    </Routes>
+        <Route path="/unauthorized" element={<div>Unauthorized</div>} />
+      </Routes>
+    </AliveScope>
   );
 }
 

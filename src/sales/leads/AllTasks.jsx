@@ -13,12 +13,13 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  DatePicker,
 } from "@heroui/react";
 import { ChevronDown, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import { getAllLeadsTask } from "../../toolkit/slices/leadSlice";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 export const columns = [
   { name: "DATE", uid: "date", sortable: true },
@@ -49,6 +50,8 @@ const AllTasks = () => {
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
+  const [isTodayFilter, setIsTodayFilter] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState(null);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -65,22 +68,35 @@ const AllTasks = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
-
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item.company.toLowerCase().includes(filterValue.toLowerCase())
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
-
+    if (isTodayFilter) {
+      const today = dayjs().startOf("day");
+      filteredUsers = filteredUsers.filter((item) =>
+        dayjs(item.expectedDate).isSame(today, "day")
+      );
+    }
+    if (selectedDate) {
+      const formattedSelectedDate = dayjs(
+        `${selectedDate.year}-${selectedDate.month}-${selectedDate.day}`
+      ).startOf("day");
+      filteredUsers = filteredUsers.filter((item) =>
+        dayjs(item.expectedDate).isSame(formattedSelectedDate, "day")
+      );
+    }
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, isTodayFilter, selectedDate]);
 
-  const pages = Math.ceil(count / rowsPerPage) || 1;
+  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
 
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-
     return filteredItems.slice(start, end);
   }, [page, filteredItems, rowsPerPage]);
 
@@ -104,7 +120,14 @@ const AllTasks = () => {
           </p>
         );
       case "name":
-        return <p className="text-sm capitalize">{rowData?.name}</p>;
+        return (
+          <Link
+            to={`${rowData?.leadId}/leadDetail`}
+            className="text-sm capitalize"
+          >
+            {rowData?.name}
+          </Link>
+        );
       case "description":
         return <p className="text-sm">{rowData?.description}</p>;
       case "statusName":
@@ -145,20 +168,48 @@ const AllTasks = () => {
     setPage(1);
   }, []);
 
+  const toggleTodayFilter = React.useCallback(() => {
+    setIsTodayFilter((prev) => !prev);
+    setSelectedDate(null); // Clear date filter when toggling today's tasks
+    setPage(1);
+  }, []);
+
+  const handleDateChange = React.useCallback((date) => {
+    setSelectedDate(date);
+    setIsTodayFilter(false); // Clear today's tasks filter when selecting a date
+    setPage(1);
+  }, []);
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
+          <div className="flex gap-3 items-end">
+            <Input
+              isClearable
+              className="w-full sm:max-w-[35%]"
+              placeholder="Search ..."
+              startContent={<Search />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+            />
+          </div>
           <div className="flex gap-3">
+            <div>
+              <DatePicker
+                showMonthAndYearPickers
+                variant="flat"
+                onChange={handleDateChange}
+              />
+            </div>
+            <Button
+              color={isTodayFilter ? "primary" : "default"}
+              onPress={toggleTodayFilter}
+              variant="flat"
+            >
+              Today's tasks
+            </Button>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -184,7 +235,7 @@ const AllTasks = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} tasks
+            Total {filteredItems.length} tasks
           </span>
           <div className="flex gap-4">
             <label className="flex items-center text-default-400 text-small">
@@ -207,9 +258,12 @@ const AllTasks = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    count,
+    filteredItems.length,
     onSearchChange,
     hasSearchFilter,
+    isTodayFilter,
+    toggleTodayFilter,
+    selectedDate,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -218,7 +272,7 @@ const AllTasks = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys.size} of ${filteredItems.length} selected`}
         </span>
         <Pagination
           isCompact
@@ -249,7 +303,7 @@ const AllTasks = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, items.length, page, pages, filteredItems.length]);
 
   return (
     <>
@@ -281,7 +335,7 @@ const AllTasks = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={`${item?.id}unbill`}>
+            <TableRow key={`${item?.leadId}task`}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}

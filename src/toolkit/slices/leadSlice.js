@@ -50,7 +50,7 @@ export const handleDeleteSingleLead = createAsyncThunk(
   "handleDeleteSingleLead",
   async (data) => {
     const response = await api.delete(
-      `/leadService/api/v1/lead/deleteLead?leadId=${data?.id}&userId=${data?.userid}`
+      `/leadService/api/v1/lead/deleteLead?leadId=${data?.id}&userId=${data?.userId}`
     );
     return response.data;
   }
@@ -407,6 +407,17 @@ export const createNewLeadTask = createAsyncThunk(
     const response = await api.post(
       `/leadService/api/v1/task/createTask`,
       taskData
+    );
+    return response.data;
+  }
+);
+
+export const updateLeadTask = createAsyncThunk(
+  "updateLeadTasd",
+  async (addNewTask) => {
+    const response = await api.post(
+      `/leadService/api/v1/task/updateTaskData`,
+      addNewTask
     );
     return response.data;
   }
