@@ -1,7 +1,13 @@
 import { useRef, useState, useEffect } from "react";
 import { api } from "../httpRequest";
 
-const SingleFileUploader = ({ value, onChange, label, isRequired = false,errorMessage }) => {
+const SingleFileUploader = ({
+  value,
+  onChange,
+  label,
+  isRequired = false,
+  errorMessage,
+}) => {
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -17,6 +23,26 @@ const SingleFileUploader = ({ value, onChange, label, isRequired = false,errorMe
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
+
+  useEffect(() => {
+    if (value) {
+      // If value is a URL, create a pseudo-file object
+      if (typeof value === "string") {
+        const fileName = value.split("/").pop(); // Extract file name from URL
+        setFile({
+          name: fileName,
+          size: 0, // Size unknown from URL; can be updated if API provides it
+          url: value, // Store URL for reference
+        });
+        setStatus("success");
+      } else {
+        setFile(value);
+      }
+    } else {
+      setFile(null);
+      setStatus("idle");
+    }
+  }, [value]);
 
   const uploadFile = async (selectedFile) => {
     setStatus("uploading");
@@ -123,7 +149,7 @@ const SingleFileUploader = ({ value, onChange, label, isRequired = false,errorMe
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`w-full min-h-[52px] border-2 rounded-lg mt-1 border-gray-600 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer  transition-colors ${
+        className={`w-full min-h-[52px] border-2 rounded-lg mt-1 border-gray-600 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer transition-colors ${
           file && status === "success" ? "cursor-not-allowed opacity-70" : ""
         }`}
       >
@@ -136,7 +162,7 @@ const SingleFileUploader = ({ value, onChange, label, isRequired = false,errorMe
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className={`bg-blue-500 text-white text-tiny  px-2 py-[3px] rounded hover:bg-blue-600 ${
+            className={`bg-blue-500 text-white text-tiny px-2 py-[3px] rounded hover:bg-blue-600 ${
               file && status === "success" ? "hidden" : ""
             }`}
             onClick={(e) => {
@@ -153,9 +179,7 @@ const SingleFileUploader = ({ value, onChange, label, isRequired = false,errorMe
           </p>
         </div>
       </div>
-      {
-        errorMessage &&  <p className="text-red-500 text-xs">{errorMessage} </p>
-      }
+      {errorMessage && <p className="text-red-500 text-xs">{errorMessage}</p>}
 
       {file && (
         <div className="mt-4 flex items-center gap-2">
@@ -164,7 +188,7 @@ const SingleFileUploader = ({ value, onChange, label, isRequired = false,errorMe
               status === "success" ? "text-green-600" : "text-gray-800"
             } text-tiny`}
           >
-            {file.name} ({Math.round(file.size / 1024)} KB)
+            {file.name} {file.size > 0 && `(${Math.round(file.size / 1024)} KB)`}
             {status === "success" && value && (
               <>
                 {" "}

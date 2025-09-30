@@ -423,6 +423,13 @@ export const updateLeadTask = createAsyncThunk(
   }
 );
 
+export const deleteTask = createAsyncThunk("deleteTask", async (data) => {
+  const response = await api.delete(
+    `/leadService/api/v1/task/deleteTaskById?taskId=${data?.id}&currentUserId=${data?.userId}`
+  );
+  return response.data;
+});
+
 export const createEstimateForApprovals = createAsyncThunk(
   "createEstimateForApprovals",
   async (data) => {

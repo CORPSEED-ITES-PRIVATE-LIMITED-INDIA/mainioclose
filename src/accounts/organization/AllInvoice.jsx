@@ -28,9 +28,9 @@ import {
 } from "../../toolkit/slices/organizationSlice";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
-import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
-import InvoiceView from "../../components/InvoiceView";
 import { inrCurrency } from "../../common";
+import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import TaxInvoice from "../../components/TaxInvoice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -125,7 +125,7 @@ const AllInvoice = () => {
   }, [sortDescriptor, items]);
 
   const handleViewEstimate = (value) => {
-    dispatch(getEstimateByLeadId(value?.leadId))
+    dispatch(getInvoiceDetailById(value?.id))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           let data = resp?.payload;
@@ -202,7 +202,7 @@ const AllInvoice = () => {
                   }
                 }}
               >
-                <DropdownItem key="viewEstimate">View estimate</DropdownItem>
+                <DropdownItem key="viewEstimate">Tax invoice</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -394,9 +394,9 @@ const AllInvoice = () => {
         placement="top-center"
       >
         <ModalContent>
-          <ModalHeader>Estimate</ModalHeader>
+          <ModalHeader>Tax Invoice</ModalHeader>
           <ModalBody className="max-h-[90vh] overflow-auto">
-            <InvoiceView details={estimateDetail} />
+            <TaxInvoice details={estimateDetail} />
           </ModalBody>
         </ModalContent>
       </Modal>
