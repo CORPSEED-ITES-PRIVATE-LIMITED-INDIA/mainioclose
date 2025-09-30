@@ -32,7 +32,18 @@ import {
   getAllTaskData,
 } from "../../toolkit/slices/leadSlice";
 import { padZero } from "../../common";
-import { parseDate, parseZonedDateTime } from "@internationalized/date";
+import {
+  fromDate,
+  getLocalTimeZone,
+  now,
+  parseAbsoluteToLocal,
+  parseDate,
+  parseDateTime,
+  parseZonedDateTime,
+  setLocalTimeZone,
+  toCalendarDate,
+  toCalendarDateTime,
+} from "@internationalized/date";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -75,7 +86,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const LeadTask = () => {
   const dispatch = useDispatch();
-  const { leadId } = useParams();
+  const { leadId, userId } = useParams();
   const { onClose, onOpen, isOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.leads.getSingleLeadTask);
   const count = useSelector((state) => state.leads.getSingleLeadTask?.length);
@@ -111,7 +122,6 @@ const LeadTask = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
-
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
@@ -119,9 +129,8 @@ const LeadTask = () => {
         )
       );
     }
-
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, date]);
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
@@ -147,8 +156,18 @@ const LeadTask = () => {
     defaultValues: defaultValues,
   });
 
+  const onEditTask = (rowData) => {
+    reset({
+      name: rowData?.name,
+      description: rowData?.description,
+      expectedDate: rowData?.expectedDate,
+      statusId: rowData?.taskStatus?.id,
+    });
+    onOpen();
+  };
+
   const handleFinish = (values) => {
-    dispatch(createNewLeadTask(values))
+    dispatch(createNewLeadTask({ ...values, leadId, assignedById: userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
@@ -176,19 +195,21 @@ const LeadTask = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
+      case "name":
+        return <span className="font-medium">{rowData?.name}</span>;
       case "statusName":
         return (
           <div className="flex flex-col">
             <Chip
               color={
-                rowData?.taskStatus === "Re-Open"
+                rowData?.taskStatus?.name === "Re-Open"
                   ? "danger"
-                  : rowData?.status === "Done"
+                  : rowData?.taskStatus?.name === "Done"
                     ? "success"
                     : "default"
               }
             >
-              {rowData?.statusName}
+              {rowData?.taskStatus?.name}
             </Chip>
           </div>
         );
@@ -196,6 +217,26 @@ const LeadTask = () => {
         return (
           <div className="flex flex-col">
             <p>{dayjs(rowData?.expectedDate).format("DD-MM-YYYY")}</p>
+          </div>
+        );
+      case "actions":
+        return (
+          <div className="relative flex justify-center items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu selectionMode="single">
+                <DropdownItem key="edit" onPress={() => onEditTask(rowData)}>
+                  Edit
+                </DropdownItem>
+                <DropdownItem key="delete" color="danger">
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
         );
       default:
@@ -252,10 +293,11 @@ const LeadTask = () => {
               <DatePicker
                 size="md"
                 showMonthAndYearPickers
-                value={parseDate(date)}
+                value={date ? parseDate(date) : null}
                 onChange={(e) => {
-                  let date = `${e.year}-${padZero(e.month)}-${padZero(e.day)}`;
-                  setDate(date);
+                  let selectedDate = `${e.year}-${padZero(e.month)}-${padZero(e.day)}`;
+                  setDate(selectedDate);
+                  setPage(1);
                 }}
               />
             </div>
@@ -314,9 +356,10 @@ const LeadTask = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    count,
     onSearchChange,
     hasSearchFilter,
+    date,
+    count,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -356,7 +399,7 @@ const LeadTask = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, items.length, page, pages, count]);
 
   return (
     <>
@@ -413,42 +456,51 @@ const LeadTask = () => {
               </ModalHeader>
               <ModalBody>
                 <form
-                  className="w-full flex flex-col gap-4 "
+                  className="w-full flex flex-col gap-4"
                   onSubmit={handleSubmit(handleFinish)}
                 >
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
                     <Controller
                       name="name"
                       control={control}
-                      render={({ field }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
-                          errorMessage="please enter the name "
+                          errorMessage={error?.message}
                           label="Name"
                           {...field}
                         />
                       )}
                     />
-
                     <Controller
                       name="description"
                       control={control}
-                      render={({ field }) => (
-                        <Input label="Description" isRequired {...field} />
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          errorMessage={error?.message}
+                          label="Description"
+                          {...field}
+                        />
                       )}
                     />
                     <Controller
                       name="expectedDate"
                       control={control}
-                      render={({ field }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <DatePicker
-                          label="Expected date"
-                          isRequired
                           hideTimeZone
                           showMonthAndYearPickers
-                          value={field?.value ? parseZonedDateTime(`${field?.value}[Asia/kolkata]`) : null}
+                          value={
+                            field?.value
+                              ? parseAbsoluteToLocal(field?.value)
+                              : null
+                          }
+                          label="Event Date"
+                          variant="bordered"
                           onChange={(value) => {
-                            let date = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}T${String(value.hour).padStart(2, "0")}:${String(value.minute).padStart(2, "0")}`;
+                            const dateTime = toCalendarDateTime(value);
+                            const date = `${dateTime.year}-${padZero(dateTime.month)}-${padZero(dateTime.day)}T${padZero(dateTime.hour)}:${padZero(dateTime.minute)}:${padZero(dateTime.second)}+05:30`;
                             field.onChange(date);
                           }}
                         />
@@ -457,18 +509,19 @@ const LeadTask = () => {
                     <Controller
                       name="statusId"
                       control={control}
-                      render={({ field }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <NewSelect
-                          isRequired={true}
+                          isRequired
                           data={allTaskStatusData || []}
                           label="Select category"
-                          name="subsubIndustryId"
+                          name="statusId"
                           labelKey="name"
                           valueKey="id"
                           value={field.value}
                           onChange={(selectedValue) => {
                             field.onChange(selectedValue);
                           }}
+                          errorMessage={error?.message}
                         />
                       )}
                     />

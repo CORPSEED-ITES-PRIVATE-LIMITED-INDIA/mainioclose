@@ -36,7 +36,6 @@ import {
   ArrowDownNarrowWide,
   ArrowDownToLine,
   ArrowUpDown,
-  ArrowUpNarrowWide,
   ArrowUpToLine,
   ArrowUpWideNarrow,
   ChevronDown,
@@ -73,7 +72,6 @@ import { formatedDateTime, leadSource } from "../../common";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 import { CSVLink } from "react-csv";
 import dayjs from "dayjs";
 
@@ -325,7 +323,7 @@ const Leads = () => {
   const leadDeleteResponse = useCallback(() => {
     let obj = {
       id: itemId,
-      userId,
+      userId: userId,
     };
     dispatch(handleDeleteSingleLead(obj))
       .then((response) => {
@@ -335,6 +333,9 @@ const Leads = () => {
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
+          dispatch(getAllLeadCount(allMultiFilterData));
+          dispatch(getAllLeadsForExport(allMultiFilterData));
+          deleteModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -360,6 +361,8 @@ const Leads = () => {
               color: "success",
             });
             dispatch(getAllLeadsByFilter(allMultiFilterData));
+            dispatch(getAllLeadCount(allMultiFilterData));
+            dispatch(getAllLeadsForExport(allMultiFilterData));
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -537,6 +540,8 @@ const Leads = () => {
       } else {
         setFilterValue("");
         dispatch(getAllLeadsByFilter(initialFilterValues));
+        dispatch(getAllLeadCount(allMultiFilterData));
+        dispatch(getAllLeadsForExport(allMultiFilterData));
       }
     },
     [dispatch, userId, initialFilterValues]
@@ -574,6 +579,8 @@ const Leads = () => {
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
+          dispatch(getAllLeadCount(allMultiFilterData));
+          dispatch(getAllLeadsForExport(allMultiFilterData));
           setSelectedKeys(new Set([]));
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
@@ -598,6 +605,8 @@ const Leads = () => {
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
+          dispatch(getAllLeadCount(allMultiFilterData));
+          dispatch(getAllLeadsForExport(allMultiFilterData));
           setSelectedKeys(new Set([]));
           setAssignedLeadInfo({
             statusId: null,
@@ -687,14 +696,14 @@ const Leads = () => {
                         <NewSelect
                           data={allLeadUser}
                           label={"Assignee"}
-                          name={"statusId"}
+                          name={"assigneId"}
                           labelKey={"fullName"}
                           valueKey={"id"}
                           value={assignedLeadInfo?.assigneId}
                           onChange={(selectedSet) => {
                             setAssignedLeadInfo((prev) => ({
                               ...prev,
-                              statusId: selectedSet,
+                              assigneId: selectedSet,
                             }));
                           }}
                         />
@@ -1160,8 +1169,8 @@ const Leads = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper:
-            "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
+          wrapper: "max-h-[70vh] max-w-[87vw]",
+          table: "overflow-scroll",
         }}
         selectedKeys={
           selectedKeys?.size === allMultiFilterData?.size ? "all" : selectedKeys

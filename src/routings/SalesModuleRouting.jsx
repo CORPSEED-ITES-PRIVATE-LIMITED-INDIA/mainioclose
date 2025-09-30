@@ -1,4 +1,5 @@
 import { Route } from "react-router-dom";
+import { KeepAlive } from "react-activation";
 import Leads from "../sales/leads/Leads";
 import LeadDetail from "../sales/leads/LeadDetail";
 import LeadHistory from "../sales/leads/LeadHistory";
@@ -28,7 +29,22 @@ const SalesModuleRouting = () => {
   return (
     <>
       <Route path="sales/allTask" element={<AllTasks />} />
-      <Route path="sales/leads" element={<Leads />} />
+      <Route path="sales/allTask/:leadId" element={<LeadDetail />}>
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="proposal" element={<Proposal />} />
+        <Route path="leadEstimate" element={<LeadEstimate />} />
+      </Route>
+      <Route
+        path="sales/leads"
+        element={
+          <KeepAlive>
+            <Leads />
+          </KeepAlive>
+        }
+      />
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
