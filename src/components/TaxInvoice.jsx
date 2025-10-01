@@ -1,52 +1,56 @@
 import React from "react";
-import { toWords } from "../common";
+import { inrCurrency, toWords } from "../common";
+import dayjs from "dayjs";
 
 const TaxInvoice = ({ detail }) => {
+  console.log("dakjfgkjasgdjhgsdg", detail);
+
   const items = [
     {
-      particulars: "Consulting Services",
-      gst: "18%",
-      hsn: "9983",
-      amount: 5000,
+      particulars: detail?.productName,
+      gst: detail?.profesionalGst,
+      hsn: detail?.professionalCode,
+      amount: detail?.professionalFees,
     },
-    {
-      particulars: "Software Development",
-      gst: "18%",
-      hsn: "9984",
-      amount: 12000,
-    },
-    {
-      particulars: "Website Maintenance",
-      gst: "18%",
-      hsn: "9985",
-      amount: 3000,
-    },
+    // {
+    //   particulars: "Software Development",
+    //   gst: "18%",
+    //   hsn: "9984",
+    //   amount: 12000,
+    // },
+    // {
+    //   particulars: "Website Maintenance",
+    //   gst: "18%",
+    //   hsn: "9985",
+    //   amount: 3000,
+    // },
   ];
 
-  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  // const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  const totalAmount = detail?.totalAmount;
 
   const taxAbleItems = [
     {
-      hsn: "9983",
-      taxable: 5000,
-      igstRate: 18,
-      igstAmount: 900,
-      totalTax: 900,
+      hsn: detail?.professionalCode,
+      taxable: detail?.professionalFees,
+      igstRate: detail?.profesionalGst,
+      igstAmount: detail?.gstAmount,
+      totalTax: detail?.gstAmount,
     },
-    {
-      hsn: "9984",
-      taxable: 10000,
-      igstRate: 12,
-      igstAmount: 1200,
-      totalTax: 1200,
-    },
-    {
-      hsn: "9985",
-      taxable: 2000,
-      igstRate: 18,
-      igstAmount: 360,
-      totalTax: 360,
-    },
+    // {
+    //   hsn: "9984",
+    //   taxable: 10000,
+    //   igstRate: 12,
+    //   igstAmount: 1200,
+    //   totalTax: 1200,
+    // },
+    // {
+    //   hsn: "9985",
+    //   taxable: 2000,
+    //   igstRate: 18,
+    //   igstAmount: 360,
+    //   totalTax: 360,
+    // },
   ];
 
   // Totals
@@ -74,7 +78,7 @@ const TaxInvoice = ({ detail }) => {
               <p className="text-xs">Consignee (Ship to)</p>
               <h3 className="font-medium">{detail?.companyName}</h3>
               <p className="text-sm">
-                {detail?.address}, {detail?.city}, {detail?.state},{" "}
+                {detail?.Address}, {detail?.City}, {detail?.State},{" "}
                 {detail?.Country} -{detail?.primaryPinCode}
               </p>
               <p className="text-sm">GSTIN/UIN : {detail?.gstNo}</p>
@@ -83,16 +87,17 @@ const TaxInvoice = ({ detail }) => {
             </div>
             <div className="flex flex-col gap-0.5 p-2">
               <p className="text-xs">Buyer (Bill to)</p>
-              <h3 className="font-medium">
-                EMERSON PROCESS MANAGEMENT (INDIA) PVT LTD
-              </h3>
+              <h3 className="font-medium">{detail?.companyName}</h3>
               <p className="text-sm">
-                Klauke Division, No. 1785 ,Ground floor, 19th main,HSR Layout
-                Sector-1 , Bengaluru Karnataka - 560102,India
+                {detail?.secondaryAddress}, {detail?.secondaryCity},{" "}
+                {detail?.secondaryState}, {detail?.secondaryCountry} -
+                {detail?.secondaryPinCode}
               </p>
-              <p className="text-sm">GSTIN/UIN : 29AAACF1667M2Z8</p>
-              <p className="text-sm">State name : Karnataka, code : 29</p>
-              <p className="text-sm">E-mail : info@corpseed.com</p>
+              <p className="text-sm">GSTIN/UIN : {detail?.gstNo}</p>
+              <p className="text-sm">State name : {detail?.State}, code : 29</p>
+              <p className="text-sm">
+                E-mail : {detail?.secondaryContactemails}
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-1 grid-rows-2">
@@ -103,7 +108,9 @@ const TaxInvoice = ({ detail }) => {
               </div>
               <div className="border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                 <p className="text-xs">Dated</p>
-                <p className="text-sm font-medium">23-Aug-2023</p>
+                <p className="text-sm font-medium">
+                  {dayjs(detail?.createDate).format("DD-MM-YYYY")}
+                </p>
               </div>
               <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                 <p className="text-xs">Delivery Note</p>
@@ -182,7 +189,7 @@ const TaxInvoice = ({ detail }) => {
                     {item.particulars}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
-                    {item.gst}
+                    {item.gst}%
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
                     {item.hsn}
@@ -244,16 +251,16 @@ const TaxInvoice = ({ detail }) => {
               <tr key={index}>
                 <td className="border border-gray-300 px-4 py-2">{item.hsn}</td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
-                  {item.taxable.toLocaleString("en-IN")}
+                  {inrCurrency(item.taxable.toLocaleString("en-IN"))}
                 </td>
                 <td className="border border-gray-300 px-4 py-2">
                   {item.igstRate}%
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
-                  {item.igstAmount.toLocaleString("en-IN")}
+                  {inrCurrency(item.igstAmount)}
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
-                  {item.totalTax.toLocaleString("en-IN")}
+                  {inrCurrency(item.totalTax)}
                 </td>
               </tr>
             ))}
@@ -262,14 +269,14 @@ const TaxInvoice = ({ detail }) => {
             <tr className="font-semibold bg-gray-100 dark:bg-gray-600">
               <td className="border border-gray-300 px-4 py-2">Total</td>
               <td className="border border-gray-300 px-4 py-2 text-right">
-                {totalTaxable.toLocaleString("en-IN")}
+                {inrCurrency(totalTaxable)}
               </td>
               <td className="border border-gray-300 px-4 py-2">-</td>
               <td className="border border-gray-300 px-4 py-2 text-right">
-                {totalIGST.toLocaleString("en-IN")}
+                {inrCurrency(totalIGST)}
               </td>
               <td className="border border-gray-300 px-4 py-2 text-right">
-                {totalTaxAmount.toLocaleString("en-IN")}
+                {inrCurrency(totalTaxAmount)}
               </td>
             </tr>
           </tbody>
@@ -284,10 +291,7 @@ const TaxInvoice = ({ detail }) => {
 
           <div className="grid grid-cols-2 gap-4 mt-2">
             <p className="text-sm max-w-[90%]">
-              <span className="font-semibold text-sm">Remark </span>: The
-              estimated value for the project is ₹17700/-. A Payment Invoice
-              (PI) has been created for the initial 50% payment. Kindly note
-              that the remaining 50% balance is still due..
+              <span className="font-semibold text-sm">Remark </span>: {detail?.remarksForOption}
             </p>
 
             <div className="flex flex-col gap-0.5">

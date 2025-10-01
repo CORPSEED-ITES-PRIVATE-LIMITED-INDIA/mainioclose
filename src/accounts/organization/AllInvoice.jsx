@@ -66,7 +66,7 @@ const AllInvoice = () => {
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length
   );
-  const [estimateDetail, setEstimateDetail] = useState(null);
+  const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -128,18 +128,19 @@ const AllInvoice = () => {
     dispatch(getInvoiceDetailById(value?.id))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          let data = resp?.payload;
-          setEstimateDetail(data);
+          let tempData = resp?.payload;
+          console.log("sdkgfkjsdgjksdgjhs",tempData)
+          setInvoiceDetail(tempData);
           onOpen();
         } else {
           addToast({
-            title: "There is Some Issue in estimate",
+            title: "There is Some Issue in Invoice",
             color: "danger",
           });
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" })
+        addToast({ title: "There is Some Issue in Invoice", color: "danger" })
       );
   };
 
@@ -347,6 +348,9 @@ const AllInvoice = () => {
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
+
+  console.log("invoice",invoiceDetail)
+
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
@@ -396,7 +400,7 @@ const AllInvoice = () => {
         <ModalContent>
           <ModalHeader>Tax Invoice</ModalHeader>
           <ModalBody className="max-h-[90vh] overflow-auto">
-            <TaxInvoice details={estimateDetail} />
+            <TaxInvoice detail={invoiceDetail} />
           </ModalBody>
         </ModalContent>
       </Modal>

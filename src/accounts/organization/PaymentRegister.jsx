@@ -848,7 +848,6 @@ const PaymentRegister = () => {
                     </Button>
                   </div>
                 </div>
-                <Textarea className="max-w-xs" label="Description" />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
@@ -880,6 +879,7 @@ const PaymentRegister = () => {
                 <Textarea
                   className="max-w-xs"
                   label="Remark"
+                  isRequired
                   onChange={(e) => {
                     setPaymentActionData((prev) => ({
                       ...prev,
@@ -892,7 +892,11 @@ const PaymentRegister = () => {
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
-                <Button color="primary" onPress={handleSubmitPaymentAction}>
+                <Button
+                  color="primary"
+                  isDisabled={paymentActionData?.comment === ""}
+                  onPress={handleSubmitPaymentAction}
+                >
                   Submit
                 </Button>
               </ModalFooter>
