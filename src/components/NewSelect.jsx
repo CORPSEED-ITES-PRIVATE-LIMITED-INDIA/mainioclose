@@ -168,7 +168,7 @@ const NewSelect = ({
                     key={item?.key}
                     className="flex items-center gap-2 selectable-text"
                   >
-                    <span className="text-sm">
+                    <span className="text-sm flex flex-wrap py-0.5">
                       {item?.data?.[labelKey] || "Unknown"}
                     </span>
                   </div>
@@ -189,7 +189,7 @@ const NewSelect = ({
             }}
           >
             <div className="flex flex-col">
-              <span className="text-small">
+              <span className="text-small flex flex-wrap py-0.5">
                 {item?.[labelKey] || "Unknown"}
               </span>
             </div>

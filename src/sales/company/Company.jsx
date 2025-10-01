@@ -490,7 +490,8 @@ const Company = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[70vh] max-w-[87vw]",
+          table: "overflow-scroll",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
