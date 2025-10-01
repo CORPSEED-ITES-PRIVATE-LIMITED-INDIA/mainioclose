@@ -71,9 +71,10 @@ const Projects = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
-  useEffect(() => {
-    dispatch(getProjectAction(filteration));
-  }, [dispatch]);
+  useEffect(()=>{
+    dispatch(getProjectAction(filteration))
+  },[dispatch])
+
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -253,7 +254,7 @@ const Projects = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
