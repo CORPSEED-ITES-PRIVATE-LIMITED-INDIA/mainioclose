@@ -11,7 +11,6 @@ import Estimate from "../sales/estimate/Estimate";
 import AllProposal from "../sales/proposal/AllProposal";
 import DiscountedEstimate from "../sales/leads/DiscountedEstimate";
 import AutoHistory from "../sales/leads/AutoHistory";
-import Projects from "../operation/projects/Projects";
 import ServingCompanies from "../sales/leads/ServingCompanies";
 import LeadTask from "../sales/leads/LeadTask";
 import LeadInfo from "../sales/leads/LeadInfo";
@@ -24,6 +23,7 @@ import SalesReport from "../sales/leads/SalesReport";
 import AllTasks from "../sales/leads/AllTasks";
 import CreateLeadCompanyForm from "../sales/company/CreateLeadCompanyForm";
 import CompanyForm from "../accounts/CompanyForm";
+import Projects from "../sales/leads/Projects";
 
 const SalesModuleRouting = () => {
   return (

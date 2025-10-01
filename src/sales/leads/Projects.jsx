@@ -71,9 +71,10 @@ const Projects = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
-  useEffect(() => {
-    dispatch(getProjectAction(filteration));
-  }, [dispatch]);
+  useEffect(()=>{
+    dispatch(getProjectAction(filteration))
+  },[dispatch])
+
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
