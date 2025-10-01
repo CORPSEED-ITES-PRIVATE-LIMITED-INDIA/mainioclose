@@ -8,6 +8,8 @@ import numWords from "num-words";
 import { inrCurrency } from "../common";
 
 const EstimateView = ({ details }) => {
+  console.log("sdkjjsgjksgsjgj", details);
+
   const pdfRef = useRef();
 
   const generatePDF = async () => {
@@ -32,7 +34,7 @@ const EstimateView = ({ details }) => {
     pdf.save("estimate.pdf");
   };
   return (
-    <div className="max-h-[84vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
+    <div className="max-h-[75vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
       <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
         {/* Product Name */}
         {details?.productName && (
@@ -247,34 +249,32 @@ const EstimateView = ({ details }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {details?.products?.map((item, index) => (
-                      <tr key={index}>
-                        <td className="border border-black p-1 text-center">
-                          {index + 1}
-                        </td>
-                        <td className="border border-black p-1">
-                          {item?.name}
-                        </td>
-                        <td className="border border-black p-1 text-center">
-                          {item?.hsnCode}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {item?.ratePerKg}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {item?.quantity}
-                        </td>
-                        <td className="border border-black p-1 text-center">
-                          {item?.gstPercent}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {item?.gstAmount}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {item?.amount}
-                        </td>
-                      </tr>
-                    ))}
+                    <tr >
+                      <td className="border border-black p-1 text-center">
+                        {1}
+                      </td>
+                      <td className="border border-black p-1">
+                        {details?.productName}
+                      </td>
+                      <td className="border border-black p-1 text-center">
+                        {details?.gstCode}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {inrCurrency(details?.actualPrice)}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {details?.quantity}
+                      </td>
+                      <td className="border border-black p-1 text-center">
+                        {details?.gst}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {inrCurrency(details?.gstAmount)}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {inrCurrency(details?.totalAmount)}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               ) : (
