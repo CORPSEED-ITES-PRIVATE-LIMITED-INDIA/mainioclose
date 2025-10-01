@@ -26,10 +26,10 @@ import {
   getAllUnbillCount,
   getAllUnbillList,
 } from "../../toolkit/slices/organizationSlice";
-import TaxInvoice from "../../components/TaxInvoice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
 import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import InvoiceView from "../../components/InvoiceView";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -124,11 +124,13 @@ const Unbill = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "date":
-        return <p className="text-sm capitalize">{dayjs(rowData?.date).format("DD-MM-YYYY")}</p>;
-      case "unbillNo":
         return (
-          <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>
+          <p className="text-sm capitalize">
+            {dayjs(rowData?.date).format("DD-MM-YYYY")}
+          </p>
         );
+      case "unbillNo":
+        return <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>;
       case "service":
         return <p className="text-sm capitalize">{rowData?.productName}</p>;
       case "company":
@@ -157,10 +159,13 @@ const Unbill = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="view" onPress={()=>{
-                  onOpen()
-                  dispatch(getInvoiceDetailById(rowData?.id))
-                }}>
+                <DropdownItem
+                  key="view"
+                  onPress={() => {
+                    onOpen();
+                    dispatch(getInvoiceDetailById(rowData?.id));
+                  }}
+                >
                   View
                 </DropdownItem>
                 <DropdownItem key="edit">Edit</DropdownItem>
@@ -359,10 +364,10 @@ const Unbill = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Tax invoice
+                Invoice
               </ModalHeader>
-              <ModalBody>
-                <TaxInvoice detail={invoiceDetail} />
+              <ModalBody className="max-h-[85vh] overflow-auto">
+                <InvoiceView detail={invoiceDetail} />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>

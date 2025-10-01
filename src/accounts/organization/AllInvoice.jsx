@@ -28,9 +28,9 @@ import {
 } from "../../toolkit/slices/organizationSlice";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
-import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
-import InvoiceView from "../../components/InvoiceView";
 import { inrCurrency } from "../../common";
+import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import TaxInvoice from "../../components/TaxInvoice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -66,7 +66,7 @@ const AllInvoice = () => {
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length
   );
-  const [estimateDetail, setEstimateDetail] = useState(null);
+  const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -125,21 +125,22 @@ const AllInvoice = () => {
   }, [sortDescriptor, items]);
 
   const handleViewEstimate = (value) => {
-    dispatch(getEstimateByLeadId(value?.leadId))
+    dispatch(getInvoiceDetailById(value?.id))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          let data = resp?.payload;
-          setEstimateDetail(data);
+          let tempData = resp?.payload;
+          console.log("sdkgfkjsdgjksdgjhs",tempData)
+          setInvoiceDetail(tempData);
           onOpen();
         } else {
           addToast({
-            title: "There is Some Issue in estimate",
+            title: "There is Some Issue in Invoice",
             color: "danger",
           });
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" })
+        addToast({ title: "There is Some Issue in Invoice", color: "danger" })
       );
   };
 
@@ -202,7 +203,7 @@ const AllInvoice = () => {
                   }
                 }}
               >
-                <DropdownItem key="viewEstimate">View estimate</DropdownItem>
+                <DropdownItem key="viewEstimate">Tax invoice</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -347,6 +348,9 @@ const AllInvoice = () => {
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
+
+  console.log("invoice",invoiceDetail)
+
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
@@ -394,9 +398,9 @@ const AllInvoice = () => {
         placement="top-center"
       >
         <ModalContent>
-          <ModalHeader>Estimate</ModalHeader>
+          <ModalHeader>Tax Invoice</ModalHeader>
           <ModalBody className="max-h-[90vh] overflow-auto">
-            <InvoiceView details={estimateDetail} />
+            <TaxInvoice detail={invoiceDetail} />
           </ModalBody>
         </ModalContent>
       </Modal>

@@ -23,25 +23,20 @@ import {
   useDisclosure,
   addToast,
 } from "@heroui/react";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
   createNewLeadTask,
+  deleteTask,
   getAllTaskData,
+  updateLeadTask,
 } from "../../toolkit/slices/leadSlice";
 import { padZero } from "../../common";
 import {
-  fromDate,
-  getLocalTimeZone,
-  now,
   parseAbsoluteToLocal,
   parseDate,
-  parseDateTime,
-  parseZonedDateTime,
-  setLocalTimeZone,
-  toCalendarDate,
   toCalendarDateTime,
 } from "@internationalized/date";
 import { Controller, useForm } from "react-hook-form";
@@ -70,6 +65,7 @@ export const columns = [
   { name: "STATUS", uid: "statusName" },
   { name: "EXPECTED DATE", uid: "expectedDate" },
   { name: "DESCRIPTION", uid: "description" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
@@ -82,12 +78,14 @@ const INITIAL_VISIBLE_COLUMNS = [
   "statusName",
   "expectedDate",
   "description",
+  "actions",
 ];
 
 const LeadTask = () => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
   const { onClose, onOpen, isOpen, onOpenChange } = useDisclosure();
+  const deleteModal = useDisclosure();
   const data = useSelector((state) => state.leads.getSingleLeadTask);
   const count = useSelector((state) => state.leads.getSingleLeadTask?.length);
   const allTaskStatusData = useSelector(
@@ -99,6 +97,7 @@ const LeadTask = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [rowData, setRowData] = useState(null);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "age",
@@ -156,40 +155,95 @@ const LeadTask = () => {
     defaultValues: defaultValues,
   });
 
+  const handleDeleteTask = () => {
+    dispatch(deleteTask({ id: rowData?.id, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({ title: "Task deleted successfully.", color: "success" });
+          dispatch(getAllTaskData(leadId));
+          deleteModal.onClose();
+          setRowData(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  };
+
   const onEditTask = (rowData) => {
     reset({
       name: rowData?.name,
       description: rowData?.description,
       expectedDate: rowData?.expectedDate,
-      statusId: rowData?.taskStatus?.id,
+      statusId: rowData?.taskStatus?.id
+        ? rowData?.taskStatus?.id?.toString()
+        : "",
     });
     onOpen();
+    setRowData(rowData);
   };
 
   const handleFinish = (values) => {
-    dispatch(createNewLeadTask({ ...values, leadId, assignedById: userId }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Task created successfully.",
-            color: "success",
-          });
-          dispatch(getAllTaskData(leadId));
-          onClose();
-          reset(defaultValues);
-        } else {
+    if (rowData) {
+      dispatch(
+        updateLeadTask({
+          ...values,
+          taskId: rowData?.id,
+          leadId,
+          assignedById: userId,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Task updated successfully.",
+              color: "success",
+            });
+            dispatch(getAllTaskData(leadId));
+            onClose();
+            reset(defaultValues);
+            setRowData(null);
+          } else {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
           addToast({
             title: "Something went wrong !.",
             color: "danger",
           });
-        }
-      })
-      .catch(() => {
-        addToast({
-          title: "Something went wrong !.",
-          color: "danger",
         });
-      });
+    } else {
+      dispatch(createNewLeadTask({ ...values, leadId, assignedById: userId }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Task created successfully.",
+              color: "success",
+            });
+            dispatch(getAllTaskData(leadId));
+            onClose();
+            reset(defaultValues);
+            setRowData(null);
+          } else {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+        });
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -232,7 +286,14 @@ const LeadTask = () => {
                 <DropdownItem key="edit" onPress={() => onEditTask(rowData)}>
                   Edit
                 </DropdownItem>
-                <DropdownItem key="delete" color="danger">
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  onPress={() => {
+                    deleteModal.onOpen();
+                    setRowData(rowData);
+                  }}
+                >
                   Delete
                 </DropdownItem>
               </DropdownMenu>
@@ -327,6 +388,7 @@ const LeadTask = () => {
               onPress={() => {
                 onOpen();
                 reset(defaultValues);
+                setRowData(null);
               }}
             >
               Add task
@@ -452,7 +514,7 @@ const LeadTask = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create task
+                {rowData ? "Update task" : "Create task"}
               </ModalHeader>
               <ModalBody>
                 <form
@@ -497,7 +559,6 @@ const LeadTask = () => {
                               : null
                           }
                           label="Event Date"
-                          variant="bordered"
                           onChange={(value) => {
                             const dateTime = toCalendarDateTime(value);
                             const date = `${dateTime.year}-${padZero(dateTime.month)}-${padZero(dateTime.day)}T${padZero(dateTime.hour)}:${padZero(dateTime.minute)}:${padZero(dateTime.second)}+05:30`;
@@ -534,6 +595,28 @@ const LeadTask = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteTask}>
+                  Yes
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

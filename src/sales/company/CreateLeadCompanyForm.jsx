@@ -5,24 +5,43 @@ import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createCompanyForm,
+  getAllCompanyByStatus,
   getAllCompanyUnits,
+  getCompanyDetailsById,
+  getCompanyExistData,
+  getCompanyUnitsByStateAndCompanyId,
+  handleResetExistingCompany,
+  updateCompanyForm,
 } from "../../toolkit/slices/companySlice";
 import { Input } from "@heroui/input";
-import { formatGSTInput, maskEmail, maskMobileNumber } from "../../common";
+import {
+  formatGSTInput,
+  formatPANInput,
+  maskEmail,
+  maskMobileNumber,
+} from "../../common";
 import { addToast } from "@heroui/toast";
 import { getSingleLeadDataByLeadId } from "../../toolkit/slices/leadSlice";
 import { useParams } from "react-router-dom";
 import {
   getAllCitiesByStateName,
+  getAllContactDetails,
   getAllCountries,
+  getAllMainIndustry,
+  getAllSecondaryCitiesBySecondaryStateName,
+  getAllSecondaryStatesBySecondaryCountryName,
   getAllStatesByCountryName,
+  getAllUsers,
   getIndustryDataBySubSubIndustryId,
+  getSubIndustryByIndustryId,
   getSubSubIndustryBySubIndustryId,
 } from "../../toolkit/slices/commonSlice";
 import { Select, SelectItem } from "@heroui/select";
 import NewSelect from "../../components/NewSelect";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { Button } from "@heroui/button";
+import { getClientDesiginationList } from "../../toolkit/slices/settingSlice";
+import { ModalFooter } from "@heroui/react";
 
 const formSchema = ({
   isExistingCompany,
@@ -31,22 +50,23 @@ const formSchema = ({
   primaryContact,
   secondaryContact,
   adminRole,
-}) =>
-  z.object({
+  editForm,
+}) => {
+  return z.object({
     ...(isExistingCompany
       ? {
           companyId: z.string().min(1, "please select the company."),
+          isUnit: z.boolean(),
+          ...(isUnit
+            ? {
+                unitName: z.string().min(1, "Please enter unit name"),
+              }
+            : {
+                unitId: z.string().min(1, "Please select unit."),
+              }),
         }
       : {
           companyName: z.string().min(1, "Please enter company name"),
-        }),
-    isUnit: z.boolean(),
-    ...(isUnit
-      ? {
-          unitName: z.string().min(1, "Please enter unit name"),
-        }
-      : {
-          unitId: z.string().min(1, "Please select unit."),
         }),
     companyAge: z.string().min(1, "Please enter company age"),
     ...(parentLead
@@ -57,7 +77,7 @@ const formSchema = ({
     gstType: z.string().min(1, "Please select gst type."),
     gstNo: z.string().min(15, "please enter GST number"),
     panNo: z.string().min(10, "please enter pan number"),
-    amount:z.string().min(1,"please enter the amount ."),
+    amount: z.string().min(1, "please enter the amount ."),
     ...(adminRole
       ? {
           assigneeId: z.string().min(1, "Please select the assignee"),
@@ -70,6 +90,7 @@ const formSchema = ({
       .array(z.string())
       .min(1, "Please select the business activity"),
     gstDocuments: z.string().optional(),
+    primaryContact: z.boolean(),
     ...(primaryContact
       ? {
           primaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
@@ -86,25 +107,19 @@ const formSchema = ({
       : {
           contactId: z.string().min(1, "please select the contact."),
         }),
-
+    secondaryContact: z.boolean(),
     ...(secondaryContact
       ? {
-          secondaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
-            required_error: "Please select the salutation",
-          }),
-          secondaryContactName: z
-            .string()
-            .min(1, "Please enter contact person name"),
-          secondaryDesignation: z
-            .string()
-            .min(1, "Please select the designation"),
-          secondaryContactEmails: z
-            .string()
-            .email("Please enter a valid email address"),
-          secondaryContactNo: z.string().min(1, "Please enter contact number"),
-          secondaryContactWhatsappNo: z
-            .string()
-            .min(1, "Please enter whatsapp number"),
+          secondaryTitle: z
+            .enum(["master", "mr", "mrs", "miss"], {
+              required_error: "Please select the salutation",
+            })
+            .optional(),
+          secondaryContactName: z.string().optional(),
+          secondaryDesignation: z.string().optional(),
+          secondaryContactEmails: z.string().optional(),
+          secondaryContactNo: z.string().optional(),
+          secondaryContactWhatsappNo: z.string().optional(),
         }
       : {
           scontactId: z.string().min(1, "please select the contact."),
@@ -119,7 +134,13 @@ const formSchema = ({
     secondaryState: z.string().optional(),
     secondaryCity: z.string().optional(),
     secondaryPinCode: z.string().optional(),
+    ...(editForm
+      ? {
+          comment: z.string().min(1, "please enter comment"),
+        }
+      : {}),
   });
+};
 
 const defaultValues = ({
   isExistingCompany,
@@ -127,6 +148,7 @@ const defaultValues = ({
   parentLead,
   primaryContact,
   secondaryContact,
+  editForm,
 }) => ({
   ...(isExistingCompany
     ? {
@@ -152,13 +174,14 @@ const defaultValues = ({
   gstType: "",
   gstNo: "",
   panNo: "",
-  amount:"",
+  amount: "",
   assigneeId: "",
   industryId: "",
   subIndustryId: "",
   subsubIndustryId: "",
   industrydataId: [],
   gstDocuments: "",
+  primaryContact: false,
   ...(primaryContact
     ? {
         primaryTitle: "",
@@ -169,8 +192,9 @@ const defaultValues = ({
         contactWhatsappNo: "",
       }
     : {
-        contactId:"",
+        contactId: "",
       }),
+  secondaryContact: false,
   ...(secondaryContact
     ? {
         secondaryTitle: "",
@@ -193,19 +217,38 @@ const defaultValues = ({
   secondaryState: "",
   secondaryCity: "",
   secondaryPinCode: "",
+  ...(editForm
+    ? {
+        comment: "",
+      }
+    : {}),
 });
 
-const CreateLeadCompanyForm = () => {
+const CreateLeadCompanyForm = ({
+  edit,
+  companyData,
+  onClose,
+  companyFilter,
+}) => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const companyDetailById = useSelector(
+    (state) => state.company.companyDetailById
+  );
   const adminRole = userRole.includes("ADMIN");
   const existingCompanyList = useSelector(
     (state) => state.company.existingCompanyList
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
+  const secondaryStateList = useSelector(
+    (state) => state.common.secondaryStateList
+  );
   const citiesList = useSelector((state) => state.common.citiesList);
+  const secondaryCitiesList = useSelector(
+    (state) => state.common.secondaryCitiesList
+  );
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const userList = useSelector((state) => state.common.usersList);
   const allContactList = useSelector((state) => state.common.allContactList);
@@ -222,22 +265,45 @@ const CreateLeadCompanyForm = () => {
     (state) => state.setting.clientDesiginationList
   );
   const singleLeadResponseData = useSelector(
-    (state) => state.leads.singleLeadResponseData
+    (state) => state.leads.singleLeadData
   );
   const [formValidation, setFormValidation] = useState({
+    isExistingCompany: existingCompanyList?.length > 0 ? true : false,
     parentLead: singleLeadResponseData?.parent ? true : false,
     isUnit: existingCompanyList?.length > 0 ? true : false,
     primaryContact: false,
     secondaryContact: false,
     adminRole: adminRole,
+    editForm: edit ? true : false,
   });
-    const [panError, setPanError] = useState("");
-    const [gstError, setGstError] = useState("");
+  const [panError, setPanError] = useState("");
+  const [gstError, setGstError] = useState("");
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema(formValidation)),
+    defaultValues: defaultValues(formValidation),
+  });
+
+  const state = watch("state");
+  const gstNo = watch("gstNo");
 
   useEffect(() => {
-    dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
-    dispatch(getAllCountries());
-  }, []);
+    if (leadId) {
+      dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+      dispatch(getAllCountries());
+      dispatch(getAllUsers());
+      dispatch(getAllMainIndustry());
+      dispatch(getClientDesiginationList());
+      dispatch(getAllContactDetails());
+    }
+  }, [dispatch]);
 
   const validateGST = (gstNo, stateName) => {
     if (!gstNo) return "";
@@ -282,9 +348,101 @@ const CreateLeadCompanyForm = () => {
     setGstError(error);
   };
 
+  useEffect(() => {
+    if (companyData?.id !== undefined) {
+      dispatch(getAllMainIndustry());
+      dispatch(getClientDesiginationList());
+      dispatch(getAllCountries());
+      dispatch(getAllUsers());
+      dispatch(getCompanyDetailsById(companyData?.id)).then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let editData = resp?.payload;
+          setFormValidation((prev) => ({
+            ...prev,
+            primaryContact: editData?.contactId ? false : true,
+            secondaryContact: editData?.scontactId ? false : true,
+          }));
+          dispatch(getSubIndustryByIndustryId(editData?.industry?.id));
+          dispatch(getSubSubIndustryBySubIndustryId(editData?.subIndustry?.id));
+          dispatch(
+            getIndustryDataBySubSubIndustryId(editData?.subsubIndustry?.id)
+          );
+          dispatch(getCompanyExistData(editData?.lead?.id));
+          dispatch(getCompanyUnitsByStateAndCompanyId(editData?.companyId));
+          dispatch(getAllStatesByCountryName(editData?.country));
+          dispatch(getAllCitiesByStateName(editData?.state));
+          if (editData?.scountry) {
+            dispatch(
+              getAllSecondaryStatesBySecondaryCountryName(editData?.scountry)
+            );
+          }
+          if (editData?.sstate) {
+            dispatch(
+              getAllSecondaryCitiesBySecondaryStateName(editData?.sstate)
+            );
+          }
+          reset({
+            isPresent: editData?.isPresent,
+            companyName: editData?.companyName,
+            companyId: editData?.companyId,
+            isUnit: editData?.isUnit,
+            unitName: editData?.unitName,
+            unitId: editData?.unitId,
+            panNo: editData?.panNo,
+            gstNo: editData?.gstNo,
+            gstType: editData?.gstType,
+            gstDocuments: editData?.gstDocuments,
+            isPrimaryAddress: editData?.isPrimaryAddress,
+            companyAge: editData?.companyAge,
+            primaryPinCode: editData?.primaryPinCode,
+            secondaryPinCode: editData?.secondaryPinCode,
+            assigneeId: String(editData?.assigneeId),
+            contactId: editData?.contactId,
+            contactName: editData?.contactName,
+            contactEmails: editData?.contactEmails,
+            contactNo: editData?.contactNo,
+            contactWhatsappNo: editData?.contactWhatsappNo,
+            updatedBy: editData?.updatedBy?.id,
+            state: editData?.state,
+            address: editData?.address,
+            country: editData?.country,
+            primaryContact: editData?.primaryContact,
+            city: editData?.city,
+            isSecondaryAddress: editData?.isSecondaryAddress,
+            secondaryContact: editData?.secondaryContact,
+            scountry: editData?.scountry,
+            saddress: editData?.saddress,
+            sstate: editData?.sstate,
+            scontactEmails: editData?.scontactEmails,
+            scontactNo: editData?.scontactNo,
+            scontactName: editData?.scontactName,
+            scity: editData?.scity,
+            scontactId: editData?.scontactId,
+            scontactWhatsappNo: editData?.scontactWhatsappNo,
+            amount: editData?.amount,
+            comment: editData?.comment,
+            secondaryDesignation: editData?.secondaryDesignation?.id
+              ? String(editData?.secondaryDesignation?.id)
+              : "",
+            primaryDesignation: editData?.primaryDesignation?.id
+              ? String(editData?.primaryDesignation?.id)
+              : "",
+            primaryTitle: editData?.title,
+            secondaryTitle: editData?.secTitle,
+            industryId: String(editData?.industry?.id),
+            subIndustryId: String(editData?.subIndustry?.id),
+            subsubIndustryId: String(editData?.subsubIndustry?.id),
+            industrydataId: editData?.industryDataList?.map((item) =>
+              String(item?.id)
+            ),
+          });
+        }
+      });
+    }
+  }, [edit, companyData, reset]);
+
   const handleSelectCompany = (e) => {
     dispatch(getAllCompanyUnits(e));
-    form.resetFields(["unitId"]);
     reset({
       panNo: "",
       gstNo: "",
@@ -328,44 +486,57 @@ const CreateLeadCompanyForm = () => {
     });
   };
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(formSchema(formValidation)),
-    defaultValues: defaultValues(formValidation),
-  });
-
   const onSubmit = (values) => {
-    values.leadId = singleLeadResponseData?.parent
-      ? values?.leadId
-      : data?.id
-        ? data?.id
-        : data?.leadId;
-    if (existingCompanyList?.length > 0) {
-      values.isPresent = true;
-    } else {
-      values.isPresent = false;
-    }
-    dispatch(createCompanyForm(values))
-      .then((response) => {
-        if (response.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Company created successfully.",
-            color: "success",
-          });
-          reset(defaultValues());
-        } else {
+    values.assigneeId = adminRole ? values?.assigneeId : userId;
+    if (edit) {
+      values.companyFormId = companyDetailById?.id;
+      values.isPresent = companyDetailById?.isPresent;
+      values.leadId = singleLeadResponseData?.parent
+        ? values?.leadId
+        : companyDetailById?.lead?.id;
+      values.companyId = companyDetailById?.companyId;
+      dispatch(updateCompanyForm(values))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            dispatch(getAllCompanyByStatus(companyFilter));
+            addToast({
+              title: "Company created successfully.",
+              color: "success",
+            });
+            reset(defaultValues(formValidation));
+            onClose();
+            dispatch(handleResetExistingCompany());
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() => {
           addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
-      });
+        });
+    } else {
+      values.isPresent = existingCompanyList?.length > 0 ? true : false;
+      values.leadId = singleLeadResponseData?.parent
+        ? values?.leadId
+        : singleLeadResponseData?.id
+          ? singleLeadResponseData?.id
+          : singleLeadResponseData?.leadId;
+      dispatch(createCompanyForm(values))
+        .then((response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Company created successfully.",
+              color: "success",
+            });
+            reset(defaultValues(formValidation));
+            dispatch(handleResetExistingCompany());
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() => {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        });
+    }
   };
 
   return (
@@ -493,12 +664,12 @@ const CreateLeadCompanyForm = () => {
 
             {formValidation?.parentLead && (
               <Controller
-                name="unitId"
+                name="leadId"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
                     isRequired
-                    label="Select unit."
+                    label="Select lead "
                     errorMessage={error?.message}
                     isInvalid={!!error}
                     data={singleLeadResponseData?.childLead || []}
@@ -523,7 +694,7 @@ const CreateLeadCompanyForm = () => {
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   {...field}
-                  value={[field.value]}
+                  selectedKeys={[field.value]}
                   onSelectionChange={(e) => field.onChange(Array.from(e)[0])}
                   items={[
                     { label: "Registered", key: "Registered" },
@@ -587,7 +758,7 @@ const CreateLeadCompanyForm = () => {
                   isInvalid={!!error || !!panError}
                   {...field}
                   onChange={(e) => {
-                    handlePanChange(e);
+                    field.onChange(e.target.value);
                   }}
                 />
               )}
@@ -719,11 +890,10 @@ const CreateLeadCompanyForm = () => {
               render={({ field, fieldState: { error } }) => (
                 <Select
                   isRequired={true}
-                  label="Primary contct"
+                  label="New Primary contact"
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  {...field}
-                  value={field.value}
+                  selectedKeys={[String(field.value)]}
                   onChange={(e) => {
                     field.onChange(e.target.value === "true");
                     setFormValidation((prev) => ({
@@ -753,8 +923,7 @@ const CreateLeadCompanyForm = () => {
                       isRequired={true}
                       label="Salutation"
                       errorMessage={error?.message}
-                      isInvalid={!!error}
-                      {...field}
+                      selectedKeys={[String(field.value)]}
                       onChange={(e) => field.onChange(e.target.value)}
                       items={[
                         { label: "Master.", key: "master" },
@@ -847,6 +1016,7 @@ const CreateLeadCompanyForm = () => {
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
                     label="Select contact."
+                    isRequired={true}
                     errorMessage={error?.message}
                     isInvalid={!!error}
                     data={
@@ -875,31 +1045,33 @@ const CreateLeadCompanyForm = () => {
             <Controller
               name="secondaryContact"
               control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Select
-                  isRequired={true}
-                  label="Secondary contct"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  {...field}
-                  value={field.value}
-                  onChange={(e) => {
-                    field.onChange(e.target.value === "true");
-                    setFormValidation((prev) => ({
-                      ...prev,
-                      secondaryContact: e.target.value === "true",
-                    }));
-                  }}
-                  items={[
-                    { label: "Yes", key: true },
-                    { label: "No", key: false },
-                  ]}
-                >
-                  {(item) => (
-                    <SelectItem key={item.key}>{item.label}</SelectItem>
-                  )}
-                </Select>
-              )}
+              render={({ field, fieldState: { error } }) => {
+                return (
+                  <Select
+                    isRequired
+                    label="New secondary contact"
+                    errorMessage={error?.message}
+                    isInvalid={!!error}
+                    selectedKeys={[String(field.value)]}
+                    onChange={(e) => {
+                      const val = e.target.value === "true";
+                      field.onChange(val);
+                      setFormValidation((prev) => ({
+                        ...prev,
+                        secondaryContact: val,
+                      }));
+                    }}
+                    items={[
+                      { label: "Yes", key: "true" },
+                      { label: "No", key: "false" },
+                    ]}
+                  >
+                    {(item) => (
+                      <SelectItem key={item.key}>{item.label}</SelectItem>
+                    )}
+                  </Select>
+                );
+              }}
             />
 
             {formValidation?.primaryContact ? (
@@ -912,7 +1084,7 @@ const CreateLeadCompanyForm = () => {
                       label="Salutation"
                       errorMessage={error?.message}
                       isInvalid={!!error}
-                      {...field}
+                      selectedKeys={[String(field.value)]}
                       onChange={(e) => field.onChange(e.target.value)}
                       items={[
                         { label: "Master.", key: "master" },
@@ -1034,6 +1206,7 @@ const CreateLeadCompanyForm = () => {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Address"
+                  isRequired={true}
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   {...field}
@@ -1046,6 +1219,7 @@ const CreateLeadCompanyForm = () => {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="Country"
+                  isRequired={true}
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={countryList || []}
@@ -1066,6 +1240,7 @@ const CreateLeadCompanyForm = () => {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="State"
+                  isRequired={true}
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={statesList || []}
@@ -1086,6 +1261,7 @@ const CreateLeadCompanyForm = () => {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="City"
+                  isRequired={true}
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={citiesList || []}
@@ -1103,6 +1279,7 @@ const CreateLeadCompanyForm = () => {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Pin code"
+                  isRequired={true}
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   {...field}
@@ -1150,7 +1327,9 @@ const CreateLeadCompanyForm = () => {
                   valueKey="name"
                   value={field.value}
                   onChange={(value) => {
-                    dispatch(getAllStatesByCountryName(value));
+                    dispatch(
+                      getAllSecondaryStatesBySecondaryCountryName(value)
+                    );
                     field.onChange(value);
                   }}
                 />
@@ -1165,12 +1344,12 @@ const CreateLeadCompanyForm = () => {
                   label="State"
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  data={statesList || []}
+                  data={secondaryStateList || []}
                   labelKey="name"
                   valueKey="name"
                   value={field.value}
                   onChange={(value) => {
-                    dispatch(getAllCitiesByStateName(value));
+                    dispatch(getAllSecondaryCitiesBySecondaryStateName(value));
                     field.onChange(value);
                   }}
                 />
@@ -1185,7 +1364,7 @@ const CreateLeadCompanyForm = () => {
                   label="City"
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  data={citiesList || []}
+                  data={secondaryCitiesList || []}
                   labelKey="name"
                   valueKey="name"
                   value={field.value}
@@ -1206,12 +1385,38 @@ const CreateLeadCompanyForm = () => {
                 />
               )}
             />
+
+            {edit && (
+              <Controller
+                name="comment"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <Input
+                    isRequired
+                    label="Comment"
+                    errorMessage={error?.message}
+                    isInvalid={!!error}
+                    {...field}
+                  />
+                )}
+              />
+            )}
           </div>
         </div>
       </div>
-      <Button size="lg" color="primary" type="submit" className="mt-2">
-        Submit
-      </Button>
+
+      {edit ? (
+        <ModalFooter className="flex justify-end">
+          <Button onPress={onClose}>Cancel</Button>
+          <Button color="primary" type="submit">
+            Submit
+          </Button>
+        </ModalFooter>
+      ) : (
+        <Button size="lg" color="primary" type="submit" className="mt-2">
+          Submit
+        </Button>
+      )}
     </form>
   );
 };

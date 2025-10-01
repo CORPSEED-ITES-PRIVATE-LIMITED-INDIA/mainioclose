@@ -37,6 +37,7 @@ import {
   updateStatusById,
 } from "../toolkit/slices/companySlice";
 import { inrCurrency, maskEmail, maskMobileNumber } from "../common";
+import CreateLeadCompanyForm from "../sales/company/CreateLeadCompanyForm";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -82,7 +83,8 @@ const defaultValues = {
 const CompanyForm = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
-  const { isOpen, onOpen,onClose ,onOpenChange } = useDisclosure();
+  const companyModal = useDisclosure();
+  const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.company.allLeadCompanyList);
   const count = useSelector(
     (state) => state.company.allLeadCompanyList?.[0]?.totalLeadFor
@@ -180,6 +182,11 @@ const CompanyForm = () => {
     setEditData(value);
   };
 
+  const handleEditCompany = (value) => {
+    companyModal.onOpen();
+    setEditData(value);
+  };
+
   const onSubmit = useCallback(
     (values) => {
       dispatch(
@@ -262,7 +269,9 @@ const CompanyForm = () => {
                   {rowData?.status}
                 </span>
               ) : rowData?.status === "disapproved" ? (
-                <span className="text-red-500 text-xs capitalize">{rowData?.status}</span>
+                <span className="text-red-500 text-xs capitalize">
+                  {rowData?.status}
+                </span>
               ) : (
                 <span className="text-default-500 text-xs capitalize">
                   {rowData?.status}
@@ -402,6 +411,14 @@ const CompanyForm = () => {
                         Action
                       </DropdownItem>
                     ))}
+                  <DropdownItem
+                    key="edit"
+                    onPress={() => {
+                      handleEditCompany(rowData);
+                    }}
+                  >
+                    Edit
+                  </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -470,7 +487,7 @@ const CompanyForm = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search by name..."
             startContent={<Search />}
             value={filterValue}
@@ -649,7 +666,7 @@ const CompanyForm = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add TDS</ModalHeader>
+              <ModalHeader>Approved and disapproved </ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="grid gap-4 max-h-[60vh] overflow-auto">
@@ -710,6 +727,36 @@ const CompanyForm = () => {
                     </Button>
                   </ModalFooter>
                 </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="5xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={companyModal.isOpen}
+        onOpenChange={companyModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Update company</ModalHeader>
+              <ModalBody>
+                <CreateLeadCompanyForm
+                  edit={true}
+                  companyData={editData}
+                  onClose={onClose}
+                  companyFilter={{
+                    id: userId,
+                    status: status,
+                    page: page,
+                    size: rowsPerPage,
+                  }}
+                />
               </ModalBody>
             </>
           )}

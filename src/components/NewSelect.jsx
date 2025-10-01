@@ -18,6 +18,7 @@ const NewSelect = ({
   errorMessage,
   size,
   placeholder,
+  isDisabled,
   onItemSelect=()=>{},
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
@@ -130,6 +131,7 @@ const NewSelect = ({
     <div className="w-full">
       <Select
         size={size}
+        isDisabled={isDisabled}
         errorMessage={errorMessage}
         isRequired={isRequired}
         name={name}

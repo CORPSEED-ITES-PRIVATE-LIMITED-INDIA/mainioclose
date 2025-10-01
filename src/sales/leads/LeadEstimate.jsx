@@ -19,7 +19,6 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  NumberInput,
   Select,
   SelectItem,
   Switch,
@@ -55,7 +54,7 @@ import {
   getAllProductSubCategoryListByCategoryId,
   getProductListByLeadName,
 } from "../../toolkit/slices/productSlice";
-import { IndianRupee, Percent } from "lucide-react";
+import { IndianRupee, Pencil, Percent } from "lucide-react";
 import {
   createEstimate,
   createEstimateForApprovals,
@@ -74,11 +73,16 @@ import {
 } from "@internationalized/date";
 import {
   getAllCitiesByStateId,
+  getAllCitiesByStateName,
   getAllCountries,
+  getAllSecondaryCitiesBySecondaryStateName,
+  getAllSecondaryStatesBySecondaryCountryName,
   getAllStatesByCountryId,
+  getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
 import dayjs from "dayjs";
 import EstimateView from "../../components/EstimateView";
+import { formatGSTInput, formatPANInput } from "../../common";
 
 function formCondition(data) {
   let result = {
@@ -104,15 +108,23 @@ function formCondition(data) {
   return result;
 }
 
-const formSchema = ({ productData, productSubCategoryData }) =>
-  z.object({
+const formSchema = ({ productData, productSubCategoryData, gstMand }) => {
+  return z.object({
     performaInvoice: z.boolean(),
     unitId: z.string().min(1, "Please select the company unit."),
     companyType: z.string().min(1, "Please select the company type."),
     gstType: z.string().min(1, "Please select the gst type."),
     businessType: z.string().min(1, "Please select the gst type."),
-    gstNo: z.string().min(15, "please enter GST number."),
-    panNo: z.string().min(10, "please enter pan number."),
+    ...(gstMand?.gst
+      ? {
+          gstNo: z.string().min(15, "please enter GST number."),
+        }
+      : {}),
+    ...(gstMand?.pan
+      ? {
+          panNo: z.string().min(10, "please enter pan number."),
+        }
+      : {}),
     gstDocuments: z.string().optional(),
     cc: z.array(z.string()).optional(),
     primaryContact: z.string().min(1, "Please select the contact."),
@@ -186,6 +198,7 @@ const formSchema = ({ productData, productSubCategoryData }) =>
     secondaryCity: z.string().optional(),
     secondaryPinCode: z.string().optional(),
   });
+};
 
 const defaultValues = {
   performaInvoice: false,
@@ -237,12 +250,12 @@ const defaultValues = {
 };
 
 const addressFormSchema = z.object({
-  revenue: z.string().min("please enter revenue"),
-  address: z.string().min("please enter address."),
-  country: z.string().min("please select country."),
-  state: z.string().min("please select state."),
-  city: z.string().min("please select city."),
-  pinCode: z.string().min("please enter pinCode."),
+  revenue: z.string().min(1, "please enter revenue"),
+  address: z.string().min(1, "please enter address."),
+  country: z.string().min(1, "please select country."),
+  state: z.string().min(1, "please select state."),
+  city: z.string().min(1, "please select city."),
+  pinCode: z.string().min(1, "please enter pinCode."),
 });
 
 const addressFormDefaultValues = {
@@ -254,18 +267,27 @@ const addressFormDefaultValues = {
   pinCode: "",
 };
 
-const gstFormSchema = z.object({
-  companyType: z.string().min("please select company type."),
-  gstType: z.string().min("please select gst type."),
-  businessType: z.string().min("please select business type."),
-  gstNo: z.string().min("please enter gst."),
-  panNo: z.string().min("please enter pan no."),
-});
+const gstFormSchema = (updateGstMand) =>
+  z.object({
+    companyType: z.string().min(1, "please select company type"),
+    gstType: z.string().min(1, "please select gst type"),
+    businessType: z.string().min(1, "please select business type"),
+    ...(updateGstMand?.gst
+      ? {
+          gstNo: z.string().min(1, "please enter gst number"),
+        }
+      : {}),
+    ...(updateGstMand?.pan
+      ? {
+          panNo: z.string().min(1, "please enter pan number"),
+        }
+      : {}),
+  });
 
 const gstFormDefaultValues = {
-  companyType: null,
-  gstType: null,
-  businessType: null,
+  companyType: "",
+  gstType: "",
+  businessType: "",
   gstNo: "",
   panNo: "",
 };
@@ -305,10 +327,16 @@ const LeadEstimate = () => {
     (state) => state.product.productDataByLeadName
   );
   const leadUsersList = useSelector((state) => state.leads.leadUsersList);
-  const docsListInEstimate = useSelector((state) => state.leads.docsListInEstimate);
+  const docsListInEstimate = useSelector(
+    (state) => state.leads.docsListInEstimate
+  );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
+  const secStatesList = useSelector((state) => state.common.secondaryStateList);
+  const secCitiesList = useSelector(
+    (state) => state.common.secondaryCitiesList
+  );
   const [seachFields, setSearchFields] = useState({
     searchText: "",
     userId: userId,
@@ -329,6 +357,10 @@ const LeadEstimate = () => {
     roundOff: false,
   });
   const [gstMand, setGstMand] = useState({ gst: false, pan: false });
+  const [updateGstMand, setUpdateGstMand] = useState({
+    gst: false,
+    pan: false,
+  });
   const [discount, setDiscount] = useState(false);
   const [panError, setPanError] = useState("");
   const [gstError, setGstError] = useState("");
@@ -352,12 +384,14 @@ const LeadEstimate = () => {
     reset,
     getValues,
   } = useForm({
-    resolver: zodResolver(formSchema({ productData, productSubCategoryData })),
+    resolver: zodResolver(
+      formSchema({ productData, productSubCategoryData, gstMand })
+    ),
     defaultValues,
   });
 
   const gstForm = useForm({
-    resolver: zodResolver(gstFormSchema),
+    resolver: zodResolver(gstFormSchema(updateGstMand)),
     defaultValues: gstFormDefaultValues,
   });
 
@@ -511,44 +545,44 @@ const LeadEstimate = () => {
     reset({
       admin: details?.primaryContact?.id,
       cc: details?.ccMail,
-      companyId: details?.companyId,
+      companyId: String(details?.companyId),
       companyName: details?.companyName,
       isUnit: details?.isUnit,
-      unitId: details?.unitId,
+      unitId: String(details?.unitId),
       unitName: details?.unitName,
       panNo: details?.panNo,
-      gstType: details?.gstType,
-      companyType: details?.companyType,
-      businessType: details?.bussinessType,
+      gstType: String(details?.gstType),
+      companyType: String(details?.companyType),
+      businessType: String(details?.bussinessType),
       companyAge: details?.companyAge,
       performaInvoice: details?.performaInvoice,
       gstNo: details?.gstNo,
       gstDocuments: details?.gstDocuments,
-      businessArrangmentId: details?.businessArrangmentId,
-      productCategoryId: details?.productCategoryId,
-      productSubCategoryId: details?.productSubCategoryId,
-      actualPrice: details?.actualPrice,
+      businessArrangmentId: String(details?.businessArrangmentId),
+      productCategoryId: String(details?.productCategoryId),
+      productSubCategoryId: String(details?.productSubCategoryId),
+      actualPrice: String(details?.actualPrice),
       gstCode: details?.gstCode,
       gst: details?.gst,
       quantity: details?.quantity,
-      totalPrice: details?.totalPrice,
+      totalPrice: String(details?.totalPrice),
       salesType: details?.salesType,
-      secondaryContact: details?.secondaryContact?.id,
-      primaryContact: details?.primaryContact?.id,
-      productId: details?.product?.id,
-      professionalFees: details?.professionalFees,
+      secondaryContact: String(details?.secondaryContact?.id),
+      primaryContact: String(details?.primaryContact?.id),
+      productId: String(details?.product?.id),
+      professionalFees: String(details?.professionalFees),
       professionalCode: details?.professionalCode,
       profesionalGst: details?.profesionalGst,
       serviceCharge: details?.serviceCharge,
       serviceCode: details?.serviceCode,
       serviceGst: details?.serviceGst,
-      govermentfees: details?.govermentfees,
+      govermentfees: String(details?.govermentfees),
       govermentCode: details?.govermentCode,
       govermentGst: details?.govermentGst,
-      otherFees: details?.otherFees,
+      otherFees: String(details?.otherFees),
       otherCode: details?.otherCode,
       otherGst: details?.otherGst,
-      assigneeId: details?.assigneeId?.id,
+      assigneeId: String(details?.assigneeId?.id),
       orderNumber: details?.orderNumber,
       purchaseDate: dayjs(details?.purchaseDate),
       invoiceNote: details?.invoiceNote,
@@ -570,9 +604,9 @@ const LeadEstimate = () => {
     });
 
     gstForm.reset({
-      companyType: details?.companyType,
-      gstType: details?.gstType,
-      businessType: details?.businessType,
+      companyType: String(details?.companyType),
+      gstType: String(details?.gstType),
+      businessType: String(details?.businessType),
       gstNo: details?.gstNo,
       panNo: details?.panNo,
     });
@@ -626,12 +660,32 @@ const LeadEstimate = () => {
     }
   };
 
+  const handleUpdatePanChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatPANInput(rawValue);
+    gstForm.setValue("panNo", formattedValue);
+    if (
+      formattedValue.length === 10 &&
+      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedValue)
+    ) {
+      setPanError("Invalid PAN Number");
+    } else {
+      setPanError("");
+    }
+  };
+
   const handleGstChange = (e) => {
     const rawValue = e.target.value;
     const formattedValue = formatGSTInput(rawValue);
     setValue("gstNo", formattedValue);
     const error = validateGST(formattedValue, state);
     setGstError(error);
+  };
+
+  const handleUpdateGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    gstForm.setValue("gstNo", formattedValue);
   };
 
   const handleStateChange = (stateName) => {
@@ -642,6 +696,7 @@ const LeadEstimate = () => {
   };
 
   const handleGstUpdate = (values) => {
+    console.log("dkbjhbkjdfdfd", values);
     values.companyId = companyAndUnitData?.companyId;
     dispatch(updateGstTypeInEstimate(values))
       .then((resp) => {
@@ -657,7 +712,7 @@ const LeadEstimate = () => {
             panNo: compData?.panNo,
           });
           addToast({ title: "Gst updated successfully !.", color: "success" });
-          setGstModal(false);
+          gstFormModal.onClose();
           gstForm.reset(gstFormDefaultValues);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
@@ -696,9 +751,9 @@ const LeadEstimate = () => {
             secondaryPinCode: compUnit?.secondaryPinCode,
           });
           reset({
-            companyType: compUnit?.companyType,
-            gstType: compUnit?.gstType,
-            businessType: compUnit?.bussinessType,
+            companyType: String(compUnit?.companyType),
+            gstType: String(compUnit?.gstType),
+            businessType: String(compUnit?.bussinessType),
             gstNo: compUnit?.gstNo,
             panNo: compUnit?.panNo,
           });
@@ -723,6 +778,12 @@ const LeadEstimate = () => {
       );
   };
 
+  console.log("dskfsjkgjsgsdj", getValues());
+  console.log(
+    "dskfsjkgjsgsdj 111",
+    formSchema({ productData, productSubCategoryData, gstMand })
+  );
+
   const handleFinish = useCallback(
     (values) => {
       values.leadId = leadId;
@@ -733,6 +794,9 @@ const LeadEstimate = () => {
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
       values.type = productData?.type;
+
+      console.log("dskfsjkgjsgsdj", values);
+
       if (discount) {
         if (details?.discountEstimate) {
           values.estimateId = details?.id;
@@ -740,7 +804,7 @@ const LeadEstimate = () => {
             .then((resp) => {
               if (resp.meta.requestStatus === "fulfilled") {
                 addToast({
-                  title: "Estimate edited successfully !.",
+                  title: "Discounted estimate edited successfully !.",
                   color: "success",
                 });
                 dispatch(getEstimateByLeadId(leadId));
@@ -763,7 +827,7 @@ const LeadEstimate = () => {
             .then((resp) => {
               if (resp.meta.requestStatus === "fulfilled") {
                 addToast({
-                  title: "Estimate created successfully !.",
+                  title: "Discounted estimate created successfully !.",
                   color: "success",
                 });
                 dispatch(getEstimateByLeadId(leadId));
@@ -788,10 +852,11 @@ const LeadEstimate = () => {
           dispatch(editLeadEstimate(values))
             .then((resp) => {
               if (resp.meta.requestStatus === "fulfilled") {
-                notification.success({
-                  message: "Estimate updated successfully !.",
+                addToast({
+                  title: "Estimate updated successfully !.",
+                  color: "success",
                 });
-                form.resetFields();
+                reset(defaultValues);
                 dispatch(getEstimateByLeadId(leadId));
                 setCompanyAndUnitData({
                   companyId: null,
@@ -800,21 +865,22 @@ const LeadEstimate = () => {
                   unitName: "",
                 });
               } else {
-                notification.error({ message: "Something went wrong !." });
+                addToast({ title: "Something went wrong !.", color: "danger" });
               }
             })
             .catch(() =>
-              notification.error({ message: "Something went wrong !." })
+              addToast({ title: "Something went wrong !.", color: "danger" })
             );
         } else {
           dispatch(createEstimate(values))
             .then((resp) => {
               if (resp.meta.requestStatus === "fulfilled") {
-                notification.success({
-                  message: "Estimate created successfully !.",
+                addToast({
+                  title: "Estimate created successfully !.",
+                  color: "success",
                 });
-                form.resetFields();
-                dispatch(getEstimateByLeadId(leadid));
+                reset(defaultValues);
+                dispatch(getEstimateByLeadId(leadId));
                 setCompanyAndUnitData({
                   companyId: null,
                   companyName: "",
@@ -822,11 +888,11 @@ const LeadEstimate = () => {
                   unitName: "",
                 });
               } else {
-                notification.error({ message: "Something went wrong !." });
+                addToast({ title: "Something went wrong !.", color: "danger" });
               }
             })
             .catch(() =>
-              notification.error({ message: "Something went wrong !." })
+              addToast({ title: "Something went wrong !.", color: "danger" })
             );
         }
       }
@@ -926,22 +992,33 @@ const LeadEstimate = () => {
               <Controller
                 name="performaInvoice"
                 control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <Switch
-                    value={field.value}
-                    onValueChange={(e) => field.onChange(e)}
-                  >
-                    Performa invoice
-                  </Switch>
-                )}
+                render={({ field, fieldState: { error } }) => {
+                  return (
+                    <Switch
+                      isSelected={field.value}
+                      onValueChange={(e) => {
+                        field.onChange(e);
+                      }}
+                    >
+                      Performa invoice
+                    </Switch>
+                  );
+                }}
               />
             </div>
             <Card className="my-2">
               <CardHeader className="flex justify-between font-medium">
-                Company info{" "}
-                <Button variant="light" size="sm" onPress={gstFormModal.onOpen}>
-                  Update gst
-                </Button>
+                Company info
+                {!companyAndUnitData?.oneTimeUpdateGst && (
+                  <Button
+                    variant="flat"
+                    color="primary"
+                    onPress={gstFormModal.onOpen}
+                    endContent={<Pencil className="w-4 h-4" />}
+                  >
+                    Update gst
+                  </Button>
+                )}
               </CardHeader>
 
               <CardBody className="grid grid-cols-3 gap-2">
@@ -949,18 +1026,17 @@ const LeadEstimate = () => {
                   name="unitId"
                   control={control}
                   render={({ field, fieldState: { error } }) => {
+                    console.log("jkxhbsjkhjksd", field);
                     return (
                       <NewSelect
                         isRequired
                         data={allCompanyUnits || []}
                         errorMessage="please select company unit"
                         label={"Select company unit "}
-                        value={field?.value}
+                        value={String(field?.value)}
                         labelKey={"companyName"}
                         valueKey={"id"}
-                        onSelectionChange={(e) => {
-                          field.onChange(e);
-                        }}
+                        onChange={(e) => field.onChange(e)}
                         onItemSelect={(compUnit) => {
                           setCompanyAndUnitData((prev) => ({
                             ...prev,
@@ -976,31 +1052,64 @@ const LeadEstimate = () => {
                           dispatch(
                             getBusinessTypeByGstTypeId(compUnit?.gstType)
                           );
+                          setGstMand((prev) => ({
+                            ...prev,
+                            gst: compUnit?.gstPresent,
+                            pan: compUnit?.panPresent,
+                          }));
+                          setUpdateGstMand((prev) => ({
+                            ...prev,
+                            gst: compUnit?.gstPresent,
+                            pan: compUnit?.panPresent,
+                          }));
+                          dispatch(
+                            getAllStatesByCountryName(compUnit?.country)
+                          );
+                          dispatch(getAllCitiesByStateName(compUnit?.state));
+                          if (compUnit?.seCountry) {
+                            dispatch(
+                              getAllSecondaryStatesBySecondaryCountryName(
+                                compUnit?.seCountry
+                              )
+                            );
+                          }
+                          if (compUnit?.secState) {
+                            dispatch(
+                              getAllSecondaryCitiesBySecondaryStateName(
+                                compUnit?.secState
+                              )
+                            );
+                          }
                           reset({
-                            gstType: compUnit?.gstType,
+                            unitId: String(compUnit?.id),
+                            gstType: String(compUnit?.gstType),
                             gstNo: compUnit?.gstNo,
-                            companyType: compUnit?.companyType,
-                            businessType: compUnit?.bussinessType,
-                            companyAge: compUnit?.companyAge,
+                            companyType: String(compUnit?.companyType),
+                            businessType: String(compUnit?.bussinessType),
                             address: compUnit?.address,
                             city: compUnit?.city,
                             country: compUnit?.country,
                             state: compUnit?.state,
                             panNo: compUnit?.panNo,
-                            primaryContact: compUnit?.primaryContact?.id,
-                            secondaryContact: compUnit?.secondaryContact?.id,
-                            assigneeId: compUnit?.assignee?.id,
+                            primaryContact: String(
+                              compUnit?.primaryContact?.id
+                            ),
+                            secondaryContact: String(
+                              compUnit?.secondaryContact?.id
+                            ),
+                            assigneeId: String(compUnit?.assignee?.id),
                             primaryPinCode: compUnit?.pinCode,
                             secondaryAddress: compUnit?.sAddress,
-                            secondaryCity: compUnit?.sCity,
-                            secondaryState: compUnit?.sState,
-                            secondaryCountry: compUnit?.sCountry,
+                            secondaryCity: compUnit?.secCity,
+                            secondaryState: compUnit?.secState,
+                            secondaryCountry: compUnit?.seCountry,
                             secondaryPinCode: compUnit?.secondaryPinCode,
                           });
+
                           gstForm.reset({
-                            companyType: compUnit?.companyType,
-                            gstType: compUnit?.gstType,
-                            businessType: compUnit?.bussinessType,
+                            companyType: String(compUnit?.companyType),
+                            gstType: String(compUnit?.gstType),
+                            businessType: String(compUnit?.bussinessType),
                             gstNo: compUnit?.gstNo,
                             panNo: compUnit?.panNo,
                           });
@@ -1024,12 +1133,13 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      isDisabled
                       label="Company structure"
                       errorMessage={"please select the company type."}
                       data={companyTypeList || []}
                       labelKey="name"
                       valueKey="id"
-                      value={field.value}
+                      value={String(field.value)}
                       onChange={(value) => {
                         dispatch(getAllGstTypeByCompanyTypeId(value));
                         field.onChange(value);
@@ -1044,13 +1154,14 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      isDisabled
                       label="GST type"
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={gstTypeList?.gstBussinessType || []}
                       labelKey="name"
                       valueKey="id"
-                      value={field.value}
+                      value={String(field.value)}
                       onChange={(value) => {
                         dispatch(getBusinessTypeByGstTypeId(value));
                         field.onChange(value);
@@ -1065,13 +1176,14 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      isDisabled
                       label="Business type"
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={businessTypeList?.gstTypePrice || []}
                       labelKey="name"
                       valueKey="id"
-                      value={field.value}
+                      value={String(field.value)}
                       onChange={(value) => {
                         field.onChange(value);
                         const foundObject =
@@ -1095,6 +1207,7 @@ const LeadEstimate = () => {
                       <Input
                         isRequired
                         label="GST number"
+                        isDisabled
                         maxLength={15}
                         errorMessage={error?.message || gstError}
                         isInvalid={!!error || !!gstError}
@@ -1114,6 +1227,7 @@ const LeadEstimate = () => {
                       <Input
                         isRequired
                         label="Pan number"
+                        isDisabled
                         maxLength={10}
                         errorMessage={error?.message || panError}
                         isInvalid={!!error || !!panError}
@@ -1134,9 +1248,10 @@ const LeadEstimate = () => {
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <TagsInput
-                          {...field}
                           placeholder="CC"
-                          className="rounded-lg h-[50px]"
+                          className="rounded-lg min-h-[50px]"
+                          value={field.value}
+                          onChange={(e) => field.onChange(e)}
                         />
                         {error && (
                           <span className="text-red-500 text-sm">
@@ -1181,9 +1296,8 @@ const LeadEstimate = () => {
                       data={contactListByCompanyId || []}
                       labelKey="contactNo"
                       valueKey="id"
-                      value={field.value}
+                      value={String(field.value)}
                       onChange={(value) => {
-                        dispatch(getBusinessTypeByGstTypeId(value));
                         field.onChange(value);
                       }}
                     />
@@ -1201,9 +1315,8 @@ const LeadEstimate = () => {
                       data={contactListByCompanyId || []}
                       labelKey="contactNo"
                       valueKey="id"
-                      value={field.value}
+                      value={String(field.value)}
                       onChange={(value) => {
-                        dispatch(getBusinessTypeByGstTypeId(value));
                         field.onChange(value);
                       }}
                     />
@@ -1247,7 +1360,7 @@ const LeadEstimate = () => {
                             data={businessArrangementList || []}
                             labelKey="name"
                             valueKey="id"
-                            value={field.value}
+                            value={String(field.value)}
                             onChange={(value) => {
                               dispatch(getAllProductCategoryById(value));
                               field.onChange(value);
@@ -1267,7 +1380,7 @@ const LeadEstimate = () => {
                             data={productCategoryList || []}
                             labelKey="name"
                             valueKey="id"
-                            value={field.value}
+                            value={String(field.value)}
                             onChange={(value) => {
                               dispatch(
                                 getAllProductSubCategoryListByCategoryId(value)
@@ -1289,7 +1402,7 @@ const LeadEstimate = () => {
                             data={productSubcategoryList || []}
                             labelKey="name"
                             valueKey="id"
-                            value={field.value}
+                            value={String(field.value)}
                             onChange={(value) => {
                               dispatch(
                                 getAllProductSubCategoryListByCategoryId(value)
@@ -1301,13 +1414,13 @@ const LeadEstimate = () => {
                               setProductSubCategoryData(item);
                               reset({
                                 ...currentValues,
-                                actualPrice: item?.productFees,
+                                actualPrice: String(item?.productFees),
                                 gstCode: item?.productCode,
                                 gst: item?.productGst,
                               });
                               setProductSubCategoryFees((prev) => ({
                                 ...prev,
-                                actualPrice: item?.productFees,
+                                actualPrice: String(item?.productFees),
                                 gst: item?.productGst,
                                 roundOff: item?.roundValue,
                               }));
@@ -1318,29 +1431,49 @@ const LeadEstimate = () => {
                     </div>
 
                     {Object.keys(productSubCategoryData || {})?.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-4 gap-2 mt-2">
                         <Controller
                           name="actualPrice"
                           control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NumberInput
-                              startContent={<IndianRupee className="h-4 w-4" />}
-                              isRequired
-                              label="Actual price"
-                              errorMessage={discountError}
-                              {...field}
-                              onChange={(e) => {
-                                let { quantity, gst } = getValues();
-                                field.onChange(e);
-                                calculateTotalPriceWithGST(e, quantity, gst);
-                                validateGreaterThanOrEqual(
-                                  e,
-                                  productSubCategoryFees?.actualPrice,
-                                  discount
-                                );
-                              }}
-                            />
-                          )}
+                          render={({ field, fieldState: { error } }) => {
+                            return (
+                              <Input
+                                type="number"
+                                startContent={
+                                  <IndianRupee className="h-4 w-4" />
+                                }
+                                isRequired
+                                label="Actual price"
+                                errorMessage={discountError}
+                                {...field}
+                                onChange={(e) => {
+                                  console.log(
+                                    "sdlkslkjhslkhslkjhsldk 1111",
+                                    e.target.value
+                                  );
+                                  let { quantity, gst } = getValues();
+                                  field.onChange(e.target.value);
+                                  setValue(
+                                    "totalPrice",
+                                    String(
+                                      calculateTotalPriceWithGST(
+                                        e.target.value,
+                                        quantity,
+                                        gst
+                                      )
+                                    )
+                                  );
+                                  if (discount) {
+                                    validateGreaterThanOrEqual(
+                                      e.target.value,
+                                      productSubCategoryFees?.actualPrice,
+                                      discount
+                                    );
+                                  }
+                                }}
+                              />
+                            );
+                          }}
                         />
 
                         <Controller
@@ -1368,10 +1501,15 @@ const LeadEstimate = () => {
                               {...field}
                               onChange={(e) => {
                                 let { actualPrice, quantity } = getValues();
-                                calculateTotalPriceWithGST(
-                                  actualPrice,
-                                  quantity,
-                                  e
+                                setValue(
+                                  "totalPrice",
+                                  String(
+                                    calculateTotalPriceWithGST(
+                                      actualPrice,
+                                      quantity,
+                                      e.target.value
+                                    )
+                                  )
                                 );
                                 field.onChange(e);
                               }}
@@ -1382,14 +1520,24 @@ const LeadEstimate = () => {
                           name="quantity"
                           control={control}
                           render={({ field, fieldState: { error } }) => (
-                            <NumberInput
+                            <Input
                               isRequired
                               label="Quantity in kg"
-                              {...field}
+                              type="number"
+                              value={field.value}
                               onChange={(e) => {
                                 let { actualPrice, gst } = getValues();
-                                calculateTotalPriceWithGST(actualPrice, e, gst);
-                                field.onChange(e);
+                                field.onChange(e.target.value);
+                                setValue(
+                                  "totalPrice",
+                                  String(
+                                    calculateTotalPriceWithGST(
+                                      actualPrice,
+                                      e.target.value,
+                                      gst
+                                    )
+                                  )
+                                );
                               }}
                             />
                           )}
@@ -1398,13 +1546,15 @@ const LeadEstimate = () => {
                           name="totalPrice"
                           control={control}
                           render={({ field, fieldState: { error } }) => (
-                            <NumberInput
+                            <Input
                               isRequired
                               label="Total price (₹)"
+                              isDisabled
+                              type="number"
                               startContent={<IndianRupee className="h-4 w-4" />}
                               {...field}
                               onChange={(e) => {
-                                field.onChange(e);
+                                field.onChange(e.target.value);
                               }}
                             />
                           )}
@@ -1422,15 +1572,16 @@ const LeadEstimate = () => {
                               name="professionalFees"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
+                                  type="number"
                                   label="Professional fees"
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1444,7 +1595,7 @@ const LeadEstimate = () => {
                                   label="Hsn number"
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1453,8 +1604,9 @@ const LeadEstimate = () => {
                               name="profesionalGst"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
+                                  type="number"
                                   label="Professional gst"
                                   isDisabled={
                                     productFees?.profesionalGst == 0
@@ -1466,7 +1618,7 @@ const LeadEstimate = () => {
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1481,15 +1633,16 @@ const LeadEstimate = () => {
                               name="serviceCharge"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
                                   label="Service charges"
+                                  type="number"
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1503,7 +1656,7 @@ const LeadEstimate = () => {
                                   label="Hsn number"
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1512,8 +1665,9 @@ const LeadEstimate = () => {
                               name="serviceGst"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
+                                  type="number"
                                   label="Service gst"
                                   isDisabled={
                                     productFees?.profesionalGst == 0
@@ -1525,7 +1679,7 @@ const LeadEstimate = () => {
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1540,15 +1694,16 @@ const LeadEstimate = () => {
                               name="govermentfees"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
+                                  type="number"
                                   label="Government fees"
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1562,7 +1717,7 @@ const LeadEstimate = () => {
                                   label="Hsn number"
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1571,9 +1726,10 @@ const LeadEstimate = () => {
                               name="govermentGst"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
                                   label="Government gst"
+                                  type="number"
                                   isDisabled={
                                     productFees?.govermentGst == 0
                                       ? false
@@ -1584,7 +1740,7 @@ const LeadEstimate = () => {
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1599,15 +1755,16 @@ const LeadEstimate = () => {
                               name="otherFees"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
                                   label="Other fees"
+                                  type="number"
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1621,7 +1778,7 @@ const LeadEstimate = () => {
                                   label="Hsn number"
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1630,8 +1787,9 @@ const LeadEstimate = () => {
                               name="otherGst"
                               control={control}
                               render={({ field, fieldState: { error } }) => (
-                                <NumberInput
+                                <Input
                                   isRequired
+                                  type="number"
                                   label="Government gst"
                                   isDisabled={
                                     productFees?.otherGst == 0 ? false : true
@@ -1641,7 +1799,7 @@ const LeadEstimate = () => {
                                   }
                                   {...field}
                                   onChange={(e) => {
-                                    field.onChange(e);
+                                    field.onChange(e.target.value);
                                   }}
                                 />
                               )}
@@ -1663,13 +1821,13 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
-                      label="Select product category"
+                      label="Select assignee"
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={leadUsersList || []}
-                      labelKey="name"
+                      labelKey="fullName"
                       valueKey="id"
-                      value={field.value}
+                      value={String(field.value)}
                       onChange={(value) => {
                         field.onChange(value);
                       }}
@@ -1685,7 +1843,7 @@ const LeadEstimate = () => {
                       label="Order number"
                       {...field}
                       onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(e.target.value);
                       }}
                     />
                   )}
@@ -1717,7 +1875,7 @@ const LeadEstimate = () => {
                       label="Invoice note"
                       {...field}
                       onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(e.target.value);
                       }}
                     />
                   )}
@@ -1731,7 +1889,7 @@ const LeadEstimate = () => {
                       label="Remark"
                       {...field}
                       onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(e.target.value);
                       }}
                     />
                   )}
@@ -1741,9 +1899,16 @@ const LeadEstimate = () => {
             <Card className="my-2">
               <CardHeader className="flex justify-between font-medium">
                 Address{" "}
-                <Button variant="light" onPress={addressFormModal.onOpen}>
-                  Update address
-                </Button>
+                {!companyAndUnitData?.oneTimeUpdateAddress && (
+                  <Button
+                    variant="flat"
+                    color="primary"
+                    endContent={<Pencil className="w-4 h-4" />}
+                    onPress={addressFormModal.onOpen}
+                  >
+                    Update address
+                  </Button>
+                )}
               </CardHeader>
               <CardBody className="grid grid-cols-3 gap-3">
                 <Controller
@@ -1755,7 +1920,7 @@ const LeadEstimate = () => {
                       label="Address"
                       {...field}
                       onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(e.target.value);
                       }}
                     />
                   )}
@@ -1860,7 +2025,9 @@ const LeadEstimate = () => {
                       valueKey="name"
                       value={field.value}
                       onChange={(value) => {
-                        dispatch(getAllStatesByCountryName(value));
+                        dispatch(
+                          getAllSecondaryStatesBySecondaryCountryName(value)
+                        );
                         field.onChange(value);
                       }}
                     />
@@ -1875,12 +2042,14 @@ const LeadEstimate = () => {
                       label="State"
                       errorMessage={error?.message}
                       isInvalid={!!error}
-                      data={statesList || []}
+                      data={secStatesList || []}
                       labelKey="name"
                       valueKey="name"
                       value={field.value}
                       onChange={(value) => {
-                        dispatch(getAllCitiesByStateName(value));
+                        dispatch(
+                          getAllSecondaryCitiesBySecondaryStateName(value)
+                        );
                         field.onChange(value);
                       }}
                     />
@@ -1895,7 +2064,7 @@ const LeadEstimate = () => {
                       label="City"
                       errorMessage={error?.message}
                       isInvalid={!!error}
-                      data={citiesList || []}
+                      data={secCitiesList || []}
                       labelKey="name"
                       valueKey="name"
                       value={field.value}
@@ -1936,7 +2105,9 @@ const LeadEstimate = () => {
                     Update address
                   </ModalHeader>
                   <ModalBody>
-                    <form onSubmit={handleSubmit(handleAddressFinish)}>
+                    <form
+                      onSubmit={addressForm.handleSubmit(handleAddressFinish)}
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <Controller
                           name="revenue"
@@ -1999,7 +2170,6 @@ const LeadEstimate = () => {
                               valueKey="name"
                               value={field.value}
                               onChange={(value) => {
-                                handleStateChange(value);
                                 field.onChange(value);
                               }}
                             />
@@ -2057,116 +2227,138 @@ const LeadEstimate = () => {
               {(onClose) => (
                 <>
                   <ModalHeader className="flex flex-col gap-1">
-                    Update Gst
+                    Update GST
                   </ModalHeader>
                   <ModalBody>
-                    <form onSubmit={handleSubmit(handleGstUpdate)}>
+                    <form
+                      onSubmit={gstForm.handleSubmit((values) => {
+                        handleGstUpdate(values);
+                      })}
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <Controller
                           name="companyType"
                           control={gstForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NewSelect
-                              isRequired
-                              label="Company structure"
-                              errorMessage={"please select the company type."}
-                              data={companyTypeList || []}
-                              labelKey="name"
-                              valueKey="id"
-                              value={field.value}
-                              onChange={(value) => {
-                                dispatch(getAllGstTypeByCompanyTypeId(value));
-                                field.onChange(value);
-                              }}
-                            />
-                          )}
+                          render={({ field, fieldState: { error } }) => {
+                            return (
+                              <NewSelect
+                                isRequired
+                                label="Company structure"
+                                errorMessage={
+                                  error?.message ||
+                                  "Please select the company type."
+                                }
+                                isInvalid={!!error}
+                                data={companyTypeList || []}
+                                labelKey="name"
+                                valueKey="id"
+                                value={String(field.value)}
+                                onChange={(value) => {
+                                  dispatch(getAllGstTypeByCompanyTypeId(value));
+                                  field.onChange(value || null);
+                                }}
+                              />
+                            );
+                          }}
                         />
 
                         <Controller
                           name="gstType"
                           control={gstForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NewSelect
-                              isRequired
-                              label="GST type"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              data={gstTypeList?.gstBussinessType || []}
-                              labelKey="name"
-                              valueKey="id"
-                              value={field.value}
-                              onChange={(value) => {
-                                dispatch(getBusinessTypeByGstTypeId(value));
-                                field.onChange(value);
-                              }}
-                            />
-                          )}
+                          render={({ field, fieldState: { error } }) => {
+                            return (
+                              <NewSelect
+                                isRequired
+                                label="GST type"
+                                errorMessage={error?.message}
+                                isInvalid={!!error}
+                                data={gstTypeList?.gstBussinessType || []}
+                                labelKey="name"
+                                valueKey="id"
+                                value={String(field.value)}
+                                onChange={(value) => {
+                                  dispatch(getBusinessTypeByGstTypeId(value));
+                                  field.onChange(value || null);
+                                }}
+                              />
+                            );
+                          }}
                         />
 
                         <Controller
                           name="businessType"
                           control={gstForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <NewSelect
-                              isRequired
-                              label="Business type"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              data={businessTypeList?.gstTypePrice || []}
-                              labelKey="name"
-                              valueKey="id"
-                              value={field.value}
-                              onChange={(value) => {
-                                field.onChange(value);
-                                const foundObject =
-                                  businessTypeList?.gstTypePrice?.find(
-                                    (item) => item.id == value
-                                  );
-                                setGstMand((prev) => ({
-                                  ...prev,
-                                  gst: foundObject?.gstPresent,
-                                  pan: foundObject?.panPresent,
-                                }));
-                              }}
-                            />
-                          )}
+                          render={({ field, fieldState: { error } }) => {
+                            return (
+                              <NewSelect
+                                isRequired
+                                label="Business type"
+                                errorMessage={error?.message}
+                                isInvalid={!!error}
+                                data={businessTypeList?.gstTypePrice || []}
+                                labelKey="name"
+                                valueKey="id"
+                                value={String(field.value)}
+                                onChange={(value) => {
+                                  field.onChange(value || null);
+                                  const foundObject =
+                                    businessTypeList?.gstTypePrice?.find(
+                                      (item) => item.id == value
+                                    );
+                                  setUpdateGstMand((prev) => ({
+                                    ...prev,
+                                    gst: foundObject?.gstPresent ?? false,
+                                    pan: foundObject?.panPresent ?? false,
+                                  }));
+                                }}
+                              />
+                            );
+                          }}
                         />
-                        {gstMand?.gst && (
+
+                        {updateGstMand?.gst && (
                           <Controller
                             name="gstNo"
                             control={gstForm.control}
-                            render={({ field, fieldState: { error } }) => (
-                              <Input
-                                isRequired
-                                label="GST number"
-                                maxLength={15}
-                                errorMessage={error?.message}
-                                isInvalid={!!error}
-                                {...field}
-                                onChange={(e) => {
-                                  handleGstChange(e);
-                                }}
-                              />
-                            )}
+                            render={({ field, fieldState: { error } }) => {
+                              return (
+                                <Input
+                                  isRequired
+                                  label="GST number"
+                                  maxLength={15}
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  value={field?.value}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                    handleUpdateGstChange(e);
+                                  }}
+                                />
+                              );
+                            }}
                           />
                         )}
-                        {gstMand?.pan && (
+
+                        {updateGstMand?.pan && (
                           <Controller
                             name="panNo"
                             control={gstForm.control}
-                            render={({ field, fieldState: { error } }) => (
-                              <Input
-                                isRequired
-                                label="Pan number"
-                                maxLength={10}
-                                errorMessage={error?.message}
-                                isInvalid={!!error}
-                                {...field}
-                                onChange={(e) => {
-                                  handlePanChange(e);
-                                }}
-                              />
-                            )}
+                            render={({ field, fieldState: { error } }) => {
+                              return (
+                                <Input
+                                  isRequired
+                                  label="Pan number"
+                                  maxLength={10}
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  value={field?.value}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                    handleUpdatePanChange(e);
+                                  }}
+                                />
+                              );
+                            }}
                           />
                         )}
                       </div>
@@ -2222,7 +2414,7 @@ const LeadEstimate = () => {
                         {(columnKey) =>
                           columnKey === "docs" ? (
                             <TableCell>
-                              <SingleFileUploader/>
+                              <SingleFileUploader />
                             </TableCell>
                           ) : (
                             <TableCell>
