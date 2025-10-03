@@ -621,7 +621,7 @@ const AutoHistory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[70vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

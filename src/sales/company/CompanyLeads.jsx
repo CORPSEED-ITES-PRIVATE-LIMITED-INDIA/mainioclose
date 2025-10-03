@@ -93,22 +93,15 @@ const CompanyLeads = () => {
 
   const pages = Math.ceil(count / companyFilteration?.size) || 1;
 
-  const items = useMemo(() => {
-    const start = (companyFilteration?.page - 1) * companyFilteration?.size;
-    const end = start + companyFilteration?.size;
-
-    return filteredItems.slice(start, end);
-  }, [companyFilteration, filteredItems]);
-
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {

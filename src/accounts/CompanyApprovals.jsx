@@ -93,22 +93,15 @@ const CompanyApprovals = () => {
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
-  const items = useMemo(() => {
-    const start = (filteration?.page - 1) * filteration?.size;
-    const end = start + filteration?.size;
-
-    return filteredItems.slice(start, end);
-  }, [filteration, filteredItems]);
-
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
 
 

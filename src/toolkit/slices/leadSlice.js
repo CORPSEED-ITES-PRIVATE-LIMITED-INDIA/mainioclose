@@ -61,7 +61,9 @@ export const deleteMultipleLeads = createAsyncThunk(
   async (data) => {
     const response = await api.delete(
       `/leadService/api/v1/lead/deleteMultiLead`,
-      data
+      {
+        data: data,
+      }
     );
     return response.data;
   }
@@ -139,7 +141,8 @@ export const getEstimateListByUserId = createAsyncThunk(
 );
 
 export const getProjectAction = createAsyncThunk(
-  "getProjectAction",async ({ userId, page, size }) => {
+  "getProjectAction",
+  async ({ userId, page, size }) => {
     const response = await api.get(
       `/leadService/api/v1/project/getAllProject?userId=${userId}&page=${page}&size=${size}`
     );
