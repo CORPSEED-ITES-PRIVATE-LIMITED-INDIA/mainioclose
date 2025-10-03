@@ -53,7 +53,7 @@ const UnitDetails = () => {
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-gray-400 text-sm">GST type :</p>
-                <p className="text-sm">{details?.gstType || "-"}</p>
+                <p className="text-sm">{details?.gstType?.name || "-"}</p>
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-gray-400 text-sm">Company age :</p>
@@ -61,7 +61,7 @@ const UnitDetails = () => {
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-gray-400 text-sm">Business type :</p>
-                <p className="text-sm">{details?.bussinessType || "-"}</p>
+                <p className="text-sm">{details?.bussinessType?.name || "-"}</p>
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-gray-400 text-sm">Assignee name :</p>
