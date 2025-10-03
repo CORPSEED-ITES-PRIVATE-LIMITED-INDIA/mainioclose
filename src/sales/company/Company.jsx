@@ -34,6 +34,7 @@ import NewSelect from "../../components/NewSelect";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 import dayjs from "dayjs";
 import CreateCompanyForm from "./CreateCompanyForm";
+import { maskEmail, maskMobileNumber } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
@@ -197,10 +198,10 @@ const Company = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal">
-              {company.clientContactEmail || "-"}
+              {maskEmail(company.clientContactEmail) || "-"}
             </span>
             <span className="text-sm text-gray-400">
-              {company.clientContactNo || "-"}
+              {maskMobileNumber(company.clientContactNo) || "-"}
             </span>
           </div>
         );
@@ -437,7 +438,7 @@ const Company = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -473,7 +474,7 @@ const Company = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, companyFilteration, pages, hasSearchFilter]);
+  }, [selectedKeys,count, companyFilteration, pages, hasSearchFilter]);
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Company</h1>

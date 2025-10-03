@@ -68,7 +68,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
-import { formatedDateTime, leadSource } from "../../common";
+import { formatedDateTime, leadSource, maskEmail, maskMobileNumber } from "../../common";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -407,7 +407,7 @@ const Leads = () => {
                   shape="circle"
                   size="sm"
                 />
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-default-500">
                   {dayjs(lead?.createDate).format("DD-MM-YYYY")}
                 </span>
               </div>
@@ -417,9 +417,9 @@ const Leads = () => {
       case "contact":
         return (
           <div className="flex flex-col">
-            <span className="font-normal text-sm">{lead?.email || "-"}</span>
-            <span className="text-xs text-gray-400">
-              {lead?.mobileNo || "-"}
+            <span className="font-normal text-sm">{maskEmail(lead?.email) || "-"}</span>
+            <span className="text-xs text-default-500">
+              {maskMobileNumber(lead?.mobileNo) || "-"}
             </span>
           </div>
         );
@@ -435,7 +435,7 @@ const Leads = () => {
             <span className="font-semibold text-sm">
               {lead?.assignee?.fullName || "-"}
             </span>
-            <span className="text-xm text-gray-400">
+            <span className="text-xm text-default-500">
               {lead?.assignee?.email || "-"}
             </span>
           </div>

@@ -20,16 +20,15 @@ import {
   ModalContent,
   ModalHeader,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllUnbillCount,
-  getAllUnbillList,
-} from "../../toolkit/slices/organizationSlice";
-import TaxInvoice from "../../components/TaxInvoice";
-import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import { getAllVendorsPaymentCount, getAllVendorsPaymentList } from "../toolkit/slices/accountSlice";
+import {
+  getAllVendorsPaymentCount,
+  getAllVendorsPaymentList,
+} from "../toolkit/slices/accountSlice";
+import TaxInvoice from "../components/TaxInvoice";
+import { inrCurrency } from "../common";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -60,8 +59,8 @@ const INITIAL_VISIBLE_COLUMNS = [
 const VendorPayments = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.accounts.vendorsPaymentList);
-  const count = useSelector((state) => state.accounts.vendorsPaymentCount);
+  const data = useSelector((state) => state.account.vendorsPaymentList);
+  const count = useSelector((state) => state.account.vendorsPaymentCount);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -116,11 +115,13 @@ const VendorPayments = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "date":
-        return <p className="text-sm capitalize">{dayjs(rowData?.date).format("DD-MM-YYYY")}</p>;
-      case "unbillNo":
         return (
-          <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>
+          <p className="text-sm capitalize">
+            {dayjs(rowData?.date).format("DD-MM-YYYY")}
+          </p>
         );
+      case "unbillNo":
+        return <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>;
       case "service":
         return <p className="text-sm capitalize">{rowData?.productName}</p>;
       case "company":
@@ -207,6 +208,7 @@ const VendorPayments = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Button variant="flat" endContent={<Plus />}>Add</Button>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -297,11 +299,13 @@ const VendorPayments = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendor's payment list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Vendor's payment list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

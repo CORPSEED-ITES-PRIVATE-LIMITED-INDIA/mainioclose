@@ -4,7 +4,6 @@ import Login from "./login/Login";
 import ProtectedRoute from "./ProtectedRoute";
 import Layoutpage from "./layouts/Layoutpage";
 import Users from "./users/Users";
-import VendorRequests from "./vendor-request/VendorRequests";
 import SalesModuleRouting from "./routings/SalesModuleRouting";
 import IndustryModuleRouting from "./routings/IndustryModuleRouting";
 import HRModuleRouting from "./routings/HRModuleRouting";
@@ -17,6 +16,7 @@ import {
   AccountsModuleRouting,
 } from "./routings/AccountsModuleRouting";
 import { AliveScope } from "react-activation";
+import ProcurementRouting from "./routings/ProcurementRouting";
 
 function App() {
   return (
@@ -52,7 +52,7 @@ function App() {
 
             {/* Others */}
             <Route path="users" element={<Users />} />
-            <Route path="vendors-requests" element={<VendorRequests />} />
+            {ProcurementRouting()}
 
             {/* Settings */}
             {ERPSettingRouting()}

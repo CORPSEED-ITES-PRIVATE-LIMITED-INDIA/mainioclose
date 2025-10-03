@@ -26,12 +26,14 @@ import {
   Factory,
   FileText,
   Link,
+  Mail,
   MapPin,
   MessageCircle,
   MessageSquareMore,
   Pencil,
   Phone,
   Plus,
+  Smartphone,
   Trash,
   User2,
   X,
@@ -183,7 +185,7 @@ const LeadInfo = () => {
     dispatch(getAllComments());
     dispatch(getAllLeadUser(userId));
     dispatch(getAllRemarkAndCommnts(leadId));
-  }, [dispatch, leadId,userId]);
+  }, [dispatch, leadId, userId]);
 
   const handleUpdateLeadName = (leadName) => {
     dispatch(updateSingleLeadName({ leadName, leadId, userId }))
@@ -386,7 +388,7 @@ const LeadInfo = () => {
     contactModal.onOpen();
     contactForm.reset({
       name: value?.clientName,
-      email: value?.email,
+      email: value?.email || "",
       contactNo: value?.contactNo,
     });
     setEditContact(value);
@@ -578,24 +580,24 @@ const LeadInfo = () => {
             <CardBody>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-foreground-500 text-xs">Address</p>
-                  <p className="text-xs">{leadData?.address || "-"}</p>
+                  <p className="text-default-500 text-sm">Address</p>
+                  <p className="text-sm">{leadData?.address || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">Country</p>
-                  <p className="text-xs">{leadData?.country || "-"}</p>
+                  <p className="text-default-500 text-sm">Country</p>
+                  <p className="text-sm">{leadData?.country || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">State</p>
-                  <p className="text-xs">{leadData?.state || "-"}</p>
+                  <p className="text-default-500 text-sm">State</p>
+                  <p className="text-sm">{leadData?.state || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">City</p>
-                  <p className="text-xs">{leadData?.city}</p>
+                  <p className="text-default-500 text-sm">City</p>
+                  <p className="text-sm">{leadData?.city}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">Pin code</p>
-                  <p className="text-xs">{leadData?.pinCode}</p>
+                  <p className="text-default-500 text-sm">Pin code</p>
+                  <p className="text-sm">{leadData?.pinCode}</p>
                 </div>
               </div>
             </CardBody>
@@ -621,22 +623,22 @@ const LeadInfo = () => {
             <CardBody>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-foreground-500 text-xs">Industry</p>
-                  <p className="text-xs">{leadData?.industries?.name}</p>
+                  <p className="text-default-500 text-sm">Industry</p>
+                  <p className="text-sm">{leadData?.industries?.name}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">Sub Industry</p>
-                  <p className="text-xs">{leadData?.subIndustry?.name}</p>
+                  <p className="text-default-500 text-sm">Sub Industry</p>
+                  <p className="text-sm">{leadData?.subIndustry?.name}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">Category</p>
-                  <p className="text-xs">{leadData?.subSubIndustry?.name}</p>
+                  <p className="text-default-500 text-sm">Category</p>
+                  <p className="text-sm">{leadData?.subSubIndustry?.name}</p>
                 </div>
                 <div>
-                  <p className="text-foreground-500 text-xs">
+                  <p className="text-default-500 text-sm">
                     Business activity
                   </p>
-                  <p className="text-xs">
+                  <p className="text-sm">
                     {leadData?.industriesData
                       ?.map((item) => item?.name)
                       .join(",")}
@@ -679,10 +681,10 @@ const LeadInfo = () => {
             <CardBody>
               {toggleAssignee ? (
                 <div className="flex flex-col">
-                  <span className="font-semibold text-xs">
+                  <span className="font-semibold text-sm">
                     {leadData?.assigne?.fullName}
                   </span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-default-500">
                     {leadData?.assigne?.email}
                   </span>
                 </div>
@@ -761,7 +763,7 @@ const LeadInfo = () => {
               </div>
             </CardHeader>
             <CardBody>
-              <p className="text-xs">{leadData?.description}</p>
+              <p className="text-sm">{leadData?.description}</p>
             </CardBody>
           </Card>
           <Card className="my-2">
@@ -800,16 +802,26 @@ const LeadInfo = () => {
                     key={item?.clientName}
                     className="flex justify-between items-center border rounded-md mb-2 px-2"
                   >
-                    <div className="flex flex-col p-2">
+                    <div className="flex flex-col p-3">
                       <span className="font-medium text-sm">
                         {item?.clientName || "-"}
                       </span>
-                      <span className="text-sm text-gray-400">
-                        {item?.email || ""}
-                      </span>
-                      <span className="text-sm text-gray-400">
-                        {item?.contactNo || ""}
-                      </span>
+                      {item?.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4" />
+                          <span className="text-sm text-default-500">
+                            {item?.email || ""}
+                          </span>
+                        </div>
+                      )}
+                      {item?.contactNo && (
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-4 h-4" />
+                          <span className="text-sm text-default-500">
+                            {item?.contactNo || ""}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <Dropdown>
                       <DropdownTrigger>
@@ -1195,7 +1207,8 @@ const LeadInfo = () => {
                           isRequired
                           errorMessage="please enter the name "
                           label="Name"
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       )}
                     />
@@ -1203,7 +1216,13 @@ const LeadInfo = () => {
                     <Controller
                       name="email"
                       control={contactForm.control}
-                      render={({ field }) => <Input label="Email" {...field} />}
+                      render={({ field }) => (
+                        <Input
+                          label="Email"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      )}
                     />
 
                     <Controller
@@ -1214,7 +1233,8 @@ const LeadInfo = () => {
                           isRequired
                           errorMessage="please enter the contact number "
                           label="Contact number"
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       )}
                     />
