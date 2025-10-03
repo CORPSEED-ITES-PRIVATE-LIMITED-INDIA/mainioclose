@@ -142,12 +142,6 @@ const CompanyForm = () => {
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
-  // const items = React.useMemo(() => {
-  //   const start = (page - 1) * rowsPerPage;
-  //   const end = start + rowsPerPage;
-
-  //   return filteredItems.slice(start, end);
-  // }, [page, filteredItems, rowsPerPage,data]);
 
   const sortedItems = React.useMemo(() => {
     return [...filteredItems].sort((a, b) => {

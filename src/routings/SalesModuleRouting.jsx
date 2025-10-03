@@ -75,10 +75,14 @@ const SalesModuleRouting = () => {
       <Route path="sales/autoHistory" element={<AutoHistory />} />
       <Route path="sales/salesReport" element={<SalesReport />} />
       <Route path="sales/autoStatus" element={<AutomationStatus />} />
-      <Route
-        path="sales/autoHistory/:leadId/leadDetail"
-        element={<LeadDetail />}
-      />
+       <Route path="sales/autoHistory/:leadId" element={<LeadDetail />}>
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="proposal" element={<Proposal />} />
+        <Route path="leadEstimate" element={<LeadEstimate />} />
+      </Route>
       <Route path="sales/projects" element={<Projects />} />
       <Route path="sales/servingCompanies" element={<ServingCompanies />} />
     </>

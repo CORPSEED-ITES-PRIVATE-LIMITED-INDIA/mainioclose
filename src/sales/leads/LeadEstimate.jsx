@@ -140,48 +140,50 @@ const formSchema = ({ productData, productSubCategoryData, gstMand }) => {
           productSubCategoryId: z
             .string()
             .min(1, "Please select the product sub category."),
+          ...(Object.keys(productSubCategoryData || {})?.length > 0
+            ? {
+                actualPrice: z.string().min(1, "Please enter actual price."),
+                gstCode: z.string().min(1, "Please enter gst code."),
+                gst: z.string().min(1, "Please enter gst percentage."),
+                quantity: z.string().min(1, "Please enter quantity."),
+                totalPrice: z.string().min(1, "Please enter total price."),
+              }
+            : {}),
         }
-      : {}),
-    ...(Object.keys(productSubCategoryData || {})?.length > 0
-      ? {
-          actualPrice: z.string().min(1, "Please enter actual price."),
-          gstCode: z.string().min(1, "Please enter gst code."),
-          gst: z.string().min(1, "Please enter gst percentage."),
-          quantity: z.string().min(1, "Please enter quantity."),
-          totalPrice: z.string().min(1, "Please enter total price."),
-        }
-      : {}),
-
-    ...(formCondition(productData).professional
-      ? {
-          professionalFees: z.string().min(1, "Please enter professional fee."),
-          professionalCode: z
-            .string()
-            .min(1, "Please enter professional code."),
-          profesionalGst: z.string().min(1, "Please enter professional gst."),
-        }
-      : {}),
-    ...(formCondition(productData).service
-      ? {
-          serviceCharge: z.string().min(1, "Please enter service charge."),
-          serviceCode: z.string().min(1, "Please enter service code."),
-          serviceGst: z.string().min(1, "Please enter service Gst."),
-        }
-      : {}),
-    ...(formCondition(productData).government
-      ? {
-          govermentfees: z.string().min(1, "Please enter government fee."),
-          govermentCode: z.string().min(1, "Please enter government code."),
-          govermentGst: z.string().min(1, "Please enter government gst."),
-        }
-      : {}),
-    ...(formCondition(productData).other
-      ? {
-          otherFees: z.string().min(1, "Please enter other fee."),
-          otherCode: z.string().min(1, "Please enter other code."),
-          otherGst: z.string().min(1, "Please enter other gst."),
-        }
-      : {}),
+      : {
+          ...(formCondition(productData).professional
+            ? {
+                professionalFees: z.number(),
+                professionalCode: z
+                  .string()
+                  .min(1, "Please enter professional code."),
+                profesionalGst: z.number(),
+              }
+            : {}),
+          ...(formCondition(productData).service
+            ? {
+                serviceCharge: z.number(),
+                serviceCode: z.string().min(1, "Please enter service code."),
+                serviceGst: z.number(),
+              }
+            : {}),
+          ...(formCondition(productData).government
+            ? {
+                govermentfees: z.number(),
+                govermentCode: z
+                  .string()
+                  .min(1, "Please enter government code."),
+                govermentGst: z.number(),
+              }
+            : {}),
+          ...(formCondition(productData).other
+            ? {
+                otherFees: z.number(),
+                otherCode: z.string().min(1, "Please enter other code."),
+                otherGst: z.number(),
+              }
+            : {}),
+        }),
     assigneeId: z.string().min(1, "Please select assignee id."),
     orderNumber: z.string().min(1, "Please enter Order number."),
     purchaseDate: z.string().min(1, "Please select purchase date."),
@@ -455,63 +457,76 @@ const LeadEstimate = () => {
   }, [companyDetails]);
 
   useEffect(() => {
-    let values = getValues();
-    productData?.productAmount?.forEach((item) => {
+    if (!productData?.productAmount) return;
+
+    const values = getValues();
+    let updatedValues = { ...values };
+    let updatedProductFees = {};
+
+    productData.productAmount.forEach((item) => {
       if (item?.name === "Government") {
-        reset({
-          ...values,
-          govermentfees: item?.fees,
+        updatedValues = {
+          ...updatedValues,
+          govermentfees: Number(item?.fees),
           govermentCode: item?.hsnNo,
-          govermentGst: item?.taxAmount,
-        });
-        setProductFees((prev) => ({
-          ...prev,
+          govermentGst: Number(item?.taxAmount),
+        };
+        updatedProductFees = {
+          ...updatedProductFees,
           govermentfees: item?.fees,
           govermentGst: item?.taxAmount,
-        }));
+        };
       }
+
       if (item?.name === "Professional fees") {
-        reset({
-          ...values,
-          professionalFees: item?.fees,
+        updatedValues = {
+          ...updatedValues,
+          professionalFees: Number(item?.fees),
           professionalCode: item?.hsnNo,
-          profesionalGst: item?.taxAmount,
-        });
-        setProductFees((prev) => ({
-          ...prev,
+          profesionalGst: Number(item?.taxAmount),
+        };
+        updatedProductFees = {
+          ...updatedProductFees,
           professionalFees: item?.fees,
           profesionalGst: item?.taxAmount,
-        }));
+        };
       }
+
       if (item?.name === "Service charges") {
-        reset({
-          ...values,
-          serviceCharge: item?.fees,
+        updatedValues = {
+          ...updatedValues,
+          serviceCharge: Number(item?.fees),
           serviceCode: item?.hsnNo,
-          serviceGst: item?.taxAmount,
-        });
-        setProductFees((prev) => ({
-          ...prev,
+          serviceGst: Number(item?.taxAmount),
+        };
+        updatedProductFees = {
+          ...updatedProductFees,
           serviceCharge: item?.fees,
           serviceGst: item?.taxAmount,
-        }));
+        };
       }
 
       if (item?.name === "Other fees") {
-        reset({
-          ...values,
-          otherFees: item?.fees,
+        updatedValues = {
+          ...updatedValues,
+          otherFees: Number(item?.fees),
           otherCode: item?.hsnNo,
-          otherGst: item?.taxAmount,
-        });
-        setProductFees((prev) => ({
-          ...prev,
+          otherGst: Number(item?.taxAmount),
+        };
+        updatedProductFees = {
+          ...updatedProductFees,
           otherFees: item?.fees,
           otherGst: item?.taxAmount,
-        }));
+        };
       }
     });
-  }, [productData]);
+
+    reset(updatedValues);
+    setProductFees((prev) => ({
+      ...prev,
+      ...updatedProductFees,
+    }));
+  }, [productData, reset, getValues]);
 
   const calculateTotalPriceWithGST = (actualPrice, quantity, gstString) => {
     const price = parseFloat(actualPrice) || 0;
@@ -696,7 +711,6 @@ const LeadEstimate = () => {
   };
 
   const handleGstUpdate = (values) => {
-    console.log("dkbjhbkjdfdfd", values);
     values.companyId = companyAndUnitData?.companyId;
     dispatch(updateGstTypeInEstimate(values))
       .then((resp) => {
@@ -778,12 +792,6 @@ const LeadEstimate = () => {
       );
   };
 
-  console.log("dskfsjkgjsgsdj", getValues());
-  console.log(
-    "dskfsjkgjsgsdj 111",
-    formSchema({ productData, productSubCategoryData, gstMand })
-  );
-
   const handleFinish = useCallback(
     (values) => {
       values.leadId = leadId;
@@ -794,8 +802,6 @@ const LeadEstimate = () => {
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
       values.type = productData?.type;
-
-      console.log("dskfsjkgjsgsdj", values);
 
       if (discount) {
         if (details?.discountEstimate) {
@@ -1026,7 +1032,6 @@ const LeadEstimate = () => {
                   name="unitId"
                   control={control}
                   render={({ field, fieldState: { error } }) => {
-                    console.log("jkxhbsjkhjksd", field);
                     return (
                       <NewSelect
                         isRequired
@@ -1447,10 +1452,6 @@ const LeadEstimate = () => {
                                 errorMessage={discountError}
                                 {...field}
                                 onChange={(e) => {
-                                  console.log(
-                                    "sdlkslkjhslkhslkjhsldk 1111",
-                                    e.target.value
-                                  );
                                   let { quantity, gst } = getValues();
                                   field.onChange(e.target.value);
                                   setValue(
@@ -1567,7 +1568,7 @@ const LeadEstimate = () => {
                     {productData?.productAmount?.map((ele, idx) => {
                       if (ele?.name === "Professional fees") {
                         return (
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-3 my-2">
                             <Controller
                               name="professionalFees"
                               control={control}
@@ -1579,9 +1580,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1593,7 +1594,7 @@ const LeadEstimate = () => {
                                 <Input
                                   isRequired
                                   label="Hsn number"
-                                  {...field}
+                                  value={field.value}
                                   onChange={(e) => {
                                     field.onChange(e.target.value);
                                   }}
@@ -1616,9 +1617,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1628,7 +1629,7 @@ const LeadEstimate = () => {
                       }
                       if (ele?.name === "Service charges") {
                         return (
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-3 my-2">
                             <Controller
                               name="serviceCharge"
                               control={control}
@@ -1640,9 +1641,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1654,7 +1655,7 @@ const LeadEstimate = () => {
                                 <Input
                                   isRequired
                                   label="Hsn number"
-                                  {...field}
+                                  value={field.value}
                                   onChange={(e) => {
                                     field.onChange(e.target.value);
                                   }}
@@ -1677,9 +1678,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1689,7 +1690,7 @@ const LeadEstimate = () => {
                       }
                       if (ele?.name === "Government") {
                         return (
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-3 my-2">
                             <Controller
                               name="govermentfees"
                               control={control}
@@ -1701,9 +1702,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1715,7 +1716,7 @@ const LeadEstimate = () => {
                                 <Input
                                   isRequired
                                   label="Hsn number"
-                                  {...field}
+                                  value={field.value}
                                   onChange={(e) => {
                                     field.onChange(e.target.value);
                                   }}
@@ -1738,9 +1739,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1750,7 +1751,7 @@ const LeadEstimate = () => {
                       }
                       if (ele?.name === "Other fees") {
                         return (
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-3 my-2">
                             <Controller
                               name="otherFees"
                               control={control}
@@ -1762,9 +1763,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
@@ -1776,7 +1777,7 @@ const LeadEstimate = () => {
                                 <Input
                                   isRequired
                                   label="Hsn number"
-                                  {...field}
+                                  value={field.value}
                                   onChange={(e) => {
                                     field.onChange(e.target.value);
                                   }}
@@ -1797,9 +1798,9 @@ const LeadEstimate = () => {
                                   startContent={
                                     <IndianRupee className="h-4 w-4" />
                                   }
-                                  {...field}
+                                  value={Number(field.value)}
                                   onChange={(e) => {
-                                    field.onChange(e.target.value);
+                                    field.onChange(Number(e.target.value));
                                   }}
                                 />
                               )}
