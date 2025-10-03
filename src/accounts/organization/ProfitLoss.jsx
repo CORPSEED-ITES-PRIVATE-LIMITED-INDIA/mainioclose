@@ -57,7 +57,12 @@ const ProfitLoss = () => {
     "Total amount": row?.totalAmount,
   }));
 
-  const headers2 = ["Group name", "Total credit", "Total debit", "Total amount"];
+  const headers2 = [
+    "Group name",
+    "Total credit",
+    "Total debit",
+    "Total amount",
+  ];
 
   useEffect(() => {
     dispatch(getAllProfitList(dateRange));
@@ -167,6 +172,9 @@ const ProfitLoss = () => {
         </div>
 
         <Table
+          classNames={{
+            wrapper: "max-h-[65vh] max-w-full",
+          }}
           bottomContent={
             <div className="flex flex-col gap-2">
               <Divider />

@@ -453,7 +453,7 @@ const VendorRequests = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -488,7 +488,7 @@ const VendorRequests = () => {
     );
   }, [
     selectedKeys,
-    items.length,
+    count,
     filteration,
     pages,
     onPreviousPage,

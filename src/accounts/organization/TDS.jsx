@@ -361,7 +361,7 @@ const TDS = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[65vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

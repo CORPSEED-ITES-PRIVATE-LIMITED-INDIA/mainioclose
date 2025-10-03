@@ -461,7 +461,7 @@ const LeadTask = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, count]);
+  }, [selectedKeys, page, pages, count]);
 
   return (
     <>
