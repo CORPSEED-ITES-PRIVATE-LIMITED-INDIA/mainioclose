@@ -34,6 +34,7 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 const Group = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.organization.groupList);
+  const count = useSelector((state) => state.organization.groupList?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -71,7 +72,7 @@ const Group = () => {
     return filteredUsers;
   }, [data, filterValue]);
 
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
+  const pages = Math.ceil(count / rowsPerPage) || 1;
 
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -224,7 +225,7 @@ const Group = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -255,7 +256,7 @@ const Group = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
     <>

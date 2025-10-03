@@ -314,7 +314,7 @@ const Users = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -347,7 +347,7 @@ const Users = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, initialFilteration, pages, hasSearchFilter]);
+  }, [selectedKeys, count, initialFilteration, pages, hasSearchFilter]);
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Users</h1>

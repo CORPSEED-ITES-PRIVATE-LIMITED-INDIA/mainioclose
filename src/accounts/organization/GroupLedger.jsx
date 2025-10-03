@@ -37,6 +37,7 @@ const GroupLedger = () => {
   const dispatch = useDispatch();
   const { groupId } = useParams();
   const data = useSelector((state) => state.organization.groupLedgerList);
+  const count = useSelector((state) => state.organization.groupLedgerList?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -74,7 +75,7 @@ const GroupLedger = () => {
     return filteredUsers;
   }, [data, filterValue]);
 
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
+  const pages = Math.ceil(count / rowsPerPage) || 1;
 
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -226,7 +227,7 @@ const GroupLedger = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -257,7 +258,7 @@ const GroupLedger = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
     <>

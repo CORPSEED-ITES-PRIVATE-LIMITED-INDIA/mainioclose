@@ -45,6 +45,7 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "ipAddress", "actions"];
 const IpAddress = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.setting.ipAddressList);
+  const count = useSelector((state) => state.setting.ipAddressList?.length);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -86,7 +87,7 @@ const IpAddress = () => {
     return filteredUsers;
   }, [data, filterValue]);
 
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
+  const pages = Math.ceil(count / rowsPerPage) || 1;
 
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -257,7 +258,7 @@ const IpAddress = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -288,7 +289,7 @@ const IpAddress = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
     <>

@@ -353,7 +353,7 @@ const PaymentApprovals = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+            : `${selectedKeys.size} of ${count} selected`}
         </span>
         <Pagination
           isCompact
@@ -389,7 +389,7 @@ const PaymentApprovals = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, filteration, pages, hasSearchFilter]);
+  }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
 
   return (
     <>
