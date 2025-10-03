@@ -51,7 +51,7 @@ const Projects = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.leads.estimateListByUserId[0]?.totalProject
+    (state) => state.leads.projectsList?.length
   );
   const data = useSelector((state) => state.leads.projectsList);
   const [filterValue, setFilterValue] = useState("");

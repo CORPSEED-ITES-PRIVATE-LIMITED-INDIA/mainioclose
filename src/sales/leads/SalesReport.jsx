@@ -53,7 +53,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "status",
   "assignee",
   "assignDate",
-  "reopenBy"
+  "reopenBy",
 ];
 
 const SalesReport = () => {
@@ -94,6 +94,7 @@ const SalesReport = () => {
       getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter })
     );
     dispatch(getSaleReportByFilterCount(dateFilter));
+    dispatch(getSalesReportByFilterForExport(dateFilter));
   }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
@@ -120,22 +121,15 @@ const SalesReport = () => {
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -240,11 +234,7 @@ const SalesReport = () => {
     "Lead name": row?.leadOriginalName,
     Status: row?.status,
     Manual: row?.manual ? "Manual" : "Auto",
-    Description: row?.description,
     "Client Email": row?.clientEmail,
-    "Mobile no.": row?.mobileNo,
-    "Previous Assignee person": row?.paName,
-    "Previous Assignee email": row?.paEmail,
     "Current Assignee person": row?.currName,
     "Current Assignee email": row?.currEmail,
     "Created Date": dayjs(row?.assignDate).format("YYYY-MM-DD"),
@@ -257,11 +247,7 @@ const SalesReport = () => {
     "Lead name",
     "Status",
     "Manual",
-    "Description",
     "Client Email",
-    "Mobile no.",
-    "Previous Assignee person",
-    "Previous Assignee email",
     "Current Assignee person",
     "Current Assignee email",
     "Created Date",
@@ -494,7 +480,7 @@ const SalesReport = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, page, pages, hasSearchFilter, count]);
+  }, [selectedKeys, page, pages, hasSearchFilter, data, count]);
 
   return (
     <>
@@ -505,7 +491,7 @@ const SalesReport = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[70vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

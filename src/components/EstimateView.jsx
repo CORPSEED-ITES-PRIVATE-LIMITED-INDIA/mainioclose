@@ -272,7 +272,7 @@ const EstimateView = ({ details }) => {
                         {inrCurrency(details?.gstAmount)}
                       </td>
                       <td className="border border-black p-1 text-right">
-                        {inrCurrency(details?.totalAmount)}
+                        {inrCurrency(details?.totalPrice)}
                       </td>
                     </tr>
                   </tbody>

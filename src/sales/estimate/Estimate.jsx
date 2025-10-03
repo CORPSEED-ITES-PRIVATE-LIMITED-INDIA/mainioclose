@@ -1,8 +1,6 @@
 import {
   addToast,
-  Avatar,
   Button,
-  Chip,
   DatePicker,
   Dropdown,
   DropdownItem,
@@ -28,13 +26,11 @@ import {
 import {
   ChevronDown,
   EllipsisVertical,
-  Phone,
-  Plus,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,11 +44,17 @@ import { getAllUrlList } from "../../toolkit/slices/commonSlice";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { inrCurrency, paymentTermDays } from "../../common";
 import {
+  createPaymentRegister,
   createPurchaseOrder,
   getPaymentDetailListByEstimateId,
   paymentRegisterRemainingAmount,
 } from "../../toolkit/slices/accountSlice";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  parseDate,
+  toCalendarDate,
+  today,
+} from "@internationalized/date";
 import InvoiceView from "../../components/InvoiceView";
 
 const columns = [
@@ -88,72 +90,82 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const formSchema = z.object({
-  paymentType: z.enum(["Fully", "Partial", "Milestone"], {
-    required_error: "Company type is required",
-  }),
-  docPersent: z
-    .number({
-      required_error: "Document rate is required",
-      invalid_type_error: "Document rate must be a number",
-    })
-    .min(0, "Document rate must be at least 0")
-    .max(100, "Document rate cannot exceed 100"),
-  filingPersent: z
-    .number({
-      required_error: "Filing rate is required",
-      invalid_type_error: "Filing rate must be a number",
-    })
-    .min(0, "Filing rate must be at least 0")
-    .max(100, "Filing rate cannot exceed 100"),
-  liasoningPersent: z
-    .number({
-      required_error: "Liasoning rate is required",
-      invalid_type_error: "Liasoning rate must be a number",
-    })
-    .min(0, "Liasoning rate must be at least 0")
-    .max(100, "Liasoning rate cannot exceed 100"),
-  certificatePersent: z
-    .number({
-      required_error: "Certificate rate is required",
-      invalid_type_error: "Certificate rate must be a number",
-    })
-    .min(0, "Certificate rate must be at least 0")
-    .max(100, "Certificate rate cannot exceed 100"),
-  purchaseNumber: z.string().min(1, "PO number cannot be empty"),
-  serviceName: z.string().min(1, "Service name cannot be empty"),
-  purchaseAttach: z.string().optional(),
-  approveDate: z.string().min(1, "Please enter approve date"),
-  paymentTerm: z.string().min(1, "Please select the payment term"),
-  comment: z.string().min(1, "Comment cannot be empty"),
-  companyName: z.string().min(1, "Company name cannot be empty"),
-  transactionId: z.string().min(1, "Transaction ID cannot be empty"),
-  estimateNo: z.string().min(1, "Estimate number cannot be empty"),
-  billingQuantity: z.number().min(0, "Billing quantity must be at least 0"),
-  tdsPresent: z.boolean(),
-  tdsPercent: z.number().min(1, "TDS percent must be at least 0"),
-  professionalFees: z.number().min(1, "Professional fees must be at least 1"),
-  profesionalGst: z.number().min(1, "Professional GST must be at least 0"),
-  govermentfees: z.number().min(0, "Government fees must be at least 0"),
-  govermentGst: z
-    .number()
-    .min(0, "Government GST must be at least 0")
-    .max(100, "Government GST cannot exceed 100"),
-  serviceCharge: z.number().min(0, "Service charge must be at least 0"),
-  serviceGst: z
-    .number()
-    .min(0, "Service GST must be at least 0")
-    .max(100, "Service GST cannot exceed 100"),
-  otherFees: z.number().min(0, "Other fees must be at least 0"),
-  otherGst: z
-    .number()
-    .min(0, "Other GST must be at least 0")
-    .max(100, "Other GST cannot exceed 100"),
-  totalAmount: z.number().min(0, "Total amount must be at least 0"),
-  paymentDate: z.string().min(1, "Please enter payment date"),
-  remark: z.string().min(1, "Remark cannot be empty"),
-  doc: z.string().optional(),
-});
+const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
+  z.object({
+    ...(isPrimary
+      ? {
+          paymentType: z.enum(["Fully", "Partial", "Milestone"], {
+            required_error: "Company type is required",
+          }),
+        }
+      : {}),
+    ...(isMilestone
+      ? {
+          docPersent: z
+            .number({
+              required_error: "Document rate is required",
+              invalid_type_error: "Document rate must be a number",
+            })
+            .min(1, "Document rate must be at least 0")
+            .max(100, "Document rate cannot exceed 100"),
+          filingPersent: z
+            .number({
+              required_error: "Filing rate is required",
+              invalid_type_error: "Filing rate must be a number",
+            })
+            .min(1, "Filing rate must be at least 0")
+            .max(100, "Filing rate cannot exceed 100"),
+          liasoningPersent: z
+            .number({
+              required_error: "Liasoning rate is required",
+              invalid_type_error: "Liasoning rate must be a number",
+            })
+            .min(1, "Liasoning rate must be at least 0")
+            .max(100, "Liasoning rate cannot exceed 100"),
+          certificatePersent: z
+            .number({
+              required_error: "Certificate rate is required",
+              invalid_type_error: "Certificate rate must be a number",
+            })
+            .min(1, "Certificate rate must be at least 0")
+            .max(100, "Certificate rate cannot exceed 100"),
+        }
+      : {}),
+    ...(isPurchaseOrder
+      ? {
+          purchaseNumber: z.string().min(1, "PO number cannot be empty"),
+          serviceName: z.string().min(1, "Service name cannot be empty"),
+          purchaseAttach: z.string().optional(),
+          approveDate: z.string().min(1, "Please enter approve date"),
+          paymentTerm: z.string().min(1, "Please select the payment term"),
+          comment: z.string().min(1, "Comment cannot be empty"),
+        }
+      : {
+          companyName: z.string().min(1, "Company name cannot be empty"),
+          serviceName: z.string().min(1, "Service name cannot be empty"),
+          transactionId: z.string().min(1, "Transaction ID cannot be empty"),
+          estimateNo: z.string().min(1, "Estimate number cannot be empty"),
+          billingQuantity: z.number(),
+          tdsPresent: z.boolean(),
+          ...(isTDS
+            ? {
+                tdsPercent: z.string().min(1, "TDS percent must be at least 0"),
+              }
+            : {}),
+          professionalFees: z.number(),
+          profesionalGst: z.number(),
+          govermentfees: z.number(),
+          govermentGst: z.number(),
+          serviceCharge: z.number(),
+          serviceGst: z.number(),
+          otherFees: z.number(),
+          otherGst: z.number(),
+          totalAmount: z.number(),
+          paymentDate: z.string().min(1, "Please enter payment date"),
+          remark: z.string().min(1, "Remark cannot be empty"),
+          doc: z.string().optional(),
+        }),
+  });
 
 const defaultValues = {
   paymentType: "",
@@ -170,9 +182,8 @@ const defaultValues = {
   companyName: "",
   transactionId: "",
   estimateNo: "",
-  billingQuantity: "",
-  tdsPresent: "",
-  tdsPercent: 0,
+  billingQuantity: 0,
+  tdsPercent: "0", // This is z.string(), so string is fine
   professionalFees: 0,
   profesionalGst: 0,
   govermentfees: 0,
@@ -190,7 +201,7 @@ const defaultValues = {
 const Estimate = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const viewModal = useDisclosure();
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
@@ -203,6 +214,7 @@ const Estimate = () => {
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [paymentType, setPaymentType] = useState("");
   const [isMilestone, setIsMilestone] = useState(false);
+  const [isTDS, setIsTDS] = useState(false);
   const [paymentSelectionType, setPaymentSelectionType] =
     useState("Payment register");
   const [visibleColumns, setVisibleColumns] = useState(
@@ -217,6 +229,12 @@ const Estimate = () => {
     size: 50,
   });
   const [rowItem, setRowItem] = useState(null);
+  const [gstsAmount, setGstsAmount] = useState({
+    govermentGstPercent: 0,
+    profesionalGstPercent: 0,
+    serviceGstPercent: 0,
+    otherGstPercent: 0,
+  });
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -226,8 +244,17 @@ const Estimate = () => {
     formState: { errors },
     reset,
     getValues,
+    setValue,
+    watch,
   } = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(
+      formSchema({
+        isPrimary: remainingAmountDetail?.primary,
+        isMilestone,
+        isPurchaseOrder: paymentSelectionType === "Purchase order",
+        isTDS,
+      })
+    ),
     defaultValues,
   });
 
@@ -279,10 +306,10 @@ const Estimate = () => {
   useEffect(() => {
     if (!remainingAmountDetail?.primary) {
       reset({
-        professionalFees: remainingAmountDetail?.proffees,
-        govermentFees: remainingAmountDetail?.govfees,
-        otherFees: remainingAmountDetail?.otherFees,
-        serviceCharge: remainingAmountDetail?.serviceCharge,
+        professionalFees: Number(remainingAmountDetail?.proffees),
+        govermentFees: Number(remainingAmountDetail?.govfees),
+        otherFees: Number(remainingAmountDetail?.otherFees),
+        serviceCharge: Number(remainingAmountDetail?.serviceCharge),
       });
     }
   }, [remainingAmountDetail, reset]);
@@ -314,47 +341,131 @@ const Estimate = () => {
     dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
     dispatch(paymentRegisterRemainingAmount(rowItem?.id));
     const values = getValues();
+
+    console.log("sdjhsdkhsdkhsdk", values, rowItem);
     reset({
       ...values,
       serviceName: rowItem?.productName,
-      profesionalGst: rowItem?.profesionalGst ? rowItem?.profesionalGst : 0,
+      profesionalGst: rowItem?.profesionalGst
+        ? Number(rowItem?.profesionalGst)
+        : 0,
       companyName: rowItem?.companyName,
-      govermentGst: rowItem?.govermentGst ? rowItem?.govermentGst : 0,
-      serviceGst: rowItem?.serviceGst ? rowItem?.serviceGst : 0,
-      otherGst: rowItem?.otherGst ? rowItem?.otherGst : 0,
+      govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
+      serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
+      otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
     });
     onOpen();
   };
 
-  const onSubmit = (data) => {
-    data.createdById = userId;
-    data.leadId = rowItem?.leadId;
-    data.estimateId = rowItem?.id;
-    dispatch(createPurchaseOrder(data))
-      .then((response) => {
-        if (response.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Payment registered successfully !.",
-            color: "success",
+  const allValues = watch();
+
+  useEffect(() => {
+    const handleValuesChange = () => {
+      const {
+        professionalFees = 0,
+        profesionalGst = 0,
+        govermentfees = 0,
+        govermentGst = 0,
+        serviceCharge = 0,
+        serviceGst = 0,
+        otherFees = 0,
+        otherGst = 0,
+      } = allValues;
+      const professionalGstAmount =
+        (Number(professionalFees) * Number(profesionalGst)) / 100;
+      const professionalTotal =
+        Number(professionalFees) + professionalGstAmount;
+      const governmentGstAmount =
+        (Number(govermentfees) * Number(govermentGst)) / 100;
+      const governmentTotal = Number(govermentfees) + governmentGstAmount;
+      const serviceGstAmount =
+        (Number(serviceCharge) * Number(serviceGst)) / 100;
+      const serviceTotal = Number(serviceCharge) + serviceGstAmount;
+      const otherGstAmount = (Number(otherFees) * Number(otherGst)) / 100;
+      const otherTotal = Number(otherFees) + otherGstAmount;
+      const totalAmount =
+        professionalTotal + governmentTotal + serviceTotal + otherTotal;
+      setValue("totalAmount", Number(totalAmount));
+      setGstsAmount((prev) => ({
+        ...prev,
+        serviceGstPercent: serviceGstAmount,
+        otherGstPercent: otherGstAmount,
+        govermentGstPercent: governmentGstAmount,
+        profesionalGstPercent: professionalGstAmount,
+      }));
+    };
+    handleValuesChange();
+  }, [
+    allValues.professionalFees,
+    allValues.profesionalGst,
+    allValues.serviceCharge,
+    allValues.serviceGst,
+    allValues.govermentGst,
+    allValues.govermentfees,
+    allValues.otherFees,
+    allValues.otherGst,
+  ]);
+
+  const onSubmit = useCallback(
+    (values) => {
+      if (paymentSelectionType === "Purchase order") {
+        values.purchaseAttach = values?.purchaseAttach?.map(
+          (item) => item?.response
+        );
+        data.createdById = userId;
+        data.leadId = rowItem?.leadId;
+        data.estimateId = rowItem?.id;
+        dispatch(createPurchaseOrder(data))
+          .then((response) => {
+            if (response.meta.requestStatus === "fulfilled") {
+              addToast({
+                title: "Payment registered successfully !.",
+                color: "success",
+              });
+              dispatch(getAllEstimateByUserId(userId));
+              dispatch(getTotalCountOfEstimate(userId));
+              reset(defaultValues);
+              onClose();
+              setRowItem(null);
+            } else {
+              addToast({
+                title: "Something went wrong !.",
+                color: "danger",
+              });
+            }
+          })
+          .catch(() => {
+            addToast({
+              title: "Something went wrong !.",
+              color: "danger",
+            });
           });
-          dispatch(getAllEstimateByUserId(userId));
-          dispatch(getTotalCountOfEstimate(userId));
-          reset(defaultValues);
-          onOpenChange(false);
-        } else {
-          addToast({
-            title: "Something went wrong !.",
-            color: "danger",
-          });
-        }
-      })
-      .catch(() => {
-        addToast({
-          title: "Something went wrong !.",
-          color: "danger",
-        });
-      });
-  };
+      } else if (paymentSelectionType === "Payment register") {
+        values.paymentType = values.paymentType
+          ? values.paymentType
+          : remainingAmountDetail?.paymentType;
+        let obj = { ...values, ...gstsAmount, estimateId: rowItem?.id };
+        dispatch(createPaymentRegister(obj))
+          .then((resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+              addToast({
+                title: "Payment registered successfully !.",
+                color: "success",
+              });
+              onClose();
+              reset(defaultValues);
+              setRowItem(null);
+            } else {
+              addToast({ title: "Something went wrong !.", color: "danger" });
+            }
+          })
+          .catch(() =>
+            addToast({ title: "Something went wrong !.", color: "danger" })
+          );
+      }
+    },
+    [reset, dispatch, rowItem, gstsAmount, remainingAmountDetail]
+  );
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
@@ -403,7 +514,7 @@ const Estimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-medium">
-              {inrCurrency(rowData?.professionalFees) || "-"}
+              {inrCurrency(rowData?.professionalFees || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.profesionalGst || "-"}%
@@ -414,7 +525,7 @@ const Estimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-medium">
-              {inrCurrency(rowData?.govermentfees) || "-"}
+              {inrCurrency(rowData?.govermentfees || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.govermentGst || "-"}%
@@ -425,7 +536,7 @@ const Estimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-medium">
-              {inrCurrency(rowData?.serviceCharge) || "-"}
+              {inrCurrency(rowData?.serviceCharge || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.serviceGst || "-"}%
@@ -436,7 +547,7 @@ const Estimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-medium">
-              {inrCurrency(rowData?.otherFees) || "-"}
+              {inrCurrency(rowData?.otherFees || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.otherGst || "-"}%
@@ -787,7 +898,11 @@ const Estimate = () => {
                             label="Document rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            {...field}
+                            value={field?.value}
+                            onChange={(e) => {
+                              const temp = e.target.value;
+                              field.onChange(temp);
+                            }}
                           />
                         )}
                       />
@@ -802,7 +917,11 @@ const Estimate = () => {
                             label="Filing rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            {...field}
+                            value={field?.value}
+                            onChange={(e) => {
+                              const temp = e.target.value;
+                              field.onChange(temp);
+                            }}
                           />
                         )}
                       />
@@ -817,7 +936,11 @@ const Estimate = () => {
                             label="Liasoning rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            {...field}
+                            value={field?.value}
+                            onChange={(e) => {
+                              const temp = e.target.value;
+                              field.onChange(temp);
+                            }}
                           />
                         )}
                       />
@@ -832,7 +955,11 @@ const Estimate = () => {
                             label="Certificate rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            {...field}
+                            value={field?.value}
+                            onChange={(e) => {
+                              const temp = e.target.value;
+                              field.onChange(temp);
+                            }}
                           />
                         )}
                       />
@@ -869,7 +996,11 @@ const Estimate = () => {
                               label="PO number"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field?.value}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(temp);
+                              }}
                             />
                           )}
                         />
@@ -884,8 +1015,8 @@ const Estimate = () => {
                               isInvalid={!!error}
                               data={urlList || []}
                               labelKey="urlsName"
-                              valueKey="id"
-                              value={field.value}
+                              valueKey="urlsName"
+                              value={String(field.value)}
                               onChange={(value) => {
                                 field.onChange(value);
                               }}
@@ -961,7 +1092,11 @@ const Estimate = () => {
                               label="Comment"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field?.value}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(temp);
+                              }}
                             />
                           )}
                         />
@@ -978,7 +1113,11 @@ const Estimate = () => {
                               label="Company name"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field?.value}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(temp);
+                              }}
                             />
                           )}
                         />
@@ -993,7 +1132,7 @@ const Estimate = () => {
                               isInvalid={!!error}
                               data={urlList || []}
                               labelKey="urlsName"
-                              valueKey="id"
+                              valueKey="urlsName"
                               value={field.value}
                               onChange={(value) => {
                                 field.onChange(value);
@@ -1011,7 +1150,11 @@ const Estimate = () => {
                               label="Transaction Id"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field?.value}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(temp);
+                              }}
                             />
                           )}
                         />
@@ -1024,7 +1167,11 @@ const Estimate = () => {
                               label="Estimate number"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field?.value}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(temp);
+                              }}
                             />
                           )}
                         />
@@ -1037,7 +1184,12 @@ const Estimate = () => {
                               label="Billing quantity"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1051,11 +1203,12 @@ const Estimate = () => {
                               label="TDS present"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
-                              value={field.value}
-                              onChange={(e) =>
-                                field.onChange(e.target.value === "true")
-                              }
+                              selectedKeys={[String(field.value)]}
+                              onSelectionChange={(e) => {
+                                const key = Array.from(e)[0];
+                                field.onChange(key === "true");
+                                setIsTDS(key === "true");
+                              }}
                               items={[
                                 { label: "Yes", key: true },
                                 { label: "No", key: false },
@@ -1070,19 +1223,26 @@ const Estimate = () => {
                           )}
                         />
 
-                        <Controller
-                          name="tdsPercent"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="TDS percent %"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              {...field}
-                            />
-                          )}
-                        />
+                        {isTDS && (
+                          <Controller
+                            name="tdsPercent"
+                            control={control}
+                            render={({ field, fieldState: { error } }) => (
+                              <Input
+                                isRequired
+                                label="TDS percent %"
+                                errorMessage={error?.message}
+                                isInvalid={!!error}
+                                value={field?.value}
+                                onChange={(e) => {
+                                  const temp = e.target.value;
+                                  field.onChange(temp);
+                                }}
+                              />
+                            )}
+                          />
+                        )}
+
                         <Controller
                           name="professionalFees"
                           control={control}
@@ -1092,12 +1252,16 @@ const Estimate = () => {
                               label="Professional fees"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               isDisabled={
                                 paymentType === "Partial" ||
                                 paymentType === "Fully"
                               }
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1110,9 +1274,13 @@ const Estimate = () => {
                               label="Professional GST %"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               isDisabled
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1125,12 +1293,16 @@ const Estimate = () => {
                               label="Government fees"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               isDisabled={
                                 paymentType === "Partial" ||
                                 paymentType === "Fully"
                               }
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1143,9 +1315,13 @@ const Estimate = () => {
                               label="Government GST %"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               isDisabled
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1162,8 +1338,12 @@ const Estimate = () => {
                                 paymentType === "Partial" ||
                                 paymentType === "Fully"
                               }
-                              {...field}
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1176,9 +1356,13 @@ const Estimate = () => {
                               label="Service GST %"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               isDisabled
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1195,8 +1379,12 @@ const Estimate = () => {
                                 paymentType === "Partial" ||
                                 paymentType === "Fully"
                               }
-                              {...field}
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1210,8 +1398,12 @@ const Estimate = () => {
                               label="Other GST %"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               type="number"
+                              value={Number(field?.value)}
+                              onChange={(e) => {
+                                const temp = e.target.value;
+                                field.onChange(Number(temp));
+                              }}
                             />
                           )}
                         />
@@ -1224,9 +1416,12 @@ const Estimate = () => {
                               label="Total amount"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
                               isDisabled
                               type="number"
+                              value={Number(field.value)}
+                              onChange={(e) =>
+                                field.onChange(Number(e.target.value))
+                              }
                             />
                           )}
                         />
@@ -1260,7 +1455,8 @@ const Estimate = () => {
                               label="Remark"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
                             />
                           )}
                         />

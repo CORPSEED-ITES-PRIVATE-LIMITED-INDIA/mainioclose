@@ -32,6 +32,17 @@ export const createPurchaseOrder = createAsyncThunk(
   }
 );
 
+export const createPaymentRegister = createAsyncThunk(
+  "createPaymentRegister",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/paymentRegister/createPaymentRegister`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getPaymentDetailListByEstimateId = createAsyncThunk(
   "getPaymentDetailListByEstimateId",
   async (id) => {
