@@ -520,7 +520,6 @@ const LeadEstimate = () => {
         };
       }
     });
-
     reset(updatedValues);
     setProductFees((prev) => ({
       ...prev,
@@ -585,18 +584,18 @@ const LeadEstimate = () => {
       secondaryContact: String(details?.secondaryContact?.id),
       primaryContact: String(details?.primaryContact?.id),
       productId: String(details?.product?.id),
-      professionalFees: String(details?.professionalFees),
+      professionalFees: Number(details?.professionalFees),
       professionalCode: details?.professionalCode,
-      profesionalGst: details?.profesionalGst,
-      serviceCharge: details?.serviceCharge,
+      profesionalGst: Number(details?.profesionalGst),
+      serviceCharge: Number(details?.serviceCharge),
       serviceCode: details?.serviceCode,
-      serviceGst: details?.serviceGst,
-      govermentfees: String(details?.govermentfees),
+      serviceGst: Number(details?.serviceGst),
+      govermentfees: Number(details?.govermentfees),
       govermentCode: details?.govermentCode,
-      govermentGst: details?.govermentGst,
-      otherFees: String(details?.otherFees),
+      govermentGst: Number(details?.govermentGst),
+      otherFees: Number(details?.otherFees),
       otherCode: details?.otherCode,
-      otherGst: details?.otherGst,
+      otherGst: Number(details?.otherGst),
       assigneeId: String(details?.assigneeId?.id),
       orderNumber: details?.orderNumber,
       purchaseDate: dayjs(details?.purchaseDate),

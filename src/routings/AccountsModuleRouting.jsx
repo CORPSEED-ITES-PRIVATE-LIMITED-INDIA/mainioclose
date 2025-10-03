@@ -22,6 +22,7 @@ import LedgerType from "../accounts/organization/settings/LedgerType";
 import VoucherType from "../accounts/organization/settings/VoucherType";
 import Statutory from "../accounts/organization/settings/Statutory";
 import OrganizationEstimate from "../accounts/organization/OrganizationEstimate";
+import VendorPayments from "../accounts/VendorPayments";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -34,6 +35,7 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
+      <Route path="accounts/vendor-payments" element={<VendorPayments />} />
 
       <Route path="accounts/organizations" element={<Organizations />}>
         <Route index element={<OrganizationDetail />} />

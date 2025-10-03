@@ -194,8 +194,20 @@ export const navItems = [
   {
     title: "Vendor's",
     icon: "SquareUserRound",
-    url: "vendors-requests",
-    key: "vendors-requests",
+    url: "",
+    key: "vendorsRequest",
+    children: [
+      {
+        title: "Vendor",
+        url: "vendors-requests",
+        key: "vendor",
+      },
+      {
+        title: "Payments",
+        url: "vendors-payments",
+        key: "vendors-payments",
+      },
+    ],
   },
   {
     title: "Settings",
@@ -306,6 +318,12 @@ export const accountNavItems = [
     icon: "Book",
   },
   {
+    title: "Vendor's payments",
+    url: "accounts/vendor-payments",
+    key: "accounts/vendor-payments",
+    icon: "Coin",
+  },
+  {
     title: "Organization",
     icon: "Building2",
     url: "accounts/organizations",
@@ -393,7 +411,12 @@ export const salesNavItems = [
     key: "leads",
   },
   { title: "Company", icon: "Building", url: "sales/company", key: "company" },
-  { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
+  {
+    title: "Lead form",
+    icon: "FileText",
+    url: "sales/leadForm",
+    key: "leadForm",
+  },
   {
     title: "Estimate",
     icon: "FileText",
