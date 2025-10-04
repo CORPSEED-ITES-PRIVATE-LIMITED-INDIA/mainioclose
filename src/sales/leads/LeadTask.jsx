@@ -193,6 +193,7 @@ const LeadTask = () => {
           taskId: rowData?.id,
           leadId,
           assignedById: userId,
+          currentUserId:userId
         })
       )
         .then((resp) => {
