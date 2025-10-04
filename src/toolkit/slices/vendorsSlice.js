@@ -5,7 +5,7 @@ export const allVendorsCategory = createAsyncThunk(
   "allVendorsCatagory",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=800`
+      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=1000`
     );
     return response.data;
   }
@@ -52,6 +52,58 @@ export const getAllVendorsRequest = createAsyncThunk(
   }
 );
 
+export const createVendorsCategory = createAsyncThunk(
+  "createVendorsCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/create-vendor-category?userId=${data?.userId}&categoryName=${data?.categoryName}`
+    );
+    return response.data;
+  }
+);
+
+export const updateVendorsCategory = createAsyncThunk(
+  "updateVendorsCategory",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/update-vendor-category?userId=${data?.userId}&categoryId=${data?.categoryId}&newCategoryName=${data?.categoryName}`
+    );
+    return response.data;
+  }
+);
+
+export const createVendorsSubCategory = createAsyncThunk(
+  "createVendorsCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/create-vendor-sub-category?userId=${data?.userId}`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const updateVendorsSubCategory = createAsyncThunk(
+  "updateVendorsSubCategory",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/update-vendor-sub-category?userId=${data?.userId}&categoryId=${data?.categoryId}&subCategoryId=${data?.subCategoryId}&newSubCategoryName=${data?.subCategoryName}&vendorCategoryResearchTat=${data?.vendorCategoryResearchTat}&vendorCompletionTat=${data?.vendorCompletionTat}`
+    );
+    return response.data;
+  }
+);
+
+export const updateProcurementUsers = createAsyncThunk(
+  "updateProcurementUsers",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/map-assignee-to-sub-category?subCategoryId=${data?.subCategoryId}`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -59,8 +111,8 @@ const VendorsSlice = createSlice({
     loading: "",
     singleCategoryDetail: {},
     vendorsList: [],
-    totalVendorRequestCount:0,
-    allVendorsRequestList:[]
+    totalVendorRequestCount: 0,
+    allVendorsRequestList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -100,7 +152,7 @@ const VendorsSlice = createSlice({
       state.vendorsList = [];
     });
 
-     builder.addCase(getAllVendorsRequest.pending, (state, action) => {
+    builder.addCase(getAllVendorsRequest.pending, (state, action) => {
       state.loading = "pending";
     });
     builder.addCase(getAllVendorsRequest.fulfilled, (state, action) => {

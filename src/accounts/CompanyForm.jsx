@@ -142,7 +142,6 @@ const CompanyForm = () => {
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
-
   const sortedItems = React.useMemo(() => {
     return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
@@ -394,17 +393,16 @@ const CompanyForm = () => {
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu selectionMode="single">
-                  {department?.department === "Accounts" ||
-                    (admin && (
-                      <DropdownItem
-                        key="action"
-                        onPress={() => {
-                          handleEdit(rowData);
-                        }}
-                      >
-                        Action
-                      </DropdownItem>
-                    ))}
+                  {(department?.department === "Accounts" || admin) && (
+                    <DropdownItem
+                      key="action"
+                      onPress={() => {
+                        handleEdit(rowData);
+                      }}
+                    >
+                      Action
+                    </DropdownItem>
+                  )}
                   <DropdownItem
                     key="edit"
                     onPress={() => {

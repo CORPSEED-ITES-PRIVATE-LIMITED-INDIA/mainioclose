@@ -10,6 +10,8 @@ import Slug from "../setting/slug/Slug";
 import Urls from "../setting/urls/Urls";
 import Department from "../setting/department/Department";
 import Designation from "../setting/designation/Designation";
+import ProcurementCategory from "../setting/procurement/ProcurementCategory";
+import ProcurementSubCategory from "../setting/procurement/ProcurementSubCategory";
 
 const ERPSettingRouting = () => {
   return (
@@ -30,6 +32,14 @@ const ERPSettingRouting = () => {
       <Route path="settings/urls" element={<Urls />} />
       <Route path="settings/department" element={<Department />} />
       <Route path="settings/designation" element={<Designation />} />
+      <Route
+        path="settings/procurementCategory"
+        element={<ProcurementCategory />}
+      />
+      <Route
+        path="settings/procurementCategory/:categoryId/subcategory"
+        element={<ProcurementSubCategory />}
+      />
     </>
   );
 };

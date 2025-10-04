@@ -263,6 +263,12 @@ export const navItems = [
         url: "settings/designation",
         key: "designation",
       },
+      {
+        title: "Procurement category",
+        icon: "",
+        url: "settings/procurementCategory",
+        key: "procurementCategory",
+      },
     ],
   },
 ];
@@ -326,7 +332,7 @@ export const accountNavItems = [
     title: "Vendor's payments",
     url: "accounts/vendor-payments",
     key: "accounts/vendor-payments",
-    icon: "Coin",
+    icon: "HandCoins",
   },
   {
     title: "Organization",
@@ -351,10 +357,9 @@ export const accountNavItems = [
       },
       {
         title: "Daily book",
-        url: "accounts/organizations/dailyBook",
-        key: "dailyBook",
+        url: "accounts/organizations/dayBook",
+        key: "dayBook",
       },
-
       {
         title: "Profit/Loss",
         url: "accounts/organizations/profitLoss",

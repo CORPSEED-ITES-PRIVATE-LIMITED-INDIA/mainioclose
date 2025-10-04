@@ -110,8 +110,8 @@ const VendorRequests = () => {
   const subCategoryList = useSelector(
     (state) => state.vendors.singleCategoryDetail.subCategories
   );
-  const count = useSelector((state) => state.vendors.totalItems);
-  const data = useSelector((state) => state.vendors.vendorsRequests)||[];
+  const count = useSelector((state) => state.vendors.totalVendorRequestCount);
+  const data = useSelector((state) => state.vendors.allVendorsRequestList)||[];
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
