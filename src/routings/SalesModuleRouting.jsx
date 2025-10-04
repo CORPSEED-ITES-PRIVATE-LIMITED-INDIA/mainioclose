@@ -28,7 +28,14 @@ import Projects from "../sales/leads/Projects";
 const SalesModuleRouting = () => {
   return (
     <>
-      <Route path="sales/allTask" element={<AllTasks />} />
+      <Route
+        path="sales/allTask"
+        element={
+          <KeepAlive>
+            <AllTasks />
+          </KeepAlive>
+        }
+      />
       <Route path="sales/allTask/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
@@ -52,6 +59,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadTasks" element={<LeadTask />} />
       </Route>
       <Route path="sales/leads/:leadId/leadHistory" element={<LeadHistory />} />
       <Route path="sales/leads/:leadId/leadTasks" element={<LeadTask />} />
@@ -75,7 +83,7 @@ const SalesModuleRouting = () => {
       <Route path="sales/autoHistory" element={<AutoHistory />} />
       <Route path="sales/salesReport" element={<SalesReport />} />
       <Route path="sales/autoStatus" element={<AutomationStatus />} />
-       <Route path="sales/autoHistory/:leadId" element={<LeadDetail />}>
+      <Route path="sales/autoHistory/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />

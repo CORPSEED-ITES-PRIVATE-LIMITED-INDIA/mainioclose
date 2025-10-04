@@ -492,12 +492,12 @@ const Leads = () => {
                 >
                   History
                 </DropdownItem>
-                <DropdownItem
+                {/* <DropdownItem
                   key="tasks"
                   href={`erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
                 >
                   Lead tasks
-                </DropdownItem>
+                </DropdownItem> */}
                 {/* <DropdownItem key="edit">Edit</DropdownItem> */}
                 <DropdownItem key="delete" color="danger">
                   Delete

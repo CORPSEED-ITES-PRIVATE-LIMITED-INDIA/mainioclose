@@ -883,7 +883,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <SingleFileUploader
-                  isRequired
+                  isRequired={formValidation?.isCompanyRegistered}
                   label="GST document"
                   value={field.value}
                   onChange={(value) => {

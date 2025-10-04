@@ -45,6 +45,10 @@ const LeadDetail = () => {
       id: "leadEstimate",
       label: "Estimate",
     },
+    {
+      id: "leadTasks",
+      label: "Tasks",
+    },
   ];
 
   return (
