@@ -284,6 +284,17 @@ export const getCompanyDetailsById = createAsyncThunk(
   }
 );
 
+export const updateMultiCompanyAssignee = createAsyncThunk(
+  "updateMultiAssignee",
+  async (data) => {
+    const response = api.put(
+      `/leadService/api/v1/company/updateMultiCompanyAssignee`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {

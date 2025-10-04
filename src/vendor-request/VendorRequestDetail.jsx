@@ -1,18 +1,79 @@
 import { Button } from "@heroui/button";
-import { Input, useDisclosure } from "@heroui/react";
+import {
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  useDisclosure,
+} from "@heroui/react";
 import { useState } from "react";
+import { getAllVendorsStatus } from "../toolkit/slices/vendorsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const formSchema = () =>
+  z.object({
+    requestStatus: z.string().min(1, "Please select status"),
+    quotationFilePath: z.string().min(1, "Please upload document"),
+    quotationAmount: z.number(),
+    additionalMailId: z.string().optional(),
+    agreementName: z.string().optional(),
+    agreementWithClientDocumentPath: z.string().optional(),
+    researchName: z.string().optional(),
+    researchDocumentPath: z.string().optional(),
+    cancelReason: z.string().min(1, "Please enter reason"),
+    internalVendorPrices: z.string().optional().or(z.literal("")),
+    externalVendorPrice: z.string().optional().or(z.literal("")),
+    comment: z.string().optional().or(z.literal("")),
+  });
+
+const defaultValues = {
+  requestStatus: "",
+  quotationFilePath: "",
+  quotationAmount: "",
+  additionalMailId: "",
+  agreementName: "",
+  agreementWithClientDocumentPath: "",
+  researchName: "",
+  researchDocumentPath: "",
+  cancelReason: "",
+  internalVendorPrices: "",
+  externalVendorPrice: "",
+  comment: "",
+};
 
 const VendorRequestDetail = () => {
+  const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const vendorsStatus = useSelector((state) => state.vendors.vendorsStatus);
   const [statusIsFinished, setStatusIsFinished] = useState(false);
+  const [statusIsCanceled, setStatusIsCanceled] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
+  const handleUpdateBtn = () => {
+    onOpen();
+    dispatch(getAllVendorsStatus());
+  };
 
   return (
     <div>
       <div className="w-full flex justify-between px-2">
         <div></div>
-        <Button onPress={onOpen}>Update status</Button>
+        <Button onPress={handleUpdateBtn}>Update status</Button>
       </div>
-      {/* <Modal
+      <Modal
         size="3xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
@@ -39,13 +100,12 @@ const VendorRequestDetail = () => {
                           label="Status"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          data={vendorsCategoryList || []}
+                          data={vendorsStatus || []}
                           labelKey="statusName"
                           valueKey="statusName"
                           name="requestStatus"
                           value={field.value}
                           onChange={(value) => {
-                            dispatch(getSingleCategoryDataById(value));
                             field.onChange(value);
                           }}
                         />
@@ -95,82 +155,100 @@ const VendorRequestDetail = () => {
                           )}
                         />
                         <Controller
-                          name="companyName"
+                          name="agreementName"
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
-                              isRequired
-                              label="Company name"
+                              label="Agreement name"
                               errorMessage={error?.message}
                               isInvalid={!!error}
-                              {...field}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="agreementWithClientDocumentPath"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <FileUploader
+                              uploadingType="multiple"
+                              label="Agreement attachements"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="researchName"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              label="Research name"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="researchDocumentPath"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <FileUploader
+                              uploadingType="multiple"
+                              label="Research attachements"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
                             />
                           )}
                         />
                       </>
                     )}
 
-                    <Controller
-                      name="subVendorCategoryId"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          label="Sub-Category"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          name="subVendorCategoryId"
-                          data={subCategoryList || []}
-                          labelKey="subCategoryName"
-                          valueKey="subCategoryId"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
+                    {statusIsCanceled && (
+                      <>
+                        <Controller
+                          name="cancelReason"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Reason"
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
                         />
-                      )}
-                    />
-
-                    <Controller
-                      name="clientMobileNumber"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Contact number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
+                        <Controller
+                          name="internalVendorPrices"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              label="Amount given to vendor"
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
                         />
-                      )}
-                    />
-
-                    <Controller
-                      name="clientBudgetPrice"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Client budget"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
+                        <Controller
+                          name="externalVendorPrice"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              label="Amount given by vendor"
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    <Controller
-                      name="description"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Description"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
+                      </>
+                    )}
                   </div>
 
                   <ModalFooter className="flex justify-end">
@@ -184,7 +262,7 @@ const VendorRequestDetail = () => {
             </>
           )}
         </ModalContent>
-      </Modal> */}
+      </Modal>
     </div>
   );
 };

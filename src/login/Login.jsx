@@ -35,7 +35,9 @@ const Login = () => {
                     navigate(`/erp/${resp?.payload?.id}/dashboard`);
                   } else {
                     if (response.payload?.department === "Procurement") {
-                      navigate(`/erp/${resp?.payload?.id}/procurement/vendors-requests`);
+                      navigate(
+                        `/erp/${resp?.payload?.id}/procurement/vendors-requests`
+                      );
                     }
                     if (response.payload?.department === "Human Resource") {
                       navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
