@@ -148,7 +148,7 @@ const LeadSearch = () => {
       case "updatedBy":
         return (
           <div>
-            <span className="font-normal">{lead?.updatedBy}</span>
+            <span className="font-normal">{lead?.updatedBy?.fullName}</span>
             <span className="font-normal text-muted-foreground">
               {lead?.updatedDate
                 ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
