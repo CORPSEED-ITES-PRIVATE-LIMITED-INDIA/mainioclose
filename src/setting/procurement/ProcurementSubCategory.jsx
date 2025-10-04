@@ -294,7 +294,7 @@ const ProcurementSubCategory = () => {
           }
         })
         .catch(() => {
-          addToast({ message: "Something went wrong !.", color: "danger" });
+          addToast({ title: "Something went wrong !.", color: "danger" });
         });
     }
   };
@@ -313,16 +313,16 @@ const ProcurementSubCategory = () => {
               title: "Assignee updated successfully",
               color: "success",
             });
-            setOpenModal(false);
+            assigneeModal.onClose();
             dispatch(getSingleCategoryDataById(categoryId));
             assigneeForm.reset(assigneeFormDefaultValues);
             setRowItem(null);
           } else {
-            addToast({ message: "Something went wrong !.", color: "danger" });
+            addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ message: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" })
         );
     },
     [dispatch, rowItem, assigneeForm]

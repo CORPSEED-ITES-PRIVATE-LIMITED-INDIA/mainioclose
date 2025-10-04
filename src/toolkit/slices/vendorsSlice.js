@@ -96,9 +96,10 @@ export const updateVendorsSubCategory = createAsyncThunk(
 export const updateProcurementUsers = createAsyncThunk(
   "updateProcurementUsers",
   async (data) => {
+    console.log("dshgsdjhgdsjgs",data)
     const response = await api.post(
       `/leadService/api/v1/vendor/map-assignee-to-sub-category?subCategoryId=${data?.subCategoryId}`,
-      data
+      JSON.stringify(data?.data || [])
     );
     return response.data;
   }
