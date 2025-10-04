@@ -418,7 +418,7 @@ const Vendors = () => {
             </Dropdown>
 
             <Button color="primary" onPress={onOpen} endContent={<Plus />}>
-              Add vendors
+              Add vendor's request
             </Button>
           </div>
         </div>

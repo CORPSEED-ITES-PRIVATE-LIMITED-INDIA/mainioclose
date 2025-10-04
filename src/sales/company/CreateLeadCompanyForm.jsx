@@ -51,6 +51,7 @@ const formSchema = ({
   secondaryContact,
   adminRole,
   editForm,
+  isCompanyRegistered,
 }) => {
   return z.object({
     ...(isExistingCompany
@@ -75,8 +76,15 @@ const formSchema = ({
         }
       : {}),
     gstType: z.string().min(1, "Please select gst type."),
-    gstNo: z.string().min(15, "please enter GST number"),
-    panNo: z.string().min(10, "please enter pan number"),
+    ...(isCompanyRegistered
+      ? {
+          gstNo: z.string().min(15, "please enter GST number"),
+          panNo: z.string().min(10, "please enter pan number"),
+        }
+      : {
+          gstNo: z.string().optional(),
+          panNo: z.string().optional(),
+        }),
     amount: z.string().min(1, "please enter the amount ."),
     ...(adminRole
       ? {
@@ -275,6 +283,7 @@ const CreateLeadCompanyForm = ({
     secondaryContact: false,
     adminRole: adminRole,
     editForm: edit ? true : false,
+    isCompanyRegistered: false,
   });
   const [panError, setPanError] = useState("");
   const [gstError, setGstError] = useState("");
@@ -695,7 +704,14 @@ const CreateLeadCompanyForm = ({
                   isInvalid={!!error}
                   {...field}
                   selectedKeys={[field.value]}
-                  onSelectionChange={(e) => field.onChange(Array.from(e)[0])}
+                  onSelectionChange={(e) => {
+                    const key = Array.from(e)[0];
+                    field.onChange(key);
+                    setFormValidation((prev) => ({
+                      ...prev,
+                      isCompanyRegistered: key === "Registered",
+                    }));
+                  }}
                   items={[
                     { label: "Registered", key: "Registered" },
                     { label: "Unregistered", key: "Unregistered" },
@@ -715,7 +731,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
-                  isRequired
+                  isRequired={formValidation?.isCompanyRegistered}
                   label="GST number"
                   maxLength={15}
                   errorMessage={error?.message || gstError}
@@ -733,7 +749,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
-                  isRequired
+                  isRequired={formValidation?.isCompanyRegistered}
                   label="Pan number"
                   maxLength={10}
                   errorMessage={error?.message || panError}

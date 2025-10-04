@@ -96,11 +96,19 @@ export const updateVendorsSubCategory = createAsyncThunk(
 export const updateProcurementUsers = createAsyncThunk(
   "updateProcurementUsers",
   async (data) => {
-    console.log("dshgsdjhgdsjgs",data)
+    console.log("dshgsdjhgdsjgs", data);
     const response = await api.post(
       `/leadService/api/v1/vendor/map-assignee-to-sub-category?subCategoryId=${data?.subCategoryId}`,
       JSON.stringify(data?.data || [])
     );
+    return response.data;
+  }
+);
+
+export const getAllVendorsStatus = createAsyncThunk(
+  "getAllVendorsStatus",
+  async () => {
+    const response = await api.get(`/leadService/api/v1/vendor-status-all`);
     return response.data;
   }
 );
@@ -114,6 +122,7 @@ const VendorsSlice = createSlice({
     vendorsList: [],
     totalVendorRequestCount: 0,
     allVendorsRequestList: [],
+    vendorsStatus: [],
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -153,7 +162,7 @@ const VendorsSlice = createSlice({
       state.vendorsList = [];
     });
 
-    builder.addCase(getAllVendorsRequest.pending, (state, action) => {
+    builder.addCase(getAllVendorsRequest.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllVendorsRequest.fulfilled, (state, action) => {
@@ -165,6 +174,18 @@ const VendorsSlice = createSlice({
       state.loading = "rejected";
       state.totalVendorRequestCount = 0;
       state.allVendorsRequestList = [];
+    });
+
+    builder.addCase(getAllVendorsStatus.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorsStatus.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorsStatus = action?.payload;
+    });
+    builder.addCase(getAllVendorsStatus.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsStatus = [];
     });
   },
 });

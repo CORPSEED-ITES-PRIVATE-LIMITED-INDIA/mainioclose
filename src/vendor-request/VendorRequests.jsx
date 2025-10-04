@@ -4,11 +4,6 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
   Pagination,
   Table,
   TableBody,
@@ -16,30 +11,21 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-  useDisclosure,
   Input,
-  addToast,
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@heroui/react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  Info,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ChevronDown, EllipsisVertical, Info, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import dayjs from "dayjs";
-import { addVendorsDetail, allVendorsCategory, getAllVendorsRequest, getSingleCategoryDataById } from "../toolkit/slices/vendorsSlice";
-import NewSelect from "../components/NewSelect";
-import FileUploader from "../components/FileUploader";
+import {
+  allVendorsCategory,
+  getAllVendorsRequest,
+} from "../toolkit/slices/vendorsSlice";
+import { inrCurrency } from "../common";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -74,44 +60,12 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const formSchema = z.object({
-  clientName: z.string().min(1, "please enter the client name"),
-  clientMailId: z.string().min(1, "please enter email address"),
-  companyName: z.string().min(1, "please enter company name"),
-  vendorCategoryId: z.string().min(1, "please select category id"),
-  subVendorCategoryId: z.string().min(1, "please select subcategory id"),
-  salesAttachmentReferencePath: z
-    .array(z.string().min(1, "Each document path must not be empty"))
-    .min(1, "Please upload at least one document"),
-  clientMobileNumber: z.string().min(1, "please enter client mobile number"),
-  clientBudgetPrice: z.string().optional(),
-  description: z.string().min(1, "please enter description"),
-});
-
-const defaultValues = {
-  clientName: "",
-  clientMailId: "",
-  companyName: "",
-  vendorCategoryId: "",
-  subVendorCategoryId: "",
-  salesAttachmentReferencePath: [],
-  clientMobileNumber: "",
-  clientBudgetPrice: "",
-  description: "",
-};
-
 const VendorRequests = () => {
   const dispatch = useDispatch();
-  const { userId, leadId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const vendorsCategoryList = useSelector(
-    (state) => state.vendors.vendorsCategoryList
-  );
-  const subCategoryList = useSelector(
-    (state) => state.vendors.singleCategoryDetail.subCategories
-  );
+  const { userId } = useParams();
   const count = useSelector((state) => state.vendors.totalVendorRequestCount);
-  const data = useSelector((state) => state.vendors.allVendorsRequestList)||[];
+  const data =
+    useSelector((state) => state.vendors.allVendorsRequestList) || [];
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -131,16 +85,6 @@ const VendorRequests = () => {
     dispatch(allVendorsCategory());
     dispatch(getAllVendorsRequest({ userId, ...filteration }));
   }, [dispatch]);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: defaultValues,
-  });
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -163,27 +107,23 @@ const VendorRequests = () => {
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
-  const items = useMemo(() => {
-    const start = (filteration?.page - 1) * filteration?.size;
-    const end = start + filteration?.size;
-    return filteredItems.slice(start, end);
-  }, [filteration, filteredItems]);
-
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "clientName":
         return (
           <div className="flex items-start gap-2">
-            <span className="font-medium">{rowData?.clientName}</span>
+            <Link className="font-medium" to={`${rowData?.id}/requestDetail`}>
+              {rowData?.clientName}
+            </Link>
           </div>
         );
       case "clientCompanyName":
@@ -204,7 +144,7 @@ const VendorRequests = () => {
       case "budgetPrice":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">₹ {rowData?.budgetPrice}</span>
+            <span className="font-normal"> {inrCurrency(rowData?.budgetPrice)}</span>
           </div>
         );
       case "vendorCategoryName":
@@ -238,19 +178,16 @@ const VendorRequests = () => {
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
               <span className="">
-                Completion days : {rowData?.completionDays|| "-"}
+                Completion days : {rowData?.completionDays || "-"}
               </span>
               <span className="text-xs text-foreground-400">
-                Days left :{" "}
-                {rowData?.tatDaysLeft|| "-"}
+                Days left : {rowData?.tatDaysLeft || "-"}
               </span>
               <span className="text-xs text-foreground-400">
-                Overdue :{" "}
-                {rowData?.overDueTat || "-"}
+                Overdue : {rowData?.overDueTat || "-"}
               </span>
               <span className="text-xs text-foreground-400">
-                Subcategory TAT :{" "}
-                {rowData?.subCategoryTatDays || "-"}
+                Subcategory TAT : {rowData?.subCategoryTatDays || "-"}
               </span>
             </div>
             <Popover>
@@ -266,23 +203,24 @@ const VendorRequests = () => {
                       Updated history
                     </h3>
                     <div className="text-tiny">
-                      {rowData?.updateHistory?.map((item,idx) => {
+                      {rowData?.updateHistory?.map((item, idx) => {
                         return (
-                          <div className="flex flex-col my-4" key={`history${idx}`}>
+                          <div
+                            className="flex flex-col my-4"
+                            key={`history${idx}`}
+                          >
                             <span className="">
-                              Status :{" "}
-                              {item?.requestStatus || "-"}
+                              Status : {item?.requestStatus || "-"}
                             </span>
                             <span className="text-xs text-foreground-400">
                               Updated on :{" "}
-                              {dayjs(
-                                item?.updateDate
-                              ).format("DD-MM-YYYY , hh:mm a") || "-"}
+                              {dayjs(item?.updateDate).format(
+                                "DD-MM-YYYY , hh:mm a"
+                              ) || "-"}
                             </span>
                             <span className="text-xs text-foreground-400">
                               Updated description :{" "}
-                              {item?.updateDescription ||
-                                "-"}
+                              {item?.updateDescription || "-"}
                             </span>
                           </div>
                         );
@@ -359,31 +297,6 @@ const VendorRequests = () => {
     setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const onSubmit = (values) => {
-    let tempData = {
-      leadId,
-      userId,
-      data: values,
-    };
-    dispatch(addVendorsDetail(tempData))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Vendor's details added successfully !.",
-            color: "success",
-          });
-          onOpenChange(false);
-          dispatch(getVendorDetailList({ leadId, userId }));
-          reset();
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() => {
-        addToast({ message: "Something went wrong !.", color: "danger" });
-      });
-  };
-
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -419,10 +332,6 @@ const VendorRequests = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
-              Add vendors
-            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -486,14 +395,7 @@ const VendorRequests = () => {
         </div>
       </div>
     );
-  }, [
-    selectedKeys,
-    count,
-    filteration,
-    pages,
-    onPreviousPage,
-    onNextPage,
-  ]);
+  }, [selectedKeys, count, filteration, pages, onPreviousPage, onNextPage]);
 
   return (
     <>
@@ -537,176 +439,6 @@ const VendorRequests = () => {
           )}
         </TableBody>
       </Table>
-      <Modal
-        size="3xl"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="top-center"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Add vendors request</ModalHeader>
-              <ModalBody>
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="flex flex-col gap-4"
-                >
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="clientName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Client name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="clientMailId"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Client email"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="companyName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Company name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="vendorCategoryId"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          label="Category"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          data={vendorsCategoryList || []}
-                          labelKey="vendorCategoryName"
-                          valueKey="id"
-                          name="vendorCategoryId"
-                          value={field.value}
-                          onChange={(value) => {
-                            dispatch(getSingleCategoryDataById(value));
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="subVendorCategoryId"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          label="Sub-Category"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          name="subVendorCategoryId"
-                          data={subCategoryList || []}
-                          labelKey="subCategoryName"
-                          valueKey="subCategoryId"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="salesAttachmentReferencePath"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <FileUploader
-                          uploadingType="multiple"
-                          isRequired
-                          label="Company document"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="clientMobileNumber"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Contact number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="clientBudgetPrice"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Client budget"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="description"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Description"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
     </>
   );
 };
