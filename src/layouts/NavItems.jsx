@@ -163,6 +163,11 @@ export const navItems = [
     children: [
       { title: "IVR", icon: "", url: "quality/ivr", key: "ivr" },
       { title: "Report", icon: "", url: "quality/report", key: "report" },
+      {
+        title: "Lead search",
+        url: "quality/leadsSearch",
+        key: "leadsSearch",
+      },
     ],
   },
   {
@@ -192,19 +197,19 @@ export const navItems = [
     key: "users",
   },
   {
-    title: "Vendor's",
+    title: "Procurement",
     icon: "SquareUserRound",
     url: "",
-    key: "vendorsRequest",
+    key: "Procurement",
     children: [
       {
         title: "Vendor",
-        url: "vendors-requests",
-        key: "vendor",
+        url: "procurement/vendors-requests",
+        key: "vendorRequest",
       },
       {
         title: "Payments",
-        url: "vendors-payments",
+        url: "procurement/vendors-payments",
         key: "vendors-payments",
       },
     ],
@@ -474,5 +479,20 @@ export const qualityNavItems = [
     icon: "NotepadTextDashed",
     url: "quality/report",
     key: "report",
+  },
+];
+
+export const procurementItems = [
+  {
+    title: "Vendor",
+    icon: "User2",
+    url: "procurement/vendors-requests",
+    key: "vendor",
+  },
+  {
+    title: "Payments",
+    icon: "Coin",
+    url: "procurement/vendors-payments",
+    key: "vendors-payments",
   },
 ];

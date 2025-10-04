@@ -6,8 +6,8 @@ import VendorPayments from "../accounts/VendorPayments";
 const ProcurementRouting = () => {
   return (
     <>
-      <Route path="vendors-requests" element={<VendorRequests />} />
-      <Route path="vendors-payments" element={<VendorPayments />} />
+      <Route path="procurement/vendors-requests" element={<VendorRequests />} />
+      <Route path="procurement/vendors-payments" element={<VendorPayments />} />
     </>
   );
 };

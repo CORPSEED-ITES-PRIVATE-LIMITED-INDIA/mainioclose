@@ -571,7 +571,6 @@ const Leads = () => {
       leadId: Array.from(selectedKeys),
       updatedById: Number(userId),
     };
-    console.log("dgasjkfgsdjkg",obj)
     dispatch(deleteMultipleLeads(obj))
       .then((response) => {
         if (response?.meta?.requestStatus === "fulfilled") {

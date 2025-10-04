@@ -11,6 +11,16 @@ export const getAllNewCompanies = createAsyncThunk(
   }
 );
 
+export const searchCompanies = createAsyncThunk(
+  "getHandleSearchCompanies",
+  async ({ userId, searchNameAndGSt, type }) => {
+    const response = await api.get(
+      `/leadService/api/v1/company/searchCompanyByNameAndGSTAndContactAndEmail?searchNameAndGSt=${searchNameAndGSt}&userId=${userId}&type=${type}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllGstTypeByCompanyTypeId = createAsyncThunk(
   "getAllGstTypeById",
   async (id) => {
@@ -294,7 +304,7 @@ const CompanySlice = createSlice({
     contactListByCompanyId: [],
     companyHistoryList: [],
     existingCompanyList: [],
-    companyDetailById:{}
+    companyDetailById: {},
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {
@@ -310,6 +320,18 @@ const CompanySlice = createSlice({
       state.newCompaniesList = action?.payload;
     });
     builder.addCase(getAllNewCompanies.rejected, (state) => {
+      state.loading = "rejected";
+      state.newCompaniesList = [];
+    });
+
+    builder.addCase(searchCompanies.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchCompanies.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.newCompaniesList = action?.payload;
+    });
+    builder.addCase(searchCompanies.rejected, (state) => {
       state.loading = "rejected";
       state.newCompaniesList = [];
     });

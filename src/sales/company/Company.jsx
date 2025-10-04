@@ -29,6 +29,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   getAllNewCompanies,
   getHistoryByCompanyId,
+  searchCompanies,
 } from "../../toolkit/slices/companySlice";
 import NewSelect from "../../components/NewSelect";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
@@ -96,12 +97,13 @@ const Company = () => {
     rating: "all",
   });
   const [editData, setEditData] = useState(null);
+  const [searchFilterType,setSearchFilterType]=useState("name")
 
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
     dispatch(getAllNewCompanies(companyFilteration));
-  }, [dispatch, companyFilteration]);
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(getDashboardUsersByHeirarchy(userId));
@@ -115,31 +117,31 @@ const Company = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
+  // const filteredItems = useMemo(() => {
+  //   let filteredUsers = [...(data || [])];
 
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
-      );
-    }
+  //   if (hasSearchFilter) {
+  //     filteredUsers = filteredUsers.filter((item) =>
+  //       Object.values(item)?.some((val) =>
+  //         String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+  //       )
+  //     );
+  //   }
 
-    return filteredUsers;
-  }, [data, filterValue]);
+  //   return filteredUsers;
+  // }, [data, filterValue]);
 
   const pages = Math.ceil(count / companyFilteration?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...(data || [])].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, data]);
 
   const renderCell = useCallback((company, columnKey) => {
     switch (columnKey) {
@@ -263,14 +265,16 @@ const Company = () => {
   const onNextPage = useCallback(() => {
     if (companyFilteration?.page < pages) {
       setCompanyFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
+      dispatch(getAllNewCompanies({...companyFilteration,page:companyFilteration.page+1}));
     }
-  }, [companyFilteration, pages]);
+  }, [companyFilteration, pages,dispatch]);
 
   const onPreviousPage = useCallback(() => {
     if (companyFilteration?.page > 1) {
       setCompanyFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
+      dispatch(getAllNewCompanies({...companyFilteration,page:companyFilteration.page-1}));
     }
-  }, [companyFilteration]);
+  }, [companyFilteration,dispatch]);
 
   const onRowsPerPageChange = useCallback((e) => {
     setCompanyFilteration((prev) => ({
@@ -284,10 +288,12 @@ const Company = () => {
     if (value) {
       setFilterValue(value);
       setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
+      dispatch(searchCompanies({searchNameAndGSt:value,userId,type:searchFilterType}))
     } else {
       setFilterValue("");
+      dispatch(getAllNewCompanies(companyFilteration));
     }
-  }, []);
+  }, [searchFilterType,dispatch,companyFilteration]);
 
   const onClear = useCallback(() => {
     setFilterValue("");
@@ -298,15 +304,44 @@ const Company = () => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
+          <div className="flex items-center gap-2 w-[35%]">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {searchFilterType}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[searchFilterType]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e);
+                  setSearchFilterType(key);
+                }}
+              >
+                <DropdownItem key="name">Name</DropdownItem>
+                <DropdownItem key="email">Email</DropdownItem>
+                <DropdownItem key="gst">GST</DropdownItem>
+                <DropdownItem key="contact">Contact</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Input
+              isClearable
+              className="w-full sm:max-w-[70%]"
+              placeholder="Search ..."
+              startContent={<Search />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+            />
+          </div>
+
           <div className="flex gap-3">
             <div className="w-[200px]">
               {" "}
@@ -474,7 +509,7 @@ const Company = () => {
         </div>
       </div>
     );
-  }, [selectedKeys,count, companyFilteration, pages, hasSearchFilter]);
+  }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Company</h1>

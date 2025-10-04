@@ -8,7 +8,6 @@ import SalesModuleRouting from "./routings/SalesModuleRouting";
 import IndustryModuleRouting from "./routings/IndustryModuleRouting";
 import HRModuleRouting from "./routings/HRModuleRouting";
 import ERPSettingRouting from "./routings/ERPSettingRouting";
-import IVRRouting from "./routings/IVRRouting";
 import DashboardRouting from "./routings/DashboardRouting";
 import OperationModuleRouting from "./routings/OperationModuleRouting";
 import {
@@ -17,6 +16,7 @@ import {
 } from "./routings/AccountsModuleRouting";
 import { AliveScope } from "react-activation";
 import ProcurementRouting from "./routings/ProcurementRouting";
+import QualityRouting from "./routings/QualityRouting";
 
 function App() {
   return (
@@ -42,7 +42,7 @@ function App() {
             {accountLoginModuleRouting()}
 
             {/* IVR */}
-            {IVRRouting()}
+            {QualityRouting()}
 
             {/* HR */}
             {HRModuleRouting()}

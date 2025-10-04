@@ -199,7 +199,7 @@ const LeadSearch = () => {
       setFilterValue("");
       dispatch(searchIvrLeads({ input: value, id: userId }));
     }
-  }, []);
+  }, [dispatch,userId]);
 
   const onClear = useCallback(() => {
     setFilterValue("");
@@ -272,6 +272,8 @@ const LeadSearch = () => {
     onSearchChange,
     hasSearchFilter,
     selectedKeys,
+    sortedItems,
+    data
   ]);
 
   const bottomContent = useMemo(() => {
