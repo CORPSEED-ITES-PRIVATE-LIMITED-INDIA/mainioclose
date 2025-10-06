@@ -285,7 +285,7 @@ const Estimate = () => {
       if (e === "Partial") {
         reset({
           professionalFees: rowItem?.professionalFees / 2,
-          govermentFees: rowItem?.govermentFees / 2,
+          govermentfees: rowItem?.govermentfees / 2,
           otherFees: rowItem?.otherFees / 2,
           serviceCharge: rowItem?.serviceCharge / 2,
         });
@@ -293,7 +293,7 @@ const Estimate = () => {
       if (e === "Fully") {
         reset({
           professionalFees: rowItem?.professionalFees,
-          govermentFees: rowItem?.govermentFees,
+          govermentfees: rowItem?.govermentfees,
           otherFees: rowItem?.otherFees,
           serviceCharge: rowItem?.serviceCharge,
         });
@@ -303,40 +303,34 @@ const Estimate = () => {
   );
 
   const handleActionsPress = (rowItem) => {
-    const values = getValues();
-    let updatedValues = { ...values };
     setRowItem(rowItem);
     dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
     dispatch(paymentRegisterRemainingAmount(rowItem?.id)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         const temData = resp.payload;
+        const updatedValues = {
+          ...defaultValues,
+          serviceName: rowItem?.productName,
+          profesionalGst: rowItem?.profesionalGst
+            ? Number(rowItem?.profesionalGst)
+            : 0,
+          companyName: rowItem?.companyName,
+          govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
+          serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
+          otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
+        };
         if (temData?.primary) {
-          updatedValues = {
-            ...updatedValues,
-            professionalFees:temData?.proffees,
-            govermentFees: Number(temData?.govfees),
-            otherFees: Number(temData?.otherFees),
-            serviceCharge: Number(temData?.serviceCharge),
-            totalAmount: Number(temData?.totalAmount),
-          };
+          updatedValues.professionalFees = Number(temData?.proffees || 0);
+          updatedValues.govermentfees = Number(temData?.govfees || 0);
+          updatedValues.otherFees = Number(temData?.otherFees || 0);
+          updatedValues.serviceCharge = Number(temData?.serviceCharge || 0);
+          updatedValues.totalAmount = Number(temData?.totalAmount || 0);
         }
+        console.log("sdkjhskjghjksdgjskd", rowItem, updatedValues);
+        reset(updatedValues);
+        onOpen();
       }
     });
-
-    updatedValues = {
-      ...updatedValues,
-      serviceName: rowItem?.productName,
-      profesionalGst: rowItem?.profesionalGst
-        ? Number(rowItem?.profesionalGst)
-        : 0,
-      companyName: rowItem?.companyName,
-      govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
-      serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
-      otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
-    };
-    console.log("sdkjhskjghjksdgjskd", rowItem, updatedValues);
-    reset(updatedValues);
-    onOpen();
   };
 
   useEffect(() => {

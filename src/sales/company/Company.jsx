@@ -422,7 +422,7 @@ const Company = () => {
                 value={companyFilteration?.filterUserId}
                 placeholder={"Users"}
                 label={null}
-                labelKey={"name"}
+                labelKey={"fullName"}
                 valueKey={"id"}
                 onChange={(e) => {
                   setCompanyFilteration((prev) => ({
