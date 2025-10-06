@@ -11,6 +11,7 @@ import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import LeadSearch from "../quality/LeadSearch";
 import KeepAlive from "react-activation";
+import LeadHistory from "../sales/leads/LeadHistory";
 
 const QualityRouting = () => {
   return (
@@ -24,6 +25,13 @@ const QualityRouting = () => {
         }
       />
       <Route path="quality/leadsSearch" element={<LeadSearch />} />
+      <Route path="quality/leadsSearch/:leadId" element={<LeadDetail />}>
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="proposal" element={<Proposal />} />
+        <Route path="leadEstimate" element={<LeadEstimate />} />
+      </Route>
       <Route path="quality/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
@@ -33,6 +41,7 @@ const QualityRouting = () => {
       </Route>
       <Route path="quality/ivr" element={<IVR />} />
       <Route path="quality/report" element={<IVRReport />} />
+      <Route path="quality/leads/:leadId/leadHistory" element={<LeadHistory />} />
     </>
   );
 };

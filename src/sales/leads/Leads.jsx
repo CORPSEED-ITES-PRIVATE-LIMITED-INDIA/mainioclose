@@ -503,12 +503,22 @@ const Leads = () => {
                     }
                   }}
                 >
-                  <DropdownItem
-                    key="history"
-                    href={`erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
-                  >
-                    History
-                  </DropdownItem>
+                  {department?.department === "Quality Team" ? (
+                    <DropdownItem
+                      key="history"
+                      href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+                    >
+                      History
+                    </DropdownItem>
+                  ) : (
+                    <DropdownItem
+                      key="history"
+                      href={`erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
+                    >
+                      History
+                    </DropdownItem>
+                  )}
+
                   {/* <DropdownItem
                   key="tasks"
                   href={`erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
@@ -657,7 +667,7 @@ const Leads = () => {
   };
 
   const topContent = useMemo(() => {
-    const cols=columns(adminRole)||[]
+    const cols = columns(adminRole) || [];
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
