@@ -390,7 +390,7 @@ export const getAllHistory = createAsyncThunk(
   "allLeadsDataHistorys",
   async (id) => {
     const allHistoryRes = await api.get(
-      `/leadService/api/v1/rating/getAllUserHistory?userId=${id}`
+      `/leadService/api/v1/leadHistory/getAllLeadHistory?leadId=${id}`
     );
     return allHistoryRes?.data;
   }

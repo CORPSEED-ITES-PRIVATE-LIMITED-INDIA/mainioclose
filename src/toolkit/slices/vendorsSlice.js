@@ -113,6 +113,58 @@ export const getAllVendorsStatus = createAsyncThunk(
   }
 );
 
+export const getvendorHistoryByLeadId = createAsyncThunk(
+  "getvendorHistoryByLeadId",
+  async (data) => {
+    const response = await api.get(
+      `/leadService/api/v1/vendor/find-update-request-history?userId=${data?.userId}&leadId=${data?.leadId}&vendorRequestId=${data?.vendorRequestId}`
+    );
+    return response.data;
+  }
+);
+
+export const cancelVendorsRequest = createAsyncThunk(
+  "cancelVendorsRequest",
+  async ({ vendorRequestId, userId, cancelReason }) => {
+    const response = await api.delete(
+      `/leadService/api/v1/vendor/cancel-vendor-request?vendorRequestId=${vendorRequestId}&userId=${userId}&cancelReason=${cancelReason}`
+    );
+    return response.data;
+  }
+);
+
+export const updateVendorStatus = createAsyncThunk(
+  "updateVendorStatus",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/update-vendor-request?vendorId=${data?.vendorId}&userId=${data?.userId}&leadId=${data?.leadId}`,
+      data?.data
+    );
+    return response.data;
+  }
+);
+
+export const sendVendorsProposal = createAsyncThunk(
+  "vendorsProposal",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/send-quotation?leadId=${data?.leadId}&userId=${data?.userId}&vendorRequestId=${data?.vendorRequestId}`,
+      data?.data
+    );
+    return response.data;
+  }
+);
+
+export const searchInVendorsList = createAsyncThunk(
+  `searchInVendorsList`,
+  async ({ userId, searchInput }) => {
+    const response = await api.get(
+      `/leadService/api/v1/vendor/vendor-search?userId=${userId}&searchInput=${searchInput}`
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -123,6 +175,7 @@ const VendorsSlice = createSlice({
     totalVendorRequestCount: 0,
     allVendorsRequestList: [],
     vendorsStatus: [],
+    singleVendorHistoryList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -176,6 +229,20 @@ const VendorsSlice = createSlice({
       state.allVendorsRequestList = [];
     });
 
+    builder.addCase(searchInVendorsList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchInVendorsList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalVendorRequestCount = action?.payload?.totalItems;
+      state.allVendorsRequestList = action?.payload?.vendorsRequests;
+    });
+    builder.addCase(searchInVendorsList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.totalVendorRequestCount = 0;
+      state.allVendorsRequestList = [];
+    });
+
     builder.addCase(getAllVendorsStatus.pending, (state) => {
       state.loading = "pending";
     });
@@ -186,6 +253,17 @@ const VendorsSlice = createSlice({
     builder.addCase(getAllVendorsStatus.rejected, (state) => {
       state.loading = "rejected";
       state.vendorsStatus = [];
+    });
+
+    builder.addCase(getvendorHistoryByLeadId.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getvendorHistoryByLeadId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.singleVendorHistoryList = action?.payload;
+    });
+    builder.addCase(getvendorHistoryByLeadId.rejected, (state, action) => {
+      state.loading = "rejected";
     });
   },
 });

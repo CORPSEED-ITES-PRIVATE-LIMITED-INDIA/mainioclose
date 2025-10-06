@@ -77,28 +77,20 @@ const LeadSearch = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.leadName.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-    return filteredUsers;
-  }, [data, filterValue]);
+const filteredItems = data.filter((user) =>
+  !hasSearchFilter
+    ? true
+    : user?.leadName?.toLowerCase()?.includes(filterValue.toLowerCase())
+);
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
-  const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, filteredItems]);
+const sortedItems = [...filteredItems].sort((a, b) => {
+  const first = a[sortDescriptor.column];
+  const second = b[sortDescriptor.column];
+  const cmp = first < second ? -1 : first > second ? 1 : 0;
+  return sortDescriptor.direction === "descending" ? -cmp : cmp;
+});
 
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {

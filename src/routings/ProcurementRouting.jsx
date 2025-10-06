@@ -8,7 +8,7 @@ const ProcurementRouting = () => {
   return (
     <>
       <Route path="procurement/vendors-requests" element={<VendorRequests />} />
-      <Route path="procurement/vendors-requests/:requestId/requestDetail" element={<VendorRequestDetail />} />
+      <Route path="procurement/vendors-requests/:requestId/:leadId/requestDetail" element={<VendorRequestDetail />} />
       <Route path="procurement/vendors-payments" element={<VendorPayments />} />
     </>
   );

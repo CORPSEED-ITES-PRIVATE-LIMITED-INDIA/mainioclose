@@ -121,7 +121,10 @@ const VendorRequests = () => {
       case "clientName":
         return (
           <div className="flex items-start gap-2">
-            <Link className="font-medium" to={`${rowData?.id}/requestDetail`}>
+            <Link
+              className="font-medium"
+              to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
+            >
               {rowData?.clientName}
             </Link>
           </div>
@@ -144,7 +147,10 @@ const VendorRequests = () => {
       case "budgetPrice":
         return (
           <div className="flex flex-col">
-            <span className="font-normal"> {inrCurrency(rowData?.budgetPrice)}</span>
+            <span className="font-normal">
+              {" "}
+              {inrCurrency(rowData?.budgetPrice)}
+            </span>
           </div>
         );
       case "vendorCategoryName":
@@ -303,7 +309,7 @@ const VendorRequests = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
@@ -354,7 +360,14 @@ const VendorRequests = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
+  }, [
+    filterValue,
+    visibleColumns,
+    onRowsPerPageChange,
+    count,
+    onSearchChange,
+    data,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (

@@ -23,11 +23,7 @@ import {
   TableRow,
   useDisclosure,
 } from "@heroui/react";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  Search,
-} from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -101,34 +97,10 @@ const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
       : {}),
     ...(isMilestone
       ? {
-          docPersent: z
-            .number({
-              required_error: "Document rate is required",
-              invalid_type_error: "Document rate must be a number",
-            })
-            .min(1, "Document rate must be at least 0")
-            .max(100, "Document rate cannot exceed 100"),
-          filingPersent: z
-            .number({
-              required_error: "Filing rate is required",
-              invalid_type_error: "Filing rate must be a number",
-            })
-            .min(1, "Filing rate must be at least 0")
-            .max(100, "Filing rate cannot exceed 100"),
-          liasoningPersent: z
-            .number({
-              required_error: "Liasoning rate is required",
-              invalid_type_error: "Liasoning rate must be a number",
-            })
-            .min(1, "Liasoning rate must be at least 0")
-            .max(100, "Liasoning rate cannot exceed 100"),
-          certificatePersent: z
-            .number({
-              required_error: "Certificate rate is required",
-              invalid_type_error: "Certificate rate must be a number",
-            })
-            .min(1, "Certificate rate must be at least 0")
-            .max(100, "Certificate rate cannot exceed 100"),
+          docPersent: z.number(),
+          filingPersent: z.number(),
+          liasoningPersent: z.number(),
+          certificatePersent: z.number(),
         }
       : {}),
     ...(isPurchaseOrder
@@ -283,7 +255,6 @@ const Estimate = () => {
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
-
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
@@ -336,10 +307,9 @@ const Estimate = () => {
     dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
     dispatch(paymentRegisterRemainingAmount(rowItem?.id));
     const values = getValues();
-
-    console.log("sdjhsdkhsdkhsdk", values, rowItem);
-    reset({
-      ...values,
+    let updatedValues = { ...values };
+    updatedValues = {
+      ...updatedValues,
       serviceName: rowItem?.productName,
       profesionalGst: rowItem?.profesionalGst
         ? Number(rowItem?.profesionalGst)
@@ -348,13 +318,14 @@ const Estimate = () => {
       govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
       serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
       otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
-    });
+    };
+    console.log("sdkjhskjghjksdgjskd",rowItem,updatedValues)
+    reset(updatedValues);
     onOpen();
   };
 
-  const allValues = watch();
-
   useEffect(() => {
+    const allValues = getValues();
     const handleValuesChange = () => {
       const {
         professionalFees = 0,
@@ -390,16 +361,7 @@ const Estimate = () => {
       }));
     };
     handleValuesChange();
-  }, [
-    allValues.professionalFees,
-    allValues.profesionalGst,
-    allValues.serviceCharge,
-    allValues.serviceGst,
-    allValues.govermentGst,
-    allValues.govermentfees,
-    allValues.otherFees,
-    allValues.otherGst,
-  ]);
+  }, [getValues]);
 
   const onSubmit = useCallback(
     (values) => {
