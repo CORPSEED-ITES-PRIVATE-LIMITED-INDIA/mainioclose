@@ -12,6 +12,7 @@ import LeadEstimate from "../sales/leads/LeadEstimate";
 import LeadSearch from "../quality/LeadSearch";
 import KeepAlive from "react-activation";
 import LeadHistory from "../sales/leads/LeadHistory";
+import LeadTask from "../sales/leads/LeadTask";
 
 const QualityRouting = () => {
   return (
