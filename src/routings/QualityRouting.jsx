@@ -31,6 +31,7 @@ const QualityRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadTasks" element={<LeadTask />} />
       </Route>
       <Route path="quality/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
@@ -38,10 +39,14 @@ const QualityRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadTasks" element={<LeadTask />} />
       </Route>
       <Route path="quality/ivr" element={<IVR />} />
       <Route path="quality/report" element={<IVRReport />} />
-      <Route path="quality/leads/:leadId/leadHistory" element={<LeadHistory />} />
+      <Route
+        path="quality/leads/:leadId/leadHistory"
+        element={<LeadHistory />}
+      />
     </>
   );
 };

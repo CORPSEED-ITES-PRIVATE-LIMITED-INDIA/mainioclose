@@ -269,16 +269,16 @@ const Estimate = () => {
     viewModal.onOpen();
   };
 
-  useEffect(() => {
-    if (!remainingAmountDetail?.primary) {
-      reset({
-        professionalFees: Number(remainingAmountDetail?.proffees),
-        govermentFees: Number(remainingAmountDetail?.govfees),
-        otherFees: Number(remainingAmountDetail?.otherFees),
-        serviceCharge: Number(remainingAmountDetail?.serviceCharge),
-      });
-    }
-  }, [remainingAmountDetail, reset]);
+  // useEffect(() => {
+  //   if (!remainingAmountDetail?.primary) {
+  //     reset({
+  //       professionalFees: Number(remainingAmountDetail?.proffees),
+  //       govermentFees: Number(remainingAmountDetail?.govfees),
+  //       otherFees: Number(remainingAmountDetail?.otherFees),
+  //       serviceCharge: Number(remainingAmountDetail?.serviceCharge),
+  //     });
+  //   }
+  // }, [remainingAmountDetail, reset]);
 
   const handleSetPayment = useCallback(
     (e) => {
@@ -303,11 +303,27 @@ const Estimate = () => {
   );
 
   const handleActionsPress = (rowItem) => {
-    setRowItem(rowItem);
-    dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
-    dispatch(paymentRegisterRemainingAmount(rowItem?.id));
     const values = getValues();
     let updatedValues = { ...values };
+    setRowItem(rowItem);
+    dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
+    dispatch(paymentRegisterRemainingAmount(rowItem?.id)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        const temData = resp.payload;
+        if (temData?.primary) {
+          console.log("dfkjghdjkfhjkdghjs", temData);
+          updatedValues = {
+            ...updatedValues,
+            professionalFees:temData?.proffees,
+            govermentFees: Number(temData?.govfees),
+            otherFees: Number(temData?.otherFees),
+            serviceCharge: Number(temData?.serviceCharge),
+            totalAmount: Number(temData?.totalAmount),
+          };
+        }
+      }
+    });
+
     updatedValues = {
       ...updatedValues,
       serviceName: rowItem?.productName,
@@ -319,7 +335,7 @@ const Estimate = () => {
       serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
       otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
     };
-    console.log("sdkjhskjghjksdgjskd",rowItem,updatedValues)
+    console.log("sdkjhskjghjksdgjskd", rowItem, updatedValues);
     reset(updatedValues);
     onOpen();
   };

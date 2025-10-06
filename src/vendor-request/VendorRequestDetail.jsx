@@ -18,6 +18,7 @@ import {
   Pagination,
   Button,
   addToast,
+  ModalFooter,
 } from "@heroui/react";
 import React, { useCallback, useEffect, useState } from "react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
@@ -499,8 +500,8 @@ const VendorRequestDetail = () => {
       <div className="w-full flex justify-between px-2 mb-3">
         <h1 className="text-xl font-medium my-1">Vendor's request status</h1>
       </div>
-      <div className="grid grid-cols-[20%_80%] gap-4">
-        <section className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-4">
+        <section className="grid grid-cols-3 gap-2">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1">
               <Calendar className="w-5 h-5" />

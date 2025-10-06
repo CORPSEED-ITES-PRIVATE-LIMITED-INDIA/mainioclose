@@ -43,6 +43,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadTasks" element={<LeadTask />} />
       </Route>
       <Route
         path="sales/leads"
@@ -90,6 +91,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadTasks" element={<LeadTask />} />
       </Route>
       <Route path="sales/projects" element={<Projects />} />
       <Route path="sales/servingCompanies" element={<ServingCompanies />} />

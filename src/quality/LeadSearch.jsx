@@ -62,7 +62,7 @@ const LeadSearch = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
