@@ -41,6 +41,61 @@ export const getProductListByLeadName = createAsyncThunk(
   }
 );
 
+export const createProductCategory = createAsyncThunk(
+  "createProductCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/productCategory/createProductCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editProductCategory = createAsyncThunk(
+  "editProductCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/productCategory/editProductCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const createProductSubCategory = createAsyncThunk(
+  "createProductSubCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/productSubCategory/createProductSubCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editProductSubCategory = createAsyncThunk(
+  "editProductSubCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/productSubCategory/editProductSubCategory`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const toggleForRoundOffValue = createAsyncThunk(
+  "toggleForRoundOffValue",
+  async (id) => {
+    const response = await api.put(
+      `/leadService/api/v1/productSubCategory/roundValueOnAndOff?id=${id}`
+    );
+    return response.data;
+  }
+);
+
+
 const ProductSlice = createSlice({
   name: "product",
   initialState: {

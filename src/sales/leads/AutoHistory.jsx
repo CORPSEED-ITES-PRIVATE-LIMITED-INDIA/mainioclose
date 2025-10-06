@@ -476,16 +476,16 @@ const AutoHistory = () => {
                       </Select>
                       <Select
                         label="Assign type"
-                        selectionMode="multiple"
+                        selectionMode="single"
                         items={[
                           { label: "Manual", key: "Manual" },
                           { label: "Auto", key: "Auto" },
                         ]}
-                        selectedKeys={dateFilter?.assignType}
+                        selectedKeys={[dateFilter?.assignType]}
                         onSelectionChange={(e) =>
                           setDateFilter((prev) => ({
                             ...prev,
-                            assignType: Array.from(e),
+                            assignType: Array.from(e)[0],
                           }))
                         }
                       >

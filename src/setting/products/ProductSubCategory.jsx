@@ -19,46 +19,53 @@ import {
   ModalHeader,
   ModalBody,
   Form,
-  Select,
-  SelectItem,
   addToast,
   ModalFooter,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createProduct,
-  deleteProduct,
-  getAllProductListByType,
-  getAllProductListCount,
-} from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { addProductsInOperations } from "../../toolkit/slices/operationSlice";
+import {
+  createProductSubCategory,
+  editProductSubCategory,
+  getAllProductSubCategoryListByCategoryId,
+  toggleForRoundOffValue,
+} from "../../toolkit/slices/productSlice";
 
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName", sortable: true },
-  { name: "TYPE", uid: "type" },
-];
-
-export const statusOptions = [
-  { name: "All", uid: "all" },
-  { name: "Product", uid: "Product" },
-  { name: "Service", uid: "Service" },
+  { name: "ID", uid: "id" },
+  { name: "NAME", uid: "name", sortable: true },
+  { name: "PRODUCT FEE", uid: "productFees" },
+  { name: "PRODUCT GST %", uid: "productGst" },
+  { name: "HSN CODE", uid: "productCode" },
+  { name: "ROUND OFF", uid: "roundoff" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "productFees",
+  "productGst",
+  "productCode",
+  "roundoff",
+  "actions",
+];
 
-const LeadProducts = () => {
+const ProductSubCategory = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const data = useSelector((state) => state.setting.productList);
-  const count = useSelector((state) => state.setting.productListCount);
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { categoryId } = useParams();
+  const data = useSelector((state) => state.product.productSubcategoryList);
+  const count = useSelector(
+    (state) => state.product.productSubcategoryList?.length
+  );
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -66,18 +73,19 @@ const LeadProducts = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "productName",
+    column: "name",
     direction: "ascending",
   });
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
-    serviceType: "",
+    productFees: "",
+    productGst: "",
+    productCode: "",
+    roundValue: "",
   });
   const [rowItem, setRowItem] = useState(null);
 
   const [initialFilteration, setInitialFilteration] = useState({
-    type: "all",
     page: 1,
     size: 50,
   });
@@ -85,8 +93,7 @@ const LeadProducts = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllProductListByType(initialFilteration));
-    dispatch(getAllProductListCount(initialFilteration));
+    dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -122,104 +129,134 @@ const LeadProducts = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  // const handleDeleteOpen =(row)=>{
-  //   setRowItem(row)
-  //   modal.onOpen()
-  // }
+  const handleEditPress = (row) => {
+    setRowItem(row);
+    setFormData({
+      name: row?.name,
+      productFees: row?.productFees,
+      productGst: row?.productGst,
+      roundValue: row?.roundValue,
+      productCode: row?.productCode,
+    });
+    onOpen();
+  };
 
-  // const handleDelete = () => {
-  //   dispatch(deleteProduct(deleteId))
-  //     .then((resp) => {
-  //       if (resp.meta.requestStatus === "fulfilled") {
-  //         addToast({
-  //           title: "Status deleted successfully !.",
-  //           color: "success",
-  //         });
-  //         modal.onOpenChange(false);
-  //         setDeleteId(null);
-  //         dispatch(getAllStatusData());
-  //       } else {
-  //         addToast({ title: "Something went wrong !.", color: "danger" });
-  //       }
-  //     })
-  //     .catch(() =>
-  //       addToast({ title: "Something went wrong !.", color: "danger" })
-  //     );
-  // };
-
-  const handleSubmit = (values) => {
-    dispatch(createProduct({ userId, ...values }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          const productInfo = resp.payload;
-          addToast({
-            title: "Product created successfully !.",
-            color: "success",
-          });
-          onOpenChange(false);
-          dispatch(getAllProductListByType(initialFilteration));
-          dispatch(
-            addProductsInOperations([
-              {
-                productId: productInfo?.id,
-                productName: productInfo?.productName,
-                description: productInfo?.description,
-                createdBy: productInfo?.createdBy?.id,
-                updatedBy: productInfo?.createdBy?.id,
-                date: productInfo?.createdDate,
-                active: true,
-              },
-            ])
-          );
-          setFormData({ name: "", type: "" });
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+  const handleFinish = (values) => {
+    if (rowItem) {
+      dispatch(
+        editProductSubCategory({
+          ...values,
+          productCategoryId: categoryId,
+          id: rowItem?.id,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Sub category updated successfully",
+              color: "success",
+            });
+            onClose();
+            setFormData({ name: "" });
+            setRowItem(null);
+            dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(
+        createProductSubCategory({
+          ...values,
+          productCategoryId: categoryId,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Sub category created successfully",
+              color: "success",
+            });
+            onClose();
+            setFormData({ name: "" });
+            setRowItem(null);
+            dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
-
     switch (columnKey) {
-      case "productName":
+      case "name":
+        return <p> {rowData?.name}</p>;
+      case "productFees":
+        return <p> {rowData?.productFees}</p>;
+      case "productGst":
+        return <p> {rowData?.productGst}</p>;
+      case "productCode":
+        return <p> {rowData?.productCode}</p>;
+      case "roundoff":
+        return <p> {rowData?.roundValue ? "True" : "False"}</p>;
+      case "actions":
         return (
-          <Link
-            to={
-              rowData?.type === "Service"
-                ? `${rowData?.id}/productDetail`
-                : `${rowData?.id}/businessArrangement`
-            }
-          >
-            {rowData?.productName}
-          </Link>
+          <div className="relative flex justify-center items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical className="text-default-300" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem
+                  key="edit"
+                  onPress={() => handleEditPress(rowData)}
+                >
+                  Edit
+                </DropdownItem>
+                <DropdownItem
+                  key="roundoff"
+                  onPress={() =>
+                    dispatch(toggleForRoundOffValue(rowData?.id))
+                      .then((resp) => {
+                        if (resp.meta.requestStatus === "fulfilled") {
+                          addToast({
+                            title: "Toggle updated successfully !.",
+                            color: "success",
+                          });
+                          dispatch(
+                            getAllProductSubCategoryListByCategoryId(categoryId)
+                          );
+                        } else {
+                          addToast({
+                            title: "Something went wrong !.",
+                            color: "danger",
+                          });
+                        }
+                      })
+                      .catch(() =>
+                        addToast({
+                          title: "Something went wrong !.",
+                          color: "danger",
+                        })
+                      )
+                  }
+                >
+                  Roundoff
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
         );
-
-      // case "actions":
-      //   return (
-      //     <div className="relative flex justify-center items-center gap-2">
-      //       <Dropdown>
-      //         <DropdownTrigger>
-      //           <Button isIconOnly size="sm" variant="light">
-      //             <EllipsisVertical className="text-default-300" />
-      //           </Button>
-      //         </DropdownTrigger>
-      //         <DropdownMenu>
-      //           <DropdownItem key="edit">Edit</DropdownItem>
-      //           <DropdownItem
-      //             key="delete"
-      //             color="danger"
-      //             onClick={()=>handleDeleteOpen(rowData)}
-      //           >
-      //             Delete
-      //           </DropdownItem>
-      //         </DropdownMenu>
-      //       </Dropdown>
-      //     </div>
-      //   );
       default:
         return cellValue;
     }
@@ -288,37 +325,6 @@ const LeadProducts = () => {
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  className="capitalize"
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                >
-                  {initialFilteration?.type}
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Single selection example"
-                selectedKeys={[initialFilteration?.type]}
-                selectionMode="single"
-                onSelectionChange={(event) => {
-                  const [status] = [...event];
-                  setInitialFilteration((prev) => ({
-                    ...prev,
-                    type: status,
-                  }));
-                }}
-              >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
                   endContent={<ChevronDown className="text-small" />}
                   variant="flat"
                 >
@@ -347,7 +353,7 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} products
+            Total {count} product sub category
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -415,9 +421,12 @@ const LeadProducts = () => {
     );
   }, [selectedKeys, initialFilteration?.page, pages, hasSearchFilter, count]);
 
+
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead products</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Product sub category
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -467,7 +476,7 @@ const LeadProducts = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create product
+                {rowItem ? "Update sub category" : "Create sub category"}
               </ModalHeader>
               <ModalBody>
                 <Form
@@ -476,14 +485,14 @@ const LeadProducts = () => {
                     let data = Object.fromEntries(
                       new FormData(e.currentTarget)
                     );
-                    handleSubmit(data);
+                    handleFinish(data);
                   }}
                 >
                   <div className="w-full grid grid-cols-2 gap-5 max-h-[65vh] overflow-auto p-4">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
-                      label="Product name"
+                      label="Sub category name"
                       name="name"
                       type="text"
                       value={formData?.name}
@@ -494,39 +503,71 @@ const LeadProducts = () => {
                         }))
                       }
                     />
-
-                    <Select
+                    <Input
                       isRequired
-                      errorMessage="please select the product type"
-                      label="Select product type"
-                      name="type"
+                      errorMessage="Please enter product name"
+                      label="Product fee ₹/kg"
+                      name="productFees"
+                      type="text"
+                      value={formData?.productFees}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, type: e }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          productFees: e.target.value,
+                        }))
                       }
+                    />
+                    <Input
+                      isRequired
+                      errorMessage="Please enter product name"
+                      label="Product gst %"
+                      name="productGst"
+                      type="text"
+                      value={formData?.productGst}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productGst: e.target.value,
+                        }))
+                      }
+                    />
+                    <Input
+                      isRequired
+                      errorMessage="Please enter product name"
+                      label="HSN code"
+                      name="productCode"
+                      type="text"
+                      value={formData?.productCode}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productCode: e.target.value,
+                        }))
+                      }
+                    />
+                    <Select
+                      label="Roundoff on product fee"
+                      name="roundValue"
+                      isRequired
+                      selectedKeys={[String(formData?.roundValue)]}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0];
+                        setFormData((prev) => ({
+                          ...prev,
+                          roundValue: value === "true",
+                        }));
+                      }}
                     >
                       {[
-                        { label: "Product", value: "Product" },
-                        { label: "Service", value: "Service" },
-                      ].map((info) => (
-                        <SelectItem key={info.value}>{info.label}</SelectItem>
-                      ))}
-                    </Select>
-
-                    <Select
-                      isRequired
-                      errorMessage="please select the product type"
-                      label="Select product type"
-                      name="serviceType"
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, serviceType: e }))
-                      }
-                    >
-                      {[
-                        { label: "International", value: "international" },
-                        { label: "Central", value: "central" },
-                        { label: "State", value: "state" },
-                      ].map((info) => (
-                        <SelectItem key={info.value}>{info.label}</SelectItem>
+                        { label: "True", value: true },
+                        { label: "False", value: false },
+                      ].map((item) => (
+                        <SelectItem
+                          key={item.value.toString()}
+                          value={item.value}
+                        >
+                          {item.label}
+                        </SelectItem>
                       ))}
                     </Select>
                   </div>
@@ -569,4 +610,4 @@ const LeadProducts = () => {
   );
 };
 
-export default LeadProducts;
+export default ProductSubCategory;

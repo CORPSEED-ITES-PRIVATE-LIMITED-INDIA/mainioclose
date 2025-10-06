@@ -65,14 +65,13 @@ const TopSellLeads = () => {
     fromDate: today,
     filter: "",
     currentUserId: userId,
-    userId: userId,
+    userId: null,
   });
 
   useEffect(() => {
     dispatch(getTopSellLeadsData(topSellLeadsFilter));
   }, [dispatch, topSellLeadsFilter]);
 
-  console.log("xkcnjxkhndsikhnsdihd", topSellLeadsList);
 
   return (
     <Card>

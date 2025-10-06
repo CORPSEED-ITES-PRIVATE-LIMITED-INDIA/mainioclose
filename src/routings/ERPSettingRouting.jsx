@@ -12,6 +12,9 @@ import Department from "../setting/department/Department";
 import Designation from "../setting/designation/Designation";
 import ProcurementCategory from "../setting/procurement/ProcurementCategory";
 import ProcurementSubCategory from "../setting/procurement/ProcurementSubCategory";
+import BusinessArrangement from "../setting/products/BusinessArrangement";
+import ProductCategory from "../setting/products/ProductCategory";
+import ProductSubCategory from "../setting/products/ProductSubCategory";
 
 const ERPSettingRouting = () => {
   return (
@@ -25,6 +28,18 @@ const ERPSettingRouting = () => {
       <Route
         path="settings/products/:productId/productDetail"
         element={<ProductDetails />}
+      />
+      <Route
+        path="settings/products/:productId/businessArrangement"
+        element={<BusinessArrangement />}
+      />
+      <Route
+        path="settings/products/:productId/businessArrangement/:businessArrangmentId/productCategory"
+        element={<ProductCategory />}
+      />
+      <Route
+        path="settings/products/:productId/businessArrangement/:businessArrangmentId/productCategory/:categoryId/subCategory"
+        element={<ProductSubCategory />}
       />
       <Route path="settings/comments" element={<LeadComments />} />
       <Route path="settings/ipAddress" element={<IpAddress />} />

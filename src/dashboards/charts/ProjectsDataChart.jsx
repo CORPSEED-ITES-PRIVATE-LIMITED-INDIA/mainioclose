@@ -59,7 +59,7 @@ const ProjectsDataChart = () => {
     fromDate: today,
     filter: "",
     currentUserId: userId,
-    userId: userId,
+    userId: null,
   });
 
   useEffect(() => {

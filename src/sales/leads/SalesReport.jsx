@@ -153,6 +153,12 @@ const SalesReport = () => {
             <span className="font-normal">{rowData.status || "-"}</span>
           </div>
         );
+      case "assignee":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">{rowData.currName || "-"}</span>
+          </div>
+        );
       case "assignDate":
         return (
           <div className="flex flex-col">
