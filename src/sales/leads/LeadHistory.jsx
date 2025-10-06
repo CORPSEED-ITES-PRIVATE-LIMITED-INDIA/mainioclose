@@ -110,7 +110,7 @@ const LeadHistory = () => {
       case "createdDate":
         return (
           <div className="flex flex-col">
-           <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY")}</p>
+           <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY, HH:mm A")}</p>
           </div>
         );
       default:
@@ -265,7 +265,7 @@ const LeadHistory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[70vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

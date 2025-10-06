@@ -121,18 +121,17 @@ const VendorRequests = () => {
       case "clientName":
         return (
           <div className="flex items-start gap-1">
-            {
-              <Dot
-              className="w-6 h-6"
-                color={
-                  rowData?.status === "Finished"
-                    ? "green"
-                    : data?.status === "Cancel"
-                      ? "black"
-                      : "red"
-                }
-              />
-            }
+            <Dot
+              className="w-8 h-8"
+              color={
+                rowData?.status === "Finished"
+                  ? "green"
+                  : rowData?.status === "Cancel"
+                    ? "black"
+                    : "red"
+              }
+            />
+
             <Link
               className="font-medium"
               to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}

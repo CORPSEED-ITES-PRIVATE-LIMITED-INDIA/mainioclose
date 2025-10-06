@@ -78,9 +78,9 @@ const LeadSearch = () => {
     return cols.filter((column) =>
       Array.from(visibleColumns).includes(column.uid)
     );
-  }, [visibleColumns,adminRole]);
+  }, [visibleColumns, adminRole]);
 
-  const filteredItems = data.filter((user) =>
+  const filteredItems = [...(data || [])]?.filter((user) =>
     !hasSearchFilter
       ? true
       : user?.leadName?.toLowerCase()?.includes(filterValue.toLowerCase())
@@ -230,7 +230,7 @@ const LeadSearch = () => {
   }, []);
 
   const topContent = useMemo(() => {
-    const cols=columns(adminRole)
+    const cols = columns(adminRole);
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -298,7 +298,7 @@ const LeadSearch = () => {
     selectedKeys,
     sortedItems,
     data,
-    adminRole
+    adminRole,
   ]);
 
   const bottomContent = useMemo(() => {

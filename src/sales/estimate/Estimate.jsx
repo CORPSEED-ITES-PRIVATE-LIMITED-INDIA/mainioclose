@@ -311,7 +311,6 @@ const Estimate = () => {
       if (resp.meta.requestStatus === "fulfilled") {
         const temData = resp.payload;
         if (temData?.primary) {
-          console.log("dfkjghdjkfhjkdghjs", temData);
           updatedValues = {
             ...updatedValues,
             professionalFees:temData?.proffees,
