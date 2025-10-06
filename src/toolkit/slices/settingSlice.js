@@ -106,6 +106,13 @@ export const createProduct = createAsyncThunk("createProduct", async (data) => {
   return response.data;
 });
 
+export const deleteProduct = createAsyncThunk("deleteProduct", async (data) => {
+  const response = await api.put(
+    `/leadService/api/v1/lead/deleteProductInLead?leadId=${data?.leadid}&serviceId=${data?.serviceId}&userId=${data?.userid}`
+  );
+  return response.data;
+});
+
 export const getSingleProductByProductId = createAsyncThunk(
   "getSingleProductByProductId",
   async (id) => {

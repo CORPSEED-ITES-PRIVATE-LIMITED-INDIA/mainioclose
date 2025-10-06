@@ -68,7 +68,12 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
-import { formatedDateTime, leadSource, maskEmail, maskMobileNumber } from "../../common";
+import {
+  formatedDateTime,
+  leadSource,
+  maskEmail,
+  maskMobileNumber,
+} from "../../common";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -82,10 +87,10 @@ const getRowClassName = (item) => {
   return "";
 };
 
-export const columns = [
+export const columns = (admin) => [
   { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadName", sortable: true },
-  { name: "CONTACT", uid: "contact" },
+  ...(admin ? [{ name: "CONTACT", uid: "contact" }] : []),
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "UPDATED BY", uid: "updatedBy" },
@@ -99,9 +104,9 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
+const INITIAL_VISIBLE_COLUMNS = (admin) => [
   "leadName",
-  "contact",
+  ...(admin ? ["contact"] : []),
   "assignee",
   "source",
   "status",
@@ -167,7 +172,7 @@ const Leads = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -226,12 +231,13 @@ const Leads = () => {
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
-    if (visibleColumns === "all") return columns;
+    const cols = columns(adminRole) || [];
+    if (visibleColumns === "all") return cols;
 
-    return columns.filter((column) =>
+    return cols.filter((column) =>
       Array.from(visibleColumns).includes(column.uid)
     );
-  }, [visibleColumns]);
+  }, [visibleColumns, adminRole]);
 
   const filteredItems = useMemo(() => {
     return [...(data || [])];
@@ -374,142 +380,165 @@ const Leads = () => {
     [dispatch, userId, allMultiFilterData]
   );
 
-  const renderCell = useCallback((lead, columnKey) => {
-    switch (columnKey) {
-      case "leadName":
-        return (
-          <div className="flex  gap-1">
-            {department?.department === "Quality Team" && (
-              <Flag
-                className="h-4 w-4 cursor-pointer"
-                color={lead?.reopenByQuality ? "red" : "black"}
-                onClick={() => handleFlag(lead)}
-              />
-            )}
-
-            <div className="flex flex-col">
-              <Link
-                to={`${lead?.id}/leadDetail`}
-                className="font-semibold"
-                onClick={() =>
-                  dispatch(handleViewHistory({ leadId: lead?.id, userId }))
-                }
-              >
-                {lead?.originalName
-                  ? lead?.originalName
-                  : lead?.leadName || "-"}
-              </Link>
-              <div className="flex gap-3">
-                <Badge
-                  color={lead?.auto ? "success" : "danger"}
-                  content=""
-                  placement="center-left"
-                  shape="circle"
-                  size="sm"
+  const renderCell = useCallback(
+    (lead, columnKey) => {
+      switch (columnKey) {
+        case "leadName":
+          return (
+            <div className="flex  gap-1">
+              {department?.department === "Quality Team" && (
+                <Flag
+                  className="h-4 w-4 cursor-pointer"
+                  color={lead?.reopenByQuality ? "red" : "black"}
+                  onClick={() => handleFlag(lead)}
                 />
-                <span className="text-xs text-default-500">
-                  {dayjs(lead?.createDate).format("DD-MM-YYYY")}
-                </span>
+              )}
+
+              <div className="flex flex-col">
+                <Link
+                  to={`${lead?.id}/leadDetail`}
+                  className="font-semibold"
+                  onClick={() =>
+                    dispatch(handleViewHistory({ leadId: lead?.id, userId }))
+                  }
+                >
+                  {lead?.originalName
+                    ? lead?.originalName
+                    : lead?.leadName || "-"}
+                </Link>
+                <div className="flex gap-3">
+                  <Badge
+                    color={lead?.auto ? "success" : "danger"}
+                    content=""
+                    placement="center-left"
+                    shape="circle"
+                    size="sm"
+                  />
+                  <span className="text-xs text-default-500">
+                    {dayjs(lead?.createDate).format("DD-MM-YYYY")}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      case "contact":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal text-sm">{maskEmail(lead?.email) || "-"}</span>
-            <span className="text-xs text-default-500">
-              {maskMobileNumber(lead?.mobileNo) || "-"}
-            </span>
-          </div>
-        );
-      case "status":
-        return (
-          <Chip className="capitalize" color="primary" size="sm" variant="flat">
-            {lead?.status?.name || "Unknown"}
-          </Chip>
-        );
-      case "assignee":
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm">
-              {lead?.assignee?.fullName || "-"}
-            </span>
-            <span className="text-xm text-default-500">
-              {lead?.assignee?.email || "-"}
-            </span>
-          </div>
-        );
-      case "industry":
-        return <p className="text-sm">{lead?.industries?.name}</p> || "-";
-      case "city":
-        return <p className="text-sm">{lead?.city}</p> || "-";
-      case "source":
-        return <p className="text-sm">{lead?.source}</p> || "-";
-      case "updatedBy":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal text-sm">
-              {lead?.updatedBy?.fullName}
-            </span>
-            <span className="font-normal text-xs text-default-500">
-              {lead?.updatedDate
-                ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
-                : "-"}
-            </span>
-          </div>
-        );
-      case "Address":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal text-sm">{lead.address || "-"}</span>
-            <span className="text-xs text-default-500">
-              {lead.city || ""},{lead?.state},{lead?.country}
-            </span>
-          </div>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let key = Array.from(e);
-                  if (key == "delete") {
-                    openDeleteModal(lead?.id);
-                  }
-                }}
-              >
-                <DropdownItem
-                  key="history"
-                  href={`erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
+          );
+        case "contact":
+          if (adminRole) {
+            return (
+              <div className="flex flex-col">
+                <span className="font-normal text-sm">
+                  {lead?.email || "-"}
+                </span>
+                <span className="text-xs text-default-500">
+                  {lead?.mobileNo || "-"}
+                </span>
+              </div>
+            );
+          } else return null;
+
+        case "status":
+          return (
+            <Chip
+              className="capitalize"
+              color="primary"
+              size="sm"
+              variant="flat"
+            >
+              {lead?.status?.name || "Unknown"}
+            </Chip>
+          );
+        case "assignee":
+          return (
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm">
+                {lead?.assignee?.fullName || "-"}
+              </span>
+              <span className="text-xm text-default-500">
+                {lead?.assignee?.email || "-"}
+              </span>
+            </div>
+          );
+        case "industry":
+          return <p className="text-sm">{lead?.industries?.name}</p> || "-";
+        case "city":
+          return <p className="text-sm">{lead?.city}</p> || "-";
+        case "source":
+          return <p className="text-sm">{lead?.source}</p> || "-";
+        case "updatedBy":
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="font-normal text-sm">
+                {lead?.updatedBy?.fullName}
+              </span>
+              <span className="font-normal text-xs text-default-500">
+                {lead?.updatedDate
+                  ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
+            </div>
+          );
+        case "Address":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal text-sm">{lead.address || "-"}</span>
+              <span className="text-xs text-default-500">
+                {lead.city || ""},{lead?.state},{lead?.country}
+              </span>
+            </div>
+          );
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  selectionMode="single"
+                  onSelectionChange={(e) => {
+                    let key = Array.from(e);
+                    if (key == "delete") {
+                      openDeleteModal(lead?.id);
+                    }
+                  }}
                 >
-                  History
-                </DropdownItem>
-                {/* <DropdownItem
+                  {department?.department === "Quality Team" ? (
+                    <DropdownItem
+                      key="history"
+                      href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+                    >
+                      History
+                    </DropdownItem>
+                  ) : (
+                    <DropdownItem
+                      key="history"
+                      href={`erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
+                    >
+                      History
+                    </DropdownItem>
+                  )}
+
+                  {/* <DropdownItem
                   key="tasks"
                   href={`erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
                 >
                   Lead tasks
                 </DropdownItem> */}
-                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-      default:
-        return lead[columnKey] || "-";
-    }
-  }, []);
+                  {/* <DropdownItem key="edit">Edit</DropdownItem> */}
+                  <DropdownItem key="delete" color="danger">
+                    Delete
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return lead[columnKey] || "-";
+      }
+    },
+    [adminRole]
+  );
 
   const onNextPage = useCallback(() => {
     if (allMultiFilterData?.page < pages) {
@@ -638,6 +667,7 @@ const Leads = () => {
   };
 
   const topContent = useMemo(() => {
+    const cols = columns(adminRole) || [];
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -990,7 +1020,7 @@ const Leads = () => {
                 selectionMode="multiple"
                 onSelectionChange={setVisibleColumns}
               >
-                {columns.map((column) => (
+                {cols?.map((column) => (
                   <DropdownItem key={column.uid} className="capitalize">
                     {capitalize(column.name)}
                   </DropdownItem>

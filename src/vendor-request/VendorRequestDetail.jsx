@@ -18,9 +18,12 @@ import {
   Pagination,
   Button,
   addToast,
+  ModalFooter,
+  Card,
+  CardBody,
 } from "@heroui/react";
 import React, { useCallback, useEffect, useState } from "react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, Dot, EllipsisVertical, Plus, Search } from "lucide-react";
 import {
   cancelVendorsRequest,
   getAllVendorsRequest,
@@ -46,6 +49,8 @@ import {
 } from "lucide-react";
 import { inrCurrency } from "../common";
 import { useParams } from "react-router-dom";
+import NewSelect from "../components/NewSelect";
+import FileUploader from "../components/FileUploader";
 
 const formSchema = ({ statusIsFinished, statusIsCanceled }) =>
   z.object({
@@ -59,15 +64,17 @@ const formSchema = ({ statusIsFinished, statusIsCanceled }) =>
           agreementWithClientDocumentPath: z.string().optional(),
           researchName: z.string().optional(),
           researchDocumentPath: z.string().optional(),
+          internalVendorPrices: z.string().optional(),
+          externalVendorPrice: z.string().optional(),
         }
       : {}),
     ...(statusIsCanceled
       ? { cancelReason: z.string().min(1, "Please enter reason") }
       : {
-          internalVendorPrices: z.string().optional().or(z.literal("")),
-          externalVendorPrice: z.string().optional().or(z.literal("")),
-          comment: z.string().optional().or(z.literal("")),
+          internalVendorPrices: z.string().optional(),
+          externalVendorPrice: z.string().optional(),
         }),
+    comment: z.string().optional(),
   });
 
 const defaultValues = {
@@ -116,7 +123,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 const VendorRequestDetail = () => {
   const dispatch = useDispatch();
   const { leadId, userId, requestId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const detail = {};
   const vendorsStatus = useSelector((state) => state.vendors.vendorsStatus);
   const data = useSelector((state) => state.vendors.singleVendorHistoryList);
@@ -178,7 +185,9 @@ const VendorRequestDetail = () => {
   }, [sortDescriptor, items]);
 
   useEffect(() => {
-    dispatch(getvendorHistoryByLeadId({ userId, leadId, vendorRequestId:requestId }));
+    dispatch(
+      getvendorHistoryByLeadId({ userId, leadId, vendorRequestId: requestId })
+    );
   }, [leadId, leadId, requestId]);
 
   const {
@@ -186,6 +195,7 @@ const VendorRequestDetail = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    getValues,
   } = useForm({
     resolver: zodResolver(formSchema({ statusIsCanceled, statusIsFinished })),
     defaultValues,
@@ -200,7 +210,25 @@ const VendorRequestDetail = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "requestStatus":
-        return <span className="font-normal">{rowData?.requestStatus}</span>;
+        return (
+          <div className="flex items-center gap-1">
+            <Dot
+              className="w-8 h-8"
+              color={
+                rowData?.requestStatus === "Finished"
+                  ? "green"
+                  : rowData?.requestStatus === "Cancel"
+                    ? "black"
+                    : rowData?.requestStatus === "Unavailable"
+                      ? "red"
+                      : rowData?.requestStatus === "Processing"
+                        ? "orange"
+                        : "blue"
+              }
+            />
+            <span className="font-normal">{rowData?.requestStatus}</span>
+          </div>
+        );
       case "raisedBy":
         return (
           <span className="font-normal">{rowData?.raisedBy?.fullName}</span>
@@ -400,20 +428,13 @@ const VendorRequestDetail = () => {
                 title: "Vendors request cancelled successfully!.",
                 color: "success",
               });
-              setOpenModal(false);
-              form.resetFields();
+              onClose();
+              reset(defaultValues);
               dispatch(
                 getvendorHistoryByLeadId({
                   userId: userId,
                   leadId: leadId,
                   vendorRequestId: requestId,
-                })
-              );
-              dispatch(
-                getAllVendorsRequest({
-                  id: userId,
-                  page: 1,
-                  size: 50,
                 })
               );
             } else {
@@ -439,7 +460,7 @@ const VendorRequestDetail = () => {
                     userId: userId,
                     leadId: leadId,
                     vendorRequestId: requestId,
-                    detail: {
+                    data: {
                       clientMailId: detail?.clientEmailId,
                       clientName: detail?.clientName,
                       clientContactNumber: detail?.clientMobileNumber,
@@ -491,7 +512,16 @@ const VendorRequestDetail = () => {
           });
       }
     },
-    [dispatch, detail, userId,statusIsCanceled,statusIsFinished,requestId,leadId]
+    [
+      dispatch,
+      detail,
+      userId,
+      statusIsCanceled,
+      statusIsFinished,
+      requestId,
+      leadId,
+      defaultValues,
+    ]
   );
 
   return (
@@ -499,72 +529,79 @@ const VendorRequestDetail = () => {
       <div className="w-full flex justify-between px-2 mb-3">
         <h1 className="text-xl font-medium my-1">Vendor's request status</h1>
       </div>
-      <div className="grid grid-cols-[20%_80%] gap-4">
-        <section className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-5 h-5" />
-              <p className="text-default-500 inline">Date</p>
-            </span>
-            : <p>{dayjs(detail?.updatedDate).format("DD-MM-YYYY , hh:mm a")}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <User className="w-5 h-5" />
-              <p className="text-default-500">Client name</p>
-            </span>
-            : <p>{detail?.clientName}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <Mail className="w-5 h-5" />{" "}
-              <p className="text-default-500">Email</p>{" "}
-            </span>
-            : <p>{detail?.clientEmailId}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <Phone className="w-5 h-5" />{" "}
-              <p className="text-default-500">Contact</p>
-            </span>{" "}
-            : <p>{detail?.contactNumber}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <Factory className="w-5 h-5" />{" "}
-              <p className="text-default-500">Company</p>{" "}
-            </span>
-            : <p>{detail?.clientCompanyName}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <Banknote className="w-5 h-5" />{" "}
-              <p className="text-default-500">Budget</p>
-            </span>
-            : <p>{inrCurrency(detail?.budgetPrice)}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <UserRoundCog className="w-5 h-5" />{" "}
-              <p className="text-default-500">Category</p>
-            </span>
-            : <p>{detail?.vendorCategoryName}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <UserRoundCog className="w-5 h-5" />{" "}
-              <p className="text-default-500">Sub category</p>{" "}
-            </span>
-            : <p>{detail?.vendorSubCategoryName}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1">
-              <FileText className="w-5 h-5" />{" "}
-              <p className="text-default-500">Description</p>{" "}
-            </span>
-            : <p>{detail?.requirementDescription}</p>
-          </div>
-        </section>
+      <div className="grid grid-cols-1 gap-8">
+        <Card>
+          <CardBody>
+            <section className="grid grid-cols-3 gap-2">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-5 h-5" />
+                  <p className="text-default-500 inline">Date</p>
+                </span>
+                :{" "}
+                <p>
+                  {dayjs(detail?.updatedDate).format("DD-MM-YYYY , hh:mm a")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <User className="w-5 h-5" />
+                  <p className="text-default-500">Client name</p>
+                </span>
+                : <p>{detail?.clientName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <Mail className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Email</p>{" "}
+                </span>
+                : <p>{detail?.clientEmailId}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <Phone className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Contact</p>
+                </span>{" "}
+                : <p>{detail?.contactNumber}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <Factory className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Company</p>{" "}
+                </span>
+                : <p>{detail?.clientCompanyName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <Banknote className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Budget</p>
+                </span>
+                : <p>{inrCurrency(detail?.budgetPrice || 0)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <UserRoundCog className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Category</p>
+                </span>
+                : <p>{detail?.vendorCategoryName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <UserRoundCog className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Sub category</p>{" "}
+                </span>
+                : <p>{detail?.vendorSubCategoryName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <FileText className="w-5 h-5" />{" "}
+                  <p className="text-default-500">Description</p>{" "}
+                </span>
+                : <p>{detail?.requirementDescription}</p>
+              </div>
+            </section>
+          </CardBody>
+        </Card>
         <section>
           <Table
             isHeaderSticky
@@ -614,7 +651,7 @@ const VendorRequestDetail = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add vendors request</ModalHeader>
+              <ModalHeader>Update vendor's request</ModalHeader>
               <ModalBody>
                 <form
                   onSubmit={handleSubmit(onSubmit)}
@@ -651,7 +688,6 @@ const VendorRequestDetail = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <FileUploader
-                              uploadingType="multiple"
                               isRequired
                               label="Reference attachements"
                               value={field.value}
@@ -668,7 +704,10 @@ const VendorRequestDetail = () => {
                             <Input
                               label="Quotation amount"
                               value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
+                              type="number"
+                              onChange={(e) =>
+                                field.onChange(Number(e.target.value))
+                              }
                             />
                           )}
                         />
@@ -677,7 +716,6 @@ const VendorRequestDetail = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
-                              isRequired
                               label="Additional email"
                               errorMessage={error?.message}
                               isInvalid={!!error}
@@ -704,7 +742,6 @@ const VendorRequestDetail = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <FileUploader
-                              uploadingType="multiple"
                               label="Agreement attachements"
                               value={field.value}
                               onChange={(value) => {
@@ -731,7 +768,6 @@ const VendorRequestDetail = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <FileUploader
-                              uploadingType="multiple"
                               label="Research attachements"
                               value={field.value}
                               onChange={(value) => {
@@ -782,6 +818,18 @@ const VendorRequestDetail = () => {
                         />
                       </>
                     )}
+                    <Controller
+                      name="comment"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Description"
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      )}
+                    />
                   </div>
 
                   <ModalFooter className="flex justify-end">

@@ -50,6 +50,7 @@ const LeadStatus = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
   const data = useSelector((state) => state.setting.statusList);
+  const count = useSelector((state) => state.setting.statusList?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(

@@ -47,6 +47,7 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 const LeadComments = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.setting.allComments);
+  const count = useSelector((state) => state.setting.allComments?.length);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
@@ -303,7 +304,7 @@ const LeadComments = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {data.length} products
+            Total {count} comments
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -324,7 +325,7 @@ const LeadComments = () => {
     statusFilter,
     visibleColumns,
     onRowsPerPageChange,
-    data.length,
+    count,
     onSearchChange,
     hasSearchFilter,
   ]);

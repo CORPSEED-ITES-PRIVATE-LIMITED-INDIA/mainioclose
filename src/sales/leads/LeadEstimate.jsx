@@ -1084,7 +1084,11 @@ const LeadEstimate = () => {
                               )
                             );
                           }
-                          reset({
+                          const formValues = getValues();
+                          let updatedValues = { ...formValues };
+
+                          updatedValues = {
+                            ...updatedValues,
                             unitId: String(compUnit?.id),
                             gstType: String(compUnit?.gstType),
                             gstNo: compUnit?.gstNo,
@@ -1108,8 +1112,8 @@ const LeadEstimate = () => {
                             secondaryState: compUnit?.secState,
                             secondaryCountry: compUnit?.seCountry,
                             secondaryPinCode: compUnit?.secondaryPinCode,
-                          });
-
+                          };
+                          reset(updatedValues);
                           gstForm.reset({
                             companyType: String(compUnit?.companyType),
                             gstType: String(compUnit?.gstType),

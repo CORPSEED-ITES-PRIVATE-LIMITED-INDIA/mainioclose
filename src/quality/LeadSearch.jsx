@@ -16,18 +16,18 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { searchIvrLeads } from "../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { Link, useParams } from "react-router-dom";
 
-export const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "LEAD NAME", uid: "leadName", sortable: true },
-  { name: "CONTACT", uid: "contact" },
-  { name: "STATUS", uid: "status", sortable: true },
+export const columns = (admin) => [
+  { name: "ID", uid: "id" },
+  { name: "LEAD NAME", uid: "leadName" },
+  ...(admin ? [{ name: "CONTACT", uid: "contact" }] : []),
+  { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "UPDATED BY", uid: "updatedBy" },
   { name: "SOURCE", uid: "source" },
@@ -40,14 +40,13 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
+const INITIAL_VISIBLE_COLUMNS = (admin) => [
   "leadName",
-  "contact",
+  ...(admin ? ["contact"] : []),
   "assignee",
   "source",
   "updatedBy",
   "status",
-  "industry",
   "address",
   "actions",
 ];
@@ -57,10 +56,12 @@ const LeadSearch = () => {
   const { userId } = useParams();
   const data = useSelector((state) => state.leads.leadSearchList);
   const count = useSelector((state) => state.leads.leadSearchList?.length);
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -70,27 +71,22 @@ const LeadSearch = () => {
   const [paginationData, setPaginationData] = useState({ page: 1, size: 50 });
 
   const headerColumns = useMemo(() => {
-    if (visibleColumns === "all") return columns;
+    const cols = columns(adminRole);
+    if (visibleColumns === "all") return cols;
 
-    return columns.filter((column) =>
+    return cols.filter((column) =>
       Array.from(visibleColumns).includes(column.uid)
     );
-  }, [visibleColumns]);
+  }, [visibleColumns, adminRole]);
 
-const filteredItems = data.filter((user) =>
-  !hasSearchFilter
-    ? true
-    : user?.leadName?.toLowerCase()?.includes(filterValue.toLowerCase())
-);
+  const filteredItems = [...(data || [])]?.filter((user) =>
+    !hasSearchFilter
+      ? true
+      : user?.leadName?.toLowerCase()?.includes(filterValue.toLowerCase())
+  );
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
-const sortedItems = [...filteredItems].sort((a, b) => {
-  const first = a[sortDescriptor.column];
-  const second = b[sortDescriptor.column];
-  const cmp = first < second ? -1 : first > second ? 1 : 0;
-  return sortDescriptor.direction === "descending" ? -cmp : cmp;
-});
 
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {
@@ -157,6 +153,31 @@ const sortedItems = [...filteredItems].sort((a, b) => {
             </span>
           </div>
         );
+      case "actions":
+        return (
+          <div className="relative flex justify-center items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e);
+                }}
+              >
+                <DropdownItem
+                  key="history"
+                  href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+                >
+                  History
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
       default:
         return lead[columnKey] || "-";
     }
@@ -182,16 +203,19 @@ const sortedItems = [...filteredItems].sort((a, b) => {
     setPaginationData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setPaginationData((prev) => ({ ...prev, page: 1 }));
-      dispatch(searchIvrLeads({ input: value, id: userId }));
-    } else {
-      setFilterValue("");
-      dispatch(searchIvrLeads({ input: value, id: userId }));
-    }
-  }, [dispatch,userId]);
+  const onSearchChange = useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        setPaginationData((prev) => ({ ...prev, page: 1 }));
+        dispatch(searchIvrLeads({ input: value, id: userId }));
+      } else {
+        setFilterValue("");
+        dispatch(searchIvrLeads({ input: value, id: userId }));
+      }
+    },
+    [dispatch, userId]
+  );
 
   const onClear = useCallback(() => {
     setFilterValue("");
@@ -199,6 +223,7 @@ const sortedItems = [...filteredItems].sort((a, b) => {
   }, []);
 
   const topContent = useMemo(() => {
+    const cols = columns(adminRole);
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -227,7 +252,7 @@ const sortedItems = [...filteredItems].sort((a, b) => {
                 selectionMode="multiple"
                 onSelectionChange={setVisibleColumns}
               >
-                {columns.map((column) => (
+                {cols.map((column) => (
                   <DropdownItem key={column.uid} className="capitalize">
                     {capitalize(column.name)}
                   </DropdownItem>
@@ -264,8 +289,9 @@ const sortedItems = [...filteredItems].sort((a, b) => {
     onSearchChange,
     hasSearchFilter,
     selectedKeys,
-    sortedItems,
-    data
+    data,
+    adminRole,
+    filteredItems
   ]);
 
   const bottomContent = useMemo(() => {
@@ -317,9 +343,6 @@ const sortedItems = [...filteredItems].sort((a, b) => {
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
-        // classNames={{
-        //   wrapper: "max-h-[65vh]",
-        // }}
         classNames={{
           wrapper:
             "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
@@ -346,7 +369,7 @@ const sortedItems = [...filteredItems].sort((a, b) => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={filteredItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (

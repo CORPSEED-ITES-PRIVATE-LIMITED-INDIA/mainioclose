@@ -52,6 +52,7 @@ import {
   today,
 } from "@internationalized/date";
 import InvoiceView from "../../components/InvoiceView";
+import FileUploader from "../../components/FileUploader";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -135,7 +136,7 @@ const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
           totalAmount: z.number(),
           paymentDate: z.string().min(1, "Please enter payment date"),
           remark: z.string().min(1, "Remark cannot be empty"),
-          doc: z.string().optional(),
+          doc: z.array(z.string()).optional(),
         }),
   });
 
@@ -269,23 +270,23 @@ const Estimate = () => {
     viewModal.onOpen();
   };
 
-  useEffect(() => {
-    if (!remainingAmountDetail?.primary) {
-      reset({
-        professionalFees: Number(remainingAmountDetail?.proffees),
-        govermentFees: Number(remainingAmountDetail?.govfees),
-        otherFees: Number(remainingAmountDetail?.otherFees),
-        serviceCharge: Number(remainingAmountDetail?.serviceCharge),
-      });
-    }
-  }, [remainingAmountDetail, reset]);
+  // useEffect(() => {
+  //   if (!remainingAmountDetail?.primary) {
+  //     reset({
+  //       professionalFees: Number(remainingAmountDetail?.proffees),
+  //       govermentFees: Number(remainingAmountDetail?.govfees),
+  //       otherFees: Number(remainingAmountDetail?.otherFees),
+  //       serviceCharge: Number(remainingAmountDetail?.serviceCharge),
+  //     });
+  //   }
+  // }, [remainingAmountDetail, reset]);
 
   const handleSetPayment = useCallback(
     (e) => {
       if (e === "Partial") {
         reset({
           professionalFees: rowItem?.professionalFees / 2,
-          govermentFees: rowItem?.govermentFees / 2,
+          govermentfees: rowItem?.govermentfees / 2,
           otherFees: rowItem?.otherFees / 2,
           serviceCharge: rowItem?.serviceCharge / 2,
         });
@@ -293,7 +294,7 @@ const Estimate = () => {
       if (e === "Fully") {
         reset({
           professionalFees: rowItem?.professionalFees,
-          govermentFees: rowItem?.govermentFees,
+          govermentfees: rowItem?.govermentfees,
           otherFees: rowItem?.otherFees,
           serviceCharge: rowItem?.serviceCharge,
         });
@@ -305,23 +306,31 @@ const Estimate = () => {
   const handleActionsPress = (rowItem) => {
     setRowItem(rowItem);
     dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
-    dispatch(paymentRegisterRemainingAmount(rowItem?.id));
-    const values = getValues();
-    let updatedValues = { ...values };
-    updatedValues = {
-      ...updatedValues,
-      serviceName: rowItem?.productName,
-      profesionalGst: rowItem?.profesionalGst
-        ? Number(rowItem?.profesionalGst)
-        : 0,
-      companyName: rowItem?.companyName,
-      govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
-      serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
-      otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
-    };
-    console.log("sdkjhskjghjksdgjskd",rowItem,updatedValues)
-    reset(updatedValues);
-    onOpen();
+    dispatch(paymentRegisterRemainingAmount(rowItem?.id)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        const temData = resp.payload;
+        const updatedValues = {
+          ...defaultValues,
+          serviceName: rowItem?.productName,
+          profesionalGst: rowItem?.profesionalGst
+            ? Number(rowItem?.profesionalGst)
+            : 0,
+          companyName: rowItem?.companyName,
+          govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
+          serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
+          otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
+        };
+        if (!temData?.primary) {
+          updatedValues.professionalFees = Number(temData?.proffees || 0);
+          updatedValues.govermentfees = Number(temData?.govfees || 0);
+          updatedValues.otherFees = Number(temData?.otherFees || 0);
+          updatedValues.serviceCharge = Number(temData?.serviceCharge || 0);
+          updatedValues.totalAmount = Number(temData?.totalAmount || 0);
+        }
+        reset(updatedValues);
+        onOpen();
+      }
+    });
   };
 
   useEffect(() => {
@@ -815,7 +824,6 @@ const Estimate = () => {
                       <Controller
                         name="paymentType"
                         control={control}
-                        defaultValue={[]}
                         render={({ field }) => (
                           <Select
                             isRequired
@@ -1421,8 +1429,9 @@ const Estimate = () => {
                           name="doc"
                           control={control}
                           render={({ field, fieldState: { error } }) => (
-                            <SingleFileUploader
+                            <FileUploader
                               isRequired
+                              uploadingType="multiple"
                               label="Document attachement"
                               value={field.value}
                               onChange={(value) => {

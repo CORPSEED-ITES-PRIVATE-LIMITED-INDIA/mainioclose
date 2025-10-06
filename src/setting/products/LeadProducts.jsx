@@ -27,6 +27,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   createProduct,
+  deleteProduct,
   getAllProductListByType,
   getAllProductListCount,
 } from "../../toolkit/slices/settingSlice";
@@ -38,7 +39,6 @@ export const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "NAME", uid: "productName", sortable: true },
   { name: "TYPE", uid: "type" },
-  { name: "ACTIONS", uid: "actions" },
 ];
 
 export const statusOptions = [
@@ -51,7 +51,7 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type", "actions"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type",];
 
 const LeadProducts = () => {
   const dispatch = useDispatch();
@@ -74,6 +74,7 @@ const LeadProducts = () => {
     type: "",
     serviceType: "",
   });
+  const [rowItem,setRowItem]=useState(null)
 
   const [initialFilteration, setInitialFilteration] = useState({
     type: "all",
@@ -111,42 +112,40 @@ const LeadProducts = () => {
 
   const pages = Math.ceil(count / initialFilteration?.size) || 1;
 
-  const items = React.useMemo(() => {
-    const start = (initialFilteration?.page - 1) * initialFilteration?.size;
-    const end = start + initialFilteration?.size;
-
-    return filteredItems.slice(start, end);
-  }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
-
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
-  const handleDelete = () => {
-    // dispatch((deleteId))
-    //   .then((resp) => {
-    //     if (resp.meta.requestStatus === "fulfilled") {
-    //       addToast({
-    //         title: "Status deleted successfully !.",
-    //         color: "success",
-    //       });
-    //       modal.onOpenChange(false);
-    //       setDeleteId(null);
-    //       dispatch(getAllStatusData());
-    //     } else {
-    //       addToast({ title: "Something went wrong !.", color: "danger" });
-    //     }
-    //   })
-    //   .catch(() =>
-    //     addToast({ title: "Something went wrong !.", color: "danger" })
-    //   );
-  };
+  // const handleDeleteOpen =(row)=>{
+  //   setRowItem(row)
+  //   modal.onOpen()
+  // }
+
+  // const handleDelete = () => {
+  //   dispatch(deleteProduct(deleteId))
+  //     .then((resp) => {
+  //       if (resp.meta.requestStatus === "fulfilled") {
+  //         addToast({
+  //           title: "Status deleted successfully !.",
+  //           color: "success",
+  //         });
+  //         modal.onOpenChange(false);
+  //         setDeleteId(null);
+  //         dispatch(getAllStatusData());
+  //       } else {
+  //         addToast({ title: "Something went wrong !.", color: "danger" });
+  //       }
+  //     })
+  //     .catch(() =>
+  //       addToast({ title: "Something went wrong !.", color: "danger" })
+  //     );
+  // };
 
   const handleSubmit = (values) => {
     dispatch(createProduct({ userId, ...values }))
@@ -193,28 +192,28 @@ const LeadProducts = () => {
           </Link>
         );
 
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem
-                  key="delete"
-                  color="danger"
-                  onClick={modal.onOpen}
-                >
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+      // case "actions":
+      //   return (
+      //     <div className="relative flex justify-center items-center gap-2">
+      //       <Dropdown>
+      //         <DropdownTrigger>
+      //           <Button isIconOnly size="sm" variant="light">
+      //             <EllipsisVertical className="text-default-300" />
+      //           </Button>
+      //         </DropdownTrigger>
+      //         <DropdownMenu>
+      //           <DropdownItem key="edit">Edit</DropdownItem>
+      //           <DropdownItem
+      //             key="delete"
+      //             color="danger"
+      //             onClick={()=>handleDeleteOpen(rowData)}
+      //           >
+      //             Delete
+      //           </DropdownItem>
+      //         </DropdownMenu>
+      //       </Dropdown>
+      //     </div>
+      //   );
       default:
         return cellValue;
     }

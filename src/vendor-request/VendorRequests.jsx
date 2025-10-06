@@ -18,7 +18,7 @@ import {
 } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, EllipsisVertical, Info, Search } from "lucide-react";
+import { ChevronDown, Dot, EllipsisVertical, Info, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
@@ -120,7 +120,18 @@ const VendorRequests = () => {
     switch (columnKey) {
       case "clientName":
         return (
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-1">
+            <Dot
+              className="w-8 h-8"
+              color={
+                rowData?.status === "Finished"
+                  ? "green"
+                  : rowData?.status === "Cancel"
+                    ? "black"
+                    : "red"
+              }
+            />
+
             <Link
               className="font-medium"
               to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
