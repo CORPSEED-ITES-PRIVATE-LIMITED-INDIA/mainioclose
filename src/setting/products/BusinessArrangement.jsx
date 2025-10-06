@@ -19,26 +19,22 @@ import {
   ModalHeader,
   ModalBody,
   Form,
-  Select,
-  SelectItem,
   addToast,
   ModalFooter,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createProduct,
-  deleteProduct,
-  getAllProductListByType,
-  getAllProductListCount,
+  createBusinessArrangement,
+  updateBusinessArrangement,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { addProductsInOperations } from "../../toolkit/slices/operationSlice";
+import { getAllBusinessArrangement } from "../../toolkit/slices/productSlice";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName", sortable: true },
-  { name: "TYPE", uid: "type" },
+  { name: "NAME", uid: "name", sortable: true },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export const statusOptions = [
@@ -51,11 +47,11 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
-const LeadProducts = () => {
+const BusinessArrangement = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
+  const { userId, productId } = useParams();
   const data = useSelector((state) => state.setting.productList);
   const count = useSelector((state) => state.setting.productListCount);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -71,8 +67,6 @@ const LeadProducts = () => {
   });
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
-    serviceType: "",
   });
   const [rowItem, setRowItem] = useState(null);
 
@@ -85,8 +79,7 @@ const LeadProducts = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllProductListByType(initialFilteration));
-    dispatch(getAllProductListCount(initialFilteration));
+    dispatch(getAllBusinessArrangement(productId));
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -122,104 +115,87 @@ const LeadProducts = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  // const handleDeleteOpen =(row)=>{
-  //   setRowItem(row)
-  //   modal.onOpen()
-  // }
+  const handleEditPress = (row) => {
+    setRowItem(row);
+    setFormData({ name: rowData?.name });
+    onOpen();
+  };
 
-  // const handleDelete = () => {
-  //   dispatch(deleteProduct(deleteId))
-  //     .then((resp) => {
-  //       if (resp.meta.requestStatus === "fulfilled") {
-  //         addToast({
-  //           title: "Status deleted successfully !.",
-  //           color: "success",
-  //         });
-  //         modal.onOpenChange(false);
-  //         setDeleteId(null);
-  //         dispatch(getAllStatusData());
-  //       } else {
-  //         addToast({ title: "Something went wrong !.", color: "danger" });
-  //       }
-  //     })
-  //     .catch(() =>
-  //       addToast({ title: "Something went wrong !.", color: "danger" })
-  //     );
-  // };
-
-  const handleSubmit = (values) => {
-    dispatch(createProduct({ userId, ...values }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          const productInfo = resp.payload;
-          addToast({
-            title: "Product created successfully !.",
-            color: "success",
-          });
-          onOpenChange(false);
-          dispatch(getAllProductListByType(initialFilteration));
-          dispatch(
-            addProductsInOperations([
-              {
-                productId: productInfo?.id,
-                productName: productInfo?.productName,
-                description: productInfo?.description,
-                createdBy: productInfo?.createdBy?.id,
-                updatedBy: productInfo?.createdBy?.id,
-                date: productInfo?.createdDate,
-                active: true,
-              },
-            ])
-          );
-          setFormData({ name: "", type: "" });
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+  const handleFinish = (values) => {
+    if (rowItem) {
+      dispatch(
+        updateBusinessArrangement({
+          ...values,
+          productId: productId,
+          id: rowItem?.id,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Business arrangement updated successfully",
+              color: "success",
+            });
+            onClose();
+            setFormData({ name: "" });
+            setRowItem(null);
+            dispatch(getAllBusinessArrangement(productId));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(createBusinessArrangement({ ...values, productId: productId }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Business arrangement created successfully",
+              color: "success",
+            });
+            onClose();
+            setFormData({ name: "" });
+            setRowItem(null);
+            dispatch(getAllBusinessArrangement(productId));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
 
     switch (columnKey) {
-      case "productName":
-        return (
-          <Link
-            to={
-              rowData?.type === "Service"
-                ? `${rowData?.id}/productDetail`
-                : `${rowData?.id}/businessArrangement`
-            }
-          >
-            {rowData?.productName}
-          </Link>
-        );
+      case "name":
+        return <Link to={`${rowData?.id}/productDetail`}>{rowData?.name}</Link>;
 
-      // case "actions":
-      //   return (
-      //     <div className="relative flex justify-center items-center gap-2">
-      //       <Dropdown>
-      //         <DropdownTrigger>
-      //           <Button isIconOnly size="sm" variant="light">
-      //             <EllipsisVertical className="text-default-300" />
-      //           </Button>
-      //         </DropdownTrigger>
-      //         <DropdownMenu>
-      //           <DropdownItem key="edit">Edit</DropdownItem>
-      //           <DropdownItem
-      //             key="delete"
-      //             color="danger"
-      //             onClick={()=>handleDeleteOpen(rowData)}
-      //           >
-      //             Delete
-      //           </DropdownItem>
-      //         </DropdownMenu>
-      //       </Dropdown>
-      //     </div>
-      //   );
+      case "actions":
+        return (
+          <div className="relative flex justify-center items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical className="text-default-300" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem
+                  key="edit"
+                  onPress={() => handleEditPress(rowData)}
+                >
+                  Edit
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
       default:
         return cellValue;
     }
@@ -347,7 +323,7 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} products
+            Total {count} business arrangement
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -417,7 +393,9 @@ const LeadProducts = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead products</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Business arrangement
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -476,14 +454,14 @@ const LeadProducts = () => {
                     let data = Object.fromEntries(
                       new FormData(e.currentTarget)
                     );
-                    handleSubmit(data);
+                    handleFinish(data);
                   }}
                 >
                   <div className="w-full grid grid-cols-2 gap-5 max-h-[65vh] overflow-auto p-4">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
-                      label="Product name"
+                      label="Business arrangement name"
                       name="name"
                       type="text"
                       value={formData?.name}
@@ -494,41 +472,6 @@ const LeadProducts = () => {
                         }))
                       }
                     />
-
-                    <Select
-                      isRequired
-                      errorMessage="please select the product type"
-                      label="Select product type"
-                      name="type"
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, type: e }))
-                      }
-                    >
-                      {[
-                        { label: "Product", value: "Product" },
-                        { label: "Service", value: "Service" },
-                      ].map((info) => (
-                        <SelectItem key={info.value}>{info.label}</SelectItem>
-                      ))}
-                    </Select>
-
-                    <Select
-                      isRequired
-                      errorMessage="please select the product type"
-                      label="Select product type"
-                      name="serviceType"
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, serviceType: e }))
-                      }
-                    >
-                      {[
-                        { label: "International", value: "international" },
-                        { label: "Central", value: "central" },
-                        { label: "State", value: "state" },
-                      ].map((info) => (
-                        <SelectItem key={info.value}>{info.label}</SelectItem>
-                      ))}
-                    </Select>
                   </div>
 
                   <ModalFooter className="w-full flex justify-end">
@@ -569,4 +512,4 @@ const LeadProducts = () => {
   );
 };
 
-export default LeadProducts;
+export default BusinessArrangement;

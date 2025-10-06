@@ -135,6 +135,9 @@ const VendorRequests = () => {
             <Link
               className="font-medium"
               to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
+              onClick={() =>
+                localStorage.setItem("vendorDetail", JSON.stringify(rowData))
+              }
             >
               {rowData?.clientName}
             </Link>
@@ -249,32 +252,32 @@ const VendorRequests = () => {
             </Popover>
           </div>
         );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let item = Array.from(e)[0];
-                  if (item === "paymentRegister") {
-                    handleActionsPress(rowData);
-                  }
-                }}
-              >
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+      // case "actions":
+      //   return (
+      //     <div className="relative flex justify-center items-center gap-2">
+      //       <Dropdown>
+      //         <DropdownTrigger>
+      //           <Button isIconOnly size="sm" variant="light">
+      //             <EllipsisVertical />
+      //           </Button>
+      //         </DropdownTrigger>
+      //         <DropdownMenu
+      //           selectionMode="single"
+      //           onSelectionChange={(e) => {
+      //             let item = Array.from(e)[0];
+      //             if (item === "paymentRegister") {
+      //               handleActionsPress(rowData);
+      //             }
+      //           }}
+      //         >
+      //           <DropdownItem key="edit">Edit</DropdownItem>
+      //           <DropdownItem key="delete" color="danger">
+      //             Delete
+      //           </DropdownItem>
+      //         </DropdownMenu>
+      //       </Dropdown>
+      //     </div>
+      //   );
       default:
         return rowData[columnKey] || "-";
     }
