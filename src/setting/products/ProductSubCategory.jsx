@@ -21,35 +21,49 @@ import {
   Form,
   addToast,
   ModalFooter,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createBusinessArrangement,
-  updateBusinessArrangement,
-} from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { getAllBusinessArrangement } from "../../toolkit/slices/productSlice";
+import {
+  createProductSubCategory,
+  editProductSubCategory,
+  getAllProductSubCategoryListByCategoryId,
+  toggleForRoundOffValue,
+} from "../../toolkit/slices/productSlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "name", sortable: true },
+  { name: "PRODUCT FEE", uid: "productFees" },
+  { name: "PRODUCT GST %", uid: "productGst" },
+  { name: "HSN CODE", uid: "productCode" },
+  { name: "ROUND OFF", uid: "roundoff" },
   { name: "ACTIONS", uid: "actions" },
 ];
-
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "productFees",
+  "productGst",
+  "productCode",
+  "roundoff",
+  "actions",
+];
 
-const BusinessArrangement = () => {
+const ProductSubCategory = () => {
   const dispatch = useDispatch();
-  const { productId } = useParams();
-  const data = useSelector((state) => state.product.businessArrangementList);
+  const { categoryId } = useParams();
+  const data = useSelector((state) => state.product.productSubcategoryList);
   const count = useSelector(
-    (state) => state.product.businessArrangementList?.length
+    (state) => state.product.productSubcategoryList?.length
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
@@ -64,6 +78,10 @@ const BusinessArrangement = () => {
   });
   const [formData, setFormData] = useState({
     name: "",
+    productFees: "",
+    productGst: "",
+    productCode: "",
+    roundValue: "",
   });
   const [rowItem, setRowItem] = useState(null);
 
@@ -75,7 +93,7 @@ const BusinessArrangement = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllBusinessArrangement(productId));
+    dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -113,29 +131,35 @@ const BusinessArrangement = () => {
 
   const handleEditPress = (row) => {
     setRowItem(row);
-    setFormData({ name: row?.name });
+    setFormData({
+      name: row?.name,
+      productFees: row?.productFees,
+      productGst: row?.productGst,
+      roundValue: row?.roundValue,
+      productCode: row?.productCode,
+    });
     onOpen();
   };
 
   const handleFinish = (values) => {
     if (rowItem) {
       dispatch(
-        updateBusinessArrangement({
+        editProductSubCategory({
           ...values,
-          productId: productId,
+          productCategoryId: categoryId,
           id: rowItem?.id,
         })
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Business arrangement updated successfully",
+              title: "Sub category updated successfully",
               color: "success",
             });
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllBusinessArrangement(productId));
+            dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -144,17 +168,22 @@ const BusinessArrangement = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     } else {
-      dispatch(createBusinessArrangement({ ...values, productId: productId }))
+      dispatch(
+        createProductSubCategory({
+          ...values,
+          productCategoryId: categoryId,
+        })
+      )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Business arrangement created successfully",
+              title: "Sub category created successfully",
               color: "success",
             });
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllBusinessArrangement(productId));
+            dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -169,7 +198,15 @@ const BusinessArrangement = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
-        return <Link to={`${rowData?.id}/productCategory`}>{rowData?.name}</Link>;
+        return <p> {rowData?.name}</p>;
+      case "productFees":
+        return <p> {rowData?.productFees}</p>;
+      case "productGst":
+        return <p> {rowData?.productGst}</p>;
+      case "productCode":
+        return <p> {rowData?.productCode}</p>;
+      case "roundoff":
+        return <p> {rowData?.roundValue ? "True" : "False"}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -185,6 +222,36 @@ const BusinessArrangement = () => {
                   onPress={() => handleEditPress(rowData)}
                 >
                   Edit
+                </DropdownItem>
+                <DropdownItem
+                  key="roundoff"
+                  onPress={() =>
+                    dispatch(toggleForRoundOffValue(rowData?.id))
+                      .then((resp) => {
+                        if (resp.meta.requestStatus === "fulfilled") {
+                          addToast({
+                            title: "Toggle updated successfully !.",
+                            color: "success",
+                          });
+                          dispatch(
+                            getAllProductSubCategoryListByCategoryId(categoryId)
+                          );
+                        } else {
+                          addToast({
+                            title: "Something went wrong !.",
+                            color: "danger",
+                          });
+                        }
+                      })
+                      .catch(() =>
+                        addToast({
+                          title: "Something went wrong !.",
+                          color: "danger",
+                        })
+                      )
+                  }
+                >
+                  Roundoff
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -286,7 +353,7 @@ const BusinessArrangement = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} business arrangement
+            Total {count} product sub category
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -354,10 +421,11 @@ const BusinessArrangement = () => {
     );
   }, [selectedKeys, initialFilteration?.page, pages, hasSearchFilter, count]);
 
+
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
-        Business arrangement
+        Product sub category
       </h1>
       <Table
         isHeaderSticky
@@ -408,7 +476,7 @@ const BusinessArrangement = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {rowItem ? "Update product" : "Create product"}
+                {rowItem ? "Update sub category" : "Create sub category"}
               </ModalHeader>
               <ModalBody>
                 <Form
@@ -420,11 +488,11 @@ const BusinessArrangement = () => {
                     handleFinish(data);
                   }}
                 >
-                  <div className="w-full grid gap-5 max-h-[65vh] overflow-auto p-4">
+                  <div className="w-full grid grid-cols-2 gap-5 max-h-[65vh] overflow-auto p-4">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
-                      label="Business arrangement name"
+                      label="Sub category name"
                       name="name"
                       type="text"
                       value={formData?.name}
@@ -435,6 +503,73 @@ const BusinessArrangement = () => {
                         }))
                       }
                     />
+                    <Input
+                      isRequired
+                      errorMessage="Please enter product name"
+                      label="Product fee ₹/kg"
+                      name="productFees"
+                      type="text"
+                      value={formData?.productFees}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productFees: e.target.value,
+                        }))
+                      }
+                    />
+                    <Input
+                      isRequired
+                      errorMessage="Please enter product name"
+                      label="Product gst %"
+                      name="productGst"
+                      type="text"
+                      value={formData?.productGst}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productGst: e.target.value,
+                        }))
+                      }
+                    />
+                    <Input
+                      isRequired
+                      errorMessage="Please enter product name"
+                      label="HSN code"
+                      name="productCode"
+                      type="text"
+                      value={formData?.productCode}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productCode: e.target.value,
+                        }))
+                      }
+                    />
+                    <Select
+                      label="Roundoff on product fee"
+                      name="roundValue"
+                      isRequired
+                      selectedKeys={[String(formData?.roundValue)]}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0];
+                        setFormData((prev) => ({
+                          ...prev,
+                          roundValue: value === "true",
+                        }));
+                      }}
+                    >
+                      {[
+                        { label: "True", value: true },
+                        { label: "False", value: false },
+                      ].map((item) => (
+                        <SelectItem
+                          key={item.value.toString()}
+                          value={item.value}
+                        >
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
                   </div>
 
                   <ModalFooter className="w-full flex justify-end">
@@ -475,4 +610,4 @@ const BusinessArrangement = () => {
   );
 };
 
-export default BusinessArrangement;
+export default ProductSubCategory;

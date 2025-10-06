@@ -23,13 +23,13 @@ import {
   ModalFooter,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createBusinessArrangement,
-  updateBusinessArrangement,
-} from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { getAllBusinessArrangement } from "../../toolkit/slices/productSlice";
+import {
+  createProductCategory,
+  editProductCategory,
+  getAllProductCategoryById,
+} from "../../toolkit/slices/productSlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -44,12 +44,12 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
-const BusinessArrangement = () => {
+const ProductCategory = () => {
   const dispatch = useDispatch();
-  const { productId } = useParams();
-  const data = useSelector((state) => state.product.businessArrangementList);
+  const { businessArrangmentId } = useParams();
+  const data = useSelector((state) => state.product.productCategoryList);
   const count = useSelector(
-    (state) => state.product.businessArrangementList?.length
+    (state) => state.product.productCategoryList?.length
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
@@ -75,7 +75,7 @@ const BusinessArrangement = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllBusinessArrangement(productId));
+    dispatch(getAllProductCategoryById(businessArrangmentId));
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -120,22 +120,22 @@ const BusinessArrangement = () => {
   const handleFinish = (values) => {
     if (rowItem) {
       dispatch(
-        updateBusinessArrangement({
+        editProductCategory({
           ...values,
-          productId: productId,
+          businessArrangmentId: businessArrangmentId,
           id: rowItem?.id,
         })
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Business arrangement updated successfully",
+              title: "Category updated successfully",
               color: "success",
             });
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllBusinessArrangement(productId));
+            dispatch(getAllProductCategoryById(businessArrangmentId));
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -144,17 +144,22 @@ const BusinessArrangement = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     } else {
-      dispatch(createBusinessArrangement({ ...values, productId: productId }))
+      dispatch(
+        createProductCategory({
+          ...values,
+          businessArrangmentId: businessArrangmentId,
+        })
+      )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Business arrangement created successfully",
+              title: "Category created successfully",
               color: "success",
             });
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllBusinessArrangement(productId));
+            dispatch(getAllProductCategoryById(businessArrangmentId));
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -169,7 +174,7 @@ const BusinessArrangement = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
-        return <Link to={`${rowData?.id}/productCategory`}>{rowData?.name}</Link>;
+        return <Link to={`${rowData?.id}/subCategory`}>{rowData?.name}</Link>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -286,7 +291,7 @@ const BusinessArrangement = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} business arrangement
+            Total {count} product category
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -356,9 +361,7 @@ const BusinessArrangement = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Business arrangement
-      </h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Product category</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -408,7 +411,7 @@ const BusinessArrangement = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {rowItem ? "Update product" : "Create product"}
+                {rowItem ? "Update category" : "Create category"}
               </ModalHeader>
               <ModalBody>
                 <Form
@@ -424,7 +427,7 @@ const BusinessArrangement = () => {
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
-                      label="Business arrangement name"
+                      label="Category name"
                       name="name"
                       type="text"
                       value={formData?.name}
@@ -475,4 +478,4 @@ const BusinessArrangement = () => {
   );
 };
 
-export default BusinessArrangement;
+export default ProductCategory;

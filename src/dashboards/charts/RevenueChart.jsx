@@ -55,7 +55,7 @@ const RevenueChart = () => {
     fromDate: today,
     filter: "",
     currentUserId: userId,
-    userId: userId,
+    userId: null,
   });
 
   useEffect(() => {
