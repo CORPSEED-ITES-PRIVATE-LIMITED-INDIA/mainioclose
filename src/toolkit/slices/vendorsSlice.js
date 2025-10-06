@@ -5,7 +5,7 @@ export const allVendorsCategory = createAsyncThunk(
   "allVendorsCatagory",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=800`
+      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=1000`
     );
     return response.data;
   }
@@ -52,6 +52,119 @@ export const getAllVendorsRequest = createAsyncThunk(
   }
 );
 
+export const createVendorsCategory = createAsyncThunk(
+  "createVendorsCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/create-vendor-category?userId=${data?.userId}&categoryName=${data?.categoryName}`
+    );
+    return response.data;
+  }
+);
+
+export const updateVendorsCategory = createAsyncThunk(
+  "updateVendorsCategory",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/update-vendor-category?userId=${data?.userId}&categoryId=${data?.categoryId}&newCategoryName=${data?.categoryName}`
+    );
+    return response.data;
+  }
+);
+
+export const createVendorsSubCategory = createAsyncThunk(
+  "createVendorsCategory",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/create-vendor-sub-category?userId=${data?.userId}`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const updateVendorsSubCategory = createAsyncThunk(
+  "updateVendorsSubCategory",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/update-vendor-sub-category?userId=${data?.userId}&categoryId=${data?.categoryId}&subCategoryId=${data?.subCategoryId}&newSubCategoryName=${data?.subCategoryName}&vendorCategoryResearchTat=${data?.vendorCategoryResearchTat}&vendorCompletionTat=${data?.vendorCompletionTat}`
+    );
+    return response.data;
+  }
+);
+
+export const updateProcurementUsers = createAsyncThunk(
+  "updateProcurementUsers",
+  async (data) => {
+    console.log("dshgsdjhgdsjgs", data);
+    const response = await api.post(
+      `/leadService/api/v1/vendor/map-assignee-to-sub-category?subCategoryId=${data?.subCategoryId}`,
+      JSON.stringify(data?.data || [])
+    );
+    return response.data;
+  }
+);
+
+export const getAllVendorsStatus = createAsyncThunk(
+  "getAllVendorsStatus",
+  async () => {
+    const response = await api.get(`/leadService/api/v1/vendor-status-all`);
+    return response.data;
+  }
+);
+
+export const getvendorHistoryByLeadId = createAsyncThunk(
+  "getvendorHistoryByLeadId",
+  async (data) => {
+    const response = await api.get(
+      `/leadService/api/v1/vendor/find-update-request-history?userId=${data?.userId}&leadId=${data?.leadId}&vendorRequestId=${data?.vendorRequestId}`
+    );
+    return response.data;
+  }
+);
+
+export const cancelVendorsRequest = createAsyncThunk(
+  "cancelVendorsRequest",
+  async ({ vendorRequestId, userId, cancelReason }) => {
+    const response = await api.delete(
+      `/leadService/api/v1/vendor/cancel-vendor-request?vendorRequestId=${vendorRequestId}&userId=${userId}&cancelReason=${cancelReason}`
+    );
+    return response.data;
+  }
+);
+
+export const updateVendorStatus = createAsyncThunk(
+  "updateVendorStatus",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/update-vendor-request?vendorId=${data?.vendorId}&userId=${data?.userId}&leadId=${data?.leadId}`,
+      data?.data
+    );
+    return response.data;
+  }
+);
+
+export const sendVendorsProposal = createAsyncThunk(
+  "vendorsProposal",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/send-quotation?leadId=${data?.leadId}&userId=${data?.userId}&vendorRequestId=${data?.vendorRequestId}`,
+      data?.data
+    );
+    return response.data;
+  }
+);
+
+export const searchInVendorsList = createAsyncThunk(
+  `searchInVendorsList`,
+  async ({ userId, searchInput }) => {
+    const response = await api.get(
+      `/leadService/api/v1/vendor/vendor-search?userId=${userId}&searchInput=${searchInput}`
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -59,8 +172,10 @@ const VendorsSlice = createSlice({
     loading: "",
     singleCategoryDetail: {},
     vendorsList: [],
-    totalVendorRequestCount:0,
-    allVendorsRequestList:[]
+    totalVendorRequestCount: 0,
+    allVendorsRequestList: [],
+    vendorsStatus: [],
+    singleVendorHistoryList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -100,7 +215,7 @@ const VendorsSlice = createSlice({
       state.vendorsList = [];
     });
 
-     builder.addCase(getAllVendorsRequest.pending, (state, action) => {
+    builder.addCase(getAllVendorsRequest.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllVendorsRequest.fulfilled, (state, action) => {
@@ -112,6 +227,43 @@ const VendorsSlice = createSlice({
       state.loading = "rejected";
       state.totalVendorRequestCount = 0;
       state.allVendorsRequestList = [];
+    });
+
+    builder.addCase(searchInVendorsList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchInVendorsList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.totalVendorRequestCount = action?.payload?.totalItems;
+      state.allVendorsRequestList = action?.payload?.vendorsRequests;
+    });
+    builder.addCase(searchInVendorsList.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.totalVendorRequestCount = 0;
+      state.allVendorsRequestList = [];
+    });
+
+    builder.addCase(getAllVendorsStatus.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorsStatus.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorsStatus = action?.payload;
+    });
+    builder.addCase(getAllVendorsStatus.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsStatus = [];
+    });
+
+    builder.addCase(getvendorHistoryByLeadId.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getvendorHistoryByLeadId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.singleVendorHistoryList = action?.payload;
+    });
+    builder.addCase(getvendorHistoryByLeadId.rejected, (state, action) => {
+      state.loading = "rejected";
     });
   },
 });

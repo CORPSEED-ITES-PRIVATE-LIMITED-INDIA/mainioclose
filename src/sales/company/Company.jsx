@@ -21,6 +21,12 @@ import {
   DrawerBody,
   DrawerFooter,
   getKeyValue,
+  ModalFooter,
+  addToast,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
 } from "@heroui/react";
 import { Award, ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -29,12 +35,15 @@ import { Link, useParams } from "react-router-dom";
 import {
   getAllNewCompanies,
   getHistoryByCompanyId,
+  searchCompanies,
+  updateMultiCompanyAssignee,
 } from "../../toolkit/slices/companySlice";
 import NewSelect from "../../components/NewSelect";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 import dayjs from "dayjs";
 import CreateCompanyForm from "./CreateCompanyForm";
 import { maskEmail, maskMobileNumber } from "../../common";
+import { getAllLeadUser } from "../../toolkit/slices/leadSlice";
 
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
@@ -65,6 +74,7 @@ const Company = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const updateModal = useDisclosure();
   const historyDrawer = useDisclosure();
   const count = useSelector(
     (state) => state.company.newCompaniesList?.[0]?.total
@@ -73,11 +83,9 @@ const Company = () => {
   const companyHistory = useSelector(
     (state) => state.company.companyHistoryList
   );
-  const allLeadUser = useSelector((state) => state.dashboard.dashboardUsers);
-  const currentRoles = useSelector((state) => state?.auth?.roles);
-  const countryList = useSelector((state) => state.common.countriesList);
-  const statesList = useSelector((state) => state.common.statesList);
-  const citiesList = useSelector((state) => state.common.citiesList);
+  const allLeadUser = useSelector((state) => state.leads.leadUsersList);
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole?.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -96,16 +104,19 @@ const Company = () => {
     rating: "all",
   });
   const [editData, setEditData] = useState(null);
+  const [searchFilterType, setSearchFilterType] = useState("name");
+  const [assigneeIds, setAssigneeIds] = useState([]);
+  const [companyId, setCompanyId] = useState([]);
 
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
     dispatch(getAllNewCompanies(companyFilteration));
-  }, [dispatch, companyFilteration]);
+  }, [dispatch]);
 
   useEffect(() => {
-    dispatch(getDashboardUsersByHeirarchy(userId));
-  }, []);
+    dispatch(getAllLeadUser(userId));
+  }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -115,31 +126,22 @@ const Company = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
-      );
-    }
-
-    return filteredUsers;
-  }, [data, filterValue]);
-
   const pages = Math.ceil(count / companyFilteration?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...(data || [])].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, data]);
+
+  const handleUpdateAssignee = (id) => {
+    setCompanyId([id]);
+    updateModal.onOpen();
+  };
 
   const renderCell = useCallback((company, columnKey) => {
     switch (columnKey) {
@@ -251,6 +253,14 @@ const Company = () => {
                 >
                   Edit
                 </DropdownItem>
+                <DropdownItem
+                  key="edit"
+                  onPress={() => {
+                    handleUpdateAssignee(company?.companyId);
+                  }}
+                >
+                  Update assignee
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -263,14 +273,26 @@ const Company = () => {
   const onNextPage = useCallback(() => {
     if (companyFilteration?.page < pages) {
       setCompanyFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
+      dispatch(
+        getAllNewCompanies({
+          ...companyFilteration,
+          page: companyFilteration.page + 1,
+        })
+      );
     }
-  }, [companyFilteration, pages]);
+  }, [companyFilteration, pages, dispatch]);
 
   const onPreviousPage = useCallback(() => {
     if (companyFilteration?.page > 1) {
       setCompanyFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
+      dispatch(
+        getAllNewCompanies({
+          ...companyFilteration,
+          page: companyFilteration.page - 1,
+        })
+      );
     }
-  }, [companyFilteration]);
+  }, [companyFilteration, dispatch]);
 
   const onRowsPerPageChange = useCallback((e) => {
     setCompanyFilteration((prev) => ({
@@ -280,34 +302,119 @@ const Company = () => {
     }));
   }, []);
 
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
-    } else {
-      setFilterValue("");
-    }
-  }, []);
+  const onSearchChange = useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
+        dispatch(
+          searchCompanies({
+            searchNameAndGSt: value,
+            userId,
+            type: searchFilterType,
+          })
+        );
+      } else {
+        setFilterValue("");
+        dispatch(getAllNewCompanies(companyFilteration));
+      }
+    },
+    [searchFilterType, dispatch, companyFilteration]
+  );
 
   const onClear = useCallback(() => {
     setFilterValue("");
     setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
+  const updateMultiAssigneeForCompanies = useCallback(() => {
+    dispatch(
+      updateMultiCompanyAssignee({
+        companyId:
+          selectedKeys.size === 0 ? companyId : Array.from(selectedKeys),
+        currentUserId: userId,
+        assigneeId: assigneeIds,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Companies assigned to user successfully",
+            color: "success",
+          });
+          setSelectedKeys(new Set([]));
+          setAssigneeIds([]);
+          updateModal.onClose();
+          dispatch(getAllNewCompanies(companyFilteration));
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [
+    selectedKeys,
+    dispatch,
+    userId,
+    assigneeIds,
+    companyFilteration,
+    companyId,
+  ]);
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
+          <div className="flex items-center gap-2 w-[35%]">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {searchFilterType}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[searchFilterType]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e);
+                  setSearchFilterType(key);
+                }}
+              >
+                <DropdownItem key="name">Name</DropdownItem>
+                <DropdownItem key="email">Email</DropdownItem>
+                <DropdownItem key="gst">GST</DropdownItem>
+                <DropdownItem key="contact">Contact</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Input
+              isClearable
+              className="w-full sm:max-w-[70%]"
+              placeholder="Search ..."
+              startContent={<Search />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+            />
+          </div>
+
           <div className="flex gap-3">
+            {adminRole && (
+              <Button
+                variant="flat"
+                onPress={updateModal.onOpen}
+                isDisabled={selectedKeys.size === 0}
+              >
+                Update assignee
+              </Button>
+            )}
+
             <div className="w-[200px]">
               {" "}
               <NewSelect
@@ -430,6 +537,7 @@ const Company = () => {
     hasSearchFilter,
     companyFilteration,
     allLeadUser,
+    selectedKeys,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -474,7 +582,7 @@ const Company = () => {
         </div>
       </div>
     );
-  }, [selectedKeys,count, companyFilteration, pages, hasSearchFilter]);
+  }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Company</h1>
@@ -600,6 +708,47 @@ const Company = () => {
           )}
         </DrawerContent>
       </Drawer>
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={updateModal.isOpen}
+        onOpenChange={updateModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update assignee
+              </ModalHeader>
+              <ModalBody>
+                <NewSelect
+                  isRequired={true}
+                  data={allLeadUser || []}
+                  label="Select users"
+                  name="assigneeId"
+                  labelKey="fullName"
+                  valueKey="id"
+                  value={assigneeIds}
+                  onChange={(selectedValue) => {
+                    setAssigneeIds(selectedValue);
+                  }}
+                />
+
+                <ModalFooter className="w-full flex justify-end">
+                  <Button onPress={onClose}>Cancel</Button>
+                  <Button
+                    color="primary"
+                    onPress={updateMultiAssigneeForCompanies}
+                  >
+                    Submit
+                  </Button>
+                </ModalFooter>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

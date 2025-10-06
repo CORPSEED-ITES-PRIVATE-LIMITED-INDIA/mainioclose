@@ -19,43 +19,29 @@ import {
   useDisclosure,
   Input,
   addToast,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
 } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import NewSelect from "../../components/NewSelect";
 import { useDispatch, useSelector } from "react-redux";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import { useParams } from "react-router-dom";
 import {
-  addVendorsDetail,
-  allVendorsCategory,
+  createVendorsSubCategory,
   getSingleCategoryDataById,
-  getVendorDetailList,
+  updateProcurementUsers,
+  updateVendorsSubCategory,
 } from "../../toolkit/slices/vendorsSlice";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  Info,
-  Plus,
-  Search,
-} from "lucide-react";
-import { Link, useParams } from "react-router-dom";
-import FileUploader from "../../components/FileUploader";
-import dayjs from "dayjs";
+import { getProcurementAssigneeList } from "../../toolkit/slices/commonSlice";
+import NewSelect from "../../components/NewSelect";
 
 const columns = [
-  { name: "ID", uid: "id" },
-  { name: "PERSON NAME", uid: "contactPersonName", sortable: true },
-  { name: "COMPANY NAME", uid: "clientCompanyName" },
-  { name: "CONTACT DETAILS", uid: "contactNumber" },
-  { name: "BUDGET", uid: "budgetPrice" },
-  { name: "CATEGORY", uid: "vendorCategoryName" },
-  { name: "DESCRIPTION", uid: "requirementDescription" },
-  { name: "ASSIGNEE", uid: "assigneeName" },
-  { name: "LATEST UPDATE", uid: "latestUpdate" },
+  { name: "ID", uid: "subCategoryId" },
+  { name: "SUB CATEGORY", uid: "subCategoryName", sortable: true },
+  { name: "RESEARCH TAT", uid: "vendorCategoryResearchTat" },
+  { name: "COMPLETION TAT", uid: "vendorCompletionTat" },
+  { name: "ASSIGNED USERS", uid: "assignedUsers" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -64,53 +50,47 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "contactPersonName",
-  "clientCompanyName",
-  "budgetPrice",
-  "assigneeName",
-  "vendorCategoryName",
-  "latestUpdate",
+  "subCategoryName",
+  "vendorCategoryResearchTat",
+  "vendorCompletionTat",
+  "assignedUsers",
   "actions",
 ];
 
 const formSchema = z.object({
-  clientName: z.string().min(1, "please enter the client name"),
-  clientMailId: z.string().min(1, "please enter email address"),
-  companyName: z.string().min(1, "please enter company name"),
-  vendorCategoryId: z.string().min(1, "please select category id"),
-  subVendorCategoryId: z.string().min(1, "please select subcategory id"),
-  salesAttachmentReferencePath: z
-    .array(z.string().min(1, "Each document path must not be empty"))
-    .min(1, "Please upload at least one document"),
-  clientMobileNumber: z.string().min(1, "please enter client mobile number"),
-  clientBudgetPrice: z.string().optional(),
-  description: z.string().min(1, "please enter description"),
+  subCategoryName: z.string().min(1, "please enter the sub category name"),
+  vendorCategoryResearchTat: z.string().min(1, "please enter the research TAT"),
+  vendorCompletionTat: z.string().min(1, "please enter the completion TAT"),
 });
 
 const defaultValues = {
-  clientName: "",
-  clientMailId: "",
-  companyName: "",
-  vendorCategoryId: "",
-  subVendorCategoryId: "",
-  salesAttachmentReferencePath: [],
-  clientMobileNumber: "",
-  clientBudgetPrice: "",
-  description: "",
+  subCategoryName: "",
+  vendorCategoryResearchTat: "",
+  vendorCompletionTat: "",
 };
 
-const Vendors = () => {
+const assigneeFormSchema = z.object({
+  usersId: z.array(z.string()),
+});
+
+const assigneeFormDefaultValues = z.object({
+  usersId: z.array(z.string()),
+});
+
+const ProcurementSubCategory = () => {
   const dispatch = useDispatch();
-  const { userId, leadId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const vendorsCategoryList = useSelector(
-    (state) => state.vendors.vendorsCategoryList
+  const { userId, categoryId } = useParams();
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const assigneeModal = useDisclosure();
+  const count = useSelector(
+    (state) => state.vendors.singleCategoryDetail?.subCategories?.length
   );
-  const subCategoryList = useSelector(
-    (state) => state.vendors.singleCategoryDetail.subCategories
+  const data =
+    useSelector((state) => state.vendors.singleCategoryDetail?.subCategories) ||
+    [];
+  const assigneeList = useSelector(
+    (state) => state.common.procurementAssigneeList
   );
-  const count = useSelector((state) => state.vendors.vendorsList?.length);
-  const data = useSelector((state) => state.vendors.vendorsList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -124,11 +104,12 @@ const Vendors = () => {
     page: 1,
     size: 50,
   });
+  const [rowItem, setRowItem] = useState(null);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(allVendorsCategory());
-    dispatch(getVendorDetailList({ userId, leadId }));
+    dispatch(getSingleCategoryDataById(categoryId));
+    dispatch(getProcurementAssigneeList(userId));
   }, [dispatch]);
 
   const {
@@ -139,6 +120,11 @@ const Vendors = () => {
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues,
+  });
+
+  const assigneeForm = useForm({
+    resolver: zodResolver(assigneeFormSchema),
+    defaultValues: assigneeFormDefaultValues,
   });
 
   const headerColumns = useMemo(() => {
@@ -177,118 +163,30 @@ const Vendors = () => {
     });
   }, [sortDescriptor, items]);
 
+  const handleActionsPress = (rowData) => {
+    reset({
+      categoryName: rowData?.vendorCategoryName,
+    });
+    setRowItem(rowData);
+    onOpen();
+  };
+
+  const handleUpdateUserActionPress = (rowData) => {
+    reset({
+      usersId: data?.assignedUsers?.map((item) => String(item?.userId)),
+    });
+    setRowItem(rowData);
+    assigneeModal.onOpen();
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "contactPersonName":
+      case "assignedUsers":
         return (
           <div className="flex items-start gap-2">
-            <span className="font-medium">{rowData?.contactPersonName}</span>
-          </div>
-        );
-      case "clientCompanyName":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.clientCompanyName}</span>
-          </div>
-        );
-      case "contactNumber":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.clientEmailId}</span>
-            <span className="text-sm text-gray-400">
-              {rowData?.contactNumber || "---"}
+            <span className="font-medium">
+              {rowData?.assignedUsers?.map((item) => item?.userName)?.join(",")}
             </span>
-          </div>
-        );
-      case "budgetPrice":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">₹ {rowData?.budgetPrice}</span>
-          </div>
-        );
-      case "vendorCategoryName":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-semibold">
-              {rowData.vendorCategoryName || "-"}
-            </span>
-            {rowData?.vendorSubCategoryName && (
-              <span className="text-xs text-foreground-400">
-                Sub-Category : {rowData?.vendorSubCategoryName}
-              </span>
-            )}
-          </div>
-        );
-
-      case "assigneeName":
-        return (
-          <div className="flex flex-col">
-            <span className="">{rowData?.assigneeName || "-"}</span>
-          </div>
-        );
-      case "requirementDescription":
-        return (
-          <div className="flex flex-col">
-            <span className="">{rowData?.requirementDescription || "-"}</span>
-          </div>
-        );
-      case "latestUpdate":
-        return (
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="">
-                Status : {rowData?.updateHistory[0]?.requestStatus || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Updated on :{" "}
-                {dayjs(rowData?.updateHistory[0]?.updateDate).format(
-                  "DD-MM-YYYY , hh:mm a"
-                ) || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Updated description :{" "}
-                {rowData?.updateHistory[0]?.updateDescription || "-"}
-              </span>
-            </div>
-            <Popover>
-              <PopoverTrigger>
-                <Button size="sm" variant="light" isIconOnly>
-                  <Info className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="text-small font-bold" {...titleProps}>
-                      Updated history
-                    </h3>
-                    <div className="text-tiny">
-                      {rowData?.updateHistory?.map((item,idx) => {
-                        return (
-                          <div className="flex flex-col my-4" key={`history${idx}`}>
-                            <span className="">
-                              Status :{" "}
-                              {item?.requestStatus || "-"}
-                            </span>
-                            <span className="text-xs text-foreground-400">
-                              Updated on :{" "}
-                              {dayjs(
-                                item?.updateDate
-                              ).format("DD-MM-YYYY , hh:mm a") || "-"}
-                            </span>
-                            <span className="text-xs text-foreground-400">
-                              Updated description :{" "}
-                              {item?.updateDescription ||
-                                "-"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
           </div>
         );
       case "actions":
@@ -304,15 +202,16 @@ const Vendors = () => {
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
-                  if (item === "paymentRegister") {
+                  if (item === "edit") {
                     handleActionsPress(rowData);
+                  }
+                  if (item === "updateUser") {
+                    handleUpdateUserActionPress(rowData);
                   }
                 }}
               >
                 <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
+                <DropdownItem key="updateUser">Update user</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -357,29 +256,77 @@ const Vendors = () => {
   }, []);
 
   const onSubmit = (values) => {
-    let tempData = {
-      leadId,
-      userId,
-      data: values,
-    };
-    dispatch(addVendorsDetail(tempData))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Vendor's details added successfully !.",
-            color: "success",
-          });
-          onOpenChange(false);
-          dispatch(getVendorDetailList({ leadId, userId }));
-          reset();
-        } else {
+    values.userId = userId;
+    values.vendorCategoryId = categoryId;
+    if (rowItem) {
+      values.subCategoryId = rowItem?.subCategoryId;
+      dispatch(updateVendorsSubCategory(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Sub category updated successfully",
+              color: "success",
+            });
+            onClose();
+            dispatch(getSingleCategoryDataById(categoryId));
+            setRowItem(null);
+            reset(defaultValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(createVendorsSubCategory(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Sub category added successfully !.",
+              color: "success",
+            });
+            onClose();
+            dispatch(getSingleCategoryDataById(categoryId));
+            reset();
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() => {
           addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() => {
-        addToast({ message: "Something went wrong !.", color: "danger" });
-      });
+        });
+    }
   };
+
+  const handleChangeAssignee = useCallback(
+    (values) => {
+      dispatch(
+        updateProcurementUsers({
+          data: values?.usersId,
+          subCategoryId: rowItem?.subCategoryId,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Assignee updated successfully",
+              color: "success",
+            });
+            assigneeModal.onClose();
+            dispatch(getSingleCategoryDataById(categoryId));
+            assigneeForm.reset(assigneeFormDefaultValues);
+            setRowItem(null);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    },
+    [dispatch, rowItem, assigneeForm]
+  );
 
   const topContent = useMemo(() => {
     return (
@@ -387,7 +334,7 @@ const Vendors = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
@@ -418,7 +365,7 @@ const Vendors = () => {
             </Dropdown>
 
             <Button color="primary" onPress={onOpen} endContent={<Plus />}>
-              Add vendor's request
+              Add subcategory
             </Button>
           </div>
         </div>
@@ -483,25 +430,20 @@ const Vendors = () => {
         </div>
       </div>
     );
-  }, [
-    selectedKeys,
-    count,
-    filteration,
-    pages,
-    onPreviousPage,
-    onNextPage,
-  ]);
+  }, [selectedKeys, count, filteration, pages, onPreviousPage, onNextPage]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendors list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Procurement sub categories
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[50vh] max-w-full",
+          wrapper: "max-h-[70vh] max-w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -526,7 +468,7 @@ const Vendors = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.id || item.companyId}>
+            <TableRow key={item.subCategoryId}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -545,148 +487,107 @@ const Vendors = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add vendors request</ModalHeader>
+              <ModalHeader>
+                {rowItem ? "Update subcategory" : "Add subcategory"}
+              </ModalHeader>
               <ModalBody>
                 <form
                   onSubmit={handleSubmit(onSubmit)}
                   className="flex flex-col gap-4"
                 >
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
+                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
                     <Controller
-                      name="clientName"
+                      name="subCategoryName"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
-                          label="Client name"
+                          label="Sub category name"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       )}
                     />
                     <Controller
-                      name="clientMailId"
+                      name="vendorCategoryResearchTat"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
-                          label="Client email"
+                          label="Research TAT"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       )}
                     />
                     <Controller
-                      name="companyName"
+                      name="vendorCompletionTat"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
-                          label="Company name"
+                          label="Completion TAT"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       )}
                     />
+                  </div>
 
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        size="3xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={assigneeModal.isOpen}
+        onOpenChange={assigneeModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Update procurement assignee</ModalHeader>
+              <ModalBody>
+                <form
+                  onSubmit={assigneeForm.handleSubmit(handleChangeAssignee)}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
                     <Controller
-                      name="vendorCategoryId"
-                      control={control}
+                      name="usersId"
+                      control={assigneeForm.control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           isRequired
-                          label="Category"
+                          selectionMode={"multiple"}
+                          label="Assignee"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          data={vendorsCategoryList || []}
-                          labelKey="vendorCategoryName"
+                          data={assigneeList || []}
+                          labelKey="fullName"
                           valueKey="id"
-                          name="vendorCategoryId"
-                          value={field.value}
-                          onChange={(value) => {
-                            dispatch(getSingleCategoryDataById(value));
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="subVendorCategoryId"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          label="Sub-Category"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          name="subVendorCategoryId"
-                          data={subCategoryList || []}
-                          labelKey="subCategoryName"
-                          valueKey="subCategoryId"
+                          name="usersId"
                           value={field.value}
                           onChange={(value) => {
                             field.onChange(value);
                           }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="salesAttachmentReferencePath"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <FileUploader
-                          uploadingType="multiple"
-                          isRequired
-                          label="Company document"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="clientMobileNumber"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Contact number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="clientBudgetPrice"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Client budget"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="description"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Description"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          {...field}
                         />
                       )}
                     />
@@ -708,4 +609,4 @@ const Vendors = () => {
   );
 };
 
-export default Vendors;
+export default ProcurementSubCategory;

@@ -10,11 +10,19 @@ import Vendors from "../sales/vendors/Vendors";
 import Proposal from "../sales/proposal/Proposal";
 import LeadEstimate from "../sales/leads/LeadEstimate";
 import LeadSearch from "../quality/LeadSearch";
+import KeepAlive from "react-activation";
 
-const IVRRouting = () => {
+const QualityRouting = () => {
   return (
     <>
-      <Route path="quality/leads" element={<Leads />} />
+      <Route
+        path="quality/leads"
+        element={
+          <KeepAlive>
+            <Leads />
+          </KeepAlive>
+        }
+      />
       <Route path="quality/leadsSearch" element={<LeadSearch />} />
       <Route path="quality/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
@@ -29,4 +37,4 @@ const IVRRouting = () => {
   );
 };
 
-export default IVRRouting;
+export default QualityRouting;

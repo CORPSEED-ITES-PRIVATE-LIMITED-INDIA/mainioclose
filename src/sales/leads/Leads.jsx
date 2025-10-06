@@ -492,12 +492,12 @@ const Leads = () => {
                 >
                   History
                 </DropdownItem>
-                <DropdownItem
+                {/* <DropdownItem
                   key="tasks"
                   href={`erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
                 >
                   Lead tasks
-                </DropdownItem>
+                </DropdownItem> */}
                 {/* <DropdownItem key="edit">Edit</DropdownItem> */}
                 <DropdownItem key="delete" color="danger">
                   Delete
@@ -571,7 +571,6 @@ const Leads = () => {
       leadId: Array.from(selectedKeys),
       updatedById: Number(userId),
     };
-    console.log("dgasjkfgsdjkg",obj)
     dispatch(deleteMultipleLeads(obj))
       .then((response) => {
         if (response?.meta?.requestStatus === "fulfilled") {

@@ -35,13 +35,15 @@ const Login = () => {
                     navigate(`/erp/${resp?.payload?.id}/dashboard`);
                   } else {
                     if (response.payload?.department === "Procurement") {
-                      navigate(`/erp/${resp?.payload?.id}/vendors`);
+                      navigate(
+                        `/erp/${resp?.payload?.id}/procurement/vendors-requests`
+                      );
                     }
                     if (response.payload?.department === "Human Resource") {
                       navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
                     }
                     if (response.payload?.department === "Accounts") {
-                      navigate(`/erp/${resp?.payload?.id}/account/accounts`);
+                      navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
                     } else {
                       navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
                     }

@@ -163,6 +163,11 @@ export const navItems = [
     children: [
       { title: "IVR", icon: "", url: "quality/ivr", key: "ivr" },
       { title: "Report", icon: "", url: "quality/report", key: "report" },
+      {
+        title: "Lead search",
+        url: "quality/leadsSearch",
+        key: "leadsSearch",
+      },
     ],
   },
   {
@@ -192,19 +197,19 @@ export const navItems = [
     key: "users",
   },
   {
-    title: "Vendor's",
+    title: "Procurement",
     icon: "SquareUserRound",
     url: "",
-    key: "vendorsRequest",
+    key: "Procurement",
     children: [
       {
         title: "Vendor",
-        url: "vendors-requests",
-        key: "vendor",
+        url: "procurement/vendors-requests",
+        key: "vendorRequest",
       },
       {
         title: "Payments",
-        url: "vendors-payments",
+        url: "procurement/vendors-payments",
         key: "vendors-payments",
       },
     ],
@@ -257,6 +262,12 @@ export const navItems = [
         icon: "",
         url: "settings/designation",
         key: "designation",
+      },
+      {
+        title: "Procurement category",
+        icon: "",
+        url: "settings/procurementCategory",
+        key: "procurementCategory",
       },
     ],
   },
@@ -321,7 +332,7 @@ export const accountNavItems = [
     title: "Vendor's payments",
     url: "accounts/vendor-payments",
     key: "accounts/vendor-payments",
-    icon: "Coin",
+    icon: "HandCoins",
   },
   {
     title: "Organization",
@@ -346,10 +357,9 @@ export const accountNavItems = [
       },
       {
         title: "Daily book",
-        url: "accounts/organizations/dailyBook",
-        key: "dailyBook",
+        url: "accounts/organizations/dayBook",
+        key: "dayBook",
       },
-
       {
         title: "Profit/Loss",
         url: "accounts/organizations/profitLoss",
@@ -474,5 +484,20 @@ export const qualityNavItems = [
     icon: "NotepadTextDashed",
     url: "quality/report",
     key: "report",
+  },
+];
+
+export const procurementItems = [
+  {
+    title: "Vendor",
+    icon: "User2",
+    url: "procurement/vendors-requests",
+    key: "vendor",
+  },
+  {
+    title: "Payments",
+    icon: "Coin",
+    url: "procurement/vendors-payments",
+    key: "vendors-payments",
   },
 ];

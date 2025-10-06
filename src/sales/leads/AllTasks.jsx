@@ -184,7 +184,6 @@ const AllTasks = () => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <div className="flex gap-3 items-end">
             <Input
               isClearable
               className="w-full sm:max-w-[35%]"
@@ -194,7 +193,6 @@ const AllTasks = () => {
               onClear={() => onClear()}
               onValueChange={onSearchChange}
             />
-          </div>
           <div className="flex gap-3">
             <div>
               <DatePicker

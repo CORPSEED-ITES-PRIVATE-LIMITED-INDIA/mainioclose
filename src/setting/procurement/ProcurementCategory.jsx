@@ -4,6 +4,11 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Pagination,
   Table,
   TableBody,
@@ -11,36 +16,28 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  useDisclosure,
   Input,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
+  addToast,
 } from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, EllipsisVertical, Info, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import dayjs from "dayjs";
 import {
   allVendorsCategory,
-  getAllVendorsRequest,
-} from "../toolkit/slices/vendorsSlice";
-import { inrCurrency } from "../common";
+  createVendorsCategory,
+  updateVendorsCategory,
+} from "../../toolkit/slices/vendorsSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
-  { name: "CLIENT NAME", uid: "clientName", sortable: true },
-  { name: "COMPANY NAME", uid: "clientCompanyName" },
-  { name: "ASSIGNEE", uid: "assigneeName" },
-  { name: "CLIENT CONTACT", uid: "clientMobileNumber" },
-  { name: "BUDGET", uid: "budgetPrice" },
-  { name: "CATEGORY", uid: "vendorCategoryName" },
-  { name: "SUB CATEGORY", uid: "vendorSubCategoryName" },
-  { name: "RECEIVED DATE", uid: "receivedDate" },
-  { name: "COMPLETED DATE", uid: "completedDate" },
-  { name: "TAT detail", uid: "tatDetail" },
-  { name: "RAISED BY", uid: "raiseBy" },
-  { name: "COMMENT", uid: "vendorComment" },
+  { name: "CATEGORY", uid: "category", sortable: true },
+  { name: "ADDED BY", uid: "addedByUserName" },
+  { name: "DATE", uid: "date" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -49,23 +46,28 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "clientName",
-  "clientCompanyName",
-  "assigneeName",
-  "budgetPrice",
-  "vendorCategoryName",
-  "tatDetail",
-  "raiseBy",
-  "vendorComment",
+  "category",
+  "addedByUserName",
+  "date",
   "actions",
 ];
 
-const VendorRequests = () => {
+const formSchema = z.object({
+  categoryName: z.string().min(1, "please enter the category name"),
+});
+
+const defaultValues = {
+  categoryName: "",
+};
+
+const ProcurementCategory = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
-  const count = useSelector((state) => state.vendors.totalVendorRequestCount);
-  const data =
-    useSelector((state) => state.vendors.allVendorsRequestList) || [];
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const count = useSelector(
+    (state) => state.vendors.vendorsCategoryList?.length
+  );
+  const data = useSelector((state) => state.vendors.vendorsCategoryList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -79,12 +81,22 @@ const VendorRequests = () => {
     page: 1,
     size: 50,
   });
+  const [rowItem, setRowItem] = useState(null);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
     dispatch(allVendorsCategory());
-    dispatch(getAllVendorsRequest({ userId, ...filteration }));
   }, [dispatch]);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultValues,
+  });
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -107,135 +119,51 @@ const VendorRequests = () => {
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
+  const items = useMemo(() => {
+    const start = (filteration?.page - 1) * filteration?.size;
+    const end = start + filteration?.size;
+    return filteredItems.slice(start, end);
+  }, [filteration, filteredItems]);
+
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...items].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, items]);
+
+  const handleActionsPress = (rowData) => {
+    reset({
+      categoryName: rowData?.vendorCategoryName,
+    });
+    setRowItem(rowData);
+    onOpen();
+  };
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "clientName":
+      case "category":
         return (
           <div className="flex items-start gap-2">
-            <Link
-              className="font-medium"
-              to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
-            >
-              {rowData?.clientName}
+            <Link className="font-medium" to={`${rowData?.id}/subcategory`}>
+              {rowData?.vendorCategoryName}
             </Link>
           </div>
         );
-      case "clientCompanyName":
+      case "addedByUserName":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.clientCompanyName}</span>
+            <span className="font-normal">{rowData?.addedByUserName}</span>
           </div>
         );
-      case "clientMobileNumber":
+      case "date":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.clientEmailId}</span>
             <span className="text-sm text-gray-400">
-              {rowData?.clientMobileNumber || "---"}
+              {rowData?.date || "---"}
             </span>
-          </div>
-        );
-      case "budgetPrice":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {" "}
-              {inrCurrency(rowData?.budgetPrice)}
-            </span>
-          </div>
-        );
-      case "vendorCategoryName":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-semibold">
-              {rowData.vendorCategoryName || "-"}
-            </span>
-            {rowData?.vendorSubCategoryName && (
-              <span className="text-xs text-foreground-400">
-                Sub-Category : {rowData?.vendorSubCategoryName}
-              </span>
-            )}
-          </div>
-        );
-
-      case "assigneeName":
-        return (
-          <div className="flex flex-col">
-            <span className="">{rowData?.assigneeName || "-"}</span>
-          </div>
-        );
-      case "requirementDescription":
-        return (
-          <div className="flex flex-col">
-            <span className="">{rowData?.requirementDescription || "-"}</span>
-          </div>
-        );
-      case "tatDetail":
-        return (
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="">
-                Completion days : {rowData?.completionDays || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Days left : {rowData?.tatDaysLeft || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Overdue : {rowData?.overDueTat || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Subcategory TAT : {rowData?.subCategoryTatDays || "-"}
-              </span>
-            </div>
-            <Popover>
-              <PopoverTrigger>
-                <Button size="sm" variant="light" isIconOnly>
-                  <Info className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="text-small font-bold" {...titleProps}>
-                      Updated history
-                    </h3>
-                    <div className="text-tiny">
-                      {rowData?.updateHistory?.map((item, idx) => {
-                        return (
-                          <div
-                            className="flex flex-col my-4"
-                            key={`history${idx}`}
-                          >
-                            <span className="">
-                              Status : {item?.requestStatus || "-"}
-                            </span>
-                            <span className="text-xs text-foreground-400">
-                              Updated on :{" "}
-                              {dayjs(item?.updateDate).format(
-                                "DD-MM-YYYY , hh:mm a"
-                              ) || "-"}
-                            </span>
-                            <span className="text-xs text-foreground-400">
-                              Updated description :{" "}
-                              {item?.updateDescription || "-"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
           </div>
         );
       case "actions":
@@ -251,15 +179,12 @@ const VendorRequests = () => {
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
-                  if (item === "paymentRegister") {
+                  if (item === "edit") {
                     handleActionsPress(rowData);
                   }
                 }}
               >
                 <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -303,6 +228,49 @@ const VendorRequests = () => {
     setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
+  const onSubmit = (values) => {
+    values.userId = userId;
+    if (rowItem) {
+      values.categoryId = rowItem?.id;
+      dispatch(updateVendorsCategory(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Category updated successfully",
+              color: "success",
+            });
+            onClose();
+            dispatch(allVendorsCategory());
+            setRowItem(null);
+            reset(defaultValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(createVendorsCategory(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Category added successfully !.",
+              color: "success",
+            });
+            onClose();
+            dispatch(allVendorsCategory());
+            reset();
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() => {
+          addToast({ message: "Something went wrong !.", color: "danger" });
+        });
+    }
+  };
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -338,6 +306,10 @@ const VendorRequests = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+
+            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
+              Add vendors
+            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -360,14 +332,7 @@ const VendorRequests = () => {
         </div>
       </div>
     );
-  }, [
-    filterValue,
-    visibleColumns,
-    onRowsPerPageChange,
-    count,
-    onSearchChange,
-    data,
-  ]);
+  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -412,7 +377,9 @@ const VendorRequests = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendor's requests</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Procurement categories
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"
@@ -452,8 +419,56 @@ const VendorRequests = () => {
           )}
         </TableBody>
       </Table>
+      <Modal
+        size="3xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                {rowItem ? "Edit category" : "Add category"}
+              </ModalHeader>
+              <ModalBody>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
+                    <Controller
+                      name="categoryName"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Category name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };
 
-export default VendorRequests;
+export default ProcurementCategory;

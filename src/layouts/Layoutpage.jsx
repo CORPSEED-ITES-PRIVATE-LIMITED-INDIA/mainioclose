@@ -7,6 +7,7 @@ import { ThemeSwitch } from "../components/theme-switch";
 import {
   accountNavItems,
   navItems,
+  procurementItems,
   qualityNavItems,
   salesNavItems,
 } from "./NavItems";
@@ -19,6 +20,7 @@ const getNavItemsByDepartment = (department, admin) => {
     Sales: salesNavItems,
     "Quality Team": qualityNavItems,
     Accounts: accountNavItems,
+    Procurement: procurementItems,
     NA: navItems,
   };
   return items[trimmed] || navItems;
@@ -36,7 +38,6 @@ const Layoutpage = () => {
   const userIndex = segments.indexOf("erp");
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
-
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
