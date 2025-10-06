@@ -716,7 +716,6 @@ const VendorRequestDetail = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
-                              isRequired
                               label="Additional email"
                               errorMessage={error?.message}
                               isInvalid={!!error}

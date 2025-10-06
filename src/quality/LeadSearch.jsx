@@ -24,10 +24,10 @@ import dayjs from "dayjs";
 import { Link, useParams } from "react-router-dom";
 
 export const columns = (admin) => [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "LEAD NAME", uid: "leadName", sortable: true },
+  { name: "ID", uid: "id" },
+  { name: "LEAD NAME", uid: "leadName" },
   ...(admin ? [{ name: "CONTACT", uid: "contact" }] : []),
-  { name: "STATUS", uid: "status", sortable: true },
+  { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "UPDATED BY", uid: "updatedBy" },
   { name: "SOURCE", uid: "source" },
@@ -57,7 +57,6 @@ const LeadSearch = () => {
   const data = useSelector((state) => state.leads.leadSearchList);
   const count = useSelector((state) => state.leads.leadSearchList?.length);
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
-  const department = useSelector((state) => state.auth.getDepartmentDetail);
   const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState([]);
@@ -88,12 +87,6 @@ const LeadSearch = () => {
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    const first = a[sortDescriptor.column];
-    const second = b[sortDescriptor.column];
-    const cmp = first < second ? -1 : first > second ? 1 : 0;
-    return sortDescriptor.direction === "descending" ? -cmp : cmp;
-  });
 
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {
@@ -296,9 +289,9 @@ const LeadSearch = () => {
     onSearchChange,
     hasSearchFilter,
     selectedKeys,
-    sortedItems,
     data,
     adminRole,
+    filteredItems
   ]);
 
   const bottomContent = useMemo(() => {
@@ -350,9 +343,6 @@ const LeadSearch = () => {
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
-        // classNames={{
-        //   wrapper: "max-h-[65vh]",
-        // }}
         classNames={{
           wrapper:
             "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
@@ -379,7 +369,7 @@ const LeadSearch = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={filteredItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (

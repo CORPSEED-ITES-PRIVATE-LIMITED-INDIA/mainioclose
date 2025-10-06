@@ -922,7 +922,7 @@ const LeadInfo = () => {
                           name={remark?.updatedBy?.fullName}
                         />
                       </div>
-                      <p className="text-xs text-gray-500">{remark?.message}</p>
+                      <p className="text-sm">{remark?.message}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex justify-between items-center">

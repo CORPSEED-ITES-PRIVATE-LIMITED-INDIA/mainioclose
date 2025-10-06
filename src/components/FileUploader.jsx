@@ -162,7 +162,7 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
         }`}
       >
         {label && (
-          <p className="text-sm text-gray-400">
+          <p className="text-sm">
             {label}
             {isRequired && <span className="text-red-500">*</span>}
           </p>
