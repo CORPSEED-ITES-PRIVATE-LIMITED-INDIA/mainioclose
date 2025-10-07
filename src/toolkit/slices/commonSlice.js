@@ -144,6 +144,26 @@ export const getAllUsers = createAsyncThunk("allUsers", async () => {
   return allUser?.data;
 });
 
+export const activateOrDeActivateUser = createAsyncThunk(
+  "deActivateUser",
+  async ({ currentUserId, id }) => {
+    const statusUserData = await api.put(
+      `/leadService/api/v1/users/autoActive?userId=${id}&currentUser=${currentUserId}`
+    );
+    return statusUserData?.data;
+  }
+);
+
+export const deleteUserInLeadService = createAsyncThunk(
+  "deleteUserInLeadService",
+  async (id) => {
+    const response = await api.delete(
+      `/leadService/api/v1/users/deleteUser?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllRoles = createAsyncThunk("allRoles", async () => {
   const response = await api.get(`/securityService/api/v1/roles/getRole`);
   return response.data;
@@ -154,6 +174,17 @@ export const createUserByHr = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/users/createUserByHr`,
+      data
+    );
+    return response;
+  }
+);
+
+export const updateLeadByHr = createAsyncThunk(
+  "upDateLeadByHr",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/users/editUserByHr`,
       data
     );
     return response;
@@ -461,6 +492,16 @@ export const getAllTaskStatus = createAsyncThunk("allTaskStatus", async () => {
   return response.data;
 });
 
+export const getUserHistoryById = createAsyncThunk(
+  "getUserHistoryById",
+  async (id) => {
+    const response = await api.get(
+      `/leadService/api/v1/rating/getAllUserHistory?userId=${id}`
+    );
+    return response?.data;
+  }
+);
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -501,6 +542,7 @@ const CommonSlice = createSlice({
     allIndustryDataCount: 0,
     allRoles: [],
     allTaskStatusData: [],
+    userHistoryList:[]
   },
   reducers: {
     handleReset: (state) => {
@@ -966,6 +1008,17 @@ const CommonSlice = createSlice({
       state.allTaskStatusData = action.payload;
     });
     builder.addCase(getAllTaskStatus.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getUserHistoryById.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUserHistoryById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.userHistoryList = action.payload;
+    });
+    builder.addCase(getUserHistoryById.rejected, (state, action) => {
       state.loading = "rejected";
     });
   },

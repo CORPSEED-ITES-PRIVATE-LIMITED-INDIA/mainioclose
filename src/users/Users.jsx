@@ -1,11 +1,23 @@
 import {
+  addToast,
   Avatar,
   Button,
+  Chip,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Pagination,
   Table,
   TableBody,
@@ -14,19 +26,34 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  User,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import {
+  ChevronDown,
+  Dot,
+  EllipsisVertical,
+  Search,
+  User2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getAllUsers } from "../toolkit/slices/commonSlice";
+import {
+  activateOrDeActivateUser,
+  deleteUserInLeadService,
+  getAllUsers,
+} from "../toolkit/slices/commonSlice";
+import dayjs from "dayjs";
+import { deleteUserInAuth } from "../toolkit/slices/authSlice";
 
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
+  { name: "ID", uid: "id" },
   { name: "NAME", uid: "fullName", sortable: true },
   { name: "EMAIL", uid: "email" },
   { name: "DEPARTMENT", uid: "department" },
+  { name: "MANAGER", uid: "manager" },
   { name: "ROLE", uid: "role" },
+  { name: "JOIN DATE", uid: "dateOfJoining" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -38,16 +65,16 @@ const INITIAL_VISIBLE_COLUMNS = [
   "fullName",
   "email",
   "department",
+  "manager",
   "role",
+  "dateOfJoining",
   "actions",
 ];
 
 const Users = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
-  const count = useSelector(
-    (state) => state.company.newCompaniesList?.[0]?.total
-  );
+  const count = useSelector((state) => state.common.usersList?.length);
   const data = useSelector((state) => state.common.usersList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
@@ -56,10 +83,11 @@ const Users = () => {
   );
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "fullName",
     direction: "ascending",
   });
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const deleteModal = useDisclosure();
   const [initialFilteration, setInitialFilteration] = useState({
     userId: userId,
     page: 1,
@@ -68,8 +96,9 @@ const Users = () => {
     type: "all",
     rating: "all",
   });
-
+  const [userData, setUserData] = useState(null);
   const hasSearchFilter = Boolean(filterValue);
+  const [rowId, setRowId] = useState(null);
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -85,21 +114,13 @@ const Users = () => {
 
   const filteredItems = useMemo(() => {
     let filteredUsers = [...(data || [])];
-
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.leadName.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
-    // if (
-    //   statusFilter !== "all" &&
-    //   Array.from(statusFilter).length !== statusOptions.length
-    // ) {
-    //   filteredUsers = filteredUsers.filter((user) =>
-    //     Array.from(statusFilter).includes(user.status)
-    //   );
-    // }
-
     return filteredUsers;
   }, [data, filterValue, statusFilter]);
 
@@ -122,22 +143,83 @@ const Users = () => {
     });
   }, [sortDescriptor, items]);
 
+  const handleActionPress = (row) => {
+    dispatch(activateOrDeActivateUser({ id: row?.id, currentUserId: userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "User status updated successfully !.",
+            color: "success",
+          });
+          dispatch(getAllUsers());
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
+  const handleDeleteUser = () => {
+    dispatch(deleteUserInAuth(rowId))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "User deleted successfully !.",
+            color: "success",
+          });
+          dispatch(deleteUserInLeadService(rowId));
+          dispatch(getAllUsers());
+          setRowId(null);
+          deleteModal.onClose();
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "fullName":
         return (
           <div className="flex items-center gap-2">
-            <Avatar size="md" />
-            <div className="flex flex-col">
-              <span className="font-semibold">{rowData?.fullName || "-"}</span>
-            </div>
+            <Dot
+              className="h-12 w-12 m-0 p-0"
+              color={rowData?.autoActive ? "#99ff99" : "#ff9999"}
+            />
+            <User
+              className="cursor-pointer"
+              description={rowData?.employeeId}
+              name={rowData?.fullName}
+              onClick={() => {
+                onOpen();
+                setUserData(rowData);
+              }}
+            />
           </div>
         );
-
       case "email":
         return (
           <div className="flex flex-col">
             <span className="font-semibold">{rowData.email || "-"}</span>
+            <span className="font-normal text-sm text-default-500">
+              {rowData.contactNo || "-"}
+            </span>
+          </div>
+        );
+      case "manager":
+        return (
+          <div className="flex flex-col">
+            <span className="font-semibold">
+              {rowData?.managers?.fullName || "-"}
+            </span>
+            <span className="text-sm text-default-400">
+              {rowData?.managers?.contactNo || "-"}
+            </span>
           </div>
         );
       case "department":
@@ -159,7 +241,14 @@ const Users = () => {
             </span>
           </div>
         );
-
+      case "dateOfJoining":
+        return (
+          <div className="flex flex-col">
+            <span className="font-semibold">
+              {dayjs(rowData?.dateOfJoining).format("DD-MM-YYYY") || "-"}
+            </span>
+          </div>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -170,11 +259,23 @@ const Users = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="history">
-                  <Link>History</Link>
+                <DropdownItem key="userHistory">
+                  <Link to={`${rowData?.id}/userHistory`}>User history</Link>
                 </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
+                <DropdownItem
+                  key="action"
+                  onPress={() => handleActionPress(rowData)}
+                >
+                  {rowData?.autoActive ? "Active" : "Deactive"}
+                </DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  onPress={() => {
+                    setRowId(rowData?.id);
+                    deleteModal.onOpen();
+                  }}
+                >
                   Delete
                 </DropdownItem>
               </DropdownMenu>
@@ -226,8 +327,8 @@ const Users = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            className="w-full sm:max-w-[35%]"
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -280,7 +381,7 @@ const Users = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} companies
+            Total {count} users
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -357,14 +458,14 @@ const Users = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[500px]",
+          wrapper: "max-h-[70vh]",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        // onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -388,6 +489,197 @@ const Users = () => {
           )}
         </TableBody>
       </Table>
+      <Drawer isOpen={isOpen} onOpenChange={onOpenChange} size="4xl">
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1">
+                User details
+              </DrawerHeader>
+              <DrawerBody>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Name</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.fullName}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Employee id</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.employeeId}</p>
+                  </div>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <p className="text-default-400">Official email address</p>{" "}
+                    <p className="text-default-400 ">:</p>{" "}
+                    <p>{userData?.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Personal email address</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Contact number</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.contactNo}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Emergency contact number</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.emergencyNumber}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Role</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.role?.join(",")}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Department</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.userDepartment?.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Designation</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.userDesignation?.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Date of joining</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{dayjs(userData?.dateOfJoining).format("DD-MM-YYYY")}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Aadhar number</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.aadharCard}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Pan number</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.panNumber}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Nationality</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.nationality}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Language</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.language}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Locker size</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.lockerSize}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Experience</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>
+                      {[
+                        ...(userData?.expInYear
+                          ? [`${userData?.expInYear}yrs`]
+                          : []),
+                        ...(userData?.expInMonth
+                          ? [`${userData?.expInMonth}mos`]
+                          : []),
+                      ].join(",")}{" "}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Permanent address</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.permanentAddress}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Residential address</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.residentialAddress}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Manager</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.managers?.fullName}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Manager email address</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.managers?.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Father's name</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.fatherName}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Father's contact no.</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.fatherContactNo}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Father's occupation</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.fatherOccupation}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Mother's name</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.motherName}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Mother's contact no.</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.motherContactNo}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Mother's occupation</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.motherOccupation}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-default-400">Marital status</p>{" "}
+                    <p className="text-default-400">:</p>{" "}
+                    <p>{userData?.maritalStatus}</p>
+                  </div>
+                </div>
+              </DrawerBody>
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Delete user
+              </ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete this user ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteUser}>
+                  Yes
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

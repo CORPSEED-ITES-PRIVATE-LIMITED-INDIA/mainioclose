@@ -87,7 +87,7 @@ const Urls = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "urlsName",
+    column: "id",
     direction: "ascending",
   });
 
@@ -127,7 +127,6 @@ const Urls = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
-
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
@@ -140,22 +139,15 @@ const Urls = () => {
 
   const pages = Math.ceil(count / initialFilteration?.size) || 1;
 
-  const items = React.useMemo(() => {
-    const start = (initialFilteration?.page - 1) * initialFilteration?.size;
-    const end = start + initialFilteration?.size;
-
-    return filteredItems.slice(start, end);
-  }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
-
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
   const handleFinish = (values) => {
     if (item?.id) {

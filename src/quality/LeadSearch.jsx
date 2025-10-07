@@ -103,106 +103,110 @@ const LeadSearch = () => {
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
+  // console.log("paginatedItems", paginatedItems);
+  // console.log("sortedItems", paginatedItems);
+  // console.log("Items", items);
 
-
-  console.log("paginatedItems",paginatedItems)
-  console.log("sortedItems",paginatedItems)
-  console.log("Items",items)
-
-  const renderCell = useCallback((lead, columnKey) => {
-    switch (columnKey) {
-      case "leadName":
-        return (
-          <div className="flex flex-col">
-            <Link to={`${lead?.id}/leadDetail`} className="font-semibold">
-              {lead?.leadName || "-"}
-            </Link>
-            <span className="text-sm text-gray-400">
-              {dayjs(lead?.createDate).format("DD-MM-YYYY")}
-            </span>
-          </div>
-        );
-      case "contact":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{lead?.email || "-"}</span>
-            <span className="text-sm text-gray-400">
-              {lead?.mobileNo || "-"}
-            </span>
-          </div>
-        );
-      case "status":
-        return (
-          <Chip className="capitalize" color="primary" size="sm" variant="flat">
-            {lead?.status?.name || "Unknown"}
-          </Chip>
-        );
-      case "assignee":
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold">
-              {lead?.assignee?.fullName || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {lead?.assignee?.email || "-"}
-            </span>
-          </div>
-        );
-      case "industry":
-        return lead?.industries?.name || "-";
-      case "city":
-        return lead?.city || "-";
-      case "source":
-        return lead?.source || "-";
-      case "updatedBy":
-        return (
-          <div>
-            <span className="font-normal">{lead?.updatedBy?.fullName}</span>
-            <span className="font-normal text-muted-foreground">
-              {lead?.updatedDate
-                ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
-                : "-"}
-            </span>
-          </div>
-        );
-      case "address":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{lead.address || "-"}</span>
-            <span className="text-sm text-gray-400">
-              {lead.city || ""}, {lead?.state}, {lead?.country}
-            </span>
-          </div>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let key = Array.from(e);
-                }}
-              >
-                <DropdownItem
-                  key="history"
-                  href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+  const renderCell = useCallback(
+    (lead, columnKey) => {
+      switch (columnKey) {
+        case "leadName":
+          return (
+            <div className="flex flex-col">
+              <p className="font-semibold">{lead?.leadName || "-"}</p>
+              <span className="text-sm text-gray-400">
+                {dayjs(lead?.createDate).format("DD-MM-YYYY")}
+              </span>
+            </div>
+          );
+        case "contact":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">{lead?.email || "-"}</span>
+              <span className="text-sm text-gray-400">
+                {lead?.mobileNo || "-"}
+              </span>
+            </div>
+          );
+        case "status":
+          return (
+            <Chip
+              className="capitalize"
+              color="primary"
+              size="sm"
+              variant="flat"
+            >
+              {lead?.status?.name || "Unknown"}
+            </Chip>
+          );
+        case "assignee":
+          return (
+            <div className="flex flex-col">
+              <span className="font-semibold">
+                {lead?.assignee?.fullName || "-"}
+              </span>
+              <span className="text-sm text-gray-400">
+                {lead?.assignee?.email || "-"}
+              </span>
+            </div>
+          );
+        case "industry":
+          return lead?.industries?.name || "-";
+        case "city":
+          return lead?.city || "-";
+        case "source":
+          return lead?.source || "-";
+        case "updatedBy":
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="font-normal">{lead?.updatedBy?.fullName}</span>
+              <span className="font-normal text-muted-foreground">
+                {lead?.updatedDate
+                  ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
+            </div>
+          );
+        case "address":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">{lead?.address || "-"}</span>
+              <span className="text-sm text-default-500">
+                {[lead?.city, lead?.state, lead?.country].join(",")}
+              </span>
+            </div>
+          );
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  selectionMode="single"
+                  onSelectionChange={(e) => {
+                    let key = Array.from(e);
+                  }}
                 >
-                  History
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-      default:
-        return lead[columnKey] || "-";
-    }
-  }, [userId]);
+                  <DropdownItem
+                    key="history"
+                    href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+                  >
+                    History
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return lead[columnKey] || "-";
+      }
+    },
+    [userId]
+  );
 
   const onNextPage = useCallback(() => {
     if (paginationData?.page < pages) {
@@ -363,15 +367,15 @@ const LeadSearch = () => {
           wrapper:
             "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={(e) => {
-          let keys = Array.from(e);
-          setSelectedKeys(keys);
-        }}
+        // onSelectionChange={(e) => {
+        //   let keys = Array.from(e);
+        //   setSelectedKeys(keys);
+        // }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
