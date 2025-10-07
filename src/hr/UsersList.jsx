@@ -42,15 +42,21 @@ import {
   getAllUsers,
   getDesiginationById,
   getManagerById,
+  updateLeadByHr,
 } from "../toolkit/slices/commonSlice"; // Adjust import path as needed
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createNewUserInAuth } from "../toolkit/slices/authSlice";
+import { createNewUserInAuth, updateUserData } from "../toolkit/slices/authSlice";
 import { createUsersInOperations } from "../toolkit/slices/operationSlice";
 import { getAllDepartment } from "../toolkit/slices/settingSlice";
 import { padZero } from "../common";
-import { parseDate } from "@internationalized/date";
+import {
+  parseAbsoluteToLocal,
+  parseDate,
+  toCalendarDateTime,
+} from "@internationalized/date";
+import dayjs from "dayjs";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -75,7 +81,6 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "id",
   "userName",
   "email",
   "department",
@@ -87,6 +92,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const formSchema = (flags) =>
   z.object({
+    employeeId: z.string().min(1, "Please enter employee id"),
     userName: z.string().min(1, "Please enter username"),
     email: z.string().email("Please enter a valid email"),
     personalEmail: z.string().optional(),
@@ -99,6 +105,7 @@ const formSchema = (flags) =>
     aadharCard: z.string().refine((val) => /^\d{12}$/.test(val), {
       message: "Aadhar number must be 12 digits",
     }),
+    panNumber: z.string().min(1, "Please enter pan number"),
     managerId: z.string().optional(),
     lockerSize: z.string().optional(),
     expInYear: z.string().min(1, "Please enter experience in years"),
@@ -195,7 +202,7 @@ const UsersList = () => {
     page: 1,
     size: 50,
   });
-  const [edit, setEdit] = useState(null);
+  const [rowItem, setRowItem] = useState(null);
   const [formFlags, setFormFlags] = useState({
     maritalStatus: false,
     master: false,
@@ -206,11 +213,6 @@ const UsersList = () => {
   useEffect(() => {
     dispatch(getAllUsers(filteration));
   }, [dispatch, filteration]);
-
-  useEffect(() => {
-    dispatch(getAllRoles());
-    dispatch(getAllDepartment());
-  }, []);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -256,11 +258,66 @@ const UsersList = () => {
     console.log("Form errors:", errors);
   }, [watch, errors]);
 
+  const handleEdit = useCallback(
+    (data) => {
+      dispatch(getAllRoles());
+      dispatch(getAllDepartment());
+      dispatch(getDesiginationById(data?.userDepartment?.id));
+      dispatch(getManagerById(data?.userDepartment?.id));
+      reset({
+        employeeId:data?.employeeId,
+        userName: data?.fullName,
+        email: data.email,
+        designationId: String(data?.userDesignation?.id),
+        departmentId: String(data?.userDepartment?.id),
+        role: data?.role,
+        epfNo: data?.epfNo,
+        aadharCard: data?.aadharCard,
+        panNumber: data?.panNumber,
+        managerId: String(data?.managers?.id),
+        expInMonth: String(data?.expInMonth),
+        expInYear: String(data?.expInYear),
+        dateOfJoining: data.dateOfJoining
+          ? dayjs(data?.dateOfJoining).format("YYYY-MM-DD")
+          : null,
+        type: data?.type,
+        fatherName: data?.fatherName,
+        fatherOccupation: data?.fatherOccupation,
+        fatherContactNo: data?.fatherContactNo,
+        motherName: data?.motherName,
+        motherOccupation: data?.motherOccupation,
+        motherContactNo: data?.motherContactNo,
+        spouseName: data?.spouseName,
+        spouseContactNo: data?.spouseContactNo,
+        nationality: data?.nationality,
+        language: data?.language,
+        emergencyNumber: data?.emergencyNumber,
+        panNumber: data?.panNumber,
+        permanentAddress: data?.permanentAddress,
+        residentialAddress: data?.residentialAddress,
+        manager: true,
+        backupTeam: data?.backupTeam,
+        master: data?.master,
+        maritalStatus: data?.maritalStatus,
+        personalEmail: data?.personalEmail,
+        companyMobile: data?.companyMobile,
+        lockerSize: String(data?.lockerSize),
+        contactNo: data?.contactNo,
+      });
+      setRowItem(data);
+      onOpen();
+    },
+    [data, reset, dispatch, onOpen]
+  );
+
+
+  console.log("sdkghsjklgkjsgdg",rowItem)
+
   const onSubmit = (values) => {
-    if (edit) {
-      values.id = data?.id;
+    if (rowItem) {
+      values.id = rowItem?.id;
       let tempObj = {
-        id: edit?.id,
+        id: rowItem?.id,
         userName: values?.userName,
         email: values?.email,
         designationId: values?.designationId,
@@ -277,7 +334,8 @@ const UsersList = () => {
                     title: "User updated successfully !.",
                     color: "success",
                   });
-                  onOpenChange(false);
+                  setRowItem(null);
+                  onClose();
                   reset(defaultValues);
                   dispatch(getAllUsers());
                 } else {
@@ -294,16 +352,12 @@ const UsersList = () => {
                   title: "Something went wrong !.",
                   color: "danger",
                 });
-                onOpenChange(false);
-                reset(defaultValues);
               });
           } else {
             addToast({
               title: "Something went wrong !.",
               color: "danger",
             });
-            onOpenChange(false);
-            reset(defaultValues);
           }
         })
         .catch(() => {
@@ -311,8 +365,6 @@ const UsersList = () => {
             title: "Something went wrong !.",
             color: "danger",
           });
-          onOpenChange(false);
-          reset(defaultValues);
         });
     } else {
       dispatch(createNewUserInAuth(values))
@@ -326,7 +378,7 @@ const UsersList = () => {
             dispatch(createUserByHr(obj))
               .then((info) => {
                 if (info.meta.requestStatus === "fulfilled") {
-                  const userInfo=info?.payload
+                  const userInfo = info?.payload;
                   addToast({
                     title: "User created successfully !.",
                     color: "success",
@@ -337,14 +389,14 @@ const UsersList = () => {
                       fullName: userInfo?.fullName,
                       email: userInfo?.email,
                       contactNo: userInfo?.contactNo,
-                      designationId:userInfo?.userDesignation?.id,
+                      designationId: userInfo?.userDesignation?.id,
                       departmentIds: [userInfo?.userDepartment?.id],
                       roleIds: userInfo?.role,
                       managerId: managers?.id,
                       managerFlag: true,
                     })
                   );
-                  onOpenChange(false);
+                  onClose();
                   reset(defaultValues);
                   dispatch(getAllUsers());
                 } else {
@@ -352,8 +404,6 @@ const UsersList = () => {
                     title: "Something went wrong !.",
                     color: "danger",
                   });
-                  onOpenChange(false);
-                  reset(defaultValues);
                 }
               })
               .catch(() => {
@@ -361,17 +411,12 @@ const UsersList = () => {
                   title: "Something went wrong !.",
                   color: "danger",
                 });
-                onOpenChange(false);
-                reset(defaultValues);
               });
           } else {
             addToast({
               title: "Something went wrong !.",
               color: "danger",
             });
-
-            onOpenChange(false);
-            reset(defaultValues);
           }
         })
         .catch(() => {
@@ -379,8 +424,6 @@ const UsersList = () => {
             title: "Something went wrong !.",
             color: "danger",
           });
-          onOpenChange(false);
-          reset(defaultValues);
         });
     }
   };
@@ -395,8 +438,11 @@ const UsersList = () => {
               <p className="font-normal capitalize">
                 {rowData?.fullName || "-"}
               </p>
-              <p className="font-normal text-xs text-gray-400">
+              <p className="font-normal text-xs text-default-500">
                 Aadhar : {rowData?.aadharCard || "-"}
+              </p>
+              <p className="font-normal text-xs text-default-500">
+                EMP.ID : {rowData?.employeeId || "-"}
               </p>
             </div>
           </div>
@@ -426,7 +472,7 @@ const UsersList = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.department || "-"}</span>
-            <p className="font-normal text-xs text-gray-400">
+            <p className="font-normal text-xs text-default-500">
               {rowData?.designation || "-"}
             </p>
           </div>
@@ -487,10 +533,10 @@ const UsersList = () => {
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.fatherName || "-"}</span>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-400">
+              <span className="text-default-500">
                 Occupation : {rowData?.fatherOccupation || "-"}
               </span>
-              <span className="text-gray-400">
+              <span className="text-default-500">
                 Contact : {rowData?.fatherContactNo || "-"}
               </span>
             </div>
@@ -503,10 +549,10 @@ const UsersList = () => {
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.motherName || "-"}</span>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-400">
+              <span className="text-default-500">
                 Occupation : {rowData?.motherOccupation || "-"}
               </span>
-              <span className="text-gray-400">
+              <span className="text-default-500">
                 Contact : {rowData?.motherContactNo || "-"}
               </span>
             </div>
@@ -519,10 +565,10 @@ const UsersList = () => {
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.spouseName || "-"}</span>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-400">
+              <span className="text-default-500">
                 Occupation : {rowData?.spouseOccupation || "-"}
               </span>
-              <span className="text-gray-400">
+              <span className="text-default-500">
                 Contact : {rowData?.spouseContactNo || "-"}
               </span>
             </div>
@@ -539,8 +585,11 @@ const UsersList = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              <DropdownItem>Approved</DropdownItem>
-              <DropdownItem>Disapproved</DropdownItem>
+              <DropdownItem key={"edit"} onPress={() => handleEdit(rowData)}>
+                Edit
+              </DropdownItem>
+              <DropdownItem key={"approved"}>Approved</DropdownItem>
+              <DropdownItem key={"disapproved"}>Disapproved</DropdownItem>
             </DropdownMenu>
           </Dropdown>
         );
@@ -618,7 +667,17 @@ const UsersList = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
+            <Button
+              color="primary"
+              onPress={() => {
+                dispatch(getAllRoles());
+                dispatch(getAllDepartment());
+                onOpen();
+                setRowItem(null);
+                reset(defaultValues);
+              }}
+              endContent={<Plus />}
+            >
               Add users
             </Button>
           </div>
@@ -713,12 +772,12 @@ const UsersList = () => {
         classNames={{
           wrapper: "max-h-[65vh] max-w-full",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        // onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -747,11 +806,25 @@ const UsersList = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add users</ModalHeader>
+              <ModalHeader>{rowItem ? "Edit user" : "Add users"}</ModalHeader>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <ModalBody>
                   <div className="max-h-[60vh] overflow-auto p-4">
                     <div className="grid grid-cols-2 gap-4">
+                      <Controller
+                        name="employeeId"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            label="Employee Id"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={errors.userName?.message}
+                            isInvalid={!!errors.userName}
+                          />
+                        )}
+                      />
                       <Controller
                         name="userName"
                         control={control}
@@ -760,7 +833,7 @@ const UsersList = () => {
                             label="Username"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.userName?.message}
                             isInvalid={!!errors.userName}
                           />
@@ -775,10 +848,9 @@ const UsersList = () => {
                             isRequired
                             type="email"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.email?.message}
                             isInvalid={!!errors.email}
-                            isDisabled={edit}
                           />
                         )}
                       />
@@ -790,7 +862,7 @@ const UsersList = () => {
                             label="Personal email"
                             type="email"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.personalEmail?.message}
                             isInvalid={!!errors.personalEmail}
                           />
@@ -804,7 +876,7 @@ const UsersList = () => {
                             label="Contact number"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             maxLength={10}
                             errorMessage={errors.contactNo?.message}
                             isInvalid={!!errors.contactNo}
@@ -818,7 +890,7 @@ const UsersList = () => {
                           <Input
                             label="Company mobile number"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             maxLength={10}
                             errorMessage={errors.companyMobile?.message}
                             isInvalid={!!errors.companyMobile}
@@ -932,7 +1004,7 @@ const UsersList = () => {
                           <Input
                             label="EPFO number"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.epfNo?.message}
                             isInvalid={!!errors.epfNo}
                           />
@@ -947,7 +1019,22 @@ const UsersList = () => {
                             isRequired
                             maxLength={12}
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={errors.aadharCard?.message}
+                            isInvalid={!!errors.aadharCard}
+                          />
+                        )}
+                      />
+                      <Controller
+                        name="panNumber"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            label="PAN Number"
+                            isRequired
+                            maxLength={10}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.aadharCard?.message}
                             isInvalid={!!errors.aadharCard}
                           />
@@ -988,7 +1075,7 @@ const UsersList = () => {
                           <Input
                             label="Locker size"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.lockerSize?.message}
                             isInvalid={!!errors.lockerSize}
                           />
@@ -1002,7 +1089,7 @@ const UsersList = () => {
                             label="Experience (in years)"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.expInYear?.message}
                             isInvalid={!!errors.expInYear}
                           />
@@ -1016,7 +1103,7 @@ const UsersList = () => {
                             label="Experience (in months)"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.expInMonth?.message}
                             isInvalid={!!errors.expInMonth}
                           />
@@ -1114,7 +1201,7 @@ const UsersList = () => {
                                 label="Spouse name"
                                 isRequired
                                 value={field.value}
-                                onChange={field.onChange}
+                                onChange={(e) => field.onChange(e.target.value)}
                                 errorMessage={errors.spouseName?.message}
                                 isInvalid={!!errors.spouseName}
                               />
@@ -1127,9 +1214,9 @@ const UsersList = () => {
                               <Input
                                 label="Spouse contact number"
                                 isRequired
-                                value={field.value}
                                 maxLength={10}
-                                onChange={field.onChange}
+                                value={field.value}
+                                onChange={(e) => field.onChange(e.target.value)}
                                 errorMessage={errors.spouseContactNo?.message}
                                 isInvalid={!!errors.spouseContactNo}
                               />
@@ -1145,7 +1232,7 @@ const UsersList = () => {
                             label="Father's name"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.fatherName?.message}
                             isInvalid={!!errors.fatherName}
                           />
@@ -1159,7 +1246,7 @@ const UsersList = () => {
                           <Input
                             label="Father's occupation"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.fatherOccupation?.message}
                             isInvalid={!!errors.fatherOccupation}
                           />
@@ -1171,9 +1258,9 @@ const UsersList = () => {
                         render={({ field }) => (
                           <Input
                             label="Father's contact no."
-                            value={field.value}
                             maxLength={10}
-                            onChange={field.onChange}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.fatherContactNo?.message}
                             isInvalid={!!errors.fatherContactNo}
                           />
@@ -1187,7 +1274,7 @@ const UsersList = () => {
                             label="Mother's name"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.motherName?.message}
                             isInvalid={!!errors.motherName}
                           />
@@ -1199,9 +1286,9 @@ const UsersList = () => {
                         render={({ field }) => (
                           <Input
                             label="Mother's contact no."
-                            value={field.value}
                             maxLength={10}
-                            onChange={field.onChange}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.motherContactNo?.message}
                             isInvalid={!!errors.motherContactNo}
                           />
@@ -1214,7 +1301,7 @@ const UsersList = () => {
                           <Input
                             label="Nationality"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.nationality?.message}
                             isInvalid={!!errors.nationality}
                           />
@@ -1227,7 +1314,7 @@ const UsersList = () => {
                           <Input
                             label="Language"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.language?.message}
                             isInvalid={!!errors.language}
                           />
@@ -1312,7 +1399,7 @@ const UsersList = () => {
                           <Input
                             label="Emergency contact no."
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.emergencyNumber?.message}
                             isInvalid={!!errors.emergencyNumber}
                           />
@@ -1326,7 +1413,7 @@ const UsersList = () => {
                             label="Permanent address"
                             isRequired
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.permanentAddress?.message}
                             isInvalid={!!errors.permanentAddress}
                           />
@@ -1339,7 +1426,7 @@ const UsersList = () => {
                           <Textarea
                             label="Residential address"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.residentialAddress?.message}
                             isInvalid={!!errors.residentialAddress}
                           />

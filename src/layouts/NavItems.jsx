@@ -496,7 +496,7 @@ export const procurementItems = [
   },
   {
     title: "Payments",
-    icon: "Coin",
+    icon: "HandCoins",
     url: "procurement/vendors-payments",
     key: "vendors-payments",
   },

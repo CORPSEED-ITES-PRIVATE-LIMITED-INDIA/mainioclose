@@ -93,13 +93,31 @@ export const getAutomationStatus = createAsyncThunk(
   }
 );
 
+export const createNewUserInAuth = createAsyncThunk(
+  "createNewUserInAuth",
+  async (data) => {
+    const response = await api.post(
+      `/securityService/api/auth/createNewUserByEmail`,
+      data
+    );
+    return response;
+  }
+);
 
-export const createNewUserInAuth = createAsyncThunk("createNewUserInAuth", async (data) => {
-  const response = await api.post(`/securityService/api/auth/createNewUserByEmail`,
+export const updateUserData = createAsyncThunk("updateUser", async (data) => {
+  const response = await api.put(
+    `/securityService/api/auth/updateUserData`,
     data
-  )
-  return response
-})
+  );
+  return response;
+});
+
+export const deleteUserInAuth = createAsyncThunk("deleteUserInAuth", async (id) => {
+  const response = await api.delete(
+    `/securityService/api/auth/deleteUser?userId=${id}`
+  );
+  return response.data;
+});
 
 export const AuthSlice = createSlice({
   name: "auth",
@@ -176,8 +194,7 @@ export const AuthSlice = createSlice({
     builder.addCase(getAutomationStatus.fulfilled, (state, action) => {
       state.automationStatus = action.payload;
     });
-    builder.addCase(getAutomationStatus.rejected, (state, action) => {
-    });
+    builder.addCase(getAutomationStatus.rejected, (state, action) => {});
   },
 });
 

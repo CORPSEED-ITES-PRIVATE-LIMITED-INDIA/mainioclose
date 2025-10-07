@@ -17,6 +17,7 @@ import {
 import { AliveScope } from "react-activation";
 import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
+import UserHistory from "./users/UserHistory";
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
 
             {/* Others */}
             <Route path="users" element={<Users />} />
+            <Route path="users/:currentUserId/userHistory" element={<UserHistory />} />
             {ProcurementRouting()}
 
             {/* Settings */}

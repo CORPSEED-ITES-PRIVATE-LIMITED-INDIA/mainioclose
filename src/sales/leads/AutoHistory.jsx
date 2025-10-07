@@ -94,7 +94,7 @@ const AutoHistory = () => {
     toDate: "",
     fromDate: "",
     departmentId: null,
-    assignType: "",
+    assignType:null,
     statusIds: [],
     assigneeIds: [],
     source: [],

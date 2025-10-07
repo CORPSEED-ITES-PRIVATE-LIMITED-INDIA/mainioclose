@@ -68,12 +68,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
-import {
-  formatedDateTime,
-  leadSource,
-  maskEmail,
-  maskMobileNumber,
-} from "../../common";
+import { formatedDateTime, leadSource } from "../../common";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -206,6 +201,7 @@ const Leads = () => {
   const [allMultiFilterData, setAllMultiFilterData] =
     useState(initialFilterValues);
   const [itemId, setItemId] = useState(null);
+  const [loading, setLoading] = useState("");
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -254,6 +250,8 @@ const Leads = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
+
+  const visibleCount = sortedItems.length;
 
   const handleSelectionChange = (selection) => {
     if (selection === "all") {
@@ -379,6 +377,8 @@ const Leads = () => {
     },
     [dispatch, userId, allMultiFilterData]
   );
+
+  console.log("sdkfjgsjk", selectedKeys);
 
   const renderCell = useCallback(
     (lead, columnKey) => {
@@ -564,13 +564,15 @@ const Leads = () => {
     (value) => {
       if (value) {
         setFilterValue(value);
+        setSelectedKeys(new Set([]));
         setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
         dispatch(searchLeads({ input: value, id: userId }));
       } else {
         setFilterValue("");
+        setSelectedKeys(new Set([]));
         dispatch(getAllLeadsByFilter(initialFilterValues));
-        dispatch(getAllLeadCount(allMultiFilterData));
-        dispatch(getAllLeadsForExport(allMultiFilterData));
+        dispatch(getAllLeadCount(initialFilterValues));
+        dispatch(getAllLeadsForExport(initialFilterValues));
       }
     },
     [dispatch, userId, initialFilterValues]
@@ -1123,7 +1125,7 @@ const Leads = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
+          {selectedKeys.size === visibleCount
             ? "All items selected"
             : `${selectedKeys?.size} of ${count} selected`}
         </span>
@@ -1160,7 +1162,14 @@ const Leads = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, allMultiFilterData, pages, hasSearchFilter]);
+  }, [
+    selectedKeys,
+    count,
+    allMultiFilterData,
+    pages,
+    hasSearchFilter,
+    visibleCount,
+  ]);
 
   const handleOpenModal = () => {
     onOpen();
@@ -1168,6 +1177,7 @@ const Leads = () => {
   };
 
   const handleFinish = (values) => {
+    setLoading("pending");
     values.categoryId = "1";
     values.createdById = userId;
     values.serviceId = "1";
@@ -1181,13 +1191,16 @@ const Leads = () => {
           dispatch(getAllLeadCount(allMultiFilterData));
           onOpenChange(false);
           reset(defaultValues);
+          setLoading("success");
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
+          setLoading("rejected");
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+        setLoading("rejected");
+      });
   };
 
   return (
@@ -1202,9 +1215,7 @@ const Leads = () => {
           wrapper: "max-h-[70vh] max-w-[87vw]",
           table: "overflow-scroll",
         }}
-        selectedKeys={
-          selectedKeys?.size === allMultiFilterData?.size ? "all" : selectedKeys
-        }
+        selectedKeys={selectedKeys.size === visibleCount ? "all" : selectedKeys}
         selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -1476,7 +1487,11 @@ const Leads = () => {
                   </div>
                   <ModalFooter className="w-full flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
+                    <Button
+                      color="primary"
+                      type="submit"
+                      isLoading={loading === "pending"}
+                    >
                       Submit
                     </Button>
                   </ModalFooter>

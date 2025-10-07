@@ -635,6 +635,7 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(searchLeads.fulfilled, (state, action) => {
       state.allLeads = action.payload;
+      state.totalCount=action.payload?.length
       state.leadresponseStatus = "success";
     });
     builder.addCase(searchLeads.rejected, (state) => {
