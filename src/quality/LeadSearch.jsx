@@ -55,7 +55,7 @@ const LeadSearch = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const data = useSelector((state) => state.leads.leadSearchList);
-  const count = useSelector((state) => state.leads.leadSearchList?.length);
+  const count = data?.length || 0;
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
@@ -64,10 +64,9 @@ const LeadSearch = () => {
     new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "leadName",
     direction: "ascending",
   });
-  const hasSearchFilter = Boolean(filterValue);
   const [paginationData, setPaginationData] = useState({ page: 1, size: 50 });
 
   const headerColumns = useMemo(() => {
@@ -79,14 +78,36 @@ const LeadSearch = () => {
     );
   }, [visibleColumns, adminRole]);
 
-  const filteredItems = [...(data || [])]?.filter((user) =>
-    !hasSearchFilter
-      ? true
-      : user?.leadName?.toLowerCase()?.includes(filterValue.toLowerCase())
-  );
+  const items = useMemo(() => data || [], [data]);
+
+  const sortedItems = useMemo(() => {
+    const sorted = [...items];
+    if (sortDescriptor.column) {
+      sorted.sort((a, b) => {
+        let first = a[sortDescriptor.column];
+        let second = b[sortDescriptor.column];
+        const firstStr = first?.toString?.() ?? "";
+        const secondStr = second?.toString?.() ?? "";
+        const cmp = firstStr.localeCompare(secondStr);
+        return sortDescriptor.direction === "descending" ? cmp : -cmp;
+      });
+    }
+    return sorted;
+  }, [items, sortDescriptor]);
+
+  const paginatedItems = useMemo(() => {
+    const from = (paginationData.page - 1) * paginationData.size;
+    const to = from + paginationData.size;
+    return sortedItems.slice(from, to);
+  }, [sortedItems, paginationData.page, paginationData.size]);
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
+
+
+  console.log("paginatedItems",paginatedItems)
+  console.log("sortedItems",paginatedItems)
+  console.log("Items",items)
 
   const renderCell = useCallback((lead, columnKey) => {
     switch (columnKey) {
@@ -144,12 +165,12 @@ const LeadSearch = () => {
             </span>
           </div>
         );
-      case "Address":
+      case "address":
         return (
           <div className="flex flex-col">
             <span className="font-normal">{lead.address || "-"}</span>
             <span className="text-sm text-gray-400">
-              {lead.city || ""},{lead?.state},{lead?.country}
+              {lead.city || ""}, {lead?.state}, {lead?.country}
             </span>
           </div>
         );
@@ -181,7 +202,7 @@ const LeadSearch = () => {
       default:
         return lead[columnKey] || "-";
     }
-  }, []);
+  }, [userId]);
 
   const onNextPage = useCallback(() => {
     if (paginationData?.page < pages) {
@@ -205,14 +226,9 @@ const LeadSearch = () => {
 
   const onSearchChange = useCallback(
     (value) => {
-      if (value) {
-        setFilterValue(value);
-        setPaginationData((prev) => ({ ...prev, page: 1 }));
-        dispatch(searchIvrLeads({ input: value, id: userId }));
-      } else {
-        setFilterValue("");
-        dispatch(searchIvrLeads({ input: value, id: userId }));
-      }
+      setFilterValue(value);
+      setPaginationData((prev) => ({ ...prev, page: 1 }));
+      dispatch(searchIvrLeads({ input: value, id: userId }));
     },
     [dispatch, userId]
   );
@@ -220,7 +236,8 @@ const LeadSearch = () => {
   const onClear = useCallback(() => {
     setFilterValue("");
     setPaginationData((prev) => ({ ...prev, page: 1 }));
-  }, []);
+    dispatch(searchIvrLeads({ input: "", id: userId }));
+  }, [dispatch, userId]);
 
   const topContent = useMemo(() => {
     const cols = columns(adminRole);
@@ -233,7 +250,7 @@ const LeadSearch = () => {
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
 
@@ -287,11 +304,10 @@ const LeadSearch = () => {
     onRowsPerPageChange,
     count,
     onSearchChange,
-    hasSearchFilter,
     selectedKeys,
     data,
     adminRole,
-    filteredItems
+    paginationData?.size,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -333,7 +349,7 @@ const LeadSearch = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, paginationData, pages, hasSearchFilter]);
+  }, [selectedKeys, count, paginationData, pages]);
 
   return (
     <>
@@ -369,7 +385,7 @@ const LeadSearch = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={filteredItems}>
+        <TableBody emptyContent={"No data found"} items={paginatedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
