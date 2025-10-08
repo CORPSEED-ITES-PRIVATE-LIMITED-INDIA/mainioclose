@@ -112,12 +112,25 @@ export const updateUserData = createAsyncThunk("updateUser", async (data) => {
   return response;
 });
 
-export const deleteUserInAuth = createAsyncThunk("deleteUserInAuth", async (id) => {
-  const response = await api.delete(
-    `/securityService/api/auth/deleteUser?userId=${id}`
-  );
-  return response.data;
-});
+export const deleteUserInAuth = createAsyncThunk(
+  "deleteUserInAuth",
+  async (id) => {
+    const response = await api.delete(
+      `/securityService/api/auth/deleteUser?userId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const activateUserByAdminInAuth = createAsyncThunk(
+  "activateUserByAdminInAuth",
+  async (id) => {
+    const response = await api.put(
+      `/securityService/api/auth/activateUser?userId=${id}`
+    );
+    return response.data;
+  }
+);
 
 export const AuthSlice = createSlice({
   name: "auth",

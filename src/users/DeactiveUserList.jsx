@@ -21,10 +21,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
-  approvedAndDisapprovedUserByManager,
-  approvedUserByHr,
-  getUserApprovalList,
+  activeUserByAdmin,
+  getAllDeactivateUserList,
 } from "../toolkit/slices/commonSlice";
+import { activateUserByAdminInAuth } from "../toolkit/slices/authSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -61,13 +61,13 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const UserApprovals = () => {
+const DeactiveUserList = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.common.approvalUserList?.length || 0
+    (state) => state.common.deactiveUserList?.length || 0
   );
-  const data = useSelector((state) => state.common.approvalUserList);
+  const data = useSelector((state) => state.common.deactiveUserList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -85,8 +85,8 @@ const UserApprovals = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getUserApprovalList({ userId }));
-  }, [dispatch, userId]);
+    dispatch(getAllDeactivateUserList());
+  }, [dispatch]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -123,16 +123,15 @@ const UserApprovals = () => {
   }, [sortDescriptor, items]);
 
   const handleActionStatus = (currentUserId) => {
-    dispatch(
-      approvedUserByHr({ userId:currentUserId, currentUserId:userId })
-    )
+    dispatch(activateUserByAdminInAuth(currentUserId))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
+          dispatch(activeUserByAdmin(currentUserId));
           addToast({
-            title: `User approved successfully !.`,
+            title: `User activated successfully !.`,
             color: "success",
           });
-          dispatch(getUserApprovalList({ userId }));
+          dispatch(getAllDeactivateUserList());
         } else {
           addToast({ title: "Something went wrong!.", color: "danger" });
         }
@@ -299,13 +298,8 @@ const UserApprovals = () => {
               <DropdownItem
                 onPress={() => handleActionStatus(rowData?.id)}
               >
-                Approved
+                Activate
               </DropdownItem>
-              {/* <DropdownItem
-                onPress={() => handleActionStatus("Rejected", rowData?.id)}
-              >
-                Disapproved
-              </DropdownItem> */}
             </DropdownMenu>
           </Dropdown>
         );
@@ -387,7 +381,7 @@ const UserApprovals = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} users for approval
+            Total {count} deactive user
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -459,7 +453,7 @@ const UserApprovals = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
-        Users approval list
+        Deactive user list
       </h1>
       <Table
         isHeaderSticky
@@ -502,4 +496,4 @@ const UserApprovals = () => {
   );
 };
 
-export default UserApprovals;
+export default DeactiveUserList;

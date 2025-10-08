@@ -33,6 +33,7 @@ import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
 import { CSVLink } from "react-csv";
 import { formatedDateTime } from "../../common";
+import { parseZonedDateTime } from "@internationalized/date";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -363,11 +364,29 @@ const SalesReport = () => {
                         hourCycle={24}
                         visibleMonths={2}
                         label="Created date"
-                        onChange={(range) => {
+                        value={{
+                          start: dateFilter?.toDate
+                            ? parseZonedDateTime(
+                                `${dateFilter?.toDate}[Asia/kolkata]`
+                              )
+                            : null,
+                          end: dateFilter?.fromDate
+                            ? parseZonedDateTime(
+                                `${dateFilter?.fromDate}[Asia/kolkata]`
+                              )
+                            : null,
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                            : null;
                           setDateFilter((prev) => ({
                             ...prev,
-                            toDate: formatedDateTime(range?.start),
-                            fromDate: formatedDateTime(range?.end),
+                            toDate: formattedStart,
+                            fromDate: formattedEnd,
                           }));
                         }}
                       />

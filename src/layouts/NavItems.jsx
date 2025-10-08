@@ -195,6 +195,18 @@ export const navItems = [
     icon: "User2",
     url: "users",
     key: "users",
+    children: [
+      {
+        title: "Users List",
+        key: "usersList",
+        url: "users/usersList",
+      },
+      {
+        title: "Approval list",
+        key: "approvalList",
+        url: "users/approvalList",
+      },
+    ],
   },
   {
     title: "Procurement",

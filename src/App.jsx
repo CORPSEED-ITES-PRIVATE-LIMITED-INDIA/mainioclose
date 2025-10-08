@@ -18,6 +18,8 @@ import { AliveScope } from "react-activation";
 import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
 import UserHistory from "./users/UserHistory";
+import UserManagerApproval from "./users/UserManagerApproval";
+import DeactiveUserList from "./users/DeactiveUserList";
 
 function App() {
   return (
@@ -52,8 +54,10 @@ function App() {
             {OperationModuleRouting()}
 
             {/* Others */}
-            <Route path="users" element={<Users />} />
-            <Route path="users/:currentUserId/userHistory" element={<UserHistory />} />
+            <Route path="users/usersList" element={<Users />} />
+            <Route path="users/deactiveUsersList" element={<DeactiveUserList />} />
+            <Route path="users/approvalList" element={<UserManagerApproval />} />
+            <Route path="users/usersList/:currentUserId/userHistory" element={<UserHistory />} />
             {ProcurementRouting()}
 
             {/* Settings */}

@@ -63,10 +63,14 @@ const LeadDetail = () => {
         ) : (
           <Dot className="h-8 w-8" color="green" />
         )}
-
-        <h1 className="mb-1 text-xl font-medium">
-          {leadData?.originalName ? leadData?.originalName : "NA"}
-        </h1>
+        <div className="flex items-center gap-1">
+          <h1 className="mb-1 text-xl font-medium">
+            {leadData?.originalName ? leadData?.originalName : "NA"}
+          </h1>
+          {leadData?.count !== undefined && (
+            <p className="font-medium">{`(${leadData?.count})`}</p>
+          )}
+        </div>
       </div>
       <Tabs
         aria-label="Dynamic tabs"
