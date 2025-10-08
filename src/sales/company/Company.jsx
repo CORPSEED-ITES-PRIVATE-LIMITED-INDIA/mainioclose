@@ -429,6 +429,12 @@ const Company = () => {
                     ...prev,
                     filterUserId: e,
                   }));
+                  dispatch(
+                    getAllNewCompanies({
+                      ...companyFilteration,
+                      filterUserId: e,
+                    })
+                  );
                 }}
               />
             </div>
@@ -448,8 +454,14 @@ const Company = () => {
                 selectedKeys={[companyFilteration?.type]}
                 selectionMode="single"
                 onSelectionChange={(e) => {
-                  let key = Array.from(e);
+                  let key = Array.from(e)[0];
                   setCompanyFilteration((prev) => ({ ...prev, type: key }));
+                  dispatch(
+                    getAllNewCompanies({
+                      ...companyFilteration,
+                      type: key,
+                    })
+                  );
                 }}
               >
                 <DropdownItem key="all">All</DropdownItem>
@@ -474,8 +486,14 @@ const Company = () => {
                 selectionMode="single"
                 variant="flat"
                 onSelectionChange={(e) => {
-                  let key = Array.from(e);
+                  let key = Array.from(e)[0];
                   setCompanyFilteration((prev) => ({ ...prev, rating: key }));
+                  dispatch(
+                    getAllNewCompanies({
+                      ...companyFilteration,
+                      rating: key,
+                    })
+                  );
                 }}
               >
                 <DropdownItem key="all">All</DropdownItem>
