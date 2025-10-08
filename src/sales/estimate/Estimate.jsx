@@ -91,9 +91,7 @@ const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
   z.object({
     ...(isPrimary
       ? {
-          paymentType: z.enum(["Fully", "Partial", "Milestone"], {
-            required_error: "Company type is required",
-          }),
+          paymentType: z.string().min(1, "please select the payment type."),
         }
       : {}),
     ...(isMilestone
@@ -270,35 +268,59 @@ const Estimate = () => {
     viewModal.onOpen();
   };
 
-  // useEffect(() => {
-  //   if (!remainingAmountDetail?.primary) {
-  //     reset({
-  //       professionalFees: Number(remainingAmountDetail?.proffees),
-  //       govermentFees: Number(remainingAmountDetail?.govfees),
-  //       otherFees: Number(remainingAmountDetail?.otherFees),
-  //       serviceCharge: Number(remainingAmountDetail?.serviceCharge),
-  //     });
-  //   }
-  // }, [remainingAmountDetail, reset]);
+useEffect(() => {
+  if (!remainingAmountDetail?.primary) {
+    const formValues = getValues();
+    let updatedValues = { ...formValues };
+
+    const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+
+    updatedValues = {
+      ...updatedValues,
+      professionalFees: safeNum(remainingAmountDetail?.proffees),
+      govermentFees: safeNum(remainingAmountDetail?.govfees),
+      otherFees: safeNum(remainingAmountDetail?.otherFees),
+      serviceCharge: safeNum(remainingAmountDetail?.serviceCharge),
+    };
+
+    reset(updatedValues);
+  }
+}, [remainingAmountDetail, reset, getValues]);
+
 
   const handleSetPayment = useCallback(
     (e) => {
+      const values = getValues();
+      let updatedValues = { ...values };
+
+      const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+
+      const professionalFees = safeNum(rowItem?.professionalFees);
+      const govermentfees = safeNum(rowItem?.govermentfees);
+      const otherFees = safeNum(rowItem?.otherFees);
+      const serviceCharge = safeNum(rowItem?.serviceCharge);
+
       if (e === "Partial") {
-        reset({
-          professionalFees: rowItem?.professionalFees / 2,
-          govermentfees: rowItem?.govermentfees / 2,
-          otherFees: rowItem?.otherFees / 2,
-          serviceCharge: rowItem?.serviceCharge / 2,
-        });
+        updatedValues = {
+          ...updatedValues,
+          professionalFees: professionalFees / 2,
+          govermentfees: govermentfees / 2,
+          otherFees: otherFees / 2,
+          serviceCharge: serviceCharge / 2,
+        };
       }
+
       if (e === "Fully") {
-        reset({
-          professionalFees: rowItem?.professionalFees,
-          govermentfees: rowItem?.govermentfees,
-          otherFees: rowItem?.otherFees,
-          serviceCharge: rowItem?.serviceCharge,
-        });
+        updatedValues = {
+          ...updatedValues,
+          professionalFees,
+          govermentfees,
+          otherFees,
+          serviceCharge,
+        };
       }
+
+      reset(updatedValues);
     },
     [rowItem, reset]
   );
@@ -309,24 +331,26 @@ const Estimate = () => {
     dispatch(paymentRegisterRemainingAmount(rowItem?.id)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         const temData = resp.payload;
+        const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+
         const updatedValues = {
           ...defaultValues,
-          serviceName: rowItem?.productName,
-          profesionalGst: rowItem?.profesionalGst
-            ? Number(rowItem?.profesionalGst)
-            : 0,
-          companyName: rowItem?.companyName,
-          govermentGst: rowItem?.govermentGst ? Number(rowItem?.govermentGst) : 0,
-          serviceGst: rowItem?.serviceGst ? Number(rowItem?.serviceGst) : 0,
-          otherGst: rowItem?.otherGst ? Number(rowItem?.otherGst) : 0,
+          serviceName: rowItem?.productName || "",
+          profesionalGst: safeNum(rowItem?.profesionalGst),
+          companyName: rowItem?.companyName || "",
+          govermentGst: safeNum(rowItem?.govermentGst),
+          serviceGst: safeNum(rowItem?.serviceGst),
+          otherGst: safeNum(rowItem?.otherGst),
         };
+
         if (!temData?.primary) {
-          updatedValues.professionalFees = Number(temData?.proffees || 0);
-          updatedValues.govermentfees = Number(temData?.govfees || 0);
-          updatedValues.otherFees = Number(temData?.otherFees || 0);
-          updatedValues.serviceCharge = Number(temData?.serviceCharge || 0);
-          updatedValues.totalAmount = Number(temData?.totalAmount || 0);
+          updatedValues.professionalFees = safeNum(temData?.proffees);
+          updatedValues.govermentfees = safeNum(temData?.govfees);
+          updatedValues.otherFees = safeNum(temData?.otherFees);
+          updatedValues.serviceCharge = safeNum(temData?.serviceCharge);
+          updatedValues.totalAmount = safeNum(temData?.totalAmount);
         }
+
         reset(updatedValues);
         onOpen();
       }
@@ -334,7 +358,9 @@ const Estimate = () => {
   };
 
   useEffect(() => {
-    const allValues = getValues();
+    const formValues = getValues();
+    let allValues = { ...formValues };
+
     const handleValuesChange = () => {
       const {
         professionalFees = 0,
@@ -346,21 +372,35 @@ const Estimate = () => {
         otherFees = 0,
         otherGst = 0,
       } = allValues;
+
+      const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+
+      const professionalFeesNum = safeNum(professionalFees);
+      const profesionalGstNum = safeNum(profesionalGst);
+      const govermentfeesNum = safeNum(govermentfees);
+      const govermentGstNum = safeNum(govermentGst);
+      const serviceChargeNum = safeNum(serviceCharge);
+      const serviceGstNum = safeNum(serviceGst);
+      const otherFeesNum = safeNum(otherFees);
+      const otherGstNum = safeNum(otherGst);
+
       const professionalGstAmount =
-        (Number(professionalFees) * Number(profesionalGst)) / 100;
-      const professionalTotal =
-        Number(professionalFees) + professionalGstAmount;
-      const governmentGstAmount =
-        (Number(govermentfees) * Number(govermentGst)) / 100;
-      const governmentTotal = Number(govermentfees) + governmentGstAmount;
-      const serviceGstAmount =
-        (Number(serviceCharge) * Number(serviceGst)) / 100;
-      const serviceTotal = Number(serviceCharge) + serviceGstAmount;
-      const otherGstAmount = (Number(otherFees) * Number(otherGst)) / 100;
-      const otherTotal = Number(otherFees) + otherGstAmount;
+        (professionalFeesNum * profesionalGstNum) / 100;
+      const professionalTotal = professionalFeesNum + professionalGstAmount;
+
+      const governmentGstAmount = (govermentfeesNum * govermentGstNum) / 100;
+      const governmentTotal = govermentfeesNum + governmentGstAmount;
+
+      const serviceGstAmount = (serviceChargeNum * serviceGstNum) / 100;
+      const serviceTotal = serviceChargeNum + serviceGstAmount;
+
+      const otherGstAmount = (otherFeesNum * otherGstNum) / 100;
+      const otherTotal = otherFeesNum + otherGstAmount;
+
       const totalAmount =
         professionalTotal + governmentTotal + serviceTotal + otherTotal;
-      setValue("totalAmount", Number(totalAmount));
+
+      setValue("totalAmount", totalAmount);
       setGstsAmount((prev) => ({
         ...prev,
         serviceGstPercent: serviceGstAmount,
@@ -369,8 +409,9 @@ const Estimate = () => {
         profesionalGstPercent: professionalGstAmount,
       }));
     };
+
     handleValuesChange();
-  }, [getValues]);
+  }, [getValues, paymentType]);
 
   const onSubmit = useCallback(
     (values) => {
@@ -806,13 +847,13 @@ const Estimate = () => {
                     </h5>
                     {paymentList?.map((item, idx) => (
                       <p className="text-sm" key={`paym${idx}`}>
-                        Payment {idx + 1} : {item?.totalAmount}
+                        Payment {idx + 1} : {inrCurrency(item?.totalAmount)}
                       </p>
                     ))}
                   </div>
 
                   <h5 className="font-medium text-medium">
-                    Total amount : {rowItem?.totalAmount}
+                    Total amount : {inrCurrency(rowItem?.totalAmount)}
                   </h5>
                 </div>
                 <form
@@ -824,32 +865,34 @@ const Estimate = () => {
                       <Controller
                         name="paymentType"
                         control={control}
-                        render={({ field }) => (
-                          <Select
-                            isRequired
-                            label="Payment type"
-                            {...field}
-                            selectedKeys={[field.value]}
-                            onSelectionChange={(e) => {
-                              let key = Array.from(e)[0];
-                              setPaymentType(key);
-                              setIsMilestone(key === "Milestone");
-                              handleSetPayment(key);
-                              field.onChange(key);
-                            }}
-                            items={[
-                              { label: "Fully", key: "Fully" },
-                              { label: "Partial", key: "Partial" },
-                              { label: "Milestone", key: "Milestone" },
-                            ]}
-                          >
-                            {(item) => (
-                              <SelectItem key={item.key}>
-                                {item.label}
-                              </SelectItem>
-                            )}
-                          </Select>
-                        )}
+                        render={({ field }) => {
+                          return (
+                            <Select
+                              isRequired
+                              label="Payment type"
+                              selectionMode="single"
+                              selectedKeys={[field.value]}
+                              onSelectionChange={(e) => {
+                                let key = Array.from(e)[0];
+                                field.onChange(key);
+                                setPaymentType(key);
+                                setIsMilestone(key === "Milestone");
+                                handleSetPayment(key);
+                              }}
+                              items={[
+                                { label: "Fully", key: "Fully" },
+                                { label: "Partial", key: "Partial" },
+                                { label: "Milestone", key: "Milestone" },
+                              ]}
+                            >
+                              {(item) => (
+                                <SelectItem key={item.key}>
+                                  {item.label}
+                                </SelectItem>
+                              )}
+                            </Select>
+                          );
+                        }}
                       />
                     )}
 
@@ -863,10 +906,11 @@ const Estimate = () => {
                             label="Document rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            value={field?.value}
+                            value={Number(field?.value)}
+                            type="number"
                             onChange={(e) => {
                               const temp = e.target.value;
-                              field.onChange(temp);
+                              field.onChange(Number(temp));
                             }}
                           />
                         )}
@@ -882,10 +926,11 @@ const Estimate = () => {
                             label="Filing rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            value={field?.value}
+                            value={Number(field?.value)}
+                            type="number"
                             onChange={(e) => {
                               const temp = e.target.value;
-                              field.onChange(temp);
+                              field.onChange(Number(temp));
                             }}
                           />
                         )}
@@ -901,10 +946,11 @@ const Estimate = () => {
                             label="Liasoning rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            value={field?.value}
+                            value={Number(field?.value)}
+                            type="number"
                             onChange={(e) => {
                               const temp = e.target.value;
-                              field.onChange(temp);
+                              field.onChange(Number(temp));
                             }}
                           />
                         )}
@@ -920,10 +966,11 @@ const Estimate = () => {
                             label="Certificate rate %"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            value={field?.value}
+                            value={Number(field?.value)}
+                            type="number"
                             onChange={(e) => {
                               const temp = e.target.value;
-                              field.onChange(temp);
+                              field.onChange(Number(temp));
                             }}
                           />
                         )}
