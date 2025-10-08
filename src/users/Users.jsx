@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   activateOrDeActivateUser,
   deleteUserInLeadService,
@@ -74,6 +74,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 const Users = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const count = useSelector((state) => state.common.usersList?.length);
   const data = useSelector((state) => state.common.usersList);
   const [filterValue, setFilterValue] = useState("");
@@ -266,7 +267,7 @@ const Users = () => {
                   key="action"
                   onPress={() => handleActionPress(rowData)}
                 >
-                  {rowData?.autoActive ? "Active" : "Deactive"}
+                  {rowData?.autoActive ? "Deactive" : "Active"}
                 </DropdownItem>
                 <DropdownItem
                   key="delete"
@@ -335,27 +336,11 @@ const Users = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            {/* <Dropdown>
-                  <DropdownTrigger className="hidden sm:flex">
-                    <Button endContent={<ChevronDown />} variant="flat">
-                      Status
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu
-                    disallowEmptySelection
-                    aria-label="Table Columns"
-                    closeOnSelect={false}
-                    selectedKeys={statusFilter}
-                    selectionMode="multiple"
-                    onSelectionChange={setStatusFilter}
-                  >
-                    {statusOptions.map((status) => (
-                        <DropdownItem key={status.uid} className="capitalize">
-                          {capitalize(status.name)}
-                        </DropdownItem>
-                      ))}
-                  </DropdownMenu>
-                </Dropdown> */}
+            <Button
+              onPress={() => navigate(`/erp/${userId}/users/deactiveUsersList`)}
+            >
+              Deactive users list
+            </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">

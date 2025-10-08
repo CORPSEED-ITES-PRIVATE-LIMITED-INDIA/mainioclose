@@ -259,6 +259,56 @@ export const getUserApprovalList = createAsyncThunk(
   }
 );
 
+export const approvedUserByHr = createAsyncThunk(
+  "approvedUserByHr",
+  async ({ currentUserId, userId }) => {
+    const approvedUser = await api.put(
+      `/leadService/api/v1/hrManagment/approvedUserByHr?currentUserId=${currentUserId}&userId=${userId}&flag=${true}`
+    );
+    return approvedUser?.data;
+  }
+);
+
+export const getAllDeactivateUserList = createAsyncThunk(
+  "getAllDeactivateUserList",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/users/getAllDeactivateUser`
+    );
+    return response.data;
+  }
+);
+
+export const allUserListForManagerApproval = createAsyncThunk(
+  "allUserListForManagerApproval",
+  async (id) => {
+    const managerUserData = await api.get(
+      `/leadService/api/v1/users/getUserForManager?id=${id}`
+    );
+    return managerUserData?.data;
+  }
+);
+
+export const approvedAndDisapprovedUserByManager = createAsyncThunk(
+  "approvedAndDisapprovedUserByManager",
+  async ({ currentUserId, userId, status }) => {
+    const approvedUser = await api.put(
+      `/leadService/api/v1/users/approvedUserByManager?currentUserId=${currentUserId}&userId=${userId}&status=${status}`
+    );
+    return approvedUser?.data;
+  }
+);
+
+export const activeUserByAdmin = createAsyncThunk(
+  "activeUserByAdmin",
+  async (id) => {
+    const response = await api.put(
+      `/leadService/api/v1/users/activateUser?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllUrlList = createAsyncThunk("allUrlsList", async () => {
   const response = await api.get(`/leadService/api/v1/urls/getAllUrls`);
   return response.data;
@@ -542,7 +592,9 @@ const CommonSlice = createSlice({
     allIndustryDataCount: 0,
     allRoles: [],
     allTaskStatusData: [],
-    userHistoryList:[]
+    userHistoryList: [],
+    userManagerApprovalList: [],
+    deactiveUserList: [],
   },
   reducers: {
     handleReset: (state) => {
@@ -1019,6 +1071,31 @@ const CommonSlice = createSlice({
       state.userHistoryList = action.payload;
     });
     builder.addCase(getUserHistoryById.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(allUserListForManagerApproval.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      allUserListForManagerApproval.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.userManagerApprovalList = action.payload;
+      }
+    );
+    builder.addCase(allUserListForManagerApproval.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllDeactivateUserList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllDeactivateUserList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.deactiveUserList = action.payload;
+    });
+    builder.addCase(getAllDeactivateUserList.rejected, (state) => {
       state.loading = "rejected";
     });
   },

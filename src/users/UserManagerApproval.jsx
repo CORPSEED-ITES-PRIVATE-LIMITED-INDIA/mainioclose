@@ -20,11 +20,8 @@ import { ChevronDown, EllipsisVertical, Phone, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import {
-  approvedAndDisapprovedUserByManager,
-  approvedUserByHr,
-  getUserApprovalList,
-} from "../toolkit/slices/commonSlice";
+import { allUserListForManagerApproval, approvedAndDisapprovedUserByManager } from "../toolkit/slices/commonSlice";
+
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -61,13 +58,13 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const UserApprovals = () => {
+const UserManagerApproval = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.common.approvalUserList?.length || 0
+    (state) => state.common.userManagerApprovalList?.length || 0
   );
-  const data = useSelector((state) => state.common.approvalUserList);
+  const data = useSelector((state) => state.common.userManagerApprovalList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -85,7 +82,7 @@ const UserApprovals = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getUserApprovalList({ userId }));
+    dispatch(allUserListForManagerApproval(userId));
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
@@ -122,17 +119,17 @@ const UserApprovals = () => {
     });
   }, [sortDescriptor, items]);
 
-  const handleActionStatus = (currentUserId) => {
+  const handleActionStatus = (status, currentUserId) => {
     dispatch(
-      approvedUserByHr({ userId:currentUserId, currentUserId:userId })
+      approvedAndDisapprovedUserByManager({ userId:currentUserId, currentUserId:userId, status })
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: `User approved successfully !.`,
+            title: `User ${status} successfully !.`,
             color: "success",
           });
-          dispatch(getUserApprovalList({ userId }));
+          dispatch(allUserListForManagerApproval(userId));
         } else {
           addToast({ title: "Something went wrong!.", color: "danger" });
         }
@@ -297,15 +294,15 @@ const UserApprovals = () => {
             </DropdownTrigger>
             <DropdownMenu>
               <DropdownItem
-                onPress={() => handleActionStatus(rowData?.id)}
+                onPress={() => handleActionStatus("Approved", rowData?.id)}
               >
                 Approved
               </DropdownItem>
-              {/* <DropdownItem
+              <DropdownItem
                 onPress={() => handleActionStatus("Rejected", rowData?.id)}
               >
                 Disapproved
-              </DropdownItem> */}
+              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
         );
@@ -459,7 +456,7 @@ const UserApprovals = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
-        Users approval list
+        Users approval list for Manager
       </h1>
       <Table
         isHeaderSticky
@@ -502,4 +499,4 @@ const UserApprovals = () => {
   );
 };
 
-export default UserApprovals;
+export default UserManagerApproval;

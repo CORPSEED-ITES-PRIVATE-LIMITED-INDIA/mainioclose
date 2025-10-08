@@ -69,11 +69,11 @@ const Layoutpage = () => {
               </Breadcrumbs>
             </div>
             <div className="flex items-center gap-4">
-              <Badge color="danger" content={5} shape="circle">
+              {/* <Badge color="danger" content={5} shape="circle">
                 <Button size="sm" variant="light" isIconOnly>
                   <BellRing className="text-gray-500 " />
                 </Button>
-              </Badge>
+              </Badge> */}
               <ThemeSwitch />
             </div>
           </header>
