@@ -292,63 +292,111 @@ const EstimateView = ({ details }) => {
                       <th className="border border-black p-1">Amount</th>
                     </tr>
                   </thead>
-                  {details?.services?.length > 0 ? (
-                    <tbody>
-                      {details?.services?.map((item, index) => (
-                        <tr key={index}>
-                          <td className="border border-black p-1 text-center">
-                            {index + 1}
-                          </td>
-                          <td className="border border-black p-1">
-                            {item?.name}
-                          </td>
-                          <td className="border border-black p-1 text-center">
-                            {item?.hsnCode}
-                          </td>
-                          <td className="border border-black p-1 text-right">
-                            {item?.rate}
-                          </td>
-                          <td className="border border-black p-1 text-center">
-                            {item?.gstPercent}
-                          </td>
-                          <td className="border border-black p-1 text-right">
-                            {inrCurrency(item?.gstAmount)}
-                          </td>
-                          <td className="border border-black p-1 text-right">
-                            {inrCurrency(item?.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  ) : (
-                    <tbody>
-                       {details?.product?.productAmount?.map((item, index) => (
-                        <tr key={index}>
-                          <td className="border border-black p-1 text-center">
-                            {index + 1}
-                          </td>
-                          <td className="border border-black p-1">
-                            {item?.name}
-                          </td>
-                          <td className="border border-black p-1 text-center">
-                            {item?.hsnCode}
-                          </td>
-                          <td className="border border-black p-1 text-right">
-                            {item?.rate}
-                          </td>
-                          <td className="border border-black p-1 text-center">
-                            {item?.taxAmount}
-                          </td>
-                          <td className="border border-black p-1 text-right">
-                            {inrCurrency(item?.gstAmount)}
-                          </td>
-                          <td className="border border-black p-1 text-right">
-                            {inrCurrency(item?.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  )}
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-1 text-center">
+                        {1}
+                      </td>
+                      <td className="border border-black p-1">
+                        {details?.productName}
+                      </td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                    {details?.govermentCode !== null && (
+                      <tr>
+                        <td className="border border-black p-1 text-center"></td>
+                        <td className="border border-black p-1">
+                          Government fee
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.govermentCode}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.govermentGst}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-right">
+                          {inrCurrency(details?.govermentFees)}
+                        </td>
+                      </tr>
+                    )}
+                    {details?.profesionalCode !== null && (
+                      <tr>
+                        <td className="border border-black p-1 text-center"></td>
+                        <td className="border border-black p-1">
+                          Government fee
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.profesionalCode}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.profesionalGst}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-right">
+                          {inrCurrency(details?.professionalFees)}
+                        </td>
+                      </tr>
+                    )}
+                    {details?.serviceCode !== null && (
+                      <tr>
+                        <td className="border border-black p-1 text-center"></td>
+                        <td className="border border-black p-1">
+                          Government fee
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.serviceCode}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.serviceGst}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-right">
+                          {inrCurrency(details?.serviceCharge)}
+                        </td>
+                      </tr>
+                    )}
+                    {details?.otherCode !== null && (
+                      <tr>
+                        <td className="border border-black p-1 text-center"></td>
+                        <td className="border border-black p-1">
+                          Government fee
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.otherCode}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-center">
+                          {details?.otherGst}
+                        </td>
+                        <td className="border border-black p-1 text-right"></td>
+                        <td className="border border-black p-1 text-right">
+                          {inrCurrency(details?.otherFees)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {details?.totalAmount && (
+                      <tr>
+                        <td className="border border-black p-1 text-center"></td>
+                        <td className="border border-black p-1">Total</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td className="border border-black p-1 text-right">
+                          {inrCurrency(details?.totalAmount)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
                 </table>
               )}
             </div>
