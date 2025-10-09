@@ -392,6 +392,9 @@ const LeadEstimate = () => {
     defaultValues,
   });
 
+  const state = watch("state");
+  const gstNo = watch("gstNo");
+
   const gstForm = useForm({
     resolver: zodResolver(gstFormSchema(updateGstMand)),
     defaultValues: gstFormDefaultValues,

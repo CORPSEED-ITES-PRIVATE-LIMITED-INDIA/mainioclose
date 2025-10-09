@@ -73,6 +73,17 @@ export const getAllVendorsPaymentCount = createAsyncThunk(
   }
 );
 
+export const createVendorsPayment = createAsyncThunk(
+  "createVendorsPayment",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/paymentRegister/createVendorPaymentRegister`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllTdsReportInAccounts = createAsyncThunk(
   "getAllTdsReportInAccounts",
   async () => {
