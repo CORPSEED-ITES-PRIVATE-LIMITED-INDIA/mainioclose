@@ -265,8 +265,6 @@ const UsersList = () => {
 
   const handleEdit = useCallback(
     (data) => {
-      console.log("dshgvdshsdvjsdvhjsvjhv",data)
-      dispatch(getAllUsers())
       dispatch(getAllRoles());
       dispatch(getAllDepartment());
       dispatch(getDesiginationById(data?.userDepartment?.id));
