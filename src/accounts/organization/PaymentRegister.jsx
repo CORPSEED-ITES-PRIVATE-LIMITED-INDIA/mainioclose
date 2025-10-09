@@ -222,9 +222,16 @@ const PaymentRegister = () => {
   );
 
   const handleViewEstimate = (rowData) => {
-    setRowItem(rowData);
-    dispatch(getEstimateByLeadId(rowData?.leadId));
-    estimateModal.onOpen();
+    if (rowData?.leadId) {
+      setRowItem(rowData);
+      dispatch(getEstimateByLeadId(rowData?.leadId));
+      estimateModal.onOpen();
+    } else {
+      addToast({
+        title: "Lead id is not present in payment register",
+        color: "warning",
+      });
+    }
   };
 
   const handlePaymentAction = (rowData) => {
@@ -560,7 +567,7 @@ const PaymentRegister = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[70vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

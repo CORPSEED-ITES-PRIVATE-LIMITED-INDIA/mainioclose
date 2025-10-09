@@ -5,38 +5,39 @@ import jsPDF from "jspdf";
 import logo from "../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import domToImage from "dom-to-image";
+import { inrCurrency } from "../common";
 
 const InvoiceView = ({ details }) => {
   const pdfRef = useRef();
 
-const generatePDF = async () => {
-  const element = pdfRef.current;
-  try {
-    const imgData = await domToImage.toPng(element, {
-      quality: 0.95,
-      bgcolor: "#ffffff",
-    });
-    const pdf = new jsPDF("p", "mm", "a4");
-    const img = new Image();
-    img.src = imgData;
-    img.onload = () => {
-      const imgWidth = 210;
-      const imgHeight = (img.height * imgWidth) / img.width;
-      const pageHeight = 297;
-      let yPosition = 0;
-      while (yPosition < imgHeight) {
-        pdf.addImage(imgData, "PNG", 0, -yPosition, imgWidth, imgHeight);
-        yPosition += pageHeight;
-        if (yPosition < imgHeight) {
-          pdf.addPage();
+  const generatePDF = async () => {
+    const element = pdfRef.current;
+    try {
+      const imgData = await domToImage.toPng(element, {
+        quality: 0.95,
+        bgcolor: "#ffffff",
+      });
+      const pdf = new jsPDF("p", "mm", "a4");
+      const img = new Image();
+      img.src = imgData;
+      img.onload = () => {
+        const imgWidth = 210;
+        const imgHeight = (img.height * imgWidth) / img.width;
+        const pageHeight = 297;
+        let yPosition = 0;
+        while (yPosition < imgHeight) {
+          pdf.addImage(imgData, "PNG", 0, -yPosition, imgWidth, imgHeight);
+          yPosition += pageHeight;
+          if (yPosition < imgHeight) {
+            pdf.addPage();
+          }
         }
-      }
-      pdf.save("estimate.pdf");
-    };
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-  }
-};
+        pdf.save("estimate.pdf");
+      };
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
+  };
 
   return (
     <div ref={pdfRef} style={{ position: "relative" }}>
@@ -88,15 +89,21 @@ const generatePDF = async () => {
               <p>Noida, Uttar Pradesh - 2013</p>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+          >
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <h4 style={{ color: "#22c55e", fontWeight: 700, fontSize: "18px" }}>
+              <h4
+                style={{ color: "#22c55e", fontWeight: 700, fontSize: "18px" }}
+              >
                 {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
               </h4>
               <p style={{ fontWeight: 700 }}>{`#ESTD0${details?.id}`}</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <h4 style={{ color: "#22c55e", fontWeight: 700, fontSize: "18px" }}>
+              <h4
+                style={{ color: "#22c55e", fontWeight: 700, fontSize: "18px" }}
+              >
                 Order No.
               </h4>
               <p style={{ fontWeight: 700 }}>{details?.orderNumber}</p>
@@ -137,11 +144,14 @@ const generatePDF = async () => {
             {details?.secondaryPinCode && <p>{details?.secondaryPinCode}</p>}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <p style={{ color: "#6b7280" }}>Estimate Date</p>
-              <p>:</p>
-              <p>{dayjs(details?.estimateDate).format("DD-MM-YYYY")}</p>
-            </div>
+            {details?.estimateDate && (
+              <div style={{ display: "flex", gap: "8px" }}>
+                <p style={{ color: "#6b7280" }}>Estimate Date</p>
+                <p>:</p>
+                <p>{dayjs(details?.estimateDate).format("DD-MM-YYYY")}</p>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "8px" }}>
               <p style={{ color: "#6b7280" }}>Order Date</p>
               <p>:</p>
@@ -163,11 +173,15 @@ const generatePDF = async () => {
             >
               <thead style={{ backgroundColor: "#f3f4f6" }}>
                 <tr>
-                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>#</th>
+                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    #
+                  </th>
                   <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                     Item and description
                   </th>
-                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>HSN</th>
+                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    HSN
+                  </th>
                   <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                     Rate/kg
                   </th>
@@ -187,7 +201,9 @@ const generatePDF = async () => {
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>1</td>
+                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    1
+                  </td>
                   <td
                     style={{
                       border: "1px solid #e5e7eb",
@@ -197,16 +213,30 @@ const generatePDF = async () => {
                   >
                     {details?.productName}
                   </td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
                 </tr>
                 {details?.gstCode && (
                   <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       Service fee
                     </td>
@@ -223,7 +253,9 @@ const generatePDF = async () => {
                       {details?.gst}
                     </td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      {(details?.actualPrice * details?.quantity * details?.gst) /
+                      {(details?.actualPrice *
+                        details?.quantity *
+                        details?.gst) /
                         100}
                     </td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
@@ -237,7 +269,9 @@ const generatePDF = async () => {
                     borderBottom: "1px solid #000000",
                   }}
                 >
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
                   <td
                     style={{
                       border: "1px solid #e5e7eb",
@@ -247,11 +281,21 @@ const generatePDF = async () => {
                   >
                     Total Qty. : 1
                   </td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
                   <td
                     style={{
                       border: "1px solid #e5e7eb",
@@ -261,7 +305,9 @@ const generatePDF = async () => {
                     }}
                   >
                     <span>₹</span>
-                    <span style={{ fontWeight: 700 }}>₹ {details?.totalPrice}</span>
+                    <span style={{ fontWeight: 700 }}>
+                      ₹ {details?.totalPrice}
+                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -277,11 +323,15 @@ const generatePDF = async () => {
             >
               <thead style={{ backgroundColor: "#f3f4f6" }}>
                 <tr>
-                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>#</th>
+                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    #
+                  </th>
                   <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                     Item and description
                   </th>
-                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>HSN</th>
+                  <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    HSN
+                  </th>
                   <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                     Rate
                   </th>
@@ -298,7 +348,9 @@ const generatePDF = async () => {
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>1</td>
+                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    1
+                  </td>
                   <td
                     style={{
                       border: "1px solid #e5e7eb",
@@ -308,85 +360,119 @@ const generatePDF = async () => {
                   >
                     {details?.productName}
                   </td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
                 </tr>
                 {details?.govermentCode && (
                   <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       Government fee
                     </td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.govermentCode}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.govermentGst}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      {details?.govermentFees}
+                      {inrCurrency(details?.govermentFees)}
                     </td>
                   </tr>
                 )}
                 {details?.profesionalCode !== null && (
                   <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       Professional fee
                     </td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.profesionalCode}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.profesionalGst}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      {details?.professionalFees}
+                      {inrCurrency(details?.professionalFees)}
                     </td>
                   </tr>
                 )}
                 {details?.serviceCode !== null && (
                   <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       Service fee
                     </td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.serviceCode}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.serviceGst}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      {details?.serviceCharge}
+                      {inrCurrency(details?.serviceCharge)}
                     </td>
                   </tr>
                 )}
                 {details?.otherCode !== null && (
                   <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       Other fee
                     </td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.otherCode}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
                       {details?.otherGst}
                     </td>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                    <td
+                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    ></td>
                     <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      {details?.otherFees}
+                      {inrCurrency(details?.otherFees)}
                     </td>
                   </tr>
                 )}
@@ -396,7 +482,9 @@ const generatePDF = async () => {
                     borderBottom: "1px solid #000000",
                   }}
                 >
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
                   <td
                     style={{
                       border: "1px solid #e5e7eb",
@@ -406,10 +494,18 @@ const generatePDF = async () => {
                   >
                     Total Qty. : 1
                   </td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
-                  <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
+                  <td
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                  ></td>
                   <td
                     style={{
                       border: "1px solid #e5e7eb",
@@ -417,7 +513,7 @@ const generatePDF = async () => {
                       fontWeight: 700,
                     }}
                   >
-                    {details?.totalAmount}
+                    {inrCurrency(details?.totalAmount)}
                   </td>
                 </tr>
               </tbody>
@@ -426,7 +522,13 @@ const generatePDF = async () => {
 
           {/* Total in Words */}
           {details?.totalAmount > 0 && (
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "4px",
+              }}
+            >
               <p style={{ color: "#6b7280" }}>Total in words</p>
               <p>:</p>
               <p>{numWords(details?.totalAmount)}</p>
@@ -464,16 +566,24 @@ const generatePDF = async () => {
                 {details?.Type === "Product" ? (
                   details?.gstCode !== null && (
                     <tr>
-                      <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                      <td
+                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      >
                         {details?.gstCode}
                       </td>
-                      <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                      <td
+                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      >
                         0.0 %
                       </td>
-                      <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                      <td
+                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      >
                         0.0 %
                       </td>
-                      <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                      <td
+                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      >
                         {details?.gst}
                       </td>
                     </tr>
@@ -482,64 +592,144 @@ const generatePDF = async () => {
                   <>
                     {details?.profesionalCode !== null && (
                       <tr>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.profesionalCode}
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.profesionalGst}
                         </td>
                       </tr>
                     )}
                     {details?.serviceCode !== null && (
                       <tr>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.serviceCode}
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.serviceGst}
                         </td>
                       </tr>
                     )}
                     {details?.govermentCode !== null && (
                       <tr>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.govermentCode}
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.govermentGst}
                         </td>
                       </tr>
                     )}
                     {details?.otherCode !== null && (
                       <tr>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.otherCode}
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           0.0 %
                         </td>
-                        <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                        <td
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            padding: "8px",
+                          }}
+                        >
                           {details?.otherGst}
                         </td>
                       </tr>
@@ -555,8 +745,8 @@ const generatePDF = async () => {
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <p style={{ fontWeight: 700 }}>Notes :</p>
           <p style={{ color: "#6b7280" }}>
-            This Estimate & price quotation is valid for 7 calendar days from the
-            date of issue.
+            This Estimate & price quotation is valid for 7 calendar days from
+            the date of issue.
           </p>
           <p style={{ color: "#6b7280" }}>{details?.invoiceNote}</p>
           <p style={{ color: "#6b7280" }}>
@@ -564,9 +754,9 @@ const generatePDF = async () => {
           </p>
           <hr style={{ margin: "8px 0" }} />
           <p style={{ color: "#6b7280" }}>
-            Note: Government fee and corpseed professional fee may differ depending
-            on any additional changes advised by the client in the application or
-            any changes in government policies.
+            Note: Government fee and corpseed professional fee may differ
+            depending on any additional changes advised by the client in the
+            application or any changes in government policies.
           </p>
         </div>
       </div>

@@ -39,7 +39,6 @@ import {
   updateMultiCompanyAssignee,
 } from "../../toolkit/slices/companySlice";
 import NewSelect from "../../components/NewSelect";
-import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 import dayjs from "dayjs";
 import CreateCompanyForm from "./CreateCompanyForm";
 import { maskEmail, maskMobileNumber } from "../../common";
@@ -575,9 +574,7 @@ const Company = () => {
           total={pages}
           onChange={(e) => {
             setCompanyFilteration((prev) => ({ ...prev, page: e }));
-            if (e > companyFilteration?.page) {
-              dispatch(getAllNewCompanies({ ...companyFilteration, page: e }));
-            }
+            dispatch(getAllNewCompanies({ ...companyFilteration, page: e }));
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">

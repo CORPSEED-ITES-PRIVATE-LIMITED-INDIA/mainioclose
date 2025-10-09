@@ -301,10 +301,10 @@ const EstimateView = ({ details }) => {
                         {details?.productName}
                       </td>
                       <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
+                      <td className="border border-black p-1 text-right"></td>
+                      <td className="border border-black p-1 text-right"></td>
+                      <td className="border border-black p-1 text-right"></td>
+                      <td className="border border-black p-1 text-right"></td>
                     </tr>
                     {details?.govermentCode !== null && (
                       <tr>
