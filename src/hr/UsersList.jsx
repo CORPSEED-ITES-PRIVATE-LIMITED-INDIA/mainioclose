@@ -47,7 +47,10 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createNewUserInAuth, updateUserData } from "../toolkit/slices/authSlice";
+import {
+  createNewUserInAuth,
+  updateUserData,
+} from "../toolkit/slices/authSlice";
 import { createUsersInOperations } from "../toolkit/slices/operationSlice";
 import { getAllDepartment } from "../toolkit/slices/settingSlice";
 import { padZero } from "../common";
@@ -60,7 +63,7 @@ import dayjs from "dayjs";
 
 const columns = [
   { name: "ID", uid: "id" },
-  { name: "USER NAME", uid: "userName", sortable: true },
+  { name: "USER NAME", uid: "fullName", sortable: true },
   { name: "EMAIL", uid: "email" },
   { name: "DEPARTMENT", uid: "department" },
   { name: "ROLE", uid: "role" },
@@ -81,7 +84,7 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "userName",
+  "fullName",
   "email",
   "department",
   "role",
@@ -195,7 +198,7 @@ const UsersList = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "fullName",
     direction: "ascending",
   });
   const [filteration, setFilteration] = useState({
@@ -225,7 +228,9 @@ const UsersList = () => {
     let filteredUsers = [...data];
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item?.fullName?.toLowerCase().includes(filterValue.toLowerCase())
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
     return filteredUsers;
@@ -260,12 +265,14 @@ const UsersList = () => {
 
   const handleEdit = useCallback(
     (data) => {
+      console.log("dshgvdshsdvjsdvhjsvjhv",data)
+      dispatch(getAllUsers())
       dispatch(getAllRoles());
       dispatch(getAllDepartment());
       dispatch(getDesiginationById(data?.userDepartment?.id));
       dispatch(getManagerById(data?.userDepartment?.id));
       reset({
-        employeeId:data?.employeeId,
+        employeeId: data?.employeeId,
         userName: data?.fullName,
         email: data.email,
         designationId: String(data?.userDesignation?.id),
@@ -426,7 +433,7 @@ const UsersList = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "userName":
+      case "fullName":
         return (
           <div className="flex items-start gap-2">
             <Avatar size="sm" classNames={{ icon: "text-gray-500" }} />
