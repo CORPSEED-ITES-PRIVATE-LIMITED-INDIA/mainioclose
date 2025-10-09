@@ -273,7 +273,6 @@ const UsersList = () => {
         role: data?.role,
         epfNo: data?.epfNo,
         aadharCard: data?.aadharCard,
-        panNumber: data?.panNumber,
         managerId: String(data?.managers?.id),
         expInMonth: String(data?.expInMonth),
         expInYear: String(data?.expInYear),

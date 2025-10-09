@@ -70,6 +70,7 @@ const formSchema = ({
           companyName: z.string().min(1, "Please enter company name"),
         }),
     companyAge: z.string().min(1, "Please enter company age"),
+    crmCompany: z.string().min(1, "Please enter CRM company name"),
     ...(parentLead
       ? {
           leadId: z.string().min(1, "Please select lead."),
@@ -656,6 +657,19 @@ const CreateLeadCompanyForm = ({
                 )}
               </>
             )}
+            <Controller
+              name="crmCompany"
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <Input
+                  isRequired
+                  label="CRM Company name"
+                  errorMessage={error?.message}
+                  isInvalid={!!error}
+                  {...field}
+                />
+              )}
+            />
             <Controller
               name="companyAge"
               control={control}

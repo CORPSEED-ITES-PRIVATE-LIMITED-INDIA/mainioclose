@@ -249,7 +249,7 @@ const EstimateView = ({ details }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr >
+                    <tr>
                       <td className="border border-black p-1 text-center">
                         {1}
                       </td>
@@ -292,33 +292,63 @@ const EstimateView = ({ details }) => {
                       <th className="border border-black p-1">Amount</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {details?.services?.map((item, index) => (
-                      <tr key={index}>
-                        <td className="border border-black p-1 text-center">
-                          {index + 1}
-                        </td>
-                        <td className="border border-black p-1">
-                          {item?.name}
-                        </td>
-                        <td className="border border-black p-1 text-center">
-                          {item?.hsnCode}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {item?.rate}
-                        </td>
-                        <td className="border border-black p-1 text-center">
-                          {item?.gstPercent}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {inrCurrency(item?.gstAmount)}
-                        </td>
-                        <td className="border border-black p-1 text-right">
-                          {inrCurrency(item?.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  {details?.services?.length > 0 ? (
+                    <tbody>
+                      {details?.services?.map((item, index) => (
+                        <tr key={index}>
+                          <td className="border border-black p-1 text-center">
+                            {index + 1}
+                          </td>
+                          <td className="border border-black p-1">
+                            {item?.name}
+                          </td>
+                          <td className="border border-black p-1 text-center">
+                            {item?.hsnCode}
+                          </td>
+                          <td className="border border-black p-1 text-right">
+                            {item?.rate}
+                          </td>
+                          <td className="border border-black p-1 text-center">
+                            {item?.gstPercent}
+                          </td>
+                          <td className="border border-black p-1 text-right">
+                            {inrCurrency(item?.gstAmount)}
+                          </td>
+                          <td className="border border-black p-1 text-right">
+                            {inrCurrency(item?.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  ) : (
+                    <tbody>
+                       {details?.product?.productAmount?.map((item, index) => (
+                        <tr key={index}>
+                          <td className="border border-black p-1 text-center">
+                            {index + 1}
+                          </td>
+                          <td className="border border-black p-1">
+                            {item?.name}
+                          </td>
+                          <td className="border border-black p-1 text-center">
+                            {item?.hsnCode}
+                          </td>
+                          <td className="border border-black p-1 text-right">
+                            {item?.rate}
+                          </td>
+                          <td className="border border-black p-1 text-center">
+                            {item?.taxAmount}
+                          </td>
+                          <td className="border border-black p-1 text-right">
+                            {inrCurrency(item?.gstAmount)}
+                          </td>
+                          <td className="border border-black p-1 text-right">
+                            {inrCurrency(item?.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  )}
                 </table>
               )}
             </div>
