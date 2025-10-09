@@ -43,7 +43,8 @@ export const columns = [
   { name: "ID", uid: "id" },
   { name: "LEAD ID", uid: "leadId" },
   { name: "COMPANY NAME", uid: "companyName", sortable: true },
-  { name: "LEAD NAME", uid: "leadName", sortable: true },
+  { name: "CRM COMPANY", uid: "crmCompany" },
+  { name: "LEAD NAME", uid: "leadName" },
   { name: "GST", uid: "gstNo" },
   { name: "AMOUNT", uid: "amount" },
   { name: "PRI.CONT", uid: "primaryContact" },
@@ -272,6 +273,8 @@ const CompanyForm = () => {
               )}
             </div>
           );
+        case "crmCompany":
+          return <p className="text-sm">{rowData?.crmCompany}</p>;
         case "leadName":
           return (
             <p className="text-sm capitalize">{rowData?.lead?.leadName}</p>

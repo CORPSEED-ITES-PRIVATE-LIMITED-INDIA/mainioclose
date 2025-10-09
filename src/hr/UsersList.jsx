@@ -309,9 +309,6 @@ const UsersList = () => {
     [data, reset, dispatch, onOpen]
   );
 
-
-  console.log("sdkghsjklgkjsgdg",rowItem)
-
   const onSubmit = (values) => {
     if (rowItem) {
       values.id = rowItem?.id;
@@ -637,7 +634,7 @@ const UsersList = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
@@ -762,7 +759,7 @@ const UsersList = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Users</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Users list</h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"
