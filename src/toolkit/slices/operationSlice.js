@@ -115,6 +115,14 @@ export const updateMilestoneReAssignment = createAsyncThunk(
   }
 );
 
+export const createDepartmentInOPerations = createAsyncThunk(
+  "createDepartmentInOPerations",
+  async (data) => {
+    const response = await api.post(`/api/departments`, data);
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {

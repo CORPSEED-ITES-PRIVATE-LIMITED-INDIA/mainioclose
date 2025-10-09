@@ -112,8 +112,10 @@ const OrganizationEstimate = () => {
     let filteredUsers = [...data];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        item.productName.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers?.filter((item) =>
+      Object.values(item)?.some((val) =>
+        String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+      )
       );
     }
 
@@ -512,7 +514,7 @@ const OrganizationEstimate = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, page, pages, hasSearchFilter]);
 
   return (
     <>
@@ -523,7 +525,7 @@ const OrganizationEstimate = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh]",
+          wrapper: "max-h-[70vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
