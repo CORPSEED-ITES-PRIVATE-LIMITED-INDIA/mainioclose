@@ -329,7 +329,7 @@ const EstimateView = ({ details }) => {
                       <tr>
                         <td className="border border-black p-1 text-center"></td>
                         <td className="border border-black p-1">
-                          Government fee
+                          Professional fee
                         </td>
                         <td className="border border-black p-1 text-center">
                           {details?.profesionalCode}
@@ -348,7 +348,7 @@ const EstimateView = ({ details }) => {
                       <tr>
                         <td className="border border-black p-1 text-center"></td>
                         <td className="border border-black p-1">
-                          Government fee
+                          Service fee
                         </td>
                         <td className="border border-black p-1 text-center">
                           {details?.serviceCode}
@@ -367,7 +367,7 @@ const EstimateView = ({ details }) => {
                       <tr>
                         <td className="border border-black p-1 text-center"></td>
                         <td className="border border-black p-1">
-                          Government fee
+                          Other fee
                         </td>
                         <td className="border border-black p-1 text-center">
                           {details?.otherCode}
