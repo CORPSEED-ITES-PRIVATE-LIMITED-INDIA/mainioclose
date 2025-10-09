@@ -209,7 +209,7 @@ const TaxInvoice = ({ detail }) => {
                   Total
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
-                  ₹ {totalAmount.toLocaleString("en-IN")}
+                  ₹ {inrCurrency(totalAmount)}
                 </td>
               </tr>
             </tbody>
@@ -251,7 +251,7 @@ const TaxInvoice = ({ detail }) => {
               <tr key={index}>
                 <td className="border border-gray-300 px-4 py-2">{item.hsn}</td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
-                  {inrCurrency(item.taxable.toLocaleString("en-IN"))}
+                  {inrCurrency(item?.taxable)}
                 </td>
                 <td className="border border-gray-300 px-4 py-2">
                   {item.igstRate}%
