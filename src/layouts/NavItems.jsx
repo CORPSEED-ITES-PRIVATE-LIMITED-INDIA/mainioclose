@@ -105,6 +105,12 @@ export const navItems = [
         key: "accounts/orgEstimate",
         icon: "",
       },
+      {
+        title: "Vendors payment",
+        url: "accounts/vendorsPayment",
+        key: "accounts/vendorsPayment",
+        icon: "",
+      },
     ],
   },
   {

@@ -114,6 +114,26 @@ export const getInvoiceDetailById = createAsyncThunk(
   }
 );
 
+export const getAllVendorsPaymentListForAccounts = createAsyncThunk(
+  "getAllVendorsPaymentListForAccounts",
+  async ({ page, size, status }) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterForAccount?page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllVendorsPaymentCountForAccounts = createAsyncThunk(
+  "getAllVendorsPaymentCountForAccounts",
+  async (status) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAccount&status=${status}`
+    );
+    return response.data;
+  }
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -123,6 +143,8 @@ const AccountSlice = createSlice({
     estimatePaymentList: [],
     vendorsPaymentList: [],
     vendorsPaymentCount: 0,
+    vendorsPaymentListForAccount: [],
+    vendorsPaymentCountForAccount: 0,
     remainingAmountDetail: {},
     invoiceDetail: {},
   },
@@ -215,6 +237,36 @@ const AccountSlice = createSlice({
     builder.addCase(getInvoiceDetailById.rejected, (state) => {
       state.loading = "rejected";
       state.invoiceDetail = {};
+    });
+
+    builder.addCase(getAllVendorsPaymentListForAccounts.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllVendorsPaymentListForAccounts.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.vendorsPaymentListForAccount = action.payload;
+      }
+    );
+    builder.addCase(getAllVendorsPaymentListForAccounts.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsPaymentListForAccount = [];
+    });
+
+    builder.addCase(getAllVendorsPaymentCountForAccounts.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllVendorsPaymentCountForAccounts.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.vendorsPaymentCountForAccount = action.payload;
+      }
+    );
+    builder.addCase(getAllVendorsPaymentCountForAccounts.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsPaymentCountForAccount = 0;
     });
   },
 });

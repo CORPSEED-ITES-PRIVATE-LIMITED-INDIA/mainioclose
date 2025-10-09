@@ -35,7 +35,7 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
-      <Route path="accounts/vendor-payments" element={<VendorPayments />} />
+      <Route path="accounts/vendorsPayment" element={<VendorPayments />} />
 
       <Route path="accounts/organizations" element={<Organizations />}>
         <Route index element={<OrganizationDetail />} />
