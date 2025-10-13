@@ -158,7 +158,7 @@ const LeadHistory = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search..."
             startContent={<Search />}
             value={filterValue}

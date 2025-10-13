@@ -267,7 +267,7 @@ const SalesReport = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
@@ -340,7 +340,7 @@ const SalesReport = () => {
                 {(titleProps) => (
                   <div className="px-1 py-2">
                     <h3 className="my-4 font-bold text-xl" {...titleProps}>
-                      Lead filter
+                      Filter
                     </h3>
                     <div className="grid grid-cols-1 gap-4">
                       <NewSelect

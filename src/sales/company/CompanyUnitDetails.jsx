@@ -1,36 +1,53 @@
-import { Tab, Tabs } from '@heroui/react'
-import CompanyProjects from './CompanyProjects';
-import CompanyLeads from './CompanyLeads';
-import UnitDetails from './UnitDetails';
-
+import { Tab, Tabs } from "@heroui/react";
+import { useEffect, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const CompanyUnitDetails = () => {
-    let tabs = [
+  const navigate = useNavigate();
+  const path = useLocation();
+  const pathKey = path?.pathname?.split("/");
+  const [selectedKey, setSelectedKey] = useState("leadEstimate");
+
+  useEffect(() => {
+    setSelectedKey(pathKey[pathKey?.length - 1]);
+  }, []);
+
+  const handleSelect = (e) => {
+    navigate(e);
+    setSelectedKey(e);
+  };
+
+  let tabs = [
     {
-      id: "details",
+      id: "unitDetails",
       label: "Details",
-      content:<UnitDetails/>
     },
     {
       id: "companyProjects",
       label: "Company projects",
-      content:<CompanyProjects/>
     },
     {
       id: "companyLeads",
       label: "Company leads",
-      content:<CompanyLeads/>
-    }
+    },
   ];
   return (
-    <Tabs aria-label="Dynamic tabs" items={tabs}>
+    <div className="flex flex-col gap-1">
+      <Tabs
+        aria-label="Dynamic tabs"
+        items={tabs}
+        selectedKey={selectedKey}
+        onSelectionChange={handleSelect}
+      >
         {(item) => (
           <Tab key={item.id} title={item.label}>
-           {item.content}
+            {item.content}
           </Tab>
         )}
       </Tabs>
-  )
-}
+      <Outlet />
+    </div>
+  );
+};
 
-export default CompanyUnitDetails
+export default CompanyUnitDetails;

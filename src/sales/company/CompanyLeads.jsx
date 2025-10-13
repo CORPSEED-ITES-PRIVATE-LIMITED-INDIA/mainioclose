@@ -54,7 +54,7 @@ const CompanyLeads = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "leadName",
     direction: "ascending",
   });
   const [companyFilteration, setCompanyFilteration] = useState({
@@ -109,7 +109,7 @@ const CompanyLeads = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link className="font-normal">{rowData?.leadName || "-"}</Link>
+              <Link className="font-medium" to={`${rowData?.leadId}/leadDetail`} >{rowData?.leadName || "-"}</Link>
             </div>
           </div>
         );
@@ -195,7 +195,7 @@ const CompanyLeads = () => {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search by name..."
             startContent={<Search />}
             value={filterValue}
@@ -309,7 +309,7 @@ const CompanyLeads = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[500px]",
+          wrapper: "max-h-[60vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

@@ -27,6 +27,7 @@ import { CSVLink } from "react-csv";
 import NewSelect from "../../components/NewSelect";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 import { formatedDateTime } from "../../common";
+import dayjs from "dayjs";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -43,8 +44,6 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = ["id", "name", "email", "percentage", "status"];
 
 const AutomationStatus = () => {
-  const tz = "Asia/Kolkata";
-  const end = now(tz);
   const dispatch = useDispatch();
   const { userId } = useParams();
   const data = useSelector((state) => state.leads.autoStatusList);
@@ -57,10 +56,11 @@ const AutomationStatus = () => {
   );
   const initialValues = {
     userIds: [],
-    toDate: formatedDateTime(
-      end.subtract({ months: 1 }).set({ day: 1, hour: 0, minute: 45 })
-    ),
-    fromDate: formatedDateTime(now(tz)),
+    toDate: dayjs()
+      .subtract(1, "month")
+      .startOf("day")
+      .format("YYYY-MM-DDTHH:mm:ss"),
+    fromDate: dayjs().endOf("day").format("YYYY-MM-DDTHH:mm:ss"),
     currentUserId: userId,
   };
   const [dateFilter, setDateFilter] = useState(initialValues);
@@ -213,15 +213,13 @@ const AutomationStatus = () => {
   ];
 
 
-  console.log("dfjhgdkjghdkjgjkd 1111111",dateFilter)
-
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
+            className="w-full sm:max-w-[35%]"
             placeholder="Search by name..."
             startContent={<Search />}
             value={filterValue}
@@ -272,20 +270,29 @@ const AutomationStatus = () => {
                         hourCycle={24}
                         visibleMonths={2}
                         label="Select date range"
-                        defaultValue={{
-                          start: parseZonedDateTime(
-                            `${dateFilter?.toDate}[Asia/Kolkata]`
-                          ),
-                          end: parseZonedDateTime(
-                            `${dateFilter?.fromDate}[Asia/Kolkata]`
-                          ),
+                        value={{
+                          start: dateFilter?.toDate
+                            ? parseZonedDateTime(
+                                `${dateFilter?.toDate}[Asia/kolkata]`
+                              )
+                            : null,
+                          end: dateFilter?.fromDate
+                            ? parseZonedDateTime(
+                                `${dateFilter?.fromDate}[Asia/kolkata]`
+                              )
+                            : null,
                         }}
-                        onChange={(range) => {
-                          console.log("dfjhgdkjghdkjgjkd",range)
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                            : null;
                           setDateFilter((prev) => ({
                             ...prev,
-                            toDate: formatedDateTime(range?.start),
-                            fromDate: formatedDateTime(range?.end),
+                            toDate: formattedStart,
+                            fromDate: formattedEnd,
                           }));
                         }}
                       />
@@ -350,6 +357,7 @@ const AutomationStatus = () => {
     onSearchChange,
     hasSearchFilter,
     leadUsersList,
+    dateFilter
   ]);
 
   const bottomContent = React.useMemo(() => {
