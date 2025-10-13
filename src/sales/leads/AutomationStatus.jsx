@@ -132,23 +132,18 @@ const AutomationStatus = () => {
       case "email":
         return <p className="text-sm">{rowData?.email}</p>;
       case "percentage":
-        return (
-          <p className="text-sm capitalize">{rowData?.percentage || "-"}</p>
-        );
+        return <p className="text-sm capitalize">{rowData?.percentage || 0}</p>;
       case "status":
         return (
           <div className="flex gap-1">
             <span className="text-sm rounded p-1 bg-blue-300">
-              New : {rowData?.statusNew}
+              New : {rowData?.statusNew || 0}
             </span>
-            <p className="text-sm rounded p-1 bg-red-300">
-              Deal lost : {rowData?.statusDealLost}
-            </p>
-            <p className="text-sm rounded p-1 bg-orange-300">
-              Bad fit : {rowData?.statusBadFit}
-            </p>
             <p className="text-sm rounded p-1 bg-green-300">
-              Move on : {rowData?.statusMoveOn}
+              Deal won : {rowData?.statusDealWon || 0}
+            </p>
+            <p className="text-sm rounded p-1 bg-red-300">
+              Bad fit : {rowData?.statusBadFit || 0}
             </p>
           </div>
         );
@@ -237,9 +232,7 @@ const AutomationStatus = () => {
               filename={"auto-history.csv"}
               variant="flat"
             >
-              <Button endContent={<Import />}>
-                Export
-              </Button>
+              <Button endContent={<Import />}>Export</Button>
             </CSVLink>
             <Popover size="lg" showArrow>
               <PopoverTrigger>
@@ -392,7 +385,7 @@ const AutomationStatus = () => {
         </div>
       </div>
     );
-  }, [selectedKeys,count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
     <>
