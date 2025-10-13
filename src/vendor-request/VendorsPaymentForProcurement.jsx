@@ -333,9 +333,6 @@ const VendorPaymentForProcurement = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <Button variant="flat" endContent={<Plus />} onPress={onOpen}>
-              Add
-            </Button>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -357,6 +354,9 @@ const VendorPaymentForProcurement = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+            <Button variant="flat" endContent={<Plus />} onPress={onOpen}>
+              Add
+            </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">

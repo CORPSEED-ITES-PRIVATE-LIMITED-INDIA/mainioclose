@@ -25,9 +25,9 @@ import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import {
-  createVendorsPayment,
   getAllVendorsPaymentCountForAccounts,
   getAllVendorsPaymentListForAccounts,
+  updateVendorPaymentStatus,
 } from "../toolkit/slices/accountSlice";
 import TaxInvoice from "../components/TaxInvoice";
 import { inrCurrency } from "../common";
@@ -63,8 +63,12 @@ const VendorPayments = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const invoiceModal = useDisclosure();
-  const data = useSelector((state) => state.account.vendorsPaymentListForAccount);
-  const count = useSelector((state) => state.account.vendorsPaymentCountForAccount);
+  const data = useSelector(
+    (state) => state.account.vendorsPaymentListForAccount
+  );
+  const count = useSelector(
+    (state) => state.account.vendorsPaymentCountForAccount
+  );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -80,9 +84,11 @@ const VendorPayments = () => {
   const [status, setStatus] = useState("initiated");
 
   useEffect(() => {
-    dispatch(getAllVendorsPaymentListForAccounts({ page, size: rowsPerPage,status }));
+    dispatch(
+      getAllVendorsPaymentListForAccounts({ page, size: rowsPerPage, status })
+    );
     dispatch(getAllVendorsPaymentCountForAccounts(status));
-  }, [dispatch, page, rowsPerPage,status]);
+  }, [dispatch, page, rowsPerPage, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -116,6 +122,31 @@ const VendorPayments = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const handleActionPayments = (status, rowData) => {
+    const data = { userId, status, id: rowData?.id };
+    dispatch(updateVendorPaymentStatus(data))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: `Vandor payment ${status} successfully !.`,
+            color: "success",
+          });
+          dispatch(
+            getAllVendorsPaymentListForAccounts({
+              page,
+              size: rowsPerPage,
+              status,
+            })
+          );
+          dispatch(getAllVendorsPaymentCountForAccounts(status));
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -159,7 +190,18 @@ const VendorPayments = () => {
                 <DropdownItem key="view" onPress={invoiceModal.onOpen}>
                   View
                 </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
+                <DropdownItem
+                  key="approved"
+                  onPress={() => handleActionPayments("approved", rowData)}
+                >
+                  Approved
+                </DropdownItem>
+                <DropdownItem
+                  key="disapproved"
+                  onPress={() => handleActionPayments("disapproved", rowData)}
+                >
+                  Disapproved
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -296,7 +338,7 @@ const VendorPayments = () => {
     count,
     onSearchChange,
     hasSearchFilter,
-    status
+    status,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -337,26 +379,6 @@ const VendorPayments = () => {
       </div>
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
-
-  const onSubmit = (values) => {
-    values.createdById = userId;
-    dispatch(createVendorsPayment(values))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Vandor payment registered successfully !.",
-            color: "success",
-          });
-          onClose();
-          reset(defaultValues);
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
-  };
 
   return (
     <>

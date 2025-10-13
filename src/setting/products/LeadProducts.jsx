@@ -30,6 +30,7 @@ import {
   deleteProduct,
   getAllProductListByType,
   getAllProductListCount,
+  searchProducts,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
@@ -97,30 +98,17 @@ const LeadProducts = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...(data || [])];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
-      );
-    }
-    return filteredUsers;
-  }, [data, filterValue]);
-
   const pages = Math.ceil(count / initialFilteration?.size) || 1;
 
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...data].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, data]);
 
   // const handleDeleteOpen =(row)=>{
   //   setRowItem(row)
@@ -254,12 +242,11 @@ const LeadProducts = () => {
   const onSearchChange = React.useCallback((value) => {
     if (value) {
       setFilterValue(value);
-      setInitialFilteration((prev) => ({
-        ...prev,
-        page: 1,
-      }));
+      dispatch(searchProducts(value));
     } else {
       setFilterValue("");
+      dispatch(getAllProductListByType(initialFilteration));
+      dispatch(getAllProductListCount(initialFilteration));
     }
   }, []);
 
