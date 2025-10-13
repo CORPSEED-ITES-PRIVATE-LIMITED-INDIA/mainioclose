@@ -82,7 +82,7 @@ const icons = {
   Book,
 };
 
-const Sidebar = ({ items, collapsed, setCollapsed }) => {
+const Sidebar = ({ items, collapsed }) => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const userDetail = useSelector((state) => state.auth.currentUser);
@@ -165,7 +165,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
       <div className="absolute bottom-1">
         <Dropdown placement="right-end">
           <DropdownTrigger>
-            <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-1 py-1 rounded-md">
+            <div className="flex items-center gap-3 bg-gray-100 z-50 hover:bg-gray-300 cursor-pointer px-1 py-1 rounded-md">
               <User
                 className="font-medium"
                 avatarProps={{
