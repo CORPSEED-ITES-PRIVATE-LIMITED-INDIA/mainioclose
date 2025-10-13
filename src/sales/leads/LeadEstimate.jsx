@@ -799,7 +799,6 @@ const LeadEstimate = () => {
       values.leadId = leadId;
       values.unitCompany = false;
       values.productId = productData?.id;
-      values.gstDocuments = values.gstDocuments?.[0]?.response;
       values.companyId = companyAndUnitData?.companyId;
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
