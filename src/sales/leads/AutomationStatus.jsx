@@ -212,6 +212,9 @@ const AutomationStatus = () => {
     "BadFit status",
   ];
 
+
+  console.log("dfjhgdkjghdkjgjkd 1111111",dateFilter)
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -278,6 +281,7 @@ const AutomationStatus = () => {
                           ),
                         }}
                         onChange={(range) => {
+                          console.log("dfjhgdkjghdkjgjkd",range)
                           setDateFilter((prev) => ({
                             ...prev,
                             toDate: formatedDateTime(range?.start),

@@ -126,6 +126,8 @@ const VendorRequestDetail = () => {
   const { leadId, userId, requestId } = useParams();
   const detail = JSON.parse(localStorage.getItem("vendorDetail"));
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const attachementModal = useDisclosure();
+  const clientAttachementModal = useDisclosure();
   const vendorsStatus = useSelector((state) => state.vendors.vendorsStatus);
   const data = useSelector((state) => state.vendors.singleVendorHistoryList);
   const count = useSelector(
@@ -144,6 +146,7 @@ const VendorRequestDetail = () => {
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
+  const [index, setIndex] = useState(0);
   const hasSearchFilter = Boolean(filterValue);
 
   const headerColumns = React.useMemo(() => {
@@ -214,7 +217,7 @@ const VendorRequestDetail = () => {
         return (
           <div className="flex items-center gap-1">
             <Dot
-              className="w-8 h-8"
+              className="w-12 h-12 m-0 p-0"
               color={
                 rowData?.requestStatus === "Finished"
                   ? "green"
@@ -598,9 +601,20 @@ const VendorRequestDetail = () => {
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
                   <FileText className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Description</p>{" "}
+                  <p className="text-default-500 text-sm">Description</p>{" "}
                 </span>
                 : <p>{detail?.requirementDescription}</p>
+              </div>
+            </section>
+            <section className="mt-3">
+              <h4 className="font-medium">Attachements</h4>
+              <div className="flex items-center gap-2">
+                <Button onPress={attachementModal.onOpen}>
+                  Sales attachement
+                </Button>
+                <Button onPress={clientAttachementModal.onOpen}>
+                  Vendor attachement
+                </Button>
               </div>
             </section>
           </CardBody>
@@ -612,7 +626,7 @@ const VendorRequestDetail = () => {
             bottomContent={bottomContent}
             bottomContentPlacement="outside"
             classNames={{
-              wrapper: "max-h-[55vh]",
+              wrapper: "max-h-[48vh]",
             }}
             sortDescriptor={sortDescriptor}
             topContent={topContent}
@@ -842,6 +856,70 @@ const VendorRequestDetail = () => {
                     </Button>
                   </ModalFooter>
                 </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="5xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={attachementModal.isOpen}
+        onOpenChange={attachementModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Sales attachement</ModalHeader>
+              <ModalBody>
+                <iframe
+                  title=""
+                  src={data?.salesAttachmentImage?.[index]}
+                  height={500}
+                  width={"100%"}
+                />
+              </ModalBody>
+              <ModalFooter className="w-full flex justify-between">
+                <Button
+                  isDisabled={index === 0}
+                  onPress={() => setIndex((prev) => prev - 1)}
+                >
+                  Prev
+                </Button>
+                <Button
+                  isDisabled={index >= data?.salesAttachmentImage?.length}
+                  onPress={() => setIndex((prev) => prev + 1)}
+                >
+                  Next
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="5xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={clientAttachementModal.isOpen}
+        onOpenChange={clientAttachementModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Vendor attachement</ModalHeader>
+              <ModalBody>
+                <iframe
+                  title=""
+                  src={data?.[data?.length - 1]?.quotationFilePath}
+                  height={500}
+                  width={"100%"}
+                />
               </ModalBody>
             </>
           )}

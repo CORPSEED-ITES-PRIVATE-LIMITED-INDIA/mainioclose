@@ -38,7 +38,7 @@ import { addProductsInOperations } from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName", sortable: true },
+  { name: "NAME", uid: "productName" },
   { name: "TYPE", uid: "type" },
 ];
 
@@ -67,7 +67,7 @@ const LeadProducts = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "productName",
+    column: "id",
     direction: "ascending",
   });
   const [formData, setFormData] = useState({
@@ -151,7 +151,7 @@ const LeadProducts = () => {
               {
                 productId: productInfo?.id,
                 productName: productInfo?.productName,
-                description: productInfo?.description,
+                description: productInfo?.description || "Something",
                 createdBy: productInfo?.createdBy?.id,
                 updatedBy: productInfo?.createdBy?.id,
                 date: productInfo?.createdDate,
@@ -502,7 +502,7 @@ const LeadProducts = () => {
                     <Select
                       isRequired
                       errorMessage="please select the product type"
-                      label="Select product type"
+                      label="Select service type"
                       name="serviceType"
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, serviceType: e }))
