@@ -85,9 +85,9 @@ const getRowClassName = (item) => {
 };
 
 export const columns = (admin) => [
-  { name: "ID", uid: "id" },
-  { name: "LEAD NAME", uid: "leadName", sortable: true },
-  ...(admin ? [{ name: "CONTACT", uid: "contact" }] : []),
+  { name: "ID", uid: "id", sortable: true },
+  { name: "LEAD NAME", uid: "leadName", },
+  { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "UPDATED BY", uid: "updatedBy" },
@@ -103,7 +103,7 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = (admin) => [
   "leadName",
-  ...(admin ? ["contact"] : []),
+  "contact",
   "assignee",
   "source",
   "status",
@@ -172,7 +172,7 @@ const Leads = () => {
     new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "id",
     direction: "ascending",
   });
   const [assignedLeadInfo, setAssignedLeadInfo] = useState({
@@ -380,8 +380,6 @@ const Leads = () => {
     },
     [dispatch, userId, allMultiFilterData]
   );
-
-  console.log("sdkfjgsjk", selectedKeys);
 
   const renderCell = useCallback(
     (lead, columnKey) => {
