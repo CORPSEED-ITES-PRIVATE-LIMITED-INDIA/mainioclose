@@ -36,7 +36,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import logo from "../assets/CORPSEED.webp";
 import {
   Dropdown,
@@ -46,7 +46,7 @@ import {
   User,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutFun } from "../toolkit/slices/authSlice";
+import { logoutFun, toggleAutoOffFeature } from "../toolkit/slices/authSlice";
 
 const icons = {
   LayoutDashboard,
@@ -79,11 +79,12 @@ const icons = {
   NotebookText,
   BanknoteArrowDown,
   ReceiptText,
-  Book
+  Book,
 };
 
-const Sidebar = ({ items, collapsed, setCollapsed }) => {
+const Sidebar = ({ items, collapsed }) => {
   const dispatch = useDispatch();
+  const { userId } = useParams();
   const userDetail = useSelector((state) => state.auth.currentUser);
   const [openMenu, setOpenMenu] = useState({});
 
@@ -164,7 +165,7 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
       <div className="absolute bottom-1">
         <Dropdown placement="right-end">
           <DropdownTrigger>
-            <div className="flex items-center gap-3 hover:bg-gray-600 cursor-pointer px-1 py-1 rounded-md">
+            <div className="flex items-center gap-3 bg-gray-100 z-50 hover:bg-gray-300 cursor-pointer px-1 py-1 rounded-md">
               <User
                 className="font-medium"
                 avatarProps={{
@@ -196,7 +197,13 @@ const Sidebar = ({ items, collapsed, setCollapsed }) => {
                 <UserCircle2 className="w-5 h-5" /> Profile
               </div>
             </DropdownItem>
-            <DropdownItem key="logout" onPress={() => dispatch(logoutFun())}>
+            <DropdownItem
+              key="logout"
+              onPress={() => {
+                dispatch(logoutFun());
+                dispatch(toggleAutoOffFeature({ userId, flag: false }));
+              }}
+            >
               <div className="flex items-center gap-4 text-neutral-700 dark:text-gray-100">
                 <LogOut className="w-5 h-5" /> Logout
               </div>
