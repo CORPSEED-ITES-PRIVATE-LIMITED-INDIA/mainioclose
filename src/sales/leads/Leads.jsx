@@ -74,6 +74,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { CSVLink } from "react-csv";
 import dayjs from "dayjs";
+import { parseZonedDateTime } from "@internationalized/date";
 
 const getRowClassName = (item) => {
   if (!item.view) {
@@ -426,14 +427,28 @@ const Leads = () => {
             return (
               <div className="flex flex-col">
                 <span className="font-normal text-sm">
-                  {lead?.email || "-"}
+                  {lead?.clients?.[0]?.name || "-"}
                 </span>
-                <span className="text-xs text-default-500">
-                  {lead?.mobileNo || "-"}
+                {lead?.email && (
+                  <span className="text-default-500 text-sm">
+                    {lead?.email || "-"}
+                  </span>
+                )}
+                {lead?.mobileNo && (
+                  <span className="text-xs text-default-500">
+                    {lead?.mobileNo || "-"}
+                  </span>
+                )}
+              </div>
+            );
+          } else
+            return (
+              <div className="flex flex-col">
+                <span className="font-normal text-sm">
+                  {lead?.clients?.[0]?.name || "-"}
                 </span>
               </div>
             );
-          } else return null;
 
         case "status":
           return (
@@ -902,11 +917,29 @@ const Leads = () => {
                           hourCycle={24}
                           visibleMonths={2}
                           label="Created date"
-                          onChange={(range) => {
+                          value={{
+                            start: allMultiFilterData?.toDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.toDate}[Asia/kolkata]`
+                                )
+                              : null,
+                            end: allMultiFilterData?.fromDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.fromDate}[Asia/kolkata]`
+                                )
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                              : null;
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              toDate: formatedDateTime(range?.start),
-                              fromDate: formatedDateTime(range?.end),
+                              toDate: formattedStart,
+                              fromDate: formattedEnd,
                             }));
                           }}
                         />
@@ -944,11 +977,29 @@ const Leads = () => {
                           hourCycle={24}
                           visibleMonths={2}
                           label="Updated date"
-                          onChange={(range) => {
+                          value={{
+                            start: allMultiFilterData?.updatedToDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`
+                                )
+                              : null,
+                            end: allMultiFilterData?.updatedfromDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`
+                                )
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                              : null;
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              updatedToDate: formatedDateTime(range?.start),
-                              updatedfromDate: formatedDateTime(range?.end),
+                              updatedToDate: formattedStart,
+                              updatedfromDate: formattedEnd,
                             }));
                           }}
                         />

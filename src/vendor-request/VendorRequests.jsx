@@ -120,9 +120,9 @@ const VendorRequests = () => {
     switch (columnKey) {
       case "clientName":
         return (
-          <div className="flex items-start gap-1">
+          <div className="flex items-center gap-0">
             <Dot
-              className="w-8 h-8"
+              className="w-12 h-12 m-0 p-0"
               color={
                 rowData?.status === "Finished"
                   ? "green"

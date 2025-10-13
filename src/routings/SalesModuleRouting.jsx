@@ -24,6 +24,9 @@ import AllTasks from "../sales/leads/AllTasks";
 import CreateLeadCompanyForm from "../sales/company/CreateLeadCompanyForm";
 import CompanyForm from "../accounts/CompanyForm";
 import Projects from "../sales/leads/Projects";
+import UnitDetails from "../sales/company/UnitDetails";
+import CompanyProjects from "../sales/company/CompanyProjects";
+import CompanyLeads from "../sales/company/CompanyLeads";
 
 const SalesModuleRouting = () => {
   return (
@@ -75,9 +78,23 @@ const SalesModuleRouting = () => {
         element={<CompanyUnits />}
       />
       <Route
-        path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/unitDetails"
+        path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId"
         element={<CompanyUnitDetails />}
-      />
+      >
+        <Route index path="unitDetails" element={<UnitDetails />} />
+        <Route path="companyProjects" element={<CompanyProjects />} />
+        <Route path="companyLeads" element={<CompanyLeads />} />
+      </Route>
+      <Route path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/companyLeads/:leadId" element={<LeadDetail />}>
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="proposal" element={<Proposal />} />
+        <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadTasks" element={<LeadTask />} />
+        <Route path="leadHistory" element={<LeadHistory />} />
+      </Route>
       <Route path="sales/leadForm" element={<CompanyForm />} />
       <Route path="sales/estimate" element={<Estimate />} />
       <Route path="sales/proposal" element={<AllProposal />} />
