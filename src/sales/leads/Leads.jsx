@@ -75,6 +75,7 @@ import * as z from "zod";
 import { CSVLink } from "react-csv";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
+import { toggleAutoOnFeature } from "../../toolkit/slices/authSlice";
 
 const getRowClassName = (item) => {
   if (!item.view) {
@@ -220,6 +221,7 @@ const Leads = () => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
+    dispatch(toggleAutoOnFeature({ userId, flag: true }));
   }, [dispatch]);
 
   useEffect(() => {

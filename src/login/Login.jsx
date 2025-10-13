@@ -116,7 +116,12 @@ const Login = () => {
             type="password"
           />
           <div className="flex justify-center gap-2 w-full">
-            <Button color="primary" type="submit" className="w-full">
+            <Button
+              color="primary"
+              type="submit"
+              isLoading={loading === "pending"}
+              className="w-full"
+            >
               Submit
             </Button>
           </div>
