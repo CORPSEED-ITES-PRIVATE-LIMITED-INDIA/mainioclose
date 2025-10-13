@@ -88,6 +88,16 @@ export const getAllProductListByType = createAsyncThunk(
   }
 );
 
+export const searchProducts = createAsyncThunk(
+  "searchProducts",
+  async (name) => {
+    const response = await api.get(
+      `/leadService/api/v1/product/productSearch?name=${name}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllProductListCount = createAsyncThunk(
   "getAllProductListCount",
   async (data) => {
@@ -467,6 +477,19 @@ export const SettingSlice = createSlice({
       state.productList = action.payload;
     });
     builder.addCase(getAllProductListByType.rejected, (state) => {
+      state.loading = "rejected";
+      state.productList = [];
+    });
+
+    builder.addCase(searchProducts.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchProducts.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.productList = action.payload;
+      state.productListCount=action?.payload?.length
+    });
+    builder.addCase(searchProducts.rejected, (state) => {
       state.loading = "rejected";
       state.productList = [];
     });

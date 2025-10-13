@@ -268,25 +268,24 @@ const Estimate = () => {
     viewModal.onOpen();
   };
 
-useEffect(() => {
-  if (!remainingAmountDetail?.primary) {
-    const formValues = getValues();
-    let updatedValues = { ...formValues };
+  useEffect(() => {
+    if (!remainingAmountDetail?.primary) {
+      const formValues = getValues();
+      let updatedValues = { ...formValues };
 
-    const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+      const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
 
-    updatedValues = {
-      ...updatedValues,
-      professionalFees: safeNum(remainingAmountDetail?.proffees),
-      govermentFees: safeNum(remainingAmountDetail?.govfees),
-      otherFees: safeNum(remainingAmountDetail?.otherFees),
-      serviceCharge: safeNum(remainingAmountDetail?.serviceCharge),
-    };
+      updatedValues = {
+        ...updatedValues,
+        professionalFees: safeNum(remainingAmountDetail?.proffees),
+        govermentFees: safeNum(remainingAmountDetail?.govfees),
+        otherFees: safeNum(remainingAmountDetail?.otherFees),
+        serviceCharge: safeNum(remainingAmountDetail?.serviceCharge),
+      };
 
-    reset(updatedValues);
-  }
-}, [remainingAmountDetail, reset, getValues]);
-
+      reset(updatedValues);
+    }
+  }, [remainingAmountDetail, reset, getValues]);
 
   const handleSetPayment = useCallback(
     (e) => {
@@ -415,13 +414,13 @@ useEffect(() => {
 
   const onSubmit = useCallback(
     (values) => {
+      data.leadId = rowItem?.leadId;
+      data.createdById = userId;
+      data.estimateId = rowItem?.id;
       if (paymentSelectionType === "Purchase order") {
         values.purchaseAttach = values?.purchaseAttach?.map(
           (item) => item?.response
         );
-        data.createdById = userId;
-        data.leadId = rowItem?.leadId;
-        data.estimateId = rowItem?.id;
         dispatch(createPurchaseOrder(data))
           .then((response) => {
             if (response.meta.requestStatus === "fulfilled") {
