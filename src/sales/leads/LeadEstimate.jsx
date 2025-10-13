@@ -804,6 +804,7 @@ const LeadEstimate = () => {
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
       values.type = productData?.type;
+      values.currentUserId = userId;
 
       if (discount) {
         if (details?.discountEstimate) {
