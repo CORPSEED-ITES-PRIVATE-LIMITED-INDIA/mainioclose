@@ -85,7 +85,7 @@ const getRowClassName = (item) => {
 };
 
 export const columns = (admin) => [
-  { name: "ID", uid: "id", sortable: true },
+  { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadName" },
   { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status" },
@@ -245,14 +245,8 @@ const Leads = () => {
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, filteredItems]);
+    return [...filteredItems]
+  }, [filteredItems]);
 
   const visibleCount = sortedItems.length;
 

@@ -555,6 +555,7 @@ const Company = () => {
     companyFilteration,
     allLeadUser,
     selectedKeys,
+    count
   ]);
 
   const bottomContent = useMemo(() => {
