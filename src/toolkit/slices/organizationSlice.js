@@ -22,6 +22,14 @@ export const createOrganization = createAsyncThunk(
   }
 );
 
+export const addStatutory = createAsyncThunk("addStatutory", async (data) => {
+  const response = await api.post(
+    `/accountService/api/v1/statutory/addStatutoryDetails`,
+    data
+  );
+  return response.data;
+});
+
 export const getAllOrganizations = createAsyncThunk(
   "getAllOrganizations",
   async () => {

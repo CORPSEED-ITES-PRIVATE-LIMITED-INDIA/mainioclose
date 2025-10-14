@@ -3,8 +3,6 @@ import { inrCurrency, toWords } from "../common";
 import dayjs from "dayjs";
 
 const TaxInvoice = ({ detail }) => {
-  console.log("dakjfgkjasgdjhgsdg", detail);
-
   const items = [
     {
       particulars: detail?.productName,

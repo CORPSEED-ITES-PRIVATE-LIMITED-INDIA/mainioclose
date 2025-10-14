@@ -86,7 +86,7 @@ const getRowClassName = (item) => {
 
 export const columns = (admin) => [
   { name: "ID", uid: "id", sortable: true },
-  { name: "LEAD NAME", uid: "leadName", },
+  { name: "LEAD NAME", uid: "leadName" },
   { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
@@ -552,7 +552,7 @@ const Leads = () => {
           return lead[columnKey] || "-";
       }
     },
-    [adminRole,department]
+    [adminRole, department]
   );
 
   const onNextPage = useCallback(() => {
@@ -1263,8 +1263,8 @@ const Leads = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] max-w-[87vw]",
-          table: "overflow-scroll",
+          wrapper: "max-h-[70vh] w-full",
+          table: "",
         }}
         selectedKeys={selectedKeys.size === visibleCount ? "all" : selectedKeys}
         selectionMode="multiple"
