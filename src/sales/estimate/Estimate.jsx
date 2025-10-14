@@ -414,14 +414,14 @@ const Estimate = () => {
 
   const onSubmit = useCallback(
     (values) => {
-      data.leadId = rowItem?.leadId;
-      data.createdById = userId;
-      data.estimateId = rowItem?.id;
+      values.leadId = rowItem?.leadId;
+      values.createdById = userId;
+      values.estimateId = rowItem?.id;
       if (paymentSelectionType === "Purchase order") {
         values.purchaseAttach = values?.purchaseAttach?.map(
           (item) => item?.response
         );
-        dispatch(createPurchaseOrder(data))
+        dispatch(createPurchaseOrder(values))
           .then((response) => {
             if (response.meta.requestStatus === "fulfilled") {
               addToast({

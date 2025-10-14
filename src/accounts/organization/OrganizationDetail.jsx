@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import logo from "../../assets/CORPSEED.webp";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addStatutory,
   createOrganization,
   getAllLedgerType,
   getAllOrganizations,
@@ -55,7 +56,7 @@ const orgDefaultValues = {
 const statFormSchema = (flagValues) =>
   z.object({
     id: z.string().min(1, "Please select ledger type."),
-    hsnSacPresent: z.string().min(1, "Please select the option."),
+    hsnSacPresent: z.boolean(),
     ...(flagValues?.hsnSacPresent
       ? {
           hsnSacDetails: z.string().min(1, "Please enter hsn sac details"),
@@ -63,7 +64,7 @@ const statFormSchema = (flagValues) =>
           hsnDescription: z.string().min(1, "Please enter hsn sac description"),
         }
       : {}),
-    gstRateDetailPresent: z.string().min(1, "Please select option"),
+    gstRateDetailPresent: z.boolean(),
     ...(flagValues?.gstRateDetailPresent
       ? {
           gstRateDetails: z.string().min(1, "Please enter gst rate details"),
@@ -71,7 +72,7 @@ const statFormSchema = (flagValues) =>
           gstRatesData: z.string().min(1, "Please enter gst rate data"),
         }
       : {}),
-    bankAccountPresent: z.string().min(1, "Please select option"),
+    bankAccountPresent: z.boolean(),
     ...(flagValues?.bankAccountPresent
       ? {
           bankName: z.string().min(1, "Please enter bank name"),
@@ -167,7 +168,25 @@ const OrganizationDetail = () => {
     statutoryModal.onOpen();
   };
 
-  const onStatSubmit = () => {};
+  const onStatSubmit = () => {
+    dispatch(addStatutory(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Organization created successfully !.",
+            color: "success",
+          });
+          dispatch(getAllOrganizations());
+          orgForm.reset();
+          organizationModal.onOpenChange(false);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
 
   return (
     <div className="flex flex-col gap-2 ">
