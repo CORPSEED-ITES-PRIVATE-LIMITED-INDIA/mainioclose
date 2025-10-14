@@ -552,7 +552,7 @@ const Leads = () => {
           return lead[columnKey] || "-";
       }
     },
-    [adminRole]
+    [adminRole,department]
   );
 
   const onNextPage = useCallback(() => {
