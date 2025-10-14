@@ -328,7 +328,10 @@ const PaymentRegister = () => {
         return (
           <p
             className="text-sm font-medium capitalize cursor-pointer"
-            onClick={drawer.onOpen}
+            onClick={() => {
+              drawer.onOpen();
+              setRowItem(rowData);
+            }}
           >
             {rowData?.companyName}
           </p>

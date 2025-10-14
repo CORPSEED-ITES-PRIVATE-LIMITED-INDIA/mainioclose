@@ -150,6 +150,11 @@ table td {
   }
 }
 
+.pdf-mode {
+  --background: #f7f7fa; 
+  --foreground: #1a1a20;
+}
+
 .container {
   max-height: 84vh;
   overflow: auto;
