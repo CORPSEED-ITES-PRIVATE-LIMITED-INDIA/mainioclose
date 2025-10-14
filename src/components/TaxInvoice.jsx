@@ -380,7 +380,7 @@ const TaxInvoice = ({ detail }) => {
         </div>
       </div>
       <Button
-        className="w-2xl"
+        className="w-sm"
         onPress={generatePDF}
         startContent={<Download />}
       >
