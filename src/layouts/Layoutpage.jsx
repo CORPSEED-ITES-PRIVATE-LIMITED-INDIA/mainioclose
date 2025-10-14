@@ -40,15 +40,15 @@ const Layoutpage = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="min-h-screen min-w-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
+      <div className="flex flex-1 overflow-hidden w-full">
         <Sidebar
           items={getNavItemsByDepartment(department, adminRole)}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           className="hidden lg:flex"
         />
-        <main className="w-full">
+        <main className={collapsed ? "w-[96%]" : "w-[87%]"}>
           <header className="dark:bg-black dark:text-white bg-white h-[40px] shadow px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
