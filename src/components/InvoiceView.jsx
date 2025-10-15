@@ -8,6 +8,9 @@ import domToImage from "dom-to-image";
 import { inrCurrency } from "../common";
 
 const InvoiceView = ({ details }) => {
+
+  console.log("dfjkhgdskjdkjgdjkfg",details)
+
   const pdfRef = useRef();
 
   const generatePDF = async () => {
@@ -56,7 +59,7 @@ const InvoiceView = ({ details }) => {
             borderRadius: "0 4px 4px 0",
           }}
         >
-          {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
+          {details?.performaInvoice ? "Proforma Invoice" : "Invoice"}
         </div>
 
         {/* Main Container */}
@@ -103,7 +106,7 @@ const InvoiceView = ({ details }) => {
                     fontSize: "18px",
                   }}
                 >
-                  {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
+                  {details?.performaInvoice ? "Proforma Invoice" : "Invoice"}
                 </h4>
                 <p style={{ fontWeight: 700 }}>{`#ESTD0${details?.id}`}</p>
               </div>
@@ -379,12 +382,14 @@ const InvoiceView = ({ details }) => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <td 
+                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    >
                       1
                     </td>
                     <td
                       style={{
-                        border: "1px solid #e5e7eb",
+                        // border: "1px solid #e5e7eb",
                         padding: "8px",
                         fontWeight: 700,
                       }}
@@ -392,19 +397,19 @@ const InvoiceView = ({ details }) => {
                       {details?.productName}
                     </td>
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                     ></td>
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                     ></td>
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                     ></td>
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                     ></td>
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                     ></td>
                   </tr>
                   {details?.govermentCode && (
@@ -440,7 +445,7 @@ const InvoiceView = ({ details }) => {
                       </td>
                     </tr>
                   )}
-                  {details?.profesionalCode !== null && (
+                  {details?.professionalCode && (
                     <tr>
                       <td
                         style={{ border: "1px solid #e5e7eb", padding: "8px" }}
@@ -453,7 +458,7 @@ const InvoiceView = ({ details }) => {
                       <td
                         style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                       >
-                        {details?.profesionalCode}
+                        {details?.professionalCode}
                       </td>
                       <td
                         style={{ border: "1px solid #e5e7eb", padding: "8px" }}
@@ -469,11 +474,11 @@ const InvoiceView = ({ details }) => {
                       <td
                         style={{ border: "1px solid #e5e7eb", padding: "8px" }}
                       >
-                        {inrCurrency(details?.professionalFees)}
+                        {inrCurrency(Number(details?.professionalFees))}
                       </td>
                     </tr>
                   )}
-                  {details?.serviceCode !== null && (
+                  {details?.serviceCode && (
                     <tr>
                       <td
                         style={{ border: "1px solid #e5e7eb", padding: "8px" }}
@@ -506,7 +511,7 @@ const InvoiceView = ({ details }) => {
                       </td>
                     </tr>
                   )}
-                  {details?.otherCode !== null && (
+                  {details?.otherCode && (
                     <tr>
                       <td
                         style={{ border: "1px solid #e5e7eb", padding: "8px" }}
@@ -576,7 +581,7 @@ const InvoiceView = ({ details }) => {
                         fontWeight: 700,
                       }}
                     >
-                      {inrCurrency(details?.totalAmount)}
+                      {inrCurrency(Number(details?.totalAmount))}
                     </td>
                   </tr>
                 </tbody>
@@ -665,7 +670,7 @@ const InvoiceView = ({ details }) => {
                     )
                   ) : (
                     <>
-                      {details?.profesionalCode !== null && (
+                      {details?.professionalCode && (
                         <tr>
                           <td
                             style={{
@@ -673,7 +678,7 @@ const InvoiceView = ({ details }) => {
                               padding: "8px",
                             }}
                           >
-                            {details?.profesionalCode}
+                            {details?.professionalCode}
                           </td>
                           <td
                             style={{
@@ -701,7 +706,7 @@ const InvoiceView = ({ details }) => {
                           </td>
                         </tr>
                       )}
-                      {details?.serviceCode !== null && (
+                      {details?.serviceCode && (
                         <tr>
                           <td
                             style={{
@@ -737,7 +742,7 @@ const InvoiceView = ({ details }) => {
                           </td>
                         </tr>
                       )}
-                      {details?.govermentCode !== null && (
+                      {details?.govermentCode && (
                         <tr>
                           <td
                             style={{
@@ -773,7 +778,7 @@ const InvoiceView = ({ details }) => {
                           </td>
                         </tr>
                       )}
-                      {details?.otherCode !== null && (
+                      {details?.otherCode && (
                         <tr>
                           <td
                             style={{

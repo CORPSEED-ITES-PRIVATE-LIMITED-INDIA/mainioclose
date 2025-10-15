@@ -135,6 +135,7 @@ const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
           paymentDate: z.string().min(1, "Please enter payment date"),
           remark: z.string().min(1, "Remark cannot be empty"),
           doc: z.array(z.string()).optional(),
+          termOfDelivery: z.string().min(1, "Delivery terms cannot be empty"),
         }),
   });
 
@@ -167,6 +168,7 @@ const defaultValues = {
   paymentDate: "",
   remark: "",
   doc: "",
+  termOfDelivery: "",
 };
 
 const Estimate = () => {
@@ -1464,6 +1466,20 @@ const Estimate = () => {
                             <Input
                               isRequired
                               label="Remark"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="termOfDelivery"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Delivery terms"
                               errorMessage={error?.message}
                               isInvalid={!!error}
                               value={field.value}

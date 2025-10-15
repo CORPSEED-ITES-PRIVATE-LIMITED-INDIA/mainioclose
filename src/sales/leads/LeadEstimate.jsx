@@ -814,11 +814,8 @@ const LeadEstimate = () => {
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
       values.type = productData?.type;
+      values.productType = productData?.type;
       values.currentUserId = userId;
-
-      console.log("jkghsjgdjhsdghjs   111",companyAndUnitData)
-
-
       if (!adminRole) {
         values.assigneeId = userId;
       }
@@ -932,9 +929,6 @@ const LeadEstimate = () => {
       discount,
     ]
   );
-
-
-  console.log("jkghsjgdjhsdghjs  3333 ",companyAndUnitData)
 
   return (
     <>

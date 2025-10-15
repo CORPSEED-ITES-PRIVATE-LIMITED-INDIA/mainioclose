@@ -1,14 +1,23 @@
 import { Button } from "@heroui/button";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import logo from "../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency } from "../common";
+import { useDispatch } from "react-redux";
+import { useParams } from "react-router-dom";
+import { getEstimateByLeadId } from "../toolkit/slices/leadSlice";
 
-const EstimateView = ({ details }) => {
-  console.log("sdkjjsgjksgsjgj", details);
+const EstimatePreview = () => {
+  const dispatch = useDispatch();
+  const { leadId } = useParams();
+  const details = useSelector((state) => state.leads.estimateDetail);
+
+  useEffect(() => {
+    dispatch(getEstimateByLeadId(leadId));
+  }, [leadId]);
 
   const pdfRef = useRef();
 
@@ -33,8 +42,11 @@ const EstimateView = ({ details }) => {
     }
     pdf.save("estimate.pdf");
   };
+
+
+
   return (
-    <div className="max-h-[70vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
+    <div className="max-h-[75vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
       <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
         {/* Product Name */}
         {details?.productName && (
@@ -176,7 +188,7 @@ const EstimateView = ({ details }) => {
             <div className="flex justify-between gap-6 md:gap-0 text-gray-500 text-sm md:text-base">
               <div className="flex flex-col gap-4">
                 <div>
-                  <p className="font-semibold mb-0.5">Bill To :</p>
+                  <p className="font-semibold mb-1">Bill To :</p>
                   <div className="font-bold leading-tight">
                     {details?.companyName && <p>{details?.companyName}</p>}
                     {details?.address && (
@@ -193,12 +205,10 @@ const EstimateView = ({ details }) => {
                   </div>
                 </div>
 
-                <div className="mt-2">
-                  <p className="font-semibold mb-0.5">Ship To :</p>
+                <div>
+                  <p className="font-semibold mb-1">Ship To :</p>
                   <div className="leading-tight">
-                    {details?.companyName && (
-                      <p className="font-medium">{details?.companyName}</p>
-                    )}
+                    {details?.companyName && <p>{details?.companyName}</p>}
                     {details?.secondaryAddress && (
                       <p>{details?.secondaryAddress}</p>
                     )}
@@ -247,9 +257,7 @@ const EstimateView = ({ details }) => {
                       <th className="border border-black p-1">Quantity (kg)</th>
                       <th className="border border-black p-1">GST %</th>
                       <th className="border border-black p-1">GST amount(₹)</th>
-                      <th className="border border-black p-1 font-bold">
-                        Amount(₹)
-                      </th>
+                      <th className="border border-black p-1">Amount(₹)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -273,9 +281,9 @@ const EstimateView = ({ details }) => {
                         {details?.gst}
                       </td>
                       <td className="border border-black p-1 text-right">
-                        {inrCurrency(details?.gstAmount || 0)}
+                        {inrCurrency(details?.gstAmount)}
                       </td>
-                      <td className="border border-black p-1 text-right font-bold">
+                      <td className="border border-black p-1 text-right">
                         {inrCurrency(details?.totalPrice)}
                       </td>
                     </tr>
@@ -298,10 +306,10 @@ const EstimateView = ({ details }) => {
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-black p-1 text-center font-medium">
+                      <td className="border border-black p-1 text-center">
                         {1}
                       </td>
-                      <td className="border border-black p-1 font-medium">
+                      <td className="border border-black p-1">
                         {details?.productName}
                       </td>
                       <td></td>
@@ -386,14 +394,12 @@ const EstimateView = ({ details }) => {
                     {details?.totalAmount && (
                       <tr>
                         <td className="border border-black p-1 text-center"></td>
-                        <td className="border border-black p-1 font-bold">
-                          Total
-                        </td>
+                        <td className="border border-black p-1">Total</td>
                         <td></td>
                         <td></td>
                         <td></td>
                         <td></td>
-                        <td className="border border-black p-1 text-right font-bold">
+                        <td className="border border-black p-1 text-right">
                           {inrCurrency(details?.totalAmount)}
                         </td>
                       </tr>
@@ -406,15 +412,18 @@ const EstimateView = ({ details }) => {
             {/* Total Amount in Words */}
             {details?.totalAmount > 0 && (
               <div className="flex justify-end gap-1 text-gray-500 mt-4 text-sm md:text-base">
-                <span>Total amount in words :</span>
-                <span className="font-medium capitalize">{details?.totalAmount&&`${numWords(details?.totalAmount)} only`}</span>
+                <span>Total in words :</span>
+                <span>{numWords(details?.totalAmount)}</span>
               </div>
             )}
           </div>
         </div>
       </div>
+      <button className="px-4 py-2 text-white bg-blue-500" onClick={generatePDF}>
+        Export as pdf
+      </button>
     </div>
   );
 };
 
-export default EstimateView;
+export default EstimatePreview;
