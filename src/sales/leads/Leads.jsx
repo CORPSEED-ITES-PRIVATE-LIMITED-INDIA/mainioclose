@@ -68,7 +68,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
-import { formatedDateTime, leadSource } from "../../common";
+import { leadSource } from "../../common";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";

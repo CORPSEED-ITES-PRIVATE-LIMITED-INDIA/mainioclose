@@ -22,9 +22,11 @@ import {
   getAllBrochureList,
   getAllProposalTemplateList,
   getProposalDataByLeadId,
+  getSingleLeadDataByLeadId,
   sendProposal,
 } from "../../toolkit/slices/leadSlice";
 import TextEditor from "../../components/TextEditor";
+import { getProductListByLeadName } from "../../toolkit/slices/productSlice";
 
 const formSchema = z.object({
   mailTo: z
@@ -98,7 +100,9 @@ const Proposal = () => {
   const { userId, leadId } = useParams();
   const templateList = useSelector((state) => state.leads.templateList);
   const brochureList = useSelector((state) => state.leads.brochureList);
-  const productData = useSelector((state) => state.leads.productDataByLeadName);
+  const productData = useSelector(
+    (state) => state.product.productDataByLeadName
+  );
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail
   );
@@ -110,6 +114,14 @@ const Proposal = () => {
   const [templateName, setTemplateName] = useState("");
   const [editProposal, setEditProposal] = useState(false);
   const [mailBody, setMailBody] = useState("<h2>Your email body</h2>");
+
+  useEffect(() => {
+    dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        dispatch(getProductListByLeadName(resp?.payload?.originalName));
+      }
+    });
+  }, [dispatch]);
 
   const {
     control,
@@ -155,10 +167,14 @@ const Proposal = () => {
   }, [proposalDataDetail, reset]);
 
   const handleSetData = (item) => {
-    setData(item?.description);
-    setMailBody(item?.body);
-    setValue("mailBody", item?.body);
-    setValue("template", item?.description);
+    if (item.description) {
+      setData(item?.description);
+      setValue("template", item?.description);
+    }
+    if (item.body) {
+      setMailBody(item?.body);
+      setValue("mailBody", item?.body);
+    }
     setTemplateName(item?.name);
     templateModal.onClose();
   };
@@ -186,6 +202,9 @@ const Proposal = () => {
             title: "Your proposal has been sent to the manager for review !.",
             color: "success",
           });
+          reset(defaultValues);
+          dispatch(getProposalDataByLeadId(leadId));
+          setEditProposal(false)
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -197,6 +216,7 @@ const Proposal = () => {
             title: "Your proposal has been sent to the manager for review !.",
             color: "success",
           });
+          reset(defaultValues);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -315,7 +335,7 @@ const Proposal = () => {
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <>
-                  <Input {...field} />
+                  <Input variant="bordered" {...field} />
                   {error && (
                     <span className="text-red-500 text-sm">
                       {error.message}
