@@ -161,7 +161,7 @@ const Unbill = () => {
                 >
                   View
                 </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
               </DropdownMenu>
             </Dropdown>
           </div>

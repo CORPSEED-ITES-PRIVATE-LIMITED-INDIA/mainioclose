@@ -815,6 +815,10 @@ const LeadEstimate = () => {
       values.unitName = companyAndUnitData?.unitName;
       values.type = productData?.type;
       values.currentUserId = userId;
+
+      console.log("jkghsjgdjhsdghjs   111",companyAndUnitData)
+
+
       if (!adminRole) {
         values.assigneeId = userId;
       }
@@ -929,6 +933,9 @@ const LeadEstimate = () => {
     ]
   );
 
+
+  console.log("jkghsjgdjhsdghjs  3333 ",companyAndUnitData)
+
   return (
     <>
       <div className="flex justify-between items-center">
@@ -993,6 +1000,7 @@ const LeadEstimate = () => {
                 <AutocompleteItem
                   key={item.companyId}
                   onPress={() => {
+                    console.log("jkghsjgdjhsdghjs ",item)
                     setCompanyAndUnitData((prev) => ({
                       ...prev,
                       companyName: item?.companyName,
