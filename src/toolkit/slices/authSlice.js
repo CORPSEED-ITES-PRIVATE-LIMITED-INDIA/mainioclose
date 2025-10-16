@@ -152,8 +152,7 @@ export const AuthSlice = createSlice({
       state.currentUser = {};
       localStorage.removeItem("persist:root");
       localStorage.removeItem("userDetail");
-      localStorage.clear();
-      window.location.reload();
+      localStorage.removeItem("vendorDetail");
     },
     handleLoadingState: (state, action) => {
       state.userLoading = action.payload;

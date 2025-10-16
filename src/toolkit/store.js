@@ -32,6 +32,11 @@ const persistConfig = {
   key: "root",
   storage,
   whitelist: ["auth"],
+  blacklist: [],
+  throttle: 0,
+  version: 1,
+  migrate: (state) => Promise.resolve(state),
+  debug: false,
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);
