@@ -27,6 +27,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   ChevronDown,
   Dot,
+  Download,
   EllipsisVertical,
   Info,
   ListFilter,
@@ -44,6 +45,7 @@ import { inrCurrency } from "../common";
 import NewSelect from "../components/NewSelect";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import { getProcurementAssigneeList } from "../toolkit/slices/commonSlice";
+import { CSVLink } from "react-csv";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -532,6 +534,16 @@ const VendorRequests = () => {
                 )}
               </PopoverContent>
             </Popover>
+            <CSVLink
+              className="text-white"
+              data={exportData}
+              headers={headers}
+              filename={"procurement.csv"}
+            >
+              <Button startContent={<Download />} variant="flat">
+                Export
+              </Button>
+            </CSVLink>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
