@@ -581,14 +581,6 @@ const CreateLeadCompanyForm = ({
     }
   };
 
-  console.log(
-    "sdjghjdsghsdjgsdjdg",
-    getValues(),
-    formSchema(formValidation),
-    formValidation,
-    existingCompanyList
-  );
-
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="max-h-[64vh] overflow-auto p-3 flex flex-col gap-12">
@@ -968,7 +960,7 @@ const CreateLeadCompanyForm = ({
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={[String(field.value)]}
-                  onChange={(e) => {
+                  onSelectionChange={(e) => {
                     const key = Array.from(e)[0];
                     const val = key === "true";
                     field.onChange(val);
@@ -978,8 +970,8 @@ const CreateLeadCompanyForm = ({
                     }));
                   }}
                   items={[
-                    { label: "Yes", key: true },
-                    { label: "No", key: false },
+                    { label: "Yes", key: "true" },
+                    { label: "No", key: "false" },
                   ]}
                 >
                   {(item) => (
