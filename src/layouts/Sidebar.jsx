@@ -95,7 +95,7 @@ const Sidebar = ({ items, collapsed }) => {
   return (
     <aside
       className={`relative h-screen ${
-        collapsed ? "w-[4%]" : "w-[13%]"
+        collapsed ? "w-[4%]" : "lg:w-[15%] 2xl:w-[13%]"
       } bg-white dark:bg-black dark:text-white flex flex-col transition-all duration-300 `}
     >
       {/* Collapse Toggle */}

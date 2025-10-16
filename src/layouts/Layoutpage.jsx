@@ -48,7 +48,7 @@ const Layoutpage = () => {
           setCollapsed={setCollapsed}
           className="hidden lg:flex"
         />
-        <main className={collapsed ? "w-[96%]" : "w-[87%]"}>
+        <main className={collapsed ? "w-[96%]" : "lg:w-[85%] 2xl:w-[87%]"}>
           <header className="dark:bg-black dark:text-white bg-white h-[40px] shadow px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button

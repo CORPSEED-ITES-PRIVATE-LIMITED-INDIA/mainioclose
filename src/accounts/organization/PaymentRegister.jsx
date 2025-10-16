@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -20,7 +20,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  DatePicker,
   Tooltip,
   Drawer,
   DrawerContent,
@@ -45,26 +44,16 @@ import gstIcon from "../../assets/save.png";
 import panIcon from "../../assets/pan-card.png";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  addBankDetails,
-  getAllBankStatements,
   getAllPaymentRegisterCount,
   getAllPaymentRegisterWithPagination,
   paymentRegisterAction,
 } from "../../toolkit/slices/organizationSlice";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
 import dayjs from "dayjs";
-import * as z from "zod";
-import {
-  getLocalTimeZone,
-  parseDate,
-  toCalendarDate,
-  today,
-} from "@internationalized/date";
 import { inrCurrency } from "../../common";
-import { GstIcon, PanCardIcon } from "../../components/icons";
 import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
 import EstimateView from "../../components/EstimateView";
+import { updateVendorPaymentStatus } from "../../toolkit/slices/accountSlice";
+import { useParams } from "react-router-dom";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -97,25 +86,9 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const formSchema = z.object({
-  transactionId: z.string().min(1, "Please give a transaction id"),
-  name: z.string().min(1, "Please give a transaction name"),
-  totalAmount: z.string().min(1, "Please enter total amount"),
-  leftAmount: z.string().min(1, "Please enter left amount"),
-  paymentDate: z.string().min(1, "Please select payment date"),
-});
-
-const defaultValues = {
-  transactionId: "",
-  name: "",
-  totalAmount: "",
-  leftAmount: "",
-  paymentDate: "",
-};
-
 const PaymentRegister = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { userId } = useParams();
   const drawer = useDisclosure();
   const estimateModal = useDisclosure();
   const paymentModal = useDisclosure();
@@ -189,37 +162,7 @@ const PaymentRegister = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-  });
 
-  const onSubmit = useCallback(
-    (values) => {
-      dispatch(addBankDetails(values))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Voucher created successfully !.",
-              color: "success",
-            });
-            dispatch(getAllBankStatements());
-            onOpenChange(false);
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
-        );
-    },
-    [dispatch]
-  );
 
   const handleViewEstimate = (rowData) => {
     if (rowData?.leadId) {
@@ -252,6 +195,31 @@ const PaymentRegister = () => {
             title: "Payment register updated successfully !.",
             color: "success",
           });
+          if (rowItem?.productType === "Product") {
+            dispatch(
+              updateVendorPaymentStatus({
+                currentUserId: userId,
+                Status: paymentActionData?.status,
+                id: paymentActionData?.paymentRegisterId,
+              })
+            )
+              .then((res) => {
+                if (res.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "Request approved for vendor's payment",
+                    color: "success",
+                  });
+                } else {
+                  addToast({
+                    title: "Something went wrong !.",
+                    color: "danger",
+                  });
+                }
+              })
+              .catch(() =>
+                addToast({ title: "Something went wrong !.", color: "danger" })
+              );
+          }
           setPaymentActionData({
             paymentRegisterId: 0,
             estimateId: 0,
@@ -599,112 +567,6 @@ const PaymentRegister = () => {
           )}
         </TableBody>
       </Table>
-      <Modal
-        size="2xl"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="top-center"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Add bank statement</ModalHeader>
-              <ModalBody>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
-                    <Controller
-                      name="transactionId"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Transaction id"
-                          name="transactionId"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="name"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Transaction name"
-                          name="name"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="totalAmount"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Total amount"
-                          name="totalAmount"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="leftAmount"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Remaining amount"
-                          value={field.value}
-                          name="leftAmount"
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="paymentDate"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          isRequired
-                          label="Payment date"
-                          showMonthAndYearPickers
-                          maxValue={today(getLocalTimeZone())}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
-                          }
-                        />
-                      )}
-                    />
-                  </div>
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
       <Drawer isOpen={drawer.isOpen} onOpenChange={drawer.onOpenChange}>
         <DrawerContent>
           {(onClose) => (

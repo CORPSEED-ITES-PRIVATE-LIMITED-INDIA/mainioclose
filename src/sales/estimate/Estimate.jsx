@@ -419,6 +419,7 @@ const Estimate = () => {
       values.leadId = rowItem?.leadId;
       values.createdById = userId;
       values.estimateId = rowItem?.id;
+      values.productType = rowItem?.productType;
       if (paymentSelectionType === "Purchase order") {
         values.purchaseAttach = values?.purchaseAttach?.map(
           (item) => item?.response
