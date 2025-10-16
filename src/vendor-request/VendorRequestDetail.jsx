@@ -23,7 +23,7 @@ import {
   CardBody,
 } from "@heroui/react";
 import React, { useCallback, useEffect, useState } from "react";
-import { ChevronDown, Dot, EllipsisVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, Dot, Plus, Search } from "lucide-react";
 import {
   cancelVendorsRequest,
   getAllVendorsRequest,
@@ -215,7 +215,7 @@ const VendorRequestDetail = () => {
     switch (columnKey) {
       case "requestStatus":
         return (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <Dot
               className="w-12 h-12 m-0 p-0"
               color={
@@ -258,7 +258,11 @@ const VendorRequestDetail = () => {
           </span>
         );
       case "quotationAmount":
-        return <span className="font-normal">{rowData?.quotationAmount}</span>;
+        return (
+          <span className="font-normal">
+            {inrCurrency(rowData?.quotationAmount || 0)}
+          </span>
+        );
       case "updateDescription":
         return (
           <span className="font-normal">{rowData?.updateDescription}</span>
@@ -301,7 +305,7 @@ const VendorRequestDetail = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
@@ -481,13 +485,6 @@ const VendorRequestDetail = () => {
                         title: "Proposal send to client.",
                         color: "success",
                       });
-                      dispatch(
-                        getAllVendorsRequest({
-                          id: userId,
-                          page: 1,
-                          size: 50,
-                        })
-                      );
                     } else {
                       addToast({
                         title: "Something went wrong !.",
@@ -532,8 +529,8 @@ const VendorRequestDetail = () => {
 
   return (
     <div>
-      <div className="w-full flex justify-between px-2 mb-3">
-        <h1 className="text-xl font-medium my-1">Vendor's request status</h1>
+      <div className="w-full flex justify-between px-2">
+        <h1 className="text-xl font-medium">Vendor's request status</h1>
       </div>
       <div className="grid grid-cols-1 gap-8">
         <Card>
@@ -541,69 +538,72 @@ const VendorRequestDetail = () => {
             <section className="grid grid-cols-3 gap-2">
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-5 h-5" />
-                  <p className="text-default-500 inline">Date</p>
+                  <Calendar className="w-4 h-4" />
+                  <p className="text-default-500 inline text-sm">Date</p>
                 </span>
                 :{" "}
-                <p>
+                <p className="text-sm">
                   {dayjs(detail?.updatedDate).format("DD-MM-YYYY , hh:mm a")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  <User className="w-5 h-5" />
-                  <p className="text-default-500">Client name</p>
+                  <User className="w-4 h-4" />
+                  <p className="text-default-500 text-sm">Client name</p>
                 </span>
-                : <p>{detail?.clientName}</p>
+                : <p className="text-sm">{detail?.clientName}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  <Mail className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Email</p>{" "}
+                  <Mail className="w-4 h-4" />{" "}
+                  <p className="text-default-500 text-sm">Email</p>{" "}
                 </span>
-                : <p>{detail?.clientEmailId}</p>
+                : <p className="text-sm">{detail?.clientEmailId}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  <Phone className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Contact</p>
+                  <Phone className="w-4 h-4" />{" "}
+                  <p className="text-default-500 text-sm">Contact</p>
                 </span>{" "}
-                : <p>{detail?.clientMobileNumber}</p>
+                : <p className="text-sm">{detail?.clientMobileNumber}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  <Factory className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Company</p>{" "}
+                  <Factory className="w-4 h-4" />{" "}
+                  <p className="text-default-500 text-sm">Company</p>{" "}
                 </span>
-                : <p>{detail?.clientCompanyName}</p>
+                : <p className="text-sm">{detail?.clientCompanyName}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  <Banknote className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Budget</p>
+                  <Banknote className="w-4 h-4" />{" "}
+                  <p className="text-default-500 text-sm">Budget</p>
                 </span>
-                : <p>{inrCurrency(detail?.budgetPrice || 0)}</p>
+                :{" "}
+                <p className="text-sm font-medium">
+                  {inrCurrency(detail?.budgetPrice || 0)}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <span className="flex items-center gap-1">
-                  <UserRoundCog className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Category</p>
+                  <UserRoundCog className="w-4 h-4" />{" "}
+                  <p className="text-default-500 text-sm">Category</p>
                 </span>
-                : <p>{detail?.vendorCategoryName}</p>
+                : <p className="text-sm">{detail?.vendorCategoryName}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <span className="flex items-center gap-1">
-                  <UserRoundCog className="w-5 h-5" />{" "}
-                  <p className="text-default-500">Sub category</p>{" "}
+                  <UserRoundCog className="w-4 h-4" />{" "}
+                  <p className="text-default-500 text-sm">Sub category</p>{" "}
                 </span>
-                : <p>{detail?.vendorSubCategoryName}</p>
+                : <p className="text-sm">{detail?.vendorSubCategoryName}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <span className="flex items-center gap-1">
-                  <FileText className="w-5 h-5" />{" "}
+                  <FileText className="w-4 h-4" />{" "}
                   <p className="text-default-500 text-sm">Description</p>{" "}
                 </span>
-                : <p>{detail?.requirementDescription}</p>
+                : <p className="text-sm">{detail?.requirementDescription}</p>
               </div>
             </section>
             <section className="mt-3">
@@ -877,7 +877,7 @@ const VendorRequestDetail = () => {
               <ModalBody>
                 <iframe
                   title=""
-                  src={data?.salesAttachmentImage?.[index]}
+                  src={detail?.salesAttachmentImage?.[index]}
                   height={500}
                   width={"100%"}
                 />
@@ -890,7 +890,7 @@ const VendorRequestDetail = () => {
                   Prev
                 </Button>
                 <Button
-                  isDisabled={index >= data?.salesAttachmentImage?.length}
+                  isDisabled={index >= detail?.salesAttachmentImage?.length}
                   onPress={() => setIndex((prev) => prev + 1)}
                 >
                   Next

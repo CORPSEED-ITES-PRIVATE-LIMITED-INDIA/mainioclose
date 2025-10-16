@@ -133,13 +133,16 @@ const VendorRequests = () => {
             />
 
             <Link
-              className="font-medium"
+              className="font-medium flex flex-col"
               to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
               onClick={() =>
                 localStorage.setItem("vendorDetail", JSON.stringify(rowData))
               }
             >
               {rowData?.clientName}
+              <span className="text-default-400 text-sm">
+                {dayjs(rowData?.receivedDate).format("DD-MM-YYYY, hh:mm a")}
+              </span>
             </Link>
           </div>
         );
@@ -175,7 +178,7 @@ const VendorRequests = () => {
             </span>
             {rowData?.vendorSubCategoryName && (
               <span className="text-xs text-foreground-400">
-                Sub-Category : {rowData?.vendorSubCategoryName}
+                {rowData?.vendorSubCategoryName}
               </span>
             )}
           </div>
