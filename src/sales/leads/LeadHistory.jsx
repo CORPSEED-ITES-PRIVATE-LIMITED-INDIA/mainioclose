@@ -265,7 +265,7 @@ const LeadHistory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[70vh] w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

@@ -661,8 +661,8 @@ const VendorRequests = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] max-w-[87vw]",
-          table: "overflow-scroll",
+          wrapper: "max-h-[70vh] w-full",
+          table: "w-full overflow-scroll",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

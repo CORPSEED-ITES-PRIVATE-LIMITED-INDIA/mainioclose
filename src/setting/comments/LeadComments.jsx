@@ -378,7 +378,7 @@ const LeadComments = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[70vh] w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

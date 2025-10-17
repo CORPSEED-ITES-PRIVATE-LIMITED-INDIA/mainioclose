@@ -365,7 +365,8 @@ const LeadSearch = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper:
-            "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto",
+            "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto w-full",
+            table:'w-full'
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

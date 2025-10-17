@@ -351,7 +351,8 @@ const AllInvoice = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] overflow-scroll",
+          wrapper: "max-h-[70vh] overflow-scroll w-full",
+          table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

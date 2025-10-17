@@ -1,6 +1,7 @@
 import {
   addToast,
   Button,
+  Chip,
   DatePicker,
   Dropdown,
   DropdownItem,
@@ -63,6 +64,7 @@ const columns = [
   { name: "GST NUMBER", uid: "gstNo" },
   { name: "PRIMARY CONTACT", uid: "primaryContact" },
   { name: "SECONDARY CONTACT", uid: "secondaryContact" },
+  { name: "Amount", uid: "amount" },
   { name: "PROF. FEE", uid: "professionalFees" },
   { name: "GOVT. FEE", uid: "govermentfees" },
   { name: "SERVICE FEE", uid: "serviceCharge" },
@@ -82,12 +84,19 @@ const INITIAL_VISIBLE_COLUMNS = [
   "unitName",
   "createDate",
   "gstNo",
-  "govermentfees",
+  "amount",
+  // "govermentfees",
   "professionalFees",
   "actions",
 ];
 
-const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
+const formSchema = ({
+  isPrimary,
+  isMilestone,
+  isPurchaseOrder,
+  isTDS,
+  isProduct,
+}) =>
   z.object({
     ...(isPrimary
       ? {
@@ -115,22 +124,27 @@ const formSchema = ({ isPrimary, isMilestone, isPurchaseOrder, isTDS }) =>
           companyName: z.string().min(1, "Company name cannot be empty"),
           serviceName: z.string().min(1, "Service name cannot be empty"),
           transactionId: z.string().min(1, "Transaction ID cannot be empty"),
-          estimateNo: z.string().min(1, "Estimate number cannot be empty"),
-          billingQuantity: z.number(),
           tdsPresent: z.boolean(),
           ...(isTDS
             ? {
                 tdsPercent: z.string().min(1, "TDS percent must be at least 0"),
               }
             : {}),
-          professionalFees: z.number(),
-          profesionalGst: z.number(),
-          govermentfees: z.number(),
-          govermentGst: z.number(),
-          serviceCharge: z.number(),
-          serviceGst: z.number(),
-          otherFees: z.number(),
-          otherGst: z.number(),
+          ...(isProduct
+            ? {
+                quantity: z.number(),
+                actualPrice: z.number(),
+              }
+            : {
+                professionalFees: z.number(),
+                profesionalGst: z.number(),
+                govermentfees: z.number(),
+                govermentGst: z.number(),
+                serviceCharge: z.number(),
+                serviceGst: z.number(),
+                otherFees: z.number(),
+                otherGst: z.number(),
+              }),
           totalAmount: z.number(),
           paymentDate: z.string().min(1, "Please enter payment date"),
           remark: z.string().min(1, "Remark cannot be empty"),
@@ -153,8 +167,8 @@ const defaultValues = {
   comment: "",
   companyName: "",
   transactionId: "",
-  estimateNo: "",
-  billingQuantity: 0,
+  quantity: 0,
+  actualPrice: 0,
   tdsPercent: "0", // This is z.string(), so string is fine
   professionalFees: 0,
   profesionalGst: 0,
@@ -188,6 +202,7 @@ const Estimate = () => {
   const [paymentType, setPaymentType] = useState("");
   const [isMilestone, setIsMilestone] = useState(false);
   const [isTDS, setIsTDS] = useState(false);
+  const [isProduct, setIsProduct] = useState(false);
   const [paymentSelectionType, setPaymentSelectionType] =
     useState("Payment register");
   const [visibleColumns, setVisibleColumns] = useState(
@@ -226,6 +241,7 @@ const Estimate = () => {
         isMilestone,
         isPurchaseOrder: paymentSelectionType === "Purchase order",
         isTDS,
+        isProduct,
       })
     ),
     defaultValues,
@@ -276,14 +292,22 @@ const Estimate = () => {
       let updatedValues = { ...formValues };
 
       const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
-
-      updatedValues = {
-        ...updatedValues,
-        professionalFees: safeNum(remainingAmountDetail?.proffees),
-        govermentFees: safeNum(remainingAmountDetail?.govfees),
-        otherFees: safeNum(remainingAmountDetail?.otherFees),
-        serviceCharge: safeNum(remainingAmountDetail?.serviceCharge),
-      };
+      if (remainingAmountDetail?.productType === "Product") {
+        updatedValues = {
+          ...updatedValues,
+          quantity: safeNum(remainingAmountDetail?.quantity),
+          actualPrice: safeNum(remainingAmountDetail?.actualPrice),
+          totalAmount: safeNum(remainingAmountDetail?.totalAmount),
+        };
+      } else {
+        updatedValues = {
+          ...updatedValues,
+          professionalFees: safeNum(remainingAmountDetail?.proffees),
+          govermentFees: safeNum(remainingAmountDetail?.govfees),
+          otherFees: safeNum(remainingAmountDetail?.otherFees),
+          serviceCharge: safeNum(remainingAmountDetail?.serviceCharge),
+        };
+      }
 
       reset(updatedValues);
     }
@@ -293,47 +317,60 @@ const Estimate = () => {
     (e) => {
       const values = getValues();
       let updatedValues = { ...values };
-
       const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
-
       const professionalFees = safeNum(rowItem?.professionalFees);
       const govermentfees = safeNum(rowItem?.govermentfees);
       const otherFees = safeNum(rowItem?.otherFees);
       const serviceCharge = safeNum(rowItem?.serviceCharge);
+      const totalAmount = safeNum(rowItem?.totalAmount);
 
       if (e === "Partial") {
-        updatedValues = {
-          ...updatedValues,
-          professionalFees: professionalFees / 2,
-          govermentfees: govermentfees / 2,
-          otherFees: otherFees / 2,
-          serviceCharge: serviceCharge / 2,
-        };
+        if (isProduct) {
+          updatedValues = {
+            ...updatedValues,
+            totalAmount: totalAmount / 2,
+          };
+        } else {
+          updatedValues = {
+            ...updatedValues,
+            professionalFees: professionalFees / 2,
+            govermentfees: govermentfees / 2,
+            otherFees: otherFees / 2,
+            serviceCharge: serviceCharge / 2,
+          };
+        }
       }
 
       if (e === "Fully") {
-        updatedValues = {
-          ...updatedValues,
-          professionalFees,
-          govermentfees,
-          otherFees,
-          serviceCharge,
-        };
+        if (isProduct) {
+          updatedValues = {
+            ...updatedValues,
+            totalAmount: totalAmount,
+          };
+        } else {
+          updatedValues = {
+            ...updatedValues,
+            professionalFees,
+            govermentfees,
+            otherFees,
+            serviceCharge,
+          };
+        }
       }
 
       reset(updatedValues);
     },
-    [rowItem, reset]
+    [rowItem, reset, isProduct]
   );
 
   const handleActionsPress = (rowItem) => {
     setRowItem(rowItem);
+    setIsProduct(rowItem?.productType === "Product");
     dispatch(getPaymentDetailListByEstimateId(rowItem?.id));
     dispatch(paymentRegisterRemainingAmount(rowItem?.id)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         const temData = resp.payload;
         const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
-
         const updatedValues = {
           ...defaultValues,
           serviceName: rowItem?.productName || "",
@@ -343,15 +380,17 @@ const Estimate = () => {
           serviceGst: safeNum(rowItem?.serviceGst),
           otherGst: safeNum(rowItem?.otherGst),
         };
-
         if (!temData?.primary) {
           updatedValues.professionalFees = safeNum(temData?.proffees);
           updatedValues.govermentfees = safeNum(temData?.govfees);
           updatedValues.otherFees = safeNum(temData?.otherFees);
           updatedValues.serviceCharge = safeNum(temData?.serviceCharge);
-          updatedValues.totalAmount = safeNum(temData?.totalAmount);
+          if (rowItem?.productType === "Product") {
+            updatedValues.actualPrice = safeNum(temData?.actualPrice);
+            updatedValues.totalAmount = safeNum(temData?.totalAmount);
+            updatedValues.quantity = safeNum(temData?.quantity);
+          }
         }
-
         reset(updatedValues);
         onOpen();
       }
@@ -384,6 +423,7 @@ const Estimate = () => {
       const serviceGstNum = safeNum(serviceGst);
       const otherFeesNum = safeNum(otherFees);
       const otherGstNum = safeNum(otherGst);
+      const productTotalAmount = safeNum(allValues?.totalAmount);
 
       const professionalGstAmount =
         (professionalFeesNum * profesionalGstNum) / 100;
@@ -400,8 +440,11 @@ const Estimate = () => {
 
       const totalAmount =
         professionalTotal + governmentTotal + serviceTotal + otherTotal;
-
-      setValue("totalAmount", totalAmount);
+      if (isProduct) {
+        setValue("totalAmount", productTotalAmount);
+      } else {
+        setValue("totalAmount", totalAmount);
+      }
       setGstsAmount((prev) => ({
         ...prev,
         serviceGstPercent: serviceGstAmount,
@@ -420,6 +463,7 @@ const Estimate = () => {
       values.createdById = userId;
       values.estimateId = rowItem?.id;
       values.productType = rowItem?.productType;
+      values.companyId = rowItem?.company;
       if (paymentSelectionType === "Purchase order") {
         values.purchaseAttach = values?.purchaseAttach?.map(
           (item) => item?.response
@@ -480,8 +524,11 @@ const Estimate = () => {
     switch (columnKey) {
       case "productName":
         return (
-          <div className="flex items-start gap-2">
+          <div className="flex flex-col items-start gap-2">
             <span className="font-medium">{rowData?.productName}</span>
+            {rowData?.productType && (
+              <Chip size="sm">{rowData?.productType}</Chip>
+            )}
           </div>
         );
       case "companyName":
@@ -514,6 +561,24 @@ const Estimate = () => {
             {rowData?.panNo && (
               <span className="text-xs text-foreground-400">
                 Pan : {rowData?.panNo}
+              </span>
+            )}
+          </div>
+        );
+      case "amount":
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">
+              {inrCurrency(rowData?.totalAmount || 0) || "-"}
+            </span>
+            {rowData?.gst && (
+              <span className="text-tiny text-gray-400">
+                GST : {rowData?.gst || "-"}%
+              </span>
+            )}
+            {rowData?.quantity && (
+              <span className="text-tiny text-gray-400">
+                Quantity : {rowData?.quantity || "-"} kg
               </span>
             )}
           </div>
@@ -796,17 +861,18 @@ const Estimate = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] max-w-full",
+          wrapper: "max-h-[65vh] w-full",
+          table: "w-full",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={(keys) => {
-          setSelectedKeys(keys);
-        }}
-        onSortChange={setSortDescriptor}
+        // onSelectionChange={(keys) => {
+        //   setSelectedKeys(keys);
+        // }}
+        // onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
           {(column) => (
@@ -1173,42 +1239,6 @@ const Estimate = () => {
                           )}
                         />
                         <Controller
-                          name="estimateNo"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Estimate number"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              value={field?.value}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(temp);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="billingQuantity"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Billing quantity"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
-                            />
-                          )}
-                        />
-
-                        <Controller
                           name="tdsPresent"
                           control={control}
                           render={({ field, fieldState: { error } }) => (
@@ -1257,170 +1287,216 @@ const Estimate = () => {
                           />
                         )}
 
-                        <Controller
-                          name="professionalFees"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Professional fees"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled={
-                                paymentType === "Partial" ||
-                                paymentType === "Fully"
-                              }
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                        {isProduct ? (
+                          <>
+                            <Controller
+                              name="quantity"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  isDisabled
+                                  label="Quantity in kg"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="profesionalGst"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Professional GST %"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                            <Controller
+                              name="actualPrice"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  isDisabled
+                                  label="Price"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="govermentfees"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Government fees"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled={
-                                paymentType === "Partial" ||
-                                paymentType === "Fully"
-                              }
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                          </>
+                        ) : (
+                          <>
+                            <Controller
+                              name="professionalFees"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Professional fees"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled={
+                                    paymentType === "Partial" ||
+                                    paymentType === "Fully"
+                                  }
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="govermentGst"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Government GST %"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                            <Controller
+                              name="profesionalGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Professional GST %"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="serviceCharge"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Service charge"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled={
-                                paymentType === "Partial" ||
-                                paymentType === "Fully"
-                              }
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                            <Controller
+                              name="govermentfees"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Government fees"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled={
+                                    paymentType === "Partial" ||
+                                    paymentType === "Fully"
+                                  }
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="serviceGst"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Service GST %"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                            <Controller
+                              name="govermentGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Government GST %"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="otherFees"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Other fees"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              isDisabled={
-                                paymentType === "Partial" ||
-                                paymentType === "Fully"
-                              }
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                            <Controller
+                              name="serviceCharge"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Service charge"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled={
+                                    paymentType === "Partial" ||
+                                    paymentType === "Fully"
+                                  }
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
-                        <Controller
-                          name="otherGst"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              isDisabled
-                              label="Other GST %"
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                              type="number"
-                              value={Number(field?.value)}
-                              onChange={(e) => {
-                                const temp = e.target.value;
-                                field.onChange(Number(temp));
-                              }}
+                            <Controller
+                              name="serviceGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Service GST %"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
                             />
-                          )}
-                        />
+                            <Controller
+                              name="otherFees"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  label="Other fees"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  isDisabled={
+                                    paymentType === "Partial" ||
+                                    paymentType === "Fully"
+                                  }
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
+                            />
+                            <Controller
+                              name="otherGst"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Input
+                                  isRequired
+                                  isDisabled
+                                  label="Other GST %"
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                  type="number"
+                                  value={Number(field?.value)}
+                                  onChange={(e) => {
+                                    const temp = e.target.value;
+                                    field.onChange(Number(temp));
+                                  }}
+                                />
+                              )}
+                            />
+                          </>
+                        )}
+
                         <Controller
                           name="totalAmount"
                           control={control}

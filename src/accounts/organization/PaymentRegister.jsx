@@ -199,7 +199,7 @@ const PaymentRegister = () => {
             dispatch(
               updateVendorPaymentStatus({
                 currentUserId: userId,
-                Status: paymentActionData?.status,
+                status: paymentActionData?.status,
                 id: paymentActionData?.paymentRegisterId,
               })
             )
@@ -538,7 +538,8 @@ const PaymentRegister = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[70vh] w-full",
+          table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

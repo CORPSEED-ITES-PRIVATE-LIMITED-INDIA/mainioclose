@@ -250,7 +250,8 @@ const Milestone = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh]",
+          wrapper: "max-h-[68vh] w-full",
+          table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
