@@ -78,6 +78,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import BulkFileUploader from "../../components/BulkFileUploader";
 import dayjs from "dayjs";
+import StatusDisplay from "../../components/StatusDisplay";
 const iconClass = "h-4 w-4";
 
 const addressFormSchema = z.object({
@@ -518,7 +519,8 @@ const LeadInfo = () => {
     }
   };
 
-  return (
+  return Object.keys(leadData)?.length > 0 &&
+    (leadData?.assigne?.id === userId || adminRole) ? (
     <div className="grid grid-cols-2 gap-3 p-2 max-h-[78vh] overflow-auto">
       <div className="grid grid-cols-2 gap-3">
         <div className="w-full">
@@ -635,9 +637,7 @@ const LeadInfo = () => {
                   <p className="text-sm">{leadData?.subSubIndustry?.name}</p>
                 </div>
                 <div>
-                  <p className="text-default-500 text-sm">
-                    Business activity
-                  </p>
+                  <p className="text-default-500 text-sm">Business activity</p>
                   <p className="text-sm">
                     {leadData?.industriesData
                       ?.map((item) => item?.name)
@@ -1368,6 +1368,8 @@ const LeadInfo = () => {
         </ModalContent>
       </Modal>
     </div>
+  ) : (
+    <StatusDisplay type="notfound" message="Lead is not assigned to you " />
   );
 };
 

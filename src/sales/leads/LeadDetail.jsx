@@ -3,7 +3,6 @@ import { Dot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import StatusDisplay from "../../components/StatusDisplay";
 
 const LeadDetail = () => {
   const navigate = useNavigate();
@@ -56,7 +55,7 @@ const LeadDetail = () => {
     },
   ];
 
-  return Object.keys(leadData)?.length > 0 ? (
+  return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center">
         {leadData?.originalName ? (
@@ -87,8 +86,6 @@ const LeadDetail = () => {
       </Tabs>
       <Outlet />
     </div>
-  ) : (
-    <StatusDisplay type="notfound" />
   );
 };
 
