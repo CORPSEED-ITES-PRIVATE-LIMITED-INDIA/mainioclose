@@ -3,6 +3,7 @@ import { Dot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import StatusDisplay from "../../components/StatusDisplay";
 
 const LeadDetail = () => {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ const LeadDetail = () => {
       <Outlet />
     </div>
   ) : (
-    ""
+    <StatusDisplay type="notfound" />
   );
 };
 
