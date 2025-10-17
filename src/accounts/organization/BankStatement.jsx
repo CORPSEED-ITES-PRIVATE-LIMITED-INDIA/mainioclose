@@ -111,7 +111,6 @@ const BankStatement = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
-
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>

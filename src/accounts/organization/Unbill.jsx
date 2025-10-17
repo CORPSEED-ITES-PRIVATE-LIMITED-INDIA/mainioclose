@@ -161,7 +161,7 @@ const Unbill = () => {
                 >
                   View
                 </DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -308,6 +308,9 @@ const Unbill = () => {
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
+
+  console.log("dfjkhgdskjdkjgdjkfg 11111111111111",invoiceDetail)
+
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Unbilled list</h1>
@@ -360,7 +363,7 @@ const Unbill = () => {
                 Invoice
               </ModalHeader>
               <ModalBody className="max-h-[85vh] overflow-auto">
-                <InvoiceView detail={invoiceDetail} />
+                <InvoiceView details={invoiceDetail} />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>

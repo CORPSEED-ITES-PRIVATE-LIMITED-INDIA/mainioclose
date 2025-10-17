@@ -15,17 +15,37 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  Select,
+  SelectItem,
+  DateRangePicker,
+  useDisclosure,
+  addToast,
+  Spinner,
 } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, Dot, EllipsisVertical, Info, Search } from "lucide-react";
+import {
+  ChevronDown,
+  Dot,
+  Download,
+  EllipsisVertical,
+  Info,
+  ListFilter,
+  Search,
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
   allVendorsCategory,
   getAllVendorsRequest,
+  getAllVendorsStatus,
+  vendorsExportReportFilteration,
 } from "../toolkit/slices/vendorsSlice";
 import { inrCurrency } from "../common";
+import NewSelect from "../components/NewSelect";
+import { parseDate, parseZonedDateTime } from "@internationalized/date";
+import { getProcurementAssigneeList } from "../toolkit/slices/commonSlice";
+import { CSVLink } from "react-csv";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -63,9 +83,17 @@ const INITIAL_VISIBLE_COLUMNS = [
 const VendorRequests = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
+  const filterPopOver = useDisclosure();
   const count = useSelector((state) => state.vendors.totalVendorRequestCount);
   const data =
     useSelector((state) => state.vendors.allVendorsRequestList) || [];
+  const vendorsExportData = useSelector(
+    (state) => state.vendors.vendorsExportData
+  );
+  const vendorStatus = useSelector((state) => state.vendors.vendorsStatus);
+  const procurementUsers = useSelector(
+    (state) => state.common.procurementAssigneeList
+  );
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -79,11 +107,21 @@ const VendorRequests = () => {
     page: 1,
     size: 50,
   });
+  const [filteLoading, setFilterLoading] = useState("");
   const hasSearchFilter = Boolean(filterValue);
+  const [filter, setFilter] = useState({
+    userIdBy: userId,
+    statuses: [],
+    startDate: "",
+    endDate: "",
+    userIds: [],
+  });
 
   useEffect(() => {
     dispatch(allVendorsCategory());
     dispatch(getAllVendorsRequest({ userId, ...filteration }));
+    dispatch(getAllVendorsStatus());
+    dispatch(getProcurementAssigneeList(userId));
   }, [dispatch]);
 
   const headerColumns = useMemo(() => {
@@ -116,6 +154,40 @@ const VendorRequests = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const exportData = vendorsExportData?.map((row) => ({
+    Id: row?.id,
+    "Client name": row?.clientName,
+    Status: row?.currentStatus,
+    "Genrated by": row?.generateByPersonName,
+    "Sub Category name": row?.subCategoryName,
+    "Assigned to": row?.assignedToPersonName,
+    "Start date": row?.startDate,
+    "End date": row?.endDate,
+    "Completion date": row?.completionDate,
+    "Completion days": row?.completionDays,
+    "Research TAT": row?.vendorCategoryResearchTat,
+    "Completion TAT": row?.vendorCompletionTat,
+    "Left TAT": row?.tatDaysLeft,
+    "Over Due TAT": row?.overDueTat,
+  }));
+
+  const headers = [
+    "Id",
+    "Client name",
+    "Status",
+    "Genrated by",
+    "Sub Category name",
+    "Assigned to",
+    "Start date",
+    "End date",
+    "Completion date",
+    "Completion days",
+    "Research TAT",
+    "Completion TAT",
+    "Left TAT",
+    "Over Due TAT",
+  ];
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "clientName":
@@ -133,13 +205,16 @@ const VendorRequests = () => {
             />
 
             <Link
-              className="font-medium"
+              className="font-medium flex flex-col"
               to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
               onClick={() =>
                 localStorage.setItem("vendorDetail", JSON.stringify(rowData))
               }
             >
               {rowData?.clientName}
+              <span className="text-default-400 text-sm">
+                {dayjs(rowData?.receivedDate).format("DD-MM-YYYY, hh:mm a")}
+              </span>
             </Link>
           </div>
         );
@@ -175,7 +250,7 @@ const VendorRequests = () => {
             </span>
             {rowData?.vendorSubCategoryName && (
               <span className="text-xs text-foreground-400">
-                Sub-Category : {rowData?.vendorSubCategoryName}
+                {rowData?.vendorSubCategoryName}
               </span>
             )}
           </div>
@@ -317,6 +392,35 @@ const VendorRequests = () => {
     setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
+  const handleFilter = useCallback(() => {
+    setFilterLoading("pending");
+    dispatch(vendorsExportReportFilteration(filter))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          setFilterLoading("success");
+          addToast({ title: "Data is ready to export", color: "success" });
+        } else {
+          setFilterLoading("rejected");
+          addToast({ title: "Some issue in data export", color: "danger" });
+        }
+      })
+      .catch(() => {
+        setFilterLoading("rejected");
+        addToast({ title: "Some issue in data export", color: "danger" });
+      });
+  }, [dispatch, filter]);
+
+  const handleResetFilter = () => {
+    setFilter({
+      userIdBy: userId,
+      statuses: [],
+      startDate: null,
+      endDate: null,
+      userIds: [],
+    });
+    dispatch(getAllVendorsRequest({ userId, ...filteration }));
+  };
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -331,6 +435,115 @@ const VendorRequests = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Popover
+              showArrow
+              isOpen={filterPopOver.isOpen}
+              onOpenChange={(e) => filterPopOver.onOpenChange(e)}
+            >
+              <PopoverTrigger>
+                <Button variant="flat" endContent={<ListFilter />}>
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="min-w-[550px]">
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="grid gap-4 min-w-[500px]">
+                      <div>
+                        <DateRangePicker
+                          isRequired
+                          // hideTimeZone
+                          // granularity="minute"
+                          // hourCycle={24}
+                          visibleMonths={2}
+                          label="Created date"
+                          value={{
+                            start: filter?.startDate
+                              ? parseDate(`${filter?.startDate}`)
+                              : null,
+                            end: filter?.endDate
+                              ? parseDate(`${filter?.endDate}`)
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                              : null;
+                            setFilter((prev) => ({
+                              ...prev,
+                              startDate: formattedStart,
+                              endDate: formattedEnd,
+                            }));
+                          }}
+                        />
+                      </div>
+                      <Select
+                        label={"Status"}
+                        name={"statusId"}
+                        selectionMode="multiple"
+                        selectedKeys={new Set(filter?.statuses || [])}
+                        onSelectionChange={(e) => {
+                          let values = Array.from(e);
+                          setFilter((prev) => ({
+                            ...prev,
+                            statuses: values.length > 0 ? values : [],
+                          }));
+                        }}
+                      >
+                        {vendorStatus.map((status) => (
+                          <SelectItem key={status?.statusName}>
+                            {status?.statusName}
+                          </SelectItem>
+                        ))}
+                      </Select>
+
+                      <NewSelect
+                        data={procurementUsers || []}
+                        label={"User"}
+                        name={"userIds"}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        value={filter?.userIds}
+                        onChange={(selectedSet) => {
+                          setFilter((prev) => ({
+                            ...prev,
+                            userIds: selectedSet,
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 my-2">
+                      <Button onPress={handleResetFilter}>Reset</Button>
+                      <Button
+                        color="primary"
+                        isDisabled={
+                          filter?.startDate === "" || filter?.endDate === ""
+                        }
+                        onPress={handleFilter}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+            <CSVLink
+              className="text-white"
+              data={exportData}
+              headers={headers}
+              filename={"procurement.csv"}
+            >
+              <Button startContent={<Download />} variant="flat">
+                Export
+              </Button>
+            </CSVLink>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -381,6 +594,10 @@ const VendorRequests = () => {
     count,
     onSearchChange,
     data,
+    vendorStatus,
+    procurementUsers,
+    filter,
+    filterPopOver,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -427,6 +644,17 @@ const VendorRequests = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Vendor's requests</h1>
+      {filteLoading === "pending" && (
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-xs bg-black/20 z-[9999]">
+          <Spinner
+            color="success"
+            label="Loading ..."
+            labelColor="success"
+            classNames={{ label: "text-2xl font-medium" }}
+          />
+        </div>
+      )}
+
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"

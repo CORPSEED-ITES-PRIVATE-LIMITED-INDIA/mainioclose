@@ -167,7 +167,7 @@ export const getAllCompanyUnits = createAsyncThunk(
   "getAllCompanyUnits",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/company/getAllCompanyUnit?id=${id}`
+      `/leadService/api/v1/company/getAllCompanyUnit?id=${id}`  
     );
     return response.data;
   }

@@ -159,7 +159,7 @@ const OrganizationDetail = () => {
   });
 
   const statForm = useForm({
-    resolver: zodResolver(statFormSchema()),
+    resolver: zodResolver(statFormSchema(flagValues)),
     defaultValues: statDefaultValues,
   });
 
@@ -168,7 +168,8 @@ const OrganizationDetail = () => {
     statutoryModal.onOpen();
   };
 
-  const onStatSubmit = () => {
+  const onStatSubmit = (values) => {
+    console.log("dfjghdfjhdjkhkdfh",values)
     dispatch(addStatutory(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -177,8 +178,8 @@ const OrganizationDetail = () => {
             color: "success",
           });
           dispatch(getAllOrganizations());
-          orgForm.reset();
-          organizationModal.onOpenChange(false);
+          statForm.reset(statDefaultValues);
+          statutoryModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }

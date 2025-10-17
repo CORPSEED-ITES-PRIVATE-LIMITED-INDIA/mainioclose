@@ -20,6 +20,7 @@ import QualityRouting from "./routings/QualityRouting";
 import UserHistory from "./users/UserHistory";
 import UserManagerApproval from "./users/UserManagerApproval";
 import DeactiveUserList from "./users/DeactiveUserList";
+import EstimatePreview from "./components/EstimatePreview";
 
 function App() {
   return (
@@ -27,7 +28,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
-
+        <Route path="/:leadId/estimate-preview" element={<EstimatePreview />}/>
         <Route path="/erp" element={<ProtectedRoute />}>
           <Route path=":userId" element={<Layoutpage />}>
             {/*Dashboard */}

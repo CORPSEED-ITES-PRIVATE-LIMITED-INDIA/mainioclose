@@ -108,7 +108,12 @@ function formCondition(data) {
   return result;
 }
 
-const formSchema = ({ productData, productSubCategoryData, gstMand }) => {
+const formSchema = ({
+  productData,
+  productSubCategoryData,
+  gstMand,
+  adminRole,
+}) => {
   return z.object({
     performaInvoice: z.boolean(),
     unitId: z.string().min(1, "Please select the company unit."),
@@ -184,7 +189,11 @@ const formSchema = ({ productData, productSubCategoryData, gstMand }) => {
               }
             : {}),
         }),
-    assigneeId: z.string().min(1, "Please select assignee id."),
+    ...(adminRole
+      ? {
+          assigneeId: z.string().min(1, "Please select assignee id."),
+        }
+      : {}),
     orderNumber: z.string().min(1, "Please enter Order number."),
     purchaseDate: z.string().min(1, "Please select purchase date."),
     invoiceNote: z.string().min(1, "Please write invoice note."),
@@ -339,6 +348,8 @@ const LeadEstimate = () => {
   const secCitiesList = useSelector(
     (state) => state.common.secondaryCitiesList
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const [seachFields, setSearchFields] = useState({
     searchText: "",
     userId: userId,
@@ -387,7 +398,7 @@ const LeadEstimate = () => {
     getValues,
   } = useForm({
     resolver: zodResolver(
-      formSchema({ productData, productSubCategoryData, gstMand })
+      formSchema({ productData, productSubCategoryData, gstMand, adminRole })
     ),
     defaultValues,
   });
@@ -803,8 +814,11 @@ const LeadEstimate = () => {
       values.companyName = companyAndUnitData?.companyName;
       values.unitName = companyAndUnitData?.unitName;
       values.type = productData?.type;
+      values.productType = productData?.type;
       values.currentUserId = userId;
-
+      if (!adminRole) {
+        values.assigneeId = userId;
+      }
       if (discount) {
         if (details?.discountEstimate) {
           values.estimateId = details?.id;
@@ -980,6 +994,7 @@ const LeadEstimate = () => {
                 <AutocompleteItem
                   key={item.companyId}
                   onPress={() => {
+                    console.log("jkghsjgdjhsdghjs ",item)
                     setCompanyAndUnitData((prev) => ({
                       ...prev,
                       companyName: item?.companyName,
@@ -1089,7 +1104,6 @@ const LeadEstimate = () => {
                           }
                           const formValues = getValues();
                           let updatedValues = { ...formValues };
-
                           updatedValues = {
                             ...updatedValues,
                             unitId: String(compUnit?.id),
@@ -1822,25 +1836,28 @@ const LeadEstimate = () => {
             <Card className="my-2">
               <CardHeader className="font-medium">Purchasing info</CardHeader>
               <CardBody className="grid grid-cols-3 gap-3">
-                <Controller
-                  name="assigneeId"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      isRequired
-                      label="Select assignee"
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      data={leadUsersList || []}
-                      labelKey="fullName"
-                      valueKey="id"
-                      value={String(field.value)}
-                      onChange={(value) => {
-                        field.onChange(value);
-                      }}
-                    />
-                  )}
-                />
+                {adminRole && (
+                  <Controller
+                    name="assigneeId"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        isRequired
+                        label="Select assignee"
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        data={leadUsersList || []}
+                        labelKey="fullName"
+                        valueKey="id"
+                        value={String(field.value)}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                      />
+                    )}
+                  />
+                )}
+
                 <Controller
                   name="orderNumber"
                   control={control}

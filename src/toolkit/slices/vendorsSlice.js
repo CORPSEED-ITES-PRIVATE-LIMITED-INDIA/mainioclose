@@ -165,6 +165,17 @@ export const searchInVendorsList = createAsyncThunk(
   }
 );
 
+export const vendorsExportReportFilteration = createAsyncThunk(
+  "vendorsExportReportFilteration",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/vendor/vendor-report`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -175,7 +186,8 @@ const VendorsSlice = createSlice({
     totalVendorRequestCount: 0,
     allVendorsRequestList: [],
     vendorsStatus: [],
-    singleVendorHistoryList:[]
+    singleVendorHistoryList: [],
+    vendorsExportData: [],
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -265,6 +277,24 @@ const VendorsSlice = createSlice({
     builder.addCase(getvendorHistoryByLeadId.rejected, (state, action) => {
       state.loading = "rejected";
     });
+
+    builder.addCase(vendorsExportReportFilteration.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      vendorsExportReportFilteration.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.vendorsExportData = action?.payload?.vendorReports;
+      }
+    );
+    builder.addCase(
+      vendorsExportReportFilteration.rejected,
+      (state) => {
+        state.loading = "rejected";
+        state.vendorsExportData = [];
+      }
+    );
   },
 });
 

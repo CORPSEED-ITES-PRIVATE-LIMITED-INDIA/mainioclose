@@ -348,8 +348,8 @@ export const accountNavItems = [
   },
   {
     title: "Vendor's payments",
-    url: "accounts/vendor-payments",
-    key: "accounts/vendor-payments",
+    url: "accounts/vendorsPayment",
+    key: "accounts/vendorsPayment",
     icon: "HandCoins",
   },
   {

@@ -9,6 +9,7 @@ import {
 } from "@heroui/react";
 import { Settings } from "lucide-react";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 const routes = [
   "group",
@@ -31,6 +32,8 @@ const Organizations = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
   const [selectedKey, setSelectedKey] = useState("");
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole?.includes("ADMIN");
   const handleSelect = (e) => {
     navigate(e);
     setSelectedKey(e);
@@ -44,41 +47,44 @@ const Organizations = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-between max-w-full overflow-auto">
-        <Tabs
-          aria-label="Tabs variants"
-          variant={"bordered"}
-          selectedKey={selectedKey}
-          onSelectionChange={handleSelect}
-        >
-          <Tab key="" title="Organizations" />
-          <Tab key="group" title="Group" />
-          <Tab key="ledger" title="Ledger" />
-          <Tab key="voucher" title="Voucher" />
-          <Tab key="dayBook" title="Day book" />
-          <Tab key="profitLoss" title="Profit/Loss" />
-          <Tab key="cashflow" title="Cashflow" />
-          <Tab key="balanceSheet" title="Balance sheet" />
-          <Tab key="tds" title="Tds" />
-        </Tabs>
-        <Dropdown>
-          <DropdownTrigger>
-            <Button size="sm" variant="light" isIconOnly>
-              <Settings />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="Static Actions"
-            selectedKeys={[selectedKey]}
-            selectionMode="single"
-            onSelectionChange={handleSelectChange}
+      {adminRole && (
+        <div className="flex justify-between max-w-full overflow-auto">
+          <Tabs
+            aria-label="Tabs variants"
+            variant={"bordered"}
+            selectedKey={selectedKey}
+            onSelectionChange={handleSelect}
           >
-            <DropdownItem key="ledgerType">Ledger type</DropdownItem>
-            <DropdownItem key="voucherType">Voucher type</DropdownItem>
-            <DropdownItem key="statutory">Statutory</DropdownItem>
-          </DropdownMenu>
-        </Dropdown>
-      </div>
+            <Tab key="" title="Organizations" />
+            <Tab key="group" title="Group" />
+            <Tab key="ledger" title="Ledger" />
+            <Tab key="voucher" title="Voucher" />
+            <Tab key="dayBook" title="Day book" />
+            <Tab key="profitLoss" title="Profit/Loss" />
+            <Tab key="cashflow" title="Cashflow" />
+            <Tab key="balanceSheet" title="Balance sheet" />
+            <Tab key="tds" title="Tds" />
+          </Tabs>
+          <Dropdown>
+            <DropdownTrigger>
+              <Button size="sm" variant="light" isIconOnly>
+                <Settings />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="Static Actions"
+              selectedKeys={[selectedKey]}
+              selectionMode="single"
+              onSelectionChange={handleSelectChange}
+            >
+              <DropdownItem key="ledgerType">Ledger type</DropdownItem>
+              <DropdownItem key="voucherType">Voucher type</DropdownItem>
+              <DropdownItem key="statutory">Statutory</DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        </div>
+      )}
+
       <div>
         <Outlet />
       </div>
