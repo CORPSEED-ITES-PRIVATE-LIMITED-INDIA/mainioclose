@@ -199,7 +199,7 @@ const PaymentRegister = () => {
             dispatch(
               updateVendorPaymentStatus({
                 currentUserId: userId,
-                Status: paymentActionData?.status,
+                status: paymentActionData?.status,
                 id: paymentActionData?.paymentRegisterId,
               })
             )
