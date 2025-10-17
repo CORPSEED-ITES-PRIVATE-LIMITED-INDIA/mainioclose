@@ -230,6 +230,11 @@ export const navItems = [
         url: "procurement/vendors-payments",
         key: "vendors-payments",
       },
+      {
+        title: "Estimate",
+        url: "procurement/vendors-estimates",
+        key: "vendors-estimates",
+      },
     ],
   },
   {
@@ -517,5 +522,11 @@ export const procurementItems = [
     icon: "HandCoins",
     url: "procurement/vendors-payments",
     key: "vendors-payments",
+  },
+  {
+    title: "Estimate",
+    icon: "FileText",
+    url: "procurement/vendors-estimates",
+    key: "vendors-estimates",
   },
 ];

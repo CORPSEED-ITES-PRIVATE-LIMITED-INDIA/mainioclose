@@ -55,7 +55,7 @@ const LeadDetail = () => {
     },
   ];
 
-  return (
+  return Object.keys(leadData)?.length > 0 ? (
     <div className="flex flex-col gap-1">
       <div className="flex items-center">
         {leadData?.originalName ? (
@@ -86,6 +86,8 @@ const LeadDetail = () => {
       </Tabs>
       <Outlet />
     </div>
+  ) : (
+    ""
   );
 };
 

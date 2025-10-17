@@ -176,6 +176,23 @@ export const vendorsExportReportFilteration = createAsyncThunk(
   }
 );
 
+export const getAllVendorsEstimate = createAsyncThunk(
+  "getAllVendorsEstimate",
+  async ({ userId, page, size }) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getAllEstimateForProcurement?userId=${userId}&page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getVendorsEstimateCount = createAsyncThunk("getVendorsEstimateCount", async (userId) => {
+  const response = await api.get(
+    `/leadService/api/v1/leadEstimate/getAllEstimateForProcurementForCount?userId=${userId}`
+  );
+  return response.data;
+});
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -188,6 +205,8 @@ const VendorsSlice = createSlice({
     vendorsStatus: [],
     singleVendorHistoryList: [],
     vendorsExportData: [],
+    vendorEstimateList: [],
+    vendorEstimateCount:0
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -288,13 +307,34 @@ const VendorsSlice = createSlice({
         state.vendorsExportData = action?.payload?.vendorReports;
       }
     );
-    builder.addCase(
-      vendorsExportReportFilteration.rejected,
-      (state) => {
-        state.loading = "rejected";
-        state.vendorsExportData = [];
-      }
-    );
+    builder.addCase(vendorsExportReportFilteration.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorsExportData = [];
+    });
+
+    builder.addCase(getAllVendorsEstimate.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorsEstimate.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorEstimateList = action?.payload;
+    });
+    builder.addCase(getAllVendorsEstimate.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorEstimateList = [];
+    });
+
+    builder.addCase(getVendorsEstimateCount.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorsEstimateCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorEstimateCount = action?.payload;
+    });
+    builder.addCase(getVendorsEstimateCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorEstimateCount =0;
+    });
   },
 });
 
