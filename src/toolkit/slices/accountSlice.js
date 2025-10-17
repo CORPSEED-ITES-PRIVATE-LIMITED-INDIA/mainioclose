@@ -86,9 +86,9 @@ export const createVendorsPayment = createAsyncThunk(
 
 export const updateVendorPaymentStatus = createAsyncThunk(
   "updateVendorPaymentStatus",
-  async ({ userId, status, id }) => {
+  async ({ currentUserId, status, id }) => {
     const response = await api.put(
-      `/accountService/api/v1/paymentRegister/approveVendorPayment?currentUserId=${userId}&Status=${status}&id=${id}`
+      `/accountService/api/v1/paymentRegister/approveVendorPayment?currentUserId=${currentUserId}&Status=${status}&id=${id}`
     );
     return response.data;
   }
