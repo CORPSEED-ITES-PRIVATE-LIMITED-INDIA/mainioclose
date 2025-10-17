@@ -390,6 +390,10 @@ const Estimate = () => {
             updatedValues.totalAmount = safeNum(temData?.totalAmount);
             updatedValues.quantity = safeNum(temData?.quantity);
           }
+        } else if (rowItem?.productType === "Product") {
+          updatedValues.actualPrice = safeNum(rowItem?.actualPrice);
+          updatedValues.totalAmount = safeNum(rowItem?.totalAmount);
+          updatedValues.quantity = safeNum(rowItem?.quantity);
         }
         reset(updatedValues);
         onOpen();
