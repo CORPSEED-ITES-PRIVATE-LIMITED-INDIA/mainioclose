@@ -186,12 +186,25 @@ export const getAllVendorsEstimate = createAsyncThunk(
   }
 );
 
-export const getVendorsEstimateCount = createAsyncThunk("getVendorsEstimateCount", async (userId) => {
-  const response = await api.get(
-    `/leadService/api/v1/leadEstimate/getAllEstimateForProcurementForCount?userId=${userId}`
-  );
-  return response.data;
-});
+export const getVendorsEstimateCount = createAsyncThunk(
+  "getVendorsEstimateCount",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getAllEstimateForProcurementForCount?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const updatePaymentForVendorPayment = createAsyncThunk(
+  "updatePaymentForVendorPayment",
+  async ({ userId, estimateId, status }) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/markedEstimateSource?userId=${userId}&estimateId=${estimateId}&status=${status}`
+    );
+    return response.data;
+  }
+);
 
 const VendorsSlice = createSlice({
   name: "vendors",
@@ -206,7 +219,7 @@ const VendorsSlice = createSlice({
     singleVendorHistoryList: [],
     vendorsExportData: [],
     vendorEstimateList: [],
-    vendorEstimateCount:0
+    vendorEstimateCount: 0,
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -333,7 +346,7 @@ const VendorsSlice = createSlice({
     });
     builder.addCase(getVendorsEstimateCount.rejected, (state) => {
       state.loading = "rejected";
-      state.vendorEstimateCount =0;
+      state.vendorEstimateCount = 0;
     });
   },
 });

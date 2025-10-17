@@ -52,8 +52,8 @@ import dayjs from "dayjs";
 import { inrCurrency } from "../../common";
 import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
 import EstimateView from "../../components/EstimateView";
-import { updateVendorPaymentStatus } from "../../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
+import { updatePaymentForVendorPayment } from "../../toolkit/slices/vendorsSlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -162,8 +162,6 @@ const PaymentRegister = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-
-
   const handleViewEstimate = (rowData) => {
     if (rowData?.leadId) {
       setRowItem(rowData);
@@ -197,10 +195,10 @@ const PaymentRegister = () => {
           });
           if (rowItem?.productType === "Product") {
             dispatch(
-              updateVendorPaymentStatus({
-                currentUserId: userId,
+              updatePaymentForVendorPayment({
+                userId: userId,
                 status: paymentActionData?.status,
-                id: paymentActionData?.paymentRegisterId,
+                estimateId: paymentActionData?.estimateId,
               })
             )
               .then((res) => {
@@ -539,7 +537,7 @@ const PaymentRegister = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[70vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
