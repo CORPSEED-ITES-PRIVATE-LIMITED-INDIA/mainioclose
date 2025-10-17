@@ -694,7 +694,8 @@ const Voucher = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] max-w-full overflow-auto",
+          wrapper: "max-h-[55vh] w-full overflow-auto",
+          table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

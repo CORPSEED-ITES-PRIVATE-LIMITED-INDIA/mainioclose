@@ -408,7 +408,8 @@ const DailyBook = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] overflow-scroll",
+          wrapper: "max-h-[55vh] overflow-scroll w-full",
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

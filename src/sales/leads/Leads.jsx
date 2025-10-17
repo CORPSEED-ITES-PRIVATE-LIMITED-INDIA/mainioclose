@@ -1258,7 +1258,7 @@ const Leads = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[70vh] w-full",
-          table: "",
+          table: "w-full",
         }}
         selectedKeys={selectedKeys.size === visibleCount ? "all" : selectedKeys}
         selectionMode="multiple"

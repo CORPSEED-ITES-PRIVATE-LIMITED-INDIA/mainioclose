@@ -480,7 +480,8 @@ const DiscountedEstimate = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] max-w-full",
+          wrapper: "max-h-[70vh] w-full",
+          table:'w-full'
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

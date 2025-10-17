@@ -40,7 +40,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "status",
   "assignee",
   "address",
-  "actions"
+  "actions",
 ];
 
 const CompanyApprovals = () => {
@@ -103,10 +103,6 @@ const CompanyApprovals = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-
-
-  
-
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "companyName":
@@ -168,26 +164,16 @@ const CompanyApprovals = () => {
       case "secondaryAddress":
         return rowData?.secAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.secAddress || "-"}
-            </span>
+            <span className="font-normal">{rowData?.secAddress || "-"}</span>
             <div className="flex items-center gap-1">
               {" "}
-              <span className="text-gray-400">
-                {rowData?.secCity || "-"}
-              </span>
-              ,
-              <span className="text-gray-400">
-                {rowData?.secState || "-"}
-              </span>
-              ,
+              <span className="text-gray-400">{rowData?.secCity || "-"}</span>,
+              <span className="text-gray-400">{rowData?.secState || "-"}</span>,
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-400 text-tiny">
                 {rowData?.seCountry || "-"}
               </span>
-              
-             
             </div>
           </div>
         ) : (
@@ -392,14 +378,17 @@ const CompanyApprovals = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Companies for approvals</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Companies for approvals
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] max-w-full",
+          wrapper: "max-h-[65vh] w-full",
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

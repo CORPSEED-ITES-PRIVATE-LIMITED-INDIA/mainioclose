@@ -320,7 +320,8 @@ const Unbill = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] overflow-scroll",
+          wrapper: "max-h-[65vh] overflow-scroll w-full",
+          table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

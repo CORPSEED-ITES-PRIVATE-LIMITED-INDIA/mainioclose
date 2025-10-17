@@ -620,9 +620,10 @@ const CompanyForm = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] max-w-[85vw]",
-          table: "overflow-scroll",
+          wrapper: "max-h-[65vh] w-full",
+          table: "overflow-scroll w-full",
         }}
+
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"

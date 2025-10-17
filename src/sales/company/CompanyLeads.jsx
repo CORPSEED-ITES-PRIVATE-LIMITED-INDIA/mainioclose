@@ -309,7 +309,8 @@ const CompanyLeads = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[60vh]",
+          wrapper: "max-h-[60vh] w-full",
+          table:'w-full'
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

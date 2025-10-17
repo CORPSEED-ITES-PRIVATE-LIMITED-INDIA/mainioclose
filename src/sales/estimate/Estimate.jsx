@@ -796,7 +796,8 @@ const Estimate = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] max-w-full",
+          wrapper: "max-h-[65vh] w-full",
+          table:'w-full'
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
