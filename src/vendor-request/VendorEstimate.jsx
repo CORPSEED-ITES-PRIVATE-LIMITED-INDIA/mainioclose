@@ -24,7 +24,14 @@ import {
   DatePicker,
   addToast,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  IndianRupee,
+  Percent,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import {
@@ -57,6 +64,7 @@ import {
   getVendorsEstimateCount,
 } from "../toolkit/slices/vendorsSlice";
 import InvoiceView from "../components/InvoiceView";
+import { getAllProductCategoryById, getAllProductSubCategoryListByCategoryId } from "../toolkit/slices/productSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -144,6 +152,15 @@ const VendorEstimate = () => {
   const viewModal = useDisclosure();
   const data = useSelector((state) => state.vendors.vendorEstimateList);
   const count = useSelector((state) => state.vendors.vendorEstimateCount);
+  const productCategoryList = useSelector(
+    (state) => state.product.productCategoryList
+  );
+  const productSubcategoryList = useSelector(
+    (state) => state.product.productSubcategoryList
+  );
+  const businessArrangementList = useSelector(
+    (state) => state?.product?.businessArrangementList
+  );
   const urlList = useSelector((state) => state.common.urlList);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -243,7 +260,7 @@ const VendorEstimate = () => {
     return "";
   };
 
-    const handleViewEstimate = (rowData) => {
+  const handleViewEstimate = (rowData) => {
     setRowItem(rowData);
     viewModal.onOpen();
   };
@@ -254,6 +271,14 @@ const VendorEstimate = () => {
     const error = validateGST(gstNo, stateName);
     setGstError(error);
   };
+
+
+  const handleActionsPress = (rowItem) => {
+      setRowItem(rowItem);
+      dispatch(getAllBusinessArrangement(productData?.id));
+    };
+
+
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
@@ -401,8 +426,8 @@ const VendorEstimate = () => {
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
                   if (item === "paymentRegister") {
-                    // handleActionsPress(rowData);
-                    onOpen()
+                    handleActionsPress(rowData);
+                    onOpen();
                   } else if (item === "viewEstimate") {
                     handleViewEstimate(rowData);
                   }
@@ -849,6 +874,153 @@ const VendorEstimate = () => {
                           onChange={(e) => {
                             const temp = e.target.value;
                             field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="businessArrangmentId"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          label="Select business arrangement"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={businessArrangementList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={String(field.value)}
+                          onChange={(value) => {
+                            dispatch(getAllProductCategoryById(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="productCategoryId"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          label="Select product category"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={productCategoryList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={String(field.value)}
+                          onChange={(value) => {
+                            dispatch(
+                              getAllProductSubCategoryListByCategoryId(value)
+                            );
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="productSubCategoryId"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          label="Select product category"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={productSubcategoryList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={String(field.value)}
+                          onChange={(value) => {
+                            dispatch(
+                              getAllProductSubCategoryListByCategoryId(value)
+                            );
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="actualPrice"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => {
+                        return (
+                          <Input
+                            type="number"
+                            startContent={<IndianRupee className="h-4 w-4" />}
+                            isRequired
+                            label="Actual price"
+                            errorMessage={discountError}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                          />
+                        );
+                      }}
+                    />
+
+                    <Controller
+                      name="gstCode"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="HSN code"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="gst"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="GST %"
+                          endContent={<Percent className="h-4 w-4" />}
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="quantity"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Quantity in kg"
+                          type="number"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="totalPrice"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Total price (₹)"
+                          isDisabled
+                          type="number"
+                          startContent={<IndianRupee className="h-4 w-4" />}
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
                           }}
                         />
                       )}
