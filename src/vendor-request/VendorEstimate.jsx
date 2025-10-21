@@ -64,7 +64,11 @@ import {
   getVendorsEstimateCount,
 } from "../toolkit/slices/vendorsSlice";
 import InvoiceView from "../components/InvoiceView";
-import { getAllBusinessArrangement, getAllProductCategoryById, getAllProductSubCategoryListByCategoryId } from "../toolkit/slices/productSlice";
+import {
+  getAllBusinessArrangement,
+  getAllProductCategoryById,
+  getAllProductSubCategoryListByCategoryId,
+} from "../toolkit/slices/productSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -202,8 +206,10 @@ const VendorEstimate = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        item.company.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers?.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
@@ -272,13 +278,10 @@ const VendorEstimate = () => {
     setGstError(error);
   };
 
-
   const handleActionsPress = (rowItem) => {
-      setRowItem(rowItem);
-      dispatch(getAllBusinessArrangement(rowItem?.productId));
-    };
-
-
+    setRowItem(rowItem);
+    dispatch(getAllBusinessArrangement(rowItem?.productId));
+  };
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {

@@ -265,8 +265,10 @@ const Estimate = () => {
   const filteredItems = useMemo(() => {
     let filteredData = [...data];
     if (hasSearchFilter) {
-      filteredData = filteredData.filter((item) =>
-        item?.productName?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
     return filteredData;

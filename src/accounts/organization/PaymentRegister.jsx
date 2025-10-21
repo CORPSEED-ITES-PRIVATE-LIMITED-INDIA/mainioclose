@@ -54,6 +54,8 @@ import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
 import EstimateView from "../../components/EstimateView";
 import { useParams } from "react-router-dom";
 import { updatePaymentForVendorPayment } from "../../toolkit/slices/vendorsSlice";
+import InvoiceView from "../../components/InvoiceView";
+import { getCompanyByUnitId } from "../../toolkit/slices/companySlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -97,7 +99,6 @@ const PaymentRegister = () => {
     (state) => state.organization.allPaymentRegisterList
   );
   const count = useSelector((state) => state.organization.paymentRegistercont);
-  const details = useSelector((state) => state.leads.estimateDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -111,6 +112,8 @@ const PaymentRegister = () => {
   const [status, setStatus] = useState("all");
   const [page, setPage] = React.useState(1);
   const [rowItem, setRowItem] = useState(null);
+  const [estimateDetails, setEstimateDetails] = useState(null);
+  const [companyDetails, setCompanyDetails] = useState(null);
   const [paymentActionData, setPaymentActionData] = useState({
     paymentRegisterId: 0,
     estimateId: 0,
@@ -157,7 +160,6 @@ const PaymentRegister = () => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
-
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
@@ -165,7 +167,23 @@ const PaymentRegister = () => {
   const handleViewEstimate = (rowData) => {
     if (rowData?.leadId) {
       setRowItem(rowData);
-      dispatch(getEstimateByLeadId(rowData?.leadId));
+      dispatch(getEstimateByLeadId(rowData?.leadId))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            setEstimateDetails(resp.payload);
+          } else {
+            addToast({
+              title: "Some issue in fetching estimate details",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() => {
+          addToast({
+            title: "Some issue in fetching estimate details",
+            color: "danger",
+          });
+        });
       estimateModal.onOpen();
     } else {
       addToast({
@@ -297,6 +315,12 @@ const PaymentRegister = () => {
             onClick={() => {
               drawer.onOpen();
               setRowItem(rowData);
+              if (!rowData?.companyId) return;
+              dispatch(getCompanyByUnitId(rowData?.companyId)).then((resp) => {
+                if (resp.meta.requestStatus === "fulfilled") {
+                  setCompanyDetails(resp.payload);
+                }
+              });
             }}
           >
             {rowData?.companyName}
@@ -566,7 +590,15 @@ const PaymentRegister = () => {
           )}
         </TableBody>
       </Table>
-      <Drawer isOpen={drawer.isOpen} onOpenChange={drawer.onOpenChange}>
+      <Drawer
+        isOpen={drawer.isOpen}
+        onOpenChange={(e) => {
+          if (!e) {
+            setCompanyDetails(null);
+          }
+          drawer.onOpenChange(e);
+        }}
+      >
         <DrawerContent>
           {(onClose) => (
             <>
@@ -574,36 +606,63 @@ const PaymentRegister = () => {
                 Company details
               </DrawerHeader>
               <DrawerBody>
-                <div className="flex items-center gap-2">
-                  <Building2 />
-                  <p className="text-lg font-medium">Google private limited.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp />
-                  <p className="text-md text-default-500">5 years.</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <MapPin />
-                  <p className="text-medium">
-                    2nd floor,Noida extension,Greater noida ,Noida ,Uttar
-                    Pradesh,India
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <img src={panIcon} height={30} width={40} />
-                  <p className="text-medium">KUJYK9063F</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <img src={gstIcon} height={30} width={40} />
-                  <p className="text-medium">09AAHCC4539J1ZC</p>
-                </div>
+                {companyDetails?.companyName && (
+                  <div className="flex items-center gap-2">
+                    <Building2 />
+                    <p className="text-lg font-medium">
+                      {companyDetails?.companyName}
+                    </p>
+                  </div>
+                )}
+
+                {companyDetails?.companyAge && (
+                  <div className="flex items-center gap-2">
+                    <TrendingUp />
+                    <p className="text-md text-default-500">
+                      {companyDetails?.companyAge} yrs.
+                    </p>
+                  </div>
+                )}
+
+                {companyDetails?.address && (
+                  <div className="flex items-start gap-2">
+                    <MapPin />
+                    <p className="text-medium">
+                      {companyDetails?.address}{" "}
+                      {[
+                        companyDetails?.city,
+                        companyDetails?.state,
+                        companyDetails?.country,
+                        companyDetails?.primaryPinCode,
+                      ]
+                        ?.filter(Boolean)
+                        ?.join(",")}
+                    </p>
+                  </div>
+                )}
+
+                {companyDetails?.panNo && (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={panIcon}
+                      height={30}
+                      width={40}
+                      className="rounded-sm"
+                    />
+                    <p className="text-medium">{companyDetails?.panNo}</p>
+                  </div>
+                )}
+
+                {companyDetails?.gstNo && (
+                  <div className="flex items-center gap-2">
+                    <img src={gstIcon} height={30} width={40} />
+                    <p className="text-medium">{companyDetails?.gstNo}</p>
+                  </div>
+                )}
               </DrawerBody>
               <DrawerFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
+                <Button variant="light" onPress={onClose}>
                   Close
-                </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
                 </Button>
               </DrawerFooter>
             </>
@@ -624,15 +683,13 @@ const PaymentRegister = () => {
               <ModalHeader className="flex flex-col gap-1">
                 Estimate view
               </ModalHeader>
-              <ModalBody>
-                <EstimateView details={details} />
+              <ModalBody style={{ maxHeight: "70vh", overflow: "auto" }}>
+                {/* <EstimateView details={rowItem} /> */}
+                <InvoiceView details={estimateDetails} />
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
+                <Button variant="light" onPress={onClose}>
                   Close
-                </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
                 </Button>
               </ModalFooter>
             </>
@@ -714,11 +771,8 @@ const PaymentRegister = () => {
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
+                <Button variant="light" onPress={onClose}>
                   Close
-                </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
                 </Button>
               </ModalFooter>
             </>

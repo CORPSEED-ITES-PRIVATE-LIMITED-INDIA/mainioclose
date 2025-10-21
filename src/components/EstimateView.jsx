@@ -1,4 +1,3 @@
-import { Button } from "@heroui/button";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useRef } from "react";
@@ -8,10 +7,7 @@ import numWords from "num-words";
 import { inrCurrency } from "../common";
 
 const EstimateView = ({ details }) => {
-  console.log("sdkjjsgjksgsjgj", details);
-
   const pdfRef = useRef();
-
   const generatePDF = async () => {
     const element = pdfRef.current;
     const canvas = await html2canvas(element, {
@@ -34,9 +30,8 @@ const EstimateView = ({ details }) => {
     pdf.save("estimate.pdf");
   };
   return (
-    <div className="max-h-[70vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
+    <div className="max-h-[70vh] overflow-auto mt-3 px-2 md:px-4 2xl:px-12">
       <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
-        {/* Product Name */}
         {details?.productName && (
           <div className="flex flex-col md:flex-row md:items-center gap-1">
             <h3 className="font-semibold text-lg">Product name</h3>
@@ -45,9 +40,7 @@ const EstimateView = ({ details }) => {
           </div>
         )}
 
-        {/* Contacts */}
         <div className="flex flex-col md:flex-row md:gap-15 gap-6">
-          {/* Primary Contact */}
           {details?.primaryContact && (
             <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
               <div className="flex flex-col gap-3">
@@ -88,7 +81,6 @@ const EstimateView = ({ details }) => {
             </div>
           )}
 
-          {/* Secondary Contact */}
           {details?.secondaryContact && (
             <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
               <div className="flex flex-col gap-3">
@@ -130,16 +122,12 @@ const EstimateView = ({ details }) => {
           )}
         </div>
 
-        {/* Main PDF Content */}
         <div ref={pdfRef} className="relative">
-          {/* Badge */}
           <div className="absolute left-0 top-0 bg-green-500 text-white px-3 py-1 rounded-r text-sm md:text-base z-10">
             {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
           </div>
 
-          {/* Content Box */}
           <div className="flex flex-col gap-6 p-6 md:p-10 shadow-md rounded-md mb-6 bg-white">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between">
               <div className="flex flex-col gap-2">
                 <img
@@ -172,7 +160,6 @@ const EstimateView = ({ details }) => {
               </div>
             </div>
 
-            {/* Addresses and Dates */}
             <div className="flex justify-between gap-6 md:gap-0 text-gray-500 text-sm md:text-base">
               <div className="flex flex-col gap-4">
                 <div>
@@ -183,13 +170,15 @@ const EstimateView = ({ details }) => {
                       <p className="font-normal">{details?.address}</p>
                     )}
                     <p className="font-normal">
-                      {[details?.city, details?.state, details?.country]
+                      {[
+                        details?.city,
+                        details?.state,
+                        details?.country,
+                        details?.primaryPinCode,
+                      ]
                         .filter(Boolean)
                         .join(", ")}
                     </p>
-                    {details?.primaryPinCode && (
-                      <p>{details?.primaryPinCode}</p>
-                    )}
                   </div>
                 </div>
 
@@ -207,13 +196,11 @@ const EstimateView = ({ details }) => {
                         details?.secondaryCity,
                         details?.secondaryState,
                         details?.secondaryCountry?.name,
+                        details?.secondaryPinCode,
                       ]
                         .filter(Boolean)
                         .join(", ")}
                     </p>
-                    {details?.secondaryPinCode && (
-                      <p>{details?.secondaryPinCode}</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -232,7 +219,6 @@ const EstimateView = ({ details }) => {
               </div>
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto">
               {details?.Type === "Product" ? (
                 <table className="w-full border-collapse border border-black text-xs md:text-sm">
@@ -403,11 +389,13 @@ const EstimateView = ({ details }) => {
               )}
             </div>
 
-            {/* Total Amount in Words */}
             {details?.totalAmount > 0 && (
               <div className="flex justify-end gap-1 text-gray-500 mt-4 text-sm md:text-base">
                 <span>Total amount in words :</span>
-                <span className="font-medium capitalize">{details?.totalAmount&&`${numWords(details?.totalAmount)} only`}</span>
+                <span className="font-medium capitalize">
+                  {details?.totalAmount &&
+                    `${numWords(details?.totalAmount)} only`}
+                </span>
               </div>
             )}
           </div>

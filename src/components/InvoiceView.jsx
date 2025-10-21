@@ -7,10 +7,7 @@ import domToImage from "dom-to-image";
 import { inrCurrency } from "../common";
 
 const InvoiceView = ({ details }) => {
-  console.log("dfjkhgdskjdkjgdjkfg", details);
-
   const pdfRef = useRef();
-
   const generatePDF = async () => {
     const element = pdfRef.current;
     try {
@@ -43,7 +40,6 @@ const InvoiceView = ({ details }) => {
   return (
     <>
       <div ref={pdfRef} style={{ position: "relative" }}>
-        {/* Ribbon */}
         <div
           style={{
             position: "absolute",
@@ -60,7 +56,6 @@ const InvoiceView = ({ details }) => {
           {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
         </div>
 
-        {/* Main Container */}
         <div
           style={{
             display: "flex",
@@ -74,7 +69,6 @@ const InvoiceView = ({ details }) => {
             backgroundColor: "#ffffff",
           }}
         >
-          {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div>
@@ -85,7 +79,7 @@ const InvoiceView = ({ details }) => {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <p style={{ color: "#6b7280" }}>
+                <p style={{ fontWeight:500 }}>
                   Corpseed Ites Private Limited
                 </p>
                 <p>GSTIN/UIN : 09AAHCC4539J1ZC</p>
@@ -124,7 +118,6 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Bill To */}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <p style={{ color: "#6b7280" }}>Bill To :</p>
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -143,7 +136,6 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Ship To + Dates */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "0px" }}
@@ -185,7 +177,6 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Table */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
@@ -418,7 +409,7 @@ const InvoiceView = ({ details }) => {
                         fontWeight: 500,
                       }}
                     >
-                      {numWords(details?.totalPrice)}
+                      {numWords(details?.totalPrice)} only
                     </p>
                   </div>
                 )}
@@ -489,7 +480,7 @@ const InvoiceView = ({ details }) => {
                     // style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
-                    // style={{ border: "1px solid black", padding: "8px" }}
+                    style={{ borderRight: "1px solid black", padding: "8px" }}
                     ></td>
                   </tr>
                   {details?.govermentCode && (
@@ -725,7 +716,6 @@ const InvoiceView = ({ details }) => {
               </table>
             )}
 
-            {/* Total in Words */}
             {details?.totalAmount > 0 && (
               <div
                 style={{
@@ -737,7 +727,7 @@ const InvoiceView = ({ details }) => {
                 <p style={{ color: "#6b7280" }}>Total in words</p>
                 <p>:</p>
                 <p style={{ textTransform: "capitalize", fontWeight: 500 }}>
-                  {numWords(details?.totalAmount)}
+                  {numWords(details?.totalAmount)} only
                 </p>
               </div>
             )}
@@ -980,7 +970,6 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Notes */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
             <p style={{ fontWeight: 500 }}>Notes :</p>
             {details?.invoiceNote && (
