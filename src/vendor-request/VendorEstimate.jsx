@@ -64,7 +64,7 @@ import {
   getVendorsEstimateCount,
 } from "../toolkit/slices/vendorsSlice";
 import InvoiceView from "../components/InvoiceView";
-import { getAllProductCategoryById, getAllProductSubCategoryListByCategoryId } from "../toolkit/slices/productSlice";
+import { getAllBusinessArrangement, getAllProductCategoryById, getAllProductSubCategoryListByCategoryId } from "../toolkit/slices/productSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -275,7 +275,7 @@ const VendorEstimate = () => {
 
   const handleActionsPress = (rowItem) => {
       setRowItem(rowItem);
-      dispatch(getAllBusinessArrangement(productData?.id));
+      dispatch(getAllBusinessArrangement(rowItem?.productId));
     };
 
 
