@@ -802,7 +802,6 @@ const VendorEstimate = () => {
                         <Input
                           isRequired
                           label="GST number"
-                          isDisabled
                           maxLength={15}
                           errorMessage={error?.message || gstError}
                           isInvalid={!!error || !!gstError}
@@ -957,7 +956,6 @@ const VendorEstimate = () => {
                             startContent={<IndianRupee className="h-4 w-4" />}
                             isRequired
                             label="Actual price"
-                            errorMessage={discountError}
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
