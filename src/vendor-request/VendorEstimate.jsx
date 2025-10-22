@@ -107,7 +107,6 @@ const formSchema = () =>
   z.object({
     estimateNo: z.string().min(1, "Estimate number cannot be empty"),
     serviceName: z.string().min(1, "Service name cannot be empty"),
-    quantity: z.string().min(1, "Please quantity"),
     vendorCompanyName: z.string().min(1, "Please company name"),
     gstType: z.string().min(1, "please select gst type"),
     gstNo: z.string().min(1, "please enter gst number"),
@@ -115,6 +114,18 @@ const formSchema = () =>
     emails: z.string().min(1, "please enter email"),
     contactNo: z.string().min(1, "please enter contact number"),
     whatsappNo: z.string().min(1, "please enter whatsapp number"),
+    businessArrangmentId: z
+      .string()
+      .min(1, "please select business arrangement"),
+    productCategoryId: z.string().min(1, "please select product category"),
+    productSubCategoryId: z
+      .string()
+      .min(1, "please select product sub category"),
+    actualPrice: z.number(),
+    quantity: z.number(),
+    gstPercent: z.string().min(1, "please enter gst percent"),
+    gstAmount: z.number(),
+    totalPrice: z.number(),
     address: z.string().min(1, "please enter address"),
     country: z.string().min(1, "please select  country"),
     state: z.string().min(1, "please select state"),
@@ -137,6 +148,13 @@ const defaultValues = {
   emails: "",
   contactNo: "",
   whatsappNo: "",
+  businessArrangmentId: "",
+  productCategoryId: "",
+  productSubCategoryId: "",
+  actualPrice: 0,
+  gstPercent: "",
+  gstAmount: 0,
+  totalPrice: 0,
   address: "",
   country: "",
   state: "",
@@ -145,7 +163,7 @@ const defaultValues = {
   createDate: "",
   remarkByVendor: "",
   remark: "",
-  fileData: [""],
+  fileData: [],
 };
 
 const VendorEstimate = () => {
@@ -280,6 +298,7 @@ const VendorEstimate = () => {
 
   const handleActionsPress = (rowItem) => {
     setRowItem(rowItem);
+    setValue("serviceName", rowItem?.productName);
     dispatch(getAllBusinessArrangement(rowItem?.productId));
   };
 
@@ -484,6 +503,33 @@ const VendorEstimate = () => {
     setPage(1);
   }, []);
 
+  const actualPrice = watch("actualPrice");
+  const quantity = watch("quantity");
+  const gstPercent = watch("gstPercent");
+
+  useEffect(() => {
+    const formValues = getValues();
+    let allValues = { ...formValues };
+
+    const handleValuesChange = () => {
+      const { actualPrice = 0, quantity = 0, gstPercent = 0 } = allValues;
+
+      const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+
+      const actualPriceNum = safeNum(actualPrice);
+      const quantityNum = safeNum(quantity);
+      const gstPercentNum = safeNum(gstPercent);
+      const totalQuantityAmount = actualPriceNum * quantityNum;
+      const gstAmount = (totalQuantityAmount * gstPercentNum) / 100;
+      const totalAmount = totalQuantityAmount + gstAmount;
+      console.log("totalAmount", totalAmount);
+      setValue("gstAmount", gstAmount);
+      setValue("totalPrice", totalAmount);
+    };
+
+    handleValuesChange();
+  }, [actualPrice, quantity, gstPercent, setValue]);
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -592,6 +638,22 @@ const VendorEstimate = () => {
 
   const onSubmit = (values) => {
     values.createdById = userId;
+    values.leadId = rowItem?.leadId;
+    values.estimateId=rowItem?.id
+    values.createVendorSubDto = [
+      {
+        name: values.serviceName,
+        type: values.gstType,
+        serviceFees: 0,
+        serviceGstAmount: 0,
+        serviceGstPercent: 0,
+        quantity: values.quantity,
+        totalPrice: values.totalPrice,
+        gstAmount: values.gstAmount,
+        actualPrice: values.actualPrice,
+        productSubCategoryId: values.productSubCategoryId,
+      },
+    ];
     dispatch(createVendorsPayment(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -729,23 +791,6 @@ const VendorEstimate = () => {
                           value={String(field.value)}
                           onChange={(value) => {
                             field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="quantity"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Quality"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field?.value}
-                          onChange={(e) => {
-                            const temp = e.target.value;
-                            field.onChange(temp);
                           }}
                         />
                       )}
@@ -958,7 +1003,7 @@ const VendorEstimate = () => {
                             label="Actual price"
                             {...field}
                             onChange={(e) => {
-                              field.onChange(e.target.value);
+                              field.onChange(Number(e.target.value));
                             }}
                           />
                         );
@@ -966,21 +1011,23 @@ const VendorEstimate = () => {
                     />
 
                     <Controller
-                      name="gstCode"
+                      name="quantity"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
-                          label="HSN code"
-                          {...field}
+                          label="Quantity in kg"
+                          type="number"
+                          value={field.value}
                           onChange={(e) => {
-                            field.onChange(e);
+                            field.onChange(Number(e.target.value));
                           }}
                         />
                       )}
                     />
+
                     <Controller
-                      name="gst"
+                      name="gstPercent"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
@@ -994,21 +1041,23 @@ const VendorEstimate = () => {
                         />
                       )}
                     />
+
                     <Controller
-                      name="quantity"
+                      name="gstAmount"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
-                          label="Quantity in kg"
-                          type="number"
+                          isDisabled
+                          label="GST amount (₹)"
                           value={field.value}
                           onChange={(e) => {
-                            field.onChange(e.target.value);
+                            field.onChange(Number(e.target.value));
                           }}
                         />
                       )}
                     />
+
                     <Controller
                       name="totalPrice"
                       control={control}
@@ -1019,9 +1068,9 @@ const VendorEstimate = () => {
                           isDisabled
                           type="number"
                           startContent={<IndianRupee className="h-4 w-4" />}
-                          {...field}
+                          value={field.value}
                           onChange={(e) => {
-                            field.onChange(e.target.value);
+                            field.onChange(Number(e.target.value));
                           }}
                         />
                       )}
