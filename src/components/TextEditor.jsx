@@ -415,7 +415,7 @@ export default function TextEditor({ data, menu=true, onChange, initialData }) {
         htmlSupport: {
           allow: [
             {
-              name: /^.*$/,
+              name:/^.*$/,
               styles: true,
               attributes: true,
               classes: true,

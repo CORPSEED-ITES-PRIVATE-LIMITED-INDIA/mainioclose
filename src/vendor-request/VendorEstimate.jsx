@@ -522,7 +522,6 @@ const VendorEstimate = () => {
       const totalQuantityAmount = actualPriceNum * quantityNum;
       const gstAmount = (totalQuantityAmount * gstPercentNum) / 100;
       const totalAmount = totalQuantityAmount + gstAmount;
-      console.log("totalAmount", totalAmount);
       setValue("gstAmount", gstAmount);
       setValue("totalPrice", totalAmount);
     };
