@@ -40,6 +40,7 @@ export const columns = [
   { name: "COMPANY", uid: "companyName" },
   { name: "UNIT", uid: "unitName" },
   { name: "GST", uid: "gst" },
+  { name: "Amount", uid: "amount" },
   { name: "PROF.FEE", uid: "professionalFees" },
   { name: "GOVT.FEE", uid: "govermentfees" },
   { name: "SER.FEE", uid: "serviceCharge" },
@@ -60,9 +61,9 @@ const INITIAL_VISIBLE_COLUMNS = [
   "productName",
   "companyName",
   "gst",
+  "amount",
   "professionalFees",
-  "govermentfees",
-  "primaryContact",
+  // "primaryContact",
   "address",
   "actions",
 ];
@@ -113,9 +114,9 @@ const OrganizationEstimate = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
-      Object.values(item)?.some((val) =>
-        String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-      )
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
@@ -207,11 +208,13 @@ const OrganizationEstimate = () => {
         );
       case "companyName":
         return (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium capitalize">
               {rowData?.companyName}
             </p>
-            <span>Age : {rowData?.companyAge || "-"}</span>
+            {rowData?.companyAge && (
+              <span>{rowData?.companyAge || "-"} yrs</span>
+            )}
           </div>
         );
       case "unitName":
@@ -224,15 +227,35 @@ const OrganizationEstimate = () => {
         );
       case "gst":
         return (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-0.5">
             <span className="text-sm">{rowData?.gstNo}</span>
             <span className="text-sm">Pan : {rowData?.panNo}</span>
+          </div>
+        );
+      case "amount":
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">
+              {inrCurrency(rowData?.totalAmount || 0) || "-"}
+            </span>
+            {rowData?.gst && (
+              <span className="text-tiny text-gray-400">
+                GST : {rowData?.gst || "-"}%
+              </span>
+            )}
+            {rowData?.quantity && (
+              <span className="text-tiny text-gray-400">
+                Quantity : {rowData?.quantity || "-"} kg
+              </span>
+            )}
           </div>
         );
       case "professionalFees":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{inrCurrency(rowData?.professionalFees) || "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.professionalFees || 0) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.profesionalGst || "-"}%
             </span>
@@ -241,7 +264,9 @@ const OrganizationEstimate = () => {
       case "govermentfees":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{inrCurrency(rowData?.govermentfees)|| "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.govermentfees || 0) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.govermentGst || "-"}%
             </span>
@@ -250,7 +275,9 @@ const OrganizationEstimate = () => {
       case "serviceCharge":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{inrCurrency(rowData?.serviceCharge) || "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.serviceCharge) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.serviceGst || "-"}%
             </span>
@@ -259,7 +286,9 @@ const OrganizationEstimate = () => {
       case "otherFees":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{inrCurrency(rowData?.otherFees )|| "-"}</span>
+            <span className="font-medium">
+              {inrCurrency(rowData?.otherFees) || "-"}
+            </span>
             <span className="text-tiny text-gray-400">
               GST : {rowData?.otherGst || "-"}%
             </span>
@@ -267,7 +296,7 @@ const OrganizationEstimate = () => {
         );
       case "invoiceNote":
         return (
-          <div className="flex items-start gap-2">
+          <div className="flex items-start">
             <span className="text-xs">{rowData?.invoiceNote}</span>
           </div>
         );
@@ -526,7 +555,7 @@ const OrganizationEstimate = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[70vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

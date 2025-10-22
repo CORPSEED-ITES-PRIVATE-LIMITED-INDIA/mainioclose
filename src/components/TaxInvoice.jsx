@@ -267,7 +267,7 @@ const TaxInvoice = ({ detail }) => {
                   <th className="border border-gray-300 px-4 py-2" colSpan={2}>
                     IGST
                   </th>
-                  <th className="border border-gray-300 px-4 py-2" rowSpan={2}>
+                  <th className="border border-gray-300 px-4 py-2 text-right" rowSpan={2}>
                     Total Tax Amount (₹)
                   </th>
                 </tr>
@@ -286,13 +286,13 @@ const TaxInvoice = ({ detail }) => {
                     <td className="border border-gray-300 px-4 py-2">
                       {item.hsn}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">
+                    <td className="border border-gray-300 px-4 py-2 text-center">
                       {inrCurrency(item?.taxable)}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
                       {item.igstRate}%
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">
+                    <td className="border border-gray-300 px-4 py-2 text-center">
                       {inrCurrency(item.igstAmount)}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-right">
@@ -304,11 +304,11 @@ const TaxInvoice = ({ detail }) => {
                 {/* Total Row */}
                 <tr className="font-semibold bg-gray-100 dark:bg-gray-600">
                   <td className="border border-gray-300 px-4 py-2">Total</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">
+                  <td className="border border-gray-300 px-4 py-2 text-center">
                     {inrCurrency(totalTaxable)}
                   </td>
                   <td className="border border-gray-300 px-4 py-2">-</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">
+                  <td className="border border-gray-300 px-4 py-2 text-center">
                     {inrCurrency(totalIGST)}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-right">

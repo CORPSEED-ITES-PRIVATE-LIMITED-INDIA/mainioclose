@@ -19,7 +19,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { getVoucherByGroupLedgerId } from "../../toolkit/slices/organizationSlice";
 import { useParams } from "react-router-dom";
 
-
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "name", sortable: true },
@@ -43,8 +42,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "paymentType",
   "actions",
 ];
-
-
 
 const LedgerDetail = () => {
   const dispatch = useDispatch();
@@ -85,8 +82,10 @@ const LedgerDetail = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers?.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
@@ -111,8 +110,6 @@ const LedgerDetail = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
-
-
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -315,7 +312,7 @@ const LedgerDetail = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -344,7 +341,6 @@ const LedgerDetail = () => {
           )}
         </TableBody>
       </Table>
-
     </>
   );
 };

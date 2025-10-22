@@ -59,6 +59,7 @@ import {
   handleViewHistory,
   multiAssignedLeads,
   searchLeads,
+  transferLeadToAnotherUser,
 } from "../../toolkit/slices/leadSlice";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -180,6 +181,7 @@ const Leads = () => {
     assigneId: null,
   });
   const deleteModal = useDisclosure();
+  const multiDeleteModal = useDisclosure();
   const filterPopOver = useDisclosure();
   const actionPopOver = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -245,7 +247,7 @@ const Leads = () => {
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems]
+    return [...filteredItems];
   }, [filteredItems]);
 
   const visibleCount = sortedItems.length;
@@ -622,6 +624,7 @@ const Leads = () => {
           dispatch(getAllLeadCount(allMultiFilterData));
           dispatch(getAllLeadsForExport(allMultiFilterData));
           setSelectedKeys(new Set([]));
+          multiDeleteModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -668,6 +671,33 @@ const Leads = () => {
     allMultiFilterData,
     actionPopOver,
   ]);
+
+  const handleTransferLeads = () => {
+    let obj = {
+      leadIds: Array.from(selectedKeys),
+      updatedById: userId,
+      ...assignedLeadInfo,
+    };
+    dispatch(transferLeadToAnotherUser(obj)).then((response) => {
+      if (response?.meta?.requestStatus === "fulfilled") {
+        addToast({
+          title: "Leads transferred successfully !.",
+          color: "success",
+        });
+        dispatch(getAllLeadsByFilter(allMultiFilterData));
+        dispatch(getAllLeadCount(allMultiFilterData));
+        dispatch(getAllLeadsForExport(allMultiFilterData));
+        setSelectedKeys(new Set([]));
+        setAssignedLeadInfo({
+          statusId: null,
+          assigneId: null,
+        });
+        actionPopOver.onClose();
+      } else {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      }
+    });
+  };
 
   const handleSort = (sortBy, sortDirection) => {
     const updatedData = { ...allMultiFilterData, sortBy, sortDirection };
@@ -750,16 +780,33 @@ const Leads = () => {
                         />
                       </div>
                       <div className="flex justify-between gap-2 my-2 w-full">
-                        <Button
-                          color="danger"
-                          isDisabled={selectedKeys?.size === 0}
-                          onPress={handleDeleteMutipleLeads}
-                        >
-                          Delete
-                        </Button>
-                        <div className="flex items-center gap-2">
-                          <Button onPress={actionPopOver.onClose}>
+                        <div className="flex gap-0.5">
+                          <Button
+                            color="danger"
+                            isDisabled={selectedKeys?.size === 0}
+                            onPress={() => {
+                              multiDeleteModal.onOpen();
+                              actionPopOver.onClose();
+                            }}
+                          >
+                            Delete
+                          </Button>
+                          <Button
+                            onPress={() => {
+                              actionPopOver.onClose();
+                              setSelectedKeys(new Set([]));
+                            }}
+                          >
                             Cancel
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            onPress={handleTransferLeads}
+                            isDisabled={selectedKeys?.size === 0}
+                          >
+                            Transfer leads
                           </Button>
                           <Button
                             color="primary"
@@ -1164,6 +1211,7 @@ const Leads = () => {
     actionPopOver,
     sortedItems,
     data,
+    multiDeleteModal,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -1561,6 +1609,35 @@ const Leads = () => {
               <ModalFooter>
                 <Button onPress={onClose}>No</Button>
                 <Button color="primary" onPress={leadDeleteResponse}>
+                  Yes
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={multiDeleteModal.isOpen}
+        onOpenChange={multiDeleteModal.onOpenChange}
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete these {selectedKeys?.size} leads ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  onPress={() => {
+                    onClose();
+                    setSelectedKeys(new Set([]));
+                  }}
+                >
+                  No
+                </Button>
+                <Button color="primary" onPress={handleDeleteMutipleLeads}>
                   Yes
                 </Button>
               </ModalFooter>

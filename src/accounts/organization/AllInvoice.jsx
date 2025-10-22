@@ -44,7 +44,7 @@ export const columns = [
 ];
 
 export function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+  return s ? s.charAt(0)?.toUpperCase() + s.slice(1)?.toLowerCase() : "";
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
@@ -97,8 +97,10 @@ const AllInvoice = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        item.productName.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers?.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
@@ -122,7 +124,7 @@ const AllInvoice = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           let tempData = resp?.payload;
-          console.log("sdkgfkjsdgjksdgjhs",tempData)
+          console.log("sdkgfkjsdgjksdgjhs", tempData);
           setInvoiceDetail(tempData);
           onOpen();
         } else {
@@ -153,21 +155,11 @@ const AllInvoice = () => {
           </div>
         );
       case "service":
-        return (
-          <p className="text-sm capitalize">{rowData?.service}</p>
-        );
+        return <p className="text-sm capitalize">{rowData?.service}</p>;
       case "clientName":
-        return (
-          <p className="text-sm capitalize">
-            {rowData?.clientName}
-          </p>
-        );
+        return <p className="text-sm capitalize">{rowData?.clientName}</p>;
       case "companyName":
-        return (
-          <p className="text-sm capitalize">
-            {rowData?.companyName}
-          </p>
-        );
+        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
       case "txnAmount":
         return (
           <p className="text-sm capitalize">
@@ -341,7 +333,6 @@ const AllInvoice = () => {
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
-
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
@@ -352,7 +343,7 @@ const AllInvoice = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[70vh] overflow-scroll w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

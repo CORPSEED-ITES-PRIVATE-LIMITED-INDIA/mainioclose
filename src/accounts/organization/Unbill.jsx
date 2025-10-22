@@ -93,8 +93,10 @@ const Unbill = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        item.company.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers?.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
 
@@ -308,8 +310,6 @@ const Unbill = () => {
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
-
-  console.log("dfjkhgdskjdkjgdjkfg 11111111111111",invoiceDetail)
 
   return (
     <>

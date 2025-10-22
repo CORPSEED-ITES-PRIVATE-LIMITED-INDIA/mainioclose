@@ -85,8 +85,10 @@ const CompanyProjects = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.leadName.toLowerCase().includes(filterValue.toLowerCase())
+     filteredUsers = filteredUsers?.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
     return filteredUsers;

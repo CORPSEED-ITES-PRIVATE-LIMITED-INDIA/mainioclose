@@ -580,6 +580,17 @@ export const getAllLeadsTask = createAsyncThunk(
   }
 );
 
+export const transferLeadToAnotherUser = createAsyncThunk(
+  "transferLeadToAnotherUser",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/updateMultiTransferLead`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -635,7 +646,7 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(searchLeads.fulfilled, (state, action) => {
       state.allLeads = action.payload;
-      state.totalCount=action.payload?.length
+      state.totalCount = action.payload?.length;
       state.leadresponseStatus = "success";
     });
     builder.addCase(searchLeads.rejected, (state) => {

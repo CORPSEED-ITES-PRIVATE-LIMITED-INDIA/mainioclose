@@ -1,6 +1,5 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import numWords from "num-words";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import logo from "../assets/CORPSEED.webp";
 import dayjs from "dayjs";
@@ -8,11 +7,7 @@ import domToImage from "dom-to-image";
 import { inrCurrency } from "../common";
 
 const InvoiceView = ({ details }) => {
-
-  console.log("dfjkhgdskjdkjgdjkfg",details)
-
   const pdfRef = useRef();
-
   const generatePDF = async () => {
     const element = pdfRef.current;
     try {
@@ -45,7 +40,6 @@ const InvoiceView = ({ details }) => {
   return (
     <>
       <div ref={pdfRef} style={{ position: "relative" }}>
-        {/* Ribbon */}
         <div
           style={{
             position: "absolute",
@@ -59,10 +53,9 @@ const InvoiceView = ({ details }) => {
             borderRadius: "0 4px 4px 0",
           }}
         >
-          {details?.performaInvoice ? "Proforma Invoice" : "Invoice"}
+          {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
         </div>
 
-        {/* Main Container */}
         <div
           style={{
             display: "flex",
@@ -76,7 +69,6 @@ const InvoiceView = ({ details }) => {
             backgroundColor: "#ffffff",
           }}
         >
-          {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div>
@@ -87,9 +79,10 @@ const InvoiceView = ({ details }) => {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <p style={{ color: "#6b7280" }}>
+                <p style={{ fontWeight:500 }}>
                   Corpseed Ites Private Limited
                 </p>
+                <p>GSTIN/UIN : 09AAHCC4539J1ZC</p>
                 <p>CN U74999UP2018PTC101873</p>
                 <p>2nd floor, A-154A, A Block, sector 63</p>
                 <p>Noida, Uttar Pradesh - 2013</p>
@@ -125,39 +118,45 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Bill To */}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <p style={{ color: "#6b7280" }}>Bill To :</p>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {details?.companyName && (
-                <p style={{ fontWeight: 700 }}>{details?.companyName}</p>
+                <p style={{ fontWeight: 500 }}>{details?.companyName}</p>
               )}
               {details?.address && <p>{details?.address}</p>}
               <div style={{ display: "flex" }}>
-                {details?.city && <p>{details?.city},</p>}
-                {details?.state && <p>{details?.state},</p>}
-                {details?.country && <p>{details?.country}</p>}
+                {[
+                  ...(details?.city ? [details?.city] : []),
+                  ...(details?.state ? [details?.state] : []),
+                  ...(details?.country ? [details?.country] : []),
+                  ...(details?.primaryPinCode ? [details?.primaryPinCode] : []),
+                ].join(",")}
               </div>
-              {details?.primaryPinCode && <p>{details?.primaryPinCode}</p>}
             </div>
           </div>
 
-          {/* Ship To + Dates */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "0px" }}
             >
               <p style={{ color: "#6b7280" }}>Ship To :</p>
-              {details?.companyName && <p>{details?.companyName}</p>}
+              {details?.companyName && (
+                <p style={{ fontWeight: 500 }}>{details?.companyName}</p>
+              )}
               {details?.secondaryAddress && <p>{details?.secondaryAddress}</p>}
               <div style={{ display: "flex" }}>
-                {details?.secondaryCity && <p>{details?.secondaryCity},</p>}
-                {details?.secondaryState && <p>{details?.secondaryState},</p>}
-                {details?.secondaryCountry && (
-                  <p>{details?.secondaryCountry?.name}</p>
-                )}
+                {[
+                  ...(details?.secondaryCity ? [details?.secondaryCity] : []),
+                  ...(details?.secondaryState ? [details?.secondaryState] : []),
+                  ...(details?.secondaryCountry
+                    ? [details?.secondaryCountry?.name]
+                    : []),
+                  ...(details?.secondaryPinCode
+                    ? [details?.secondaryPinCode]
+                    : []),
+                ].join(",")}
               </div>
-              {details?.secondaryPinCode && <p>{details?.secondaryPinCode}</p>}
             </div>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
@@ -178,218 +177,290 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Table */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
             {details?.Type === "Product" ? (
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  border: "1px solid #e5e7eb",
-                  fontSize: "14px",
-                }}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
               >
-                <thead style={{ backgroundColor: "#f3f4f6" }}>
-                  <tr>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      #
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      Item and description
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      HSN
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      Rate/kg
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      Quantity (kg)
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      GST %
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      GST amount(₹)
-                    </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      Amount(₹)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
-                      1
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        padding: "8px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {details?.productName}
-                    </td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                  </tr>
-                  {details?.gstCode && (
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "14px",
+                  }}
+                >
+                  <thead style={{ backgroundColor: "#f3f4f6" }}>
                     <tr>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        #
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "left",
+                        }}
+                      >
+                        Item and description
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        HSN
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        Rate/kg
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        Quantity (kg)
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        GST %
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        GST amount(₹)
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
+                        Amount(₹)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ border: "1px solid black", padding: "8px" }}>
+                        1
+                      </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {details?.productName}
+                      </td>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
+                    </tr>
+                    {details?.gstCode && (
+                      <tr>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                          }}
+                        >
+                          Service fee
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {details?.gstCode}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {details?.actualPrice}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {details?.quantity}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {details?.gst}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {inrCurrency(
+                            (details?.actualPrice *
+                              details?.quantity *
+                              details?.gst) /
+                              100
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {inrCurrency(details?.totalPrice || 0)}
+                        </td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
+                      <td
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          fontWeight: 700,
+                        }}
                       >
-                        Service fee
+                        Total Qty. : 1
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
-                        {details?.gstCode}
-                      </td>
+                        style={{
+                          borderBottom: "1px solid black",
+                          padding: "8px",
+                        }}
+                      ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
-                        {details?.actualPrice}
-                      </td>
+                        style={{
+                          borderBottom: "1px solid black",
+                          padding: "8px",
+                        }}
+                      ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
-                        {details?.quantity}
-                      </td>
+                        style={{
+                          borderBottom: "1px solid black",
+                          padding: "8px",
+                        }}
+                      ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
-                        {details?.gst}
-                      </td>
+                        style={{
+                          borderBottom: "1px solid black",
+                          padding: "8px",
+                        }}
+                      ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
-                        {(details?.actualPrice *
-                          details?.quantity *
-                          details?.gst) /
-                          100}
-                      </td>
+                        style={{
+                          borderBottom: "1px solid black",
+                          padding: "8px",
+                        }}
+                      ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          border: "1px solid black",
+                        }}
                       >
-                        ₹{details?.totalPrice}
+                        <span style={{ fontWeight: 500 }}>
+                          {inrCurrency(Number(details?.totalPrice))}
+                        </span>
                       </td>
                     </tr>
-                  )}
-                  <tr
+                  </tbody>
+                </table>
+                {Number(details?.totalPrice) > 0 && (
+                  <div
                     style={{
-                      borderTop: "1px solid #000000",
-                      borderBottom: "1px solid #000000",
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: "4px",
+                      width: "100%",
                     }}
                   >
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
+                    <p style={{ color: "#6b7280" }}>Total in words</p>
+                    <p>:</p>
+                    <p
                       style={{
-                        border: "1px solid #e5e7eb",
-                        padding: "8px",
-                        fontWeight: 700,
+                        textTransform: "capitalize",
+                        fontWeight: 500,
                       }}
                     >
-                      Total Qty. : 1
-                    </td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        padding: "8px",
-                        display: "flex",
-                        gap: "4px",
-                      }}
-                    >
-                      <span>₹</span>
-                      <span style={{ fontWeight: 700 }}>
-                        ₹ {details?.totalPrice}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                      {numWords(details?.totalPrice)} only
+                    </p>
+                  </div>
+                )}
+              </div>
             ) : (
               <table
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  border: "1px solid #e5e7eb",
                   fontSize: "14px",
                 }}
               >
                 <thead style={{ backgroundColor: "#f3f4f6" }}>
                   <tr>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       #
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th
+                      style={{
+                        border: "1px solid black",
+                        padding: "8px",
+                        textAlign: "left",
+                      }}
+                    >
                       Item and description
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       HSN
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       Rate
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       GST %
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       GST amount
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       Amount
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td 
-                    style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    >
+                    <td style={{ border: "1px solid black", padding: "8px" }}>
                       1
                     </td>
                     <td
                       style={{
-                        // border: "1px solid #e5e7eb",
+                        // border: "1px solid black",
                         padding: "8px",
                         fontWeight: 700,
                       }}
@@ -397,82 +468,102 @@ const InvoiceView = ({ details }) => {
                       {details?.productName}
                     </td>
                     <td
-                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    // style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
-                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    // style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
-                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    // style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
-                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    // style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
-                      // style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                    style={{ borderRight: "1px solid black", padding: "8px" }}
                     ></td>
                   </tr>
                   {details?.govermentCode && (
                     <tr>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
-                      <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
+                      <td style={{ border: "1px solid black", padding: "8px" }}>
                         Government fee
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.govermentCode}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.govermentGst}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {inrCurrency(details?.govermentFees)}
                       </td>
                     </tr>
                   )}
-                  {details?.professionalCode && (
+                  {details?.profesionalCode && (
                     <tr>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
-                      <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
+                      <td style={{ border: "1px solid black", padding: "8px" }}>
                         Professional fee
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
-                        {details?.professionalCode}
+                        {details?.profesionalCode}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.profesionalGst}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {inrCurrency(Number(details?.professionalFees))}
                       </td>
@@ -481,31 +572,45 @@ const InvoiceView = ({ details }) => {
                   {details?.serviceCode && (
                     <tr>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
-                      <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
+                      <td style={{ border: "1px solid black", padding: "8px" }}>
                         Service fee
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.serviceCode}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.serviceGst}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {inrCurrency(details?.serviceCharge)}
                       </td>
@@ -514,31 +619,41 @@ const InvoiceView = ({ details }) => {
                   {details?.otherCode && (
                     <tr>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
-                      <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                      >
+                      <td style={{ border: "1px solid black", padding: "8px" }}>
                         Other fee
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.otherCode}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {details?.otherGst}
                       </td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
                       <td
-                        style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
                       >
                         {inrCurrency(details?.otherFees)}
                       </td>
@@ -551,11 +666,11 @@ const InvoiceView = ({ details }) => {
                     }}
                   >
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
                       style={{
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid black",
                         padding: "8px",
                         fontWeight: 700,
                       }}
@@ -563,22 +678,35 @@ const InvoiceView = ({ details }) => {
                       Total Qty. : 1
                     </td>
                     <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
-                    ></td>
-                    <td
-                      style={{ border: "1px solid #e5e7eb", padding: "8px" }}
+                      style={{
+                        borderBottom: "1px solid black",
+                        padding: "8px",
+                      }}
                     ></td>
                     <td
                       style={{
-                        border: "1px solid #e5e7eb",
+                        borderBottom: "1px solid black",
                         padding: "8px",
-                        fontWeight: 700,
+                      }}
+                    ></td>
+                    <td
+                      style={{
+                        borderBottom: "1px solid black",
+                        padding: "8px",
+                      }}
+                    ></td>
+                    <td
+                      style={{
+                        borderBottom: "1px solid black",
+                        padding: "8px",
+                      }}
+                    ></td>
+                    <td
+                      style={{
+                        border: "1px solid black",
+                        padding: "8px",
+                        fontWeight: 500,
+                        textAlign: "center",
                       }}
                     >
                       {inrCurrency(Number(details?.totalAmount))}
@@ -588,7 +716,6 @@ const InvoiceView = ({ details }) => {
               </table>
             )}
 
-            {/* Total in Words */}
             {details?.totalAmount > 0 && (
               <div
                 style={{
@@ -599,7 +726,9 @@ const InvoiceView = ({ details }) => {
               >
                 <p style={{ color: "#6b7280" }}>Total in words</p>
                 <p>:</p>
-                <p>{numWords(details?.totalAmount)}</p>
+                <p style={{ textTransform: "capitalize", fontWeight: 500 }}>
+                  {numWords(details?.totalAmount)} only
+                </p>
               </div>
             )}
 
@@ -610,22 +739,27 @@ const InvoiceView = ({ details }) => {
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  border: "1px solid #e5e7eb",
                   fontSize: "14px",
                 }}
               >
                 <thead style={{ backgroundColor: "#f3f4f6" }}>
                   <tr>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th
+                      style={{
+                        border: "1px solid black",
+                        padding: "8px",
+                        textAlign: "left",
+                      }}
+                    >
                       HSN
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       SGST %
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       CGST %
                     </th>
-                    <th style={{ border: "1px solid #e5e7eb", padding: "8px" }}>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
                       IGST %
                     </th>
                   </tr>
@@ -636,7 +770,7 @@ const InvoiceView = ({ details }) => {
                       <tr>
                         <td
                           style={{
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid black",
                             padding: "8px",
                           }}
                         >
@@ -644,24 +778,27 @@ const InvoiceView = ({ details }) => {
                         </td>
                         <td
                           style={{
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid black",
                             padding: "8px",
+                            textAlign: "center",
                           }}
                         >
                           0.0 %
                         </td>
                         <td
                           style={{
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid black",
                             padding: "8px",
+                            textAlign: "center",
                           }}
                         >
                           0.0 %
                         </td>
                         <td
                           style={{
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid black",
                             padding: "8px",
+                            textAlign: "center",
                           }}
                         >
                           {details?.gst}
@@ -670,36 +807,39 @@ const InvoiceView = ({ details }) => {
                     )
                   ) : (
                     <>
-                      {details?.professionalCode && (
+                      {details?.profesionalCode && (
                         <tr>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
                             }}
                           >
-                            {details?.professionalCode}
+                            {details?.profesionalCode}
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
-                            }}
-                          >
-                            0.0 %
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #e5e7eb",
-                              padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             {details?.profesionalGst}
@@ -710,7 +850,7 @@ const InvoiceView = ({ details }) => {
                         <tr>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
                             }}
                           >
@@ -718,24 +858,27 @@ const InvoiceView = ({ details }) => {
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             {details?.serviceGst}
@@ -746,7 +889,7 @@ const InvoiceView = ({ details }) => {
                         <tr>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
                             }}
                           >
@@ -754,24 +897,27 @@ const InvoiceView = ({ details }) => {
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             {details?.govermentGst}
@@ -782,7 +928,7 @@ const InvoiceView = ({ details }) => {
                         <tr>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
                             }}
                           >
@@ -790,24 +936,27 @@ const InvoiceView = ({ details }) => {
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             0.0 %
                           </td>
                           <td
                             style={{
-                              border: "1px solid #e5e7eb",
+                              border: "1px solid black",
                               padding: "8px",
+                              textAlign: "center",
                             }}
                           >
                             {details?.otherGst}
@@ -821,22 +970,14 @@ const InvoiceView = ({ details }) => {
             </div>
           </div>
 
-          {/* Notes */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <p style={{ fontWeight: 700 }}>Notes :</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+            <p style={{ fontWeight: 500 }}>Notes :</p>
+            {details?.invoiceNote && (
+              <p style={{ color: "#6b7280" }}>{details?.invoiceNote}</p>
+            )}
+            <hr style={{ margin: "1px 0" }} />
             <p style={{ color: "#6b7280" }}>
-              This Estimate & price quotation is valid for 7 calendar days from
-              the date of issue.
-            </p>
-            <p style={{ color: "#6b7280" }}>{details?.invoiceNote}</p>
-            <p style={{ color: "#6b7280" }}>
-              Remark : {details?.getRemarkForOperation}
-            </p>
-            <hr style={{ margin: "8px 0" }} />
-            <p style={{ color: "#6b7280" }}>
-              Note: Government fee and corpseed professional fee may differ
-              depending on any additional changes advised by the client in the
-              application or any changes in government policies.
+              <strong>Remark</strong> : {details?.getRemarkForOperation}
             </p>
           </div>
         </div>

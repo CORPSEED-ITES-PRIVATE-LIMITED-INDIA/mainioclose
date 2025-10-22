@@ -33,6 +33,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   getAllEstimateByUserId,
+  getEstimateByLeadId,
   getTotalCountOfEstimate,
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
@@ -203,6 +204,7 @@ const Estimate = () => {
   const [isMilestone, setIsMilestone] = useState(false);
   const [isTDS, setIsTDS] = useState(false);
   const [isProduct, setIsProduct] = useState(false);
+  const [estimateDetail, setEstimateDetail] = useState(null);
   const [paymentSelectionType, setPaymentSelectionType] =
     useState("Payment register");
   const [visibleColumns, setVisibleColumns] = useState(
@@ -263,8 +265,10 @@ const Estimate = () => {
   const filteredItems = useMemo(() => {
     let filteredData = [...data];
     if (hasSearchFilter) {
-      filteredData = filteredData.filter((item) =>
-        item?.productName?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
       );
     }
     return filteredData;
@@ -282,8 +286,22 @@ const Estimate = () => {
   }, [sortDescriptor, filteredItems]);
 
   const handleViewEstimate = (rowData) => {
-    setRowItem(rowData);
-    viewModal.onOpen();
+    dispatch(getEstimateByLeadId(rowData?.leadId))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setEstimateDetail(data);
+          viewModal.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "There is Some Issue in estimate", color: "danger" })
+      );
   };
 
   useEffect(() => {
@@ -1602,7 +1620,7 @@ const Estimate = () => {
         </ModalContent>
       </Modal>
       <Modal
-        size="4xl"
+        size="5xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={viewModal.isOpen}
@@ -1614,7 +1632,7 @@ const Estimate = () => {
             <>
               <ModalHeader>Estimate</ModalHeader>
               <ModalBody className="max-h-[70vh] overflow-auto">
-                <InvoiceView details={rowItem} />
+                <InvoiceView details={estimateDetail} />
               </ModalBody>
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>
