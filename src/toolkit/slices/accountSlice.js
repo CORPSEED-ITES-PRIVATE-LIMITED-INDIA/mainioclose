@@ -138,7 +138,7 @@ export const getAllVendorsPaymentCountForAccounts = createAsyncThunk(
   "getAllVendorsPaymentCountForAccounts",
   async (status) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAccount&status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAccount?status=${status}`
     );
     return response.data;
   }

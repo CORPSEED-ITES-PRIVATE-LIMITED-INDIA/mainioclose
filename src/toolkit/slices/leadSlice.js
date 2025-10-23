@@ -235,9 +235,9 @@ export const deleteLeadContact = createAsyncThunk(
 
 export const getAllEstimateByUserId = createAsyncThunk(
   "getAllEstimateByUserId",
-  async (id) => {
+  async ({userId,page,size}) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateByUserId?userId=${id}`
+      `/leadService/api/v1/leadEstimate/getEstimateByUserId?userId=${userId}&page=${page}&size=${size}`
     );
     return response.data;
   }

@@ -36,8 +36,6 @@ import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import {
   createVendorsPayment,
-  getAllVendorsPaymentCount,
-  getAllVendorsPaymentList,
 } from "../toolkit/slices/accountSlice";
 import TaxInvoice from "../components/TaxInvoice";
 import { formatGSTInput, inrCurrency } from "../common";
@@ -72,7 +70,7 @@ import {
 
 const columns = [
   { name: "ID", uid: "id" },
-  { name: "PRODUCT NAME", uid: "productName", sortable: true },
+  { name: "PRODUCT NAME", uid: "productName" },
   { name: "COMPANY", uid: "companyName" },
   { name: "UNIT NAME", uid: "unitName" },
   { name: "CREATED DATE", uid: "createDate" },

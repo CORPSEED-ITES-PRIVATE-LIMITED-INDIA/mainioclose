@@ -21,6 +21,7 @@ import UserHistory from "./users/UserHistory";
 import UserManagerApproval from "./users/UserManagerApproval";
 import DeactiveUserList from "./users/DeactiveUserList";
 import EstimatePreview from "./components/EstimatePreview";
+import VendorPaymentApproval from "./admin/VendorPaymentApproval";
 
 function App() {
   return (
@@ -59,6 +60,8 @@ function App() {
             <Route path="users/deactiveUsersList" element={<DeactiveUserList />} />
             <Route path="users/approvalList" element={<UserManagerApproval />} />
             <Route path="users/usersList/:currentUserId/userHistory" element={<UserHistory />} />
+
+            <Route path="admin/vendorPaymentApproval" element={<VendorPaymentApproval />} />
             {ProcurementRouting()}
 
             {/* Settings */}

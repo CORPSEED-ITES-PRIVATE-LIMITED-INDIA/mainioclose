@@ -250,7 +250,13 @@ const Estimate = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllEstimateByUserId(userId));
+    dispatch(
+      getAllEstimateByUserId({
+        userId,
+        page: filteration?.page,
+        size: filteration?.size,
+      })
+    );
     dispatch(getTotalCountOfEstimate(userId));
     dispatch(getAllUrlList());
   }, [dispatch, userId]);
