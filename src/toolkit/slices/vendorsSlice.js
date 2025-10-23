@@ -206,6 +206,16 @@ export const updatePaymentForVendorPayment = createAsyncThunk(
   }
 );
 
+export const getVendorPaymentHistory = createAsyncThunk(
+  "getVendorPaymentHistory",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterHistoryById?id=${id}`
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -220,6 +230,7 @@ const VendorsSlice = createSlice({
     vendorsExportData: [],
     vendorEstimateList: [],
     vendorEstimateCount: 0,
+    vendorPaymentHistory: [],
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -247,14 +258,14 @@ const VendorsSlice = createSlice({
       state.singleCategoryDetail = {};
     });
 
-    builder.addCase(getVendorDetailList.pending, (state, action) => {
+    builder.addCase(getVendorDetailList.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getVendorDetailList.fulfilled, (state, action) => {
       state.loading = "success";
       state.vendorsList = action?.payload;
     });
-    builder.addCase(getVendorDetailList.rejected, (state, action) => {
+    builder.addCase(getVendorDetailList.rejected, (state) => {
       state.loading = "rejected";
       state.vendorsList = [];
     });
@@ -267,7 +278,7 @@ const VendorsSlice = createSlice({
       state.totalVendorRequestCount = action?.payload?.totalItems;
       state.allVendorsRequestList = action?.payload?.vendorsRequests;
     });
-    builder.addCase(getAllVendorsRequest.rejected, (state, action) => {
+    builder.addCase(getAllVendorsRequest.rejected, (state) => {
       state.loading = "rejected";
       state.totalVendorRequestCount = 0;
       state.allVendorsRequestList = [];
@@ -281,7 +292,7 @@ const VendorsSlice = createSlice({
       state.totalVendorRequestCount = action?.payload?.totalItems;
       state.allVendorsRequestList = action?.payload?.vendorsRequests;
     });
-    builder.addCase(searchInVendorsList.rejected, (state, action) => {
+    builder.addCase(searchInVendorsList.rejected, (state) => {
       state.loading = "rejected";
       state.totalVendorRequestCount = 0;
       state.allVendorsRequestList = [];
@@ -299,18 +310,18 @@ const VendorsSlice = createSlice({
       state.vendorsStatus = [];
     });
 
-    builder.addCase(getvendorHistoryByLeadId.pending, (state, action) => {
+    builder.addCase(getvendorHistoryByLeadId.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getvendorHistoryByLeadId.fulfilled, (state, action) => {
       state.loading = "success";
       state.singleVendorHistoryList = action?.payload;
     });
-    builder.addCase(getvendorHistoryByLeadId.rejected, (state, action) => {
+    builder.addCase(getvendorHistoryByLeadId.rejected, (state) => {
       state.loading = "rejected";
     });
 
-    builder.addCase(vendorsExportReportFilteration.pending, (state, action) => {
+    builder.addCase(vendorsExportReportFilteration.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(
@@ -325,7 +336,7 @@ const VendorsSlice = createSlice({
       state.vendorsExportData = [];
     });
 
-    builder.addCase(getAllVendorsEstimate.pending, (state, action) => {
+    builder.addCase(getAllVendorsEstimate.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllVendorsEstimate.fulfilled, (state, action) => {
@@ -337,7 +348,7 @@ const VendorsSlice = createSlice({
       state.vendorEstimateList = [];
     });
 
-    builder.addCase(getVendorsEstimateCount.pending, (state, action) => {
+    builder.addCase(getVendorsEstimateCount.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getVendorsEstimateCount.fulfilled, (state, action) => {
@@ -347,6 +358,18 @@ const VendorsSlice = createSlice({
     builder.addCase(getVendorsEstimateCount.rejected, (state) => {
       state.loading = "rejected";
       state.vendorEstimateCount = 0;
+    });
+
+    builder.addCase(getVendorPaymentHistory.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorPaymentHistory.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorPaymentHistory = action?.payload;
+    });
+    builder.addCase(getVendorPaymentHistory.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorPaymentHistory = [];
     });
   },
 });

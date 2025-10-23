@@ -35,11 +35,11 @@ import { useParams } from "react-router-dom";
 
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "UNBILL NO.", uid: "unbillNo", sortable: true },
+  { name: "ESTIMATE NO.", uid: "estimateNo", sortable: true },
   { name: "SERVICE", uid: "service" },
-  { name: "CLIENT", uid: "client" },
+  { name: "STATUS", uid: "status" },
   { name: "COMPANY", uid: "company" },
-  { name: "TXN. AMOUNT", uid: "txnAmount" },
+  { name: "AMOUNT", uid: "amount" },
   { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -50,11 +50,11 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
-  "unbillNo",
+  "estimateNo",
   "service",
-  "client",
+  "status",
   "company",
-  "txnAmount",
+  "amount",
   "addedBy",
   "actions",
 ];
@@ -157,23 +157,31 @@ const VendorPayments = () => {
             {dayjs(rowData?.date).format("DD-MM-YYYY")}
           </p>
         );
-      case "unbillNo":
-        return <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>;
+      case "estimateNo":
+        return <p className="text-sm capitalize">{rowData?.estimateNo}</p>;
       case "service":
-        return <p className="text-sm capitalize">{rowData?.productName}</p>;
+        return <p className="text-sm capitalize">{rowData?.serviceName}</p>;
       case "company":
         return <p className="text-sm capitalize">{rowData?.company}</p>;
-      case "client":
+      case "status":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.clientName}</p>
+            <p className="text-sm capitalize">{rowData?.status}</p>
           </div>
         );
-      case "txnAmount":
+      case "amount":
         return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.txnAmount)}
-          </p>
+          <div className="flex flex-col">
+            <p className="text-sm capitalize">
+              Paid : {inrCurrency(rowData?.totalPaidAmount)}
+            </p>
+            <p className="text-sm capitalize">
+              Due : {inrCurrency(rowData?.totalDueAmount)}
+            </p>
+            <p className="text-sm capitalize">
+              Total : {inrCurrency(rowData?.totalAmount)}
+            </p>
+          </div>
         );
       case "addedBy":
         return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
@@ -392,7 +400,7 @@ const VendorPayments = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] overflow-scroll w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
