@@ -20,6 +20,7 @@ import {
   ModalContent,
   ModalHeader,
   addToast,
+  Chip,
 } from "@heroui/react";
 import {
   ChevronDown,
@@ -267,7 +268,19 @@ const VendorPayments = () => {
       case "status":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.status}</p>
+            <Chip
+              className="text-sm capitalize"
+              size="sm"
+              color={
+                rowData?.status === "approved"
+                  ? "success"
+                  : rowData?.status === "disapproved"
+                    ? "danger"
+                    : "default"
+              }
+            >
+              {rowData?.status}
+            </Chip>
           </div>
         );
       case "amount":
