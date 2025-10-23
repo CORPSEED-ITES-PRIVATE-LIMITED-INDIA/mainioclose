@@ -324,7 +324,7 @@ const BusinessActivity = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] w-full",
+          wrapper: "max-h-[70vh] w-full",
           table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
