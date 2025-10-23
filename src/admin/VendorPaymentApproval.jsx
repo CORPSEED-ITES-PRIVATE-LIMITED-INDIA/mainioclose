@@ -20,55 +20,19 @@ import {
   ModalContent,
   ModalHeader,
   addToast,
+  Chip,
 } from "@heroui/react";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  IndianRupee,
-  Percent,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
-import {
-  getAllVendorsPaymentCountForAccounts,
-  getAllVendorsPaymentListForAccounts,
-  updateVendorPaymentStatus,
-} from "../toolkit/slices/accountSlice";
 import TaxInvoice from "../components/TaxInvoice";
 import { inrCurrency } from "../common";
 import { useParams } from "react-router-dom";
-import { getAllUrlList } from "../toolkit/slices/commonSlice";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
-import { updateVendorPaymentFromAccounts } from "../toolkit/slices/vendorsSlice";
-import NewSelect from "../components/NewSelect";
-import FileUploader from "../components/FileUploader";
-
-const formSchema = () =>
-  z.object({
-    serviceName: z.string().min(1, "Service name cannot be empty"),
-    actualAmount: z.number(),
-    gst: z.string().min(1, "please enter gst percent"),
-    gstAmount: z.number(),
-    tdsPercent: z.string().min(1, "please enter gst percent"),
-    tdsAmount: z.number(),
-    totalAmount: z.number(),
-    document: z.string().min(1, "please upload document"),
-  });
-
-const defaultValues = {
-  serviceName: "",
-  actualAmount: 0,
-  gst: "",
-  gstAmount: 0,
-  tdsPercent: "",
-  tdsAmount: 0,
-  totalAmount: 0,
-  document: "",
-};
+import {
+  getVendorPaymentCountInAdmin,
+  getVendorPaymentRegisterInAdmin,
+} from "../toolkit/slices/vendorsSlice";
+import { updateVendorPaymentStatus } from "../toolkit/slices/accountSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -96,18 +60,14 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const VendorPayments = () => {
+const VendorPaymentApproval = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
-  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const invoiceModal = useDisclosure();
-  const data = useSelector(
-    (state) => state.account.vendorsPaymentListForAccount
-  );
+  const data = useSelector((state) => state.vendors.vendorPaymentListForAdmin);
   const count = useSelector(
-    (state) => state.account.vendorsPaymentCountForAccount
+    (state) => state.vendors.vendorPaymentCountForAdmin
   );
-  const urlList = useSelector((state) => state.common.urlList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -115,37 +75,19 @@ const VendorPayments = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+    column: "estimateNo",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
   const [status, setStatus] = useState("all");
-  const [rowItems, setRowItems] = useState(null);
 
   useEffect(() => {
     dispatch(
-      getAllVendorsPaymentListForAccounts({ page, size: rowsPerPage, status })
+      getVendorPaymentRegisterInAdmin({ page, size: rowsPerPage, status })
     );
-    dispatch(getAllVendorsPaymentCountForAccounts(status));
+    dispatch(getVendorPaymentCountInAdmin(status));
   }, [dispatch, page, rowsPerPage, status]);
-
-  useEffect(() => {
-    dispatch(getAllUrlList());
-  }, []);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    getValues,
-    setValue,
-    watch,
-  } = useForm({
-    resolver: zodResolver(formSchema()),
-    defaultValues,
-  });
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -157,6 +99,7 @@ const VendorPayments = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
+
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
@@ -180,66 +123,23 @@ const VendorPayments = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const handleSetRowData = (rowData) => {
-    onOpen();
-    setRowItems(rowData);
-    setValue("serviceName", rowData?.serviceName || "");
-  };
-
-  const actualAmount = watch("actualAmount");
-  const gst = watch("gst");
-  const tdsPercent = watch("tdsPercent");
-
-  useEffect(() => {
-    const formValues = getValues();
-    let allValues = { ...formValues };
-
-    const handleValuesChange = () => {
-      const { actualAmount = 0, gst = 0, tdsPercent = 0 } = allValues;
-
-      const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
-
-      const actualNumAmount = safeNum(actualAmount);
-      const gstPercentNum = safeNum(gst);
-      const tdsPercentNum = safeNum(tdsPercent);
-      const gstAmount = (actualNumAmount * gstPercentNum) / 100;
-      const tdsAmount = (actualNumAmount * tdsPercentNum) / 100;
-      const totalAmount = actualNumAmount + gstAmount + tdsAmount;
-      setValue("gstAmount", gstAmount);
-      setValue("tdsAmount", tdsAmount);
-      setValue("totalAmount", totalAmount);
-    };
-
-    handleValuesChange();
-  }, [actualAmount, gst, tdsPercent, setValue]);
-
-  const handleOnSubmit = (values) => {
+  const handleActionPayments = (paymentStatus, rowItem) => {
     const data = {
-      createBy: userId,
-      leadId: rowItems?.leadId,
-      status: "approved",
-      vendorPaymentId: rowItems?.id,
-      estimateId: rowItems?.estimateId,
-      ...values,
+      currentUserId: userId,
+      id: rowItem?.id,
+      status: paymentStatus,
     };
-    dispatch(updateVendorPaymentFromAccounts(data))
+    dispatch(updateVendorPaymentStatus(data))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: `Vandor payment approved successfully !.`,
+            title: `Vandor payment ${paymentStatus} successfully !.`,
             color: "success",
           });
-          onClose();
-          reset(defaultValues);
-          setRowItems(null);
           dispatch(
-            getAllVendorsPaymentListForAccounts({
-              page,
-              size: rowsPerPage,
-              status,
-            })
+            getVendorPaymentRegisterInAdmin({ page, size: rowsPerPage, status })
           );
-          dispatch(getAllVendorsPaymentCountForAccounts(status));
+          dispatch(getVendorPaymentCountInAdmin(status));
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -267,7 +167,19 @@ const VendorPayments = () => {
       case "status":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.status}</p>
+            <Chip
+              className="text-sm capitalize"
+              size="sm"
+              color={
+                rowData?.status === "approved"
+                  ? "success"
+                  : rowData?.status === "disapproved"
+                    ? "danger"
+                    : "default"
+              }
+            >
+              {rowData?.status}
+            </Chip>
           </div>
         );
       case "amount":
@@ -302,7 +214,7 @@ const VendorPayments = () => {
                 <DropdownItem
                   key="approved"
                   onPress={() => {
-                    handleSetRowData(rowData);
+                    handleActionPayments("approved", rowData);
                   }}
                 >
                   Approved
@@ -561,180 +473,8 @@ const VendorPayments = () => {
           )}
         </ModalContent>
       </Modal>
-
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size="5xl"
-        placement="top-center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Payment approval details
-              </ModalHeader>
-              <ModalBody>
-                <form
-                  onSubmit={handleSubmit(handleOnSubmit)}
-                  className="flex flex-col gap-4"
-                >
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="serviceName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          isRequired
-                          isDisabled
-                          label="Service name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          data={urlList || []}
-                          labelKey="urlsName"
-                          valueKey="urlsName"
-                          value={String(field.value)}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="actualAmount"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => {
-                        return (
-                          <Input
-                            type="number"
-                            startContent={<IndianRupee className="h-4 w-4" />}
-                            isRequired
-                            label="Actual amount"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value));
-                            }}
-                          />
-                        );
-                      }}
-                    />
-
-                    <Controller
-                      name="gst"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="GST %"
-                          endContent={<Percent className="h-4 w-4" />}
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="gstAmount"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          isDisabled
-                          label="GST amount (₹)"
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(Number(e.target.value));
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="tdsPercent"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="TDS %"
-                          endContent={<Percent className="h-4 w-4" />}
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="tdsAmount"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          isDisabled
-                          label="TDS amount (₹)"
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(Number(e.target.value));
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="totalAmount"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Total amount"
-                          isDisabled
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                          }}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="document"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <FileUploader
-                          isRequired
-                          label="Document attachement"
-                          value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
     </>
   );
 };
 
-export default VendorPayments;
+export default VendorPaymentApproval;

@@ -216,6 +216,37 @@ export const getVendorPaymentHistory = createAsyncThunk(
   }
 );
 
+export const updateVendorPaymentFromAccounts = createAsyncThunk(
+  "updateVendorPaymentFromAccounts",
+  async (data) => {
+    const response = await api.put(
+      `/accountService/api/v1/paymentRegister/addAmountByAccountTeam`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const getVendorPaymentRegisterInAdmin = createAsyncThunk(
+  "getVendorPaymentRegisterInAdmin",
+  async ({ page, size, status }) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterForAdmin?page=${page}&size=${size}&status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getVendorPaymentCountInAdmin = createAsyncThunk(
+  "getVendorPaymentCountInAdmin",
+  async (status) => {
+    const response = await api.get(
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAdmin?status=${status}`
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -231,6 +262,8 @@ const VendorsSlice = createSlice({
     vendorEstimateList: [],
     vendorEstimateCount: 0,
     vendorPaymentHistory: [],
+    vendorPaymentListForAdmin: [],
+    vendorPaymentCountForAdmin: 0,
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -370,6 +403,30 @@ const VendorsSlice = createSlice({
     builder.addCase(getVendorPaymentHistory.rejected, (state) => {
       state.loading = "rejected";
       state.vendorPaymentHistory = [];
+    });
+
+    builder.addCase(getVendorPaymentRegisterInAdmin.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorPaymentRegisterInAdmin.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorPaymentListForAdmin = action?.payload;
+    });
+    builder.addCase(getVendorPaymentRegisterInAdmin.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorPaymentListForAdmin = [];
+    });
+
+    builder.addCase(getVendorPaymentCountInAdmin.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorPaymentCountInAdmin.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorPaymentCountForAdmin = action?.payload;
+    });
+    builder.addCase(getVendorPaymentCountInAdmin.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorPaymentCountForAdmin =0;
     });
   },
 });

@@ -162,6 +162,20 @@ export const navItems = [
     ],
   },
   {
+    title: "Admin approvals",
+    icon: "User2",
+    url: "/admin",
+    key: "admin",
+    children: [
+      {
+        title: "Vendor payment",
+        icon: "",
+        url: "admin/vendorPaymentApproval",
+        key: "vendorPaymentApproval",
+      },
+    ],
+  },
+  {
     title: "Quality",
     icon: "FlaskConical",
     url: "/quality",
