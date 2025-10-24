@@ -151,7 +151,7 @@ const AllInvoice = () => {
       case "invoiceNo":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{`INV000${rowData?.invoiceNo}`}</p>
+            <p className="text-sm capitalize">{rowData?.invoiceNo}</p>
           </div>
         );
       case "service":

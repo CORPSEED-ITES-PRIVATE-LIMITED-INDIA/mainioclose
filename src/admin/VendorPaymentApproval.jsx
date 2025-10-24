@@ -407,7 +407,7 @@ const VendorPaymentApproval = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
-        Vendor's payment list
+        Vendor's payment approval list
       </h1>
       <Table
         isHeaderSticky

@@ -294,17 +294,17 @@ const PaymentRegister = () => {
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2 items-center">
                   <Mail className="w-4 h-4" />
-                  <span>rahul@121.com</span>
+                  <span>{rowData?.contactEmails}</span>
                 </div>
                 <div className="flex gap-2 items-center">
                   <Phone className="w-4 h-4" />
-                  <span>7586421538</span>
+                  <span>{rowData?.contactNo}</span>
                 </div>
               </div>
             }
           >
             <p className="text-sm font-medium capitalize">
-              {rowData?.client || "Rahul"}
+              {rowData?.contactName}
             </p>
           </Tooltip>
         );
