@@ -415,7 +415,7 @@ const VendorPayments = () => {
                   { label: "All", uid: "all" },
                   { label: "Initiated", uid: "initiated" },
                   { label: "Approved", uid: "approved" },
-                  { label: "Disapproved", uid: "disapproved" },
+                  // { label: "Disapproved", uid: "disapproved" },
                 ].map((status) => (
                   <DropdownItem key={status.uid} className="capitalize">
                     {capitalize(status.label)}
