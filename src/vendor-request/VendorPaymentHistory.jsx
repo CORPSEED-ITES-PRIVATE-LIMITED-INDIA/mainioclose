@@ -19,13 +19,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { getVendorPaymentHistory } from "../toolkit/slices/vendorsSlice";
+import { inrCurrency } from "../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "CREATED DATE", uid: "createdDate", sortable: true },
-  { name: "CREATED BY", uid: "createdBy" },
-  { name: "EVENT", uid: "event" },
-  { name: "DESCRIPTION", uid: "description" },
+  { name: "CREATED DATE", uid: "createdDate" },
+  { name: "SERVICE", uid: "serviceName" },
+  { name: "CREATED BY", uid: "createByName" },
+  { name: "GST", uid: "gst" },
+  { name: "TDS", uid: "tds" },
+  { name: "AMOUNT", uid: "amount" },
 ];
 
 export function capitalize(s) {
@@ -35,9 +38,11 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "createdDate",
-  "createdBy",
-  "event",
-  "description",
+  "serviceName",
+  "createByName",
+  "gst",
+  "tds",
+  "amount",
 ];
 
 const VendorPaymentHistory = () => {
@@ -54,7 +59,7 @@ const VendorPaymentHistory = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+    column: "createDate",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
@@ -111,6 +116,39 @@ const VendorPaymentHistory = () => {
         return (
           <div className="flex flex-col">
             <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY, HH:mm A")}</p>
+          </div>
+        );
+      case "serviceName":
+        return (
+          <div className="flex flex-col">
+            <p>{rowData?.serviceName}</p>
+          </div>
+        );
+      case "createByName":
+        return (
+          <div className="flex flex-col">
+            <p>{rowData?.createByName}</p>
+          </div>
+        );
+      case "gst":
+        return (
+          <div className="flex flex-col">
+            <p>GST % : {rowData?.gst || 0} %</p>
+            <p>Amount : {inrCurrency(rowData?.gstAmount || 0)}</p>
+          </div>
+        );
+      case "tds":
+        return (
+          <div className="flex flex-col">
+            <p>TDS % : {rowData?.tdsPercent || 0} %</p>
+            <p>Amount : {inrCurrency(rowData?.tdsAmount) || 0}</p>
+          </div>
+        );
+      case "amount":
+        return (
+          <div className="flex flex-col">
+            <p>Actual: {inrCurrency(rowData?.actualAmount || 0)} %</p>
+            <p>Total : {inrCurrency(rowData?.totalAmount || 0)}</p>
           </div>
         );
       default:
@@ -255,7 +293,9 @@ const VendorPaymentHistory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Payment history list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Payment history list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

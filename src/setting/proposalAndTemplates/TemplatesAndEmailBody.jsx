@@ -20,28 +20,17 @@ import {
   ModalBody,
   addToast,
   ModalFooter,
-  Chip,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  addStatusInDepartment,
-  createDepartment,
-  createDesiginationByDepartmentId,
   createProposalTemplate,
   editProposalAndEmailTemplate,
-  getAllDepartment,
-  getAllDesiginations,
   getAllProposalAndEmailTemplates,
-  getAllStatusData,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  createAuthDepartment,
-  createDesiginationByDepartment,
-} from "../../toolkit/slices/authSlice";
 import TextEditor from "../../components/TextEditor";
 
 const formSchema = z.object({

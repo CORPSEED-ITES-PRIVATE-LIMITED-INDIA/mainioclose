@@ -35,9 +35,7 @@ import dayjs from "dayjs";
 import {
   getAllVendorsPaymentCountForAccounts,
   getAllVendorsPaymentListForAccounts,
-  updateVendorPaymentStatus,
 } from "../toolkit/slices/accountSlice";
-import TaxInvoice from "../components/TaxInvoice";
 import { inrCurrency } from "../common";
 import { useParams } from "react-router-dom";
 import { getAllUrlList } from "../toolkit/slices/commonSlice";
@@ -331,13 +329,13 @@ const VendorPayments = () => {
                     handleSetRowData(rowData);
                   }}
                 >
-                  Approved
+                  Add payment
                 </DropdownItem>
                 <DropdownItem
-                  key="disapproved"
-                  onPress={() => handleActionPayments("disapproved", rowData)}
+                  key="history"
+                  href={`erp/${userId}/accounts/vendorsPayment/${rowData?.id}/paymentHistory`}
                 >
-                  Disapproved
+                  History
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>

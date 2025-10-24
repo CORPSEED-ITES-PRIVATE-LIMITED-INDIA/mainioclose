@@ -23,6 +23,7 @@ import VoucherType from "../accounts/organization/settings/VoucherType";
 import Statutory from "../accounts/organization/settings/Statutory";
 import OrganizationEstimate from "../accounts/organization/OrganizationEstimate";
 import VendorPayments from "../accounts/VendorPayments";
+import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -36,6 +37,10 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
       <Route path="accounts/vendorsPayment" element={<VendorPayments />} />
+      <Route
+        path="accounts/vendorsPayment/:paymentId/paymentHistory"
+        element={<VendorPaymentHistory />}
+      />
 
       <Route path="accounts/organizations" element={<Organizations />}>
         <Route index element={<OrganizationDetail />} />
