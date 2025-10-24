@@ -441,15 +441,15 @@ const TemplatesAndEmailBody = () => {
         classNames={{
           wrapper: "max-h-[68vh]",
         }}
-        selectedKeys={selectedKeys}
+        // selectedKeys={selectedKeys}
         selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={(e) => {
-          let rowKeys = Array.from(e);
-          setSelectedKeys(rowKeys);
-        }}
+        // onSelectionChange={(e) => {
+        //   let rowKeys = Array.from(e);
+        //   setSelectedKeys(rowKeys);
+        // }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -489,7 +489,7 @@ const TemplatesAndEmailBody = () => {
                   ? "Update template"
                   : "Create templates and email body"}
               </ModalHeader>
-              <ModalBody className="max-h-[65vh] overflow-auto">
+              <ModalBody className="max-h-[75vh] overflow-auto">
                 <form
                   onSubmit={handleSubmit(handleFinish)}
                   className="flex flex-col gap-4"
