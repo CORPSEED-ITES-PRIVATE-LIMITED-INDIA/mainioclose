@@ -72,13 +72,14 @@ const defaultValues = {
 };
 
 export const columns = [
-  { name: "DATE", uid: "date" },
+  { name: "PAYMENT DATE", uid: "paymentDate" },
   { name: "ESTIMATE NO.", uid: "estimateNo" },
   { name: "SERVICE", uid: "service" },
   { name: "STATUS", uid: "status" },
   { name: "COMPANY", uid: "company" },
   { name: "AMOUNT", uid: "amount" },
-  { name: "ADDED BY", uid: "addedBy" },
+  { name: "APPROVED BY", uid: "approvedBy" },
+  { name: "APPROVE DATE", uid: "approveDate" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -87,13 +88,14 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "date",
+  "paymentDate",
   "estimateNo",
   "service",
   "status",
   "company",
   "amount",
-  "addedBy",
+  "approvedBy",
+  "approveDate",
   "actions",
 ];
 
@@ -101,7 +103,6 @@ const VendorPayments = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
-  const invoiceModal = useDisclosure();
   const data = useSelector(
     (state) => state.account.vendorsPaymentListForAccount
   );
@@ -253,18 +254,21 @@ const VendorPayments = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "date":
-        return (
+      case "paymentDate":
+        return rowData?.paymentDate ? (
           <p className="text-sm capitalize">
-            {dayjs(rowData?.date).format("DD-MM-YYYY")}
+            {dayjs(rowData?.paymentDate).format("DD-MM-YYYY")}
           </p>
+        ) : (
+          "DD-MM-YYYY"
         );
+
       case "estimateNo":
         return <p className="text-sm capitalize">{rowData?.estimateNo}</p>;
       case "service":
         return <p className="text-sm capitalize">{rowData?.serviceName}</p>;
       case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
+        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
       case "status":
         return (
           <div className="flex flex-col gap-2">
@@ -297,8 +301,20 @@ const VendorPayments = () => {
             </p>
           </div>
         );
-      case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
+      case "approvedBy":
+        return (
+          <p className="text-sm capitalize">
+            {rowData?.approvedById?.fullName}
+          </p>
+        );
+      case "approveDate":
+        return rowData?.approveDate ? (
+          <p className="text-sm capitalize">
+            {dayjs(rowData?.approveDate).format("DD-MM-YYYY")}
+          </p>
+        ) : (
+          "DD-MM-YYYY"
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -309,9 +325,6 @@ const VendorPayments = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="view" onPress={invoiceModal.onOpen}>
-                  View
-                </DropdownItem>
                 <DropdownItem
                   key="approved"
                   onPress={() => {
@@ -546,34 +559,6 @@ const VendorPayments = () => {
           )}
         </TableBody>
       </Table>
-      <Modal
-        isOpen={invoiceModal.isOpen}
-        onOpenChange={invoiceModal.onOpenChange}
-        size="5xl"
-        placement="top-center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Tax invoice
-              </ModalHeader>
-              <ModalBody>
-                <TaxInvoice />
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
 
       <Modal
         isOpen={isOpen}

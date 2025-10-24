@@ -259,7 +259,7 @@ const Estimate = () => {
     );
     dispatch(getTotalCountOfEstimate(userId));
     dispatch(getAllUrlList());
-  }, [dispatch, userId]);
+  }, [dispatch, userId,filteration]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
