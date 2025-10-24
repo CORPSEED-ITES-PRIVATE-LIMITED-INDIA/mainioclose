@@ -322,6 +322,16 @@ export const getAllUrlCount = createAsyncThunk("getTotalUrlCount", async () => {
   return response.data;
 });
 
+export const searchLeadUrlList = createAsyncThunk(
+  "searchLeadUrlList",
+  async (name) => {
+    const response = await api.get(
+      `/leadService/api/v1/urls/getGlobalSearchUrls?name=${name}`
+    );
+    return response.data;
+  }
+);
+
 export const createUrl = createAsyncThunk("createUrl", async (data) => {
   const createLeadUrl = await api.post(
     `/leadService/api/v1/urls/createUrls`,
@@ -408,6 +418,38 @@ export const createDesigination = createAsyncThunk(
   }
 );
 
+export const getAllProposalAndEmailTemplates = createAsyncThunk(
+  "getAllProposalAndEmailTemplates",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`
+    );
+    return response.data;
+  }
+);
+
+export const createProposalTemplate = createAsyncThunk(
+  "createProposalTemplate",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/leadEstimate/createProposalTempalte`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const editProposalAndEmailTemplate = createAsyncThunk(
+  "editProposalAndEmailTemplate",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/leadEstimate/editProposalTempalte`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -427,6 +469,7 @@ export const SettingSlice = createSlice({
     urlCount: 0,
     departmentList: [],
     designationList: [],
+    templateAndMailList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -487,7 +530,7 @@ export const SettingSlice = createSlice({
     builder.addCase(searchProducts.fulfilled, (state, action) => {
       state.loading = "success";
       state.productList = action.payload;
-      state.productListCount=action?.payload?.length
+      state.productListCount = action?.payload?.length;
     });
     builder.addCase(searchProducts.rejected, (state) => {
       state.loading = "rejected";
@@ -586,6 +629,17 @@ export const SettingSlice = createSlice({
       state.loading = "rejected";
     });
 
+    builder.addCase(searchLeadUrlList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchLeadUrlList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.urlsList = action.payload;
+    });
+    builder.addCase(searchLeadUrlList.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
     builder.addCase(getAllUrlCount.pending, (state) => {
       state.loading = "pending";
     });
@@ -616,6 +670,22 @@ export const SettingSlice = createSlice({
       state.designationList = action.payload;
     });
     builder.addCase(getAllDesiginations.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllProposalAndEmailTemplates.pending, (state) => {
+      state.templateAndMailList = [];
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllProposalAndEmailTemplates.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.templateAndMailList = action?.payload;
+      }
+    );
+    builder.addCase(getAllProposalAndEmailTemplates.rejected, (state) => {
+      state.templateAndMailList = [];
       state.loading = "rejected";
     });
   },

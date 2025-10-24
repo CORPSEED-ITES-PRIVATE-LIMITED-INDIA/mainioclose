@@ -306,6 +306,12 @@ export const navItems = [
         url: "settings/procurementCategory",
         key: "procurementCategory",
       },
+      {
+        title: "Proposal & Template",
+        icon: "",
+        url: "settings/proposalTemplate",
+        key: "proposalTemplate",
+      },
     ],
   },
 ];

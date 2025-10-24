@@ -11,22 +11,6 @@ import { Settings } from "lucide-react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
-const routes = [
-  "group",
-  "ledger",
-  "voucher",
-  "orgEstimate",
-  "dailyBook",
-  "bankStatement",
-  "paymentRegister",
-  "allInvoice",
-  "unbill",
-  "manageSales",
-  "tds",
-  "ledgerType",
-  "voucherType",
-  "statutory",
-];
 
 const Organizations = () => {
   const navigate = useNavigate();

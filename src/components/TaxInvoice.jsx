@@ -225,7 +225,7 @@ const TaxInvoice = ({ detail }) => {
                         {item.hsn}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-right">
-                        {item.amount.toLocaleString("en-IN")}
+                        {item?.amount?.toLocaleString("en-IN")}
                       </td>
                     </tr>
                   ))}
@@ -249,7 +249,7 @@ const TaxInvoice = ({ detail }) => {
               <p className="text-xs">Amount Chargeable (in Words) </p>
               <p className="text-sm font-semibold">
                 {totalAmount
-                  ? toWords.convert(totalAmount, { currency: true })
+                  ? toWords?.convert(totalAmount, { currency: true })
                   : 0}{" "}
               </p>
             </div>
@@ -325,7 +325,7 @@ const TaxInvoice = ({ detail }) => {
                 :{" "}
                 <p className="text-md font-semibold">
                   {totalTaxAmount
-                    ? toWords.convert(totalTaxAmount, { currency: true })
+                    ? toWords?.convert(totalTaxAmount, { currency: true })
                     : 0}{" "}
                 </p>
               </div>
