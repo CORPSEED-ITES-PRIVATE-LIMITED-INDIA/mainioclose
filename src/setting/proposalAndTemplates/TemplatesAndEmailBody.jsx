@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -20,46 +20,47 @@ import {
   ModalBody,
   addToast,
   ModalFooter,
-  Switch,
-  Select,
-  SelectItem,
+  Chip,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  convertUrlsToProduct,
-  createUrl,
-  editSulg,
-  editUrls,
-  getAllSlugList,
-  getAllSlugs,
-  getAllUrlCount,
-  getAllUrlsList,
-  searchLeadUrlList,
+  addStatusInDepartment,
+  createDepartment,
+  createDesiginationByDepartmentId,
+  createProposalTemplate,
+  editProposalAndEmailTemplate,
+  getAllDepartment,
+  getAllDesiginations,
+  getAllProposalAndEmailTemplates,
+  getAllStatusData,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import NewSelect from "../../components/NewSelect";
+import {
+  createAuthDepartment,
+  createDesiginationByDepartment,
+} from "../../toolkit/slices/authSlice";
+import TextEditor from "../../components/TextEditor";
 
 const formSchema = z.object({
   name: z.string().min(1, "please enter the name."),
-  urlSlug: z.array(z.string()).min(1, "please select the url slug."),
-  quality: z.boolean(),
+  body: z.string().optional(),
+  description: z.string().optional(),
 });
 
 const defaultValues = {
   name: "",
-  urlSlug: [],
-  quality: false,
+  body: "",
+  description: "",
 };
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "URL NAME", uid: "urlsName", sortable: true },
-  { name: "URL SLUG", uid: "urlSlug" },
-  { name: "PRODUCT", uid: "product" },
-  { name: "QUALITY", uid: "quality" },
+  { name: "NAME", uid: "name" },
+  { name: "EMAIL BODY", uid: "emailBody" },
+  { name: "TEMPLATE", uid: "description" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -69,26 +70,28 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
-  "urlsName",
-  "urlSlug",
-  "product",
-  "quality",
+  "name",
+  "emailBody",
+  "description",
   "actions",
 ];
 
-const Urls = () => {
+const TemplatesAndEmailBody = () => {
   const dispatch = useDispatch();
-  const data = useSelector((state) => state.setting.urlsList);
-  const count = useSelector((state) => state.setting.urlCount);
-  const slugList = useSelector((state) => state.setting.slugList);
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const data = useSelector((state) => state.setting.templateAndMailList);
+  const count = useSelector(
+    (state) => state.setting.templateAndMailList?.length
+  );
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const emailPreviewModal = useDisclosure();
+  const templatePreviewModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "id",
+    column: "name",
     direction: "ascending",
   });
 
@@ -113,10 +116,8 @@ const Urls = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllUrlsList(initialFilteration));
-    dispatch(getAllUrlCount());
-    dispatch(getAllSlugList());
-  }, [dispatch, initialFilteration]);
+    dispatch(getAllProposalAndEmailTemplates());
+  }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -126,31 +127,55 @@ const Urls = () => {
     );
   }, [visibleColumns]);
 
+  const filteredItems = React.useMemo(() => {
+    let filteredUsers = [...(data || [])];
+
+    if (hasSearchFilter) {
+      filteredUsers = filteredUsers.filter((item) =>
+        Object.values(item)?.some((val) =>
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+        )
+      );
+    }
+    return filteredUsers;
+  }, [data, filterValue]);
+
   const pages = Math.ceil(count / initialFilteration?.size) || 1;
 
-  const sortedItems = React.useMemo(() => {
-    return [...(data || [])].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+  const items = React.useMemo(() => {
+    const start = (initialFilteration?.page - 1) * initialFilteration?.size;
+    const end = start + initialFilteration?.size;
 
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+    return filteredItems.slice(start, end);
+  }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
+
+  const sortedItems = React.useMemo(() => {
+    return [...items];
+  }, [items]);
+
+  const handleSetDate = (rowData) => {
+    setItem(rowData);
+    reset({
+      name: rowData?.name,
+      body: rowData?.body,
+      description: rowData?.description,
     });
-  }, [sortDescriptor, data]);
+    onOpen();
+  };
 
   const handleFinish = (values) => {
-    if (item?.id) {
-      dispatch(editUrls({ urlsId: item?.id, ...values }))
+    if (item) {
+      dispatch(editProposalAndEmailTemplate({ id: item?.id, ...values }))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Url updated successfully !.",
+              title: "Template updated successfully!.",
               color: "success",
             });
-            onOpenChange(false);
-            dispatch(getAllUrlsList(initialFilteration));
-            reset(defaultValues);
             setItem(null);
+            reset(defaultValues);
+            onClose();
+            dispatch(getAllProposalAndEmailTemplates());
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -159,16 +184,16 @@ const Urls = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     } else {
-      dispatch(createUrl(values))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
+      dispatch(createProposalTemplate(values))
+        .then((res) => {
+          if (res.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Url created successfully !.",
+              title: "Template created successfully in Auth !.",
               color: "success",
             });
-            onOpenChange(false);
-            dispatch(getAllUrlsList(initialFilteration));
+            onClose();
             reset(defaultValues);
+            dispatch(getAllProposalAndEmailTemplates());
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -179,81 +204,69 @@ const Urls = () => {
     }
   };
 
-  const handleConvertToProduct = useCallback(() => {
-    dispatch(
-      convertUrlsToProduct({
-        urlsId: selectedKeys,
-      })
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Urls converted to product successfully !.",
-            color: "success",
-          });
-          dispatch(getAllUrlsList(initialFilteration));
-          setSelectedKeys([]);
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
-      });
-  }, [dispatch, selectedKeys]);
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
+      switch (columnKey) {
+        case "name":
+          return <p>{rowData?.name}</p>;
 
-    switch (columnKey) {
-      case "urlsName":
-        return <p>{rowData?.urlsName}</p>;
+        case "emailBody":
+          return (
+            <Button
+              size="sm"
+              onPress={() => {
+                emailPreviewModal.onOpen();
+                setItem(rowData);
+              }}
+            >
+              Preview
+            </Button>
+          );
 
-      case "urlSlug":
-        return (
-          <p>{rowData?.urlSlug?.map((item) => item?.name)?.join(" , ")}</p>
-        );
+        case "description":
+          return (
+            <Button
+              size="sm"
+              onPress={() => {
+                templatePreviewModal.onOpen();
+                setItem(rowData);
+              }}
+            >
+              Preview
+            </Button>
+          );
 
-      case "product":
-        return <p>{rowData?.product ? "True" : "False"}</p>;
-
-      case "quality":
-        return <p>{rowData?.quality ? "True" : "False"}</p>;
-
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
-                  if (key === "edit") {
-                    onOpen();
-                    setItem(rowData);
-                    setValue("name", rowData?.urlsName);
-                    setValue(
-                      "urlSlug",
-                      rowData?.urlSlug?.map((item) => item?.id)
-                    );
-                    setValue("quality", rowData?.quality);
-                  }
-                }}
-              >
-                <DropdownItem key="edit">Edit</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-      default:
-        return cellValue;
-    }
-  }, []);
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  selectionMode="single"
+                  onSelectionChange={(e) => {
+                    let key = Array.from(e)[0];
+                    if (key === "edit") {
+                      handleSetDate(rowData);
+                    }
+                  }}
+                >
+                  <DropdownItem key="edit">Edit</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return cellValue;
+      }
+    },
+    [emailPreviewModal, templatePreviewModal]
+  );
 
   const onNextPage = React.useCallback(() => {
     if (initialFilteration?.page < pages) {
@@ -284,10 +297,12 @@ const Urls = () => {
   const onSearchChange = React.useCallback((value) => {
     if (value) {
       setFilterValue(value);
-      dispatch(searchLeadUrlList(value));
+      setInitialFilteration((prev) => ({
+        ...prev,
+        page: 1,
+      }));
     } else {
       setFilterValue("");
-      dispatch(getAllUrlsList(initialFilteration));
     }
   }, []);
 
@@ -313,13 +328,6 @@ const Urls = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <Button
-              variant="flat"
-              onPress={handleConvertToProduct}
-              isDisabled={selectedKeys?.length === 0}
-            >
-              Convert to product
-            </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -351,7 +359,7 @@ const Urls = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} Urls
+            Total {count} templates
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -422,7 +430,9 @@ const Urls = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Urls list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Templates and email body
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -464,7 +474,7 @@ const Urls = () => {
         </TableBody>
       </Table>
       <Modal
-        size="2xl"
+        size="full"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}
@@ -475,74 +485,79 @@ const Urls = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {item?.id ? "Update url" : "Create url"}
+                {item?.id
+                  ? "Update template"
+                  : "Create templates and email body"}
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="max-h-[65vh] overflow-auto">
                 <form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
                   onSubmit={handleSubmit(handleFinish)}
+                  className="flex flex-col gap-4"
                 >
                   <Controller
                     name="name"
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <Input
+                        label="Template name"
+                        labelPlacement="outside"
                         isRequired
-                        errorMessage="Please enter url name"
-                        label="Urls name"
-                        {...field}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="urlSlug"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        isRequired
-                        label="Slugs"
-                        selectionMode="multiple"
-                        errorMessage={"please select the slugs."}
-                        data={slugList || []}
-                        labelKey="name"
-                        valueKey="id"
+                        errorMessage="please enter the template name"
                         value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
                   />
-                  <Controller
-                    name="quality"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => {
-                      return (
-                        <Select
-                          isRequired={true}
-                          label="Quality"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          selectedKeys={[String(field.value)]}
-                          onSelectionChange={(e) => {
-                            let key = Array.from(e)[0] == "true";
-                            field.onChange(key);
-                          }}
-                          items={[
-                            { label: "True", key: true },
-                            { label: "False", key: false },
-                          ]}
-                        >
-                          {(item) => (
-                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-medium">Email body</label>
+                    <Controller
+                      name="body"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TextEditor
+                            data={field.value}
+                            onChange={(prev, editor) => {
+                              const newData = editor?.getData();
+                              field.onChange(newData);
+                            }}
+                          />
+                          {error && (
+                            <span className="text-red-500 text-sm">
+                              {error.message}
+                            </span>
                           )}
-                        </Select>
-                      );
-                    }}
-                  />
-                  <ModalFooter className="w-full flex justify-end">
+                        </>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-medium">Proposal template</label>
+                    <Controller
+                      name="description"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TextEditor
+                            data={field.value}
+                            onChange={(prev, editor) => {
+                              const newData = editor?.getData();
+                              field.onChange(newData);
+                            }}
+                          />
+                          {error && (
+                            <span className="text-red-500 text-sm">
+                              {error.message}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                  <ModalFooter>
                     <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
+                    <Button type="submit" color="primary">
                       Submit
                     </Button>
                   </ModalFooter>
@@ -552,8 +567,74 @@ const Urls = () => {
           )}
         </ModalContent>
       </Modal>
+
+      <Modal
+        size="full"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={emailPreviewModal.isOpen}
+        onOpenChange={(e) => {
+          emailPreviewModal.onOpenChange(e);
+          if (!e) {
+            setItem(null);
+          }
+        }}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Email preview
+              </ModalHeader>
+              <ModalBody>
+                <div
+                  style={{ maxHeight: "70vh", overflow: "auto" }}
+                  dangerouslySetInnerHTML={{ __html: item?.body }}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>Close</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="full"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={templatePreviewModal.isOpen}
+        onOpenChange={(e) => {
+          templatePreviewModal.onOpenChange(e);
+          if (!e) {
+            setItem(null);
+          }
+        }}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Template preview
+              </ModalHeader>
+              <ModalBody>
+                <div
+                  style={{ maxHeight: "70vh", overflow: "auto" }}
+                  dangerouslySetInnerHTML={{ __html: item?.description }}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>Close</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };
 
-export default Urls;
+export default TemplatesAndEmailBody;

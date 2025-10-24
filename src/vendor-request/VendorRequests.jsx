@@ -39,6 +39,7 @@ import {
   allVendorsCategory,
   getAllVendorsRequest,
   getAllVendorsStatus,
+  searchInVendorsList,
   vendorsExportReportFilteration,
 } from "../toolkit/slices/vendorsSlice";
 import { inrCurrency } from "../common";
@@ -94,6 +95,8 @@ const VendorRequests = () => {
   const procurementUsers = useSelector(
     (state) => state.common.procurementAssigneeList
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -131,28 +134,16 @@ const VendorRequests = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = useMemo(() => {
-    let filteredData = [...data];
-    if (hasSearchFilter) {
-      filteredData = filteredData.filter((item) =>
-        item?.contactPersonName
-          ?.toLowerCase()
-          .includes(filterValue.toLowerCase())
-      );
-    }
-    return filteredData;
-  }, [data, filterValue]);
-
   const pages = Math.ceil(count / filteration?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...data].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, data]);
 
   const exportData = vendorsExportData?.map((row) => ({
     Id: row?.id,
@@ -382,8 +373,10 @@ const VendorRequests = () => {
     if (value) {
       setFilterValue(value);
       setFilteration((prev) => ({ ...prev, page: 1 }));
+      dispatch(searchInVendorsList({ userId, searchInput: value }));
     } else {
       setFilterValue("");
+      dispatch(getAllVendorsRequest({ userId, ...filteration }));
     }
   }, []);
 
@@ -435,115 +428,120 @@ const VendorRequests = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <Popover
-              showArrow
-              isOpen={filterPopOver.isOpen}
-              onOpenChange={(e) => filterPopOver.onOpenChange(e)}
-            >
-              <PopoverTrigger>
-                <Button variant="flat" endContent={<ListFilter />}>
-                  Filter
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="min-w-[550px]">
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+            {adminRole && (
+              <>
+                <Popover
+                  showArrow
+                  isOpen={filterPopOver.isOpen}
+                  onOpenChange={(e) => filterPopOver.onOpenChange(e)}
+                >
+                  <PopoverTrigger>
+                    <Button variant="flat" endContent={<ListFilter />}>
                       Filter
-                    </h3>
-                    <div className="grid gap-4 min-w-[500px]">
-                      <div>
-                        <DateRangePicker
-                          isRequired
-                          // hideTimeZone
-                          // granularity="minute"
-                          // hourCycle={24}
-                          visibleMonths={2}
-                          label="Created date"
-                          value={{
-                            start: filter?.startDate
-                              ? parseDate(`${filter?.startDate}`)
-                              : null,
-                            end: filter?.endDate
-                              ? parseDate(`${filter?.endDate}`)
-                              : null,
-                          }}
-                          onChange={(value) => {
-                            const formattedStart = value.start
-                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
-                              : null;
-                            const formattedEnd = value.end
-                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
-                              : null;
-                            setFilter((prev) => ({
-                              ...prev,
-                              startDate: formattedStart,
-                              endDate: formattedEnd,
-                            }));
-                          }}
-                        />
-                      </div>
-                      <Select
-                        label={"Status"}
-                        name={"statusId"}
-                        selectionMode="multiple"
-                        selectedKeys={new Set(filter?.statuses || [])}
-                        onSelectionChange={(e) => {
-                          let values = Array.from(e);
-                          setFilter((prev) => ({
-                            ...prev,
-                            statuses: values.length > 0 ? values : [],
-                          }));
-                        }}
-                      >
-                        {vendorStatus.map((status) => (
-                          <SelectItem key={status?.statusName}>
-                            {status?.statusName}
-                          </SelectItem>
-                        ))}
-                      </Select>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="min-w-[550px]">
+                    {(titleProps) => (
+                      <div className="px-1 py-2">
+                        <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                          Filter
+                        </h3>
+                        <div className="grid gap-4 min-w-[500px]">
+                          <div>
+                            <DateRangePicker
+                              isRequired
+                              // hideTimeZone
+                              // granularity="minute"
+                              // hourCycle={24}
+                              visibleMonths={2}
+                              label="Created date"
+                              value={{
+                                start: filter?.startDate
+                                  ? parseDate(`${filter?.startDate}`)
+                                  : null,
+                                end: filter?.endDate
+                                  ? parseDate(`${filter?.endDate}`)
+                                  : null,
+                              }}
+                              onChange={(value) => {
+                                const formattedStart = value.start
+                                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                                  : null;
+                                const formattedEnd = value.end
+                                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                                  : null;
+                                setFilter((prev) => ({
+                                  ...prev,
+                                  startDate: formattedStart,
+                                  endDate: formattedEnd,
+                                }));
+                              }}
+                            />
+                          </div>
+                          <Select
+                            label={"Status"}
+                            name={"statusId"}
+                            selectionMode="multiple"
+                            selectedKeys={new Set(filter?.statuses || [])}
+                            onSelectionChange={(e) => {
+                              let values = Array.from(e);
+                              setFilter((prev) => ({
+                                ...prev,
+                                statuses: values.length > 0 ? values : [],
+                              }));
+                            }}
+                          >
+                            {vendorStatus.map((status) => (
+                              <SelectItem key={status?.statusName}>
+                                {status?.statusName}
+                              </SelectItem>
+                            ))}
+                          </Select>
 
-                      <NewSelect
-                        data={procurementUsers || []}
-                        label={"User"}
-                        name={"userIds"}
-                        labelKey={"fullName"}
-                        valueKey={"id"}
-                        value={filter?.userIds}
-                        onChange={(selectedSet) => {
-                          setFilter((prev) => ({
-                            ...prev,
-                            userIds: selectedSet,
-                          }));
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2 my-2">
-                      <Button onPress={handleResetFilter}>Reset</Button>
-                      <Button
-                        color="primary"
-                        isDisabled={
-                          filter?.startDate === "" || filter?.endDate === ""
-                        }
-                        onPress={handleFilter}
-                      >
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-            <CSVLink
-              className="text-white"
-              data={exportData}
-              headers={headers}
-              filename={"procurement.csv"}
-            >
-              <Button startContent={<Download />} variant="flat">
-                Export
-              </Button>
-            </CSVLink>
+                          <NewSelect
+                            data={procurementUsers || []}
+                            label={"User"}
+                            name={"userIds"}
+                            labelKey={"fullName"}
+                            valueKey={"id"}
+                            value={filter?.userIds}
+                            onChange={(selectedSet) => {
+                              setFilter((prev) => ({
+                                ...prev,
+                                userIds: selectedSet,
+                              }));
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 my-2">
+                          <Button onPress={handleResetFilter}>Reset</Button>
+                          <Button
+                            color="primary"
+                            isDisabled={
+                              filter?.startDate === "" || filter?.endDate === ""
+                            }
+                            onPress={handleFilter}
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+                <CSVLink
+                  className="text-white"
+                  data={exportData}
+                  headers={headers}
+                  filename={"procurement.csv"}
+                >
+                  <Button startContent={<Download />} variant="flat">
+                    Export
+                  </Button>
+                </CSVLink>
+              </>
+            )}
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">

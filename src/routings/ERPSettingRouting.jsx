@@ -15,6 +15,7 @@ import ProcurementSubCategory from "../setting/procurement/ProcurementSubCategor
 import BusinessArrangement from "../setting/products/BusinessArrangement";
 import ProductCategory from "../setting/products/ProductCategory";
 import ProductSubCategory from "../setting/products/ProductSubCategory";
+import TemplatesAndEmailBody from "../setting/proposalAndTemplates/TemplatesAndEmailBody";
 
 const ERPSettingRouting = () => {
   return (
@@ -54,6 +55,10 @@ const ERPSettingRouting = () => {
       <Route
         path="settings/procurementCategory/:categoryId/subcategory"
         element={<ProcurementSubCategory />}
+      />
+      <Route
+        path="settings/proposalTemplate"
+        element={<TemplatesAndEmailBody />}
       />
     </>
   );
