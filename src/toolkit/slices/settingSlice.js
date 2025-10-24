@@ -286,6 +286,16 @@ export const getAllSlugs = createAsyncThunk(
   }
 );
 
+export const searchSlugList = createAsyncThunk(
+  "searchSlugList",
+  async (name) => {
+    const response = await api.get(
+      `/leadService/api/v1/slug/getGlobalSlug?name=${name}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllSlugCount = createAsyncThunk(
   "allTotalSlugCount",
   async () => {
@@ -604,6 +614,17 @@ export const SettingSlice = createSlice({
       state.slugListWithPage = action.payload;
     });
     builder.addCase(getAllSlugs.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(searchSlugList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchSlugList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.slugListWithPage = action.payload;
+    });
+    builder.addCase(searchSlugList.rejected, (state) => {
       state.loading = "rejected";
     });
 
