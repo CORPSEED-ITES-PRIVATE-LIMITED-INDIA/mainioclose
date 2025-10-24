@@ -284,7 +284,7 @@ const Users = () => {
           </div>
         );
       default:
-        return company[columnKey] || "-";
+        return rowData[columnKey] || "-";
     }
   }, []);
 
@@ -466,7 +466,7 @@ const Users = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.companyId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
