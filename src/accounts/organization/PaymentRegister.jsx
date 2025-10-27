@@ -65,6 +65,7 @@ export const columns = [
   { name: "COMPANY NAME", uid: "companyName" },
   { name: "ORDERS AMOUNTS", uid: "orderAmounts" },
   { name: "PAYMENT AMOUNTS", uid: "paymentAmounts" },
+  { name: "TDS", uid: "tds" },
   { name: "WORK %", uid: "workPercent" },
   { name: "STATUS", uid: "status" },
   { name: "PAYMENT DATE", uid: "paymentDate" },
@@ -84,7 +85,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "paymentAmounts",
   "workPercent",
   "status",
-  "workPercent",
+  "tds",
   "actions",
 ];
 
@@ -345,6 +346,17 @@ const PaymentRegister = () => {
             </p>
             <p className="text-sm font-medium capitalize">
               Paid : {inrCurrency(rowData?.paidAmount || 0)}
+            </p>
+          </div>
+        );
+      case "tds":
+        return (
+          <div className="flex flex-col">
+            <p className="text-sm font-medium capitalize">
+              TDS % : {inrCurrency(rowData?.tdsPercent || 0)}
+            </p>
+            <p className="text-sm font-medium capitalize">
+              Amount : {inrCurrency(rowData?.tdsAmount || 0)}
             </p>
           </div>
         );
@@ -685,7 +697,7 @@ const PaymentRegister = () => {
               </ModalHeader>
               <ModalBody style={{ maxHeight: "70vh", overflow: "auto" }}>
                 {/* <EstimateView details={rowItem} /> */}
-                <InvoiceView details={estimateDetails} />
+                <InvoiceView details={estimateDetails} documentTypeName={"Estimate"} />
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>
@@ -795,7 +807,6 @@ const PaymentRegister = () => {
               </ModalHeader>
               <ModalBody>
                 <Textarea
-                  className="max-w-xs"
                   label="Remark"
                   isRequired
                   onChange={(e) => {

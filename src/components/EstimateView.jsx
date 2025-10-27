@@ -166,6 +166,7 @@ const EstimateView = ({ details }) => {
                   <p className="font-semibold mb-0.5">Bill To :</p>
                   <div className="font-bold leading-tight">
                     {details?.companyName && <p>{details?.companyName}</p>}
+                    {details?.gstNo && <p>GSTIN : {details?.gstNo}</p>}
                     {details?.address && (
                       <p className="font-normal">{details?.address}</p>
                     )}
@@ -188,6 +189,7 @@ const EstimateView = ({ details }) => {
                     {details?.companyName && (
                       <p className="font-medium">{details?.companyName}</p>
                     )}
+                    {details?.gstNo && <p>GSTIN : {details?.gstNo}</p>}
                     {details?.secondaryAddress && (
                       <p>{details?.secondaryAddress}</p>
                     )}

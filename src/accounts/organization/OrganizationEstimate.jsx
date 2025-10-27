@@ -595,7 +595,7 @@ const OrganizationEstimate = () => {
         <ModalContent>
           <ModalHeader>Estimate</ModalHeader>
           <ModalBody className="max-h-[90vh] overflow-auto">
-            <InvoiceView details={estimateDetail} />
+            <InvoiceView details={estimateDetail} documentTypeName={"Estimate"} />
           </ModalBody>
         </ModalContent>
       </Modal>

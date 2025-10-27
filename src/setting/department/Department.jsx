@@ -273,7 +273,7 @@ const Department = () => {
                         title: "Something went wrong in operations !.",
                         color: "danger",
                       });
-                    }
+                    } 
                   })
                   .catch(() => {
                     addToast({
