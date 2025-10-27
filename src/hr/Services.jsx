@@ -81,7 +81,7 @@ const Services = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "id",
     direction: "ascending",
   });
   const [filteration, setFilteration] = useState({
