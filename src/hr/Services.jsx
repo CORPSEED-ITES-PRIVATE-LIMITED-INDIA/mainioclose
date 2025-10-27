@@ -116,7 +116,7 @@ const Services = () => {
   const filteredItems = useMemo(() => {
     let filteredData = [...data];
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
+      filteredData = filteredData?.filter((item) =>
         Object.values(item)?.some((val) =>
           String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
         )
