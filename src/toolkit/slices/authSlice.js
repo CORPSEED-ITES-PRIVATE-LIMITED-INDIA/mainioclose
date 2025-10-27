@@ -29,7 +29,7 @@ export const getDepartmentOfUser = createAsyncThunk(
 export const createAuthDepartment = createAsyncThunk(
   "createDepartment",
   async (data) => {
-    const response = await api.get(
+    const response = await api.post(
       `/securityService/api/department/createDepartment?name=${data?.name}`
     );
     return response;

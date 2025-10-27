@@ -77,6 +77,7 @@ import { CSVLink } from "react-csv";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
 import { toggleAutoOnFeature } from "../../toolkit/slices/authSlice";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const getRowClassName = (item) => {
   if (!item.view) {
@@ -155,6 +156,7 @@ const Leads = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.leads.allLeads);
   const count = useSelector((state) => state.leads.totalCount);
+  const leadsLoading = useSelector((state) => state.leads.leadresponseStatus);
   const allLeadsForExport = useSelector(
     (state) => state.leads.allLeadsForExport
   );
@@ -1298,6 +1300,9 @@ const Leads = () => {
 
   return (
     <>
+      {(loading === "pending" || leadsLoading === "pending") && (
+        <LoadingSpinner />
+      )}
       <h1 className="font-sans text-2xl font-medium mb-1">Leads</h1>
       <Table
         isHeaderSticky

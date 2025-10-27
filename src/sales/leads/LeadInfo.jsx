@@ -520,7 +520,7 @@ const LeadInfo = () => {
   };
 
   return Object.keys(leadData)?.length > 0 &&
-    (leadData?.assigne?.id === userId || adminRole) ? (
+    (leadData?.assigne?.id != userId || adminRole) ? (
     <div className="grid grid-cols-2 gap-3 p-2 max-h-[78vh] overflow-auto">
       <div className="grid grid-cols-2 gap-3">
         <div className="w-full">
