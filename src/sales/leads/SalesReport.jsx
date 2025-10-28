@@ -273,13 +273,14 @@ const SalesReport = () => {
             placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
+            size="sm"
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button endContent={<ChevronDown />} size="sm" variant="flat">
                   {department}
                 </Button>
               </DropdownTrigger>
@@ -334,7 +335,7 @@ const SalesReport = () => {
               }}
             >
               <PopoverTrigger>
-                <Button variant="flat" endContent={<ListFilter />}>
+                <Button variant="flat" size="sm" endContent={<ListFilter />}>
                   Filter
                 </Button>
               </PopoverTrigger>
@@ -360,38 +361,40 @@ const SalesReport = () => {
                           }));
                         }}
                       />
-                      <DateRangePicker
-                        hideTimeZone
-                        granularity="minute"
-                        hourCycle={24}
-                        visibleMonths={2}
-                        label="Created date"
-                        value={{
-                          start: dateFilter?.toDate
-                            ? parseZonedDateTime(
-                                `${dateFilter?.toDate}[Asia/kolkata]`
-                              )
-                            : null,
-                          end: dateFilter?.fromDate
-                            ? parseZonedDateTime(
-                                `${dateFilter?.fromDate}[Asia/kolkata]`
-                              )
-                            : null,
-                        }}
-                        onChange={(value) => {
-                          const formattedStart = value.start
-                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                            : null;
-                          const formattedEnd = value.end
-                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                            : null;
-                          setDateFilter((prev) => ({
-                            ...prev,
-                            toDate: formattedStart,
-                            fromDate: formattedEnd,
-                          }));
-                        }}
-                      />
+                      <div className="w-full max-w-xl flex flex-row gap-4">
+                        <DateRangePicker
+                          hideTimeZone
+                          granularity="minute"
+                          hourCycle={24}
+                          visibleMonths={2}
+                          label="Created date"
+                          value={{
+                            start: dateFilter?.toDate
+                              ? parseZonedDateTime(
+                                  `${dateFilter?.toDate}[Asia/kolkata]`
+                                )
+                              : null,
+                            end: dateFilter?.fromDate
+                              ? parseZonedDateTime(
+                                  `${dateFilter?.fromDate}[Asia/kolkata]`
+                                )
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                              : null;
+                            setDateFilter((prev) => ({
+                              ...prev,
+                              toDate: formattedStart,
+                              fromDate: formattedEnd,
+                            }));
+                          }}
+                        />
+                      </div>
                     </div>
                     <div className="flex justify-end gap-2 my-2">
                       <Button onPress={handleResetFilter}>Reset</Button>
@@ -411,13 +414,14 @@ const SalesReport = () => {
               <Button
                 isDisabled={salesReportExportLoading !== "success"}
                 endContent={<Upload />}
+                size="sm"
               >
                 Export
               </Button>
             </CSVLink>
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button endContent={<ChevronDown />} size="sm" variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -518,8 +522,8 @@ const SalesReport = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

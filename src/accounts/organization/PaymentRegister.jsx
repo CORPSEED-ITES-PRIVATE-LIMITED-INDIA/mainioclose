@@ -52,7 +52,7 @@ import dayjs from "dayjs";
 import { inrCurrency } from "../../common";
 import { getEstimateByLeadId } from "../../toolkit/slices/leadSlice";
 import EstimateView from "../../components/EstimateView";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { updatePaymentForVendorPayment } from "../../toolkit/slices/vendorsSlice";
 import InvoiceView from "../../components/InvoiceView";
 import { getCompanyByUnitId } from "../../toolkit/slices/companySlice";
@@ -83,7 +83,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "companyName",
   "orderAmounts",
   "paymentAmounts",
-  "workPercent",
   "status",
   "tds",
   "actions",
@@ -110,7 +109,7 @@ const PaymentRegister = () => {
     column: "age",
     direction: "ascending",
   });
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState("initiated");
   const [page, setPage] = React.useState(1);
   const [rowItem, setRowItem] = useState(null);
   const [estimateDetails, setEstimateDetails] = useState(null);
@@ -572,7 +571,7 @@ const PaymentRegister = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] w-full",
+          wrapper: "max-h-[68vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
@@ -697,7 +696,10 @@ const PaymentRegister = () => {
               </ModalHeader>
               <ModalBody style={{ maxHeight: "70vh", overflow: "auto" }}>
                 {/* <EstimateView details={rowItem} /> */}
-                <InvoiceView details={estimateDetails} documentTypeName={"Estimate"} />
+                <InvoiceView
+                  details={estimateDetails}
+                  documentTypeName={"Estimate"}
+                />
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>
@@ -729,9 +731,11 @@ const PaymentRegister = () => {
                   <div class="border-b border-r p-4">Column 4</div>
                   <div class="border-b p-4 flex gap-1">
                     <Tooltip content="Attached document view">
-                      <Button color="primary" variant="light" isIconOnly>
-                        <FileText />
-                      </Button>
+                      <Link to={rowItem?.doc?.[0]?.filePath}>
+                        <Button color="primary" variant="light" isIconOnly>
+                          <FileText />
+                        </Button>
+                      </Link>
                     </Tooltip>
                     <Tooltip content="Estimate view">
                       <Button

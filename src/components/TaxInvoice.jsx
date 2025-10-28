@@ -58,9 +58,12 @@ const TaxInvoice = ({ detail }) => {
   const items = [
     {
       particulars: detail?.productName,
-      gst: detail?.profesionalGst,
       hsn: detail?.professionalCode,
       amount: detail?.professionalFees,
+    },
+    {
+      particulars: "IGST",
+      gst: detail?.profesionalGst,
     },
   ];
   const totalAmount = detail?.totalAmount;
@@ -80,7 +83,7 @@ const TaxInvoice = ({ detail }) => {
 
   return (
     <>
-      <div className=" max-h-[70vh] overflow-auto">
+      <div className=" max-h-[68vh] overflow-auto">
         <div className="flex flex-col gap-2 p-14" ref={pdfRef}>
           <h1 className="text-center font-medium">Tax Invoice</h1>
           <div className="border-1 border-gray-400">
@@ -131,7 +134,7 @@ const TaxInvoice = ({ detail }) => {
                 </div>
               </div>
               <div className="grid grid-cols-1 grid-rows-2">
-                <div className="grid grid-cols-2 grid-rows-6">
+                <div className="grid grid-cols-2 grid-rows-3">
                   <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Invoice no.</p>
                     <p className="text-sm font-medium">INV00230823004</p>
@@ -142,49 +145,52 @@ const TaxInvoice = ({ detail }) => {
                       {dayjs(detail?.createDate).format("DD-MM-YYYY")}
                     </p>
                   </div>
-                  <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  {/* <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Delivery Note</p>
                     <p className="text-sm font-medium"></p>
-                  </div>
-                  <div className="border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  </div> */}
+                  <div className=" border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Mode/Terms of Payment</p>
                     <p className="text-sm font-medium"></p>
                   </div>
-                  <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  <div className="border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">References No. & Date.</p>
                     <p className="text-sm font-medium"></p>
                   </div>
-                  <div className="border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  <div className="border-r-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Other References</p>
                     <p className="text-sm font-medium"></p>
                   </div>
-                  <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  <div className="border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Buyer's Order No.</p>
                     <p className="text-sm font-medium"></p>
                   </div>
-                  <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  {/* <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Dated</p>
                     <p className="text-sm font-medium"></p>
-                  </div>
-                  <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  </div> */}
+                  {/* <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Dispatch Doc No.</p>
                     <p className="text-sm font-medium"></p>
-                  </div>
-                  <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  </div> */}
+                  {/* <div className="border-r-1 border-b-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Delivery Note Date</p>
                     <p className="text-sm font-medium"></p>
-                  </div>
-                  <div className="border-r-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  </div> */}
+                  {/* <div className="border-r-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Dispatched through</p>
                     <p className="text-sm font-medium"></p>
-                  </div>
-                  <div className="border-r-1 border-gray-400 flex flex-col gap-0.5 p-1">
+                  </div> */}
+                  {/* <div className="border-r-1 border-gray-400 flex flex-col gap-0.5 p-1">
                     <p className="text-xs">Destination</p>
                     <p className="text-sm font-medium"></p>
-                  </div>
+                  </div> */}
                 </div>
                 <div className="border-t-1 border-gray-400 p-1">
                   <p className="text-xs">Terms of Delivery</p>
+                  <p className="text-sm font-medium">
+                    {detail?.termOfDelivery}
+                  </p>
                 </div>
               </div>
             </div>
@@ -197,9 +203,6 @@ const TaxInvoice = ({ detail }) => {
                     </th>
                     <th className="border border-gray-300 dark:text-white px-4 py-2">
                       Particulars
-                    </th>
-                    <th className="border border-gray-300 dark:text-white px-4 py-2 text-center">
-                      GST
                     </th>
                     <th className="border border-gray-300 dark:text-white px-4 py-2 text-center">
                       HSN/SAC
@@ -219,9 +222,6 @@ const TaxInvoice = ({ detail }) => {
                         {item.particulars}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center">
-                        {item.gst}%
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
                         {item.hsn}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-right">
@@ -233,13 +233,13 @@ const TaxInvoice = ({ detail }) => {
                   {/* Total Row */}
                   <tr className="font-semibold bg-gray-100 dark:bg-gray-600">
                     <td
-                      colSpan="4"
+                      colSpan="3"
                       className="border border-gray-300 px-4 py-2 text-right"
                     >
                       Total
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-right">
-                      ₹ {inrCurrency(totalAmount)}
+                      {inrCurrency(totalAmount)}
                     </td>
                   </tr>
                 </tbody>
@@ -267,7 +267,10 @@ const TaxInvoice = ({ detail }) => {
                   <th className="border border-gray-300 px-4 py-2" colSpan={2}>
                     IGST
                   </th>
-                  <th className="border border-gray-300 px-4 py-2 text-right" rowSpan={2}>
+                  <th
+                    className="border border-gray-300 px-4 py-2 text-right"
+                    rowSpan={2}
+                  >
                     Total Tax Amount (₹)
                   </th>
                 </tr>

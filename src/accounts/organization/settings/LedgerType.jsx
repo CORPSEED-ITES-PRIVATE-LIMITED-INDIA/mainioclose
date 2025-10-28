@@ -61,9 +61,9 @@ const INITIAL_VISIBLE_COLUMNS = [
 const formSchema = z.object({
   name: z.string().min(1, "Please enter ledger name."),
   id: z.string().min(1, "Please select ledger group"),
-  subLeadger: z.string().min(1, "Please select sub ledger"),
-  isDebitCredit: z.string().min(1, "Please select option"),
-  usedForCalculation: z.string().min(1, "Please select option"),
+  subLeadger: z.boolean(),
+  isDebitCredit: z.boolean(),
+  usedForCalculation: z.boolean(),
 });
 
 const defaultValues = {
@@ -168,7 +168,13 @@ const LedgerType = () => {
   const onSubmit = useCallback(
     (values) => {
       if (editData) {
-        dispatch(updateLedgerType({ ...values, id: editData?.id }))
+        dispatch(
+          updateLedgerType({
+            ...values,
+            subLedgerId: editData?.id,
+            id: editData?.id,
+          })
+        )
           .then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {
               addToast({
@@ -339,7 +345,9 @@ const LedgerType = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {count} ledger type</span>
+          <span className="text-default-400 text-small">
+            Total {count} ledger type
+          </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -413,7 +421,7 @@ const LedgerType = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -453,7 +461,9 @@ const LedgerType = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add TDS</ModalHeader>
+              <ModalHeader>
+                {editData ? "Update ledger type" : "Add ledger type"}
+              </ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">

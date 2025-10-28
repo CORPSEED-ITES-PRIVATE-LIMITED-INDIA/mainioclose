@@ -443,7 +443,7 @@ const ProcurementSubCategory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] max-w-full",
+          wrapper: "max-h-[68vh] max-w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

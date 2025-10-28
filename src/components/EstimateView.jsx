@@ -30,7 +30,7 @@ const EstimateView = ({ details }) => {
     pdf.save("estimate.pdf");
   };
   return (
-    <div className="max-h-[70vh] overflow-auto mt-3 px-2 md:px-4 2xl:px-12">
+    <div className="max-h-[68vh] overflow-auto mt-3 px-2 md:px-4 2xl:px-12">
       <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
         {details?.productName && (
           <div className="flex flex-col md:flex-row md:items-center gap-1">
