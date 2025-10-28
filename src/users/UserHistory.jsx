@@ -253,7 +253,7 @@ const UserHistory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

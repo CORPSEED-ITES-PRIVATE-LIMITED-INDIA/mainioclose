@@ -81,7 +81,7 @@ const Services = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "id",
     direction: "ascending",
   });
   const [filteration, setFilteration] = useState({
@@ -116,7 +116,7 @@ const Services = () => {
   const filteredItems = useMemo(() => {
     let filteredData = [...data];
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
+      filteredData = filteredData?.filter((item) =>
         Object.values(item)?.some((val) =>
           String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
         )

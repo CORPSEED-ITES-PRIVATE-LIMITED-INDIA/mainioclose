@@ -1249,7 +1249,7 @@ const VendorEstimate = () => {
           {(onClose) => (
             <>
               <ModalHeader>Estimate</ModalHeader>
-              <ModalBody className="max-h-[70vh] overflow-auto">
+              <ModalBody className="max-h-[68vh] overflow-auto">
                 <InvoiceView details={rowItem} />
               </ModalBody>
               <ModalFooter className="flex justify-end">

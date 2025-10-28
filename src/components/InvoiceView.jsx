@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import domToImage from "dom-to-image";
 import { inrCurrency } from "../common";
 
-const InvoiceView = ({ details }) => {
+const InvoiceView = ({ details, documentTypeName }) => {
   const pdfRef = useRef();
   const generatePDF = async () => {
     const element = pdfRef.current;
@@ -53,7 +53,7 @@ const InvoiceView = ({ details }) => {
             borderRadius: "0 4px 4px 0",
           }}
         >
-          {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
+          {details?.performaInvoice ? "Proforma Invoice" : documentTypeName}
         </div>
 
         <div
@@ -79,9 +79,7 @@ const InvoiceView = ({ details }) => {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <p style={{ fontWeight:500 }}>
-                  Corpseed Ites Private Limited
-                </p>
+                <p style={{ fontWeight: 500 }}>Corpseed Ites Private Limited</p>
                 <p>GSTIN/UIN : 09AAHCC4539J1ZC</p>
                 <p>CN U74999UP2018PTC101873</p>
                 <p>2nd floor, A-154A, A Block, sector 63</p>
@@ -99,7 +97,9 @@ const InvoiceView = ({ details }) => {
                     fontSize: "18px",
                   }}
                 >
-                  {details?.performaInvoice ? "Proforma Invoice" : "Invoice"}
+                  {details?.performaInvoice
+                    ? "Proforma Invoice"
+                    : documentTypeName}
                 </h4>
                 <p style={{ fontWeight: 700 }}>{`#ESTD0${details?.id}`}</p>
               </div>
@@ -124,6 +124,7 @@ const InvoiceView = ({ details }) => {
               {details?.companyName && (
                 <p style={{ fontWeight: 500 }}>{details?.companyName}</p>
               )}
+              {details?.gstNo && <p>GSTIN : {details?.gstNo}</p>}
               {details?.address && <p>{details?.address}</p>}
               <div style={{ display: "flex" }}>
                 {[
@@ -144,6 +145,7 @@ const InvoiceView = ({ details }) => {
               {details?.companyName && (
                 <p style={{ fontWeight: 500 }}>{details?.companyName}</p>
               )}
+              {details?.gstNo && <p>GSTIN : {details?.gstNo}</p>}
               {details?.secondaryAddress && <p>{details?.secondaryAddress}</p>}
               <div style={{ display: "flex" }}>
                 {[
@@ -215,6 +217,9 @@ const InvoiceView = ({ details }) => {
                         Quantity (kg)
                       </th>
                       <th style={{ border: "1px solid black", padding: "8px" }}>
+                        Actual amount (₹)
+                      </th>
+                      <th style={{ border: "1px solid black", padding: "8px" }}>
                         GST %
                       </th>
                       <th style={{ border: "1px solid black", padding: "8px" }}>
@@ -239,6 +244,9 @@ const InvoiceView = ({ details }) => {
                       >
                         {details?.productName}
                       </td>
+                      <td
+                        style={{ border: "1px solid black", padding: "8px" }}
+                      ></td>
                       <td
                         style={{ border: "1px solid black", padding: "8px" }}
                       ></td>
@@ -308,6 +316,18 @@ const InvoiceView = ({ details }) => {
                             textAlign: "center",
                           }}
                         >
+                          {inrCurrency(
+                            Number(details?.actualPrice) *
+                              Number(details?.quantity)
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.gst}
                         </td>
                         <td
@@ -348,6 +368,12 @@ const InvoiceView = ({ details }) => {
                       >
                         Total Qty. : 1
                       </td>
+                      <td
+                        style={{
+                          borderBottom: "1px solid black",
+                          padding: "8px",
+                        }}
+                      ></td>
                       <td
                         style={{
                           borderBottom: "1px solid black",
@@ -440,7 +466,7 @@ const InvoiceView = ({ details }) => {
                       HSN
                     </th>
                     <th style={{ border: "1px solid black", padding: "8px" }}>
-                      Rate
+                      Amount
                     </th>
                     <th style={{ border: "1px solid black", padding: "8px" }}>
                       GST %
@@ -480,7 +506,7 @@ const InvoiceView = ({ details }) => {
                     // style={{ border: "1px solid black", padding: "8px" }}
                     ></td>
                     <td
-                    style={{ borderRight: "1px solid black", padding: "8px" }}
+                      style={{ borderRight: "1px solid black", padding: "8px" }}
                     ></td>
                   </tr>
                   {details?.govermentCode && (
@@ -501,8 +527,14 @@ const InvoiceView = ({ details }) => {
                         {details?.govermentCode}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(details?.govermentFees)}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -513,8 +545,17 @@ const InvoiceView = ({ details }) => {
                         {details?.govermentGst}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(
+                          Number(details?.govermentFees) *
+                            (Number(details?.govermentGst) / 100)
+                        )}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -522,7 +563,11 @@ const InvoiceView = ({ details }) => {
                           textAlign: "center",
                         }}
                       >
-                        {inrCurrency(details?.govermentFees)}
+                        {inrCurrency(
+                          Number(details?.govermentFees) *
+                            (Number(details?.govermentGst) / 100) +
+                            Number(details?.govermentFees)
+                        )}
                       </td>
                     </tr>
                   )}
@@ -544,8 +589,14 @@ const InvoiceView = ({ details }) => {
                         {details?.profesionalCode}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(Number(details?.professionalFees))}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -556,8 +607,18 @@ const InvoiceView = ({ details }) => {
                         {details?.profesionalGst}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(
+                          (Number(details?.professionalFees) *
+                            Number(details?.profesionalGst)) /
+                            100
+                        )}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -565,7 +626,12 @@ const InvoiceView = ({ details }) => {
                           textAlign: "center",
                         }}
                       >
-                        {inrCurrency(Number(details?.professionalFees))}
+                        {inrCurrency(
+                          (Number(details?.professionalFees) *
+                            Number(details?.profesionalGst)) /
+                            100 +
+                            Number(details?.professionalFees)
+                        )}
                       </td>
                     </tr>
                   )}
@@ -592,7 +658,9 @@ const InvoiceView = ({ details }) => {
                           padding: "8px",
                           textAlign: "center",
                         }}
-                      ></td>
+                      >
+                        {inrCurrency(details?.serviceCharge)}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -603,8 +671,17 @@ const InvoiceView = ({ details }) => {
                         {details?.serviceGst}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(
+                          Number(details?.serviceCharge) *
+                            (Number(details?.serviceGst) / 100)
+                        )}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -612,7 +689,11 @@ const InvoiceView = ({ details }) => {
                           textAlign: "center",
                         }}
                       >
-                        {inrCurrency(details?.serviceCharge)}
+                        {inrCurrency(
+                          Number(details?.serviceCharge) *
+                            (Number(details?.serviceGst) / 100) +
+                            Number(details?.serviceCharge)
+                        )}
                       </td>
                     </tr>
                   )}
@@ -634,8 +715,14 @@ const InvoiceView = ({ details }) => {
                         {details?.otherCode}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(details?.otherFees)}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -646,8 +733,18 @@ const InvoiceView = ({ details }) => {
                         {details?.otherGst}
                       </td>
                       <td
-                        style={{ border: "1px solid black", padding: "8px" }}
-                      ></td>
+                        style={{
+                          border: "1px solid black",
+                          padding: "8px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {inrCurrency(
+                          (Number(details?.otherFees) *
+                            Number(details?.otherGst)) /
+                            100
+                        )}
+                      </td>
                       <td
                         style={{
                           border: "1px solid black",
@@ -655,7 +752,12 @@ const InvoiceView = ({ details }) => {
                           textAlign: "center",
                         }}
                       >
-                        {inrCurrency(details?.otherFees)}
+                        {inrCurrency(
+                          (Number(details?.otherFees) *
+                            Number(details?.otherGst)) /
+                            100 +
+                            Number(details?.otherFees)
+                        )}
                       </td>
                     </tr>
                   )}

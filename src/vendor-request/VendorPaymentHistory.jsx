@@ -302,7 +302,7 @@ const VendorPaymentHistory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] w-full",
+          wrapper: "max-h-[68vh] w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

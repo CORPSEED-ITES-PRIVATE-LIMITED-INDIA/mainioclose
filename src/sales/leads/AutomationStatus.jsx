@@ -142,6 +142,9 @@ const AutomationStatus = () => {
             <p className="text-sm rounded p-1 bg-green-300">
               Deal won : {rowData?.statusDealWon || 0}
             </p>
+            <p className="text-sm rounded p-1 bg-yellow-300">
+              Deal lost : {rowData?.statusDealLost || 0}
+            </p>
             <p className="text-sm rounded p-1 bg-red-300">
               Bad fit : {rowData?.statusBadFit || 0}
             </p>
@@ -401,7 +404,7 @@ const AutomationStatus = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Auto status list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Automation report list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

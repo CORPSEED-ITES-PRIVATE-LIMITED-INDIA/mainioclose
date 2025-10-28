@@ -47,6 +47,7 @@ import NewSelect from "../components/NewSelect";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import { getProcurementAssigneeList } from "../toolkit/slices/commonSlice";
 import { CSVLink } from "react-csv";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -643,14 +644,7 @@ const VendorRequests = () => {
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Vendor's requests</h1>
       {filteLoading === "pending" && (
-        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-xs bg-black/20 z-[9999]">
-          <Spinner
-            color="success"
-            label="Loading ..."
-            labelColor="success"
-            classNames={{ label: "text-2xl font-medium" }}
-          />
-        </div>
+        <LoadingSpinner/>
       )}
 
       <Table
@@ -659,7 +653,7 @@ const VendorRequests = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] w-full",
+          wrapper: "max-h-[68vh] w-full",
           table: "w-full overflow-scroll",
         }}
         selectedKeys={selectedKeys}

@@ -40,6 +40,8 @@ import {
   createAuthDepartment,
   createDesiginationByDepartment,
 } from "../../toolkit/slices/authSlice";
+import { createDepartmentInOPerations } from "../../toolkit/slices/operationSlice";
+import { useParams } from "react-router-dom";
 
 const formSchema = z.object({
   name: z.string().min(1, "please enter the name."),
@@ -85,6 +87,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const Department = () => {
+  const { userId } = useParams();
   const dispatch = useDispatch();
   const data = useSelector((state) => state.setting.departmentList);
   const count = useSelector((state) => state.setting.departmentList?.length);
@@ -215,9 +218,6 @@ const Department = () => {
                   title: "Desigination added successfully !.",
                   color: "success",
                 });
-                dispatch(getAllDepartment());
-                designationForm.reset(designationFormDefaultValues);
-                designationModal.onOpenChange(false);
               } else {
                 addToast({ title: "Something went wrong !.", color: "danger" });
               }
@@ -245,13 +245,42 @@ const Department = () => {
           dispatch(createDepartment(values))
             .then((resp) => {
               if (resp.meta.requestStatus === "fulfilled") {
+                const responseData = resp?.payload;
                 addToast({
                   title: "Department created successfully !.",
                   color: "success",
                 });
-                onOpenChange(false);
-                dispatch(getAllDepartment());
-                reset(defaultValues);
+                console.log("responseData", responseData);
+                dispatch(
+                  createDepartmentInOPerations({
+                    id: responseData?.id,
+                    name: responseData?.name,
+                    createdBy: userId,
+                  })
+                )
+                  .then((resu) => {
+                    if (resu.meta.requestStatus === "fulfilled") {
+                      addToast({
+                        title:
+                          "Desigination added successfully in operations !.",
+                        color: "success",
+                      });
+                      onOpenChange(false);
+                      dispatch(getAllDepartment());
+                      reset(defaultValues);
+                    } else {
+                      addToast({
+                        title: "Something went wrong in operations !.",
+                        color: "danger",
+                      });
+                    } 
+                  })
+                  .catch(() => {
+                    addToast({
+                      title: "Something went wrong in operations !.",
+                      color: "danger",
+                    });
+                  });
               } else {
                 addToast({ title: "Something went wrong !.", color: "danger" });
               }
@@ -548,7 +577,7 @@ const Department = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {item?.id ? "Update slug" : "Create department"}
+                {item?.id ? "Update department" : "Create department"}
               </ModalHeader>
               <ModalBody>
                 <form

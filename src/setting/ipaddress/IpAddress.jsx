@@ -300,7 +300,7 @@ const IpAddress = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh]",
+          wrapper: "max-h-[68vh]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

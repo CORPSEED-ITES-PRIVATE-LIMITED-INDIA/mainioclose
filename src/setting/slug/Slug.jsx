@@ -69,17 +69,17 @@ export const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-export const statusOptions = [
-  { name: "All", uid: "all" },
-  { name: "Product", uid: "Product" },
-  { name: "Service", uid: "Service" },
-];
-
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "slugList", "actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "slugList",
+  "isPlantSetup",
+  "actions",
+];
 
 const Slug = () => {
   const dispatch = useDispatch();

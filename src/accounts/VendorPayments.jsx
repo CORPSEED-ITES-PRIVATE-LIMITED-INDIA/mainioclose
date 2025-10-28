@@ -204,7 +204,7 @@ const VendorPayments = () => {
       const tdsPercentNum = safeNum(tdsPercent);
       const gstAmount = (actualNumAmount * gstPercentNum) / 100;
       const tdsAmount = (actualNumAmount * tdsPercentNum) / 100;
-      const totalAmount = actualNumAmount + gstAmount + tdsAmount;
+      const totalAmount = actualNumAmount + gstAmount - tdsAmount;
       setValue("gstAmount", gstAmount);
       setValue("tdsAmount", tdsAmount);
       setValue("totalAmount", totalAmount);
