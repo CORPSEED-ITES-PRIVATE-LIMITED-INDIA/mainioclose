@@ -37,6 +37,7 @@ import { parseZonedDateTime } from "@internationalized/date";
 
 export const columns = [
   { name: "ID", uid: "id" },
+  { name: "LEAD ID", uid: "leadId" },
   { name: "LEAD NAME", uid: "leadname", sortable: true },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
@@ -50,6 +51,7 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
+  "leadId",
   "leadname",
   "status",
   "assignee",
@@ -516,7 +518,7 @@ const SalesReport = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[70vh] w-full",
+          wrapper: "max-h-[68vh] w-full",
           table:'w-full'
         }}
         sortDescriptor={sortDescriptor}
