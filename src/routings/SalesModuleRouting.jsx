@@ -101,7 +101,7 @@ const SalesModuleRouting = () => {
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />
       <Route path="sales/autoHistory" element={<AutoHistory />} />
       <Route path="sales/salesReport" element={<SalesReport />} />
-      <Route path="sales/autoStatus" element={<AutomationStatus />} />
+      <Route path="sales/automationReport" element={<AutomationStatus />} />
       <Route path="sales/autoHistory/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />

@@ -35,10 +35,10 @@ export const navItems = [
         key: "salesReport",
       },
       {
-        title: "Automation status",
+        title: "Automation report",
         icon: "",
-        url: "sales/autoStatus",
-        key: "autoStatus",
+        url: "sales/automationReport",
+        key: "automationReport",
       },
       { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
       {
