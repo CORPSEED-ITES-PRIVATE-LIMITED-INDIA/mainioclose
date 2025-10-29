@@ -42,6 +42,7 @@ import {
   getLedgerTypeById,
 } from "../../toolkit/slices/organizationSlice";
 import NewSelect from "../../components/NewSelect";
+import { safeNum } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -170,18 +171,20 @@ const Voucher = () => {
   }, [sortDescriptor, items]);
 
   const handlePressEnter = (e) => {
+    console.log("dskjhskjdhgsjk 11111");
+
     const creditCgstAmount =
-      (voucherData?.creditAmount * ledgerDetail?.cgst) / 100;
+      (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.cgst)) / 100;
     const creditSgstAmount =
-      (voucherData?.creditAmount * ledgerDetail?.sgst) / 100;
+      (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.sgst)) / 100;
     const creditIgstAmount =
-      (voucherData?.creditAmount * ledgerDetail?.igst) / 100;
+      (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.igst)) / 100;
     const debitCgstAmount =
-      (voucherData?.debitAmount * ledgerDetail?.cgst) / 100;
+      (safeNum(voucherData?.debitAmount) * safeNum(ledgerDetail?.cgst)) / 100;
     const debitSgstAmount =
-      (voucherData?.debitAmount * ledgerDetail?.sgst) / 100;
+      (safeNum(voucherData?.debitAmount) * safeNum(ledgerDetail?.sgst)) / 100;
     const debitIgstAmount =
-      (voucherData?.debitAmount * ledgerDetail?.igst) / 100;
+      (safeNum(voucherData?.debitAmount) * safeNum(ledgerDetail?.igst)) / 100;
     if (ledgerDetail?.cgstSgstPresent) {
       setRenderedGstData([
         {
@@ -561,7 +564,7 @@ const Voucher = () => {
               onPress={() => {
                 onOpen();
                 setEditData(null);
-                setItemId(null)
+                setItemId(null);
               }}
             >
               Add voucher
@@ -697,7 +700,7 @@ const Voucher = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full overflow-auto",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -740,7 +743,7 @@ const Voucher = () => {
               <ModalHeader>
                 {editData ? "Update voucher" : "Add voucher"}
               </ModalHeader>
-              <ModalBody>
+              <ModalBody  className="max-h-[70vh] overflow-auto">
                 <Table
                   aria-label="Example static collection table"
                   topContent={tableTopContent}
@@ -782,7 +785,12 @@ const Voucher = () => {
                               creditAmount: e.target.value,
                             }));
                           }}
-                          onPressEnter={handlePressEnter}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handlePressEnter();
+                            }
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -796,7 +804,12 @@ const Voucher = () => {
                               debitAmount: e.target.value,
                             }))
                           }
-                          onPressEnter={handlePressEnter}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handlePressEnter();
+                            }
+                          }}
                         />
                       </TableCell>
                     </TableRow>

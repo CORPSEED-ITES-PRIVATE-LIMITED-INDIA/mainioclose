@@ -177,9 +177,9 @@ export const getTotalCountOfEstimate = createAsyncThunk(
 
 export const getAllDailyBookRecord = createAsyncThunk(
   "getAllDailyBookRecord",
-  async ({ start, end }) => {
+  async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/voucher/getAllVoucherInBetweenDate?startDate=${start}&endDate=${end}`
+      `/accountService/api/v1/voucher/getAllVoucherInBetweenDate?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
@@ -434,6 +434,38 @@ export const deleteVoucherById = createAsyncThunk(
   }
 );
 
+export const getAllStatutoryList = createAsyncThunk(
+  "getAllStatutoryList",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/statutory/getAllStatutoryDetails?currentUserId=${id}`
+    );
+    return response.data;
+  }
+);
+
+export const updateStatutory = createAsyncThunk(
+  "updateStatutory",
+  async (data) => {
+    const response = await api.put(
+      `/accountService/api/v1/statutory/updateStatutoryDetails`,
+      data
+    );
+    return response.data;
+  }
+);
+
+export const createStatutory = createAsyncThunk(
+  "createStatutory",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/statutory/addStatutoryDetails`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -468,6 +500,7 @@ const OrganizationSlice = createSlice({
     trailBalanceList: [],
     balanceSheetLiabilitiesList: [],
     balanceSheetAssetsList: [],
+    statutoryList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -834,6 +867,18 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllBalanceSheetAssets.rejected, (state) => {
       state.loading = "rejected";
       state.balanceSheetAssetsList = [];
+    });
+
+    builder.addCase(getAllStatutoryList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllStatutoryList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.statutoryList = action.payload;
+    });
+    builder.addCase(getAllStatutoryList.rejected, (state) => {
+      state.loading = "rejected";
+      state.statutoryList = [];
     });
   },
 });

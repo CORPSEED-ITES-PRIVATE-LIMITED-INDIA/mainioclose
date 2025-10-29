@@ -7,6 +7,9 @@ import {
 import {
   Button,
   DateRangePicker,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   TableBody,
   TableCell,
@@ -18,7 +21,8 @@ import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
 import { CSVLink } from "react-csv";
-import { FileUp } from "lucide-react";
+import { FileUp, ListFilter } from "lucide-react";
+import { useMediaQuery } from "react-responsive";
 
 const BalanceSheet = () => {
   const dispatch = useDispatch();
@@ -40,6 +44,9 @@ const BalanceSheet = () => {
     endDate: today,
   });
 
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
+
   useEffect(() => {
     dispatch(getAllBalanceSheetLiabilities(dateRange));
   }, [dispatch, dateRange]);
@@ -56,14 +63,18 @@ const BalanceSheet = () => {
   }));
   const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 
-
   const exportData2 = (balanceSheetLiabilitiesList?.data || [])?.map((row) => ({
     "Group name": row?.groupName,
     "Total credit": row?.totalCredit,
     "Total debit": row?.totalDebit,
     "Total amount": row?.totalAmount,
   }));
-  const headers2 = ["Group name", "Total credit", "Total debit", "Total amount"];
+  const headers2 = [
+    "Group name",
+    "Total credit",
+    "Total debit",
+    "Total amount",
+  ];
 
   const columns = [
     {
@@ -126,31 +137,64 @@ const BalanceSheet = () => {
     <div className="grid grid-cols-2 gap-2">
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
-          <h1 className="font-medium text-2xl">Liabilities</h1>
+          <h1 className="font-medium text-xl">Liabilities</h1>
           <div className="flex gap-2 items-center">
-            <DateRangePicker
-              hideTimeZone
-              visibleMonths={2}
-              size="md"
-              value={{
-                start: parseZonedDateTime(
-                  `${dateRange?.startDate}[Asia/kolkata]`
-                ),
-                end: parseZonedDateTime(`${dateRange?.endDate}[Asia/kolkata]`),
-              }}
-              onChange={(value) => {
-                const formattedStart = value.start
-                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                  : null;
-                const formattedEnd = value.end
-                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                  : null;
-                setDateRange({
-                  startDate: formattedStart,
-                  endDate: formattedEnd,
-                });
-              }}
-            />
+            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
+              <PopoverTrigger>
+                <Button
+                  variant="flat"
+                  endContent={<ListFilter />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-1 font-medium text-lg" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <DateRangePicker
+                        hideTimeZone
+                        visibleMonths={2}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        popoverProps={{
+                          size: isMedium ? "sm" : isLarge ? "md" : "",
+                          placement: isMedium
+                            ? "right"
+                            : isLarge
+                              ? "bottom"
+                              : "",
+                        }}
+                        value={{
+                          start: parseZonedDateTime(
+                            `${dateRange?.startDate}[Asia/kolkata]`
+                          ),
+                          end: parseZonedDateTime(
+                            `${dateRange?.endDate}[Asia/kolkata]`
+                          ),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                            : null;
+                          setDateRange({
+                            startDate: formattedStart,
+                            endDate: formattedEnd,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <CSVLink
               className="text-white"
               data={exportData}
@@ -164,14 +208,14 @@ const BalanceSheet = () => {
           </div>
         </div>
         <div>
-          <h3 className="font-medium text-lg">
+          <h3 className="font-medium text-md">
             Total amount :{" "}
             {inrCurrency(balanceSheetLiabilitiesList?.totalPrice)}
           </h3>
         </div>
         <Table
           classNames={{
-            wrapper: "max-h-[65vh]",
+            wrapper: "max-h-[60vh]",
           }}
         >
           <TableHeader columns={columns}>
@@ -192,31 +236,64 @@ const BalanceSheet = () => {
       </div>
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
-          <h1 className="font-medium text-2xl">Assets</h1>
+          <h1 className="font-medium text-xl">Assets</h1>
           <div className="flex gap-2 items-center">
-            <DateRangePicker
-              hideTimeZone
-              visibleMonths={2}
-              size="md"
-              value={{
-                start: parseZonedDateTime(
-                  `${dateRange2?.startDate}[Asia/kolkata]`
-                ),
-                end: parseZonedDateTime(`${dateRange2?.endDate}[Asia/kolkata]`),
-              }}
-              onChange={(value) => {
-                const formattedStart = value.start
-                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                  : null;
-                const formattedEnd = value.end
-                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                  : null;
-                setDateRange2({
-                  startDate: formattedStart,
-                  endDate: formattedEnd,
-                });
-              }}
-            />
+            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
+              <PopoverTrigger>
+                <Button
+                  variant="flat"
+                  endContent={<ListFilter />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-1 font-medium text-lg" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <DateRangePicker
+                        hideTimeZone
+                        visibleMonths={2}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        popoverProps={{
+                          size: isMedium ? "sm" : isLarge ? "md" : "",
+                          placement: isMedium
+                            ? "right"
+                            : isLarge
+                              ? "bottom"
+                              : "",
+                        }}
+                        value={{
+                          start: parseZonedDateTime(
+                            `${dateRange2?.startDate}[Asia/kolkata]`
+                          ),
+                          end: parseZonedDateTime(
+                            `${dateRange2?.endDate}[Asia/kolkata]`
+                          ),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                            : null;
+                          setDateRange2({
+                            startDate: formattedStart,
+                            endDate: formattedEnd,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <CSVLink
               className="text-white"
               data={exportData2}
@@ -229,7 +306,7 @@ const BalanceSheet = () => {
             </CSVLink>
           </div>
         </div>
-        <h3 className="font-medium text-lg">
+        <h3 className="font-medium text-md">
           Total amount : {inrCurrency(balanceSheetAssetsList?.totalPrice)}
         </h3>
         <Table>

@@ -1,5 +1,5 @@
 import { parseAbsolute } from "@internationalized/date";
-import { ToWords } from 'to-words';
+import { ToWords } from "to-words";
 
 export const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 export const gstRegex =
@@ -169,7 +169,6 @@ export function inrCurrency(amount) {
   return formatted.replace("₹", "₹\u00A0");
 }
 
-
 export function padZero(num) {
   return String(num).padStart(2, "0");
 }
@@ -182,10 +181,8 @@ export function formatedDateTime(calendarDateTime) {
   return `${year}-${padZero(month)}-${padZero(day)}T${padZero(hour)}:${padZero(minute)}`;
 }
 
-
-
 export const toWords = new ToWords({
-  localeCode: 'en-IN',
+  localeCode: "en-IN",
   converterOptions: {
     currency: true,
     ignoreDecimal: false,
@@ -194,6 +191,4 @@ export const toWords = new ToWords({
   },
 });
 
-
-
-
+export const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
