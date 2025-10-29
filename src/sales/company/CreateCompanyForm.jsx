@@ -56,167 +56,181 @@ import {
   updateCompanyInOperations,
 } from "../../toolkit/slices/operationSlice";
 import { getOperationCompanyFormValues } from "../../operation/components/commonFunctions";
+import { useMediaQuery } from "react-responsive";
 
-const formSchema = (isConsultant) => z.object({
-  consultantOrCompany: z.enum(["consultant", "company"], {
-    required_error: "Please select role as",
-  }),
-  companyName: z.string().min(1, "Please enter company name"),
-  companyType: z.string().min(1, "Please select the company structure"),
-  gstType: z.string().min(1, "Please select the gst type"),
-  businessType: z.string().optional(),
-  gstNo: z.string().min(15, "please enter GST number"),
-  panNo: z.string().min(10, "please enter pan number"),
-  establishDate: z.string().min(1, "Please enter company incorporate date"),
-  assigneeId: z.string().min(1, "Please select the assignee"),
-  industryId: z.string().min(1, "Please select the industry"),
-  subIndustryId: z.string().min(1, "Please select the sub industry"),
-  subsubIndustryId: z.string().min(1, "Please select the category"),
-  industrydataId: z
-    .array(z.string())
-    .min(1, "Please select the business activity"),
-  companyFileUrl: z.string().optional(),
-  rating: z.enum(["Gold", "Silver", "Bronze"], {
-    required_error: "Please select rating",
-  }),
-  paymentTerm: z.enum(
-    [
-      "Net 30",
-      "Net 60",
-      "Net 90",
-      "2/10 Net 30",
-      "EOM (End of Month)",
-      "COD (Cash on Delivery)",
-      "CIA (Cash in Advance)",
-      "Installments",
-      "Milestone-based",
-      "Due on Receipt",
-    ],
-    { required_error: "Please select payment term" }
-  ),
-  aggrementPresent: z.boolean(),
-  agreementFileUrl: z.string().optional(),
-  ndaPresent: z.boolean(),
-  ndaFileUrl: z.string().optional(),
-  primaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
-    required_error: "Please select the salutation",
-  }),
-  contactName: z.string().min(1, "Please enter contact person name"),
-  primaryDesignation: z.string().min(1, "Please select the designation"),
-  contactEmails: z.string().email("Please enter a valid email address"),
-  contactNo: z.string().min(1, "Please enter contact number"),
-  contactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
-  secondaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
-    required_error: "Please select the salutation",
-  }),
-  secondaryContactName: z.string().min(1, "Please enter contact person name"),
-  secondaryDesignation: z.string().min(1, "Please select the designation"),
-  secondaryContactEmails: z
-    .string()
-    .email("Please enter a valid email address"),
-  secondaryContactNo: z.string().min(1, "Please enter contact number"),
-  secondaryContactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
-  address: z.string().min(1, "Please enter primary address"),
-  country: z.string().min(1, "Please select the country"),
-  state: z.string().min(1, "Please select the state"),
-  city: z.string().min(1, "Please select the city"),
-  primaryPinCode: z.string().min(1, "Please enter primary pin code"),
-  secondaryAddress: z.string().optional(),
-  secondaryCountry: z.string().optional(),
-  secondaryState: z.string().optional(),
-  secondaryCity: z.string().optional(),
-  secondaryPinCode: z.string().optional(),
-  ...(isConsultant ? (
-    {
-      servingName: z
-        .string()
-        .min(1, "Please enter serving company name")
-        .optional(),
-      servingCompanyType: z
-        .string()
-        .min(1, "Please select the company structure")
-        .optional(),
-      servingGstNo: z
-        .string()
-        .min(1, "Please enter serving company GST number")
-        .optional(),
-      servingPanNo: z
-        .string()
-        .min(10, "Please enter serving company PAN number")
-        .optional(),
-      servingEstablishDate: z
-        .string()
-        .min(1, "Please enter serving company incorporate date")
-        .optional(),
-      industries: z.string().min(1, "Please select the industry"),
-      subIndustry: z.string().min(1, "Please select the sub industry"),
-      subsubIndustry: z.string().min(1, "Please select the category"),
-      industriesData: z.array(z.string()).min(1, "Please select the business activity"),
-      servingCompanyFileUrl: z.string().optional(),
-      servingPrimaryTitle: z
-        .enum(["master", "mr", "mrs", "miss"], {
-          required_error: "Please select the salutation",
-        })
-        .optional(),
-      servingContactName: z
-        .string()
-        .min(1, "Please enter contact person name")
-        .optional(),
-      servingPrimaryDesignation: z
-        .string()
-        .min(1, "Please select the designation")
-        .optional(),
-      servingContactEmails: z
-        .string()
-        .email("Please enter a valid email address")
-        .optional(),
-      servingContactNo: z.string().min(1, "Please enter contact number").optional(),
-      servingContactWhatsappNo: z
-        .string()
-        .min(1, "Please enter whatsapp number")
-        .optional(),
-      servingSecondaryTitle: z
-        .enum(["master", "mr", "mrs", "miss"], {
-          required_error: "Please select the salutation",
-        })
-        .optional(),
-      servingSecondaryContactName: z
-        .string()
-        .min(1, "Please enter contact person name")
-        .optional(),
-      servingSecondaryDesignation: z
-        .string()
-        .min(1, "Please select the designation")
-        .optional(),
-      servingSecondaryContactEmails: z
-        .string()
-        .email("Please enter a valid email address")
-        .optional(),
-      servingSecondaryContactNo: z
-        .string()
-        .min(1, "Please enter contact number")
-        .optional(),
-      servingSecondaryContactWhatsappNo: z
-        .string()
-        .min(1, "Please enter whatsapp number")
-        .optional(),
-      servingAddress: z.string().min(1, "Please enter primary address").optional(),
-      servingCountry: z.string().min(1, "Please select the country").optional(),
-      servingState: z.string().min(1, "Please select the state").optional(),
-      servingCity: z.string().min(1, "Please select the city").optional(),
-      servingprimaryPinCode: z
-        .string()
-        .min(1, "Please enter primary pin code")
-        .optional(),
-      servingSecondaryAddress: z.string().optional(),
-      servingSecondaryCountry: z.string().optional(),
-      servingSecondaryState: z.string().optional(),
-      servingsecondaryCity: z.string().optional(),
-      servingSecondaryPinCode: z.string().optional(),
-    }
-  ) : {})
-
-});
+const formSchema = (isConsultant) =>
+  z.object({
+    consultantOrCompany: z.enum(["consultant", "company"], {
+      required_error: "Please select role as",
+    }),
+    companyName: z.string().min(1, "Please enter company name"),
+    companyType: z.string().min(1, "Please select the company structure"),
+    gstType: z.string().min(1, "Please select the gst type"),
+    businessType: z.string().optional(),
+    gstNo: z.string().min(15, "please enter GST number"),
+    panNo: z.string().min(10, "please enter pan number"),
+    establishDate: z.string().min(1, "Please enter company incorporate date"),
+    assigneeId: z.string().min(1, "Please select the assignee"),
+    industryId: z.string().min(1, "Please select the industry"),
+    subIndustryId: z.string().min(1, "Please select the sub industry"),
+    subsubIndustryId: z.string().min(1, "Please select the category"),
+    industrydataId: z
+      .array(z.string())
+      .min(1, "Please select the business activity"),
+    companyFileUrl: z.string().optional(),
+    rating: z.enum(["Gold", "Silver", "Bronze"], {
+      required_error: "Please select rating",
+    }),
+    paymentTerm: z.enum(
+      [
+        "Net 30",
+        "Net 60",
+        "Net 90",
+        "2/10 Net 30",
+        "EOM (End of Month)",
+        "COD (Cash on Delivery)",
+        "CIA (Cash in Advance)",
+        "Installments",
+        "Milestone-based",
+        "Due on Receipt",
+      ],
+      { required_error: "Please select payment term" }
+    ),
+    aggrementPresent: z.boolean(),
+    agreementFileUrl: z.string().optional(),
+    ndaPresent: z.boolean(),
+    ndaFileUrl: z.string().optional(),
+    primaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
+      required_error: "Please select the salutation",
+    }),
+    contactName: z.string().min(1, "Please enter contact person name"),
+    primaryDesignation: z.string().min(1, "Please select the designation"),
+    contactEmails: z.string().email("Please enter a valid email address"),
+    contactNo: z.string().min(1, "Please enter contact number"),
+    contactWhatsappNo: z.string().min(1, "Please enter whatsapp number"),
+    secondaryTitle: z.enum(["master", "mr", "mrs", "miss"], {
+      required_error: "Please select the salutation",
+    }),
+    secondaryContactName: z.string().min(1, "Please enter contact person name"),
+    secondaryDesignation: z.string().min(1, "Please select the designation"),
+    secondaryContactEmails: z
+      .string()
+      .email("Please enter a valid email address"),
+    secondaryContactNo: z.string().min(1, "Please enter contact number"),
+    secondaryContactWhatsappNo: z
+      .string()
+      .min(1, "Please enter whatsapp number"),
+    address: z.string().min(1, "Please enter primary address"),
+    country: z.string().min(1, "Please select the country"),
+    state: z.string().min(1, "Please select the state"),
+    city: z.string().min(1, "Please select the city"),
+    primaryPinCode: z.string().min(1, "Please enter primary pin code"),
+    secondaryAddress: z.string().optional(),
+    secondaryCountry: z.string().optional(),
+    secondaryState: z.string().optional(),
+    secondaryCity: z.string().optional(),
+    secondaryPinCode: z.string().optional(),
+    ...(isConsultant
+      ? {
+          servingName: z
+            .string()
+            .min(1, "Please enter serving company name")
+            .optional(),
+          servingCompanyType: z
+            .string()
+            .min(1, "Please select the company structure")
+            .optional(),
+          servingGstNo: z
+            .string()
+            .min(1, "Please enter serving company GST number")
+            .optional(),
+          servingPanNo: z
+            .string()
+            .min(10, "Please enter serving company PAN number")
+            .optional(),
+          servingEstablishDate: z
+            .string()
+            .min(1, "Please enter serving company incorporate date")
+            .optional(),
+          industries: z.string().min(1, "Please select the industry"),
+          subIndustry: z.string().min(1, "Please select the sub industry"),
+          subsubIndustry: z.string().min(1, "Please select the category"),
+          industriesData: z
+            .array(z.string())
+            .min(1, "Please select the business activity"),
+          servingCompanyFileUrl: z.string().optional(),
+          servingPrimaryTitle: z
+            .enum(["master", "mr", "mrs", "miss"], {
+              required_error: "Please select the salutation",
+            })
+            .optional(),
+          servingContactName: z
+            .string()
+            .min(1, "Please enter contact person name")
+            .optional(),
+          servingPrimaryDesignation: z
+            .string()
+            .min(1, "Please select the designation")
+            .optional(),
+          servingContactEmails: z
+            .string()
+            .email("Please enter a valid email address")
+            .optional(),
+          servingContactNo: z
+            .string()
+            .min(1, "Please enter contact number")
+            .optional(),
+          servingContactWhatsappNo: z
+            .string()
+            .min(1, "Please enter whatsapp number")
+            .optional(),
+          servingSecondaryTitle: z
+            .enum(["master", "mr", "mrs", "miss"], {
+              required_error: "Please select the salutation",
+            })
+            .optional(),
+          servingSecondaryContactName: z
+            .string()
+            .min(1, "Please enter contact person name")
+            .optional(),
+          servingSecondaryDesignation: z
+            .string()
+            .min(1, "Please select the designation")
+            .optional(),
+          servingSecondaryContactEmails: z
+            .string()
+            .email("Please enter a valid email address")
+            .optional(),
+          servingSecondaryContactNo: z
+            .string()
+            .min(1, "Please enter contact number")
+            .optional(),
+          servingSecondaryContactWhatsappNo: z
+            .string()
+            .min(1, "Please enter whatsapp number")
+            .optional(),
+          servingAddress: z
+            .string()
+            .min(1, "Please enter primary address")
+            .optional(),
+          servingCountry: z
+            .string()
+            .min(1, "Please select the country")
+            .optional(),
+          servingState: z.string().min(1, "Please select the state").optional(),
+          servingCity: z.string().min(1, "Please select the city").optional(),
+          servingprimaryPinCode: z
+            .string()
+            .min(1, "Please enter primary pin code")
+            .optional(),
+          servingSecondaryAddress: z.string().optional(),
+          servingSecondaryCountry: z.string().optional(),
+          servingSecondaryState: z.string().optional(),
+          servingsecondaryCity: z.string().optional(),
+          servingSecondaryPinCode: z.string().optional(),
+        }
+      : {}),
+  });
 
 const defaultValues = (isConsultant) => ({
   consultantOrCompany: "",
@@ -261,44 +275,43 @@ const defaultValues = (isConsultant) => ({
   secondaryState: "",
   secondaryCity: "",
   secondaryPinCode: "",
-  ...(isConsultant ? ({
-    servingName: "",
-    servingCompanyType: "",
-    servingGstNo: "",
-    servingPanNo: "",
-    servingEstablishDate: "",
-    industries: "",
-    subIndustry: "",
-    subsubIndustry: "",
-    industriesData: "",
-    servingCompanyFileUrl: "",
-    servingPrimaryTitle: "",
-    servingContactName: "",
-    servingPrimaryDesignation: "",
-    servingContactEmails: "",
-    servingContactNo: "",
-    servingContactWhatsappNo: "",
-    servingSecondaryTitle: "",
-    servingSecondaryContactName: "",
-    servingSecondaryDesignation: "",
-    servingSecondaryContactEmails: "",
-    servingSecondaryContactNo: "",
-    servingSecondaryContactWhatsappNo: "",
-    servingAddress: "",
-    servingCountry: "",
-    servingState: "",
-    servingCity: "",
-    servingprimaryPinCode: "",
-    servingSecondaryAddress: "",
-    servingSecondaryCountry: "",
-    servingSecondaryState: "",
-    servingsecondaryCity: "",
-    servingSecondaryPinCode: "",
-  }) : {})
-
-
+  ...(isConsultant
+    ? {
+        servingName: "",
+        servingCompanyType: "",
+        servingGstNo: "",
+        servingPanNo: "",
+        servingEstablishDate: "",
+        industries: "",
+        subIndustry: "",
+        subsubIndustry: "",
+        industriesData: "",
+        servingCompanyFileUrl: "",
+        servingPrimaryTitle: "",
+        servingContactName: "",
+        servingPrimaryDesignation: "",
+        servingContactEmails: "",
+        servingContactNo: "",
+        servingContactWhatsappNo: "",
+        servingSecondaryTitle: "",
+        servingSecondaryContactName: "",
+        servingSecondaryDesignation: "",
+        servingSecondaryContactEmails: "",
+        servingSecondaryContactNo: "",
+        servingSecondaryContactWhatsappNo: "",
+        servingAddress: "",
+        servingCountry: "",
+        servingState: "",
+        servingCity: "",
+        servingprimaryPinCode: "",
+        servingSecondaryAddress: "",
+        servingSecondaryCountry: "",
+        servingSecondaryState: "",
+        servingsecondaryCity: "",
+        servingSecondaryPinCode: "",
+      }
+    : {}),
 });
-
 
 const CreateCompanyForm = ({
   edit,
@@ -349,6 +362,9 @@ const CreateCompanyForm = ({
     searchField: "searchNameAndGSt",
   });
 
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
+
   const {
     control,
     handleSubmit,
@@ -358,7 +374,7 @@ const CreateCompanyForm = ({
     reset,
   } = useForm({
     resolver: zodResolver(formSchema(isConsultant)),
-    defaultValues:defaultValues(isConsultant),
+    defaultValues: defaultValues(isConsultant),
   });
 
   const aggrementPresent = watch("aggrementPresent");
@@ -632,16 +648,16 @@ const CreateCompanyForm = ({
             variant="light"
             onPress={() => setIsNewCompany(false)}
           >
-            <ArrowLeft />
+            <ArrowLeft className="w-4 h-4" />
           </Button>
         )}
-        {!edit && <h1 className="font-medium text-2xl">Company details</h1>}
+        {!edit && <h1 className="font-medium text-xl">Company details</h1>}
       </div>
       <div>
         {!isNewCompany && (
           <div className="flex items-center w-full my-2">
             <Select
-              size="lg"
+              size={isMedium ? "md" : "lg"}
               className="w-[15%]"
               selectedKeys={[seachFields?.searchField]}
               items={[
@@ -660,7 +676,7 @@ const CreateCompanyForm = ({
               )}
             </Select>
             <Autocomplete
-              size="lg"
+              size={isMedium ? "md" : "lg"}
               className="max-w-[85%]"
               classNames={{ base: "rounded-tr-none rounded-br-none" }}
               items={searchCompaniesList || []}
@@ -704,6 +720,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="Company type"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -733,6 +750,7 @@ const CreateCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       label="Company name"
                       errorMessage={error?.message}
@@ -747,6 +765,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="Company structure"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -767,6 +786,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="GST type"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -787,6 +807,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="Business type"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -815,6 +836,7 @@ const CreateCompanyForm = ({
                     render={({ field, fieldState: { error } }) => (
                       <Input
                         isRequired
+                        size={isMedium ? "sm" : "md"}
                         label="GST number"
                         maxLength={15}
                         errorMessage={error?.message || gstError}
@@ -834,6 +856,7 @@ const CreateCompanyForm = ({
                     render={({ field, fieldState: { error } }) => (
                       <Input
                         isRequired
+                        size={isMedium ? "sm" : "md"}
                         label="Pan number"
                         maxLength={10}
                         errorMessage={error?.message || panError}
@@ -852,6 +875,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <DatePicker
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="Company incorporate date"
                       showMonthAndYearPickers
                       maxValue={today(getLocalTimeZone())}
@@ -870,6 +894,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Select assignee"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -887,6 +912,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Select industry"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -907,6 +933,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Select sub industry"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -927,6 +954,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Select category"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -947,6 +975,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Select business activity"
                       selectionMode="multiple"
                       errorMessage={error?.message}
@@ -986,6 +1015,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Rating"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1012,6 +1042,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Payment term"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1052,6 +1083,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Agreement"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1094,6 +1126,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="NDA"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1142,6 +1175,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Salutation"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1166,6 +1200,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Name"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1179,6 +1214,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Designation"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1196,6 +1232,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Email"
                       type="email"
                       errorMessage={error?.message}
@@ -1210,6 +1247,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Contact number"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1223,6 +1261,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       isRequired={true}
+                      size={isMedium ? "sm" : "md"}
                       label="Whatsapp number"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1239,6 +1278,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Select
                       label="Salutation"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1262,6 +1302,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Name"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1274,6 +1315,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="Designation"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={desiginationList || []}
@@ -1291,6 +1333,7 @@ const CreateCompanyForm = ({
                     <Input
                       label="Email"
                       type="email"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1303,6 +1346,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Contact number"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1315,6 +1359,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Whatsapp number"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1333,6 +1378,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Address"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1345,6 +1391,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="Country"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={countryList || []}
@@ -1365,6 +1412,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="State"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={statesList || []}
@@ -1385,6 +1433,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="City"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={citiesList || []}
@@ -1402,6 +1451,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Pin code"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1429,6 +1479,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Address"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1442,6 +1493,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="Country"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={countryList || []}
@@ -1462,6 +1514,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="State"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={statesList || []}
@@ -1482,6 +1535,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="City"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={citiesList || []}
@@ -1499,6 +1553,7 @@ const CreateCompanyForm = ({
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Pin code"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       {...field}
@@ -1522,6 +1577,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Serving company name"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1536,6 +1592,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="Serving company structure"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={companyTypeList || []}
@@ -1555,6 +1612,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Serving company GST number"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1568,6 +1626,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Serving company PAN number"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1581,6 +1640,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <DatePicker
+                          size={isMedium ? "sm" : "md"}
                           label="Serving company incorporate date"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1599,6 +1659,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          size={isMedium ? "sm" : "md"}
                           label="Select industry"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1619,6 +1680,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          size={isMedium ? "sm" : "md"}
                           label="Select sub industry"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1639,6 +1701,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          size={isMedium ? "sm" : "md"}
                           label="Select category"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1659,6 +1722,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          size={isMedium ? "sm" : "md"}
                           label="Select business activity"
                           selectionMode="multiple"
                           errorMessage={error?.message}
@@ -1698,6 +1762,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Select
                           label="Salutation"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1722,6 +1787,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Name"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1735,6 +1801,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="Designation"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={desiginationList || []}
@@ -1753,6 +1820,7 @@ const CreateCompanyForm = ({
                         <Input
                           label="Email"
                           type="email"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1766,6 +1834,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Contact number"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1779,6 +1848,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Whatsapp number"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1794,6 +1864,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Select
                           label="Salutation"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1818,6 +1889,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Name"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1831,6 +1903,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="Designation"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={desiginationList || []}
@@ -1847,6 +1920,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Email"
                           type="email"
                           errorMessage={error?.message}
@@ -1861,6 +1935,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Contact number"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1874,6 +1949,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Whatsapp number"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1892,6 +1968,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          size={isMedium ? "sm" : "md"}
                           label="Address"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1905,6 +1982,7 @@ const CreateCompanyForm = ({
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          size={isMedium ? "sm" : "md"}
                           label="Country"
                           errorMessage={error?.message}
                           isInvalid={!!error}
@@ -1926,6 +2004,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="State"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={statesList || []}
@@ -1946,6 +2025,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="City"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={citiesList || []}
@@ -1963,6 +2043,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Pin code"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1978,6 +2059,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Address"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -1991,6 +2073,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="Country"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={countryList || []}
@@ -2011,6 +2094,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="State"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={statesList || []}
@@ -2031,6 +2115,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="City"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           data={citiesList || []}
@@ -2048,6 +2133,7 @@ const CreateCompanyForm = ({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="Pin code"
+                          size={isMedium ? "sm" : "md"}
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
@@ -2059,10 +2145,15 @@ const CreateCompanyForm = ({
               </div>
             )}
           </div>
-          <div className="flex justify-end">
-            <Button size="lg" color="primary" type="submit" className="mt-2">
-            Submit
-          </Button>
+          <div className="flex justify-end px-2">
+            <Button
+              color="primary"
+              type="submit"
+              className="mt-2"
+              size={isMedium ? "sm" : "md"}
+            >
+              Submit
+            </Button>
           </div>
         </form>
       )}
