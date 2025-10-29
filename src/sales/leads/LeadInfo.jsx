@@ -528,7 +528,7 @@ const LeadInfo = () => {
       {leadDetailLoading === "pending" ? <LoadingSpinner /> :
       Object.keys(leadData)?.length > 0 &&
       (leadData?.assigne?.id == userId || adminRole) ? (
-        <div className="grid grid-cols-2 gap-3 p-2 max-h-[78vh] overflow-auto">
+        <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
           <div className="grid grid-cols-2 gap-3">
             <div className="w-full">
               <Card className="my-2">

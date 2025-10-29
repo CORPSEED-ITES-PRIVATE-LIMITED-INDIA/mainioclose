@@ -623,7 +623,7 @@ const CreateCompanyForm = ({
   };
 
   return (
-    <>
+    <div className="md:max-h-[65vh]">
       <div className="flex items-center gap-2 my-2">
         {!edit && (
           <Button
@@ -694,7 +694,7 @@ const CreateCompanyForm = ({
       </div>
       {isNewCompany && (
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="max-h-[64vh] overflow-auto p-3 flex flex-col gap-12">
+          <div className="2xl:max-h-[64vh] md:max-h-[58vh] overflow-auto p-3 flex flex-col gap-12">
             <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
               <h2 className="mb-2 font-medium text-lg">Company info</h2>
               <div className="grid grid-cols-3 gap-4">
@@ -2059,12 +2059,14 @@ const CreateCompanyForm = ({
               </div>
             )}
           </div>
-          <Button size="lg" color="primary" type="submit" className="mt-2">
+          <div className="flex justify-end">
+            <Button size="lg" color="primary" type="submit" className="mt-2">
             Submit
           </Button>
+          </div>
         </form>
       )}
-    </>
+    </div>
   );
 };
 

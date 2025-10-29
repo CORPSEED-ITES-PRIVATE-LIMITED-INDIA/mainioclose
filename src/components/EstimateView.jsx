@@ -30,7 +30,7 @@ const EstimateView = ({ details }) => {
     pdf.save("estimate.pdf");
   };
   return (
-    <div className="max-h-[68vh] overflow-auto mt-3 px-2 md:px-4 2xl:px-12">
+    <div className="2xl:max-h-[68vh] md:max-h-[65vh] overflow-auto mt-3 px-2 md:px-4 2xl:px-12">
       <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
         {details?.productName && (
           <div className="flex flex-col md:flex-row md:items-center gap-1">
@@ -226,7 +226,7 @@ const EstimateView = ({ details }) => {
                 <table className="w-full border-collapse border border-black text-xs md:text-sm">
                   <thead>
                     <tr>
-                      <th className="border border-black p-1">#</th>
+                      <th className="border border-black p-1"></th>
                       <th className="border border-black p-1">
                         Item and description
                       </th>
@@ -251,19 +251,19 @@ const EstimateView = ({ details }) => {
                       <td className="border border-black p-1 text-center">
                         {details?.gstCode}
                       </td>
-                      <td className="border border-black p-1 text-right">
+                      <td className="border border-black p-1 text-center">
                         {inrCurrency(details?.actualPrice)}
                       </td>
-                      <td className="border border-black p-1 text-right">
+                      <td className="border border-black p-1 text-center">
                         {details?.quantity}
                       </td>
                       <td className="border border-black p-1 text-center">
                         {details?.gst}
                       </td>
-                      <td className="border border-black p-1 text-right">
+                      <td className="border border-black p-1 text-center">
                         {inrCurrency(details?.gstAmount || 0)}
                       </td>
-                      <td className="border border-black p-1 text-right font-bold">
+                      <td className="border border-black p-1 text-center font-bold">
                         {inrCurrency(details?.totalPrice)}
                       </td>
                     </tr>
@@ -273,7 +273,7 @@ const EstimateView = ({ details }) => {
                 <table className="w-full border-collapse border border-black text-xs md:text-sm">
                   <thead>
                     <tr>
-                      <th className="border border-black p-1">#</th>
+                      <th className="border border-black p-1"></th>
                       <th className="border border-black p-1">
                         Item and description
                       </th>
@@ -331,7 +331,7 @@ const EstimateView = ({ details }) => {
                           {details?.profesionalGst}
                         </td>
                         <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td className="border border-black p-1 text-center">
                           {inrCurrency(details?.professionalFees)}
                         </td>
                       </tr>
@@ -348,7 +348,7 @@ const EstimateView = ({ details }) => {
                           {details?.serviceGst}
                         </td>
                         <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td className="border border-black p-1 text-center">
                           {inrCurrency(details?.serviceCharge)}
                         </td>
                       </tr>
@@ -365,7 +365,7 @@ const EstimateView = ({ details }) => {
                           {details?.otherGst}
                         </td>
                         <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td className="border border-black p-1 text-center">
                           {inrCurrency(details?.otherFees)}
                         </td>
                       </tr>
@@ -400,6 +400,254 @@ const EstimateView = ({ details }) => {
                 </span>
               </div>
             )}
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <p>Tax details</p>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "14px",
+                }}
+              >
+                <thead style={{ backgroundColor: "#f3f4f6" }}>
+                  <tr>
+                    <th
+                      style={{
+                        border: "1px solid black",
+                        padding: "8px",
+                        textAlign: "left",
+                      }}
+                    >
+                      HSN
+                    </th>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
+                      SGST %
+                    </th>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
+                      CGST %
+                    </th>
+                    <th style={{ border: "1px solid black", padding: "8px" }}>
+                      IGST %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {details?.Type === "Product" ? (
+                    details?.gstCode !== null && (
+                      <tr>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                          }}
+                        >
+                          {details?.gstCode}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          0.0 %
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          0.0 %
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {details?.gst}
+                        </td>
+                      </tr>
+                    )
+                  ) : (
+                    <>
+                      {details?.profesionalCode && (
+                        <tr>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                            }}
+                          >
+                            {details?.profesionalCode}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            {details?.profesionalGst}
+                          </td>
+                        </tr>
+                      )}
+                      {details?.serviceCode && (
+                        <tr>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                            }}
+                          >
+                            {details?.serviceCode}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            {details?.serviceGst}
+                          </td>
+                        </tr>
+                      )}
+                      {details?.govermentCode && (
+                        <tr>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                            }}
+                          >
+                            {details?.govermentCode}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            {details?.govermentGst}
+                          </td>
+                        </tr>
+                      )}
+                      {details?.otherCode && (
+                        <tr>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                            }}
+                          >
+                            {details?.otherCode}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            0.0 %
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid black",
+                              padding: "8px",
+                              textAlign: "center",
+                            }}
+                          >
+                            {details?.otherGst}
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "1px" }}
+            >
+              <p style={{ fontWeight: 500 }}>Notes :</p>
+              {details?.invoiceNote && (
+                <p style={{ color: "#6b7280" }}>{details?.invoiceNote}</p>
+              )}
+              <hr style={{ margin: "1px 0" }} />
+              <p style={{ color: "#6b7280" }}>
+                <strong>Remark</strong> : {details?.getRemarkForOperation}
+              </p>
+            </div>
           </div>
         </div>
       </div>

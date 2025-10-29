@@ -73,6 +73,7 @@ export const leadSource = [
   "Other",
   "Mail",
   "Emailer",
+  "Manual"
 ];
 
 export const paymentTermDays = [
