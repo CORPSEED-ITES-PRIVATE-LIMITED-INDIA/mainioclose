@@ -36,7 +36,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import logo from "../assets/CORPSEED.webp";
 import {
   Dropdown,
@@ -84,6 +84,7 @@ const icons = {
 
 const Sidebar = ({ items, collapsed }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { userId } = useParams();
   const userDetail = useSelector((state) => state.auth.currentUser);
   const [openMenu, setOpenMenu] = useState({});
@@ -202,6 +203,7 @@ const Sidebar = ({ items, collapsed }) => {
               key="logout"
               onPress={() => {
                 dispatch(logoutFun());
+                navigate("/login");
                 dispatch(toggleAutoOffFeature({ userId, flag: false }));
               }}
             >

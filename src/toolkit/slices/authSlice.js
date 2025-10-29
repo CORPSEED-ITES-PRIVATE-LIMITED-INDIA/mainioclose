@@ -16,6 +16,21 @@ export const changePasswordAuthentication = createAsyncThunk(
   }
 );
 
+export const forgetPasswordApi = createAsyncThunk(
+  "forgetPassword",
+  async (data) => {
+    const passData = await api.post(
+      `/securityService/api/auth/forgetOtp?email=${data}`
+    );
+    return passData?.data;
+  }
+);
+
+export const updatePassword = createAsyncThunk("updatePassword", async (data) => {
+  const response = await api.put(`/securityService/api/auth/updateUser`, data);
+  return response?.data;
+});
+
 export const getDepartmentOfUser = createAsyncThunk(
   "getDepartment",
   async (id) => {

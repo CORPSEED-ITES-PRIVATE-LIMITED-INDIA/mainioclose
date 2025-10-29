@@ -21,13 +21,13 @@ import {
 import { ChevronDown, Import, ListFilter, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { now, parseZonedDateTime } from "@internationalized/date";
+import { parseZonedDateTime } from "@internationalized/date";
 import { getAutomationLeads } from "../../toolkit/slices/leadSlice";
 import { CSVLink } from "react-csv";
 import NewSelect from "../../components/NewSelect";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
-import { formatedDateTime } from "../../common";
 import dayjs from "dayjs";
+import { useMediaQuery } from "react-responsive";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -72,6 +72,9 @@ const AutomationStatus = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+const isSmall = useMediaQuery({ maxWidth: 767 });
+const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(getAutomationLeads(dateFilter));
@@ -215,15 +218,15 @@ const AutomationStatus = () => {
     "BadFit status",
   ];
 
-
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
+            size={isMedium ? "sm" : isLarge ? "md" : ""}
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -236,11 +239,20 @@ const AutomationStatus = () => {
               filename={"auto-history.csv"}
               variant="flat"
             >
-              <Button endContent={<Import />}>Export</Button>
+              <Button
+                endContent={<Import />}
+                size={isMedium ? "sm" : isLarge ? "md" : ""}
+              >
+                Export
+              </Button>
             </CSVLink>
-            <Popover size="lg" showArrow>
+            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
               <PopoverTrigger>
-                <Button variant="flat" endContent={<ListFilter />}>
+                <Button
+                  variant="flat"
+                  endContent={<ListFilter />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
                   Filter
                 </Button>
               </PopoverTrigger>
@@ -252,7 +264,7 @@ const AutomationStatus = () => {
                     </h3>
                     <div className="flex flex-col gap-2">
                       <NewSelect
-                        size={"lg"}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
                         data={leadUsersList}
                         selectionMode="multiple"
                         label={"Select users"}
@@ -269,10 +281,19 @@ const AutomationStatus = () => {
                       />
                       <DateRangePicker
                         hideTimeZone
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
                         granularity="minute"
                         hourCycle={24}
                         visibleMonths={2}
                         label="Select date range"
+                        popoverProps={{
+                          size: isMedium ? "sm" :isLarge? "md":"",
+                          placement: isMedium
+                            ? "left"
+                            : isLarge
+                              ? "bottom"
+                              : "",
+                        }}
                         value={{
                           start: dateFilter?.toDate
                             ? parseZonedDateTime(
@@ -301,8 +322,17 @@ const AutomationStatus = () => {
                       />
                     </div>
                     <div className="flex justify-end gap-2 my-2">
-                      <Button onPress={handleResetFilter}>Reset</Button>
-                      <Button color="primary" onPress={handleApplyFilter}>
+                      <Button
+                        onPress={handleResetFilter}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        color="primary"
+                        onPress={handleApplyFilter}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
                         Apply
                       </Button>
                     </div>
@@ -312,7 +342,11 @@ const AutomationStatus = () => {
             </Popover>
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown />}
+                  variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -360,7 +394,11 @@ const AutomationStatus = () => {
     onSearchChange,
     hasSearchFilter,
     leadUsersList,
-    dateFilter
+    dateFilter,
+    exportData,
+    headers,
+    isMedium,
+    isLarge,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -374,6 +412,7 @@ const AutomationStatus = () => {
         <Pagination
           isCompact
           showControls
+          size={isMedium ? "sm" : isLarge ? "md" : ""}
           showShadow
           color="primary"
           page={page}
@@ -400,19 +439,21 @@ const AutomationStatus = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter, isMedium, isLarge]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Automation report list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">
+        Automation report list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

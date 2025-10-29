@@ -7,7 +7,7 @@ import {
   toggleAutoOnFeature,
 } from "../toolkit/slices/authSlice";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -115,6 +115,9 @@ const Login = () => {
             placeholder="Enter your password"
             type="password"
           />
+          <Link to={"/forgotPassword"} className="text-primary my-1">
+            Forgot password ?
+          </Link>
           <div className="flex justify-center gap-2 w-full">
             <Button
               color="primary"

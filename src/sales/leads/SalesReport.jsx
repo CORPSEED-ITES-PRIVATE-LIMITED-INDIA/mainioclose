@@ -32,8 +32,8 @@ import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
 import { CSVLink } from "react-csv";
-import { formatedDateTime } from "../../common";
 import { parseZonedDateTime } from "@internationalized/date";
+import { useMediaQuery } from "react-responsive";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -91,6 +91,11 @@ const SalesReport = () => {
     departmentId: null,
     assigneeIds: [],
   });
+const isSmall = useMediaQuery({ maxWidth: 767 });
+const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+const isLarge = useMediaQuery({ minWidth: 1536 });
+
+  console.log("isMedium",isSmall, isMedium, isLarge);
 
   useEffect(() => {
     dispatch(
@@ -273,14 +278,18 @@ const SalesReport = () => {
             placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
-            size="sm"
+            size={isMedium ? "sm" : isLarge ? "md" : ""}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} size="sm" variant="flat">
+                <Button
+                  endContent={<ChevronDown />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  variant="flat"
+                >
                   {department}
                 </Button>
               </DropdownTrigger>
@@ -324,7 +333,7 @@ const SalesReport = () => {
               </DropdownMenu>
             </Dropdown>
             <Popover
-              size="lg"
+              size={isMedium ? "sm" : isLarge ? "md" : ""}
               showArrow
               isOpen={isOpen}
               onOpenChange={(e) => {
@@ -335,7 +344,11 @@ const SalesReport = () => {
               }}
             >
               <PopoverTrigger>
-                <Button variant="flat" size="sm" endContent={<ListFilter />}>
+                <Button
+                  variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  endContent={<ListFilter />}
+                >
                   Filter
                 </Button>
               </PopoverTrigger>
@@ -347,6 +360,7 @@ const SalesReport = () => {
                     </h3>
                     <div className="grid grid-cols-1 gap-4">
                       <NewSelect
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
                         data={allLeadUser || []}
                         selectionMode="multiple"
                         label={"Select users"}
@@ -366,8 +380,17 @@ const SalesReport = () => {
                           hideTimeZone
                           granularity="minute"
                           hourCycle={24}
+                          size={isMedium ? "sm" : isLarge ? "md" : ""}
                           visibleMonths={2}
                           label="Created date"
+                          popoverProps={{
+                            size: isMedium ? "sm" : isLarge ? "md" : "",
+                            placement: isMedium
+                              ? "left"
+                              : isLarge
+                                ? "bottom"
+                                : "",
+                          }}
                           value={{
                             start: dateFilter?.toDate
                               ? parseZonedDateTime(
@@ -397,8 +420,17 @@ const SalesReport = () => {
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 my-2">
-                      <Button onPress={handleResetFilter}>Reset</Button>
-                      <Button color="primary" onPress={handleApplyFilter}>
+                      <Button
+                        onPress={handleResetFilter}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        color="primary"
+                        onPress={handleApplyFilter}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
                         Apply
                       </Button>
                     </div>
@@ -414,14 +446,18 @@ const SalesReport = () => {
               <Button
                 isDisabled={salesReportExportLoading !== "success"}
                 endContent={<Upload />}
-                size="sm"
+                size={isMedium ? "sm" : isLarge ? "md" : ""}
               >
                 Export
               </Button>
             </CSVLink>
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} size="sm" variant="flat">
+                <Button
+                  endContent={<ChevronDown />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -472,6 +508,10 @@ const SalesReport = () => {
     dateFilter,
     handleApplyFilter,
     handleResetFilter,
+    isMedium,
+    exportData,
+    headers,
+    isLarge,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -485,6 +525,7 @@ const SalesReport = () => {
         <Pagination
           isCompact
           showControls
+          size={isMedium ? "sm" : isLarge ? "md" : ""}
           showShadow
           color="primary"
           page={page}
@@ -511,7 +552,16 @@ const SalesReport = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, page, pages, hasSearchFilter, data, count]);
+  }, [
+    selectedKeys,
+    page,
+    pages,
+    hasSearchFilter,
+    data,
+    count,
+    isMedium,
+    isLarge,
+  ]);
 
   return (
     <>

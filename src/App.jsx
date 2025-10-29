@@ -1,6 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import HomePage from "./home/HomePage";
 import Login from "./login/Login";
+import ForgotPassword from "./login/ForgotPassword";
+import Otp from "./login/Otp";
 import ProtectedRoute from "./ProtectedRoute";
 import Layoutpage from "./layouts/Layoutpage";
 import Users from "./users/Users";
@@ -29,7 +31,9 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/:leadId/estimate-preview" element={<EstimatePreview />}/>
+        <Route path="/forgotPassword" element={<ForgotPassword />} />
+        <Route path="/:email/otp" element={<Otp />} />
+        <Route path="/:leadId/estimate-preview" element={<EstimatePreview />} />
         <Route path="/erp" element={<ProtectedRoute />}>
           <Route path=":userId" element={<Layoutpage />}>
             {/*Dashboard */}
@@ -57,11 +61,23 @@ function App() {
 
             {/* Others */}
             <Route path="users/usersList" element={<Users />} />
-            <Route path="users/deactiveUsersList" element={<DeactiveUserList />} />
-            <Route path="users/approvalList" element={<UserManagerApproval />} />
-            <Route path="users/usersList/:currentUserId/userHistory" element={<UserHistory />} />
+            <Route
+              path="users/deactiveUsersList"
+              element={<DeactiveUserList />}
+            />
+            <Route
+              path="users/approvalList"
+              element={<UserManagerApproval />}
+            />
+            <Route
+              path="users/usersList/:currentUserId/userHistory"
+              element={<UserHistory />}
+            />
 
-            <Route path="admin/vendorPaymentApproval" element={<VendorPaymentApproval />} />
+            <Route
+              path="admin/vendorPaymentApproval"
+              element={<VendorPaymentApproval />}
+            />
             {ProcurementRouting()}
 
             {/* Settings */}
