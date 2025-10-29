@@ -7,6 +7,9 @@ import {
 import {
   Button,
   DateRangePicker,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   TableBody,
   TableCell,
@@ -18,7 +21,8 @@ import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
 import { CSVLink } from "react-csv";
-import { FileUp } from "lucide-react";
+import { FileUp, ListFilter } from "lucide-react";
+import { useMediaQuery } from "react-responsive";
 
 const CashFlow = () => {
   const dispatch = useDispatch();
@@ -35,6 +39,9 @@ const CashFlow = () => {
     startDate: twoMonthsAgo,
     endDate: today,
   });
+
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(getAllInFlowList(dateRange));
@@ -126,31 +133,64 @@ const CashFlow = () => {
     <div className="grid grid-cols-2 gap-2">
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
-          <h1 className="font-medium text-2xl">In flow</h1>
+          <h1 className="font-medium text-xl">In flow</h1>
           <div className="flex gap-2 items-center">
-            <DateRangePicker
-              hideTimeZone
-              visibleMonths={2}
-              size="md"
-              value={{
-                start: parseZonedDateTime(
-                  `${dateRange?.startDate}[Asia/kolkata]`
-                ),
-                end: parseZonedDateTime(`${dateRange?.endDate}[Asia/kolkata]`),
-              }}
-              onChange={(value) => {
-                const formattedStart = value.start
-                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                  : null;
-                const formattedEnd = value.end
-                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                  : null;
-                setDateRange({
-                  startDate: formattedStart,
-                  endDate: formattedEnd,
-                });
-              }}
-            />
+            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
+              <PopoverTrigger>
+                <Button
+                  variant="flat"
+                  endContent={<ListFilter />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-1 font-medium text-lg" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <DateRangePicker
+                        hideTimeZone
+                        visibleMonths={2}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        popoverProps={{
+                          size: isMedium ? "sm" : isLarge ? "md" : "",
+                          placement: isMedium
+                            ? "right"
+                            : isLarge
+                              ? "bottom"
+                              : "",
+                        }}
+                        value={{
+                          start: parseZonedDateTime(
+                            `${dateRange?.startDate}[Asia/kolkata]`
+                          ),
+                          end: parseZonedDateTime(
+                            `${dateRange?.endDate}[Asia/kolkata]`
+                          ),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                            : null;
+                          setDateRange({
+                            startDate: formattedStart,
+                            endDate: formattedEnd,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <CSVLink
               className="text-white"
               data={exportData}
@@ -186,31 +226,64 @@ const CashFlow = () => {
       </div>
       <div className="flex flex-col gap-2 p-2">
         <div className="flex justify-between items-center">
-          <h1 className="font-medium text-2xl">Out flow</h1>
+          <h1 className="font-medium text-xl">Out flow</h1>
           <div className="flex gap-2 items-center">
-            <DateRangePicker
-              hideTimeZone
-              visibleMonths={2}
-              size="md"
-              value={{
-                start: parseZonedDateTime(
-                  `${dateRange2?.startDate}[Asia/kolkata]`
-                ),
-                end: parseZonedDateTime(`${dateRange2?.endDate}[Asia/kolkata]`),
-              }}
-              onChange={(value) => {
-                const formattedStart = value.start
-                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                  : null;
-                const formattedEnd = value.end
-                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                  : null;
-                setDateRange2({
-                  startDate: formattedStart,
-                  endDate: formattedEnd,
-                });
-              }}
-            />
+            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
+              <PopoverTrigger>
+                <Button
+                  variant="flat"
+                  endContent={<ListFilter />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-1 font-medium text-lg" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <DateRangePicker
+                        hideTimeZone
+                        visibleMonths={2}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        popoverProps={{
+                          size: isMedium ? "sm" : isLarge ? "md" : "",
+                          placement: isMedium
+                            ? "right"
+                            : isLarge
+                              ? "bottom"
+                              : "",
+                        }}
+                        value={{
+                          start: parseZonedDateTime(
+                            `${dateRange2?.startDate}[Asia/kolkata]`
+                          ),
+                          end: parseZonedDateTime(
+                            `${dateRange2?.endDate}[Asia/kolkata]`
+                          ),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                            : null;
+                          setDateRange2({
+                            startDate: formattedStart,
+                            endDate: formattedEnd,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <CSVLink
               className="text-white"
               data={exportData2}

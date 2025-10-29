@@ -31,13 +31,15 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
+import { inrCurrency } from "../../common";
+import { useMediaQuery } from "react-responsive";
 
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "ORGANIZATION", uid: "organization", sortable: true },
   { name: "TDS TYPE", uid: "tdsType" },
   { name: "TDS", uid: "tds" },
-  { name: "TOTAL PAYMENT", uid: "totalPaymentAmount" },
+  { name: "AMOUNT", uid: "amount" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -49,7 +51,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "organization",
   "tdsType",
   "tds",
-  "totalPaymentAmount",
+  "amount",
   "actions",
 ];
 
@@ -91,6 +93,8 @@ const TDS = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(getAllTdsList());
@@ -159,7 +163,7 @@ const TDS = () => {
             });
             dispatch(getAllTdsList());
             onOpenChange(false);
-            reset()
+            reset();
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -185,13 +189,14 @@ const TDS = () => {
       case "tds":
         return (
           <div className="flex flex-col gap-2">
-            <span className="text-sm">TDS : {rowData?.tdsPrecent} %</span>
-            <span className="text-sm">Amount : ₹ {rowData?.tdsAmount}</span>
+            <span className="text-sm">{rowData?.tdsPrecent} %</span>
           </div>
         );
-      case "totalPaymentAmount":
+      case "amount":
         return (
-          <p className="text-sm capitalize">₹ {rowData?.totalPaymentAmount}</p>
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.tdsAmount)}
+          </p>
         );
       case "actions":
         return (
@@ -252,7 +257,8 @@ const TDS = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
+            size={isMedium ? "sm" : isLarge ? "md" : ""}
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -261,7 +267,11 @@ const TDS = () => {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown />}
+                  variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -280,15 +290,18 @@ const TDS = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button endContent={<Plus />} color="primary" onPress={onOpen}>
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={onOpen}
+              size={isMedium ? "sm" : isLarge ? "md" : ""}
+            >
               Add TDS
             </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} tds
-          </span>
+          <span className="text-default-400 text-small">Total {count} tds</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -311,6 +324,8 @@ const TDS = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    isLarge,
+    isMedium,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -326,6 +341,7 @@ const TDS = () => {
           showControls
           showShadow
           color="primary"
+          size={isMedium ? "sm" : isLarge ? "md" : ""}
           page={page}
           total={pages}
           onChange={setPage}
@@ -350,21 +366,27 @@ const TDS = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [
+    selectedKeys,
+    items.length,
+    page,
+    pages,
+    hasSearchFilter,
+    isMedium,
+    isLarge,
+  ]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        TDS list
-      </h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">TDS list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[68vh] md:max-h-[55vh] w-full",
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

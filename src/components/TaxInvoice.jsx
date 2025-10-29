@@ -63,7 +63,8 @@ const TaxInvoice = ({ detail }) => {
     },
     {
       particulars: "IGST",
-      gst: detail?.profesionalGst,
+      hsn: detail?.gstCode,
+      amount: detail?.gstAmount,
     },
   ];
   const totalAmount = detail?.totalAmount;
@@ -72,7 +73,7 @@ const TaxInvoice = ({ detail }) => {
     {
       hsn: detail?.professionalCode,
       taxable: detail?.professionalFees,
-      igstRate: detail?.profesionalGst,
+      igstRate: detail?.gstPercent,
       igstAmount: detail?.gstAmount,
       totalTax: detail?.gstAmount,
     },

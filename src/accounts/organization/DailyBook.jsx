@@ -14,13 +14,23 @@ import {
   DropdownItem,
   Pagination,
   DateRangePicker,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, FileUp, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  FileUp,
+  ListFilter,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllDailyBookRecord } from "../../toolkit/slices/organizationSlice";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
 import { CSVLink } from "react-csv";
+import { useMediaQuery } from "react-responsive";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -75,6 +85,8 @@ const DailyBook = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(getAllDailyBookRecord(dateRange));
@@ -126,7 +138,7 @@ const DailyBook = () => {
     "Company name": row?.companyName,
     "Voucher type": row?.voucherType?.name,
     "Payment type": row?.paymentType,
-    Date: dayjs(rowData?.date).format("DD-MM-YYYY"),
+    Date: dayjs(row?.date).format("DD-MM-YYYY"),
     "Credit amount": row?.creditAmount,
     "Debit amount": row?.debitAmount,
   }));
@@ -238,6 +250,7 @@ const DailyBook = () => {
             isClearable
             className="w-full sm:max-w-[35%]"
             placeholder="Search by name..."
+            size={isMedium ? "sm" : isLarge ? "md" : ""}
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -250,40 +263,91 @@ const DailyBook = () => {
               headers={headers}
               filename={"daybook.csv"}
             >
-              <Button variant="flat">
+              <Button
+                variant="flat"
+                size={isMedium ? "sm" : isLarge ? "md" : ""}
+              >
                 <FileUp className="h-4 w-4" />
                 Export
               </Button>
             </CSVLink>
-            <DateRangePicker
-              hideTimeZone
-              visibleMonths={2}
-              size="md"
-              value={{
-                start: parseZonedDateTime(
-                  `${dateRange?.startDate}[Asia/kolkata]`
-                ),
-                end: parseZonedDateTime(`${dateRange?.endDate}[Asia/kolkata]`),
-              }}
-              onChange={(value) => {
-                const formattedStart = value.start
-                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                  : null;
-                const formattedEnd = value.end
-                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                  : null;
-                setDateRange({
-                  startDate: formattedStart,
-                  endDate: formattedEnd,
-                });
-              }}
-            />
+            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
+              <PopoverTrigger>
+                <Button
+                  variant="flat"
+                  endContent={<ListFilter />}
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <DateRangePicker
+                        hideTimeZone
+                        visibleMonths={2}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        popoverProps={{
+                          size: isMedium ? "sm" : isLarge ? "md" : "",
+                          placement: isMedium
+                            ? "left"
+                            : isLarge
+                              ? "bottom"
+                              : "",
+                        }}
+                        value={{
+                          start: parseZonedDateTime(
+                            `${dateRange?.startDate}[Asia/kolkata]`
+                          ),
+                          end: parseZonedDateTime(
+                            `${dateRange?.endDate}[Asia/kolkata]`
+                          ),
+                        }}
+                        onChange={(value) => {
+                          const formattedStart = value.start
+                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                            : null;
+                          const formattedEnd = value.end
+                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                            : null;
+                          setDateRange({
+                            startDate: formattedStart,
+                            endDate: formattedEnd,
+                          });
+                        }}
+                      />
+                    </div>
+                    {/* <div className="flex justify-end gap-2 my-2">
+                      <Button
+                        onPress={handleResetFilter}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        color="primary"
+                        onPress={handleApplyFilter}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
+                        Apply
+                      </Button>
+                    </div> */}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
                   endContent={<ChevronDown className="text-small" />}
                   variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
                 >
                   Columns
                 </Button>
@@ -360,6 +424,11 @@ const DailyBook = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    isMedium,
+    isLarge,
+    exportData,
+    headers,
+    dateRange,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -374,6 +443,7 @@ const DailyBook = () => {
           isCompact
           showControls
           showShadow
+          size={isMedium ? "sm" : isLarge ? "md" : ""}
           color="primary"
           page={page}
           total={pages}
@@ -399,7 +469,7 @@ const DailyBook = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, hasSearchFilter, isMedium, isLarge]);
 
   return (
     <>
