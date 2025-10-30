@@ -83,6 +83,7 @@ import {
 import dayjs from "dayjs";
 import EstimateView from "../../components/EstimateView";
 import { formatGSTInput, formatPANInput } from "../../common";
+import { useMediaQuery } from "react-responsive";
 
 function formCondition(data) {
   let result = {
@@ -387,6 +388,9 @@ const LeadEstimate = () => {
     govermentGst: 0,
     otherGst: 0,
   });
+
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   const {
     control,
@@ -933,7 +937,7 @@ const LeadEstimate = () => {
   return (
     <>
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-xl font-semibold">
           {Object.keys(details)?.length > 0 && !editEstimate
             ? `${
                 details?.performaInvoice
@@ -947,7 +951,7 @@ const LeadEstimate = () => {
 
         {Object.keys(details)?.length > 0 && (
           <div>
-            <Button onPress={onOpen}>Upload document</Button>
+            {/* <Button onPress={onOpen}>Upload document</Button> */}
             <Button onPress={handleEditEstimate}>
               {editEstimate ? "Show estimate" : "Edit"}
             </Button>
@@ -958,7 +962,7 @@ const LeadEstimate = () => {
         <div>
           <div className="flex items-center w-full my-2">
             <Select
-              size="lg"
+              size={isMedium ? "md" : "lg"}
               className="w-[15%]"
               selectedKeys={[seachFields?.searchField]}
               items={[
@@ -977,8 +981,8 @@ const LeadEstimate = () => {
               )}
             </Select>
             <Autocomplete
-              size="lg"
-              className="max-w-[85%]"
+              size={isMedium ? "md" : "lg"}
+              className="max-w-[82%]"
               classNames={{ base: "rounded-tr-none rounded-br-none" }}
               items={searchCompaniesList || []}
               placeholder="Search companies"
@@ -994,7 +998,6 @@ const LeadEstimate = () => {
                 <AutocompleteItem
                   key={item.companyId}
                   onPress={() => {
-                    console.log("jkghsjgdjhsdghjs ",item)
                     setCompanyAndUnitData((prev) => ({
                       ...prev,
                       companyName: item?.companyName,
@@ -1008,7 +1011,7 @@ const LeadEstimate = () => {
             </Autocomplete>
           </div>
           <form
-            className="max-h-[67vh] overflow-auto px-4 py-2"
+            className="2xl:max-h-[67vh] md:max-h-[55vh] overflow-auto px-4 py-2"
             onSubmit={handleSubmit(handleFinish)}
           >
             <div className="px-2 py-2 my-2">
@@ -1018,6 +1021,7 @@ const LeadEstimate = () => {
                 render={({ field, fieldState: { error } }) => {
                   return (
                     <Switch
+                      size={isMedium ? "sm" : "md"}
                       isSelected={field.value}
                       onValueChange={(e) => {
                         field.onChange(e);
@@ -1036,6 +1040,7 @@ const LeadEstimate = () => {
                   <Button
                     variant="flat"
                     color="primary"
+                    size={isMedium ? "sm" : "md"}
                     onPress={gstFormModal.onOpen}
                     endContent={<Pencil className="w-4 h-4" />}
                   >
@@ -1052,6 +1057,7 @@ const LeadEstimate = () => {
                     return (
                       <NewSelect
                         isRequired
+                        size={isMedium ? "sm" : "md"}
                         data={allCompanyUnits || []}
                         errorMessage="please select company unit"
                         label={"Select company unit "}
@@ -1159,6 +1165,7 @@ const LeadEstimate = () => {
                     <NewSelect
                       isRequired
                       isDisabled
+                      size={isMedium ? "sm" : "md"}
                       label="Company structure"
                       errorMessage={"please select the company type."}
                       data={companyTypeList || []}
@@ -1178,6 +1185,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       isDisabled
                       label="GST type"
@@ -1200,6 +1208,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       isDisabled
                       label="Business type"
@@ -1230,6 +1239,7 @@ const LeadEstimate = () => {
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <Input
+                        size={isMedium ? "sm" : "md"}
                         isRequired
                         label="GST number"
                         isDisabled
@@ -1250,6 +1260,7 @@ const LeadEstimate = () => {
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <Input
+                        size={isMedium ? "sm" : "md"}
                         isRequired
                         label="Pan number"
                         isDisabled
@@ -1315,6 +1326,7 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="Primary contact"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1334,6 +1346,7 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       isRequired
+                      size={isMedium ? "sm" : "md"}
                       label="Secondary contact"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1354,6 +1367,7 @@ const LeadEstimate = () => {
               <CardBody>
                 <div className="my-2">
                   <Switch
+                    size={isMedium ? "sm" : "md"}
                     onChange={(e) => {
                       let values = getValues();
                       setDiscount(e);
@@ -1378,6 +1392,7 @@ const LeadEstimate = () => {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <NewSelect
+                            size={isMedium ? "sm" : "md"}
                             isRequired
                             label="Select business arrangement"
                             errorMessage={error?.message}
@@ -1398,6 +1413,7 @@ const LeadEstimate = () => {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <NewSelect
+                            size={isMedium ? "sm" : "md"}
                             isRequired
                             label="Select product category"
                             errorMessage={error?.message}
@@ -1420,6 +1436,7 @@ const LeadEstimate = () => {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <NewSelect
+                            size={isMedium ? "sm" : "md"}
                             isRequired
                             label="Select product category"
                             errorMessage={error?.message}
@@ -1463,6 +1480,7 @@ const LeadEstimate = () => {
                           render={({ field, fieldState: { error } }) => {
                             return (
                               <Input
+                                size={isMedium ? "sm" : "md"}
                                 type="number"
                                 startContent={
                                   <IndianRupee className="h-4 w-4" />
@@ -1502,6 +1520,7 @@ const LeadEstimate = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               isRequired
                               label="HSN code"
                               {...field}
@@ -1516,6 +1535,7 @@ const LeadEstimate = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               isRequired
                               label="GST %"
                               endContent={<Percent className="h-4 w-4" />}
@@ -1542,6 +1562,7 @@ const LeadEstimate = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               isRequired
                               label="Quantity in kg"
                               type="number"
@@ -1568,6 +1589,7 @@ const LeadEstimate = () => {
                           control={control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               isRequired
                               label="Total price (₹)"
                               isDisabled
@@ -1594,6 +1616,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   type="number"
                                   label="Professional fees"
@@ -1612,6 +1635,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Hsn number"
                                   value={field.value}
@@ -1626,6 +1650,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   type="number"
                                   label="Professional gst"
@@ -1655,6 +1680,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Service charges"
                                   type="number"
@@ -1673,6 +1699,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Hsn number"
                                   value={field.value}
@@ -1687,6 +1714,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   type="number"
                                   label="Service gst"
@@ -1716,6 +1744,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   type="number"
                                   label="Government fees"
@@ -1734,6 +1763,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Hsn number"
                                   value={field.value}
@@ -1748,6 +1778,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Government gst"
                                   type="number"
@@ -1777,6 +1808,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Other fees"
                                   type="number"
@@ -1795,6 +1827,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Hsn number"
                                   value={field.value}
@@ -1809,6 +1842,7 @@ const LeadEstimate = () => {
                               control={control}
                               render={({ field, fieldState: { error } }) => (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   type="number"
                                   label="Government gst"
@@ -1842,6 +1876,7 @@ const LeadEstimate = () => {
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
+                        size={isMedium ? "sm" : "md"}
                         isRequired
                         label="Select assignee"
                         errorMessage={error?.message}
@@ -1863,6 +1898,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       label="Order number"
                       {...field}
@@ -1877,6 +1913,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <DatePicker
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       label="Purchase date"
                       showMonthAndYearPickers
@@ -1895,6 +1932,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       label="Invoice note"
                       {...field}
@@ -1909,6 +1947,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       label="Remark"
                       {...field}
@@ -1929,6 +1968,7 @@ const LeadEstimate = () => {
                     color="primary"
                     endContent={<Pencil className="w-4 h-4" />}
                     onPress={addressFormModal.onOpen}
+                    size={isMedium ? "sm" : "md"}
                   >
                     Update address
                   </Button>
@@ -1940,6 +1980,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired
                       label="Address"
                       {...field}
@@ -1955,6 +1996,7 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="Country"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={countryList || []}
@@ -1974,6 +2016,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       label="State"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1994,6 +2037,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       label="City"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -2011,6 +2055,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Pin code"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -2028,6 +2073,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Address"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -2041,6 +2087,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       label="Country"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -2064,6 +2111,7 @@ const LeadEstimate = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="State"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={secStatesList || []}
@@ -2085,6 +2133,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       label="City"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -2102,6 +2151,7 @@ const LeadEstimate = () => {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Pin code"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -2112,7 +2162,11 @@ const LeadEstimate = () => {
               </CardBody>
             </Card>
             <div className="flex justify-end px-4 my-2 w-full">
-              <Button type="submit" color="primary">
+              <Button
+                type="submit"
+                color="primary"
+                size={isMedium ? "sm" : "md"}
+              >
                 Submit
               </Button>
             </div>
@@ -2138,6 +2192,7 @@ const LeadEstimate = () => {
                           control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               isRequired
                               label="Revenue"
                               {...field}
@@ -2152,6 +2207,7 @@ const LeadEstimate = () => {
                           control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               isRequired
                               label="Address"
                               {...field}
@@ -2166,6 +2222,7 @@ const LeadEstimate = () => {
                           control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <NewSelect
+                              size={isMedium ? "sm" : "md"}
                               label="Country"
                               errorMessage={error?.message}
                               isInvalid={!!error}
@@ -2186,6 +2243,7 @@ const LeadEstimate = () => {
                           control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <NewSelect
+                              size={isMedium ? "sm" : "md"}
                               label="State"
                               errorMessage={error?.message}
                               isInvalid={!!error}
@@ -2205,6 +2263,7 @@ const LeadEstimate = () => {
                           control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <NewSelect
+                              size={isMedium ? "sm" : "md"}
                               label="City"
                               errorMessage={error?.message}
                               isInvalid={!!error}
@@ -2222,6 +2281,7 @@ const LeadEstimate = () => {
                           control={addressForm.control}
                           render={({ field, fieldState: { error } }) => (
                             <Input
+                              size={isMedium ? "sm" : "md"}
                               label="Pin code"
                               errorMessage={error?.message}
                               isInvalid={!!error}
@@ -2231,8 +2291,14 @@ const LeadEstimate = () => {
                         />
                       </div>
                       <ModalFooter className="flex justify-end">
-                        <Button onPress={onClose}>Cancel</Button>
-                        <Button color="primary" type="submit">
+                        <Button onPress={onClose} size={isMedium ? "sm" : "md"}>
+                          Cancel
+                        </Button>
+                        <Button
+                          color="primary"
+                          type="submit"
+                          size={isMedium ? "sm" : "md"}
+                        >
                           Submit
                         </Button>
                       </ModalFooter>
@@ -2266,6 +2332,7 @@ const LeadEstimate = () => {
                           render={({ field, fieldState: { error } }) => {
                             return (
                               <NewSelect
+                                size={isMedium ? "sm" : "md"}
                                 isRequired
                                 label="Company structure"
                                 errorMessage={
@@ -2292,6 +2359,7 @@ const LeadEstimate = () => {
                           render={({ field, fieldState: { error } }) => {
                             return (
                               <NewSelect
+                                size={isMedium ? "sm" : "md"}
                                 isRequired
                                 label="GST type"
                                 errorMessage={error?.message}
@@ -2315,6 +2383,7 @@ const LeadEstimate = () => {
                           render={({ field, fieldState: { error } }) => {
                             return (
                               <NewSelect
+                                size={isMedium ? "sm" : "md"}
                                 isRequired
                                 label="Business type"
                                 errorMessage={error?.message}
@@ -2347,6 +2416,7 @@ const LeadEstimate = () => {
                             render={({ field, fieldState: { error } }) => {
                               return (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="GST number"
                                   maxLength={15}
@@ -2370,6 +2440,7 @@ const LeadEstimate = () => {
                             render={({ field, fieldState: { error } }) => {
                               return (
                                 <Input
+                                  size={isMedium ? "sm" : "md"}
                                   isRequired
                                   label="Pan number"
                                   maxLength={10}
@@ -2387,8 +2458,14 @@ const LeadEstimate = () => {
                         )}
                       </div>
                       <ModalFooter className="flex justify-end">
-                        <Button onPress={onClose}>Cancel</Button>
-                        <Button color="primary" type="submit">
+                        <Button onPress={onClose} size={isMedium ? "sm" : "md"}>
+                          Cancel
+                        </Button>
+                        <Button
+                          color="primary"
+                          type="submit"
+                          size={isMedium ? "sm" : "md"}
+                        >
                           Submit
                         </Button>
                       </ModalFooter>
@@ -2432,7 +2509,7 @@ const LeadEstimate = () => {
                       <TableColumn key={column.key}>{column.label}</TableColumn>
                     )}
                   </TableHeader>
-                  <TableBody items={rows}>
+                  <TableBody items={[]}>
                     {(item) => (
                       <TableRow key={item.key}>
                         {(columnKey) =>

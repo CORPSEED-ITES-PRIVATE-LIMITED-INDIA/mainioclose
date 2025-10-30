@@ -23,6 +23,7 @@ import {
   getAllVendorsPaymentList,
 } from "../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
+import { inrCurrency } from "../common";
 
 export const columns = [
   { name: "DATE", uid: "date" },

@@ -42,6 +42,7 @@ import SingleFileUploader from "../../components/SingleFileUploader";
 import { Button } from "@heroui/button";
 import { getClientDesiginationList } from "../../toolkit/slices/settingSlice";
 import { ModalFooter } from "@heroui/react";
+import { useMediaQuery } from "react-responsive";
 
 const formSchema = ({
   isExistingCompany,
@@ -239,8 +240,8 @@ const CreateLeadCompanyForm = ({
   onClose,
   companyFilter,
 }) => {
-  console.log("dkfjhkdhdkhdkjhdfkj", companyData);
-
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
@@ -593,6 +594,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
+                    size={isMedium ? "sm" : "md"}
                     isRequired
                     label="Company list"
                     errorMessage={error?.message}
@@ -614,6 +616,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <Input
+                    size={isMedium ? "sm" : "md"}
                     isRequired
                     label="Company name"
                     errorMessage={error?.message}
@@ -633,6 +636,7 @@ const CreateLeadCompanyForm = ({
                     <Select
                       isRequired={true}
                       label="New unit"
+                      size={isMedium ? "sm" : "md"}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       selectedKeys={[String(field?.value)]}
@@ -662,6 +666,7 @@ const CreateLeadCompanyForm = ({
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <Input
+                        size={isMedium ? "sm" : "md"}
                         isRequired
                         label="Unit name"
                         errorMessage={error?.message}
@@ -677,6 +682,7 @@ const CreateLeadCompanyForm = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
+                        size={isMedium ? "sm" : "md"}
                         label="Select unit."
                         errorMessage={error?.message}
                         isInvalid={!!error}
@@ -698,6 +704,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   isRequired
                   label="CRM Company name"
                   errorMessage={error?.message}
@@ -711,6 +718,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   isRequired
                   label="Company age (in yrs)"
                   errorMessage={error?.message}
@@ -727,6 +735,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
+                    size={isMedium ? "sm" : "md"}
                     isRequired
                     label="Select lead "
                     errorMessage={error?.message}
@@ -749,6 +758,7 @@ const CreateLeadCompanyForm = ({
               render={({ field, fieldState: { error } }) => (
                 <Select
                   isRequired={true}
+                  size={isMedium ? "sm" : "md"}
                   label="GST type"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -781,6 +791,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   isRequired={formValidation?.isCompanyRegistered}
                   label="GST number"
                   maxLength={15}
@@ -799,6 +810,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   isRequired={formValidation?.isCompanyRegistered}
                   label="Pan number"
                   maxLength={10}
@@ -817,6 +829,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   isRequired
                   label="Amount."
                   type="number"
@@ -836,6 +849,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
+                    size={isMedium ? "sm" : "md"}
                     isRequired={true}
                     label="Select assignee"
                     errorMessage={error?.message}
@@ -855,6 +869,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   isRequired={true}
                   label="Select industry"
                   errorMessage={error?.message}
@@ -875,6 +890,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   isRequired={true}
                   label="Select sub industry"
                   errorMessage={error?.message}
@@ -895,6 +911,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   isRequired={true}
                   label="Select category"
                   errorMessage={error?.message}
@@ -915,6 +932,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   isRequired={true}
                   label="Select business activity"
                   selectionMode="multiple"
@@ -955,6 +973,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Select
+                  size={isMedium ? "sm" : "md"}
                   isRequired={true}
                   label="New Primary contact"
                   errorMessage={error?.message}
@@ -988,6 +1007,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Select
+                      size={isMedium ? "sm" : "md"}
                       isRequired={true}
                       label="Salutation"
                       errorMessage={error?.message}
@@ -1011,6 +1031,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired={true}
                       label="Name"
                       errorMessage={error?.message}
@@ -1024,6 +1045,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       isRequired={true}
                       label="Designation"
                       errorMessage={error?.message}
@@ -1041,6 +1063,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired={true}
                       label="Email"
                       type="email"
@@ -1055,6 +1078,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired={true}
                       label="Contact number"
                       errorMessage={error?.message}
@@ -1068,6 +1092,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       isRequired={true}
                       label="Whatsapp number"
                       errorMessage={error?.message}
@@ -1083,6 +1108,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
+                    size={isMedium ? "sm" : "md"}
                     label="Select contact."
                     isRequired={true}
                     errorMessage={error?.message}
@@ -1116,6 +1142,7 @@ const CreateLeadCompanyForm = ({
               render={({ field, fieldState: { error } }) => {
                 return (
                   <Select
+                    size={isMedium ? "sm" : "md"}
                     isRequired
                     label="New secondary contact"
                     errorMessage={error?.message}
@@ -1150,6 +1177,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Select
+                      size={isMedium ? "sm" : "md"}
                       label="Salutation"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1173,6 +1201,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Name"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1185,6 +1214,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      size={isMedium ? "sm" : "md"}
                       label="Designation"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1201,6 +1231,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Email"
                       type="email"
                       errorMessage={error?.message}
@@ -1214,6 +1245,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Contact number"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1226,6 +1258,7 @@ const CreateLeadCompanyForm = ({
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <Input
+                      size={isMedium ? "sm" : "md"}
                       label="Whatsapp number"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1240,6 +1273,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <NewSelect
+                    size={isMedium ? "sm" : "md"}
                     label="Select contact."
                     errorMessage={error?.message}
                     isInvalid={!!error}
@@ -1274,6 +1308,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   label="Address"
                   isRequired={true}
                   errorMessage={error?.message}
@@ -1287,6 +1322,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   label="Country"
                   isRequired={true}
                   errorMessage={error?.message}
@@ -1308,6 +1344,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   label="State"
                   isRequired={true}
                   errorMessage={error?.message}
@@ -1329,6 +1366,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   label="City"
                   isRequired={true}
                   errorMessage={error?.message}
@@ -1347,6 +1385,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   label="Pin code"
                   isRequired={true}
                   errorMessage={error?.message}
@@ -1375,6 +1414,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   label="Address"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -1388,6 +1428,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   label="Country"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -1410,6 +1451,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   label="State"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -1430,6 +1472,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  size={isMedium ? "sm" : "md"}
                   label="City"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -1447,6 +1490,7 @@ const CreateLeadCompanyForm = ({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
+                  size={isMedium ? "sm" : "md"}
                   label="Pin code"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -1461,6 +1505,7 @@ const CreateLeadCompanyForm = ({
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <Input
+                    size={isMedium ? "sm" : "md"}
                     isRequired
                     label="Comment"
                     errorMessage={error?.message}
@@ -1482,9 +1527,16 @@ const CreateLeadCompanyForm = ({
           </Button>
         </ModalFooter>
       ) : (
-        <Button size="lg" color="primary" type="submit" className="mt-2">
-          Submit
-        </Button>
+        <div className="flex justify-end px-2">
+          <Button
+            size={isMedium ? "sm" : "md"}
+            color="primary"
+            type="submit"
+            className="mt-2"
+          >
+            Submit
+          </Button>
+        </div>
       )}
     </form>
   );

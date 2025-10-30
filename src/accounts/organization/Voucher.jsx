@@ -42,14 +42,15 @@ import {
   getLedgerTypeById,
 } from "../../toolkit/slices/organizationSlice";
 import NewSelect from "../../components/NewSelect";
-import { safeNum } from "../../common";
+import { inrCurrency, safeNum } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "LEDGER", uid: "ledgerName", sortable: true },
   { name: "VOUCHER TYPE", uid: "voucherType" },
   { name: "AMOUNT", uid: "amount" },
-  { name: "GST", uid: "gst" },
+  { name: "CREDIT GST", uid: "creditGst" },
+  { name: "DEBIT GST", uid: "debitGst" },
   { name: "TOTAL AMOUNT", uid: "totalAmount" },
   { name: "PAYMENT TYPE", uid: "paymentType" },
   { name: "PRODUCT", uid: "product" },
@@ -64,7 +65,8 @@ const INITIAL_VISIBLE_COLUMNS = [
   "ledgerName",
   "voucherType",
   "amount",
-  "gst",
+  "creditGst",
+  "debitGst",
   "totalAmount",
   "paymentType",
   "actions",
@@ -171,8 +173,6 @@ const Voucher = () => {
   }, [sortDescriptor, items]);
 
   const handlePressEnter = (e) => {
-    console.log("dskjhskjdhgsjk 11111");
-
     const creditCgstAmount =
       (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.cgst)) / 100;
     const creditSgstAmount =
@@ -206,9 +206,13 @@ const Voucher = () => {
           perticulars: "Total amount",
           rate: "",
           debitAmount:
-            debitCgstAmount + debitSgstAmount + voucherData?.debitAmount,
+            safeNum(debitCgstAmount) +
+            safeNum(debitSgstAmount) +
+            safeNum(voucherData?.debitAmount),
           creditAmount:
-            creditCgstAmount + creditSgstAmount + voucherData?.creditAmount,
+            safeNum(creditCgstAmount) +
+            safeNum(creditSgstAmount) +
+            safeNum(voucherData?.creditAmount),
         },
       ]);
     }
@@ -225,8 +229,10 @@ const Voucher = () => {
           idx: "",
           perticulars: "Total amount",
           rate: "",
-          debitAmount: debitIgstAmount + voucherData?.debitAmount,
-          creditAmount: creditIgstAmount + voucherData?.creditAmount,
+          debitAmount:
+            safeNum(debitIgstAmount) + safeNum(voucherData?.debitAmount),
+          creditAmount:
+            safeNum(creditIgstAmount) + safeNum(voucherData?.creditAmount),
         },
       ]);
     }
@@ -434,21 +440,47 @@ const Voucher = () => {
       case "amount":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm">Credit : ₹ {rowData?.creditAmount || "-"}</p>
-            <p className="text-sm">Debit : ₹ {rowData?.debitAmount || "-"}</p>
+            <p className="text-sm">
+              Credit : {inrCurrency(rowData?.creditAmount) || "-"}
+            </p>
+            <p className="text-sm">
+              Debit : {inrCurrency(rowData?.debitAmount) || "-"}
+            </p>
           </div>
         );
-      case "gst":
+      case "creditGst":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm">SGST : ₹ {rowData?.creditAmount || "-"}</p>
-            <p className="text-sm">CGST : ₹ {rowData?.debitAmount || "-"}</p>
-            <p className="text-sm">IGST : ₹ {rowData?.debitAmount || "-"}</p>
+            <p className="text-sm">
+              SGST : {inrCurrency(rowData?.sgstCreditAmount) || "-"}
+            </p>
+            <p className="text-sm">
+              CGST : {inrCurrency(rowData?.cgstCreditAmount) || "-"}
+            </p>
+            <p className="text-sm">
+              IGST : {inrCurrency(rowData?.igstCreditAmount) || "-"}
+            </p>
+          </div>
+        );
+      case "debitGst":
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">
+              SGST : {inrCurrency(rowData?.sgstDebitAmount) || "-"}
+            </p>
+            <p className="text-sm">
+              CGST : {inrCurrency(rowData?.cgstDebitAmount) || "-"}
+            </p>
+            <p className="text-sm">
+              IGST : {inrCurrency(rowData?.igstDebitAmount) || "-"}
+            </p>
           </div>
         );
       case "totalAmount":
         return (
-          <p className="text-sm capitalize">₹ {rowData?.totalAmount || "-"}</p>
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.totalAmount) || "-"}
+          </p>
         );
       case "paymentType":
         return (
@@ -743,7 +775,7 @@ const Voucher = () => {
               <ModalHeader>
                 {editData ? "Update voucher" : "Add voucher"}
               </ModalHeader>
-              <ModalBody  className="max-h-[70vh] overflow-auto">
+              <ModalBody className="max-h-[70vh] overflow-auto">
                 <Table
                   aria-label="Example static collection table"
                   topContent={tableTopContent}
@@ -822,10 +854,10 @@ const Voucher = () => {
                           </TableCell>
                           <TableCell>{item?.rate}</TableCell>
                           <TableCell className="font-medium pl-6">
-                            ₹ {item?.creditAmount}
+                            {inrCurrency(item?.creditAmount)}
                           </TableCell>
                           <TableCell className="font-medium pl-6">
-                            ₹ {item?.debitAmount}
+                            {inrCurrency(item?.debitAmount)}
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -834,10 +866,10 @@ const Voucher = () => {
                           <TableCell>{item?.perticulars}</TableCell>
                           <TableCell className="pl-6">{item?.rate}</TableCell>
                           <TableCell className="pl-6">
-                            ₹ {item?.creditAmount}
+                            {inrCurrency(item?.creditAmount)}
                           </TableCell>
                           <TableCell className="pl-6">
-                            ₹ {item?.debitAmount}
+                            {inrCurrency(item?.debitAmount)}
                           </TableCell>
                         </TableRow>
                       );
