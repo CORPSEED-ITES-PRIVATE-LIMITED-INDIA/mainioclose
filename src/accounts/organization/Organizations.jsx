@@ -25,8 +25,10 @@ const Organizations = () => {
 
   const handleSelectChange = (e) => {
     let key = Array.from(e)[0];
-    navigate(`/erp/${userId}/accounts/organizations/settings/${key}`);
-    setSelectedKey(key);
+    if (key) {
+      navigate(`/erp/${userId}/accounts/organizations/settings/${key}`);
+      setSelectedKey(key);
+    }
   };
 
   return (

@@ -14,7 +14,7 @@ import organizationReducer from "./slices/organizationSlice";
 import productReducer from "./slices/productSlice";
 import operationReducer from "./slices/operationSlice";
 
-const reducers = combineReducers({
+const appReducer = combineReducers({
   auth: authReducer,
   leads: leadReducer,
   common: commonReducer,
@@ -32,21 +32,22 @@ const persistConfig = {
   key: "root",
   storage,
   whitelist: ["auth"],
-  blacklist: [],
-  throttle: 0,
-  version: 1,
-  migrate: (state) => Promise.resolve(state),
-  debug: false,
 };
 
-const persistedReducer = persistReducer(persistConfig, reducers);
+const persistedReducer = persistReducer(persistConfig, appReducer);
+
+const rootReducer = (state, action) => {
+  if (action.type === "auth/logoutFun") {
+    storage.removeItem("persist:root");
+    return persistedReducer(undefined, action);
+  }
+  return persistedReducer(state, action);
+};
 
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
+    getDefaultMiddleware({ serializableCheck: false }),
 });
 
 export const persistor = persistStore(store);

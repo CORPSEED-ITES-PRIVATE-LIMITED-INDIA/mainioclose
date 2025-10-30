@@ -468,7 +468,7 @@ const Statutory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[55vh] w-full",
+          wrapper: "2xl:max-h-[62vh] md:max-h-[55vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}

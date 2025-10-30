@@ -111,9 +111,9 @@ const Group = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                <DropdownItem key="edit" >
+                {/* <DropdownItem key="edit" >
                   Edit
-                </DropdownItem>
+                </DropdownItem> */}
               </DropdownMenu>
             </Dropdown>
           </div>
