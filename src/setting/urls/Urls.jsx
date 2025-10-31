@@ -139,6 +139,7 @@ const Urls = () => {
   }, [sortDescriptor, data]);
 
   const handleFinish = (values) => {
+    console.log("sdkhsdjkgjk", values);
     if (item?.id) {
       dispatch(editUrls({ urlsId: item?.id, ...values }))
         .then((resp) => {
@@ -239,7 +240,7 @@ const Urls = () => {
                     setValue("name", rowData?.urlsName);
                     setValue(
                       "urlSlug",
-                      rowData?.urlSlug?.map((item) => item?.id)
+                      rowData?.urlSlug?.map((item) => String(item?.id))
                     );
                     setValue("quality", rowData?.quality);
                   }
@@ -497,21 +498,23 @@ const Urls = () => {
                   <Controller
                     name="urlSlug"
                     control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        isRequired
-                        label="Slugs"
-                        selectionMode="multiple"
-                        errorMessage={"please select the slugs."}
-                        data={slugList || []}
-                        labelKey="name"
-                        valueKey="id"
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
+                    render={({ field, fieldState: { error } }) => {
+                      return (
+                        <NewSelect
+                          isRequired
+                          label="Slugs"
+                          selectionMode="multiple"
+                          errorMessage={"please select the slugs."}
+                          data={slugList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                        />
+                      );
+                    }}
                   />
                   <Controller
                     name="quality"
@@ -525,7 +528,7 @@ const Urls = () => {
                           isInvalid={!!error}
                           selectedKeys={[String(field.value)]}
                           onSelectionChange={(e) => {
-                            let key = Array.from(e)[0] == "true";
+                            let key = Array.from(e)[0] === "true";
                             field.onChange(key);
                           }}
                           items={[
