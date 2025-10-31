@@ -593,13 +593,6 @@ export const transferLeadToAnotherUser = createAsyncThunk(
 );
 
 
-export const getTodos=createAsyncThunk("getTodos",async()=>{
- const response= await axios.get(`https://jsonplaceholder.typicode.com/todos`)
- return response.data
-
-})
-
-
 
 export const LeadSlice = createSlice({
   name: "leads",

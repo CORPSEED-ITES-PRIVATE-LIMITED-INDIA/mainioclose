@@ -54,7 +54,6 @@ import {
   getAllLeadsByFilter,
   getAllLeadsForExport,
   getAllLeadUser,
-  getTodos,
   handleDeleteSingleLead,
   handleFlagByQualityTeam,
   handleViewHistory,
@@ -711,11 +710,6 @@ const Leads = () => {
   };
 
 
-  const handleAPi =()=>{
-    console.log("1111111111")
-    dispatch(getTodos())
-  }
-
   const topContent = useMemo(() => {
     const cols = columns(adminRole) || [];
     return (
@@ -732,7 +726,6 @@ const Leads = () => {
           />
 
           <div className="flex gap-3">
-            <Button onPress={handleAPi}>Api</Button>
             {adminRole && (
               <Popover
                 size="lg"
