@@ -556,6 +556,9 @@ const LeadEstimate = () => {
     return total.toFixed(2);
   };
 
+
+  console.log("sdjhgsjgsgsj",details)
+
   const handleEditEstimate = useCallback(() => {
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactListByCompanyId(details?.companyId));
@@ -575,7 +578,7 @@ const LeadEstimate = () => {
       unitId: details?.unitId,
     }));
     reset({
-      admin: details?.primaryContact?.id,
+      admin: String(details?.primaryContact?.id),
       cc: details?.ccMail,
       companyId: String(details?.companyId),
       companyName: details?.companyName,
@@ -616,7 +619,7 @@ const LeadEstimate = () => {
       otherGst: Number(details?.otherGst),
       assigneeId: String(details?.assigneeId?.id),
       orderNumber: details?.orderNumber,
-      purchaseDate: dayjs(details?.purchaseDate),
+      purchaseDate: dayjs(details?.purchaseDate).format("YYYY-MM-DD"),
       invoiceNote: details?.invoiceNote,
       remarksForOption: details?.getRemarkForOperation,
       address: details?.address,
@@ -1911,7 +1914,9 @@ const LeadEstimate = () => {
                 <Controller
                   name="purchaseDate"
                   control={control}
-                  render={({ field, fieldState: { error } }) => (
+                  render={({ field, fieldState: { error } }) => {
+                    console.log("sdkjsjkgjks",field)
+                    return(
                     <DatePicker
                       size={isMedium ? "sm" : "md"}
                       isRequired
@@ -1925,7 +1930,8 @@ const LeadEstimate = () => {
                         field.onChange(toCalendarDate(e).toString())
                       }
                     />
-                  )}
+                  )
+                  }}
                 />
                 <Controller
                   name="invoiceNote"
