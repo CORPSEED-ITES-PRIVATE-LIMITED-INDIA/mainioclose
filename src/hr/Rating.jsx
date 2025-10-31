@@ -120,17 +120,30 @@ const Rating = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = useMemo(() => {
-    let filteredData = [...data];
-    if (hasSearchFilter) {
-      filteredData = filteredData?.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
-      );
-    }
-    return filteredData;
-  }, [data, filterValue]);
+const filteredItems = useMemo(() => {
+  const search = filterValue?.toLowerCase();
+  if (!hasSearchFilter || !search) return data;
+  const filterItem = (item) => {
+    return Object.values(item)?.some((val) => {
+      if (Array.isArray(val)) {
+        return val.some((obj) =>
+          Object.values(obj)?.some((innerVal) =>
+            String(innerVal).toLowerCase().includes(search)
+          )
+        );
+      } else if (val !== null && typeof val === "object") {
+        return Object.values(val)?.some((innerVal) =>
+          String(innerVal).toLowerCase().includes(search)
+        );
+      }
+      return String(val)?.toLowerCase()?.includes(search);
+    });
+  };
+
+  return data?.filter(filterItem);
+
+}, [data, filterValue, hasSearchFilter]);
+
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
@@ -368,7 +381,7 @@ const Rating = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
+  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange,filteredItems]);
 
   const bottomContent = useMemo(() => {
     return (
