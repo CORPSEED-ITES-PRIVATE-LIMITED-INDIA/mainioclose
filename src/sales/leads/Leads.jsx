@@ -709,7 +709,6 @@ const Leads = () => {
     dispatch(getAllLeadCount(updatedData));
   };
 
-
   const topContent = useMemo(() => {
     const cols = columns(adminRole) || [];
     return (
@@ -1311,7 +1310,7 @@ const Leads = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh] w-full",
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
           table: "w-full",
         }}
         selectedKeys={selectedKeys.size === visibleCount ? "all" : selectedKeys}

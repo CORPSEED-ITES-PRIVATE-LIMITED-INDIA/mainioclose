@@ -91,11 +91,9 @@ const SalesReport = () => {
     departmentId: null,
     assigneeIds: [],
   });
-const isSmall = useMediaQuery({ maxWidth: 767 });
-const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
-const isLarge = useMediaQuery({ minWidth: 1536 });
-
-  console.log("isMedium",isSmall, isMedium, isLarge);
+  const isSmall = useMediaQuery({ maxWidth: 767 });
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(

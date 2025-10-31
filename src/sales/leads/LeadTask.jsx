@@ -193,7 +193,7 @@ const LeadTask = () => {
           taskId: rowData?.id,
           leadId,
           assignedById: userId,
-          currentUserId:userId
+          currentUserId: userId,
         })
       )
         .then((resp) => {
@@ -473,8 +473,8 @@ const LeadTask = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
