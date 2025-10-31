@@ -251,7 +251,7 @@ const defaultValues = ({ isConsultant, gstAndPanData }) => ({
         panNo: "",
       }
     : {}),
-  ...(gstAndPanData?.pan
+  ...(gstAndPanData?.gst
     ? {
         gstNo: "",
       }
@@ -513,7 +513,7 @@ const CreateCompanyForm = ({
             industryId: compData?.industry?.id,
             subIndustryId: compData?.subIndustry?.id,
             subsubIndustryId: compData?.subSubIndustry?.id,
-            industrydataId: compData?.industryData?.map((item) => item?.id),
+            industrydataId: compData?.industryData?.map((item) => String(item?.id)),
             gstDocuments: compData?.gstDoc,
             rating: compData?.rating,
             paymentTerm: compData?.paymentTerm,
