@@ -43,11 +43,11 @@ const EstimateView = ({ details }) => {
         <div className="flex flex-col md:flex-row md:gap-15 gap-6">
           {details?.primaryContact && (
             <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
-              <div className="flex flex-col gap-3">
-                <h4 className="font-semibold text-lg">
+              <div className="flex flex-col gap-1">
+                <h4 className="font-semibold text-medium">
                   Primary contact detail
                 </h4>
-                <div className="flex flex-col gap-2 text-gray-500">
+                <div className="flex flex-col gap-0.5 text-sm">
                   <div className="flex gap-2">
                     <span>Name</span>
                     <span>:</span>
@@ -83,11 +83,11 @@ const EstimateView = ({ details }) => {
 
           {details?.secondaryContact && (
             <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
-              <div className="flex flex-col gap-3">
-                <h4 className="font-semibold text-lg">
+              <div className="flex flex-col gap-1">
+                <h4 className="font-semibold text-medium">
                   Secondary contact detail
                 </h4>
-                <div className="flex flex-col gap-2 text-gray-500">
+                <div className="flex flex-col gap-0.5 text-sm">
                   <div className="flex gap-2">
                     <span>Name</span>
                     <span>:</span>
@@ -123,7 +123,7 @@ const EstimateView = ({ details }) => {
         </div>
 
         <div ref={pdfRef} className="relative">
-          <div className="absolute left-0 top-0 bg-green-500 text-white px-3 py-1 rounded-r text-sm md:text-base z-10">
+          <div className="absolute left-0 top-0 bg-green-500 text-white font-medium px-3 py-1 rounded-r text-sm md:text-base z-10">
             {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
           </div>
 
@@ -135,42 +135,46 @@ const EstimateView = ({ details }) => {
                   alt="corpseed"
                   className="max-w-[100px] md:max-w-[130px]"
                 />
-                <div className="flex flex-col text-gray-500 text-sm md:text-base mt-2 leading-relaxed">
+                <div className="flex flex-col text-sm md:text-base mt-2 leading-relaxed">
                   <p className="font-medium">Corpseed Ites Private Limited</p>
-                  <p>CN U74999UP2018PTC101873</p>
-                  <p>GST : 09AAHCC4539J1ZC</p>
-                  <p>2nd floor, A-154A, A Block, sector 63</p>
-                  <p>Noida, Uttar Pradesh - 2013</p>
+                  <p className="text-sm">CN U74999UP2018PTC101873</p>
+                  <p className="text-sm">GST : 09AAHCC4539J1ZC</p>
+                  <p className="text-sm">
+                    2nd floor, A-154A, A Block, sector 63
+                  </p>
+                  <p className="text-sm">Noida, Uttar Pradesh - 2013</p>
                 </div>
               </div>
 
-              <div className="flex flex-row md:flex-col md:items-end gap-6 mt-6 md:mt-0 text-green-500">
+              <div className="flex flex-row md:flex-col md:items-end gap-6 mt-6 md:mt-0">
                 <div className="flex flex-col items-start md:items-end">
-                  <h4 className="text-green-500 text-xl font-semibold">
+                  <h4 className="text-green-500 text-lg font-semibold">
                     {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
                   </h4>
-                  <strong>{`#ESTD0${details?.id}`}</strong>
+                  <p className="text-small font-medium">{`#ESTD0${details?.id}`}</p>
                 </div>
                 <div className="flex flex-col items-start md:items-end">
-                  <h4 className="text-green-500 text-xl font-semibold">
+                  <h4 className="text-green-500 text-lg font-semibold">
                     Order No.
                   </h4>
-                  <strong>{details?.orderNumber}</strong>
+                  <p className="text-small font-medium">
+                    {details?.orderNumber}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-between gap-6 md:gap-0 text-gray-500 text-sm md:text-base">
+            <div className="flex justify-between gap-6 md:gap-0 text-sm md:text-base">
               <div className="flex flex-col gap-4">
                 <div>
-                  <p className="font-semibold mb-0.5">Bill To :</p>
-                  <div className="font-bold leading-tight">
-                    {details?.companyName && <p>{details?.companyName}</p>}
-                    {details?.gstNo && <p>GSTIN : {details?.gstNo}</p>}
+                  <p className="font-semibold text-small mb-0.5">Bill To :</p>
+                  <div className="leading-tight">
+                    {details?.companyName && <p >{details?.companyName}</p>}
+                    {details?.gstNo && <p className="text-sm">GSTIN : {details?.gstNo}</p>}
                     {details?.address && (
-                      <p className="font-normal">{details?.address}</p>
+                      <p className="font-normal text-sm">{details?.address}</p>
                     )}
-                    <p className="font-normal">
+                    <p className="font-normal text-sm">
                       {[
                         details?.city,
                         details?.state,
@@ -184,16 +188,16 @@ const EstimateView = ({ details }) => {
                 </div>
 
                 <div className="mt-2">
-                  <p className="font-semibold mb-0.5">Ship To :</p>
+                  <p className="font-semibold mb-0.5 text-small">Ship To :</p>
                   <div className="leading-tight">
                     {details?.companyName && (
                       <p className="font-medium">{details?.companyName}</p>
                     )}
-                    {details?.gstNo && <p>GSTIN : {details?.gstNo}</p>}
+                    {details?.gstNo && <p className="text-sm">GSTIN : {details?.gstNo}</p>}
                     {details?.secondaryAddress && (
-                      <p>{details?.secondaryAddress}</p>
+                      <p className="text-sm">{details?.secondaryAddress}</p>
                     )}
-                    <p>
+                    <p className="text-sm">
                       {[
                         details?.secondaryCity,
                         details?.secondaryState,
@@ -207,16 +211,16 @@ const EstimateView = ({ details }) => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 text-gray-500 text-sm md:text-base whitespace-nowrap">
+              <div className="flex flex-col items-end gap-2 text-sm md:text-base whitespace-nowrap">
                 <div className="flex gap-2">
-                  <span className="font-semibold">Estimate Date:</span>
-                  <span>
+                  <span className="font-semibold text-small">Estimate Date:</span>
+                  <span  className="text-sm">
                     {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="font-semibold">Order Date:</span>
-                  <span>{dayjs(details?.createDate).format("DD-MM-YYYY")}</span>
+                  <span className="font-semibold text-small">Order Date:</span>
+                  <span className="text-sm">{dayjs(details?.createDate).format("DD-MM-YYYY")}</span>
                 </div>
               </div>
             </div>
@@ -392,7 +396,7 @@ const EstimateView = ({ details }) => {
             </div>
 
             {details?.totalAmount > 0 && (
-              <div className="flex justify-end gap-1 text-gray-500 mt-4 text-sm md:text-base">
+              <div className="flex justify-end gap-1 mt-4 text-sm md:text-base">
                 <span>Total amount in words :</span>
                 <span className="font-medium capitalize">
                   {details?.totalAmount &&
@@ -639,13 +643,13 @@ const EstimateView = ({ details }) => {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "1px" }}
             >
-              <p style={{ fontWeight: 500 }}>Notes :</p>
+              <p className="text-small font-medium">Notes :</p>
               {details?.invoiceNote && (
-                <p style={{ color: "#6b7280" }}>{details?.invoiceNote}</p>
+                <p className="text-sm">{details?.invoiceNote}</p>
               )}
               <hr style={{ margin: "1px 0" }} />
-              <p style={{ color: "#6b7280" }}>
-                <strong>Remark</strong> : {details?.getRemarkForOperation}
+              <p className="text-small">
+                <span className="font-medium">Remark</span> : {details?.getRemarkForOperation}
               </p>
             </div>
           </div>
