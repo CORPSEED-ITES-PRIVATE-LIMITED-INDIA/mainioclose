@@ -317,7 +317,7 @@ const Urls = () => {
             <Button
               variant="flat"
               onPress={handleConvertToProduct}
-              isDisabled={selectedKeys?.length === 0}
+              isDisabled={selectedKeys?.size === 0}
             >
               Convert to product
             </Button>

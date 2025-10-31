@@ -137,6 +137,17 @@ const Company = () => {
     });
   }, [sortDescriptor, data]);
 
+
+
+    const handleSelectionChange = (selection) => {
+    if (selection === "all") {
+      const allKeys = new Set(sortedItems.map((item) => item.id));
+      setSelectedKeys(allKeys);
+    } else {
+      setSelectedKeys(selection);
+    }
+  };
+
   const handleUpdateAssignee = (id) => {
     setCompanyId([id]);
     updateModal.onOpen();
@@ -616,7 +627,7 @@ const Company = () => {
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        onSelectionChange={handleSelectionChange}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
