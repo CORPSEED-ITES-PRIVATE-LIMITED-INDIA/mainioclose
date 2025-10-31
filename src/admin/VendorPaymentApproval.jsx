@@ -415,7 +415,7 @@ const VendorPaymentApproval = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] overflow-scroll w-full",
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
