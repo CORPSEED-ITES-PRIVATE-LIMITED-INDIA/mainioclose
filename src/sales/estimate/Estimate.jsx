@@ -148,6 +148,10 @@ const formSchema = ({
               }),
           totalAmount: z.number(),
           paymentDate: z.string().min(1, "Please enter payment date"),
+          modeOfPayment: z.string().min(1, "Please enter mode of payment"),
+          referenceDate: z.string().min(1, "Please enter reference date"),
+          otherReference: z.string().min(1, "Please enter payment date"),
+          buyerOrderNo: z.string().min(1, "Please enter buyer order number"),
           remark: z.string().min(1, "Remark cannot be empty"),
           doc: z.array(z.string()).optional(),
           termOfDelivery: z.string().min(1, "Delivery terms cannot be empty"),
@@ -181,6 +185,10 @@ const defaultValues = {
   otherGst: 0,
   totalAmount: 0,
   paymentDate: "",
+  modeOfPayment: "",
+  referenceDate: "",
+  otherReference: "",
+  buyerOrderNo: "",
   remark: "",
   doc: "",
   termOfDelivery: "",
@@ -259,7 +267,7 @@ const Estimate = () => {
     );
     dispatch(getTotalCountOfEstimate(userId));
     dispatch(getAllUrlList());
-  }, [dispatch, userId,filteration]);
+  }, [dispatch, userId, filteration]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -425,6 +433,12 @@ const Estimate = () => {
     });
   };
 
+  const profFee = watch("professionalFees");
+  const profGst = watch("profesionalGst");
+  const govermentfees = watch("govermentfees");
+  const serviceFee = watch("serviceCharge");
+  const otherFees = watch("otherFees");
+
   useEffect(() => {
     const formValues = getValues();
     let allValues = { ...formValues };
@@ -483,7 +497,15 @@ const Estimate = () => {
     };
 
     handleValuesChange();
-  }, [getValues, paymentType]);
+  }, [
+    getValues,
+    paymentType,
+    profFee,
+    profGst,
+    govermentfees,
+    serviceFee,
+    otherFees,
+  ]);
 
   const onSubmit = useCallback(
     (values) => {
@@ -1561,6 +1583,78 @@ const Estimate = () => {
                               onChange={(e) =>
                                 field.onChange(toCalendarDate(e).toString())
                               }
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="modeOfPayment"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Select
+                              items={[
+                                { label: "Cash", key: "Cash" },
+                                { label: "UPI", key: "UPI" },
+                                { label: "NetBanking", key: "NetBanking" },
+                              ]}
+                              label="Payment mode"
+                              selectionMode="single"
+                              selectedKeys={[field?.value]}
+                              onSelectionChange={(e) => {
+                                let key = Array.from(e)[0];
+                                field.onChange(key);
+                              }}
+                            >
+                              {(item) => <SelectItem>{item.label}</SelectItem>}
+                            </Select>
+                          )}
+                        />
+
+                        <Controller
+                          name="referenceDate"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <DatePicker
+                              isRequired
+                              label="Reference date"
+                              showMonthAndYearPickers
+                              maxValue={today(getLocalTimeZone())}
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={
+                                field.value ? parseDate(field.value) : null
+                              }
+                              onChange={(e) =>
+                                field.onChange(toCalendarDate(e).toString())
+                              }
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="otherReference"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Other reference"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="buyerOrderNo"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Buyer order number"
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
                             />
                           )}
                         />

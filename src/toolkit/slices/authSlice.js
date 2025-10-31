@@ -26,10 +26,16 @@ export const forgetPasswordApi = createAsyncThunk(
   }
 );
 
-export const updatePassword = createAsyncThunk("updatePassword", async (data) => {
-  const response = await api.put(`/securityService/api/auth/updateUser`, data);
-  return response?.data;
-});
+export const updatePassword = createAsyncThunk(
+  "updatePassword",
+  async (data) => {
+    const response = await api.put(
+      `/securityService/api/auth/updateUser`,
+      data
+    );
+    return response?.data;
+  }
+);
 
 export const getDepartmentOfUser = createAsyncThunk(
   "getDepartment",
@@ -186,18 +192,6 @@ export const AuthSlice = createSlice({
       state.roles = action.payload.roles;
       state.loginLoading = false;
       state.isAuth = true;
-      state.loginError = false;
-      state.userLoading = "success";
-    });
-    builder.addCase(getCurrentUser.rejected, (state, action) => {
-      state.loginError = true;
-      state.loginLoading = false;
-      state.userLoading = "rejected";
-    });
-
-    builder.addCase(changePasswordAuthentication.pending, (state, action) => {
-      state.loginLoading = true;
-      state.loginError = false;
     });
     builder.addCase(changePasswordAuthentication.fulfilled, (state, action) => {
       state.isManagerApproved = action.payload;
