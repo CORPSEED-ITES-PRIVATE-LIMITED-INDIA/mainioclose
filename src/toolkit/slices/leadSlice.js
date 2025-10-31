@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
+import axios from "axios";
 
 export const getAllLeadsByFilter = createAsyncThunk(
   "getAllLeadsByFilter",
@@ -590,6 +591,15 @@ export const transferLeadToAnotherUser = createAsyncThunk(
     return response.data;
   }
 );
+
+
+export const getTodos=createAsyncThunk("getTodos",async()=>{
+ const response= await axios.get(`https://jsonplaceholder.typicode.com/todos`)
+ return response.data
+
+})
+
+
 
 export const LeadSlice = createSlice({
   name: "leads",
