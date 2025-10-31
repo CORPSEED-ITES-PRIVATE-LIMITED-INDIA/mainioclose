@@ -14,9 +14,9 @@ import {
   DropdownItem,
   Pagination,
 } from "@heroui/react";
-import { ChevronDown,  Search} from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import  {useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { getAllHistory } from "../../toolkit/slices/leadSlice";
 
@@ -61,7 +61,6 @@ const LeadHistory = () => {
   useEffect(() => {
     dispatch(getAllHistory(leadId));
   }, [dispatch]);
-
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -110,7 +109,7 @@ const LeadHistory = () => {
       case "createdDate":
         return (
           <div className="flex flex-col">
-           <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY, HH:mm A")}</p>
+            <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY, HH:mm A")}</p>
           </div>
         );
       default:
@@ -148,9 +147,6 @@ const LeadHistory = () => {
     setFilterValue("");
     setPage(1);
   }, []);
-
-
-
 
   const topContent = React.useMemo(() => {
     return (
@@ -265,7 +261,8 @@ const LeadHistory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh] w-full",
+          wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

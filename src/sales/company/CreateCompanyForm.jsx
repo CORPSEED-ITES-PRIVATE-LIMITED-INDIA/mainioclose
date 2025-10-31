@@ -58,7 +58,7 @@ import {
 import { getOperationCompanyFormValues } from "../../operation/components/commonFunctions";
 import { useMediaQuery } from "react-responsive";
 
-const formSchema = (isConsultant) =>
+const formSchema = ({ isConsultant, gstAndPanData }) =>
   z.object({
     consultantOrCompany: z.enum(["consultant", "company"], {
       required_error: "Please select role as",
@@ -67,8 +67,16 @@ const formSchema = (isConsultant) =>
     companyType: z.string().min(1, "Please select the company structure"),
     gstType: z.string().min(1, "Please select the gst type"),
     businessType: z.string().optional(),
-    gstNo: z.string().min(15, "please enter GST number"),
-    panNo: z.string().min(10, "please enter pan number"),
+    ...(gstAndPanData?.pan
+      ? {
+          panNo: z.string().min(10, "please enter pan number"),
+        }
+      : {}),
+    ...(gstAndPanData?.gst
+      ? {
+          gstNo: z.string().min(15, "please enter GST number"),
+        }
+      : {}),
     establishDate: z.string().min(1, "Please enter company incorporate date"),
     assigneeId: z.string().min(1, "Please select the assignee"),
     industryId: z.string().min(1, "Please select the industry"),
@@ -232,14 +240,22 @@ const formSchema = (isConsultant) =>
       : {}),
   });
 
-const defaultValues = (isConsultant) => ({
+const defaultValues = ({ isConsultant, gstAndPanData }) => ({
   consultantOrCompany: "",
   companyName: "",
   companyType: "",
   gstType: "",
   businessType: "",
-  gstNo: "",
-  panNo: "",
+  ...(gstAndPanData?.pan
+    ? {
+        panNo: "",
+      }
+    : {}),
+  ...(gstAndPanData?.gst
+    ? {
+        gstNo: "",
+      }
+    : {}),
   establishDate: "",
   assigneeId: "",
   industryId: "",
@@ -347,7 +363,6 @@ const CreateCompanyForm = ({
   const searchCompaniesList = useSelector(
     (state) => state.company.seachCompniesList
   );
-  const [searchTerm, setSearchTerm] = useState("");
   const [isNewCompany, setIsNewCompany] = useState(true);
   const [gstAndPanData, setGstAndPanData] = useState({
     pan: false,
@@ -373,8 +388,8 @@ const CreateCompanyForm = ({
     formState: { errors },
     reset,
   } = useForm({
-    resolver: zodResolver(formSchema(isConsultant)),
-    defaultValues: defaultValues(isConsultant),
+    resolver: zodResolver(formSchema({ isConsultant, gstAndPanData })),
+    defaultValues: defaultValues({ isConsultant, gstAndPanData }),
   });
 
   const aggrementPresent = watch("aggrementPresent");
@@ -498,7 +513,7 @@ const CreateCompanyForm = ({
             industryId: compData?.industry?.id,
             subIndustryId: compData?.subIndustry?.id,
             subsubIndustryId: compData?.subSubIndustry?.id,
-            industrydataId: compData?.industryData?.map((item) => item?.id),
+            industrydataId: compData?.industryData?.map((item) => String(item?.id)),
             gstDocuments: compData?.gstDoc,
             rating: compData?.rating,
             paymentTerm: compData?.paymentTerm,

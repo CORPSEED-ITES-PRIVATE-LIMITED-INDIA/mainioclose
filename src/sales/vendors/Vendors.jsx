@@ -501,8 +501,8 @@ const Vendors = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[50vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
