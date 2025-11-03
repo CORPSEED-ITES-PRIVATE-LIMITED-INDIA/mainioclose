@@ -468,20 +468,30 @@ export const createStatutory = createAsyncThunk(
 
 export const getGstList = createAsyncThunk(
   "getGstList",
-  async ({ page, size }) => {
+  async ({ page, size, startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/gstData/getAllGstDataCrm?page=${page}&size=${size}`
+      `/accountService/api/v1/gstData/getAllGstDataCrm?page=${page}&size=${size}&startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
 );
 
-export const getGstListCount = createAsyncThunk("getGstListCount", async () => {
+export const getGstListCount = createAsyncThunk("getGstListCount", async ({startDate, endDate}) => {
   const response = await api.get(
-    `/accountService/api/v1/gstData/getAllGstDataCrmCount`
+    `/accountService/api/v1/gstData/getAllGstDataCrmCount?startDate=${startDate}&endDate=${endDate}`
   );
   return response.data;
 });
+
+export const getGstExportedData = createAsyncThunk(
+  "getGstExportedData",
+  async ({ startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/gstData/getAllGstDataCrmForExport?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
 
 const OrganizationSlice = createSlice({
   name: "organization",
@@ -519,7 +529,8 @@ const OrganizationSlice = createSlice({
     balanceSheetAssetsList: [],
     statutoryList: [],
     gstList: [],
-    gstListCount:0
+    gstListCount: 0,
+    gstExportedDataList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -922,6 +933,18 @@ const OrganizationSlice = createSlice({
     builder.addCase(getGstListCount.rejected, (state) => {
       statusbar.loading = "rejected";
       state.gstListCount = 0;
+    });
+
+    builder.addCase(getGstExportedData.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getGstExportedData.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.gstExportedDataList = action.payload;
+    });
+    builder.addCase(getGstExportedData.rejected, (state) => {
+      statusbar.loading = "rejected";
+      state.gstExportedDataList = [];
     });
   },
 });

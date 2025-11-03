@@ -70,15 +70,17 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const formSchema = z.object({
-  transactionId: z.string().min(1, "Please give a transaction id"),
-  name: z.string().min(1, "Please give a transaction name"),
-  totalAmount: z.string().min(1, "Please enter total amount"),
-  leftAmount: z.string().min(1, "Please enter left amount"),
-  paymentDate: z.string().min(1, "Please select payment date"),
+  transactionId: z.string().min(1, "Please give a transaction id."),
+  bankAccountId: z.string().min(1, "Please select bank account."),
+  name: z.string().min(1, "Please give a transaction name."),
+  totalAmount: z.string().min(1, "Please enter total amount."),
+  leftAmount: z.string().min(1, "Please enter left amount."),
+  paymentDate: z.string().min(1, "Please select payment date."),
 });
 
 const defaultValues = {
   transactionId: "",
+  bankAccountId:"",
   name: "",
   totalAmount: "",
   leftAmount: "",
@@ -100,7 +102,7 @@ const BankStatement = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+    column: "name",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
@@ -273,7 +275,7 @@ const BankStatement = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -455,15 +457,15 @@ const BankStatement = () => {
                       )}
                     />
                     <Controller
-                      name="bankName"
+                      name="bankAccountId"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           isRequired={true}
                           data={allBankAccountList||[]}
                           label={"Select bank"}
-                          name={"bankName"}
-                          labelKey={"name"}
+                          name={"bankAccountId"}
+                          labelKey={"bankName"}
                           valueKey={"id"}
                           value={field.value}
                           onChange={(selectedSet) => {
