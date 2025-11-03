@@ -1,6 +1,5 @@
 import {
   addToast,
-  Avatar,
   Button,
   Card,
   CardBody,
@@ -180,6 +179,13 @@ const LeadInfo = () => {
   const [files, setFiles] = useState([]);
   const [editContact, setEditContact] = useState(null);
   const [remarkDataItem, setRemarkDataItem] = useState(null);
+  const [remarkLoading, setRemarkLoading] = useState("");
+  const [statusLoading, setStatusLoading] = useState("");
+  const [leadLoading, setLeadLoading] = useState("");
+  const [addressLoading, setAddressLoading] = useState("");
+  const [industryLoading, setIndustryLoading] = useState("");
+  const [assigneeLoading, setAssigneeLoading] = useState("");
+  const [contactLoading, setContactLoading] = useState("");
 
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
@@ -193,6 +199,7 @@ const LeadInfo = () => {
   }, [dispatch, leadId, userId]);
 
   const handleUpdateLeadName = (leadName) => {
+    setLeadLoading("pending");
     dispatch(updateSingleLeadName({ leadName, leadId, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -200,9 +207,11 @@ const LeadInfo = () => {
             title: "Lead name updated successfully !.",
             color: "success",
           });
+          setLeadLoading("success");
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           setToggleSlug(true);
         } else {
+          setLeadLoading("rejected");
           addToast({
             title: "Something went wrong !.",
             color: "danger",
@@ -210,6 +219,7 @@ const LeadInfo = () => {
         }
       })
       .catch(() => {
+        setLeadLoading("rejected");
         addToast({
           title: "Something went wrong !.",
           color: "danger",
@@ -225,6 +235,7 @@ const LeadInfo = () => {
       message: selectedComment === "Other" ? customComment : selectedComment,
       file: files?.map((item) => item?.url),
     };
+    setRemarkLoading("pending");
     if (customComment || selectedComment) {
       dispatch(createRemakWithFile(data))
         .then((resp) => {
@@ -235,13 +246,16 @@ const LeadInfo = () => {
             });
             setFiles([]);
             setCustomComment("");
+            setRemarkLoading("success");
             setSelectedComment(null);
             dispatch(getAllRemarkAndCommnts(leadId));
           } else {
+            setRemarkLoading("reject");
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
         .catch(() => {
+          setRemarkLoading("reject");
           addToast({ title: "Something went wrong !.", color: "danger" });
         });
     } else {
@@ -250,6 +264,7 @@ const LeadInfo = () => {
   }, [files, leadId, userId, selectedComment, customComment, dispatch]);
 
   const changeLeadAssignee = (assigneeId) => {
+    setAssigneeLoading("pending");
     dispatch(changeLeadAssigneeLeads({ assigneeId, leadId, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -257,9 +272,11 @@ const LeadInfo = () => {
             title: "Assignee updated successfully !.",
             color: "success",
           });
+          setAssigneeLoading("success");
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           setToggleAssignee(true);
         } else {
+          setAssigneeLoading("rejected");
           addToast({
             title: "Something went wrong !.",
             color: "danger",
@@ -267,6 +284,7 @@ const LeadInfo = () => {
         }
       })
       .catch(() => {
+        setAssigneeLoading("rejected");
         addToast({
           title: "Something went wrong !.",
           color: "danger",
@@ -275,6 +293,7 @@ const LeadInfo = () => {
   };
 
   const changeLeadStatus = (statusId) => {
+    setStatusLoading("pending");
     dispatch(updateLeadStatus({ leadId, userId, statusId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -282,9 +301,11 @@ const LeadInfo = () => {
             title: "Status updated successfully",
             color: "success",
           });
+          setStatusLoading("success");
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           setToggleStatus(true);
         } else {
+          setStatusLoading("rejected");
           addToast({
             title: "Something went wrong !.",
             color: "danger",
@@ -292,6 +313,7 @@ const LeadInfo = () => {
         }
       })
       .catch(() => {
+        setStatusLoading("rejected");
         addToast({
           title: "Something went wrong !.",
           color: "danger",
@@ -341,6 +363,7 @@ const LeadInfo = () => {
   };
 
   const conFirmDeleteRemark = () => {
+    setRemarkLoading("pending");
     dispatch(deleteRemarks({ remarkId: remarkDataItem?.id, leadId, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -348,16 +371,19 @@ const LeadInfo = () => {
             title: "Remark deleted successfully !.",
             color: "success",
           });
+          setRemarkLoading("success");
           dispatch(getAllRemarkAndCommnts(leadId));
           deleteRemarkModal.onOpenChange(false);
           setRemarkDataItem(null);
         } else {
+          setRemarkLoading("rejected");
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+      .catch(() => {
+        setRemarkLoading("rejected");
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const handleUpdateRemark = (values) => {
@@ -369,6 +395,7 @@ const LeadInfo = () => {
       type: values?.message === "Other" ? "Other" : "selected",
       leadId: leadId,
     };
+    setRemarkLoading("pending");
     dispatch(updateRemarks(obj))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -376,17 +403,20 @@ const LeadInfo = () => {
             title: "Remark updated successfully !.",
             color: "success",
           });
+          setRemarkLoading("success");
           dispatch(getAllRemarkAndCommnts(leadId));
           remarkModal.onOpenChange(false);
           setRemarkDataItem(null);
           remarkForm.reset(remarkFormDefault);
         } else {
+          setRemarkLoading("rejected");
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+      .catch(() => {
+        setRemarkLoading("rejected");
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const editContactModalPress = (value) => {
@@ -405,6 +435,7 @@ const LeadInfo = () => {
   };
 
   const confirmDeleteContact = () => {
+    setContactLoading("pending");
     dispatch(
       deleteLeadContact({ leadId, clientId: editContact?.clientId, userId })
     )
@@ -414,20 +445,24 @@ const LeadInfo = () => {
             title: "Contact deleted successfully !.",
             color: "success",
           });
+          setContactLoading("success");
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           deleteModal.onOpenChange(false);
           setEditContact(null);
         } else {
+          setContactLoading("rejected");
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+      .catch(() => {
+        setContactLoading("rejected");
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const handleAddressFinish = (values) => {
     values.leadId = leadId;
+    setAddressLoading("pending");
     dispatch(updateAddressInLeads(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -435,19 +470,23 @@ const LeadInfo = () => {
             title: "Address updated successfully !.",
             color: "success",
           });
+          setAddressLoading("success");
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           addressModal.onOpenChange(false);
         } else {
+          setAddressLoading("rejected");
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+      .catch(() => {
+        setAddressLoading("rejected");
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const handleIndustryFinish = (values) => {
     values.leadId = leadId;
+    setIndustryLoading("pending");
     dispatch(updateIndustriesInLeads(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -455,19 +494,23 @@ const LeadInfo = () => {
             title: "Industries updated successfully !.",
             color: "success",
           });
+          setIndustryLoading("success");
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           industryModal.onOpenChange(false);
         } else {
+          setIndustryLoading("rejected");
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+      .catch(() => {
+        setIndustryLoading("rejected");
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const handleContctFinish = (values) => {
     values.leadId = leadId;
+    setContactLoading("pending");
     if (editContact) {
       values.id = editContact?.clientId;
       values.userId = userId;
@@ -478,11 +521,13 @@ const LeadInfo = () => {
               title: "Contact details updated successfully !.",
               color: "success",
             });
+            setContactLoading("success");
             dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
             contactModal.onOpenChange(false);
             setEditContact(null);
             contactForm.reset(contactFormDefault);
           } else {
+            setContactLoading("rejected");
             addToast({
               title: "Something went wrong !.",
               color: "danger",
@@ -490,6 +535,7 @@ const LeadInfo = () => {
           }
         })
         .catch(() => {
+          setContactLoading("rejected");
           addToast({
             title: "Something went wrong !.",
             color: "danger",
@@ -504,10 +550,12 @@ const LeadInfo = () => {
               title: "Contact details created successfully.",
               color: "success",
             });
+            setContactLoading("success");
             dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
             contactModal.onOpenChange(false);
             setEditContact(null);
           } else {
+            setContactLoading("rejected");
             addToast({
               title: "Something went wrong !.",
               color: "danger",
@@ -515,6 +563,7 @@ const LeadInfo = () => {
           }
         })
         .catch(() => {
+          setContactLoading("rejected");
           addToast({
             title: "Something went wrong !.",
             color: "danger",
@@ -525,9 +574,17 @@ const LeadInfo = () => {
 
   return (
     <>
-      {leadDetailLoading === "pending" ? <LoadingSpinner /> :
-      Object.keys(leadData)?.length > 0 &&
-      (leadData?.assigne?.id == userId || adminRole) ? (
+      {(remarkLoading === "pending" ||
+        statusLoading === "pending" ||
+        leadLoading === "pending" ||
+        addressLoading === "pending" ||
+        industryLoading === "pending" ||
+        assigneeLoading === "pending" ||
+        contactLoading === "pending") && <LoadingSpinner />}
+      {leadDetailLoading === "pending" ? (
+        <LoadingSpinner />
+      ) : Object.keys(leadData)?.length > 0 &&
+        (leadData?.assigne?.id == userId || adminRole) ? (
         <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
           <div className="grid grid-cols-2 gap-3">
             <div className="w-full">
@@ -886,6 +943,7 @@ const LeadInfo = () => {
                   labelKey={"name"}
                   label={"Comments"}
                   isClearable
+                  value={selectedComment}
                   onChange={(e) => {
                     setSelectedComment(e);
                     setCustomComment("");
@@ -903,7 +961,12 @@ const LeadInfo = () => {
               </CardBody>
               <CardFooter className="flex justify-end">
                 <div>
-                  <Button color="primary" onPress={onSubmit}>
+                  <Button
+                    color="primary"
+                    isDisabled={remarkLoading === "pending"}
+                    isLoading={remarkLoading === "pending"}
+                    onPress={onSubmit}
+                  >
                     Submit
                   </Button>
                 </div>
@@ -1396,7 +1459,6 @@ const LeadInfo = () => {
       ) : (
         <StatusDisplay type="notfound" message="Lead is not assigned to you " />
       )}
-
     </>
   );
 };

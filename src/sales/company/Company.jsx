@@ -374,7 +374,7 @@ const Company = () => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center gap-2 w-[35%]">
+          <div className="flex items-center gap-1 w-[35%]">
             <Dropdown>
               <DropdownTrigger>
                 <Button

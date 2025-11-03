@@ -144,6 +144,13 @@ export const getAllVendorsPaymentCountForAccounts = createAsyncThunk(
   }
 );
 
+export const getAllBankAccounts = createAsyncThunk("", async () => {
+  const response = await api.get(
+    `/accountService/api/v1/bankStatements/getAllBankAccounts`
+  );
+  return response.data;
+});
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -157,6 +164,7 @@ const AccountSlice = createSlice({
     vendorsPaymentCountForAccount: 0,
     remainingAmountDetail: {},
     invoiceDetail: {},
+    allBankAccountsList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -277,6 +285,18 @@ const AccountSlice = createSlice({
     builder.addCase(getAllVendorsPaymentCountForAccounts.rejected, (state) => {
       state.loading = "rejected";
       state.vendorsPaymentCountForAccount = 0;
+    });
+
+    builder.addCase(getAllBankAccounts.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllBankAccounts.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allBankAccountsList = action.payload;
+    });
+    builder.addCase(getAllBankAccounts.rejected, (state) => {
+      state.loading = "rejected";
+      state.allBankAccountsList = [];
     });
   },
 });
