@@ -236,7 +236,7 @@ export const deleteLeadContact = createAsyncThunk(
 
 export const getAllEstimateByUserId = createAsyncThunk(
   "getAllEstimateByUserId",
-  async ({userId,page,size}) => {
+  async ({ userId, page, size }) => {
     const response = await api.get(
       `/leadService/api/v1/leadEstimate/getEstimateByUserId?userId=${userId}&page=${page}&size=${size}`
     );
@@ -571,6 +571,17 @@ export const docsUploadListInEstimate = createAsyncThunk(
   }
 );
 
+export const addDocumentsInEstimate = createAsyncThunk(
+  "addDocumentsInEstimate",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/addRequiredDocInEstimate`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const getAllLeadsTask = createAsyncThunk(
   "getAllLeadsTask",
   async (userId) => {
@@ -591,8 +602,6 @@ export const transferLeadToAnotherUser = createAsyncThunk(
     return response.data;
   }
 );
-
-
 
 export const LeadSlice = createSlice({
   name: "leads",

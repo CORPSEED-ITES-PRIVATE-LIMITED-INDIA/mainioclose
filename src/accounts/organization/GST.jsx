@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -13,60 +13,42 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  addToast,
-  useDisclosure,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown,Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  getAllInvoice,
-  getAllInvoiceCount,
+  getGstList,
+  getGstListCount,
 } from "../../toolkit/slices/organizationSlice";
-import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
 import { inrCurrency } from "../../common";
-import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
-import TaxInvoice from "../../components/TaxInvoice";
+import { useMediaQuery } from "react-responsive";
 
 export const columns = [
-  { name: "DATE", uid: "date" },
-  { name: "INVOICE NO.", uid: "invoiceNo" },
-  { name: "SERVICE", uid: "service" },
-  { name: "CLIENT", uid: "clientName" },
-  { name: "COMPANY", uid: "companyName" },
-  { name: "TXN. AMOUNT", uid: "txnAmount" },
-  { name: "ADDED BY", uid: "addedBy" },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "ID", uid: "id" },
+  { name: "COMPANY", uid: "company", sortable: true },
+  { name: "TYPE", uid: "type" },
+  { name: "GST", uid: "gst" },
+  { name: "AMOUNT", uid: "amount" },
+  { name: "STATUS", uid: "status" },
 ];
 
 export function capitalize(s) {
-  return s ? s.charAt(0)?.toUpperCase() + s.slice(1)?.toLowerCase() : "";
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "date",
-  "invoiceNo",
-  "service",
-  "clientName",
-  "companyName",
-  "txnAmount",
-  "addedBy",
-  "actions",
+  "id",
+  "company",
+  "type",
+  "gst",
+  "amount",
+  "status",
 ];
 
-const AllInvoice = () => {
+const GST = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.allInvoiceList);
-  const count = useSelector(
-    (state) => state.organization.allInvoiceList?.length
-  );
-  const [invoiceDetail, setInvoiceDetail] = useState(null);
+  const data = useSelector((state) => state.organization.gstList);
+  const count = useSelector((state) => state.organization.gstListCount);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -74,16 +56,18 @@ const AllInvoice = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+    column: "company",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage }));
-    dispatch(getAllInvoiceCount(userId));
-  }, [dispatch, userId]);
+    dispatch(getGstList({page,size:rowsPerPage}));
+    dispatch(getGstListCount())
+  }, [dispatch,page,rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -109,89 +93,46 @@ const AllInvoice = () => {
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
+  const items = React.useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    return filteredItems.slice(start, end);
+  }, [page, filteredItems, rowsPerPage]);
+
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...items].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, items]);
 
-  const handleViewEstimate = (value) => {
-    dispatch(getInvoiceDetailById(value?.id))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          let tempData = resp?.payload;
-          console.log("sdkgfkjsdgjksdgjhs", tempData);
-          setInvoiceDetail(tempData);
-          onOpen();
-        } else {
-          addToast({
-            title: "There is Some Issue in Invoice",
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "There is Some Issue in Invoice", color: "danger" })
-      );
-  };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "date":
+      case "company":
         return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.createDate).format("DD-MM-YYYY")}
+          <p className="text-sm font-medium capitalize">
+            {rowData?.company}
           </p>
         );
-      case "invoiceNo":
+      case "type":
+        return <p className="text-sm capitalize">{rowData?.type}</p>;
+      case "gst":
         return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{rowData?.invoiceNo}</p>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm">{rowData?.gst} %</span>
           </div>
         );
-      case "service":
-        return <p className="text-sm capitalize">{rowData?.service}</p>;
-      case "clientName":
-        return <p className="text-sm capitalize">{rowData?.clientName}</p>;
-      case "companyName":
-        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
-      case "txnAmount":
+      case "amount":
         return (
           <p className="text-sm capitalize">
-            {inrCurrency(rowData?.txnAmount)}
+            {inrCurrency(rowData?.gstAmount)}
           </p>
-        );
-      case "addedBy":
-        return (
-          <p className="text-sm capitalize">{rowData?.addedBy?.fullName}</p>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
-                  if (key == "viewEstimate") {
-                    handleViewEstimate(rowData);
-                  }
-                }}
-              >
-                <DropdownItem key="viewEstimate">Tax invoice</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
         );
       default:
         return cellValue;
@@ -237,6 +178,7 @@ const AllInvoice = () => {
             isClearable
             className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
+            size={isMedium ? "sm" : isLarge ? "md" : ""}
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -245,7 +187,11 @@ const AllInvoice = () => {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown />}
+                  variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -267,9 +213,7 @@ const AllInvoice = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} invoice
-          </span>
+          <span className="text-default-400 text-small">Total {count} tds</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -292,6 +236,8 @@ const AllInvoice = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    isLarge,
+    isMedium,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -307,6 +253,7 @@ const AllInvoice = () => {
           showControls
           showShadow
           color="primary"
+          size={isMedium ? "sm" : isLarge ? "md" : ""}
           page={page}
           total={pages}
           onChange={setPage}
@@ -331,18 +278,26 @@ const AllInvoice = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [
+    selectedKeys,
+    items.length,
+    page,
+    pages,
+    hasSearchFilter,
+    isMedium,
+    isLarge,
+  ]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">GST list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "2xl:max-h-[62vh] md:max-h-[55vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
@@ -372,23 +327,8 @@ const AllInvoice = () => {
           )}
         </TableBody>
       </Table>
-      <Modal
-        size="full"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="top-center"
-      >
-        <ModalContent>
-          <ModalHeader>Tax Invoice</ModalHeader>
-          <ModalBody className="max-h-[90vh] overflow-auto">
-            <TaxInvoice detail={invoiceDetail} />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
     </>
   );
 };
 
-export default AllInvoice;
+export default GST;

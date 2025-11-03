@@ -22,7 +22,13 @@ import {
   ModalFooter,
   DatePicker,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, FileUp, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  FileUp,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addBankDetails,
@@ -39,6 +45,8 @@ import {
   today,
 } from "@internationalized/date";
 import { CSVLink } from "react-csv";
+import NewSelect from "../../components/NewSelect";
+import { getAllBankAccounts } from "../../toolkit/slices/accountSlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -84,6 +92,7 @@ const BankStatement = () => {
   const count = useSelector(
     (state) => state.organization.bankStatementList?.length
   );
+  const allBankAccountList=useSelector((state)=>state.accounts.allBankAccountList)
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -99,6 +108,7 @@ const BankStatement = () => {
 
   useEffect(() => {
     dispatch(getAllBankStatements());
+    dispatch(getAllBankAccounts())
   }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
@@ -385,7 +395,7 @@ const BankStatement = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -444,6 +454,25 @@ const BankStatement = () => {
                         />
                       )}
                     />
+                    <Controller
+                      name="bankName"
+                      control={statForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired={true}
+                          data={allBankAccountList}
+                          label={"Select bank"}
+                          name={"bankName"}
+                          labelKey={"name"}
+                          valueKey={"id"}
+                          value={field.value}
+                          onChange={(selectedSet) => {
+                            field.onChange(selectedSet);
+                          }}
+                        />
+                      )}
+                    />
+
                     <Controller
                       name="name"
                       control={control}

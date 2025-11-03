@@ -443,7 +443,7 @@ const Users = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh]",
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

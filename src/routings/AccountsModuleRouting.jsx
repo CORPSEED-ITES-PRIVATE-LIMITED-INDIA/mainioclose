@@ -24,6 +24,7 @@ import Statutory from "../accounts/organization/settings/Statutory";
 import OrganizationEstimate from "../accounts/organization/OrganizationEstimate";
 import VendorPayments from "../accounts/VendorPayments";
 import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
+import GST from "../accounts/organization/GST";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -57,6 +58,7 @@ export const AccountsModuleRouting = () => {
         <Route path="cashflow" element={<CashFlow />} />
         <Route path="balanceSheet" element={<BalanceSheet />} />
         <Route path="tds" element={<TDS />} />
+        <Route path="gst" element={<GST />} />
         <Route
           path="/erp/:userId/accounts/organizations/settings/ledgerType"
           element={<LedgerType />}
@@ -120,6 +122,7 @@ export const accountLoginModuleRouting = () => {
         element={<BalanceSheet />}
       />
       <Route path="accounts/organizations/tds" element={<TDS />} />
+      <Route path="accounts/organizations/gst" element={<GST />} />
       <Route path="accounts/settings/ledgerType" element={<LedgerType />} />
       <Route path="accounts/settings/voucherType" element={<VoucherType />} />
       <Route path="accounts/settings/statutory" element={<Statutory />} />

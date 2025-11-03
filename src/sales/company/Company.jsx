@@ -137,9 +137,7 @@ const Company = () => {
     });
   }, [sortDescriptor, data]);
 
-
-
-    const handleSelectionChange = (selection) => {
+  const handleSelectionChange = (selection) => {
     if (selection === "all") {
       const allKeys = new Set(sortedItems.map((item) => item.id));
       setSelectedKeys(allKeys);
@@ -372,13 +370,11 @@ const Company = () => {
     companyId,
   ]);
 
-
-
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center gap-2 w-[35%]">
+          <div className="flex items-center gap-1 w-[35%]">
             <Dropdown>
               <DropdownTrigger>
                 <Button
@@ -568,7 +564,7 @@ const Company = () => {
     companyFilteration,
     allLeadUser,
     selectedKeys,
-    count
+    count,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -621,8 +617,8 @@ const Company = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh] w-full",
-          table: "w-full overflow-scroll",
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

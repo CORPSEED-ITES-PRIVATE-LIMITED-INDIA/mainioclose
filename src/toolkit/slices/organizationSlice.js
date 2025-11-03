@@ -466,6 +466,23 @@ export const createStatutory = createAsyncThunk(
   }
 );
 
+export const getGstList = createAsyncThunk(
+  "getGstList",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/accountService/api/v1/gstData/getAllGstDataCrm?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getGstListCount = createAsyncThunk("getGstListCount", async () => {
+  const response = await api.get(
+    `/accountService/api/v1/gstData/getAllGstDataCrmCount`
+  );
+  return response.data;
+});
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -501,6 +518,8 @@ const OrganizationSlice = createSlice({
     balanceSheetLiabilitiesList: [],
     balanceSheetAssetsList: [],
     statutoryList: [],
+    gstList: [],
+    gstListCount:0
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -879,6 +898,30 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllStatutoryList.rejected, (state) => {
       state.loading = "rejected";
       state.statutoryList = [];
+    });
+
+    builder.addCase(getGstList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getGstList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.gstList = action.payload;
+    });
+    builder.addCase(getGstList.rejected, (state) => {
+      statusbar.loading = "rejected";
+      state.gstList = [];
+    });
+
+    builder.addCase(getGstListCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getGstListCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.gstListCount = action.payload;
+    });
+    builder.addCase(getGstListCount.rejected, (state) => {
+      statusbar.loading = "rejected";
+      state.gstListCount = 0;
     });
   },
 });

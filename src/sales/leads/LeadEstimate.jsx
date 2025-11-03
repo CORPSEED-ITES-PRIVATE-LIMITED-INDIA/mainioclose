@@ -56,8 +56,10 @@ import {
 } from "../../toolkit/slices/productSlice";
 import { IndianRupee, Pencil, Percent } from "lucide-react";
 import {
+  addDocumentsInEstimate,
   createEstimate,
   createEstimateForApprovals,
+  docsUploadListInEstimate,
   editEstimateForApprovals,
   editLeadEstimate,
   getAllLeadUser,
@@ -84,6 +86,7 @@ import dayjs from "dayjs";
 import EstimateView from "../../components/EstimateView";
 import { formatGSTInput, formatPANInput } from "../../common";
 import { useMediaQuery } from "react-responsive";
+import FileUploader from "../../components/FileUploader";
 
 function formCondition(data) {
   let result = {
@@ -556,9 +559,6 @@ const LeadEstimate = () => {
     return total.toFixed(2);
   };
 
-
-  console.log("sdjhgsjgsgsj",details)
-
   const handleEditEstimate = useCallback(() => {
     dispatch(getAllCompanyUnits(details?.companyId));
     dispatch(getAllContactListByCompanyId(details?.companyId));
@@ -937,6 +937,47 @@ const LeadEstimate = () => {
     ]
   );
 
+  useEffect(() => {
+    dispatch(docsUploadListInEstimate(details?.id));
+  }, [details]);
+
+  const uploadDocs = (fileData) => {
+    dispatch(addDocumentsInEstimate(fileData))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Document uploaded successfully !.",
+            color: "success",
+          });
+          dispatch(docsUploadListInEstimate(details?.id));
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
+  const renderDoucmentData = useCallback((rowData, columnKey) => {
+    const cellValue = rowData[columnKey];
+    switch (columnKey) {
+      case "docs":
+        return (
+          <div className="flex flex-col">
+            <FileUploader
+              value={rowData?.documents}
+              onChange={(file) =>
+                uploadDocs({ id: rowData?.id, documents: file })
+              }
+            />
+          </div>
+        );
+      default:
+        return cellValue;
+    }
+  }, []);
+
   return (
     <>
       <div className="flex justify-between items-center">
@@ -953,8 +994,8 @@ const LeadEstimate = () => {
         </h1>
 
         {Object.keys(details)?.length > 0 && (
-          <div>
-            {/* <Button onPress={onOpen}>Upload document</Button> */}
+          <div className="flex gap-1.5">
+            <Button onPress={onOpen}>Upload document</Button>
             <Button onPress={handleEditEstimate}>
               {editEstimate ? "Show estimate" : "Edit"}
             </Button>
@@ -1915,22 +1956,22 @@ const LeadEstimate = () => {
                   name="purchaseDate"
                   control={control}
                   render={({ field, fieldState: { error } }) => {
-                    console.log("sdkjsjkgjks",field)
-                    return(
-                    <DatePicker
-                      size={isMedium ? "sm" : "md"}
-                      isRequired
-                      label="Purchase date"
-                      showMonthAndYearPickers
-                      maxValue={today(getLocalTimeZone())}
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      value={field.value ? parseDate(field.value) : null}
-                      onChange={(e) =>
-                        field.onChange(toCalendarDate(e).toString())
-                      }
-                    />
-                  )
+                    console.log("sdkjsjkgjks", field);
+                    return (
+                      <DatePicker
+                        size={isMedium ? "sm" : "md"}
+                        isRequired
+                        label="Purchase date"
+                        showMonthAndYearPickers
+                        maxValue={today(getLocalTimeZone())}
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        value={field.value ? parseDate(field.value) : null}
+                        onChange={(e) =>
+                          field.onChange(toCalendarDate(e).toString())
+                        }
+                      />
+                    );
                   }}
                 />
                 <Controller
@@ -2515,20 +2556,14 @@ const LeadEstimate = () => {
                       <TableColumn key={column.key}>{column.label}</TableColumn>
                     )}
                   </TableHeader>
-                  <TableBody items={[]}>
+                  <TableBody items={docsListInEstimate || []}>
                     {(item) => (
                       <TableRow key={item.key}>
-                        {(columnKey) =>
-                          columnKey === "docs" ? (
-                            <TableCell>
-                              <SingleFileUploader />
-                            </TableCell>
-                          ) : (
-                            <TableCell>
-                              {getKeyValue(item, columnKey)}
-                            </TableCell>
-                          )
-                        }
+                        {(columnKey) => (
+                          <TableCell>
+                            {renderDoucmentData(item, columnKey)}
+                          </TableCell>
+                        )}
                       </TableRow>
                     )}
                   </TableBody>
