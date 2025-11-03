@@ -195,6 +195,23 @@ const PaymentRegister = () => {
 
   const handlePaymentAction = (rowData) => {
     setRowItem(rowData);
+    dispatch(getEstimateByLeadId(rowData?.leadId))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          setEstimateDetails(resp.payload);
+        } else {
+          addToast({
+            title: "Some issue in fetching estimate details",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Some issue in fetching estimate details",
+          color: "danger",
+        });
+      });
     paymentModal.onOpen();
     setPaymentActionData((prev) => ({
       ...prev,
@@ -724,11 +741,83 @@ const PaymentRegister = () => {
                 Mark payment as paid
               </ModalHeader>
               <ModalBody>
-                <div class="grid grid-cols-[repeat(4,_auto)_1fr] gap-0 max-w-full overflow-x-auto border border-gray-300 rounded-2xl">
-                  <div class="border-b border-r p-4">Column 1</div>
-                  <div class="border-b border-r p-4">Column 2</div>
-                  <div class="border-b border-r p-4">Column 3</div>
-                  <div class="border-b border-r p-4">Column 4</div>
+                <div class="grid grid-cols-[repeat(5,_auto)_1fr] gap-0 max-w-full overflow-x-auto border border-gray-300 rounded-2xl">
+                  {estimateDetails?.Type === "Product" ? (
+                    <>
+                      <div class="border-b border-r p-4">
+                        <h4 className="text-small font-medium">Name</h4>
+                        <p className="text-sm">
+                          {estimateDetails?.productName}
+                        </p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        <h4 className="text-small font-medium">
+                          Actual price{" "}
+                        </h4>
+                        <p className="text-sm">
+                          {inrCurrency(estimateDetails?.actualPrice)}
+                        </p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        <h4 className="text-small font-medium">Quantity</h4>
+                        <p className="text-sm">
+                          {estimateDetails?.quantity} kg
+                        </p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        {" "}
+                        <h4 className="text-small font-medium">GST</h4>
+                        <p className="text-sm">{estimateDetails?.gst} %</p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        {" "}
+                        <h4 className="text-small font-medium">Total amount</h4>
+                        <p className="text-sm">
+                          {inrCurrency(estimateDetails?.totalPrice)}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div class="border-b border-r p-4">
+                        <h4 className="text-small font-medium">Name</h4>
+                        <p className="text-sm">
+                          {estimateDetails?.productName}
+                        </p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        <h4 className="text-small font-medium">Fee</h4>
+                        <p className="text-sm">
+                          {inrCurrency(estimateDetails?.professionalFees)}
+                        </p>
+                      </div>
+
+                      <div class="border-b border-r p-4">
+                        {" "}
+                        <h4 className="text-small font-medium">GST</h4>
+                        <p className="text-sm">
+                          {estimateDetails?.profesionalGst} %
+                        </p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        <h4 className="text-small font-medium">GST amount</h4>
+                        <p className="text-sm">
+                          {inrCurrency(
+                            (Number(estimateDetails?.professionalFees) *
+                              Number(estimateDetails?.profesionalGst)) /
+                              100
+                          )}{" "}
+                        </p>
+                      </div>
+                      <div class="border-b border-r p-4">
+                        {" "}
+                        <h4 className="text-small font-medium">Total amount</h4>
+                        <p className="text-sm">
+                          {inrCurrency(estimateDetails?.totalAmount)}
+                        </p>
+                      </div>
+                    </>
+                  )}
                   <div class="border-b p-4 flex gap-1">
                     <Tooltip content="Attached document view">
                       <Link to={rowItem?.doc?.[0]?.filePath}>
