@@ -762,7 +762,7 @@ const LeadInfo = () => {
                       labelKey={"fullName"}
                       valueKey={"id"}
                       label={"Select assignee"}
-                      value={leadData?.assigne?.id}
+                      value={String(leadData?.assigne?.id)}
                       onChange={(e) => changeLeadAssignee(e)}
                     />
                   )}
@@ -815,7 +815,7 @@ const LeadInfo = () => {
                       labelKey={"name"}
                       valueKey={"id"}
                       label={"Select status"}
-                      value={leadData?.status?.id}
+                      value={String(leadData?.status?.id)}
                       onChange={(e) => changeLeadStatus(e)}
                     />
                   )}

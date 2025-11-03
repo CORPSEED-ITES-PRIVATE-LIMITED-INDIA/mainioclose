@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -13,15 +13,24 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  DateRangePicker,
+  useDisclosure,
 } from "@heroui/react";
-import { ChevronDown,Plus, Search } from "lucide-react";
+import { ChevronDown, ListFilter, Search, Upload } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  getGstExportedData,
   getGstList,
   getGstListCount,
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import { useMediaQuery } from "react-responsive";
+import { parseZonedDateTime } from "@internationalized/date";
+import { CSVLink } from "react-csv";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -47,8 +56,13 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const GST = () => {
   const dispatch = useDispatch();
+  const { isOpen, onOpenChange, onClose } = useDisclosure();
   const data = useSelector((state) => state.organization.gstList);
   const count = useSelector((state) => state.organization.gstListCount);
+  const exportedData = useSelector(
+    (state) => state.organization.gstExportedDataList
+  );
+  const loading = useSelector((state) => state.organization.loading);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -63,11 +77,17 @@ const GST = () => {
   const hasSearchFilter = Boolean(filterValue);
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const isLarge = useMediaQuery({ minWidth: 1536 });
+  const initialDates = {
+    startDate: null,
+    endDate: null,
+  };
+  const [dateFilter, setDateFilter] = useState(initialDates);
 
   useEffect(() => {
-    dispatch(getGstList({page,size:rowsPerPage}));
-    dispatch(getGstListCount())
-  }, [dispatch,page,rowsPerPage]);
+    dispatch(getGstList({ page, size: rowsPerPage, ...dateFilter }));
+    dispatch(getGstListCount(dateFilter));
+    dispatch(getGstExportedData(dateFilter));
+  }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -110,15 +130,23 @@ const GST = () => {
     });
   }, [sortDescriptor, items]);
 
+  const exportData = exportedData?.map((row) => ({
+    Id: row?.id,
+    Company: row?.company,
+    GST: `${row?.gst}%`,
+    "GST Amount": inrCurrency(row?.gstAmount),
+    status: row?.status,
+    type: row?.type,
+  }));
+
+  const headers = ["Id", "Company", "GST", "GST Amount", "status", "type"];
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "company":
         return (
-          <p className="text-sm font-medium capitalize">
-            {rowData?.company}
-          </p>
+          <p className="text-sm font-medium capitalize">{rowData?.company}</p>
         );
       case "type":
         return <p className="text-sm capitalize">{rowData?.type}</p>;
@@ -170,6 +198,18 @@ const GST = () => {
     setPage(1);
   }, []);
 
+  const handleReset = () => {
+    dispatch(getGstExportedData(initialDates));
+    dispatch(getGstList({ page, size: rowsPerPage, ...initialDates }));
+    dispatch(getGstListCount(initialDates));
+  };
+
+  const handleApply = () => {
+    dispatch(getGstExportedData(dateFilter));
+    dispatch(getGstList({ page, size: rowsPerPage, ...dateFilter }));
+    dispatch(getGstListCount(dateFilter));
+  };
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -185,6 +225,107 @@ const GST = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Popover
+              size={isMedium ? "sm" : isLarge ? "md" : ""}
+              showArrow
+              isOpen={isOpen}
+              onOpenChange={(e) => {
+                onOpenChange(e);
+              }}
+            >
+              <PopoverTrigger>
+                <Button
+                  variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  endContent={<ListFilter />}
+                >
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                      Filter
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="w-full max-w-xl flex flex-row gap-4">
+                        <DateRangePicker
+                          hideTimeZone
+                          granularity="minute"
+                          hourCycle={24}
+                          size={isMedium ? "sm" : isLarge ? "md" : ""}
+                          visibleMonths={2}
+                          label="Created date"
+                          popoverProps={{
+                            size: isMedium ? "sm" : isLarge ? "md" : "",
+                            placement: isMedium
+                              ? "left"
+                              : isLarge
+                                ? "bottom"
+                                : "",
+                          }}
+                          value={{
+                            start: dateFilter?.startDate
+                              ? parseZonedDateTime(
+                                  `${dateFilter?.startDate}[Asia/kolkata]`
+                                )
+                              : null,
+                            end: dateFilter?.endDate
+                              ? parseZonedDateTime(
+                                  `${dateFilter?.endDate}[Asia/kolkata]`
+                                )
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
+                              : null;
+                            setDateFilter((prev) => ({
+                              ...prev,
+                              startDate: formattedStart,
+                              endDate: formattedEnd,
+                            }));
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 my-2">
+                      <Button
+                        onPress={handleReset}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onPress={handleApply}
+                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        color="primary"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+            <CSVLink
+              data={exportData}
+              headers={headers}
+              filename={"salesReport.csv"}
+            >
+              <Button
+                isDisabled={loading === "pending"}
+                isLoading={loading === "pending"}
+                endContent={<Upload />}
+                size={isMedium ? "sm" : isLarge ? "md" : ""}
+              >
+                Export
+              </Button>
+            </CSVLink>
             <Dropdown>
               <DropdownTrigger>
                 <Button
@@ -238,6 +379,9 @@ const GST = () => {
     hasSearchFilter,
     isLarge,
     isMedium,
+    loading,
+    isOpen,
+    onOpenChange
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -290,6 +434,7 @@ const GST = () => {
 
   return (
     <>
+      {loading === "pending" && <LoadingSpinner />}
       <h1 className="font-sans text-2xl font-medium mb-1">GST list</h1>
       <Table
         isHeaderSticky
