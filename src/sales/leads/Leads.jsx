@@ -66,6 +66,7 @@ import {
   getAllCitiesByStateName,
   getAllCountries,
   getAllStatesByCountryName,
+  getAllUrlList,
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
@@ -166,6 +167,7 @@ const Leads = () => {
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
+  const urlList = useSelector((state) => state.common.urlList);
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const department = useSelector((state) => state.auth.getDepartmentDetail);
   const adminRole = userRole.includes("ADMIN");
@@ -195,6 +197,7 @@ const Leads = () => {
     fromDate: "",
     updatedToDate: "",
     updatedfromDate: "",
+    originalName: null,
     updatedById: null,
     source: [],
     contactMobileNo: "",
@@ -231,6 +234,7 @@ const Leads = () => {
   useEffect(() => {
     dispatch(getAllLeadUser(userId));
     dispatch(getAllStatusData());
+    dispatch(getAllUrlList())
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
@@ -1012,6 +1016,21 @@ const Leads = () => {
                           ))}
                         </Select>
                       </div>
+
+                       <NewSelect
+                        data={urlList || []}
+                        label={"Service"}
+                        name={"originalName"}
+                        labelKey={"urlsName"}
+                        valueKey={"urlsName"}
+                        value={allMultiFilterData?.userIdFilter}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            originalName: selectedSet,
+                          }));
+                        }}
+                      />
 
                       <div>
                         <DateRangePicker
