@@ -77,7 +77,7 @@ const defaultValues = {
 
 const TDS = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen,onClose, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.organization.tdsList);
   const tdsAmount = useSelector((state) => state.organization.tdsAmount);
   const count = useSelector((state) => state.organization.tdsList?.length);
@@ -162,7 +162,7 @@ const TDS = () => {
               color: "success",
             });
             dispatch(getAllTdsList());
-            onOpenChange(false);
+            onClose()
             reset();
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
@@ -172,7 +172,7 @@ const TDS = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     },
-    [dispatch]
+    [dispatch,onClose,reset]
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
