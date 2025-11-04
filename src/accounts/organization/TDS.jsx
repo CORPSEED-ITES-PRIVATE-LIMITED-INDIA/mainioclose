@@ -88,7 +88,7 @@ const TDS = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+    column: "organization",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
@@ -265,6 +265,14 @@ const TDS = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={onOpen}
+              size={isMedium ? "sm" : isLarge ? "md" : ""}
+            >
+              Add TDS
+            </Button>
             <Dropdown>
               <DropdownTrigger>
                 <Button
@@ -290,14 +298,7 @@ const TDS = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button
-              endContent={<Plus />}
-              color="primary"
-              onPress={onOpen}
-              size={isMedium ? "sm" : isLarge ? "md" : ""}
-            >
-              Add TDS
-            </Button>
+            
           </div>
         </div>
         <div className="flex justify-between items-center">

@@ -7,6 +7,7 @@ import ProductPrice from "./ProductPrice";
 import {
   Banknote,
   FileText,
+  Flag,
   FlaskConical,
   HandCoins,
   HandHelping,
@@ -17,6 +18,7 @@ import {
 import ProductDocument from "./ProductDocument";
 import ProductAttachedDocument from "./ProductAttachedDocument";
 import SalesTAT from "./SalesTAT";
+import ProductMilestones from "./ProductMilestones";
 
 const ProductDetails = () => {
   const dispatch = useDispatch();
@@ -56,58 +58,70 @@ const ProductDetails = () => {
           <span>Service documnents</span>
         </div>
       ),
-      content: <ProductAttachedDocument data={details?.doc} details={details} />,
+      content: (
+        <ProductAttachedDocument data={details?.doc} details={details} />
+      ),
     },
     {
-      id: "salesTat",
+      id: "milestone",
       label: (
         <div className="flex items-center space-x-2">
-          <HandHelping />
-          <span>Sales TAT</span>
+          <Flag />
+          <span>Milestones</span>
         </div>
       ),
-      content: <SalesTAT data={details?.productDoc} details={details} />,
+      content: <ProductMilestones data={details?.doc} details={details} />,
     },
-    {
-      id: "qualityTat",
-      label: (
-        <div className="flex items-center space-x-2">
-          <FlaskConical />
-          <span>Quality TAT</span>
-        </div>
-      ),
-      content: <ProductDocument data={details?.productDoc} details={details} />,
-    },
-    {
-      id: "accountTat",
-      label: (
-        <div className="flex items-center space-x-2">
-          <HandCoins />
-          <span>Account TAT</span>
-        </div>
-      ),
-      content: <ProductDocument data={details?.productDoc} details={details} />,
-    },
-    {
-      id: "technicalTat",
-      label: (
-        <div className="flex items-center space-x-2">
-          <Wrench />
-          <span>Technical TAT</span>
-        </div>
-      ),
-      content: <ProductDocument data={details?.productDoc} details={details} />,
-    },
-    {
-      id: "crtTat",
-      label: (
-        <div className="flex items-center space-x-2">
-          <Handshake />
-          <span>CRT TAT</span>
-        </div>
-      ),
-      content: <ProductDocument data={details?.productDoc} />,
-    },
+    // {
+    //   id: "salesTat",
+    //   label: (
+    //     <div className="flex items-center space-x-2">
+    //       <HandHelping />
+    //       <span>Sales TAT</span>
+    //     </div>
+    //   ),
+    //   content: <SalesTAT data={details?.productDoc} details={details} />,
+    // },
+    // {
+    //   id: "qualityTat",
+    //   label: (
+    //     <div className="flex items-center space-x-2">
+    //       <FlaskConical />
+    //       <span>Quality TAT</span>
+    //     </div>
+    //   ),
+    //   content: <ProductDocument data={details?.productDoc} details={details} />,
+    // },
+    // {
+    //   id: "accountTat",
+    //   label: (
+    //     <div className="flex items-center space-x-2">
+    //       <HandCoins />
+    //       <span>Account TAT</span>
+    //     </div>
+    //   ),
+    //   content: <ProductDocument data={details?.productDoc} details={details} />,
+    // },
+    // {
+    //   id: "technicalTat",
+    //   label: (
+    //     <div className="flex items-center space-x-2">
+    //       <Wrench />
+    //       <span>Technical TAT</span>
+    //     </div>
+    //   ),
+    //   content: <ProductDocument data={details?.productDoc} details={details} />,
+    // },
+    // {
+    //   id: "crtTat",
+    //   label: (
+    //     <div className="flex items-center space-x-2">
+    //       <Handshake />
+    //       <span>CRT TAT</span>
+    //     </div>
+    //   ),
+    //   content: <ProductDocument data={details?.productDoc} />,
+    // },
   ];
 
   return (

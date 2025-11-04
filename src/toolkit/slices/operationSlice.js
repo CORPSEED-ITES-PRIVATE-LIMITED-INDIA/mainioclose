@@ -51,6 +51,14 @@ export const getAllMilestones = createAsyncThunk(
   }
 );
 
+export const createMileStone = createAsyncThunk(
+  "createMileStone",
+  async (data) => {
+    const response = await api.post(`/api/milestones`, data);
+    return response.data;
+  }
+);
+
 export const createUsersInOperations = createAsyncThunk(
   "createUsersInOperations",
   async (data) => {
@@ -123,6 +131,24 @@ export const createDepartmentInOPerations = createAsyncThunk(
   }
 );
 
+export const getProductMileStonesListByProductId = createAsyncThunk(
+  "productMileStonesListByProductId",
+  async ({ userId, productId }) => {
+    const response = await api.get(
+      `/api/product-milestone-maps/user/${userId}/product/${productId}`
+    );
+    return response.data;
+  }
+);
+
+export const addMileStoneInProduct = createAsyncThunk(
+  "addMileStoneInProduct",
+  async (data) => {
+    const response = await api.post(`/api/product-milestone-maps`, data);
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -132,6 +158,7 @@ const OperationSlice = createSlice({
     mileStoneList: [],
     operationProjectDetail: [],
     requiredDoucmentListOfProduct: [],
+    productMileStoneList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -198,6 +225,21 @@ const OperationSlice = createSlice({
     builder.addCase(getRequiredDocumentsByProductId.rejected, (state) => {
       state.loading = "rejected";
       state.requiredDoucmentListOfProduct = [];
+    });
+
+    builder.addCase(getProductMileStonesListByProductId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getProductMileStonesListByProductId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.productMileStoneList = action?.payload;
+      }
+    );
+    builder.addCase(getProductMileStonesListByProductId.rejected, (state) => {
+      state.loading = "rejected";
+      state.productMileStoneList = [];
     });
   },
 });

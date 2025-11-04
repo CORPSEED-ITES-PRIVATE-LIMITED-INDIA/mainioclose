@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -13,11 +13,27 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  User,
+  useDisclosure,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Textarea,
+  addToast,
 } from "@heroui/react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllMilestones } from "../../toolkit/slices/operationSlice";
+import {
+  createMileStone,
+  getAllMilestones,
+} from "../../toolkit/slices/operationSlice";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+import { useMediaQuery } from "react-responsive";
+import { getAllDepartment } from "../../toolkit/slices/settingSlice";
+import NewSelect from "../../components/NewSelect";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -31,10 +47,24 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = ["id", "name", "departments"];
 
+const formSchema = z.object({
+  name: z.string().min(1, "Please enter milestone name."),
+  departmentIds: z.array(z.string()).min(1, "Please select department"),
+  description: z.string().min(1, "Please enter description"),
+});
+
+const defaultValues = {
+  name: "",
+  departmentIds: [],
+  description: "",
+};
+
 const Milestone = () => {
   const dispatch = useDispatch();
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.operation.mileStoneList);
   const count = useSelector((state) => state.operation.mileStoneList?.length);
+  const departmentList = useSelector((state) => state.setting.departmentList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -48,9 +78,12 @@ const Milestone = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(getAllMilestones());
+    dispatch(getAllDepartment());
   }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
@@ -94,13 +127,52 @@ const Milestone = () => {
     });
   }, [sortDescriptor, items]);
 
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
+  const onSubmit = useCallback(
+    (values) => {
+      dispatch(createMileStone(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Milestone created successfully !.",
+              color: "success",
+            });
+            dispatch(getAllMilestones());
+            onClose();
+            reset(defaultValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    },
+    [dispatch, onClose, reset]
+  );
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
         return <p>{rowData?.name} </p>;
       case "departments":
-        return <p>{rowData?.departmentResponseDtos?.map((item)=>item?.name)?.join(", ")} </p>;
+        return (
+          <p>
+            {rowData?.departmentResponseDtos
+              ?.map((item) => item?.name)
+              ?.join(", ")}{" "}
+          </p>
+        );
       default:
         return cellValue;
     }
@@ -151,6 +223,14 @@ const Milestone = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={onOpen}
+              size={isMedium ? "sm" : isLarge ? "md" : ""}
+            >
+              Add Milestone
+            </Button>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -251,7 +331,7 @@ const Milestone = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -280,6 +360,85 @@ const Milestone = () => {
           )}
         </TableBody>
       </Table>
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Add Milestone</ModalHeader>
+              <ModalBody>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
+                    <Controller
+                      name="name"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          label="Milestone name"
+                          name="name"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="departmentIds"
+                      control={control}
+                      defaultValue={[]}
+                      render={({ field }) => (
+                        <NewSelect
+                          isRequired={true}
+                          data={departmentList || []}
+                          label={"Select department"}
+                          selectionMode="multiple"
+                          name={"departmentIds"}
+                          labelKey={"name"}
+                          valueKey={"id"}
+                          value={field.value}
+                          onChange={(selectedSet) => {
+                            field.onChange(selectedSet);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="description"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          isRequired
+                          label="Description"
+                          name="description"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };
