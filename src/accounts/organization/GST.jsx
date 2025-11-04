@@ -31,6 +31,7 @@ import { useMediaQuery } from "react-responsive";
 import { parseZonedDateTime } from "@internationalized/date";
 import { CSVLink } from "react-csv";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import dayjs from "dayjs";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -57,6 +58,8 @@ const INITIAL_VISIBLE_COLUMNS = [
 const GST = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpenChange, onClose } = useDisclosure();
+    const today = dayjs().format("YYYY-MM-DDTHH:mm");
+    const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
   const data = useSelector((state) => state.organization.gstList);
   const count = useSelector((state) => state.organization.gstListCount);
   const exportedData = useSelector(
@@ -78,8 +81,8 @@ const GST = () => {
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const isLarge = useMediaQuery({ minWidth: 1536 });
   const initialDates = {
-    startDate: null,
-    endDate: null,
+    startDate: twoMonthsAgo,
+    endDate: today,
   };
   const [dateFilter, setDateFilter] = useState(initialDates);
 
@@ -202,6 +205,7 @@ const GST = () => {
     dispatch(getGstExportedData(initialDates));
     dispatch(getGstList({ page, size: rowsPerPage, ...initialDates }));
     dispatch(getGstListCount(initialDates));
+    setDateFilter(initialDates)
   };
 
   const handleApply = () => {
@@ -381,7 +385,8 @@ const GST = () => {
     isMedium,
     loading,
     isOpen,
-    onOpenChange
+    onOpenChange,
+    dateFilter
   ]);
 
   const bottomContent = React.useMemo(() => {

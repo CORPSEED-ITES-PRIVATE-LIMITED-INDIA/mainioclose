@@ -106,10 +106,10 @@ const PaymentRegister = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+    column: "id",
     direction: "ascending",
   });
-  const [status, setStatus] = useState("initiated");
+  const [status, setStatus] = useState("all");
   const [page, setPage] = React.useState(1);
   const [rowItem, setRowItem] = useState(null);
   const [estimateDetails, setEstimateDetails] = useState(null);
