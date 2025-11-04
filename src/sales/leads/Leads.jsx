@@ -1023,7 +1023,7 @@ const Leads = () => {
                         name={"originalName"}
                         labelKey={"urlsName"}
                         valueKey={"urlsName"}
-                        value={allMultiFilterData?.userIdFilter}
+                        value={allMultiFilterData?.originalName}
                         onChange={(selectedSet) => {
                           setAllMultiFilterData((prev) => ({
                             ...prev,
