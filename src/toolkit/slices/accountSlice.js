@@ -84,6 +84,17 @@ export const createVendorsPayment = createAsyncThunk(
   }
 );
 
+export const createExternalVendorsPayment = createAsyncThunk(
+  "createExternalVendorsPayment",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/paymentRegister/createVendorPaymentRegisterManual`,
+      data
+    );
+    return response.data;
+  }
+);
+
 export const updateVendorPaymentStatus = createAsyncThunk(
   "updateVendorPaymentStatus",
   async ({ currentUserId, status, id }) => {

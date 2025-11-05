@@ -35,6 +35,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import {
+  createExternalVendorsPayment,
   createVendorsPayment,
 } from "../toolkit/slices/accountSlice";
 import TaxInvoice from "../components/TaxInvoice";
@@ -101,13 +102,15 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const formSchema = () =>
+const formSchema = (isGstMand) =>
   z.object({
     estimateNo: z.string().min(1, "Estimate number cannot be empty"),
     serviceName: z.string().min(1, "Service name cannot be empty"),
     vendorCompanyName: z.string().min(1, "Please company name"),
     gstType: z.string().min(1, "please select gst type"),
-    gstNo: z.string().min(1, "please enter gst number"),
+    ...(isGstMand
+      ? { gstNo: z.string().min(1, "please enter gst number") }
+      : { gstNo: z.string().optional() }),
     name: z.string().min(1, "please enter vendor name"),
     emails: z.string().min(1, "please enter email"),
     contactNo: z.string().min(1, "please enter contact number"),
@@ -164,12 +167,70 @@ const defaultValues = {
   fileData: [],
 };
 
+const paymentFormSchema = (isGst) =>
+  z.object({
+    estimateNo: z.string().min(1, "Estimate number cannot be empty"),
+    serviceName: z.string().min(1, "Service name cannot be empty"),
+    vendorCompanyName: z.string().min(1, "Please company name"),
+    gstType: z.string().min(1, "please select gst type"),
+    ...(isGst
+      ? { gstNo: z.string().min(1, "please enter gst number") }
+      : {
+          gstNo: z.string().optional(),
+        }),
+    name: z.string().min(1, "please enter vendor name"),
+    emails: z.string().min(1, "please enter email"),
+    contactNo: z.string().min(1, "please enter contact number"),
+    whatsappNo: z.string().min(1, "please enter whatsapp number"),
+    price: z.number(),
+    quantity: z.number().optional(),
+    gstPercent: z.string().optional(),
+    gstAmount: z.number(),
+    totalAmount: z.number(),
+    address: z.string().min(1, "please enter address"),
+    country: z.string().min(1, "please select  country"),
+    state: z.string().min(1, "please select state"),
+    city: z.string().min(1, "please select city"),
+    pinCode: z.string().min(1, "please enter address"),
+    createDate: z.string().min(1, "please enter date"),
+    remarkByVendor: z.string().min(1, "please remark "),
+    remark: z.string().min(1, "please remark "),
+    fileData: z.array(z.string()).optional(),
+  });
+
+const paymentFormDefaultValues = {
+  estimateNo: "",
+  serviceName: "",
+  quantity: 0,
+  vendorCompanyName: "",
+  gstType: "",
+  gstNo: "",
+  name: "",
+  emails: "",
+  contactNo: "",
+  whatsappNo: "",
+  price: 0,
+  gstPercent: "",
+  gstAmount: 0,
+  totalAmount: 0,
+  address: "",
+  country: "",
+  state: "",
+  city: "",
+  pinCode: "",
+  createDate: "",
+  remarkByVendor: "",
+  remark: "",
+  fileData: [],
+};
+
 const VendorEstimate = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const invoiceModal = useDisclosure();
   const viewModal = useDisclosure();
+  const paymentModal = useDisclosure();
   const data = useSelector((state) => state.vendors.vendorEstimateList);
   const count = useSelector((state) => state.vendors.vendorEstimateCount);
   const productCategoryList = useSelector(
@@ -199,6 +260,8 @@ const VendorEstimate = () => {
   const hasSearchFilter = Boolean(filterValue);
   const [gstError, setGstError] = useState("");
   const [rowItem, setRowItem] = useState(null);
+  const [isGst, setIsGst] = useState(false);
+  const [isGstMand, setIsGstMand] = useState(false);
 
   useEffect(() => {
     dispatch(getAllVendorsEstimate({ userId, page, size: rowsPerPage }));
@@ -253,20 +316,17 @@ const VendorEstimate = () => {
     setValue,
     watch,
   } = useForm({
-    resolver: zodResolver(formSchema()),
+    resolver: zodResolver(formSchema(isGstMand)),
     defaultValues,
+  });
+
+  const paymentForm = useForm({
+    resolver: zodResolver(paymentFormSchema(isGst)),
+    defaultValues: paymentFormDefaultValues,
   });
 
   const state = watch("state");
   const gstNo = watch("gstNo");
-
-  const handleGstChange = (e) => {
-    const rawValue = e.target.value;
-    const formattedValue = formatGSTInput(rawValue);
-    setValue("gstNo", formattedValue);
-    const error = validateGST(formattedValue, state);
-    setGstError(error);
-  };
 
   const validateGST = (gstNo, stateName) => {
     if (!gstNo) return "";
@@ -282,6 +342,22 @@ const VendorEstimate = () => {
     return "";
   };
 
+  const handleGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    setValue("gstNo", formattedValue);
+    const error = validateGST(formattedValue, state);
+    setGstError(error);
+  };
+
+    const handleSetPaymentGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    paymentForm.setValue("gstNo", formattedValue);
+    const error = validateGST(formattedValue, state);
+    setGstError(error);
+  };
+
   const handleViewEstimate = (rowData) => {
     setRowItem(rowData);
     viewModal.onOpen();
@@ -289,6 +365,13 @@ const VendorEstimate = () => {
 
   const handleStateChange = (stateName) => {
     setValue("state", stateName);
+    dispatch(getAllCitiesByStateName(stateName));
+    const error = validateGST(gstNo, stateName);
+    setGstError(error);
+  };
+
+    const handleSetPaymentStateChange = (stateName) => {
+    paymentForm.setValue("state", stateName);
     dispatch(getAllCitiesByStateName(stateName));
     const error = validateGST(gstNo, stateName);
     setGstError(error);
@@ -527,6 +610,39 @@ const VendorEstimate = () => {
     handleValuesChange();
   }, [actualPrice, quantity, gstPercent, setValue]);
 
+  const externalVendorPrice = paymentForm.watch("price");
+  const externalVendorQuantity = paymentForm.watch("quantity");
+  const externalVendorGstPercent = paymentForm.watch("gstPercent");
+
+  useEffect(() => {
+    const formValues = paymentForm.getValues();
+    let allValues = { ...formValues };
+
+    const handleValuesChange = () => {
+      const { price = 0, quantity = 0, gstPercent = 0 } = allValues;
+      const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+      const actualPriceNum = safeNum(price);
+      const quantityNum = safeNum(quantity);
+      const gstPercentNum = safeNum(gstPercent);
+      const totalQuantityAmount =
+        actualPriceNum * (quantityNum === 0 ? 1 : quantityNum);
+      const gstAmount = (totalQuantityAmount * gstPercentNum) / 100;
+      const totalAmount = totalQuantityAmount + gstAmount;
+      paymentForm.setValue("gstAmount", gstAmount);
+      paymentForm.setValue("totalAmount", totalAmount);
+    };
+
+    handleValuesChange();
+  }, [
+    externalVendorPrice,
+    externalVendorQuantity,
+    externalVendorGstPercent,
+    paymentForm,
+  ]);
+
+
+  console.log('dfjghsdgsjhgjgs',paymentFormSchema(isGst),paymentForm.getValues())
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -541,6 +657,13 @@ const VendorEstimate = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={paymentModal.onOpen}
+            >
+              Add external vendor payment
+            </Button>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -636,7 +759,7 @@ const VendorEstimate = () => {
   const onSubmit = (values) => {
     values.createdById = userId;
     values.leadId = rowItem?.leadId;
-    values.estimateId=rowItem?.id
+    values.estimateId = rowItem?.id;
     values.createVendorSubDto = [
       {
         name: values.serviceName,
@@ -660,6 +783,27 @@ const VendorEstimate = () => {
           });
           onClose();
           reset(defaultValues);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
+  const onExternalPaymentSubmit = (values) => {
+    console.log("dfjghsdgsjhgjgs 22222222222",values)
+    values.createdById = userId;
+    dispatch(createExternalVendorsPayment(values))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Vandor payment registered successfully !.",
+            color: "success",
+          });
+          paymentModal.onClose();
+          paymentForm.reset(paymentFormDefaultValues);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -822,6 +966,7 @@ const VendorEstimate = () => {
                           selectedKeys={[field.value]}
                           onSelectionChange={(e) => {
                             const key = Array.from(e)[0];
+                            setIsGstMand(key === "Registered");
                             field.onChange(key);
                           }}
                           items={[
@@ -842,7 +987,7 @@ const VendorEstimate = () => {
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
-                          isRequired
+                          isRequired={isGstMand}
                           label="GST number"
                           maxLength={15}
                           errorMessage={error?.message || gstError}
@@ -1255,6 +1400,439 @@ const VendorEstimate = () => {
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>
               </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        size="5xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={paymentModal.isOpen}
+        onOpenChange={paymentModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Add external vendor payment details</ModalHeader>
+              <ModalBody>
+                <form
+                  onSubmit={paymentForm.handleSubmit(onExternalPaymentSubmit)}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
+                    <Controller
+                      name="estimateNo"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Estimate number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="serviceName"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Service name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="vendorCompanyName"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Company name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="gstType"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          isRequired={true}
+                          label="GST type"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                          selectedKeys={[field.value]}
+                          onSelectionChange={(e) => {
+                            const key = Array.from(e)[0];
+                            setIsGst(key === "Registered");
+                            field.onChange(key);
+                          }}
+                          items={[
+                            { label: "Registered", key: "Registered" },
+                            { label: "Unregistered", key: "Unregistered" },
+                            { label: "SE2", key: "SE2" },
+                            { label: "International", key: "International" },
+                          ]}
+                        >
+                          {(item) => (
+                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                          )}
+                        </Select>
+                      )}
+                    />
+                    <Controller
+                      name="gstNo"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired={isGst}
+                          label="GST number"
+                          maxLength={15}
+                          errorMessage={error?.message || gstError}
+                          isInvalid={!!error || !!gstError}
+                          value={field.value}
+                          onChange={(e) => {
+                            handleSetPaymentGstChange(e);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="name"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="emails"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Email"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="contactNo"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Contact number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="whatsappNo"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Whatsapp number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="price"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => {
+                        return (
+                          <Input
+                            type="number"
+                            startContent={<IndianRupee className="h-4 w-4" />}
+                            isRequired
+                            label="Price"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(Number(e.target.value));
+                            }}
+                          />
+                        );
+                      }}
+                    />
+
+                    <Controller
+                      name="quantity"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Quantity (in kg)"
+                          type="number"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(Number(e.target.value));
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="gstPercent"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="GST %"
+                          endContent={<Percent className="h-4 w-4" />}
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="gstAmount"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          isDisabled
+                          label="GST amount (₹)"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(Number(e.target.value));
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="totalAmount"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Total amount (₹)"
+                          isDisabled
+                          type="number"
+                          startContent={<IndianRupee className="h-4 w-4" />}
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(Number(e.target.value));
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="address"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Address"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="country"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Country"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={countryList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllStatesByCountryName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="state"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="State"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={statesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            handleSetPaymentStateChange(value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="city"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="City"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={citiesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="pinCode"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Pin code"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="createDate"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <DatePicker
+                          isRequired
+                          label="Create date"
+                          showMonthAndYearPickers
+                          maxValue={today(getLocalTimeZone())}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field.value ? parseDate(field.value) : null}
+                          onChange={(e) =>
+                            field.onChange(toCalendarDate(e).toString())
+                          }
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="remarkByVendor"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Remark by vendor"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field?.value}
+                          onChange={(e) => {
+                            const temp = e.target.value;
+                            field.onChange(temp);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="remark"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Remark"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="fileData"
+                      control={paymentForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <FileUploader
+                          isRequired
+                          uploadingType="multiple"
+                          label="Document attachement"
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
             </>
           )}
         </ModalContent>
