@@ -175,7 +175,7 @@ const LeadInfo = () => {
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const department = useSelector((state) => state.auth.getDepartmentDetail);
-  const adminRole = userRole.includes("ADMIN");
+  const adminRole = userRole?.includes("ADMIN");
   const [toggleSlug, setToggleSlug] = useState(true);
   const [toggleAssignee, setToggleAssignee] = useState(true);
   const [customComment, setCustomComment] = useState("");
@@ -890,31 +890,34 @@ const LeadInfo = () => {
                       <Podcast className={iconClass} />{" "}
                       <h3 className="font-medium">Source</h3>
                     </div>
-
-                    {toggleSource ? (
-                      <Button
-                        variant="light"
-                        onPress={() => {
-                          setToggleSource(false);
-                        }}
-                        size="sm"
-                        isIconOnly
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <Pencil className={iconClass} />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="light"
-                        onPress={() => {
-                          setToggleSource(true);
-                        }}
-                        size="sm"
-                        isIconOnly
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <X className={iconClass} />
-                      </Button>
+                    {adminRole && (
+                      <>
+                        {toggleSource ? (
+                          <Button
+                            variant="light"
+                            onPress={() => {
+                              setToggleSource(false);
+                            }}
+                            size="sm"
+                            isIconOnly
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <Pencil className={iconClass} />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="light"
+                            onPress={() => {
+                              setToggleSource(true);
+                            }}
+                            size="sm"
+                            isIconOnly
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <X className={iconClass} />
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </CardHeader>
