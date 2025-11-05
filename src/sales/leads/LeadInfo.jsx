@@ -15,6 +15,8 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Select,
+  SelectItem,
   Textarea,
   useDisclosure,
   User,
@@ -32,6 +34,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  Podcast,
   Smartphone,
   Trash,
   User2,
@@ -57,6 +60,7 @@ import {
   updateAddressInLeads,
   updateIndustriesInLeads,
   updateLeadsContact,
+  updateLeadSource,
   updateLeadStatus,
   updateRemarks,
   updateSingleLeadName,
@@ -79,6 +83,7 @@ import BulkFileUploader from "../../components/BulkFileUploader";
 import dayjs from "dayjs";
 import StatusDisplay from "../../components/StatusDisplay";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { leadSource } from "../../common";
 const iconClass = "h-4 w-4";
 
 const addressFormSchema = z.object({
@@ -176,11 +181,13 @@ const LeadInfo = () => {
   const [customComment, setCustomComment] = useState("");
   const [selectedComment, setSelectedComment] = useState(null);
   const [toggleStatus, setToggleStatus] = useState(true);
+  const [toggleSource, setToggleSource] = useState(true);
   const [files, setFiles] = useState([]);
   const [editContact, setEditContact] = useState(null);
   const [remarkDataItem, setRemarkDataItem] = useState(null);
   const [remarkLoading, setRemarkLoading] = useState("");
   const [statusLoading, setStatusLoading] = useState("");
+  const [sourceLoading, setSourceLoading] = useState("");
   const [leadLoading, setLeadLoading] = useState("");
   const [addressLoading, setAddressLoading] = useState("");
   const [industryLoading, setIndustryLoading] = useState("");
@@ -314,6 +321,35 @@ const LeadInfo = () => {
       })
       .catch(() => {
         setStatusLoading("rejected");
+        addToast({
+          title: "Something went wrong !.",
+          color: "danger",
+        });
+      });
+  };
+
+  const handleUpdateSource = (source) => {
+    setSourceLoading("pending");
+    dispatch(updateLeadSource({ sourceName: source, leadId, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Source updated successfully !.",
+            color: "success",
+          });
+          setSourceLoading("success");
+          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+          setToggleSource(true);
+        } else {
+          setSourceLoading("rejected");
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        setSourceLoading("rejected");
         addToast({
           title: "Something went wrong !.",
           color: "danger",
@@ -580,7 +616,8 @@ const LeadInfo = () => {
         addressLoading === "pending" ||
         industryLoading === "pending" ||
         assigneeLoading === "pending" ||
-        contactLoading === "pending") && <LoadingSpinner />}
+        contactLoading === "pending" ||
+        sourceLoading === "pending") && <LoadingSpinner />}
       {leadDetailLoading === "pending" ? (
         <LoadingSpinner />
       ) : Object.keys(leadData)?.length > 0 &&
@@ -768,6 +805,7 @@ const LeadInfo = () => {
                   )}
                 </CardBody>
               </Card>
+
               <Card className="my-2">
                 <CardHeader>
                   <div className="flex justify-between items-center w-full">
@@ -843,6 +881,64 @@ const LeadInfo = () => {
                 </CardHeader>
                 <CardBody>
                   <p className="text-sm font-medium">{leadData?.urls}</p>
+                </CardBody>
+              </Card>
+              <Card className="my-2">
+                <CardHeader>
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center gap-2">
+                      <Podcast className={iconClass} />{" "}
+                      <h3 className="font-medium">Source</h3>
+                    </div>
+
+                    {toggleSource ? (
+                      <Button
+                        variant="light"
+                        onPress={() => {
+                          setToggleSource(false);
+                        }}
+                        size="sm"
+                        isIconOnly
+                        className="w-6 h-6 rounded-full bg-none"
+                      >
+                        <Pencil className={iconClass} />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="light"
+                        onPress={() => {
+                          setToggleSource(true);
+                        }}
+                        size="sm"
+                        isIconOnly
+                        className="w-6 h-6 rounded-full bg-none"
+                      >
+                        <X className={iconClass} />
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {toggleSource ? (
+                    <div className="flex flex-col">
+                      <span className="text-sm">{leadData?.source}</span>
+                    </div>
+                  ) : (
+                    <Select
+                      label="Source"
+                      selectedKeys={[leadData?.source]}
+                      onSelectionChange={(e) => {
+                        let key = Array.from(e)[0];
+                        handleUpdateSource(key);
+                      }}
+                    >
+                      {leadSource.map((item) => (
+                        <SelectItem key={item} value={item}>
+                          {item}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  )}
                 </CardBody>
               </Card>
               <Card className="my-2">

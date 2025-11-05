@@ -236,7 +236,7 @@ const ProductDocument = ({ data, details }) => {
                     handleSubmit(data);
                   }}
                 >
-                  <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="grid grid-cols-2 gap-2 w-full">
                     {details?.serviceType === "international" && (
                       <NewSelect
                         isRequired={true}
@@ -281,19 +281,6 @@ const ProductDocument = ({ data, details }) => {
                         }))
                       }
                     />
-                    <Textarea
-                      isRequired
-                      label="Description"
-                      name="description"
-                      errorMessage="please enter the document description ."
-                      value={formData?.description}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                    />
 
                     <Select
                       items={[
@@ -314,6 +301,19 @@ const ProductDocument = ({ data, details }) => {
                     >
                       {(info) => <SelectItem>{info.label}</SelectItem>}
                     </Select>
+                    <Textarea
+                      isRequired
+                      label="Description"
+                      name="description"
+                      errorMessage="please enter the document description ."
+                      value={formData?.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                    />
                   </div>
                   <ModalFooter className="flex justify-end gap-2 w-full">
                     <Button onPress={onClose}>Cancel</Button>

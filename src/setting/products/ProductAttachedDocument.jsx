@@ -28,18 +28,18 @@ import { EllipsisVertical, Paperclip, Plus } from "lucide-react";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   addDocsInProduct,
   getSingleProductByProductId,
 } from "../../toolkit/slices/settingSlice";
+import FileUploader from "../../components/FileUploader";
 const iconClass = "w-5 h-5";
 
 const ProductAttachedDocument = ({ details }) => {
   const dispatch = useDispatch();
   const { productId, userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [fileUrl, setFileUrl] = useState("");
   const formValues = {
     productId: productId,
     documentsName: "",
@@ -50,9 +50,8 @@ const ProductAttachedDocument = ({ details }) => {
   };
   const [formData, setFormData] = useState(formValues);
 
-
   const handleSubmit = useCallback(() => {
-    dispatch(addDocsInProduct({ ...formData, name: fileUrl }))
+    dispatch(addDocsInProduct(formData))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
@@ -61,7 +60,6 @@ const ProductAttachedDocument = ({ details }) => {
           });
           setFormData(formValues);
           dispatch(getSingleProductByProductId(productId));
-          setFileUrl("");
           onOpenChange(false);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
@@ -70,7 +68,7 @@ const ProductAttachedDocument = ({ details }) => {
       .catch(() =>
         addToast({ title: "Something went wrong !.", color: "danger" })
       );
-  }, [fileUrl, formData, productId, dispatch]);
+  }, [formData, productId, dispatch]);
 
   return (
     <>
@@ -109,6 +107,10 @@ const ProductAttachedDocument = ({ details }) => {
               label: "DESCRIPTION",
             },
             {
+              key: "document",
+              label: "Document",
+            },
+            {
               key: "actions",
               label: "ACTIONS",
             },
@@ -124,25 +126,23 @@ const ProductAttachedDocument = ({ details }) => {
               {(columnKey) =>
                 columnKey === "actions" ? (
                   <TableCell>
-                    <div className="relative flex justify-center items-center gap-2">
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button isIconOnly size="sm" variant="light">
-                            <EllipsisVertical className="text-default-300" />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu>
-                          <DropdownItem key="edit">Edit</DropdownItem>
-                          <DropdownItem
-                            key="delete"
-                            color="danger"
-                            // onClick={modal.onOpen}
-                          >
-                            Delete
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
-                    </div>
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button isIconOnly size="sm" variant="light">
+                          <EllipsisVertical className="text-default-300" />
+                        </Button>
+                      </DropdownTrigger>
+                      <DropdownMenu>
+                        <DropdownItem key="edit">Edit</DropdownItem>
+                        <DropdownItem key="delete" color="danger">
+                          Delete
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </TableCell>
+                ) : columnKey === "document" ? (
+                  <TableCell>
+                    <Link to={item?.name}>View</Link>
                   </TableCell>
                 ) : (
                   <TableCell>{getKeyValue(item, columnKey)}</TableCell>
@@ -170,7 +170,7 @@ const ProductAttachedDocument = ({ details }) => {
                     handleSubmit(data);
                   }}
                 >
-                  <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="grid grid-cols-2 gap-2 w-full">
                     <Input
                       isRequired
                       label="Document name"
@@ -181,19 +181,6 @@ const ProductAttachedDocument = ({ details }) => {
                         setFormData((prev) => ({
                           ...prev,
                           documentsName: e.target.value,
-                        }))
-                      }
-                    />
-                    <Textarea
-                      isRequired
-                      label="Description"
-                      name="description"
-                      errorMessage="please enter the document description ."
-                      value={formData?.description}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          description: e.target.value,
                         }))
                       }
                     />
@@ -218,9 +205,29 @@ const ProductAttachedDocument = ({ details }) => {
                       {(info) => <SelectItem>{info.label}</SelectItem>}
                     </Select>
 
-                    <SingleFileUploader
-                      setFileUrl={setFileUrl}
-                      fileUrl={fileUrl}
+                    <FileUploader
+                      isRequired
+                      label="Document attachement"
+                      value={formData?.name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: e,
+                        }))
+                      }
+                    />
+
+                    <Textarea
+                      isRequired
+                      label="Description"
+                      name="description"
+                      value={formData?.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                   <ModalFooter className="flex justify-end gap-2 w-full">

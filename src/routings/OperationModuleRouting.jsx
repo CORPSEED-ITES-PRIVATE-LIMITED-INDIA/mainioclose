@@ -1,4 +1,4 @@
-import { Route } from "react-router-dom";
+import { Navigate, Route } from "react-router-dom";
 import OperationsSettings from "../operation/Settings/OperationsSettings";
 import UserMapWithProduct from "../operation/Settings/UserMapWithProduct";
 import ProjectDetails from "../operation/projects/ProjectDetails";
@@ -14,6 +14,7 @@ const OperationModuleRouting = () => {
         element={<ProjectDetails />}
       />
       <Route path="operation/settings" element={<OperationsSettings />}>
+        <Route index element={<Navigate to="userMap" replace />} />
         <Route path="userMap" element={<UserMapWithProduct />} />
         <Route path="milestones" element={<Milestone />} />
       </Route>

@@ -149,6 +149,22 @@ export const addMileStoneInProduct = createAsyncThunk(
   }
 );
 
+export const updateMilestoneInProduct = createAsyncThunk(
+  "updateMilestoneInProduct",
+  async ({ id, data }) => {
+    const response = await api.put(`/api/product-milestone-maps/${id}`, data);
+    return response.data;
+  }
+);
+
+export const deleteMileStoneInProduct = createAsyncThunk(
+  "deleteMileStoneInProduct",
+  async (id) => {
+    const response = await api.delete(`/api/product-milestone-maps/${id}`);
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {

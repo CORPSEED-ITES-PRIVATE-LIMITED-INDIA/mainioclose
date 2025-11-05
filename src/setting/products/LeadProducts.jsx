@@ -413,12 +413,9 @@ const LeadProducts = () => {
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>

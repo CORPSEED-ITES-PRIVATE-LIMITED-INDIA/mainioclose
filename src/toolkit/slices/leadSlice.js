@@ -603,6 +603,16 @@ export const transferLeadToAnotherUser = createAsyncThunk(
   }
 );
 
+export const updateLeadSource = createAsyncThunk(
+  "updateLeadSource",
+  async ({ sourceName, leadId, userId }) => {
+    const response = await api.put(
+      `/leadService/api/v1/lead/updateLeadSource?sourceName=${sourceName}&leadId=${leadId}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
