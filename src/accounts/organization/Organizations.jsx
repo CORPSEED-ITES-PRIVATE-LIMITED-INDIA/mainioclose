@@ -49,6 +49,7 @@ const Organizations = () => {
             <Tab key="profitLoss" title="Profit/Loss" />
             <Tab key="cashflow" title="Cashflow" />
             <Tab key="balanceSheet" title="Balance sheet" />
+            <Tab key="trailBalance" title="Trail balance" />
             <Tab key="tds" title="Tds" />
             <Tab key="gst" title="GST" />
           </Tabs>

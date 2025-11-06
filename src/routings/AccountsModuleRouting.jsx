@@ -25,6 +25,7 @@ import OrganizationEstimate from "../accounts/organization/OrganizationEstimate"
 import VendorPayments from "../accounts/VendorPayments";
 import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
 import GST from "../accounts/organization/GST";
+import TrailBalance from "../accounts/organization/TrailBalance";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -57,6 +58,7 @@ export const AccountsModuleRouting = () => {
         <Route path="profitLoss" element={<ProfitLoss />} />
         <Route path="cashflow" element={<CashFlow />} />
         <Route path="balanceSheet" element={<BalanceSheet />} />
+        <Route path="trailBalance" element={<TrailBalance />} />
         <Route path="tds" element={<TDS />} />
         <Route path="gst" element={<GST />} />
         <Route
@@ -121,6 +123,7 @@ export const accountLoginModuleRouting = () => {
         path="accounts/organizations/balanceSheet"
         element={<BalanceSheet />}
       />
+      <Route path="accounts/organizations/trailBalance" element={<TrailBalance />} />
       <Route path="accounts/organizations/tds" element={<TDS />} />
       <Route path="accounts/organizations/gst" element={<GST />} />
       <Route path="accounts/settings/ledgerType" element={<LedgerType />} />

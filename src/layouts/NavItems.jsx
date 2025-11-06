@@ -419,6 +419,11 @@ export const accountNavItems = [
         key: "organizations/balanceSheet",
       },
       {
+        title: "Trail balance",
+        url: "accounts/organizations/trailBalance",
+        key: "organizations/trailBalance",
+      },
+      {
         title: "Tds",
         url: "accounts/organizations/tds",
         key: "tds",
