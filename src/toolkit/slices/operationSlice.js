@@ -165,6 +165,24 @@ export const deleteMileStoneInProduct = createAsyncThunk(
   }
 );
 
+export const createProjectsForOperations = createAsyncThunk(
+  "createProjectsForOperations",
+  async (data) => {
+    const response = await api.post(`/api/projects`, data);
+    return response.data;
+  }
+);
+
+export const getAllProjectsForOperations = createAsyncThunk(
+  "getAllProjectsForOperations",
+  async ({ userId, page, size }) => {
+    const response = await api.get(
+      `/api/projects?userId=${userId}&page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -175,6 +193,7 @@ const OperationSlice = createSlice({
     operationProjectDetail: [],
     requiredDoucmentListOfProduct: [],
     productMileStoneList: [],
+    projectListForOperation:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -256,6 +275,21 @@ const OperationSlice = createSlice({
     builder.addCase(getProductMileStonesListByProductId.rejected, (state) => {
       state.loading = "rejected";
       state.productMileStoneList = [];
+    });
+
+    builder.addCase(getAllProjectsForOperations.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllProjectsForOperations.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.projectListForOperation = action?.payload;
+      }
+    );
+    builder.addCase(getAllProjectsForOperations.rejected, (state) => {
+      state.loading = "rejected";
+      state.projectListForOperation = [];
     });
   },
 });

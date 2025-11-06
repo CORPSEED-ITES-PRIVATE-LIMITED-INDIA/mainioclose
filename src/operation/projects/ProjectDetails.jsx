@@ -80,7 +80,7 @@ const ProjectDetails = () => {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex justify-between gap-3">
         <div className="flex gap-3">
           <div className="flex flex-col gap-2">
             <div>
@@ -100,13 +100,13 @@ const ProjectDetails = () => {
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4" />{" "}
               <div className="flex flex-col ">
-                <p className="text-xs text-default-500">
-                  {detailedData?.projectDetails?.address} ,{" "}
-                  {detailedData?.projectDetails?.city},
-                </p>
-                <p className="text-xs text-default-500">
-                  {detailedData?.projectDetails?.state},
-                  {detailedData?.projectDetails?.country}
+                <p className="text-sm">
+                  {detailedData?.projectDetails?.address}{", "}
+                  {[
+                    detailedData?.projectDetails?.city,
+                    detailedData?.projectDetails?.state,
+                    detailedData?.projectDetails?.country,
+                  ].join(",")}
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ const ProjectDetails = () => {
                       <CardHeader>
                         <User
                           description={detail?.assignedUser?.email}
-                          name={detail?.assignedUser?.fullName}
+                          name={detail?.salesPersonName}
                           classNames={{ name: "font-medium font-sans" }}
                         />
                       </CardHeader>

@@ -93,6 +93,7 @@ const VendorRequests = () => {
     (state) => state.vendors.vendorsExportData
   );
   const vendorStatus = useSelector((state) => state.vendors.vendorsStatus);
+  const loading = useSelector((state) => state.vendors.loading);
   const procurementUsers = useSelector(
     (state) => state.common.procurementAssigneeList
   );
@@ -643,10 +644,9 @@ const VendorRequests = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Vendor's requests</h1>
-      {filteLoading === "pending" && (
-        <LoadingSpinner/>
+      {(filteLoading === "pending" || loading === "pending") && (
+        <LoadingSpinner />
       )}
-
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"
