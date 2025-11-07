@@ -62,8 +62,6 @@ export const columns = [
   { name: "PROJECT NO.", uid: "projectNo" },
   { name: "UNBILL NO.", uid: "unbilledNumber" },
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
-  { name: "SALES PERSON", uid: "salesPersonName" },
-  { name: "CONTACT PERSON", uid: "contactName" },
   { name: "DATE", uid: "date" },
   { name: "AMOUNT", uid: "amount" },
   { name: "ADDRESS", uid: "address" },
@@ -154,7 +152,7 @@ const Projects = () => {
 
   const [paginationData, setPaginationData] = useState({
     userId,
-    page: 0,
+    page: 1,
     size: 50,
   });
 
