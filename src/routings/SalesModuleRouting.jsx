@@ -27,6 +27,7 @@ import Projects from "../sales/leads/Projects";
 import UnitDetails from "../sales/company/UnitDetails";
 import CompanyProjects from "../sales/company/CompanyProjects";
 import CompanyLeads from "../sales/company/CompanyLeads";
+import ChildLead from "../sales/leads/ChildLead";
 
 const SalesModuleRouting = () => {
   return (
@@ -41,6 +42,7 @@ const SalesModuleRouting = () => {
       />
       <Route path="sales/allTask/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
@@ -58,6 +60,7 @@ const SalesModuleRouting = () => {
       />
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
@@ -85,8 +88,12 @@ const SalesModuleRouting = () => {
         <Route path="companyProjects" element={<CompanyProjects />} />
         <Route path="companyLeads" element={<CompanyLeads />} />
       </Route>
-      <Route path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/companyLeads/:leadId" element={<LeadDetail />}>
+      <Route
+        path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/companyLeads/:leadId"
+        element={<LeadDetail />}
+      >
         <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
@@ -104,6 +111,7 @@ const SalesModuleRouting = () => {
       <Route path="sales/automationReport" element={<AutomationStatus />} />
       <Route path="sales/autoHistory/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />

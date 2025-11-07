@@ -57,8 +57,8 @@ import {
 import { inrCurrency } from "../../common";
 
 export const columns = [
-  { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
+  { name: "ID", uid: "id", sortable: true },
+  { name: "NAME", uid: "name" },
   { name: "PROJECT NO.", uid: "projectNo" },
   { name: "UNBILL NO.", uid: "unbilledNumber" },
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
@@ -67,7 +67,6 @@ export const columns = [
   { name: "DATE", uid: "date" },
   { name: "AMOUNT", uid: "amount" },
   { name: "ADDRESS", uid: "address" },
-  // { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {

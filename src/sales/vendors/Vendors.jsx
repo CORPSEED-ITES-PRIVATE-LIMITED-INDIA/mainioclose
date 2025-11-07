@@ -56,7 +56,6 @@ const columns = [
   { name: "DESCRIPTION", uid: "requirementDescription" },
   { name: "ASSIGNEE", uid: "assigneeName" },
   { name: "LATEST UPDATE", uid: "latestUpdate" },
-  { name: "ACTIONS", uid: "actions" },
 ];
 
 function capitalize(s) {
@@ -70,7 +69,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "assigneeName",
   "vendorCategoryName",
   "latestUpdate",
-  "actions",
 ];
 
 const formSchema = z.object({
@@ -291,32 +289,6 @@ const Vendors = () => {
             </Popover>
           </div>
         );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let item = Array.from(e)[0];
-                  if (item === "paymentRegister") {
-                    handleActionsPress(rowData);
-                  }
-                }}
-              >
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
       default:
         return rowData[columnKey] || "-";
     }
@@ -501,7 +473,7 @@ const Vendors = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
+          wrapper: "2xl:max-h-[55vh] md:max-h-[48vh] w-full",
           table: "w-full",
         }}
         selectedKeys={selectedKeys}

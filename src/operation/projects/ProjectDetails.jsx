@@ -141,7 +141,7 @@ const ProjectDetails = () => {
                 title={
                   <>
                     {detail?.milestoneName}{" "}
-                    <Chip size="sm" color="primary" className="ml-3">
+                    <Chip size="sm" color="primary" className="ml-1">
                       {detail?.status}
                     </Chip>
                   </>

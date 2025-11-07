@@ -26,6 +26,10 @@ const LeadDetail = () => {
       label: "Details",
     },
     {
+      id: "childLead",
+      label: "Child lead",
+    },
+    {
       id: "companyForm",
       label: "Company",
     },

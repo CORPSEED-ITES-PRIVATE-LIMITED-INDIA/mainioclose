@@ -613,6 +613,21 @@ export const updateLeadSource = createAsyncThunk(
   }
 );
 
+export const getAllChildLeads = createAsyncThunk(
+  "getAllChildLeads",
+  async (name) => {
+    const response = await api.get(
+      `/leadService/api/v1/urls/getSlugChildByName?name=${name}`
+    );
+    return response.data;
+  }
+);
+
+export const addLeadChild = createAsyncThunk("addLeadChild", async (data) => {
+  const response = await api.put(`/leadService/api/v1/lead/addChildLead`, data);
+  return response.data;
+});
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -649,6 +664,7 @@ export const LeadSlice = createSlice({
     salesReportExportLoading: "",
     docsListInEstimate: [],
     allLeadsTaskList: [],
+    allChildLeadList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1018,6 +1034,18 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllLeadsTask.rejected, (state) => {
       state.loading = "rejected";
       state.allLeadsTaskList = [];
+    });
+
+    builder.addCase(getAllChildLeads.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllChildLeads.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allChildLeadList = action?.payload;
+    });
+    builder.addCase(getAllChildLeads.rejected, (state) => {
+      state.loading = "rejected";
+      state.allChildLeadList = [];
     });
   },
 });
