@@ -154,7 +154,6 @@ export const activateOrDeActivateUser = createAsyncThunk(
   }
 );
 
-
 export const deleteUserInLeadService = createAsyncThunk(
   "deleteUserInLeadService",
   async (id) => {
@@ -353,6 +352,16 @@ export const editUserRatingAssignee = createAsyncThunk(
     const response = await api.put(
       `/leadService/api/v1/rating/updateUserRatingService`,
       data
+    );
+    return response.data;
+  }
+);
+
+export const deleteRatingAssignee = createAsyncThunk(
+  "deleteRatingAssignee",
+  async (id) => {
+    const response = await api.delete(
+      `/leadService/api/v1/rating/deleteUserByRatingId?id=${id}`
     );
     return response.data;
   }

@@ -21,7 +21,15 @@ import {
   getRequiredDocumentsByProductId,
 } from "../../toolkit/slices/operationSlice";
 import { useParams } from "react-router-dom";
-import { BookText, Building, Mail, MapPin, Phone } from "lucide-react";
+import {
+  BookText,
+  Building,
+  Calendar,
+  Mail,
+  MapPin,
+  Phone,
+} from "lucide-react";
+import dayjs from "dayjs";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -88,7 +96,9 @@ const ProjectDetails = () => {
                 {detailedData?.projectDetails?.name}
               </h1>
               <h3 className="text-default-500 text-xs">
-                {detailedData?.projectDetails?.projectNo}
+                {detailedData?.projectDetails?.projectNo}{" "}
+                {detailedData?.projectDetails?.date &&
+                  `(created date : ${dayjs(detailedData?.projectDetails?.createdDate).format("DD-MM-YYYY")})`}
               </h3>
             </div>
             <div className="flex items-center gap-2">
@@ -101,12 +111,24 @@ const ProjectDetails = () => {
               <MapPin className="w-4 h-4" />{" "}
               <div className="flex flex-col ">
                 <p className="text-sm">
-                  {detailedData?.projectDetails?.address}{", "}
+                  {detailedData?.projectDetails?.address}
+                  {", "}
                   {[
                     detailedData?.projectDetails?.city,
                     detailedData?.projectDetails?.state,
                     detailedData?.projectDetails?.country,
                   ].join(",")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Calendar className="w-4 h-4" />{" "}
+              <div className="flex flex-col ">
+                <p className="text-sm">
+                  Last updated : {" "}
+                   {dayjs(detailedData?.projectDetails?.updatedDate).format(
+                    "DD-MM-YYYY"
+                  )}
                 </p>
               </div>
             </div>

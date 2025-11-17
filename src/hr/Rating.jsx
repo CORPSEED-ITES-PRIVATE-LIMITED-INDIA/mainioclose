@@ -35,6 +35,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewRating,
+  deleteRatingAssignee,
   editUserRatingAssignee,
   getAllUrlList,
   getAllUsers,
@@ -62,9 +63,7 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "urlsName", "user", "rating", "actions"];
 
 const formSchema = z.object({
   ratingsUser: z.array(z.string()).min(1, "Please select at least one user"),
-  rating: z.enum(["1", "2", "3", "4", "5"], {
-    errorMap: () => ({ message: "Please select a rating" }),
-  }),
+  rating: z.string().min(1, "please select the rating"),
 });
 
 const defaultValues = {
@@ -75,6 +74,7 @@ const defaultValues = {
 const Rating = () => {
   const { serviceId } = useParams();
   const dispatch = useDispatch();
+  const deleteModal = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector(
     (state) => state.common.usersListByServiceId?.length || 0
@@ -120,30 +120,28 @@ const Rating = () => {
     );
   }, [visibleColumns]);
 
-const filteredItems = useMemo(() => {
-  const search = filterValue?.toLowerCase();
-  if (!hasSearchFilter || !search) return data;
-  const filterItem = (item) => {
-    return Object.values(item)?.some((val) => {
-      if (Array.isArray(val)) {
-        return val.some((obj) =>
-          Object.values(obj)?.some((innerVal) =>
+  const filteredItems = useMemo(() => {
+    const search = filterValue?.toLowerCase();
+    if (!hasSearchFilter || !search) return data;
+    const filterItem = (item) => {
+      return Object.values(item)?.some((val) => {
+        if (Array.isArray(val)) {
+          return val.some((obj) =>
+            Object.values(obj)?.some((innerVal) =>
+              String(innerVal).toLowerCase().includes(search)
+            )
+          );
+        } else if (val !== null && typeof val === "object") {
+          return Object.values(val)?.some((innerVal) =>
             String(innerVal).toLowerCase().includes(search)
-          )
-        );
-      } else if (val !== null && typeof val === "object") {
-        return Object.values(val)?.some((innerVal) =>
-          String(innerVal).toLowerCase().includes(search)
-        );
-      }
-      return String(val)?.toLowerCase()?.includes(search);
-    });
-  };
+          );
+        }
+        return String(val)?.toLowerCase()?.includes(search);
+      });
+    };
 
-  return data?.filter(filterItem);
-
-}, [data, filterValue, hasSearchFilter]);
-
+    return data?.filter(filterItem);
+  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
@@ -164,15 +162,44 @@ const filteredItems = useMemo(() => {
 
   const handleEdit = (rowData) => {
     reset({
-      ratingsUser: rowData?.user?.map((item) => item?.id),
+      ratingsUser: rowData?.user?.map((item) => String(item?.id)),
       rating: rowData?.rating,
     });
     setEditData(rowData);
     onOpen();
   };
 
+  const hadleDeleteRating = () => {
+    dispatch(deleteRatingAssignee(editData?.id))
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Rating deleted successfully for the user !.",
+            color: "success",
+          });
+          dispatch(getUsersListByServiceRatingId({ serviceId }));
+          dispatch(getAllUrlList());
+          reset(defaultValues);
+          deleteModal.onClose();
+          setEditData(null);
+        } else {
+          addToast({
+            title: "Something went wrong !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Either user is already persent or empty !.",
+          color: "danger",
+        });
+      });
+  };
+
   const onSubmit = (data) => {
     if (editData) {
+      console.log("formDatatat", data);
       dispatch(
         editUserRatingAssignee({
           ...data,
@@ -233,59 +260,64 @@ const filteredItems = useMemo(() => {
     }
   };
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "urlsName":
-        return (
-          <div className="flex items-start gap-2">
-            <span className="font-normal">{rowData?.urlsName}</span>
-          </div>
-        );
-      case "user":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.user?.map((item) => item?.name).join("     ,    ")}
-            </span>
-          </div>
-        );
-      case "actions":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button size="sm" isIconOnly variant="light">
-                    <EllipsisVertical />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  selectionMode="single"
-                  onSelectionChange={(e) => handleEdit(rowData)}
-                >
-                  <DropdownItem
-                    key={"edit"}
-                    startContent={<Pencil className="h-4 w-4" />}
-                  >
-                    {" "}
-                    Edit
-                  </DropdownItem>
-                  <DropdownItem
-                    key={"delete"}
-                    color="danger"
-                    startContent={<Trash className="h-4 w-4" />}
-                  >
-                    Delete
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </span>
-          </div>
-        );
-      default:
-        return rowData[columnKey] || "-";
-    }
-  }, []);
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "urlsName":
+          return (
+            <div className="flex items-start gap-2">
+              <span className="font-normal">{rowData?.urlsName}</span>
+            </div>
+          );
+        case "user":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">
+                {rowData?.user?.map((item) => item?.name).join("     ,    ")}
+              </span>
+            </div>
+          );
+        case "actions":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">
+                <Dropdown>
+                  <DropdownTrigger>
+                    <Button size="sm" isIconOnly variant="light">
+                      <EllipsisVertical />
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu>
+                    <DropdownItem
+                      key={"edit"}
+                      startContent={<Pencil className="h-4 w-4" />}
+                      onPress={() => handleEdit(rowData)}
+                    >
+                      {" "}
+                      Edit
+                    </DropdownItem>
+                    <DropdownItem
+                      key={"delete"}
+                      color="danger"
+                      startContent={<Trash className="h-4 w-4" />}
+                      onPress={() => {
+                        setEditData(rowData);
+                        deleteModal.onOpen();
+                      }}
+                    >
+                      Delete
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </span>
+            </div>
+          );
+        default:
+          return rowData[columnKey] || "-";
+      }
+    },
+    [deleteModal]
+  );
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
@@ -381,7 +413,14 @@ const filteredItems = useMemo(() => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange,filteredItems]);
+  }, [
+    filterValue,
+    visibleColumns,
+    onRowsPerPageChange,
+    count,
+    onSearchChange,
+    filteredItems,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -442,7 +481,7 @@ const filteredItems = useMemo(() => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[65vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -484,7 +523,7 @@ const filteredItems = useMemo(() => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add Rating</ModalHeader>
+              <ModalHeader>{editData ? "Update" : "Add Rating"}</ModalHeader>
               <ModalBody>
                 <form
                   onSubmit={handleSubmit(onSubmit)}
@@ -549,6 +588,35 @@ const filteredItems = useMemo(() => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  onPress={() => {
+                    onClose();
+                  }}
+                >
+                  No
+                </Button>
+                <Button color="primary" onPress={hadleDeleteRating}>
+                  Yes
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>
