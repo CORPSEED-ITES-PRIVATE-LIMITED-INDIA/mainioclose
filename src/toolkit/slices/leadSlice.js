@@ -628,6 +628,17 @@ export const addLeadChild = createAsyncThunk("addLeadChild", async (data) => {
   return response.data;
 });
 
+export const updateAutoAssignnee = createAsyncThunk(
+  "auto-lead-assignee",
+  async (data) => {
+    const autoresponse = await api.put(
+      `/leadService/api/v1/lead/updateStatusAndAutoSame`,
+      data
+    );
+    return autoresponse?.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {

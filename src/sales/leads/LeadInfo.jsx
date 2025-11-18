@@ -58,6 +58,7 @@ import {
   getAllRemarkAndCommnts,
   getSingleLeadDataByLeadId,
   updateAddressInLeads,
+  updateAutoAssignnee,
   updateIndustriesInLeads,
   updateLeadsContact,
   updateLeadSource,
@@ -174,7 +175,9 @@ const LeadInfo = () => {
     (state) => state.common.industryDataListBySubSubIndustryId
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
-  const department = useSelector((state) => state.auth.getDepartmentDetail);
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department
+  );
   const adminRole = userRole?.includes("ADMIN");
   const [toggleSlug, setToggleSlug] = useState(true);
   const [toggleAssignee, setToggleAssignee] = useState(true);
@@ -193,6 +196,7 @@ const LeadInfo = () => {
   const [industryLoading, setIndustryLoading] = useState("");
   const [assigneeLoading, setAssigneeLoading] = useState("");
   const [contactLoading, setContactLoading] = useState("");
+  const [assignLoading, setAssignLoading] = useState("");
 
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
@@ -608,6 +612,64 @@ const LeadInfo = () => {
     }
   };
 
+  const sameAssigneePresonFun = async () => {
+    if (window.confirm("Are you Want to Sure")) {
+      setAssignLoading("pending");
+      dispatch(
+        updateAutoAssignnee({
+          leadId: leadId,
+          updatedById: userId,
+          status: "Badfit",
+          autoSame: true,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({ title: "Assigned to same person", color: "success" });
+            setAssignLoading("success");
+            dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+            setAssignLoading("rejected");
+          }
+        })
+        .catch(() => {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+          setAssignLoading("rejected");
+        });
+    }
+  };
+
+  const notSameAssigneePresonFun = async () => {
+    if (window.confirm("Are you Want to Sure ?")) {
+      dispatch(
+        updateAutoAssignnee({
+          leadId: leadId,
+          updatedById: userId,
+          status: "Badfit",
+          autoSame: false,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Not Assigned to same person",
+              color: "success",
+            });
+            setAssignLoading("success");
+            dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+            setAssignLoading("rejected");
+          }
+        })
+        .catch(() => {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+          setAssignLoading("rejected");
+        });
+    }
+  };
+
   return (
     <>
       {(remarkLoading === "pending" ||
@@ -944,6 +1006,24 @@ const LeadInfo = () => {
                   )}
                 </CardBody>
               </Card>
+              {(department === "Quality Team" || adminRole) && (
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-2">
+                        <Podcast className={iconClass} />{" "}
+                        <h3 className="font-medium">Assigne to same person </h3>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="flex gap-1.5">
+                    <Button color="primary" onPress={sameAssigneePresonFun}>
+                      Same
+                    </Button>
+                    <Button onPress={notSameAssigneePresonFun}>Not same</Button>
+                  </CardBody>
+                </Card>
+              )}
               <Card className="my-2">
                 <CardHeader>
                   <div className="flex justify-between items-center w-full">
