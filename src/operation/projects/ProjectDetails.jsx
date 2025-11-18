@@ -11,6 +11,11 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   useDisclosure,
   User,
 } from "@heroui/react";
@@ -27,9 +32,11 @@ import {
   Calendar,
   Mail,
   MapPin,
+  Pencil,
   Phone,
 } from "lucide-react";
 import dayjs from "dayjs";
+import NewSelect from "../../components/NewSelect";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -75,6 +82,7 @@ const ProjectDetails = () => {
   const dispatch = useDispatch();
   const { projectId, userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const assigneeModal = useDisclosure();
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail
   );
@@ -125,8 +133,8 @@ const ProjectDetails = () => {
               <Calendar className="w-4 h-4" />{" "}
               <div className="flex flex-col ">
                 <p className="text-sm">
-                  Last updated : {" "}
-                   {dayjs(detailedData?.projectDetails?.updatedDate).format(
+                  Last updated :{" "}
+                  {dayjs(detailedData?.projectDetails?.updatedDate).format(
                     "DD-MM-YYYY"
                   )}
                 </p>
@@ -173,12 +181,20 @@ const ProjectDetails = () => {
                 <div className="grid grid-cols-4 border-t border-gray-300 max-h-[60vh] overflow-auto">
                   <div className="col-span-1 border-r border-gray-300 p-4">
                     <Card key={`contact${idx}`}>
-                      <CardHeader>
+                      <CardHeader className="w-full flex justify-between">
                         <User
                           description={detail?.assignedUser?.email}
-                          name={detail?.salesPersonName}
+                          name={detail?.assignedUser?.fullName}
                           classNames={{ name: "font-medium font-sans" }}
                         />
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          onPress={assigneeModal.onOpen}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                       </CardHeader>
                       <CardBody>
                         <div className="flex items-center gap-2">
@@ -251,6 +267,32 @@ const ProjectDetails = () => {
           )}
         </DrawerContent>
       </Drawer>
+
+      <Modal
+        isOpen={assigneeModal.isOpen}
+        onOpenChange={assigneeModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update assignee
+              </ModalHeader>
+              <ModalBody className="max-h-[90vh] overflow-auto">
+                <NewSelect label={"Select assignee"} />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Submit
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

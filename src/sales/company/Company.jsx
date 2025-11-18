@@ -46,7 +46,7 @@ import { getAllLeadUser } from "../../toolkit/slices/leadSlice";
 
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
-  { name: "COMPANY NAME", uid: "companyName", sortable: true },
+  { name: "COMPANY NAME", uid: "companyName" },
   { name: "GST", uid: "gstNo" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "CLIENT", uid: "client" },
@@ -91,7 +91,7 @@ const Company = () => {
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
+    column: "companyId",
     direction: "ascending",
   });
   const [companyFilteration, setCompanyFilteration] = useState({
@@ -139,7 +139,7 @@ const Company = () => {
 
   const handleSelectionChange = (selection) => {
     if (selection === "all") {
-      const allKeys = new Set(sortedItems.map((item) => item.id));
+      const allKeys = new Set(sortedItems.map((item) => item.companyId));
       setSelectedKeys(allKeys);
     } else {
       setSelectedKeys(selection);
@@ -220,7 +220,7 @@ const Company = () => {
           <div className="flex flex-col">
             <span className="font-normal">{company.address || "-"}</span>
             <span className="text-sm text-gray-400">
-              {company.city || ""},{company?.state},{company?.country}
+              {[company?.city, company?.state, company?.country].join(",")}
             </span>
           </div>
         );
@@ -229,7 +229,9 @@ const Company = () => {
           <div className="flex flex-col">
             <span className="font-normal">{company.secAddress || "-"}</span>
             <span className="text-sm text-gray-400">
-              {company.secCity || ""},{company?.secState},{company?.seCountry}
+              {[company?.secCity, company?.secState, company?.seCountry].join(
+                ","
+              )}
             </span>
           </div>
         );
@@ -571,7 +573,7 @@ const Company = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
+          {selectedKeys === sortedItems?.length
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
@@ -607,7 +609,14 @@ const Company = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
+  }, [
+    selectedKeys,
+    count,
+    companyFilteration,
+    pages,
+    hasSearchFilter,
+    sortedItems,
+  ]);
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Company</h1>
@@ -620,7 +629,9 @@ const Company = () => {
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
           table: "w-full",
         }}
-        selectedKeys={selectedKeys}
+        selectedKeys={
+          selectedKeys.size === sortedItems?.length ? "all" : selectedKeys
+        }
         selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
