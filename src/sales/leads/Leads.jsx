@@ -197,7 +197,7 @@ const Leads = () => {
     fromDate: "",
     updatedToDate: "",
     updatedfromDate: "",
-    originalName: null,
+    originalName: [],
     updatedById: null,
     source: [],
     contactMobileNo: "",
@@ -1019,6 +1019,7 @@ const Leads = () => {
 
                        <NewSelect
                         data={urlList || []}
+                        selectionMode="multiple"
                         label={"Service"}
                         name={"originalName"}
                         labelKey={"urlsName"}

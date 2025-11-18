@@ -679,7 +679,8 @@ const LeadInfo = () => {
         industryLoading === "pending" ||
         assigneeLoading === "pending" ||
         contactLoading === "pending" ||
-        sourceLoading === "pending") && <LoadingSpinner />}
+        sourceLoading === "pending" ||
+        assignLoading === "pending") && <LoadingSpinner />}
       {leadDetailLoading === "pending" ? (
         <LoadingSpinner />
       ) : Object.keys(leadData)?.length > 0 &&
