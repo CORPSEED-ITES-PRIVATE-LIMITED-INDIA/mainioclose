@@ -234,7 +234,7 @@ const Leads = () => {
   useEffect(() => {
     dispatch(getAllLeadUser(userId));
     dispatch(getAllStatusData());
-    dispatch(getAllUrlList())
+    dispatch(getAllUrlList());
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
@@ -1017,7 +1017,7 @@ const Leads = () => {
                         </Select>
                       </div>
 
-                       <NewSelect
+                      <NewSelect
                         data={urlList || []}
                         selectionMode="multiple"
                         label={"Service"}
@@ -1171,7 +1171,7 @@ const Leads = () => {
                   </DropdownItem>
                 )}
                 {adminRole && (
-                  <DropdownItem key="export" endContent={<ArrowDownToLine />}>
+                  <DropdownItem key="export" endContent={<ArrowUpToLine />}>
                     <CSVLink
                       className="text-white"
                       data={exportData}
@@ -1189,7 +1189,7 @@ const Leads = () => {
                   </DropdownItem>
                 )}
                 {adminRole && (
-                  <DropdownItem key="import" endContent={<ArrowUpToLine />}>
+                  <DropdownItem key="import" endContent={<ArrowDownToLine />}>
                     Import
                   </DropdownItem>
                 )}

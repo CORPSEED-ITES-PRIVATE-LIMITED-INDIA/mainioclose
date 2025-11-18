@@ -9,6 +9,9 @@ const LeadDetail = () => {
   const path = useLocation();
   const pathKey = path?.pathname?.split("/");
   const leadData = useSelector((state) => state.leads.singleLeadData);
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department
+  );
   const [selectedKey, setSelectedKey] = useState("leadEstimate");
 
   useEffect(() => {
@@ -49,10 +52,14 @@ const LeadDetail = () => {
       id: "leadEstimate",
       label: "Estimate",
     },
-    {
-      id: "leadTasks",
-      label: "Tasks",
-    },
+    ...(department === "Quality Team"
+      ? []
+      : [
+          {
+            id: "leadTasks",
+            label: "Tasks",
+          },
+        ]),
     {
       id: "leadHistory",
       label: "Lead history",

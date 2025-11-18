@@ -562,6 +562,14 @@ export const getUserHistoryById = createAsyncThunk(
   }
 );
 
+export const getUsersListByDepartmentId = createAsyncThunk(
+  "getUsersListByDepartmentId",
+  async (id) => {
+    const response = await api.get(`/api/departments/${id}/users`);
+    return response.data;
+  }
+);
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -605,6 +613,7 @@ const CommonSlice = createSlice({
     userHistoryList: [],
     userManagerApprovalList: [],
     deactiveUserList: [],
+    userListByDepartment:[]
   },
   reducers: {
     handleReset: (state) => {
@@ -1106,6 +1115,17 @@ const CommonSlice = createSlice({
       state.deactiveUserList = action.payload;
     });
     builder.addCase(getAllDeactivateUserList.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getUsersListByDepartmentId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUsersListByDepartmentId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.userListByDepartment = action.payload;
+    });
+    builder.addCase(getUsersListByDepartmentId.rejected, (state) => {
       state.loading = "rejected";
     });
   },

@@ -1,330 +1,297 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllBalanceSheetAssets,
-  getAllBalanceSheetLiabilities,
-} from "../../toolkit/slices/organizationSlice";
-import {
-  Button,
-  DateRangePicker,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-} from "@heroui/react";
+import { getAllBalanceSheetDetail } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import { parseZonedDateTime } from "@internationalized/date";
-import { CSVLink } from "react-csv";
-import { FileUp, ListFilter } from "lucide-react";
-import { useMediaQuery } from "react-responsive";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+function parseNumber(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  if (typeof v === "number") return v;
+  const cleaned = String(v)
+    .replace(/,/g, "")
+    .replace(/[^0-9.-]/g, "");
+  const parsed = parseFloat(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toAlpha(num) {
+  let s = "";
+  while (num > 0) {
+    const mod = (num - 1) % 26;
+    s = String.fromCharCode(65 + mod) + s;
+    num = Math.floor((num - 1) / 26);
+  }
+  return s;
+}
+
+function toRoman(num) {
+  const romans = [
+    [1000, "M"],
+    [900, "CM"],
+    [500, "D"],
+    [400, "CD"],
+    [100, "C"],
+    [90, "XC"],
+    [50, "L"],
+    [40, "XL"],
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"],
+  ];
+  let res = "";
+  let n = Math.floor(num);
+  if (n <= 0) return String(num);
+  for (const [val, sym] of romans) {
+    while (n >= val) {
+      res += sym;
+      n -= val;
+    }
+  }
+  return res || String(num);
+}
+
+function getSerial(level, index) {
+  if (level === 1) return `${toAlpha(index)}.`;
+  if (level === 2) return `${toRoman(index)}.`;
+  if (level === 3) return `${index}.`;
+  if (level === 4) return `${String.fromCharCode(96 + index)}.`; // a.
+  if (level === 5) return `${toRoman(index).toLowerCase()}.`;
+  return `${index}.`;
+}
+
+function getCurrent(node) {
+  if (node.totalCurrentAmount !== undefined && node.totalCurrentAmount !== null)
+    return node.totalCurrentAmount;
+  if (node.price !== undefined && node.price !== null) return node.price;
+  return "";
+}
+function getPrevious(node) {
+  if (
+    node.totalPreviousAmount !== undefined &&
+    node.totalPreviousAmount !== null
+  )
+    return node.totalPreviousAmount;
+  return "";
+}
+
+function computeTotals(node) {
+  if (!node) return { current: 0, previous: 0 };
+  if (
+    node.totalCurrLiabilities !== undefined ||
+    node.totalPrevLiabilities !== undefined
+  ) {
+    return {
+      current: parseNumber(node.totalCurrLiabilities),
+      previous: parseNumber(node.totalPrevLiabilities),
+    };
+  }
+
+  if (
+    node.totalCurrAssets !== undefined ||
+    node.totalPrevAssets !== undefined
+  ) {
+    return {
+      current: parseNumber(node.totalCurrAssets),
+      previous: parseNumber(node.totalPrevAssets),
+    };
+  }
+
+  if (node.total !== undefined || node.totalCurrAssets !== undefined) {
+    return {
+      current: parseNumber(node.total ?? node.totalCurrAssets ?? 0),
+      previous: parseNumber(
+        node.totalPrevAssets ?? node.totalPrevLiabilities ?? 0
+      ),
+    };
+  }
+
+  if (!node.data || !Array.isArray(node.data)) {
+    return {
+      current: parseNumber(getCurrent(node)),
+      previous: parseNumber(getPrevious(node)),
+    };
+  }
+
+  let currSum = 0;
+  let prevSum = 0;
+  for (const child of node.data) {
+    const t = computeTotals(child);
+    currSum += t.current;
+    prevSum += t.previous;
+  }
+  return { current: currSum, previous: prevSum };
+}
 
 const BalanceSheet = () => {
   const dispatch = useDispatch();
-  const today = dayjs().format("YYYY-MM-DDTHH:mm");
-  const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
-  const balanceSheetLiabilitiesList = useSelector(
-    (state) => state.organization.balanceSheetLiabilitiesList
+  const today = dayjs().format("YYYY-MM-DD");
+  const balanceSheetDetails = useSelector(
+    (s) => s.organization?.balanceSheetDetail
   );
-  const balanceSheetAssetsList = useSelector(
-    (state) => state.organization.balanceSheetAssetsList
-  );
-  const [dateRange, setDateRange] = useState({
-    startDate: twoMonthsAgo,
-    endDate: today,
-  });
-
-  const [dateRange2, setDateRange2] = useState({
-    startDate: twoMonthsAgo,
-    endDate: today,
-  });
-
-  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
-  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getAllBalanceSheetLiabilities(dateRange));
-  }, [dispatch, dateRange]);
+    dispatch(getAllBalanceSheetDetail());
+  }, [dispatch]);
 
-  useEffect(() => {
-    dispatch(getAllBalanceSheetAssets(dateRange2));
-  }, [dispatch, dateRange2]);
+  const containerRef = useRef(null);
 
-  const exportData = (balanceSheetAssetsList?.data || [])?.map((row) => ({
-    "Group name": row?.groupName,
-    "Total credit": row?.totalCredit,
-    "Total debit": row?.totalDebit,
-    "Total amount": row?.totalAmount,
-  }));
-  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
+  const exportPDF = async () => {
+    const input = containerRef.current;
+    if (!input) return;
+    const canvas = await html2canvas(input, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = 210; // mm
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("balance-sheet.pdf");
+  };
 
-  const exportData2 = (balanceSheetLiabilitiesList?.data || [])?.map((row) => ({
-    "Group name": row?.groupName,
-    "Total credit": row?.totalCredit,
-    "Total debit": row?.totalDebit,
-    "Total amount": row?.totalAmount,
-  }));
-  const headers2 = [
-    "Group name",
-    "Total credit",
-    "Total debit",
-    "Total amount",
-  ];
+const renderNode = (node, level = 1, index = 1, path = "") => {
+  if (!node) return null;
 
-  const columns = [
-    {
-      key: "groupName",
-      label: "GROUP NAME",
-    },
-    {
-      key: "totalCredit",
-      label: "TOTAL CREDIT",
-    },
-    {
-      key: "totalDebit",
-      label: "TOTAL DEBIT",
-    },
-    {
-      key: "totalAmount",
-      label: "TOTAL AMOUNT",
-    },
-  ];
+  // If node contains children → treat as group
+  const isGroup = node.title && Array.isArray(node.data);
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "groupName":
-        return (
-          <div className="flex flex-col">
-            <p className="font-medium">{rowData?.groupName || "-"}</p>
-          </div>
-        );
+  const serial = getSerial(level, index);
+  const indentPx = (level - 1) * 20; // increased for better alignment
+  const curr = parseNumber(getCurrent(node));
+  const prev = parseNumber(getPrevious(node));
 
-      case "totalCredit":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal">
-              {inrCurrency(rowData.totalCredit) || "-"}
-            </span>
-          </div>
-        );
-      case "totalDebit":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal">
-              {inrCurrency(rowData.totalDebit) || "-"}
-            </span>
-          </div>
-        );
-      case "totalAmount":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal">
-              {inrCurrency(rowData.totalAmount) || "-"}
-            </span>
-          </div>
-        );
-      default:
-        return rowData[columnKey] || "-";
-    }
-  }, []);
+  // ---------------------------
+  // GROUP NODE (with children)
+  // ---------------------------
+  if (isGroup) {
+    return (
+      <React.Fragment key={path + node.title}>
+        <tr>
+          <td
+            colSpan={4}
+            className="bg-gray-100 border px-3 py-2 font-semibold"
+            style={{ paddingLeft: `${indentPx}px` }}
+          >
+            <span className="mr-2 font-semibold">{serial}</span>
+            <span className="font-semibold">{node.title}</span>
+          </td>
+        </tr>
+
+        {node.data.map((child, idx) =>
+          renderNode(child, Math.min(level + 1, 5), idx + 1, `${path}-${idx}`)
+        )}
+      </React.Fragment>
+    );
+  }
+
+  // ---------------------------
+  // LEAF NODE (no children)
+  // ---------------------------
+  return (
+    <tr key={path + node.title} className="border-b">
+      <td
+        className="px-3 py-2 flex items-center gap-2"
+        style={{
+          paddingLeft: `${indentPx}px`,
+          fontWeight: 400,     // title not bold
+        }}
+      >
+        <span className="font-semibold">{serial}</span>
+        <span className="font-normal">{node.title}</span>
+      </td>
+
+      <td className="px-3 py-2 text-center"></td>
+
+      <td className="px-3 py-2 text-center">{inrCurrency(curr)}</td>
+      <td className="px-3 py-2 text-center">{inrCurrency(prev)}</td>
+    </tr>
+  );
+};
+
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <div className="flex flex-col gap-2 p-2">
-        <div className="flex justify-between items-center">
-          <h1 className="font-medium text-xl">Liabilities</h1>
-          <div className="flex gap-2 items-center">
-            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
-              <PopoverTrigger>
-                <Button
-                  variant="flat"
-                  endContent={<ListFilter />}
-                  size={isMedium ? "sm" : isLarge ? "md" : ""}
-                >
-                  Filter
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="my-1 font-medium text-lg" {...titleProps}>
-                      Filter
-                    </h3>
-                    <div className="flex flex-col gap-2">
-                      <DateRangePicker
-                        hideTimeZone
-                        visibleMonths={2}
-                        size={isMedium ? "sm" : isLarge ? "md" : ""}
-                        popoverProps={{
-                          size: isMedium ? "sm" : isLarge ? "md" : "",
-                          placement: isMedium
-                            ? "right"
-                            : isLarge
-                              ? "bottom"
-                              : "",
-                        }}
-                        value={{
-                          start: parseZonedDateTime(
-                            `${dateRange?.startDate}[Asia/kolkata]`
-                          ),
-                          end: parseZonedDateTime(
-                            `${dateRange?.endDate}[Asia/kolkata]`
-                          ),
-                        }}
-                        onChange={(value) => {
-                          const formattedStart = value.start
-                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                            : null;
-                          const formattedEnd = value.end
-                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                            : null;
-                          setDateRange({
-                            startDate: formattedStart,
-                            endDate: formattedEnd,
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+    <div className="p-4 bg-gray-50 flex flex-col items-center">
+      <div
+        ref={containerRef}
+        className="w-full bg-white p-6 rounded shadow max-h-[70vh] overflow-auto"
+      >
+        <h2 className="text-center text-xl font-bold mb-1">
+          Corpseed Ites Private Limited
+        </h2>
+        <h3 className="text-center font-semibold">Balance Sheet</h3>
+        <h4 className="text-center mb-6 text-sm text-gray-600">
+          as at {today}
+        </h4>
 
-            <CSVLink
-              className="text-white"
-              data={exportData}
-              headers={headers}
-              filename={"liabilities.csv"}
-            >
-              <Button size="sm" isIconOnly>
-                <FileUp className="h-4 w-4" />
-              </Button>
-            </CSVLink>
-          </div>
-        </div>
-        <div>
-          <h3 className="font-medium text-md">
-            Total amount :{" "}
-            {inrCurrency(balanceSheetLiabilitiesList?.totalPrice)}
-          </h3>
-        </div>
-        <Table
-          classNames={{
-            wrapper: "max-h-[60vh]",
-          }}
-        >
-          <TableHeader columns={columns}>
-            {(column) => (
-              <TableColumn key={column.key}>{column.label}</TableColumn>
-            )}
-          </TableHeader>
-          <TableBody items={balanceSheetLiabilitiesList?.data || []}>
-            {(item) => (
-              <TableRow key={`${item.groupName}profit`}>
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <table className="w-full border-collapse border border-gray-300 text-sm">
+          <thead>
+            <tr>
+              <th className="border p-2 text-left">Particulars</th>
+              <th className="border p-2 text-center">Note No.</th>
+              <th className="border p-2 text-center">Current Period</th>
+              <th className="border p-2 text-center">Previous Period</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {balanceSheetDetails?.length > 0 &&
+              balanceSheetDetails?.map((section, sIdx) => {
+                const totals = computeTotals(section);
+                return (
+                  <React.Fragment key={`section-${sIdx}`}>
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="bg-gray-200 font-bold border px-3 py-2"
+                      >
+                        <span className="mr-2">{getSerial(1, sIdx + 1)}</span>
+                        {section?.title ||
+                          (sIdx === 0 ? "EQUITY AND LIABILITIES" : "ASSETS")}
+                      </td>
+                    </tr>
+
+                    {Array.isArray(section?.data)
+                      ? section?.data?.map((node, idx) =>
+                          renderNode(node, 2, idx + 1, `s${sIdx}n${idx}`)
+                        )
+                      : null}
+                    <tr>
+                      <td
+                        className="px-3 py-2 font-semibold"
+                        style={{ paddingLeft: "16px" }}
+                      >
+                        Total {section?.title}
+                      </td>
+                      <td className="px-3 py-2 text-center font-semibold" />
+                      <td className="px-3 py-2 text-center font-semibold">
+                        {inrCurrency(totals?.current)}
+                      </td>
+                      <td className="px-3 py-2 text-center font-semibold">
+                        {inrCurrency(totals?.previous)}
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+          </tbody>
+        </table>
+
+        <p className="mt-4 text-xs text-gray-500">
+          Note: Note numbers are intentionally blank. Totals are computed
+          dynamically by the component (explicit total keys are honored if
+          present).
+        </p>
       </div>
-      <div className="flex flex-col gap-2 p-2">
-        <div className="flex justify-between items-center">
-          <h1 className="font-medium text-xl">Assets</h1>
-          <div className="flex gap-2 items-center">
-            <Popover size={isMedium ? "sm" : isLarge ? "md" : ""} showArrow>
-              <PopoverTrigger>
-                <Button
-                  variant="flat"
-                  endContent={<ListFilter />}
-                  size={isMedium ? "sm" : isLarge ? "md" : ""}
-                >
-                  Filter
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="my-1 font-medium text-lg" {...titleProps}>
-                      Filter
-                    </h3>
-                    <div className="flex flex-col gap-2">
-                      <DateRangePicker
-                        hideTimeZone
-                        visibleMonths={2}
-                        size={isMedium ? "sm" : isLarge ? "md" : ""}
-                        popoverProps={{
-                          size: isMedium ? "sm" : isLarge ? "md" : "",
-                          placement: isMedium
-                            ? "right"
-                            : isLarge
-                              ? "bottom"
-                              : "",
-                        }}
-                        value={{
-                          start: parseZonedDateTime(
-                            `${dateRange2?.startDate}[Asia/kolkata]`
-                          ),
-                          end: parseZonedDateTime(
-                            `${dateRange2?.endDate}[Asia/kolkata]`
-                          ),
-                        }}
-                        onChange={(value) => {
-                          const formattedStart = value.start
-                            ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                            : null;
-                          const formattedEnd = value.end
-                            ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}`
-                            : null;
-                          setDateRange2({
-                            startDate: formattedStart,
-                            endDate: formattedEnd,
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
 
-            <CSVLink
-              className="text-white"
-              data={exportData2}
-              headers={headers2}
-              filename={"assets.csv"}
-            >
-              <Button size="sm" isIconOnly>
-                <FileUp className="h-4 w-4" />
-              </Button>
-            </CSVLink>
-          </div>
-        </div>
-        <h3 className="font-medium text-md">
-          Total amount : {inrCurrency(balanceSheetAssetsList?.totalPrice)}
-        </h3>
-        <Table>
-          <TableHeader columns={columns}>
-            {(column) => (
-              <TableColumn key={column.key}>{column.label}</TableColumn>
-            )}
-          </TableHeader>
-          <TableBody items={balanceSheetAssetsList?.data || []}>
-            {(item) => (
-              <TableRow key={`${item.groupName}loss`}>
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+      <div className="w-full mt-2 flex justify-center">
+        <button
+          onClick={exportPDF}
+          className="px-4 py-2 bg-blue-600 text-white rounded shadow cursor-pointer"
+        >
+          Export as PDF
+        </button>
       </div>
     </div>
   );

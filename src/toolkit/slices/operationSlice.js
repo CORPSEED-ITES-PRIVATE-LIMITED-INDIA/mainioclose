@@ -183,6 +183,16 @@ export const getAllProjectsForOperations = createAsyncThunk(
   }
 );
 
+export const updateAssigneeForMileStone = createAsyncThunk(
+  "updateAssigneeForMileStone",
+  async (assignmentId) => {
+    const response = await api.put(
+      `/api/milestone-assignments/${assignmentId}/reassign`
+    );
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -193,7 +203,7 @@ const OperationSlice = createSlice({
     operationProjectDetail: [],
     requiredDoucmentListOfProduct: [],
     productMileStoneList: [],
-    projectListForOperation:[]
+    projectListForOperation: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -280,13 +290,10 @@ const OperationSlice = createSlice({
     builder.addCase(getAllProjectsForOperations.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      getAllProjectsForOperations.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.projectListForOperation = action?.payload;
-      }
-    );
+    builder.addCase(getAllProjectsForOperations.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectListForOperation = action?.payload;
+    });
     builder.addCase(getAllProjectsForOperations.rejected, (state) => {
       state.loading = "rejected";
       state.projectListForOperation = [];

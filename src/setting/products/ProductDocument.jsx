@@ -40,6 +40,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { addDocumentsInProductsForOperation } from "../../toolkit/slices/operationSlice";
+import FileUploader from "../../components/FileUploader";
 const iconClass = "w-5 h-5";
 
 const ProductDocument = ({ data, details }) => {
@@ -338,15 +339,15 @@ const ProductDocument = ({ data, details }) => {
               <ModalHeader>Upload document</ModalHeader>
               <ModalBody className="w-full">
                 <div className="flex flex-col gap-4">
-                  <SingleFileUploader
-                    fileUrl={fileUrl}
-                    setFileUrl={setFileUrl}
+                  <FileUploader
+                    value={fileUrl}
+                    onChange={(e) => setFileUrl(e)}
                   />
-                  <div>
+                  {/* <div>
                     <a href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794064357DocumentsChecklist_(2).xlsx">
                       Download the sample document
                     </a>
-                  </div>
+                  </div> */}
                 </div>
                 <ModalFooter className="flex justify-end gap-2 w-full">
                   <Button onPress={onClose}>Cancel</Button>

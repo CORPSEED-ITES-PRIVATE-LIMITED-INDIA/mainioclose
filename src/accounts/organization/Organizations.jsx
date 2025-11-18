@@ -50,7 +50,7 @@ const Organizations = () => {
             <Tab key="cashflow" title="Cashflow" />
             <Tab key="balanceSheet" title="Balance sheet" />
             <Tab key="trailBalance" title="Trail balance" />
-            <Tab key="tds" title="Tds" />
+            <Tab key="tds" title="TDS" />
             <Tab key="gst" title="GST" />
           </Tabs>
           <Dropdown>

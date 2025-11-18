@@ -384,6 +384,16 @@ export const getAllLossList = createAsyncThunk(
   }
 );
 
+export const getProfitLossDetail = createAsyncThunk(
+  "getProfitLossDetail",
+  async ({ startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllProfitAndLoss?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllOutFlowList = createAsyncThunk(
   "getAllOutFlowList",
   async ({ startDate, endDate }) => {
@@ -419,6 +429,16 @@ export const getAllBalanceSheetAssets = createAsyncThunk(
   async ({ startDate, endDate }) => {
     const response = await api.get(
       `/accountService/api/v1/balanceSheet/getAllBalanceSheetAssets?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllBalanceSheetDetail = createAsyncThunk(
+  "getAllBalanceSheetDetail",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/balanceSheet/getAllAssetsAndLiabilities`
     );
     return response.data;
   }
@@ -476,12 +496,15 @@ export const getGstList = createAsyncThunk(
   }
 );
 
-export const getGstListCount = createAsyncThunk("getGstListCount", async ({startDate, endDate}) => {
-  const response = await api.get(
-    `/accountService/api/v1/gstData/getAllGstDataCrmCount?startDate=${startDate}&endDate=${endDate}`
-  );
-  return response.data;
-});
+export const getGstListCount = createAsyncThunk(
+  "getGstListCount",
+  async ({ startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/gstData/getAllGstDataCrmCount?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
 
 export const getGstExportedData = createAsyncThunk(
   "getGstExportedData",
@@ -530,7 +553,9 @@ const OrganizationSlice = createSlice({
     statutoryList: [],
     gstList: [],
     gstListCount: 0,
-    gstExportedDataList:[]
+    gstExportedDataList: [],
+    profitLossDetail: {},
+    balanceSheetDetail: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -945,6 +970,30 @@ const OrganizationSlice = createSlice({
     builder.addCase(getGstExportedData.rejected, (state) => {
       statusbar.loading = "rejected";
       state.gstExportedDataList = [];
+    });
+
+    builder.addCase(getProfitLossDetail.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getProfitLossDetail.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.profitLossDetail = action.payload;
+    });
+    builder.addCase(getProfitLossDetail.rejected, (state) => {
+      statusbar.loading = "rejected";
+      state.profitLossDetail = {};
+    });
+
+    builder.addCase(getAllBalanceSheetDetail.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllBalanceSheetDetail.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.balanceSheetDetail = action.payload;
+    });
+    builder.addCase(getAllBalanceSheetDetail.rejected, (state) => {
+      statusbar.loading = "rejected";
+      state.balanceSheetDetail = {};
     });
   },
 });

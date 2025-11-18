@@ -16,6 +16,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Textarea,
   useDisclosure,
   User,
 } from "@heroui/react";
@@ -37,6 +38,7 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
+import { getUsersListByDepartmentId } from "../../toolkit/slices/commonSlice";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -88,6 +90,9 @@ const ProjectDetails = () => {
   );
   const requiredDocsList = useSelector(
     (state) => state.operation.requiredDoucmentListOfProduct
+  );
+  const userListBydepartment = useSelector(
+    (state) => state.common.userListByDepartment
   );
 
   useEffect(() => {
@@ -191,7 +196,12 @@ const ProjectDetails = () => {
                           isIconOnly
                           size="sm"
                           variant="light"
-                          onPress={assigneeModal.onOpen}
+                          onPress={() => {
+                            assigneeModal.onOpen();
+                            dispatch(
+                              getUsersListByDepartmentId(detail?.departmentId)
+                            );
+                          }}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -279,11 +289,17 @@ const ProjectDetails = () => {
                 Update assignee
               </ModalHeader>
               <ModalBody className="max-h-[90vh] overflow-auto">
-                <NewSelect label={"Select assignee"} />
+                <NewSelect
+                  label={"Select assignee"}
+                  data={userListBydepartment || []}
+                  labelKey={"fullName"}
+                  valueKey={"id"}
+                />
+                <Textarea label={"Reason"} />
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
+                <Button variant="light" onPress={onClose}>
+                  Cancel
                 </Button>
                 <Button color="primary" onPress={onClose}>
                   Submit

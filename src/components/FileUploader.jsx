@@ -1,7 +1,14 @@
 import { useRef, useState, useEffect } from "react";
 import { api } from "../httpRequest";
 
-const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage, uploadingType = "single" }) => {
+const FileUploader = ({
+  value,
+  onChange,
+  label,
+  isRequired = false,
+  errorMessage,
+  uploadingType = "single",
+}) => {
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
   const [files, setFiles] = useState([]);
@@ -16,6 +23,8 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
     "text/plain",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
 
   const uploadFile = async (selectedFile, index) => {
@@ -101,7 +110,11 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
   };
 
   const handleClickDropZone = () => {
-    if (uploadingType !== "multiple" && files.length > 0 && statuses[0] === "success") {
+    if (
+      uploadingType !== "multiple" &&
+      files.length > 0 &&
+      statuses[0] === "success"
+    ) {
       return; // Prevent clicking if single file is already uploaded successfully
     }
     fileInputRef.current.click();
@@ -137,7 +150,6 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
     };
   }, []);
 
-
   return (
     <div className="w-full">
       <input
@@ -156,7 +168,9 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`w-full min-h-[52px] border-2 rounded-lg mt-1 border-gray-600 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer transition-colors ${
-          uploadingType !== "multiple" && files.length > 0 && statuses[0] === "success"
+          uploadingType !== "multiple" &&
+          files.length > 0 &&
+          statuses[0] === "success"
             ? "cursor-not-allowed opacity-70"
             : ""
         }`}
@@ -171,7 +185,9 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
           <button
             type="button"
             className={`bg-blue-500 text-white text-tiny px-2 py-[3px] rounded hover:bg-blue-600 ${
-              uploadingType !== "multiple" && files.length > 0 && statuses[0] === "success"
+              uploadingType !== "multiple" &&
+              files.length > 0 &&
+              statuses[0] === "success"
                 ? "hidden"
                 : ""
             }`}
@@ -183,13 +199,15 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
             Choose
           </button>
           <p className="text-tiny text-gray-400">
-            {uploadingType === "multiple" && files.length > 0 && Object.values(statuses).includes("success")
+            {uploadingType === "multiple" &&
+            files.length > 0 &&
+            Object.values(statuses).includes("success")
               ? "Files uploaded. Add more or replace."
               : uploadingType === "multiple"
-              ? "or Drag & Drop Files Here, or Paste"
-              : files.length > 0 && statuses[0] === "success"
-              ? "File uploaded. Click to replace."
-              : "or Drag & Drop File Here, or Paste"}
+                ? "or Drag & Drop Files Here, or Paste"
+                : files.length > 0 && statuses[0] === "success"
+                  ? "File uploaded. Click to replace."
+                  : "or Drag & Drop File Here, or Paste"}
           </p>
         </div>
       </div>
@@ -201,7 +219,9 @@ const FileUploader = ({ value, onChange, label, isRequired = false, errorMessage
             <div key={index} className="flex items-center gap-2">
               <p
                 className={`${
-                  statuses[index] === "success" ? "text-green-600" : "text-gray-800"
+                  statuses[index] === "success"
+                    ? "text-green-600"
+                    : "text-gray-800"
                 } text-tiny`}
               >
                 {file.name} ({Math.round(file.size / 1024)} KB)
