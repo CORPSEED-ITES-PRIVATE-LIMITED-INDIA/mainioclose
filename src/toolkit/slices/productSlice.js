@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
+import { ca } from "zod/v4/locales";
 
 export const getAllProductCategoryById = createAsyncThunk(
   "getAllProductCategoryById",
@@ -95,6 +96,31 @@ export const toggleForRoundOffValue = createAsyncThunk(
   }
 );
 
+export const createDocumentsForProduct = createAsyncThunk(
+  "createDocumentsForProduct",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/api/required-documents`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  }
+);
+
+export const getAllDocumentsForProduct = createAsyncThunk(
+  "getAllDocumentsForProduct",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/api/required-documents/admin/activeDocument?userId=${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  }
+);
 
 const ProductSlice = createSlice({
   name: "product",
@@ -104,6 +130,7 @@ const ProductSlice = createSlice({
     businessArrangementList: [],
     productSubcategoryList: [],
     productDataByLeadName: {},
+    allDocumentList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllProductCategoryById.pending, (state) => {
@@ -161,6 +188,18 @@ const ProductSlice = createSlice({
     builder.addCase(getProductListByLeadName.rejected, (state, action) => {
       state.loading = "rejected";
       state.productDataByLeadName = {};
+    });
+
+    builder.addCase(getAllDocumentsForProduct.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllDocumentsForProduct.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allDocumentList = action?.payload;
+    });
+    builder.addCase(getAllDocumentsForProduct.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.allDocumentList = [];
     });
   },
 });

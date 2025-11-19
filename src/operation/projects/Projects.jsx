@@ -148,8 +148,6 @@ const Projects = () => {
     direction: "ascending",
   });
 
-  console.log("djhdskjgskj", data);
-
   const [paginationData, setPaginationData] = useState({
     userId,
     page: 1,

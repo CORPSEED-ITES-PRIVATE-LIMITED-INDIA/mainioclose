@@ -24,8 +24,8 @@ const OperationsSettings = () => {
           <Listbox aria-label="Actions" selectedKeys={[lastKey[lastKey?.length-1]]} onAction={handleOnNavigate}>
             <ListboxItem key="userMap">User map</ListboxItem>
             <ListboxItem key="milestones">Milestones</ListboxItem>
-            {/* <ListboxItem key="edit">Edit file</ListboxItem>
-            <ListboxItem key="delete" className="text-danger" color="danger">
+            <ListboxItem key="allDocuments">Documents</ListboxItem>
+            {/* <ListboxItem key="delete" className="text-danger" color="danger">
               Delete file
             </ListboxItem> */}
           </Listbox>
