@@ -1,6 +1,7 @@
 import {
   Accordion,
   AccordionItem,
+  addToast,
   Button,
   Card,
   CardBody,
@@ -11,6 +12,10 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
   Modal,
   ModalBody,
   ModalContent,
@@ -20,17 +25,21 @@ import {
   useDisclosure,
   User,
 } from "@heroui/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getOperationProjectDetailById,
   getRequiredDocumentsByProductId,
+  updateAssigneeForMileStone,
+  updateAssignmentStatusForMileStone,
 } from "../../toolkit/slices/operationSlice";
 import { useParams } from "react-router-dom";
 import {
   BookText,
   Building,
   Calendar,
+  EllipsisVertical,
+  GitFork,
   Mail,
   MapPin,
   Pencil,
@@ -38,7 +47,11 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
-import { getUsersListByDepartmentId } from "../../toolkit/slices/commonSlice";
+import {
+  getAllMilestoneStatusesForOperations,
+  getUsersListByDepartmentId,
+} from "../../toolkit/slices/commonSlice";
+import { statusColors } from "../../common";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -85,6 +98,7 @@ const ProjectDetails = () => {
   const { projectId, userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const assigneeModal = useDisclosure();
+  const statusModal = useDisclosure();
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail
   );
@@ -94,18 +108,89 @@ const ProjectDetails = () => {
   const userListBydepartment = useSelector(
     (state) => state.common.userListByDepartment
   );
+  const milestoneStatusList = useSelector(
+    (state) => state.common.milestoneStatusList
+  );
+  const [assigneeObj, setAssigneeObj] = useState({
+    assignmentId: null,
+    newUserId: null,
+    reassignmentReason: "",
+    changedById: null,
+  });
+
+  const [statusObj, setStatusObj] = useState({
+    assignmentId: null,
+    newStatusName: "",
+    statusReason: "",
+    changedById: null,
+  });
 
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
+    dispatch(getAllMilestoneStatusesForOperations());
   }, [projectId]);
 
   const handleChangeAssignee = () => {
-    dispatch(updateAssigneeForMileStone);
+    dispatch(updateAssigneeForMileStone(assigneeObj))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Assignee updated successfully !.",
+            color: "success",
+          });
+          assigneeModal.onClose();
+          dispatch(getOperationProjectDetailById({ projectId, userId }));
+          setAssigneeObj({
+            assignmentId: null,
+            newUserId: null,
+            reassignmentReason: "",
+            changedById: null,
+          });
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  };
+
+  const handleStatusChange = () => {
+    dispatch(updateAssignmentStatusForMileStone(statusObj))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Status updated successfully !.",
+            color: "success",
+          });
+          setStatusObj({
+            assignmentId: null,
+            newStatusName: "",
+            statusReason: "",
+            changedById: null,
+          });
+          statusModal.onClose();
+          dispatch(getOperationProjectDetailById({ projectId, userId }));
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch((error) => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex justify-between gap-3">
+      <div className="flex justify-between gap-3 px-3">
         <div className="flex gap-3">
           <div className="flex flex-col gap-2">
             <div>
@@ -176,11 +261,14 @@ const ProjectDetails = () => {
               <AccordionItem
                 key={idx}
                 aria-label="Accordion 1"
-                subtitle={""}
                 title={
                   <>
                     {detail?.milestoneName}{" "}
-                    <Chip size="sm" color="primary" className="ml-1">
+                    <Chip
+                      size="sm"
+                      color={statusColors[detail?.status]}
+                      className="ml-1"
+                    >
                       {detail?.status}
                     </Chip>
                   </>
@@ -205,6 +293,11 @@ const ProjectDetails = () => {
                             dispatch(
                               getUsersListByDepartmentId(detail?.departmentId)
                             );
+                            setAssigneeObj((prev) => ({
+                              ...prev,
+                              assignmentId: detail?.id,
+                              changedById: userId,
+                            }));
                           }}
                         >
                           <Pencil className="h-4 w-4" />
@@ -217,24 +310,52 @@ const ProjectDetails = () => {
                             {detail?.assignedUser?.contactNo}
                           </p>
                         </div>
-                        {/* <div className="flex items-center gap-2">
-                              <WhatsAppIcon className="w-4 h-4" />
-                              <p className="text-muted-foreground text-sm">
-                                {item?.contactNo}
-                              </p>
-                            </div> */}
+                        <div className="flex items-center gap-2">
+                          <GitFork className="w-4 h-4" />
+                          <p className="text-muted-foreground text-sm">
+                            {detail?.departmentName}
+                          </p>
+                        </div>
                       </CardBody>
                     </Card>
                   </div>
 
                   <div className="col-span-3 p-4">
-                    <div className="flex items-center gap-3">
-                      <h2 className="font-medium">
-                        {detailedData?.projectDetails?.productName}
-                      </h2>
-                      <Chip size="sm" color="primary">
-                        {detail?.status}
-                      </Chip>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <h2 className="font-medium">
+                          {detailedData?.projectDetails?.productName}
+                        </h2>
+                        <Chip size="sm" color={statusColors[detail?.status]}>
+                          {detail?.status}
+                        </Chip>
+                      </div>
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button radius="full" variant="flat" isIconOnly>
+                            <EllipsisVertical />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                          aria-label="Static Actions"
+                          selectionMode="single"
+                        >
+                          <DropdownItem
+                            key="updateStatus"
+                            onPress={() => {
+                              statusModal.onOpen();
+                              setStatusObj((prev) => ({
+                                ...prev,
+                                newStatusName: detail?.status,
+                                assignmentId: detail?.id,
+                                changedById: userId,
+                              }));
+                            }}
+                          >
+                            Update status
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
                     </div>
                   </div>
                 </div>
@@ -298,14 +419,86 @@ const ProjectDetails = () => {
                   data={userListBydepartment || []}
                   labelKey={"fullName"}
                   valueKey={"id"}
+                  value={assigneeObj?.newUserId}
+                  onChange={(e) => {
+                    setAssigneeObj((prev) => ({
+                      ...prev,
+                      newUserId: e,
+                      changedById: userId,
+                    }));
+                  }}
                 />
-                <Textarea label={"Reason"} />
+                <Textarea
+                  label={"Reason"}
+                  value={assigneeObj?.reassignmentReason}
+                  onChange={(e) => {
+                    setAssigneeObj((prev) => ({
+                      ...prev,
+                      reassignmentReason: e.target.value,
+                      changedById: userId,
+                    }));
+                  }}
+                />
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>
                   Cancel
                 </Button>
                 <Button color="primary" onPress={handleChangeAssignee}>
+                  Submit
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={statusModal.isOpen}
+        onOpenChange={statusModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update status
+              </ModalHeader>
+              <ModalBody className="max-h-[90vh] overflow-auto">
+                <NewSelect
+                  isRequired={true}
+                  errorMessage={"please select status"}
+                  label={"Select status"}
+                  data={milestoneStatusList || []}
+                  labelKey={"name"}
+                  valueKey={"name"}
+                  value={statusObj?.newStatusName}
+                  onChange={(e) => {
+                    setStatusObj((prev) => ({
+                      ...prev,
+                      newStatusName: e,
+                      changedById: userId,
+                    }));
+                  }}
+                />
+                <Textarea
+                  label={"Reason"}
+                  isRequired
+                  errorMessage="please enter reason"
+                  value={statusObj?.statusReason}
+                  onChange={(e) => {
+                    setStatusObj((prev) => ({
+                      ...prev,
+                      statusReason: e.target.value,
+                      changedById: userId,
+                    }));
+                  }}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button color="primary" onPress={handleStatusChange}>
                   Submit
                 </Button>
               </ModalFooter>

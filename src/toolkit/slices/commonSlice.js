@@ -570,6 +570,14 @@ export const getUsersListByDepartmentId = createAsyncThunk(
   }
 );
 
+export const getAllMilestoneStatusesForOperations = createAsyncThunk(
+  "getAllMilestoneStatusesForOperations",
+  async () => {
+    const response = await api.get("/api/milestone-statuses");
+    return response.data;
+  }
+);
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -613,7 +621,8 @@ const CommonSlice = createSlice({
     userHistoryList: [],
     userManagerApprovalList: [],
     deactiveUserList: [],
-    userListByDepartment:[]
+    userListByDepartment: [],
+    milestoneStatusList: [],
   },
   reducers: {
     handleReset: (state) => {
@@ -1126,6 +1135,20 @@ const CommonSlice = createSlice({
       state.userListByDepartment = action.payload;
     });
     builder.addCase(getUsersListByDepartmentId.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllMilestoneStatusesForOperations.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllMilestoneStatusesForOperations.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.milestoneStatusList = action.payload;
+      }
+    );
+    builder.addCase(getAllMilestoneStatusesForOperations.rejected, (state) => {
       state.loading = "rejected";
     });
   },

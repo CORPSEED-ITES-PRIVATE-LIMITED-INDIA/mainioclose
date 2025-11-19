@@ -24,7 +24,7 @@ import {
   Textarea,
   useDisclosure,
 } from "@heroui/react";
-import { EllipsisVertical, Paperclip, Plus } from "lucide-react";
+import { EllipsisVertical, Eye, Paperclip, Plus } from "lucide-react";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useState } from "react";
@@ -110,10 +110,10 @@ const ProductAttachedDocument = ({ details }) => {
               key: "document",
               label: "Document",
             },
-            {
-              key: "actions",
-              label: "ACTIONS",
-            },
+            // {
+            //   key: "actions",
+            //   label: "ACTIONS",
+            // },
           ]}
         >
           {(column) => (
@@ -142,7 +142,10 @@ const ProductAttachedDocument = ({ details }) => {
                   </TableCell>
                 ) : columnKey === "document" ? (
                   <TableCell>
-                    <Link to={item?.name}>View</Link>
+                    <Link to={item?.name} className="flex items-center gap-1.5">
+                      <Eye className="h-3 w-3 text-gray-500" />
+                      View
+                    </Link>
                   </TableCell>
                 ) : (
                   <TableCell>{getKeyValue(item, columnKey)}</TableCell>

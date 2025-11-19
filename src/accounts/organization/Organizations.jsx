@@ -8,16 +8,23 @@ import {
   Tabs,
 } from "@heroui/react";
 import { Settings } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 const Organizations = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const path = window.location.pathname;
+  const lastEndpoint = path.substring(path.lastIndexOf("/") + 1);
   const [selectedKey, setSelectedKey] = useState("");
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
+
+  useEffect(() => {
+    setSelectedKey(lastEndpoint);
+  }, [lastEndpoint]);
+
   const handleSelect = (e) => {
     navigate(e);
     setSelectedKey(e);

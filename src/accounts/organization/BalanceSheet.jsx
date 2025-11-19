@@ -162,9 +162,7 @@ const renderNode = (node, level = 1, index = 1, path = "") => {
   const curr = parseNumber(getCurrent(node));
   const prev = parseNumber(getPrevious(node));
 
-  // ---------------------------
-  // GROUP NODE (with children)
-  // ---------------------------
+
   if (isGroup) {
     return (
       <React.Fragment key={path + node.title}>
@@ -186,16 +184,13 @@ const renderNode = (node, level = 1, index = 1, path = "") => {
     );
   }
 
-  // ---------------------------
-  // LEAF NODE (no children)
-  // ---------------------------
   return (
     <tr key={path + node.title} className="border-b">
       <td
         className="px-3 py-2 flex items-center gap-2"
         style={{
           paddingLeft: `${indentPx}px`,
-          fontWeight: 400,     // title not bold
+          fontWeight: 400,
         }}
       >
         <span className="font-semibold">{serial}</span>
@@ -215,7 +210,7 @@ const renderNode = (node, level = 1, index = 1, path = "") => {
     <div className="p-4 bg-gray-50 flex flex-col items-center">
       <div
         ref={containerRef}
-        className="w-full bg-white p-6 rounded shadow max-h-[70vh] overflow-auto"
+        className="w-full bg-white p-6 rounded shadow max-h-[75vh] overflow-auto"
       >
         <h2 className="text-center text-xl font-bold mb-1">
           Corpseed Ites Private Limited
@@ -285,14 +280,14 @@ const renderNode = (node, level = 1, index = 1, path = "") => {
         </p>
       </div>
 
-      <div className="w-full mt-2 flex justify-center">
+      {/* <div className="w-full mt-2 flex justify-center">
         <button
           onClick={exportPDF}
           className="px-4 py-2 bg-blue-600 text-white rounded shadow cursor-pointer"
         >
           Export as PDF
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };

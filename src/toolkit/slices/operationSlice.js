@@ -185,11 +185,31 @@ export const getAllProjectsForOperations = createAsyncThunk(
 
 export const updateAssigneeForMileStone = createAsyncThunk(
   "updateAssigneeForMileStone",
-  async (assignmentId) => {
-    const response = await api.put(
-      `/api/milestone-assignments/${assignmentId}/reassign`
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/api/milestone-assignments/${data?.assignmentId}/assignee`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  }
+);
+
+export const updateAssignmentStatusForMileStone = createAsyncThunk(
+  "updateAssignmentStatusForMileStone",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/api/milestone-assignments/${data?.assignmentId}/status`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
   }
 );
 

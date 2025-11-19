@@ -73,7 +73,7 @@ export const leadSource = [
   "Other",
   "Mail",
   "Emailer",
-  "Manual"
+  "Manual",
 ];
 
 export const paymentTermDays = [
@@ -193,3 +193,12 @@ export const toWords = new ToWords({
 });
 
 export const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+
+export const statusColors = {
+  NEW: "primary",
+  IN_PROGRESS: "secondary",
+  COMPLETED: "success",
+  ON_HOLD: "warning",
+  QUEUED: "default",
+  REJECTED: "danger",
+};
