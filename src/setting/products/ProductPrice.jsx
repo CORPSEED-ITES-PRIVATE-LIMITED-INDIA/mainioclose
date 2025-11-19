@@ -26,7 +26,13 @@ import {
   TableRow,
   useDisclosure,
 } from "@heroui/react";
-import { Banknote, Download, EllipsisVertical, IndianRupee, Plus } from "lucide-react";
+import {
+  Banknote,
+  Download,
+  EllipsisVertical,
+  IndianRupee,
+  Plus,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllCountries,
@@ -42,6 +48,7 @@ import {
   importProductAmountDoument,
 } from "../../toolkit/slices/settingSlice";
 import SingleFileUploader from "../../components/SingleFileUploader";
+import FileUploader from "../../components/FileUploader";
 const iconClass = "w-5 h-5";
 
 const ProductPrice = ({ data, details }) => {
@@ -142,14 +149,14 @@ const ProductPrice = ({ data, details }) => {
     dispatch(importProductAmountDoument(fileUrl))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Document uploaded successfully !." });
+          addToast({ title: "Document uploaded successfully !.",color:"success" });
           setFileUrl("");
           uploadModal.onOpenChange(false);
         } else {
-          addToast({ title: "Something went wrong !." });
+          addToast({ title: "Something went wrong !.",color:"danger" });
         }
       })
-      .catch(() => addToast({ title: "Something went wrong !." }));
+      .catch(() => addToast({ title: "Something went wrong !.",color:"danger" }));
   }, [dispatch, fileUrl]);
 
   return (
@@ -400,12 +407,12 @@ const ProductPrice = ({ data, details }) => {
               <ModalHeader>Upload document</ModalHeader>
               <ModalBody className="w-full">
                 <div className="flex flex-col gap-4">
-                  <SingleFileUploader
-                    fileUrl={fileUrl}
-                    setFileUrl={setFileUrl}
+                  <FileUploader
+                    value={fileUrl}
+                    onChange={(e) => setFileUrl(e)}
                   />
                   <div>
-                    <a href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794100973productAmount_(1).xlsx">
+                    <a className="text-primary" href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794100973productAmount_(1).xlsx">
                       Download the sample document
                     </a>
                   </div>

@@ -38,7 +38,6 @@ import {
   getAllCountries,
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
-import SingleFileUploader from "../../components/SingleFileUploader";
 import { addDocumentsInProductsForOperation } from "../../toolkit/slices/operationSlice";
 import FileUploader from "../../components/FileUploader";
 const iconClass = "w-5 h-5";
@@ -112,14 +111,14 @@ const ProductDocument = ({ data, details }) => {
     dispatch(importProductCheckListDoument(fileUrl))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Document uploaded successfully !." });
+          addToast({ title: "Document uploaded successfully !.",color:"success" });
           setFileUrl("");
           uploadModal.onOpenChange(false);
         } else {
-          addToast({ title: "Something went wrong !." });
+          addToast({ title: "Something went wrong !.",color:"danger" });
         }
       })
-      .catch(() => addToast({ title: "Something went wrong !." }));
+      .catch(() => addToast({ title: "Something went wrong !.",color:"danger" }));
   }, [dispatch, fileUrl]);
 
   return (
@@ -343,11 +342,11 @@ const ProductDocument = ({ data, details }) => {
                     value={fileUrl}
                     onChange={(e) => setFileUrl(e)}
                   />
-                  {/* <div>
-                    <a href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794064357DocumentsChecklist_(2).xlsx">
+                  <div>
+                    <a className="text-primary-500" href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794064357DocumentsChecklist_(2).xlsx">
                       Download the sample document
                     </a>
-                  </div> */}
+                  </div>
                 </div>
                 <ModalFooter className="flex justify-end gap-2 w-full">
                   <Button onPress={onClose}>Cancel</Button>

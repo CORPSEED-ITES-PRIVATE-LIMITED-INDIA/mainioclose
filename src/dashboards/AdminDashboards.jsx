@@ -51,7 +51,7 @@ const AdminDashboards = () => {
 
   return (
     <div className="max-h-[87vh] overflow-auto p-1">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-4 mb-1">
         <Card>
           <CardHeader>
             <CardTitle className="flex justify-between items-center w-full text-muted-foreground">

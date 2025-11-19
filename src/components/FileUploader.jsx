@@ -14,18 +14,19 @@ const FileUploader = ({
   const [files, setFiles] = useState([]);
   const [statuses, setStatuses] = useState({}); // Track status for each file
 
-  const allowedTypes = [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "image/gif",
-    "application/pdf",
-    "text/plain",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  ];
+const allowedTypes = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",  // .xls
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+];
+
 
   const uploadFile = async (selectedFile, index) => {
     setStatuses((prev) => ({ ...prev, [index]: "uploading" }));

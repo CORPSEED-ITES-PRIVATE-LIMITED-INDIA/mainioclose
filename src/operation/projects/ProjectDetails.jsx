@@ -99,6 +99,10 @@ const ProjectDetails = () => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
   }, [projectId]);
 
+  const handleChangeAssignee = () => {
+    dispatch(updateAssigneeForMileStone);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3">
@@ -301,7 +305,7 @@ const ProjectDetails = () => {
                 <Button variant="light" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button color="primary" onPress={onClose}>
+                <Button color="primary" onPress={handleChangeAssignee}>
                   Submit
                 </Button>
               </ModalFooter>
