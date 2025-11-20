@@ -66,7 +66,8 @@ function getSerial(level, index) {
 function getCurrent(node) {
   if (node.totalCurrentAmount !== undefined && node.totalCurrentAmount !== null)
     return node.totalCurrentAmount;
-  if (node.price !== undefined && node.price !== null) return node.price;
+  if (node.totalCurrentAmount !== undefined && node.totalCurrentAmount !== null)
+    return node.totalCurrentAmount;
   return "";
 }
 function getPrevious(node) {
@@ -151,60 +152,58 @@ const BalanceSheet = () => {
     pdf.save("balance-sheet.pdf");
   };
 
-const renderNode = (node, level = 1, index = 1, path = "") => {
-  if (!node) return null;
+  const renderNode = (node, level = 1, index = 1, path = "") => {
+    if (!node) return null;
 
-  // If node contains children → treat as group
-  const isGroup = node.title && Array.isArray(node.data);
+    // If node contains children → treat as group
+    const isGroup = node.title && Array.isArray(node.data);
 
-  const serial = getSerial(level, index);
-  const indentPx = (level - 1) * 20; // increased for better alignment
-  const curr = parseNumber(getCurrent(node));
-  const prev = parseNumber(getPrevious(node));
+    const serial = getSerial(level, index);
+    const indentPx = (level - 1) * 20; // increased for better alignment
+    const curr = parseNumber(getCurrent(node));
+    const prev = parseNumber(getPrevious(node));
 
+    if (isGroup) {
+      return (
+        <React.Fragment key={path + node.title}>
+          <tr>
+            <td
+              colSpan={4}
+              className="bg-gray-100 border px-3 py-2 font-semibold"
+              style={{ paddingLeft: `${indentPx}px` }}
+            >
+              <span className="mr-2 font-semibold">{serial}</span>
+              <span className="font-semibold">{node.title}</span>
+            </td>
+          </tr>
 
-  if (isGroup) {
+          {node.data.map((child, idx) =>
+            renderNode(child, Math.min(level + 1, 5), idx + 1, `${path}-${idx}`)
+          )}
+        </React.Fragment>
+      );
+    }
+
     return (
-      <React.Fragment key={path + node.title}>
-        <tr>
-          <td
-            colSpan={4}
-            className="bg-gray-100 border px-3 py-2 font-semibold"
-            style={{ paddingLeft: `${indentPx}px` }}
-          >
-            <span className="mr-2 font-semibold">{serial}</span>
-            <span className="font-semibold">{node.title}</span>
-          </td>
-        </tr>
+      <tr key={path + node.title} className="border-b">
+        <td
+          className="px-3 py-2 flex items-center gap-2"
+          style={{
+            paddingLeft: `${indentPx}px`,
+            fontWeight: 400,
+          }}
+        >
+          <span className="font-semibold">{serial}</span>
+          <span className="font-normal">{node.title}</span>
+        </td>
 
-        {node.data.map((child, idx) =>
-          renderNode(child, Math.min(level + 1, 5), idx + 1, `${path}-${idx}`)
-        )}
-      </React.Fragment>
+        <td className="px-3 py-2 text-center"></td>
+
+        <td className="px-3 py-2 text-center">{inrCurrency(curr)}</td>
+        <td className="px-3 py-2 text-center">{inrCurrency(prev)}</td>
+      </tr>
     );
-  }
-
-  return (
-    <tr key={path + node.title} className="border-b">
-      <td
-        className="px-3 py-2 flex items-center gap-2"
-        style={{
-          paddingLeft: `${indentPx}px`,
-          fontWeight: 400,
-        }}
-      >
-        <span className="font-semibold">{serial}</span>
-        <span className="font-normal">{node.title}</span>
-      </td>
-
-      <td className="px-3 py-2 text-center"></td>
-
-      <td className="px-3 py-2 text-center">{inrCurrency(curr)}</td>
-      <td className="px-3 py-2 text-center">{inrCurrency(prev)}</td>
-    </tr>
-  );
-};
-
+  };
 
   return (
     <div className="p-4 bg-gray-50 flex flex-col items-center">
