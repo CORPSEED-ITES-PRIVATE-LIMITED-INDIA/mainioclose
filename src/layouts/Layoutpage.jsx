@@ -1,8 +1,15 @@
 import { BellRing, PanelLeft } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { Outlet, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { Badge, BreadcrumbItem, Breadcrumbs, Button } from "@heroui/react";
+import { useEffect, useState } from "react";
+import {
+  addToast,
+  Badge,
+  BreadcrumbItem,
+  Breadcrumbs,
+  Button,
+  Switch,
+} from "@heroui/react";
 import { ThemeSwitch } from "../components/theme-switch";
 import {
   accountNavItems,
@@ -11,7 +18,11 @@ import {
   qualityNavItems,
   salesNavItems,
 } from "./NavItems";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getAutomationStatus,
+  handleToggleAutomation,
+} from "../toolkit/slices/authSlice";
 
 const getNavItemsByDepartment = (department, admin) => {
   if (admin) return navItems;
@@ -27,8 +38,10 @@ const getNavItemsByDepartment = (department, admin) => {
 };
 
 const Layoutpage = () => {
+  const dispatch = useDispatch();
   const location = useLocation();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const automationStatus = useSelector((state) => state.auth.automationStatus);
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department
@@ -38,6 +51,28 @@ const Layoutpage = () => {
   const userIndex = segments.indexOf("erp");
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    dispatch(getAutomationStatus());
+  }, [dispatch]);
+
+  const handleChangeAutoOnOff = (checked) => {
+    dispatch(handleToggleAutomation())
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Auto status updated successfully",
+            color: "success",
+          });
+          dispatch(getAutomationStatus());
+        } else {
+          addToast({ title: "Failed to update auto status", color: "danger" });
+        }
+      })
+      .catch((err) => {
+        addToast({ title: "Failed to update auto status", color: "danger" });
+      });
+  };
 
   return (
     <div className="min-h-screen min-w-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
@@ -74,6 +109,11 @@ const Layoutpage = () => {
                   <BellRing className="text-gray-500 " />
                 </Button>
               </Badge> */}
+              <Switch
+                size="sm"
+                isSelected={automationStatus?.status}
+                onValueChange={handleChangeAutoOnOff}
+              />
               <ThemeSwitch />
             </div>
           </header>
