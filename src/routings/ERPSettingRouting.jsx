@@ -16,6 +16,7 @@ import BusinessArrangement from "../setting/products/BusinessArrangement";
 import ProductCategory from "../setting/products/ProductCategory";
 import ProductSubCategory from "../setting/products/ProductSubCategory";
 import TemplatesAndEmailBody from "../setting/proposalAndTemplates/TemplatesAndEmailBody";
+import ApplicantTypes from "../setting/applicantType/ApplicantTypes";
 
 const ERPSettingRouting = () => {
   return (
@@ -45,6 +46,7 @@ const ERPSettingRouting = () => {
       <Route path="settings/comments" element={<LeadComments />} />
       <Route path="settings/ipAddress" element={<IpAddress />} />
       <Route path="settings/slug" element={<Slug />} />
+      <Route path="settings/applicantType" element={<ApplicantTypes />} />
       <Route path="settings/urls" element={<Urls />} />
       <Route path="settings/department" element={<Department />} />
       <Route path="settings/designation" element={<Designation />} />

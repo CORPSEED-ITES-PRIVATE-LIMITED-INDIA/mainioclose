@@ -460,6 +460,22 @@ export const editProposalAndEmailTemplate = createAsyncThunk(
   }
 );
 
+export const addApplicantType = createAsyncThunk(
+  "addApplicantType",
+  async (data) => {
+    const response = await api.post(`/api/applicant-types`, data);
+    return response.data;
+  }
+);
+
+export const getApplicantTypeList = createAsyncThunk(
+  "getApplicantTypeList",
+  async () => {
+    const response = await api.get(`/api/applicant-types`);
+    return response.data;
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -480,6 +496,7 @@ export const SettingSlice = createSlice({
     departmentList: [],
     designationList: [],
     templateAndMailList: [],
+    applicantTypeList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -707,6 +724,19 @@ export const SettingSlice = createSlice({
     );
     builder.addCase(getAllProposalAndEmailTemplates.rejected, (state) => {
       state.templateAndMailList = [];
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getApplicantTypeList.pending, (state) => {
+      state.applicantTypeList = [];
+      state.loading = "pending";
+    });
+    builder.addCase(getApplicantTypeList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.applicantTypeList = action?.payload;
+    });
+    builder.addCase(getApplicantTypeList.rejected, (state) => {
+      state.applicantTypeList = [];
       state.loading = "rejected";
     });
   },

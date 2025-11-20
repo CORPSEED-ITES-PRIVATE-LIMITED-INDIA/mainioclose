@@ -277,6 +277,12 @@ export const navItems = [
         key: "ipAddress",
       },
       {
+        title: "Applicant type",
+        icon: "",
+        url: "settings/applicantType",
+        key: "applicantType",
+      },
+      {
         title: "Slug",
         icon: "",
         url: "settings/slug",
