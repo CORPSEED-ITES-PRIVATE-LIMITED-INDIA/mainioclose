@@ -1057,9 +1057,9 @@ const LeadInfo = () => {
                           {item?.email && (
                             <div className="flex items-center gap-2">
                               <Mail className="w-4 h-4" />
-                              <span className="text-sm text-default-500">
+                              <div className="flex flex-wrap text-sm text-default-500">
                                 {item?.email || ""}
-                              </span>
+                              </div>
                             </div>
                           )}
                           {item?.contactNo && (
