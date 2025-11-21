@@ -109,11 +109,14 @@ const Layoutpage = () => {
                   <BellRing className="text-gray-500 " />
                 </Button>
               </Badge> */}
-              <Switch
-                size="sm"
-                isSelected={automationStatus?.status}
-                onValueChange={handleChangeAutoOnOff}
-              />
+              {adminRole && (
+                <Switch
+                  size="sm"
+                  isSelected={automationStatus?.status}
+                  onValueChange={handleChangeAutoOnOff}
+                />
+              )}
+
               <ThemeSwitch />
             </div>
           </header>
