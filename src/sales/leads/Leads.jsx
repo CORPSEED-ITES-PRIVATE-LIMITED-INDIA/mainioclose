@@ -601,6 +601,7 @@ const Leads = () => {
   }, []);
 
   const handleApplyFilter = useCallback(() => {
+    setSelectedKeys(new Set([]));
     dispatch(getAllLeadsByFilter(allMultiFilterData));
     dispatch(getAllLeadCount(allMultiFilterData));
     dispatch(getAllLeadsForExport(allMultiFilterData));
@@ -608,6 +609,7 @@ const Leads = () => {
   }, [allMultiFilterData, dispatch, filterPopOver]);
 
   const handleResetFilter = useCallback(() => {
+    setSelectedKeys(new Set([]));
     dispatch(getAllLeadsByFilter(initialFilterValues));
     dispatch(getAllLeadCount(initialFilterValues));
     dispatch(getAllLeadsForExport(initialFilterValues));
