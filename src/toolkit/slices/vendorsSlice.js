@@ -123,6 +123,17 @@ export const getvendorHistoryByLeadId = createAsyncThunk(
   }
 );
 
+
+export const getVendorDetailByVendorId = createAsyncThunk(
+  "getVendorDetailByVendorId",
+  async ({ userId, vendorId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/details-with-history?userId=${userId}&vendorId=${vendorId}`
+    );
+    return response.data;
+  }
+);
+
 export const cancelVendorsRequest = createAsyncThunk(
   "cancelVendorsRequest",
   async ({ vendorRequestId, userId, cancelReason }) => {
@@ -264,6 +275,7 @@ const VendorsSlice = createSlice({
     vendorPaymentHistory: [],
     vendorPaymentListForAdmin: [],
     vendorPaymentCountForAdmin: 0,
+    vendorDetail:{}
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -427,6 +439,18 @@ const VendorsSlice = createSlice({
     builder.addCase(getVendorPaymentCountInAdmin.rejected, (state) => {
       state.loading = "rejected";
       state.vendorPaymentCountForAdmin =0;
+    });
+
+    builder.addCase(getVendorDetailByVendorId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorDetailByVendorId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorDetail = action?.payload;
+    });
+    builder.addCase(getVendorDetailByVendorId.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorDetail ={};
     });
   },
 });

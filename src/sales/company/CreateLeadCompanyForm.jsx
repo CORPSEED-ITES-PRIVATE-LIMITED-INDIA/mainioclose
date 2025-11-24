@@ -582,6 +582,8 @@ const CreateLeadCompanyForm = ({
     }
   };
 
+  console.log("dsjgkjgkjdgjkdgdjk",)
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="max-h-[64vh] overflow-auto p-3 flex flex-col gap-12">

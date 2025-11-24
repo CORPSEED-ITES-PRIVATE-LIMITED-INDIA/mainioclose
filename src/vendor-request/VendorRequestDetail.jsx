@@ -28,6 +28,7 @@ import {
   cancelVendorsRequest,
   getAllVendorsRequest,
   getAllVendorsStatus,
+  getVendorDetailByVendorId,
   getvendorHistoryByLeadId,
   sendVendorsProposal,
   updateVendorStatus,
@@ -124,10 +125,10 @@ const INITIAL_VISIBLE_COLUMNS = [
 const VendorRequestDetail = () => {
   const dispatch = useDispatch();
   const { leadId, userId, requestId } = useParams();
-  const detail = JSON.parse(localStorage.getItem("vendorDetail"));
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const attachementModal = useDisclosure();
   const clientAttachementModal = useDisclosure();
+  const detail = useSelector((state) => state.vendors.vendorDetail);
   const vendorsStatus = useSelector((state) => state.vendors.vendorsStatus);
   const data = useSelector((state) => state.vendors.singleVendorHistoryList);
   const count = useSelector(
@@ -192,6 +193,7 @@ const VendorRequestDetail = () => {
     dispatch(
       getvendorHistoryByLeadId({ userId, leadId, vendorRequestId: requestId })
     );
+    dispatch(getVendorDetailByVendorId({ userId, vendorId: requestId }));
   }, [leadId, leadId, requestId]);
 
   const {

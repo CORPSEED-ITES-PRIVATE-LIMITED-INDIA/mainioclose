@@ -567,6 +567,7 @@ const Company = () => {
     allLeadUser,
     selectedKeys,
     count,
+    searchFilterType
   ]);
 
   const bottomContent = useMemo(() => {

@@ -200,9 +200,6 @@ const VendorRequests = () => {
             <Link
               className="font-medium flex flex-col"
               to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
-              onClick={() =>
-                localStorage.setItem("vendorDetail", JSON.stringify(rowData))
-              }
             >
               {rowData?.clientName}
               <span className="text-default-400 text-sm">

@@ -414,6 +414,16 @@ export const getAllInFlowList = createAsyncThunk(
   }
 );
 
+export const getAllCashFlowDetail = createAsyncThunk(
+  "getAllCashFlowDetail",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/cashFlow/getAllCashInAndOutFlow?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllBalanceSheetLiabilities = createAsyncThunk(
   "getAllBalanceSheetLiabilities",
   async ({ startDate, endDate }) => {
@@ -556,6 +566,7 @@ const OrganizationSlice = createSlice({
     gstExportedDataList: [],
     profitLossDetail: {},
     balanceSheetDetail: {},
+    cashInOutFlowDetail: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -883,6 +894,18 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllOutFlowList.rejected, (state) => {
       state.loading = "rejected";
       state.outFlowList = [];
+    });
+
+    builder.addCase(getAllCashFlowDetail.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCashFlowDetail.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.cashInOutFlowDetail = action.payload;
+    });
+    builder.addCase(getAllCashFlowDetail.rejected, (state) => {
+      state.loading = "rejected";
+      state.cashInOutFlowDetail = [];
     });
 
     builder.addCase(getAllTrailBalance.pending, (state) => {
