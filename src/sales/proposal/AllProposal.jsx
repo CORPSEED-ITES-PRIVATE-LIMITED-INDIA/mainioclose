@@ -1,4 +1,5 @@
 import {
+  addToast,
   Button,
   Dropdown,
   DropdownItem,
@@ -64,7 +65,7 @@ const defaultValues = {
 const AllProposal = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const proposalModal = useDisclosure();
   const count = useSelector((state) => state.leads.proposalCount);
   const data = useSelector((state) => state.leads.proposalList);
@@ -89,7 +90,7 @@ const AllProposal = () => {
     userId,
     comment: "",
   });
-  const [proposalData,setProposalData]=useState("")
+  const [proposalData, setProposalData] = useState("");
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -102,6 +103,7 @@ const AllProposal = () => {
     control,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues,
@@ -155,14 +157,43 @@ const AllProposal = () => {
         status: e,
       }));
       onOpen();
-    }else{
-        setProposalData(rowData?.template)
-        proposalModal.onOpen()
+    } else {
+      setProposalData(rowData?.template);
+      proposalModal.onOpen();
     }
   };
 
   const handleChangeStatus = () => {
-    dispatch(proposalApprovalByManager(updateStatusData));
+    dispatch(proposalApprovalByManager(updateStatusData))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          dispatch(getAllProposalByUserIdForManager(filteration));
+          if (updateStatusData.status === "approved") {
+            addToast({
+              title: `Proposal approved successfully and sent to client.`,
+              color: "success",
+            });
+            reset(defaultValues);
+          } else {
+            addToast({
+              title: `Proposal disapproved successfully.`,
+              color: "success",
+            });
+          }
+          setUpdateStatusData({
+            proposalId: null,
+            status: null,
+            userId,
+            comment: "",
+          });
+          onClose();
+        } else {
+          addToast({ title: "Something went wrong", color: "danger" });
+        }
+      })
+      .cactch((err) => {
+        addToast({ title: "Something went wrong", color: "danger" });
+      });
   };
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -358,7 +389,7 @@ const AllProposal = () => {
     data.length,
     onSearchChange,
     hasSearchFilter,
-    filteration
+    filteration,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -415,7 +446,7 @@ const AllProposal = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

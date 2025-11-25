@@ -314,19 +314,21 @@ const Company = () => {
 
   const onSearchChange = useCallback(
     (value) => {
-      if (value) {
-        setFilterValue(value);
-        setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
-        dispatch(
-          searchCompanies({
-            searchNameAndGSt: value,
-            userId,
-            type: searchFilterType,
-          })
-        );
-      } else {
-        setFilterValue("");
-        dispatch(getAllNewCompanies(companyFilteration));
+      if (value?.length >= 3) {
+        if (value) {
+          setFilterValue(value);
+          setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
+          dispatch(
+            searchCompanies({
+              searchNameAndGSt: value,
+              userId,
+              type: searchFilterType,
+            })
+          );
+        } else {
+          setFilterValue("");
+          dispatch(getAllNewCompanies(companyFilteration));
+        }
       }
     },
     [searchFilterType, dispatch, companyFilteration]
@@ -567,7 +569,7 @@ const Company = () => {
     allLeadUser,
     selectedKeys,
     count,
-    searchFilterType
+    searchFilterType,
   ]);
 
   const bottomContent = useMemo(() => {

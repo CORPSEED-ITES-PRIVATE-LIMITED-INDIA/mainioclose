@@ -470,8 +470,10 @@ export const addApplicantType = createAsyncThunk(
 
 export const getApplicantTypeList = createAsyncThunk(
   "getApplicantTypeList",
-  async () => {
-    const response = await api.get(`/api/applicant-types`);
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/api/applicant-types?page=${page}&size=${size}`
+    );
     return response.data;
   }
 );

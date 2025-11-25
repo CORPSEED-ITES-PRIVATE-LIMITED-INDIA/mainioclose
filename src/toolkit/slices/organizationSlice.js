@@ -307,6 +307,16 @@ export const createTDS = createAsyncThunk("createTDS", async (data) => {
   return response.data;
 });
 
+export const claimTDS = createAsyncThunk(
+  "claimTDS",
+  async ({ id, amount, document, tdsClaimBy }) => {
+    const response = await api.post(
+      `/accountService/api/v1/tds/updateTdsClaimAmount?id=${id}&tdsClaimBy=${tdsClaimBy}&amount=${amount}&document=${document}`
+    );
+    return response.data;
+  }
+);
+
 export const getTdsAmounts = createAsyncThunk("getTdsAmounts", async () => {
   const response = await api.get(`/accountService/api/v1/tds/getAllTdsCount`);
   return response.data;

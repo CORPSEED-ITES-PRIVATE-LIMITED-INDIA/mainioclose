@@ -63,7 +63,7 @@ const formSchema = z.object({
   centralName: z.string().min(1, "Central name is required"),
   stateName: z.string().min(1, "State name is required"),
   expiryType: z.enum(["FIXED", "ROLLING"]),
-  isMandatory: z.boolean(),
+  mandatory: z.boolean(),
   maxValidityYears: z.coerce.number().min(0),
   minFileSizeKb: z.coerce.number().min(0),
   allowedFormats: z.string().min(1, "Allowed formats are required"),
@@ -80,7 +80,7 @@ const defaultValues = {
   centralName: "",
   stateName: "",
   expiryType: "FIXED",
-  isMandatory: false,
+  mandatory: false,
   maxValidityYears: 0,
   minFileSizeKb: 0,
   allowedFormats: "",
@@ -172,12 +172,12 @@ const Documents = () => {
   const onSubmit = useCallback(
     (values) => {
       dispatch(
-        createDocumentsForProduct([{
+        createDocumentsForProduct({
           ...values,
           createdBy: userId,
           updatedBy: userId,
           productIds:userId,
-        }])
+        })
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -505,7 +505,7 @@ const Documents = () => {
 
                     {/* isMandatory */}
                     <Controller
-                      name="isMandatory"
+                      name="mandatory"
                       control={control}
                       render={({ field }) => (
                         <NewSelect

@@ -236,7 +236,7 @@ const CashFlow = () => {
             className="text-white"
             data={exportData}
             headers={headers}
-            filename={"inflow.csv"}
+            filename={"cashflow.csv"}
           >
             <Button size="sm" isIconOnly>
               <FileUp className="h-4 w-4" />

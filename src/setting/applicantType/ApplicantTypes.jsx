@@ -79,8 +79,8 @@ const ApplicantTypes = () => {
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getApplicantTypeList());
-  }, [dispatch]);
+    dispatch(getApplicantTypeList({ page, size: rowsPerPage }));
+  }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -91,10 +91,10 @@ const ApplicantTypes = () => {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...(data || [])];
+    let filteredUsers = [...(data?.length > 0 ? data : [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
+      filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
           String(val)?.toLowerCase().includes(filterValue.toLowerCase())
         )
@@ -142,7 +142,7 @@ const ApplicantTypes = () => {
               title: "Applicant type created successfully !.",
               color: "success",
             });
-            dispatch(getApplicantTypeList(userId));
+            dispatch(getApplicantTypeList({ page, size: rowsPerPage }));
             onClose();
             reset(defaultValues);
           } else {

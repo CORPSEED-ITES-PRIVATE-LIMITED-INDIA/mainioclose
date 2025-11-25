@@ -8,211 +8,381 @@ import numWords from "num-words";
 import { inrCurrency } from "../common";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { getEstimateByLeadId } from "../toolkit/slices/leadSlice";
+import { getEstimateByLeadIdAndUUID } from "../toolkit/slices/leadSlice";
 
 const EstimatePreview = () => {
   const dispatch = useDispatch();
-  const { leadId } = useParams();
-  const details = useSelector((state) => state.leads.estimateDetail);
+  const { leadId, uuid } = useParams();
+  const details = useSelector((state) => state.leads.estimateDetailByUUID);
 
   useEffect(() => {
-    dispatch(getEstimateByLeadId(leadId));
-  }, [leadId]);
+    if (leadId && uuid) {
+      dispatch(getEstimateByLeadIdAndUUID({ leadId, uuid }));
+    }
+  }, [dispatch, leadId, uuid]);
+
+  // Inject Roboto font into the document head (Google Fonts)
+  useEffect(() => {
+    const id = "roboto-google-font";
+    if (!document.getElementById(id)) {
+      const link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      link.href =
+        "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
 
   const pdfRef = useRef();
 
-  const generatePDF = async () => {
-    const element = pdfRef.current;
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-    });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    const pageHeight = 297;
-    let yPosition = 0;
-    while (yPosition < imgHeight) {
-      pdf.addImage(imgData, "PNG", 0, -yPosition, imgWidth, imgHeight);
-      if (yPosition + pageHeight < imgHeight) {
-        pdf.addPage();
+  // Attempt to remove CSS rules that use unsupported color functions (oklch)
+  // This will only succeed for same-origin stylesheets. Cross-origin sheets are skipped.
+  const sanitizeStylesheetsContainingOKLCH = () => {
+    try {
+      for (let i = 0; i < document.styleSheets.length; i++) {
+        const sheet = document.styleSheets[i];
+        // Accessing cssRules of cross-origin sheets will throw — we catch below.
+        try {
+          const rules = sheet.cssRules || sheet.rules;
+          if (!rules) continue;
+          // iterate backwards so deletes don't mess up indexes
+          for (let j = rules.length - 1; j >= 0; j--) {
+            const rule = rules[j];
+            const cssText = rule.cssText || "";
+            if (cssText.includes("oklch(") || cssText.includes("oklch ")) {
+              try {
+                sheet.deleteRule(j);
+              } catch (eDel) {
+                // ignore delete errors for read-only sheets
+              }
+            }
+          }
+        } catch (err) {
+          // likely cross-origin stylesheet — ignore
+          continue;
+        }
       }
-      yPosition += pageHeight;
+    } catch (err) {
+      // fail-safe: if anything goes wrong, don't block PDF generation
+      console.warn("Stylesheet sanitization failed:", err);
     }
-    pdf.save("estimate.pdf");
   };
 
+  const generatePDF = async () => {
+    try {
+      const element = pdfRef.current;
+      if (!element) return;
 
+      // 1️⃣ Disable all external CSS (HeroUI / Tailwind)
+      document.querySelectorAll("link[rel=stylesheet]").forEach((link) => {
+        link.setAttribute("data-disabled", "true");
+        link.rel = "alternate stylesheet";
+      });
+
+      // 2️⃣ Force simple white background
+      element.style.backgroundColor = "#ffffff";
+
+      // 3️⃣ Capture
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        ignoreElements: (node) => {
+          // prevents HeroUI shadows & animations
+          return node.tagName === "STYLE";
+        },
+      });
+
+      // 4️⃣ Restore CSS
+      document.querySelectorAll("link[data-disabled]").forEach((link) => {
+        link.rel = "stylesheet";
+        link.removeAttribute("data-disabled");
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = 297;
+      let y = 0;
+
+      while (y < imgHeight) {
+        pdf.addImage(imgData, "PNG", 0, -y, imgWidth, imgHeight);
+        y += pageHeight;
+        if (y < imgHeight) pdf.addPage();
+      }
+
+      pdf.save("estimate.pdf");
+    } catch (err) {
+      console.error("PDF error:", err);
+    }
+  };
+
+  // Common inline style values
+  const containerStyle = {
+    maxHeight: "75vh",
+    overflow: "auto",
+    marginTop: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 20,
+    background: "#f6f7fb",
+    fontFamily:
+      "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial",
+    color: "#111827",
+  };
+
+  const cardStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+    padding: 20,
+    boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
+    borderRadius: 10,
+    background: "#ffffff",
+    border: "1px solid #e6e9ef",
+    marginBottom: 10,
+  };
 
   return (
-    <div className="max-h-[75vh] overflow-auto mt-3 px-4 md:px-6 lg:px-12">
-      <div className="w-full md:w-[90%] mx-auto flex flex-col gap-6">
+    <div style={containerStyle}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 980,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+        }}
+      >
         {/* Product Name */}
         {details?.productName && (
-          <div className="flex flex-col md:flex-row md:items-center gap-1">
-            <h3 className="font-semibold text-lg">Product name</h3>
-            <span className="hidden md:inline mx-1">:</span>
-            <p>{details?.productName}</p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                margin: 0,
+                color: "#111827",
+              }}
+            >
+              Product name
+            </h3>
+            <span style={{ marginLeft: 6, marginRight: 6, color: "#6b7280" }}>
+              :
+            </span>
+            <p style={{ margin: 0, color: "#111827" }}>
+              {details?.productName}
+            </p>
           </div>
         )}
 
-        {/* Contacts */}
-        <div className="flex flex-col md:flex-row md:gap-15 gap-6">
-          {/* Primary Contact */}
-          {details?.primaryContact && (
-            <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
-              <div className="flex flex-col gap-3">
-                <h4 className="font-semibold text-lg">
-                  Primary contact detail
-                </h4>
-                <div className="flex flex-col gap-2 text-gray-500">
-                  <div className="flex gap-2">
-                    <span>Name</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.primaryContact?.name}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>Email</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.primaryContact?.emails}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>Contact number</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.primaryContact?.contactNo}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>Whatsapp number</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.primaryContact?.whatsappNo}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Secondary Contact */}
-          {details?.secondaryContact && (
-            <div className="w-full md:w-2/5 p-4 shadow rounded-md border">
-              <div className="flex flex-col gap-3">
-                <h4 className="font-semibold text-lg">
-                  Secondary contact detail
-                </h4>
-                <div className="flex flex-col gap-2 text-gray-500">
-                  <div className="flex gap-2">
-                    <span>Name</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.secondaryContact?.name}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>Email</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.secondaryContact?.emails}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>Contact number</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.secondaryContact?.contactNo}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>Whatsapp number</span>
-                    <span>:</span>
-                    <span className="text-black">
-                      {details?.secondaryContact?.whatsappNo}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Main PDF Content */}
-        <div ref={pdfRef} className="relative">
+        <div style={{ position: "relative" }}>
           {/* Badge */}
-          <div className="absolute left-0 top-0 bg-green-500 text-white px-3 py-1 rounded-r text-sm md:text-base z-10">
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              backgroundColor: "#10b981",
+              color: "#ffffff",
+              paddingLeft: 12,
+              paddingRight: 12,
+              paddingTop: 6,
+              paddingBottom: 6,
+              borderTopRightRadius: 6,
+              borderBottomRightRadius: 6,
+              fontSize: 13,
+              zIndex: 10,
+              fontWeight: 600,
+            }}
+          >
             {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
           </div>
 
           {/* Content Box */}
-          <div className="flex flex-col gap-6 p-6 md:p-10 shadow-md rounded-md mb-6 bg-white">
+          <div ref={pdfRef} style={cardStyle}>
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:justify-between">
-              <div className="flex flex-col gap-2">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                gap: 16,
+                alignItems: "flex-start",
+                flexWrap: "wrap",
+                margin: "18px 0px",
+                padding: 12,
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <img
                   src={logo}
                   alt="corpseed"
-                  className="max-w-[100px] md:max-w-[130px]"
+                  style={{ maxWidth: 130, height: "auto", display: "block" }}
                 />
-                <div className="flex flex-col text-gray-500 text-sm md:text-base mt-2 leading-relaxed">
-                  <p className="font-medium">Corpseed Ites Private Limited</p>
-                  <p>CN U74999UP2018PTC101873</p>
-                  <p>GST : 09AAHCC4539J1ZC</p>
-                  <p>2nd floor, A-154A, A Block, sector 63</p>
-                  <p>Noida, Uttar Pradesh - 2013</p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    color: "#6b7280",
+                    fontSize: 13,
+                    lineHeight: 1.35,
+                    marginTop: 6,
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 600, color: "#111827" }}>
+                    Corpseed Ites Private Limited
+                  </p>
+                  <p style={{ margin: 0 }}>CN U74999UP2018PTC101873</p>
+                  <p style={{ margin: 0 }}>GST : 09AAHCC4539J1ZC</p>
+                  <p style={{ margin: 0 }}>
+                    2nd floor, A-154A, A Block, sector 63
+                  </p>
+                  <p style={{ margin: 0 }}>Noida, Uttar Pradesh - 2013</p>
                 </div>
               </div>
 
-              <div className="flex flex-row md:flex-col md:items-end gap-6 mt-6 md:mt-0 text-green-500">
-                <div className="flex flex-col items-start md:items-end">
-                  <h4 className="text-green-500 text-xl font-semibold">
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: 10,
+                  marginTop: 8,
+                }}
+              >
+                <div style={{ textAlign: "right" }}>
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: "#10b981",
+                      fontSize: 18,
+                      fontWeight: 700,
+                    }}
+                  >
                     {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
                   </h4>
-                  <strong>{`#ESTD0${details?.id}`}</strong>
+                  <strong
+                    style={{ display: "block", marginTop: 6 }}
+                  >{`#ESTD0${details?.id ?? ""}`}</strong>
                 </div>
-                <div className="flex flex-col items-start md:items-end">
-                  <h4 className="text-green-500 text-xl font-semibold">
+
+                <div style={{ textAlign: "right" }}>
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: "#10b981",
+                      fontSize: 16,
+                      fontWeight: 700,
+                    }}
+                  >
                     Order No.
                   </h4>
-                  <strong>{details?.orderNumber}</strong>
+                  <strong style={{ display: "block", marginTop: 6 }}>
+                    {details?.orderNumber ?? "-"}
+                  </strong>
                 </div>
               </div>
             </div>
 
             {/* Addresses and Dates */}
-            <div className="flex justify-between gap-6 md:gap-0 text-gray-500 text-sm md:text-base">
-              <div className="flex flex-col gap-4">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                color: "#6b7280",
+                fontSize: 14,
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  minWidth: 260,
+                  flex: "1 1 420px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
                 <div>
-                  <p className="font-semibold mb-1">Bill To :</p>
-                  <div className="font-bold leading-tight">
-                    {details?.companyName && <p>{details?.companyName}</p>}
-                    {details?.address && (
-                      <p className="font-normal">{details?.address}</p>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 700,
+                      color: "#111827",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Bill To :
+                  </p>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      lineHeight: 1.4,
+                      color: "#111827",
+                    }}
+                  >
+                    {details?.companyName && (
+                      <p style={{ margin: 0 }}>{details?.companyName}</p>
                     )}
-                    <p className="font-normal">
+                    {details?.address && (
+                      <p style={{ margin: 0, fontWeight: 400 }}>
+                        {details?.address}
+                      </p>
+                    )}
+                    <p style={{ margin: 0, fontWeight: 400 }}>
                       {[details?.city, details?.state, details?.country]
                         .filter(Boolean)
                         .join(", ")}
                     </p>
                     {details?.primaryPinCode && (
-                      <p>{details?.primaryPinCode}</p>
+                      <p style={{ margin: 0, fontWeight: 400 }}>
+                        {details?.primaryPinCode}
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <p className="font-semibold mb-1">Ship To :</p>
-                  <div className="leading-tight">
-                    {details?.companyName && <p>{details?.companyName}</p>}
-                    {details?.secondaryAddress && (
-                      <p>{details?.secondaryAddress}</p>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 700,
+                      color: "#111827",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Ship To :
+                  </p>
+                  <div
+                    style={{
+                      lineHeight: 1.4,
+                      color: "#111827",
+                    }}
+                  >
+                    {details?.companyName && (
+                      <p style={{ margin: 0, fontWeight: 600 }}>
+                        {details?.companyName}
+                      </p>
                     )}
-                    <p>
+                    {details?.secondaryAddress && (
+                      <p style={{ margin: 0 }}>{details?.secondaryAddress}</p>
+                    )}
+                    <p style={{ margin: 0 }}>
                       {[
                         details?.secondaryCity,
                         details?.secondaryState,
@@ -222,184 +392,643 @@ const EstimatePreview = () => {
                         .join(", ")}
                     </p>
                     {details?.secondaryPinCode && (
-                      <p>{details?.secondaryPinCode}</p>
+                      <p style={{ margin: 0 }}>{details?.secondaryPinCode}</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 text-gray-500 text-sm md:text-base whitespace-nowrap">
-                <div className="flex gap-2">
-                  <span className="font-semibold">Estimate Date:</span>
-                  <span>
-                    {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
+              <div
+                style={{
+                  minWidth: 180,
+                  flex: "0 0 220px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  color: "#6b7280",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      minWidth: 110,
+                      textAlign: "right",
+                      color: "#111827",
+                    }}
+                  >
+                    Estimate Date:
+                  </span>
+                  <span style={{ textAlign: "right" }}>
+                    {details?.estimateDate
+                      ? dayjs(details?.estimateDate).format("DD-MM-YYYY")
+                      : "-"}
                   </span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="font-semibold">Order Date:</span>
-                  <span>{dayjs(details?.createDate).format("DD-MM-YYYY")}</span>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      minWidth: 110,
+                      textAlign: "right",
+                      color: "#111827",
+                    }}
+                  >
+                    Order Date:
+                  </span>
+                  <span style={{ textAlign: "right" }}>
+                    {details?.createDate
+                      ? dayjs(details?.createDate).format("DD-MM-YYYY")
+                      : "-"}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div style={{ overflowX: "auto" }}>
               {details?.Type === "Product" ? (
-                <table className="w-full border-collapse border border-black text-xs md:text-sm">
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    border: "1px solid #111827",
+                    fontSize: 13,
+                  }}
+                >
                   <thead>
                     <tr>
-                      <th className="border border-black p-1">#</th>
-                      <th className="border border-black p-1">
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "center",
+                        }}
+                      >
+                        #
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                        }}
+                      >
                         Item and description
                       </th>
-                      <th className="border border-black p-1">HSN</th>
-                      <th className="border border-black p-1">Rate/kg</th>
-                      <th className="border border-black p-1">Quantity (kg)</th>
-                      <th className="border border-black p-1">GST %</th>
-                      <th className="border border-black p-1">GST amount(₹)</th>
-                      <th className="border border-black p-1">Amount(₹)</th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "center",
+                        }}
+                      >
+                        HSN
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        Rate/kg
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        Quantity (kg)
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "center",
+                        }}
+                      >
+                        GST %
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        GST amount(₹)
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        Amount(₹)
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-black p-1 text-center">
-                        {1}
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "center",
+                        }}
+                      >
+                        1
                       </td>
-                      <td className="border border-black p-1">
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          fontWeight: "bold",
+                          padding: 8,
+                        }}
+                      >
                         {details?.productName}
                       </td>
-                      <td className="border border-black p-1 text-center">
-                        {details?.gstCode}
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "center",
+                        }}
+                      >
+                        {details?.gstCode ?? "-"}
                       </td>
-                      <td className="border border-black p-1 text-right">
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      >
                         {inrCurrency(details?.actualPrice)}
                       </td>
-                      <td className="border border-black p-1 text-right">
-                        {details?.quantity}
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      >
+                        {details?.quantity ?? "-"}
                       </td>
-                      <td className="border border-black p-1 text-center">
-                        {details?.gst}
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "center",
+                        }}
+                      >
+                        {details?.gst ?? "-"}
                       </td>
-                      <td className="border border-black p-1 text-right">
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      >
                         {inrCurrency(details?.gstAmount)}
                       </td>
-                      <td className="border border-black p-1 text-right">
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      >
                         {inrCurrency(details?.totalPrice)}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               ) : (
-                <table className="w-full border-collapse border border-black text-xs md:text-sm">
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    border: "1px solid #111827",
+                    fontSize: 13,
+                  }}
+                >
                   <thead>
                     <tr>
-                      <th className="border border-black p-1">#</th>
-                      <th className="border border-black p-1">
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "center",
+                        }}
+                      >
+                        #
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                        }}
+                      >
                         Item and description
                       </th>
-                      <th className="border border-black p-1">HSN</th>
-                      <th className="border border-black p-1">Rate</th>
-                      <th className="border border-black p-1">GST %</th>
-                      <th className="border border-black p-1">GST amount</th>
-                      <th className="border border-black p-1">Amount</th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "center",
+                        }}
+                      >
+                        HSN
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        Rate
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "center",
+                        }}
+                      >
+                        GST %
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        GST amount
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          background: "#f8fafc",
+                          textAlign: "right",
+                        }}
+                      >
+                        Amount
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-black p-1 text-center">
-                        {1}
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "center",
+                        }}
+                      >
+                        1
                       </td>
-                      <td className="border border-black p-1">
-                        {details?.productName}
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          fontWeight: "bold",
+                          padding: 8,
+                        }}
+                      >
+                        {details?.productName ?? "-"}
                       </td>
-                      <td></td>
-                      <td className="border border-black p-1 text-right"></td>
-                      <td className="border border-black p-1 text-right"></td>
-                      <td className="border border-black p-1 text-right"></td>
-                      <td className="border border-black p-1 text-right"></td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "center",
+                        }}
+                      ></td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      ></td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "center",
+                        }}
+                      ></td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      ></td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: 8,
+                          textAlign: "right",
+                        }}
+                      ></td>
                     </tr>
-                    {details?.govermentCode !== null && (
+
+                    {details?.govermentCode != null && (
                       <tr>
-                        <td className="border border-black p-1 text-center"></td>
-                        <td className="border border-black p-1">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        ></td>
+                        <td style={{ border: "1px solid #111827", padding: 8 }}>
                           Government fee
                         </td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.govermentCode}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.govermentGst}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        >
                           {inrCurrency(details?.govermentFees)}
                         </td>
                       </tr>
                     )}
-                    {details?.profesionalCode !== null && (
+
+                    {details?.profesionalCode != null && (
                       <tr>
-                        <td className="border border-black p-1 text-center"></td>
-                        <td className="border border-black p-1">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        ></td>
+                        <td style={{ border: "1px solid #111827", padding: 8 }}>
                           Professional fee
                         </td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.profesionalCode}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.profesionalGst}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        >
                           {inrCurrency(details?.professionalFees)}
                         </td>
                       </tr>
                     )}
-                    {details?.serviceCode !== null && (
+
+                    {details?.serviceCode != null && (
                       <tr>
-                        <td className="border border-black p-1 text-center"></td>
-                        <td className="border border-black p-1">Service fee</td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        ></td>
+                        <td style={{ border: "1px solid #111827", padding: 8 }}>
+                          Service fee
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.serviceCode}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.serviceGst}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        >
                           {inrCurrency(details?.serviceCharge)}
                         </td>
                       </tr>
                     )}
-                    {details?.otherCode !== null && (
+
+                    {details?.otherCode != null && (
                       <tr>
-                        <td className="border border-black p-1 text-center"></td>
-                        <td className="border border-black p-1">Other fee</td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        ></td>
+                        <td style={{ border: "1px solid #111827", padding: 8 }}>
+                          Other fee
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.otherCode}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-center">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        >
                           {details?.otherGst}
                         </td>
-                        <td className="border border-black p-1 text-right"></td>
-                        <td className="border border-black p-1 text-right">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                          }}
+                        >
                           {inrCurrency(details?.otherFees)}
                         </td>
                       </tr>
                     )}
 
-                    {details?.totalAmount && (
+                    {details?.totalAmount != null && (
                       <tr>
-                        <td className="border border-black p-1 text-center"></td>
-                        <td className="border border-black p-1">Total</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td className="border border-black p-1 text-right">
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "center",
+                          }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            fontWeight: 700,
+                          }}
+                        >
+                          Total
+                        </td>
+                        <td
+                          style={{ border: "1px solid #111827", padding: 8 }}
+                        ></td>
+                        <td
+                          style={{ border: "1px solid #111827", padding: 8 }}
+                        ></td>
+                        <td
+                          style={{ border: "1px solid #111827", padding: 8 }}
+                        ></td>
+                        <td
+                          style={{ border: "1px solid #111827", padding: 8 }}
+                        ></td>
+                        <td
+                          style={{
+                            border: "1px solid #111827",
+                            padding: 8,
+                            textAlign: "right",
+                            fontWeight: 700,
+                          }}
+                        >
                           {inrCurrency(details?.totalAmount)}
                         </td>
                       </tr>
@@ -411,17 +1040,136 @@ const EstimatePreview = () => {
 
             {/* Total Amount in Words */}
             {details?.totalAmount > 0 && (
-              <div className="flex justify-end gap-1 text-gray-500 mt-4 text-sm md:text-base">
-                <span>Total in words :</span>
-                <span>{numWords(details?.totalAmount)}</span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                  color: "#6b7280",
+                  fontSize: 14,
+                }}
+              >
+                <span style={{ fontWeight: 600, color: "#111827" }}>
+                  Total in words :
+                </span>
+                <span style={{ fontStyle: "italic", fontWeight: 500 }}>
+                  {numWords(details?.totalAmount)}
+                </span>
               </div>
             )}
+
+            <div
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                paddingTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                fontSize: 13,
+                color: "#374151",
+              }}
+            >
+              {/* Terms & Conditions */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#111827",
+                  }}
+                >
+                  Terms & Conditions
+                </h4>
+
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: 18,
+                    lineHeight: 1.45,
+                    listStyle: "outside",
+                  }}
+                >
+                  <li>
+                    All prices are inclusive/exclusive of taxes as applicable.
+                  </li>
+                  <li>
+                    Validity of this estimate is 30 days from the date of issue.
+                  </li>
+                  <li>
+                    Work will commence only after receiving the agreed advance
+                    payment.
+                  </li>
+                  <li>
+                    Delivery timelines may vary depending on government
+                    processing time.
+                  </li>
+                  <li>
+                    No refund will be applicable once the work has been
+                    initiated.
+                  </li>
+                  <li>
+                    Any additional requirements will be charged separately.
+                  </li>
+                </ul>
+              </div>
+
+              {/* Notes */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#111827",
+                  }}
+                >
+                  Notes
+                </h4>
+
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: 18,
+                    lineHeight: 1.45,
+                    listStyle: "outside",
+                  }}
+                >
+                  <li>
+                    Government fee and corpseed professional fee may differ
+                    depending on any additional changes advised the client in
+                    the application or any changes in the government policies.
+                  </li>
+                  <li>
+                    This estimate is system-generated and does not require a
+                    physical signature.
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Export button */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <button
+            onClick={generatePDF}
+            style={{
+              padding: "10px 18px",
+              backgroundColor: "#16a34a",
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: 600,
+              boxShadow: "0 6px 12px rgba(6,95,70,0.12)",
+            }}
+            aria-label="Export as PDF"
+          >
+            Download PDF
+          </button>
+        </div>
       </div>
-      <button className="px-4 py-2 text-white bg-blue-500" onClick={generatePDF}>
-        Export as pdf
-      </button>
     </div>
   );
 };

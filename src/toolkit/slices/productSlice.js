@@ -100,7 +100,7 @@ export const createDocumentsForProduct = createAsyncThunk(
   "createDocumentsForProduct",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/api/required-documents`, data);
+      const response = await api.post(`/api/product-required-documents`, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error?.response?.data);
@@ -113,7 +113,7 @@ export const getAllDocumentsForProduct = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/required-documents/admin/activeDocument?userId=${userId}`
+        `/api/product-required-documents?userId=${userId}`
       );
       return response.data;
     } catch (error) {
@@ -121,6 +121,36 @@ export const getAllDocumentsForProduct = createAsyncThunk(
     }
   }
 );
+
+export const mapDocumentToProduct = createAsyncThunk(
+  "mapDocumentToProduct",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/api/products/${data?.productId}/documents/map`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  }
+);
+
+export const getAllDocumentCheckListByProductId = createAsyncThunk(
+  "getAllDocumentCheckListByProductId",
+  async (productId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/api/products/${productId}/documents/requirements`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  }
+);
+
 
 const ProductSlice = createSlice({
   name: "product",
@@ -131,6 +161,7 @@ const ProductSlice = createSlice({
     productSubcategoryList: [],
     productDataByLeadName: {},
     allDocumentList: [],
+    allDocumentCheckListForProduct: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllProductCategoryById.pending, (state) => {
@@ -200,6 +231,18 @@ const ProductSlice = createSlice({
     builder.addCase(getAllDocumentsForProduct.rejected, (state, action) => {
       state.loading = "rejected";
       state.allDocumentList = [];
+    });
+
+    builder.addCase(getAllDocumentCheckListByProductId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllDocumentCheckListByProductId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allDocumentCheckListForProduct = action?.payload?.applicantTypeGroups;
+    });
+    builder.addCase(getAllDocumentCheckListByProductId.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.allDocumentCheckListForProduct = [];
     });
   },
 });

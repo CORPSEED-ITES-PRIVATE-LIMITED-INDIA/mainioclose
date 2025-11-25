@@ -33,7 +33,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/:email/otp" element={<Otp />} />
-        <Route path="/:leadId/estimate-preview" element={<EstimatePreview />} />
+        <Route path="/:leadId/:uuid/estimate-preview" element={<EstimatePreview />} />
         <Route path="/erp" element={<ProtectedRoute />}>
           <Route path=":userId" element={<Layoutpage />}>
             {/*Dashboard */}

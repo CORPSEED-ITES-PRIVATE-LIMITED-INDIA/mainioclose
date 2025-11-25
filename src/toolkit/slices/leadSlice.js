@@ -639,6 +639,16 @@ export const updateAutoAssignnee = createAsyncThunk(
   }
 );
 
+export const getEstimateByLeadIdAndUUID = createAsyncThunk(
+  "getEstimateByLeadIdAndUUID",
+  async ({ leadId, uuid }) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getEstimateByLeadIdAndUuid?leadId=${leadId}&uuid=${uuid}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -676,6 +686,7 @@ export const LeadSlice = createSlice({
     docsListInEstimate: [],
     allLeadsTaskList: [],
     allChildLeadList: [],
+    estimateDetailByUUID: {},
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1057,6 +1068,18 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllChildLeads.rejected, (state) => {
       state.loading = "rejected";
       state.allChildLeadList = [];
+    });
+
+    builder.addCase(getEstimateByLeadIdAndUUID.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getEstimateByLeadIdAndUUID.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateDetailByUUID = action?.payload;
+    });
+    builder.addCase(getEstimateByLeadIdAndUUID.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimateDetailByUUID = {};
     });
   },
 });

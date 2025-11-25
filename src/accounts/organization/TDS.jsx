@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -24,6 +24,7 @@ import {
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  claimTDS,
   createTDS,
   getAllTdsList,
   getTdsAmounts,
@@ -33,6 +34,9 @@ import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { inrCurrency } from "../../common";
 import { useMediaQuery } from "react-responsive";
+import FileUploader from "../../components/FileUploader";
+import dayjs from "dayjs";
+import { Link } from "react-router-dom";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -40,6 +44,9 @@ export const columns = [
   { name: "TDS TYPE", uid: "tdsType" },
   { name: "TDS", uid: "tds" },
   { name: "AMOUNT", uid: "amount" },
+  { name: "TDS CLAIM AMOUNT", uid: "tdsClaimAmount" },
+  { name: "DOCUMENT", uid: "documents" },
+  { name: "TDS DEDUCTED BY", uid: "tdsDeductBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -52,6 +59,9 @@ const INITIAL_VISIBLE_COLUMNS = [
   "tdsType",
   "tds",
   "amount",
+  "tdsClaimAmount",
+  "documents",
+  "tdsDeductBy",
   "actions",
 ];
 
@@ -65,6 +75,11 @@ const formSchema = z.object({
   projectId: z.string().min(1, "Please enter project id"),
 });
 
+const tdsFormSchema = z.object({
+  amount: z.string().min(1, "Please enter amount."),
+  document: z.string().min(1, "Please upload the document."),
+});
+
 const defaultValues = {
   organization: "",
   tdsType: "",
@@ -75,9 +90,15 @@ const defaultValues = {
   projectId: "",
 };
 
+const tdsFormDefaultValues = {
+  amount: 0,
+  document: "",
+};
+
 const TDS = () => {
   const dispatch = useDispatch();
-  const { isOpen,onClose, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const tdsModal = useDisclosure();
   const data = useSelector((state) => state.organization.tdsList);
   const tdsAmount = useSelector((state) => state.organization.tdsAmount);
   const count = useSelector((state) => state.organization.tdsList?.length);
@@ -91,6 +112,7 @@ const TDS = () => {
     column: "organization",
     direction: "ascending",
   });
+  const [rowItem, setRowItem] = useState(null);
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
@@ -152,6 +174,11 @@ const TDS = () => {
     defaultValues,
   });
 
+  const tdsForm = useForm({
+    resolver: zodResolver(tdsFormSchema),
+    defaultValues: tdsFormDefaultValues,
+  });
+
   const onSubmit = useCallback(
     (values) => {
       dispatch(createTDS(values))
@@ -162,7 +189,7 @@ const TDS = () => {
               color: "success",
             });
             dispatch(getAllTdsList());
-            onClose()
+            onClose();
             reset();
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
@@ -172,7 +199,30 @@ const TDS = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     },
-    [dispatch,onClose,reset]
+    [dispatch, onClose, reset]
+  );
+
+  const onTdsClaimSubmit = useCallback(
+    (values) => {
+      dispatch(claimTDS({ id: rowItem?.id,tdsClaimBy:userId, ...values }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "TDS claimed successfully !.",
+              color: "success",
+            });
+            dispatch(getAllTdsList());
+            tdsModal.onClose();
+            tdsForm.reset();
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    },
+    [dispatch, tdsModal, tdsForm, rowItem,userId]
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -198,6 +248,27 @@ const TDS = () => {
             {inrCurrency(rowData?.tdsAmount)}
           </p>
         );
+      case "tdsClaimAmount":
+        return (
+          <div>
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.tdsClaimAmount)}
+            </p>
+            <span className="text-gray-400 text-sm">
+              {dayjs(rowData?.claimDate).format("DD-MM-YYYY")}
+            </span>
+          </div>
+        );
+      case "documents":
+        return (
+          <div>
+            <Link className="font-bold" to={rowData?.documents}>
+              View
+            </Link>
+          </div>
+        );
+      case "tdsDeductBy":
+        return <p>{rowData?.tdsDeductedBy?.fullName}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -208,8 +279,16 @@ const TDS = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                {/* <DropdownItem key="viewEstimate">View estimate</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem> */}
+                <DropdownItem
+                  key="claimTds"
+                  onPress={() => {
+                    tdsModal.onOpen();
+                    setRowItem(rowData);
+                  }}
+                >
+                  Claim TDS
+                </DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -298,7 +377,6 @@ const TDS = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -535,6 +613,61 @@ const TDS = () => {
                           onChange={(e) => {
                             field.onChange(e.target.value);
                           }}
+                        />
+                      )}
+                    />
+                  </div>
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={tdsModal.isOpen}
+        onOpenChange={tdsModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Claim TDS</ModalHeader>
+              <ModalBody>
+                <form onSubmit={tdsForm.handleSubmit(onTdsClaimSubmit)}>
+                  <div className="grid gap-4 max-h-[60vh] overflow-auto">
+                    <Controller
+                      name="amount"
+                      control={tdsForm.control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          label="TDS amount"
+                          type="number"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="document"
+                      control={tdsForm.control}
+                      render={({ field }) => (
+                        <FileUploader
+                          label={"Upload TDS document"}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e)}
                         />
                       )}
                     />

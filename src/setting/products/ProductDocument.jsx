@@ -1,6 +1,7 @@
 import {
   addToast,
   Button,
+  Chip,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -22,6 +23,7 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { Download, EllipsisVertical, FileText, Plus } from "lucide-react";
@@ -30,6 +32,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
   addDocumentProduct,
+  getApplicantTypeList,
   getSingleProductByProductId,
   importProductCheckListDoument,
 } from "../../toolkit/slices/settingSlice";
@@ -40,64 +43,60 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import { addDocumentsInProductsForOperation } from "../../toolkit/slices/operationSlice";
 import FileUploader from "../../components/FileUploader";
+import {
+  getAllDocumentCheckListByProductId,
+  getAllDocumentsForProduct,
+  mapDocumentToProduct,
+} from "../../toolkit/slices/productSlice";
 const iconClass = "w-5 h-5";
 
-const ProductDocument = ({ data, details }) => {
+const ProductDocument = () => {
   const dispatch = useDispatch();
   const { userId, productId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const uploadModal = useDisclosure();
-  const countryList = useSelector((state) => state.common.countriesList);
-  const statesList = useSelector((state) => state.common.statesList);
+  const applicantTypeList = useSelector(
+    (state) => state.setting.applicantTypeList
+  );
+  const allDocumentList = useSelector((state) => state.product.allDocumentList);
+  const data = useSelector(
+    (state) => state.product.allDocumentCheckListForProduct
+  );
   const formValues = {
     productId: productId,
-    userId,
-    name: "",
-    type: "",
-    description: "",
-    centralName: details?.serviceType === "central" ? "India" : "",
-    stateName: "",
-    country: "",
+    applicantTypeId: null,
+    requiredDocumentIds: [],
+    updatedBy: userId,
   };
   const [formData, setFormData] = useState(formValues);
   const [fileUrl, setFileUrl] = useState("");
 
   useEffect(() => {
+    dispatch(getAllDocumentCheckListByProductId(productId));
     dispatch(getAllCountries());
     dispatch(getAllStatesByCountryName("India"));
+    dispatch(getApplicantTypeList({ page: 0, size: 1000 }));
+    dispatch(getAllDocumentsForProduct(userId));
   }, [dispatch]);
 
   const handleSubmit = useCallback(
     (values) => {
-      dispatch(addDocumentProduct(formData))
+      dispatch(mapDocumentToProduct(formData))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            const docInfo = resp.payload;
             addToast({
-              title: "Document added successfully !.",
+              title: "Product mapped with document successfully !.",
               color: "success",
             });
-            dispatch(
-              addDocumentsInProductsForOperation([
-                {
-                  id: 0,
-                  name: "string",
-                  description: "string",
-                  type: "string",
-                  country: "string",
-                  centralName: "string",
-                  stateName: "string",
-                  createdBy: 0,
-                  updatedBy: 0,
-                  productIds: [0],
-                },
-              ])
-            );
-            onOpenChange(false);
-            dispatch(getSingleProductByProductId(productId));
+            onClose();
+            dispatch(getAllDocumentCheckListByProductId(productId));
             setFormData(formValues);
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({
+              title: resp?.payload?.status,
+              color: "danger",
+              description: resp?.payload?.message,
+            });
           }
         })
         .catch(() =>
@@ -107,18 +106,117 @@ const ProductDocument = ({ data, details }) => {
     [formData, productId, dispatch]
   );
 
+  const renderCell = useCallback((rowData, columnKey) => {
+    switch (columnKey) {
+      case "documents":
+        return (
+          <div className="flex gap-1.5 flex-wrap">
+            {rowData?.documents?.map((doc) => (
+              <Tooltip
+                showArrow
+                content={
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex gap-1">
+                      <span className="text-tiny text-default-500">
+                        Document type :
+                      </span>
+                      <span className="text-tiny font-medium">
+                        {doc.documentType}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <span className="text-tiny text-default-500">
+                        Document type :
+                      </span>
+                      <span className="text-tiny font-medium">
+                        {doc.allowedFormats}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <span className="text-tiny text-default-500">
+                        Expiry type :
+                      </span>
+                      <span className="text-tiny font-medium">
+                        {doc.expiryType}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <span className="text-tiny text-default-500">
+                        Maximum validity :
+                      </span>
+                      <span className="text-tiny font-medium">
+                        {doc.maxValidityYears} yrs
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <span className="text-tiny text-default-500">
+                        Is mandatory :
+                      </span>
+                      <span className="text-tiny font-medium">
+                        {doc.mandatory ? "YES" : "NO"}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 ">
+                      <span className="text-tiny inline text-default-500">
+                        Description :
+                      </span>
+                      <div className="text-tiny font-medium max-w-[300px]">
+                        {doc.description}
+                      </div>
+                    </div>
+                  </div>
+                }
+              >
+                <Chip key={doc.requiredDocumentId}>{doc.documentName}</Chip>
+              </Tooltip>
+            ))}
+          </div>
+        );
+      case "actions":
+        return (
+          <div className="flex justify-start items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical className="text-default-300" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="edit">Edit</DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  // onClick={modal.onOpen}
+                >
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
+
+      default:
+        return rowData[columnKey] || "-";
+    }
+  }, []);
+
   const handleSubmitUploadDoc = useCallback(() => {
     dispatch(importProductCheckListDoument(fileUrl))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Document uploaded successfully !.",color:"success" });
+          addToast({
+            title: "Document uploaded successfully !.",
+            color: "success",
+          });
           setFileUrl("");
           uploadModal.onOpenChange(false);
         } else {
-          addToast({ title: "Something went wrong !.",color:"danger" });
+          addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() => addToast({ title: "Something went wrong !.",color:"danger" }));
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
   }, [dispatch, fileUrl]);
 
   return (
@@ -155,28 +253,16 @@ const ProductDocument = ({ data, details }) => {
         <TableHeader
           columns={[
             {
-              key: "name",
-              label: "NAME",
+              key: "applicantTypeId",
+              label: "ID",
             },
             {
-              key: "description",
-              label: "DESCRIPTION",
+              key: "applicantTypeName",
+              label: "APPLICANT TYPE",
             },
             {
-              key: "country",
-              label: "COUNTRY",
-            },
-            {
-              key: "centralName",
-              label: "CENTRAL",
-            },
-            {
-              key: "stateName",
-              label: "STATE",
-            },
-            {
-              key: "actions",
-              label: "ACTIONS",
+              key: "documents",
+              label: "DOCUMENTS",
             },
           ]}
         >
@@ -186,7 +272,7 @@ const ProductDocument = ({ data, details }) => {
         </TableHeader>
         <TableBody items={data || []}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item.applicantTypeId}>
               {(columnKey) =>
                 columnKey === "actions" ? (
                   <TableCell>
@@ -211,7 +297,7 @@ const ProductDocument = ({ data, details }) => {
                     </div>
                   </TableCell>
                 ) : (
-                  <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                  <TableCell>{renderCell(item, columnKey)}</TableCell>
                 )
               }
             </TableRow>
@@ -236,81 +322,35 @@ const ProductDocument = ({ data, details }) => {
                     handleSubmit(data);
                   }}
                 >
-                  <div className="grid grid-cols-2 gap-2 w-full">
-                    {details?.serviceType === "international" && (
-                      <NewSelect
-                        isRequired={true}
-                        errorMessage={"please select country"}
-                        data={countryList}
-                        label="Country"
-                        name="country"
-                        labelKey="name"
-                        valueKey="name"
-                        value={formData?.country}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, country: e }))
-                        }
-                      />
-                    )}
-
-                    {details?.serviceType === "state" && (
-                      <NewSelect
-                        isRequired={true}
-                        errorMessage={"please select state"}
-                        data={statesList}
-                        label="State"
-                        name="stateName"
-                        labelKey="name"
-                        valueKey="name"
-                        value={formData?.stateName}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, stateName: e }))
-                        }
-                      />
-                    )}
-                    <Input
-                      isRequired
-                      label="Document name"
+                  <div className="grid gap-2 w-full">
+                    <NewSelect
+                      isRequired={true}
+                      errorMessage={"please select applicant type ."}
+                      data={applicantTypeList}
+                      label="Applicant type"
                       name="name"
-                      errorMessage="please enter the document name ."
-                      value={formData?.name}
+                      labelKey="name"
+                      valueKey="id"
+                      value={formData?.applicantTypeId}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          name: e.target.value,
-                        }))
+                        setFormData((prev) => ({ ...prev, applicantTypeId: e }))
                       }
                     />
 
-                    <Select
-                      items={[
-                        { label: "Client", key: "client" },
-                        { label: "Agent", key: "agent" },
-                      ]}
-                      isRequired
-                      errorMessage="please select type"
-                      label="Type"
-                      name="type"
-                      selectedKeys={[formData?.type]}
+                    <NewSelect
+                      isRequired={true}
+                      selectionMode="multiple"
+                      errorMessage={"please select documents ."}
+                      data={allDocumentList}
+                      label="Select Document"
+                      name="name"
+                      labelKey="name"
+                      valueKey="id"
+                      value={formData?.requiredDocumentIds}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          type: e.target.value,
-                        }))
-                      }
-                    >
-                      {(info) => <SelectItem>{info.label}</SelectItem>}
-                    </Select>
-                    <Textarea
-                      isRequired
-                      label="Description"
-                      name="description"
-                      errorMessage="please enter the document description ."
-                      value={formData?.description}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          description: e.target.value,
+                          requiredDocumentIds: e,
                         }))
                       }
                     />
@@ -343,7 +383,10 @@ const ProductDocument = ({ data, details }) => {
                     onChange={(e) => setFileUrl(e)}
                   />
                   <div>
-                    <a className="text-primary-500" href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794064357DocumentsChecklist_(2).xlsx">
+                    <a
+                      className="text-primary-500"
+                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794064357DocumentsChecklist_(2).xlsx"
+                    >
                       Download the sample document
                     </a>
                   </div>
