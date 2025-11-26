@@ -70,7 +70,7 @@ table td {
   --primary-foreground: oklch(0.985 0 0);
   /* --secondary: oklch(0.97 0 0); */
   --secondary: #9353d3;
-  --secondary-foreground:oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
   /* --secondary-foreground: oklch(0.205 0 0); */
   --success: oklch(0.65 0.3 145);
   --heroui-success-foreground: 0deg 100% 98.96%;
@@ -151,7 +151,7 @@ table td {
 }
 
 .pdf-mode {
-  --background: #f7f7fa; 
+  --background: #f7f7fa;
   --foreground: #1a1a20;
 }
 
@@ -242,4 +242,13 @@ table td {
 
 .total-row {
   font-weight: bold;
+}
+
+[data-slot="listbox"] {
+  white-space: normal !important;
+}
+
+[data-slot="listbox"] div {
+  white-space: normal !important;
+  word-break: break-word !important;
 }

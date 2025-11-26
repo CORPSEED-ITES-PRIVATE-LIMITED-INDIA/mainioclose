@@ -182,13 +182,9 @@ const NewSelect = ({
           <SelectItem
             key={String(item[valueKey])}
             textValue={item?.[labelKey]}
-            onPress={() => {
-              if (onItemSelect) {
-                onItemSelect(item);
-              }
-            }}
+            onPress={() => onItemSelect(item)}
           >
-            <div className="flex flex-col flex-wrap text-small my-0.5 w-full">
+            <div className="flex flex-col w-full text-small my-0.5 whitespace-normal break-words leading-normal">
               {item?.[labelKey] || "Unknown"}
             </div>
           </SelectItem>
