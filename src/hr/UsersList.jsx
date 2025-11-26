@@ -97,55 +97,51 @@ const formSchema = (flags) =>
   z.object({
     employeeId: z.string().min(1, "Please enter employee id"),
     userName: z.string().min(1, "Please enter username"),
-    email: z.string().email("Please enter a valid email"),
-    personalEmail: z.string().optional(),
+    email: z.string().min(1,"Please enter a valid email"),
+    personalEmail: z.string().optional().or(z.literal("")),
     contactNo: z.string().min(10, "Please enter a valid contact number"),
-    companyMobile: z.string().optional(),
+    companyMobile: z.string().optional().or(z.literal("")),
     role: z.array(z.string()).min(1, "Please select at least one role"),
     departmentId: z.string().min(1, "Please select a department"),
     designationId: z.string().min(1, "Please select a designation"),
-    epfNo: z.string().optional(),
-    aadharCard: z.string().refine((val) => /^\d{12}$/.test(val), {
-      message: "Aadhar number must be 12 digits",
-    }),
+    epfNo: z.string().optional().or(z.literal("")),
+    aadharCard: z.string().min(1, "Please enter aadhar card number"),
     panNumber: z.string().min(1, "Please enter pan number"),
-    managerId: z.string().optional(),
-    lockerSize: z.string().optional(),
+    managerId: z.string().optional().or(z.literal(null)),
+    lockerSize: z.string().optional().or(z.literal("")),
     expInYear: z.string().min(1, "Please enter experience in years"),
     expInMonth: z.string().min(1, "Please enter experience in months"),
     dateOfJoining: z.string().min(1, "please select date of joining."),
-    type: z.enum(["male", "female", "others"], {
-      errorMap: () => ({ message: "Please select gender" }),
-    }),
+    type: z.string().min(1, "please select the gender."),
     maritalStatus: z.string().min(1, "please select the status."),
     ...(flags?.maritalStatus
       ? {
-          spouseName: z.string().optional(),
-          spouseContactNo: z.string().optional(),
+          spouseName: z.string().min(1, "Please enter spouse name"),
+          spouseContactNo: z.string().optional().or(z.literal("")),
         }
       : {}),
     fatherName: z.string().min(1, "Please enter father's name"),
-    fatherOccupation: z.string().optional(),
-    fatherContactNo: z.string().optional(),
+    fatherOccupation: z.string().optional().or(z.literal("")),
+    fatherContactNo: z.string().optional().or(z.literal("")),
     motherName: z.string().min(1, "Please enter mother's name"),
-    motherContactNo: z.string().optional(),
-    nationality: z.string().optional(),
-    language: z.string().optional(),
+    motherContactNo: z.string().optional().or(z.literal("")),
+    nationality: z.string().optional().or(z.literal("")),
+    language: z.string().optional().or(z.literal("")),
     ...(flags?.master
       ? {
-          master: z.boolean().optional(),
-          backupTeam: z.boolean().optional(),
+          master: z.boolean().optional().or(z.literal("")),
+          backupTeam: z.boolean().optional().or(z.literal("")),
         }
       : {}),
-    emergencyNumber: z.string().optional(),
+    emergencyNumber: z.string().optional().or(z.literal("")),
     permanentAddress: z.string().min(1, "Please enter permanent address"),
-    residentialAddress: z.string().optional(),
+    residentialAddress: z.string().optional().or(z.literal("")),
   });
 
 const defaultValues = {
   userName: "",
   email: "",
-  personalEmail: "",
+  personalEmail: null,
   contactNo: "",
   companyMobile: "",
   role: [],
@@ -253,6 +249,7 @@ const UsersList = () => {
     formState: { errors },
     watch,
     reset,
+    getValues,
   } = useForm({
     resolver: zodResolver(formSchema(formFlags)),
     defaultValues,
@@ -262,6 +259,10 @@ const UsersList = () => {
     console.log("Current form values:", watch());
     console.log("Form errors:", errors);
   }, [watch, errors]);
+
+  useEffect(() => {
+  reset(getValues());
+}, [formFlags]);
 
   const handleEdit = useCallback(
     (data) => {
@@ -299,7 +300,6 @@ const UsersList = () => {
         panNumber: data?.panNumber,
         permanentAddress: data?.permanentAddress,
         residentialAddress: data?.residentialAddress,
-        manager: true,
         backupTeam: data?.backupTeam,
         master: data?.master,
         maritalStatus: data?.maritalStatus,
@@ -313,6 +313,7 @@ const UsersList = () => {
     },
     [data, reset, dispatch, onOpen]
   );
+
 
   const onSubmit = (values) => {
     if (rowItem) {
@@ -344,8 +345,6 @@ const UsersList = () => {
                     title: "Something went wrong !.",
                     color: "danger",
                   });
-                  onOpenChange(false);
-                  reset(defaultValues);
                 }
               })
               .catch(() => {
@@ -772,7 +771,7 @@ const UsersList = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"
@@ -865,8 +864,6 @@ const UsersList = () => {
                             type="email"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.personalEmail?.message}
-                            isInvalid={!!errors.personalEmail}
                           />
                         )}
                       />
@@ -894,8 +891,6 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             maxLength={10}
-                            errorMessage={errors.companyMobile?.message}
-                            isInvalid={!!errors.companyMobile}
                           />
                         )}
                       />
@@ -1007,8 +1002,6 @@ const UsersList = () => {
                             label="EPFO number"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.epfNo?.message}
-                            isInvalid={!!errors.epfNo}
                           />
                         )}
                       />
@@ -1037,8 +1030,8 @@ const UsersList = () => {
                             maxLength={10}
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.aadharCard?.message}
-                            isInvalid={!!errors.aadharCard}
+                            errorMessage={errors.panNumber?.message}
+                            isInvalid={!!errors.panNumber}
                           />
                         )}
                       />
@@ -1053,8 +1046,6 @@ const UsersList = () => {
                               const value = Array.from(keys)[0];
                               if (value) field.onChange(value);
                             }}
-                            errorMessage={errors.managerId?.message}
-                            isInvalid={!!errors.managerId}
                           >
                             {managerListById?.length > 0 ? (
                               managerListById.map((item) => (
@@ -1078,8 +1069,6 @@ const UsersList = () => {
                             label="Locker size"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.lockerSize?.message}
-                            isInvalid={!!errors.lockerSize}
                           />
                         )}
                       />
@@ -1171,12 +1160,10 @@ const UsersList = () => {
                               const value = Array.from(keys)[0];
                               if (value) {
                                 field.onChange(value);
-                                if (value === "Married") {
-                                  setFormFlags((prev) => ({
-                                    ...prev,
-                                    maritalStatus: true,
-                                  }));
-                                }
+                                setFormFlags((prev) => ({
+                                  ...prev,
+                                  maritalStatus: value === "Married",
+                                }));
                               }
                             }}
                             errorMessage={errors.maritalStatus?.message}
@@ -1215,12 +1202,9 @@ const UsersList = () => {
                             render={({ field }) => (
                               <Input
                                 label="Spouse contact number"
-                                isRequired
                                 maxLength={10}
                                 value={field.value}
                                 onChange={(e) => field.onChange(e.target.value)}
-                                errorMessage={errors.spouseContactNo?.message}
-                                isInvalid={!!errors.spouseContactNo}
                               />
                             )}
                           />
@@ -1249,8 +1233,6 @@ const UsersList = () => {
                             label="Father's occupation"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.fatherOccupation?.message}
-                            isInvalid={!!errors.fatherOccupation}
                           />
                         )}
                       />
@@ -1263,8 +1245,6 @@ const UsersList = () => {
                             maxLength={10}
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.fatherContactNo?.message}
-                            isInvalid={!!errors.fatherContactNo}
                           />
                         )}
                       />
@@ -1291,8 +1271,6 @@ const UsersList = () => {
                             maxLength={10}
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.motherContactNo?.message}
-                            isInvalid={!!errors.motherContactNo}
                           />
                         )}
                       />
@@ -1304,8 +1282,6 @@ const UsersList = () => {
                             label="Nationality"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.nationality?.message}
-                            isInvalid={!!errors.nationality}
                           />
                         )}
                       />
@@ -1317,8 +1293,6 @@ const UsersList = () => {
                             label="Language"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.language?.message}
-                            isInvalid={!!errors.language}
                           />
                         )}
                       />
@@ -1330,7 +1304,6 @@ const UsersList = () => {
                             render={({ field }) => (
                               <Select
                                 label="Master"
-                                isRequired
                                 selectedKeys={
                                   field.value !== undefined
                                     ? [field.value.toString()]
@@ -1341,8 +1314,6 @@ const UsersList = () => {
                                   if (value !== undefined)
                                     field.onChange(value === "true");
                                 }}
-                                errorMessage={errors.master?.message}
-                                isInvalid={!!errors.master}
                               >
                                 {[
                                   { label: "True", value: true },
@@ -1364,7 +1335,6 @@ const UsersList = () => {
                             render={({ field }) => (
                               <Select
                                 label="Backup team"
-                                isRequired
                                 selectedKeys={
                                   field.value !== undefined
                                     ? [field.value.toString()]
@@ -1375,8 +1345,6 @@ const UsersList = () => {
                                   if (value !== undefined)
                                     field.onChange(value === "true");
                                 }}
-                                errorMessage={errors.backupTeam?.message}
-                                isInvalid={!!errors.backupTeam}
                               >
                                 {[
                                   { label: "True", value: true },
@@ -1402,8 +1370,6 @@ const UsersList = () => {
                             label="Emergency contact no."
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.emergencyNumber?.message}
-                            isInvalid={!!errors.emergencyNumber}
                           />
                         )}
                       />
@@ -1429,8 +1395,6 @@ const UsersList = () => {
                             label="Residential address"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.residentialAddress?.message}
-                            isInvalid={!!errors.residentialAddress}
                           />
                         )}
                       />

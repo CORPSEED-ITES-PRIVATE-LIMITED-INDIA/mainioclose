@@ -491,6 +491,7 @@ const LeadProducts = () => {
                       {[
                         { label: "Product", value: "Product" },
                         { label: "Service", value: "Service" },
+                        { label: "Plant setup", value: "plantsetup" },
                       ].map((info) => (
                         <SelectItem key={info.value}>{info.label}</SelectItem>
                       ))}
