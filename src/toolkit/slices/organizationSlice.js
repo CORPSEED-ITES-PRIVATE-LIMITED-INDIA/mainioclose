@@ -368,7 +368,7 @@ export const getAllTrailBalance = createAsyncThunk(
   "unbillItems",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/trialBalance/getAllTrialBalance?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/trialBalance/getAllTrialBalanceData?startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   }
@@ -567,7 +567,7 @@ const OrganizationSlice = createSlice({
     lossDetail: {},
     inFlowList: [],
     outFlowList: [],
-    trailBalanceList: [],
+    trailBalanceList: {},
     balanceSheetLiabilitiesList: [],
     balanceSheetAssetsList: [],
     statutoryList: [],
@@ -927,7 +927,7 @@ const OrganizationSlice = createSlice({
     });
     builder.addCase(getAllTrailBalance.rejected, (state) => {
       state.loading = "rejected";
-      state.trailBalanceList = [];
+      state.trailBalanceList = {};
     });
 
     builder.addCase(getAllBalanceSheetLiabilities.pending, (state) => {
