@@ -188,10 +188,8 @@ const NewSelect = ({
               }
             }}
           >
-            <div className="flex flex-col w-full">
-              <span className="text-small py-0.5 whitespace-normal break-words w-full block">
-                {item?.[labelKey] || "Unknown"}
-              </span>
+            <div className="flex flex-col flex-wrap text-small my-0.5 w-full">
+              {item?.[labelKey] || "Unknown"}
             </div>
           </SelectItem>
         )}
