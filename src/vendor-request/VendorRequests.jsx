@@ -200,7 +200,7 @@ const VendorRequests = () => {
     setFilterLoading("pending");
     dispatch(
       changeProcurementAssignee({
-        data: rowItem?.id,
+        data: [rowItem?.id],
         updatedById: userId,
         assigneeToId: assigneeId,
       })
@@ -551,6 +551,7 @@ const VendorRequests = () => {
                             name={"userIds"}
                             labelKey={"fullName"}
                             valueKey={"id"}
+                            selectionMode="multiple"
                             value={filter?.userIds}
                             onChange={(selectedSet) => {
                               setFilter((prev) => ({
