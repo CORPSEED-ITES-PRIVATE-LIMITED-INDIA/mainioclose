@@ -1956,7 +1956,6 @@ const LeadEstimate = () => {
                   name="purchaseDate"
                   control={control}
                   render={({ field, fieldState: { error } }) => {
-                    console.log("sdkjsjkgjks", field);
                     return (
                       <DatePicker
                         size={isMedium ? "sm" : "md"}
