@@ -108,92 +108,40 @@ const ProductDocument = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "documents":
+      case "mandatory":
         return (
           <div className="flex gap-1.5 flex-wrap">
-            {rowData?.documents?.map((doc) => (
-              <Tooltip
-                showArrow
-                content={
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex gap-1">
-                      <span className="text-tiny text-default-500">
-                        Document type :
-                      </span>
-                      <span className="text-tiny font-medium">
-                        {doc.documentType}
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      <span className="text-tiny text-default-500">
-                        Document type :
-                      </span>
-                      <span className="text-tiny font-medium">
-                        {doc.allowedFormats}
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      <span className="text-tiny text-default-500">
-                        Expiry type :
-                      </span>
-                      <span className="text-tiny font-medium">
-                        {doc.expiryType}
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      <span className="text-tiny text-default-500">
-                        Maximum validity :
-                      </span>
-                      <span className="text-tiny font-medium">
-                        {doc.maxValidityYears} yrs
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      <span className="text-tiny text-default-500">
-                        Is mandatory :
-                      </span>
-                      <span className="text-tiny font-medium">
-                        {doc.mandatory ? "YES" : "NO"}
-                      </span>
-                    </div>
-                    <div className="flex gap-1 ">
-                      <span className="text-tiny inline text-default-500">
-                        Description :
-                      </span>
-                      <div className="text-tiny font-medium max-w-[300px]">
-                        {doc.description}
-                      </div>
-                    </div>
-                  </div>
-                }
-              >
-                <Chip key={doc.requiredDocumentId}>{doc.documentName}</Chip>
-              </Tooltip>
-            ))}
+            {rowData?.mandatory ? "Yes" : "No"}
           </div>
         );
-      case "actions":
+      case "maxValidityYears":
         return (
-          <div className="flex justify-start items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem
-                  key="delete"
-                  color="danger"
-                  // onClick={modal.onOpen}
-                >
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+          <div className="flex gap-1.5 flex-wrap">
+            {rowData?.maxValidityYears} yrs
           </div>
         );
+      // case "actions":
+      //   return (
+      //     <div className="flex justify-start items-center gap-2">
+      //       <Dropdown>
+      //         <DropdownTrigger>
+      //           <Button isIconOnly size="sm" variant="light">
+      //             <EllipsisVertical className="text-default-300" />
+      //           </Button>
+      //         </DropdownTrigger>
+      //         <DropdownMenu>
+      //           <DropdownItem key="edit">Edit</DropdownItem>
+      //           <DropdownItem
+      //             key="delete"
+      //             color="danger"
+      //             // onClick={modal.onOpen}
+      //           >
+      //             Delete
+      //           </DropdownItem>
+      //         </DropdownMenu>
+      //       </Dropdown>
+      //     </div>
+      //   );
 
       default:
         return rowData[columnKey] || "-";
@@ -253,16 +201,36 @@ const ProductDocument = () => {
         <TableHeader
           columns={[
             {
-              key: "applicantTypeId",
+              key: "mappingId",
               label: "ID",
             },
             {
-              key: "applicantTypeName",
-              label: "APPLICANT TYPE",
+              key: "documentName",
+              label: "DOCUMENT NAME",
             },
             {
-              key: "documents",
-              label: "DOCUMENTS",
+              key: "applicantTypeName",
+              label: "APPLICANT TYPE NAME",
+            },
+            {
+              key: "documentType",
+              label: "DOCUMENT NAME",
+            },
+            {
+              key: "description",
+              label: "DESCRIPTION",
+            },
+            {
+              key: "allowedFormats",
+              label: "ALLOWED FORMATS",
+            },
+            {
+              key: "mandatory",
+              label: "MANDATORY",
+            },
+            {
+              key: "maxValidityYears",
+              label: "VALIDITY",
             },
           ]}
         >
@@ -272,7 +240,7 @@ const ProductDocument = () => {
         </TableHeader>
         <TableBody items={data || []}>
           {(item) => (
-            <TableRow key={item.applicantTypeId}>
+            <TableRow key={item.mappingId}>
               {(columnKey) =>
                 columnKey === "actions" ? (
                   <TableCell>

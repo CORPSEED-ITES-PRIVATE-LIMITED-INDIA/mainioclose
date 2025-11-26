@@ -238,7 +238,7 @@ const ProductSlice = createSlice({
     });
     builder.addCase(getAllDocumentCheckListByProductId.fulfilled, (state, action) => {
       state.loading = "success";
-      state.allDocumentCheckListForProduct = action?.payload?.applicantTypeGroups;
+      state.allDocumentCheckListForProduct = action?.payload?.productDocumentMappingResponseDtos;
     });
     builder.addCase(getAllDocumentCheckListByProductId.rejected, (state, action) => {
       state.loading = "rejected";
