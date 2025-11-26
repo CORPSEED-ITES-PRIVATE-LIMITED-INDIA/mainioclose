@@ -20,7 +20,12 @@ import {
   DateRangePicker,
   useDisclosure,
   addToast,
-  Spinner,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Form,
 } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -37,6 +42,7 @@ import { Link, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
   allVendorsCategory,
+  changeProcurementAssignee,
   getAllVendorsRequest,
   getAllVendorsStatus,
   searchInVendorsList,
@@ -48,6 +54,7 @@ import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import { getProcurementAssigneeList } from "../toolkit/slices/commonSlice";
 import { CSVLink } from "react-csv";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { set } from "zod";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -86,6 +93,7 @@ const VendorRequests = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const filterPopOver = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const count = useSelector((state) => state.vendors.totalVendorRequestCount);
   const data =
     useSelector((state) => state.vendors.allVendorsRequestList) || [];
@@ -113,7 +121,6 @@ const VendorRequests = () => {
     size: 50,
   });
   const [filteLoading, setFilterLoading] = useState("");
-  const hasSearchFilter = Boolean(filterValue);
   const [filter, setFilter] = useState({
     userIdBy: userId,
     statuses: [],
@@ -121,6 +128,8 @@ const VendorRequests = () => {
     endDate: "",
     userIds: [],
   });
+  const [rowItem, setRowItem] = useState(null);
+  const [assigneeId, setAssigneeId] = useState(null);
 
   useEffect(() => {
     dispatch(allVendorsCategory());
@@ -181,172 +190,204 @@ const VendorRequests = () => {
     "Over Due TAT",
   ];
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "clientName":
-        return (
-          <div className="flex items-center gap-0">
-            <Dot
-              className="w-12 h-12 m-0 p-0"
-              color={
-                rowData?.status === "Finished"
-                  ? "green"
-                  : rowData?.status === "Cancel"
-                    ? "black"
-                    : "red"
-              }
-            />
+  const handlePressChangeAssignee = (rowItem) => {
+    setRowItem(rowItem);
+    setAssigneeId(String(rowItem?.assigneeId));
+    onOpen();
+  };
 
-            <Link
-              className="font-medium flex flex-col"
-              to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
-            >
-              {rowData?.clientName}
-              <span className="text-default-400 text-sm">
-                {dayjs(rowData?.receivedDate).format("DD-MM-YYYY, hh:mm a")}
-              </span>
-            </Link>
-          </div>
-        );
-      case "clientCompanyName":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.clientCompanyName}</span>
-          </div>
-        );
-      case "clientMobileNumber":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.clientEmailId}</span>
-            <span className="text-sm text-gray-400">
-              {rowData?.clientMobileNumber || "---"}
-            </span>
-          </div>
-        );
-      case "budgetPrice":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {" "}
-              {inrCurrency(rowData?.budgetPrice)}
-            </span>
-          </div>
-        );
-      case "vendorCategoryName":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-semibold">
-              {rowData.vendorCategoryName || "-"}
-            </span>
-            {rowData?.vendorSubCategoryName && (
-              <span className="text-xs text-foreground-400">
-                {rowData?.vendorSubCategoryName}
-              </span>
-            )}
-          </div>
-        );
+  const handleChangeAssignee = () => {
+    dispatch(
+      changeProcurementAssignee({
+        data: rowItem?.id,
+        updatedById: userId,
+        assigneeToId: assigneeId,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Assignee changed successfully",
+            color: "success",
+          });
+          dispatch(getAllVendorsRequest({ userId, ...filteration }));
+        } else {
+          addToast({ title: "Error in changing assignee", color: "danger" });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Error in changing assignee", color: "danger" });
+      });
+  };
 
-      case "assigneeName":
-        return (
-          <div className="flex flex-col">
-            <span className="">{rowData?.assigneeName || "-"}</span>
-          </div>
-        );
-      case "requirementDescription":
-        return (
-          <div className="flex flex-col">
-            <span className="">{rowData?.requirementDescription || "-"}</span>
-          </div>
-        );
-      case "tatDetail":
-        return (
-          <div className="flex justify-between items-start">
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "clientName":
+          return (
+            <div className="flex items-center gap-0">
+              <Dot
+                className="w-12 h-12 m-0 p-0"
+                color={
+                  rowData?.status === "Finished"
+                    ? "green"
+                    : rowData?.status === "Cancel"
+                      ? "black"
+                      : "red"
+                }
+              />
+
+              <Link
+                className="font-medium flex flex-col"
+                to={`${rowData?.id}/${rowData?.leadId}/requestDetail`}
+              >
+                {rowData?.clientName}
+                <span className="text-default-400 text-sm">
+                  {dayjs(rowData?.receivedDate).format("DD-MM-YYYY, hh:mm a")}
+                </span>
+              </Link>
+            </div>
+          );
+        case "clientCompanyName":
+          return (
             <div className="flex flex-col">
-              <span className="">
-                Completion days : {rowData?.completionDays || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Days left : {rowData?.tatDaysLeft || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Overdue : {rowData?.overDueTat || "-"}
-              </span>
-              <span className="text-xs text-foreground-400">
-                Subcategory TAT : {rowData?.subCategoryTatDays || "-"}
+              <span className="font-normal">{rowData?.clientCompanyName}</span>
+            </div>
+          );
+        case "clientMobileNumber":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">{rowData?.clientEmailId}</span>
+              <span className="text-sm text-gray-400">
+                {rowData?.clientMobileNumber || "---"}
               </span>
             </div>
-            <Popover>
-              <PopoverTrigger>
-                <Button size="sm" variant="light" isIconOnly>
-                  <Info className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="text-small font-bold" {...titleProps}>
-                      Updated history
-                    </h3>
-                    <div className="text-tiny">
-                      {rowData?.updateHistory?.map((item, idx) => {
-                        return (
-                          <div
-                            className="flex flex-col my-4"
-                            key={`history${idx}`}
-                          >
-                            <span className="">
-                              Status : {item?.requestStatus || "-"}
-                            </span>
-                            <span className="text-xs text-foreground-400">
-                              Updated on :{" "}
-                              {dayjs(item?.updateDate).format(
-                                "DD-MM-YYYY , hh:mm a"
-                              ) || "-"}
-                            </span>
-                            <span className="text-xs text-foreground-400">
-                              Updated description :{" "}
-                              {item?.updateDescription || "-"}
-                            </span>
-                          </div>
-                        );
-                      })}
+          );
+        case "budgetPrice":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">
+                {" "}
+                {inrCurrency(rowData?.budgetPrice)}
+              </span>
+            </div>
+          );
+        case "vendorCategoryName":
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold">
+                {rowData.vendorCategoryName || "-"}
+              </span>
+              {rowData?.vendorSubCategoryName && (
+                <span className="text-xs text-foreground-400">
+                  {rowData?.vendorSubCategoryName}
+                </span>
+              )}
+            </div>
+          );
+
+        case "assigneeName":
+          return (
+            <div className="flex flex-col">
+              <span className="">{rowData?.assigneeName || "-"}</span>
+            </div>
+          );
+        case "requirementDescription":
+          return (
+            <div className="flex flex-col">
+              <span className="">{rowData?.requirementDescription || "-"}</span>
+            </div>
+          );
+        case "tatDetail":
+          return (
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="">
+                  Completion days : {rowData?.completionDays || "-"}
+                </span>
+                <span className="text-xs text-foreground-400">
+                  Days left : {rowData?.tatDaysLeft || "-"}
+                </span>
+                <span className="text-xs text-foreground-400">
+                  Overdue : {rowData?.overDueTat || "-"}
+                </span>
+                <span className="text-xs text-foreground-400">
+                  Subcategory TAT : {rowData?.subCategoryTatDays || "-"}
+                </span>
+              </div>
+              <Popover>
+                <PopoverTrigger>
+                  <Button size="sm" variant="light" isIconOnly>
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  {(titleProps) => (
+                    <div className="px-1 py-2">
+                      <h3 className="text-small font-bold" {...titleProps}>
+                        Updated history
+                      </h3>
+                      <div className="text-tiny">
+                        {rowData?.updateHistory?.map((item, idx) => {
+                          return (
+                            <div
+                              className="flex flex-col my-4"
+                              key={`history${idx}`}
+                            >
+                              <span className="">
+                                Status : {item?.requestStatus || "-"}
+                              </span>
+                              <span className="text-xs text-foreground-400">
+                                Updated on :{" "}
+                                {dayjs(item?.updateDate).format(
+                                  "DD-MM-YYYY , hh:mm a"
+                                ) || "-"}
+                              </span>
+                              <span className="text-xs text-foreground-400">
+                                Updated description :{" "}
+                                {item?.updateDescription || "-"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-          </div>
-        );
-      // case "actions":
-      //   return (
-      //     <div className="relative flex justify-center items-center gap-2">
-      //       <Dropdown>
-      //         <DropdownTrigger>
-      //           <Button isIconOnly size="sm" variant="light">
-      //             <EllipsisVertical />
-      //           </Button>
-      //         </DropdownTrigger>
-      //         <DropdownMenu
-      //           selectionMode="single"
-      //           onSelectionChange={(e) => {
-      //             let item = Array.from(e)[0];
-      //             if (item === "paymentRegister") {
-      //               handleActionsPress(rowData);
-      //             }
-      //           }}
-      //         >
-      //           <DropdownItem key="edit">Edit</DropdownItem>
-      //           <DropdownItem key="delete" color="danger">
-      //             Delete
-      //           </DropdownItem>
-      //         </DropdownMenu>
-      //       </Dropdown>
-      //     </div>
-      //   );
-      default:
-        return rowData[columnKey] || "-";
-    }
-  }, []);
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+          );
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              {adminRole && (
+                <Dropdown>
+                  <DropdownTrigger>
+                    <Button isIconOnly size="sm" variant="light">
+                      <EllipsisVertical />
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu selectionMode="single">
+                    <DropdownItem
+                      key="updateAssignee"
+                      onPress={() => handlePressChangeAssignee(rowData)}
+                    >
+                      Change assignee
+                    </DropdownItem>
+                    {/* <DropdownItem key="delete" color="danger">
+                  Delete
+                </DropdownItem> */}
+                  </DropdownMenu>
+                </Dropdown>
+              )}
+            </div>
+          );
+        default:
+          return rowData[columnKey] || "-";
+      }
+    },
+    [adminRole]
+  );
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
@@ -684,6 +725,51 @@ const VendorRequests = () => {
           )}
         </TableBody>
       </Table>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update assignee
+              </ModalHeader>
+              <ModalBody className="w-full">
+                <Form
+                  className="w-full"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    let data = Object.fromEntries(
+                      new FormData(e.currentTarget)
+                    );
+                    handleChangeAssignee(data);
+                  }}
+                >
+                  <div className="grid gap-2 w-full">
+                    <NewSelect
+                      data={procurementUsers || []}
+                      label={"Assignee"}
+                      name={"userIds"}
+                      labelKey={"fullName"}
+                      valueKey={"id"}
+                      value={assigneeId}
+                      onChange={(selectedSet) => {
+                        if (selectedSet) {
+                          setAssigneeId(selectedSet);
+                        }
+                      }}
+                    />
+                  </div>
+                  <ModalFooter className="flex justify-end gap-2 w-full">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </Form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

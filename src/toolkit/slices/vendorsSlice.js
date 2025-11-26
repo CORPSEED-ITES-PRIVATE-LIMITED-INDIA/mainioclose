@@ -123,7 +123,6 @@ export const getvendorHistoryByLeadId = createAsyncThunk(
   }
 );
 
-
 export const getVendorDetailByVendorId = createAsyncThunk(
   "getVendorDetailByVendorId",
   async ({ userId, vendorId }) => {
@@ -258,6 +257,17 @@ export const getVendorPaymentCountInAdmin = createAsyncThunk(
   }
 );
 
+export const changeProcurementAssignee = createAsyncThunk(
+  "changeProcurementAssignee",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/vendor/edit-vendor-details-request?updatedById=${data?.updatedById}&assigneeToId=${data?.assigneeToId}`,
+      data?.data
+    );
+    return response.data;
+  }
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -275,7 +285,7 @@ const VendorsSlice = createSlice({
     vendorPaymentHistory: [],
     vendorPaymentListForAdmin: [],
     vendorPaymentCountForAdmin: 0,
-    vendorDetail:{}
+    vendorDetail: {},
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -420,10 +430,13 @@ const VendorsSlice = createSlice({
     builder.addCase(getVendorPaymentRegisterInAdmin.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getVendorPaymentRegisterInAdmin.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.vendorPaymentListForAdmin = action?.payload;
-    });
+    builder.addCase(
+      getVendorPaymentRegisterInAdmin.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.vendorPaymentListForAdmin = action?.payload;
+      }
+    );
     builder.addCase(getVendorPaymentRegisterInAdmin.rejected, (state) => {
       state.loading = "rejected";
       state.vendorPaymentListForAdmin = [];
@@ -438,7 +451,7 @@ const VendorsSlice = createSlice({
     });
     builder.addCase(getVendorPaymentCountInAdmin.rejected, (state) => {
       state.loading = "rejected";
-      state.vendorPaymentCountForAdmin =0;
+      state.vendorPaymentCountForAdmin = 0;
     });
 
     builder.addCase(getVendorDetailByVendorId.pending, (state) => {
@@ -450,7 +463,7 @@ const VendorsSlice = createSlice({
     });
     builder.addCase(getVendorDetailByVendorId.rejected, (state) => {
       state.loading = "rejected";
-      state.vendorDetail ={};
+      state.vendorDetail = {};
     });
   },
 });

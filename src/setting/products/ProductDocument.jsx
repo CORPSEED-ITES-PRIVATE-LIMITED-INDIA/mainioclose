@@ -1,29 +1,22 @@
 import {
   addToast,
   Button,
-  Chip,
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
   Form,
-  getKeyValue,
-  Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
-  Select,
-  SelectItem,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
-  Textarea,
-  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { Download, EllipsisVertical, FileText, Plus } from "lucide-react";
@@ -31,9 +24,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
-  addDocumentProduct,
   getApplicantTypeList,
-  getSingleProductByProductId,
   importProductCheckListDoument,
 } from "../../toolkit/slices/settingSlice";
 import NewSelect from "../../components/NewSelect";
@@ -41,7 +32,6 @@ import {
   getAllCountries,
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
-import { addDocumentsInProductsForOperation } from "../../toolkit/slices/operationSlice";
 import FileUploader from "../../components/FileUploader";
 import {
   getAllDocumentCheckListByProductId,
