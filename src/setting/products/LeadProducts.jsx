@@ -75,7 +75,6 @@ const LeadProducts = () => {
     type: "",
     serviceType: "",
   });
-  const [rowItem, setRowItem] = useState(null);
 
   const [initialFilteration, setInitialFilteration] = useState({
     type: "all",

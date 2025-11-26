@@ -19,7 +19,7 @@ const NewSelect = ({
   size,
   placeholder,
   isDisabled,
-  onItemSelect=()=>{},
+  onItemSelect = () => {},
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
@@ -188,8 +188,8 @@ const NewSelect = ({
               }
             }}
           >
-            <div className="flex flex-col">
-              <span className="text-small flex flex-wrap py-0.5">
+            <div className="flex flex-col w-full">
+              <span className="text-small py-0.5 whitespace-normal break-words w-full block">
                 {item?.[labelKey] || "Unknown"}
               </span>
             </div>

@@ -9,6 +9,8 @@ const LeadDetail = () => {
   const path = useLocation();
   const pathKey = path?.pathname?.split("/");
   const leadData = useSelector((state) => state.leads.singleLeadData);
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department
   );
@@ -24,46 +26,55 @@ const LeadDetail = () => {
   };
 
   let tabs = [
-    {
-      id: "leadDetail",
-      label: "Details",
-    },
-    {
-      id: "childLead",
-      label: "Child lead",
-    },
-    {
-      id: "companyForm",
-      label: "Company",
-    },
-    {
-      id: "leadCompanyForm",
-      label: "Lead company",
-    },
-    {
-      id: "vendors",
-      label: "Vendors",
-    },
-    {
-      id: "proposal",
-      label: "Proposal",
-    },
-    {
-      id: "leadEstimate",
-      label: "Estimate",
-    },
-    ...(department === "Quality Team"
-      ? []
+    ...(department === "Quality Team" && !adminRole
+      ? [
+          {
+            id: "leadDetail",
+            label: "Details",
+          },
+          {
+            id: "leadHistory",
+            label: "Lead history",
+          },
+        ]
       : [
+          {
+            id: "leadDetail",
+            label: "Details",
+          },
+          {
+            id: "childLead",
+            label: "Child lead",
+          },
+          {
+            id: "companyForm",
+            label: "Company",
+          },
+          {
+            id: "leadCompanyForm",
+            label: "Lead company",
+          },
+          {
+            id: "vendors",
+            label: "Vendors",
+          },
+          {
+            id: "proposal",
+            label: "Proposal",
+          },
+          {
+            id: "leadEstimate",
+            label: "Estimate",
+          },
           {
             id: "leadTasks",
             label: "Tasks",
           },
+          {
+            id: "leadHistory",
+            label: "Lead history",
+          },
         ]),
-    {
-      id: "leadHistory",
-      label: "Lead history",
-    },
   ];
 
   return (

@@ -43,17 +43,39 @@ import {
   getAllDocumentsForProduct,
 } from "../../toolkit/slices/productSlice";
 import { useParams } from "react-router-dom";
+import dayjs from "dayjs";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "NAME", uid: "name" },
+  { name: "TYPE", uid: "type" },
+  { name: "STATE", uid: "stateName" },
+  { name: "CENTRAL NAME", uid: "centralName" },
+  { name: "COUNTRY", uid: "country" },
+  { name: "ALLOWED FORMATS", uid: "allowedFormats" },
+  { name: "EXPIRY TYPE", uid: "expiryType" },
+  { name: "VALIDITY", uid: "maxValidityYears" },
+  { name: "DESCRIPTION", uid: "description" },
+  { name: "CREATED DATE", uid: "createdDate" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "departments"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "type",
+  "stateName",
+  "centralName",
+  "country",
+  "allowedFormats",
+  "expiryType",
+  "maxValidityYears",
+  "description",
+  "createdDate",
+];
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -176,7 +198,7 @@ const Documents = () => {
           ...values,
           createdBy: userId,
           updatedBy: userId,
-          productIds:userId,
+          productIds: userId,
         })
       )
         .then((resp) => {
@@ -208,13 +230,19 @@ const Documents = () => {
     switch (columnKey) {
       case "name":
         return <p>{rowData?.name} </p>;
-      case "departments":
+      case "description":
         return (
-          <p>
-            {rowData?.departmentResponseDtos
-              ?.map((item) => item?.name)
-              ?.join(", ")}{" "}
-          </p>
+          <div className="flex flex-wrap text-tiny">{rowData?.description}</div>
+        );
+      case "maxValidityYears":
+        return (
+          <div className="flex">{rowData?.maxValidityYears} yrs</div>
+        );
+      case "createdDate":
+        return (
+          <div className="flex flex-wrap text-tiny">
+            {dayjs(rowData?.createdDate).format("DD-MM-YYYY")}
+          </div>
         );
       default:
         return cellValue;
@@ -299,7 +327,7 @@ const Documents = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} milestones
+            Total {count} documents
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:

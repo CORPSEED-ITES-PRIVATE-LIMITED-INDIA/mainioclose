@@ -49,6 +49,7 @@ const SalesModuleRouting = () => {
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadTasks" element={<LeadTask />} />
+        <Route path="leadHistory" element={<LeadHistory />} />
       </Route>
       <Route
         path="sales/leads"
