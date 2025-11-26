@@ -188,7 +188,7 @@ export const updateAssigneeForMileStone = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/api/milestone-assignments/${data?.assignmentId}/assignee`,
+        `/api/milestone-assignments/${data?.assignmentId}/reassign`,
         data
       );
       return response.data;
