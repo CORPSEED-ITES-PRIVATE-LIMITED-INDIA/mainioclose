@@ -197,6 +197,7 @@ const VendorRequests = () => {
   };
 
   const handleChangeAssignee = () => {
+    setFilterLoading("pending");
     dispatch(
       changeProcurementAssignee({
         data: rowItem?.id,
@@ -210,12 +211,18 @@ const VendorRequests = () => {
             title: "Assignee changed successfully",
             color: "success",
           });
+          setFilterLoading("success");
           dispatch(getAllVendorsRequest({ userId, ...filteration }));
+          setAssigneeId(null);
+          setRowItem(null);
+          onClose();
         } else {
+          setFilterLoading("rejected");
           addToast({ title: "Error in changing assignee", color: "danger" });
         }
       })
       .catch(() => {
+        setFilterLoading("rejected");
         addToast({ title: "Error in changing assignee", color: "danger" });
       });
   };
