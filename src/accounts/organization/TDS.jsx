@@ -36,7 +36,7 @@ import { inrCurrency } from "../../common";
 import { useMediaQuery } from "react-responsive";
 import FileUploader from "../../components/FileUploader";
 import dayjs from "dayjs";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -96,6 +96,7 @@ const tdsFormDefaultValues = {
 };
 
 const TDS = () => {
+  const { userId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const tdsModal = useDisclosure();
@@ -204,7 +205,7 @@ const TDS = () => {
 
   const onTdsClaimSubmit = useCallback(
     (values) => {
-      dispatch(claimTDS({ id: rowItem?.id,tdsClaimBy:userId, ...values }))
+      dispatch(claimTDS({ id: rowItem?.id, tdsClaimBy: userId, ...values }))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
@@ -222,7 +223,7 @@ const TDS = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     },
-    [dispatch, tdsModal, tdsForm, rowItem,userId]
+    [dispatch, tdsModal, tdsForm, rowItem, userId]
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
