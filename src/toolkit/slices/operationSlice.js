@@ -213,6 +213,36 @@ export const updateAssignmentStatusForMileStone = createAsyncThunk(
   }
 );
 
+export const getDepartments = createAsyncThunk(
+  "getDepartments",
+  async ({ page, size }) => {
+    const response = await api.get(
+      `/api/departments?page=${page}&size=${size}`
+    );
+    return response.data;
+  }
+);
+
+export const getDepartmentAutoConfig = createAsyncThunk(
+  "getDepartmentAutoConfig",
+  async (id) => {
+    const response = await api.get(`/api/department-auto-config/${id}`);
+    return response.data;
+  }
+);
+
+export const updateDepartmentAutoConfig = createAsyncThunk(
+  "updateDepartmentAutoConfig",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/api/department-auto-config/${id}`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -224,6 +254,9 @@ const OperationSlice = createSlice({
     requiredDoucmentListOfProduct: [],
     productMileStoneList: [],
     projectListForOperation: [],
+    departmentsList: [],
+    departmentAutoConfig: null,
+    updatedDepartmentConfig: null,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -317,6 +350,49 @@ const OperationSlice = createSlice({
     builder.addCase(getAllProjectsForOperations.rejected, (state) => {
       state.loading = "rejected";
       state.projectListForOperation = [];
+    });
+
+    builder.addCase(getDepartments.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getDepartments.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.departmentsList = action.payload;
+    });
+    builder.addCase(getDepartments.rejected, (state) => {
+      state.loading = "rejected";
+      state.departmentsList = [];
+    });
+
+    //new - get Departments auto-config
+    builder.addCase(getDepartmentAutoConfig.pending, (state) => {
+      state.loading = "pending";
+    });
+
+    builder.addCase(getDepartmentAutoConfig.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.departmentAutoConfig = action.payload;
+    });
+
+    builder.addCase(getDepartmentAutoConfig.rejected, (state) => {
+      state.loading = "rejected";
+      state.departmentAutoConfig = null;
+    });
+
+    // UPDATE department auto-config
+    builder.addCase(updateDepartmentAutoConfig.pending, (state) => {
+      state.loading = "pending";
+      state.updatedDepartmentConfig = null;
+    });
+
+    builder.addCase(updateDepartmentAutoConfig.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.updatedDepartmentConfig = action.payload;
+    });
+
+    builder.addCase(updateDepartmentAutoConfig.rejected, (state) => {
+      state.loading = "rejected";
+      state.updatedDepartmentConfig = null;
     });
   },
 });

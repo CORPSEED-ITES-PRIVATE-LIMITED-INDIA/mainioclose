@@ -10,8 +10,8 @@ export const ListboxWrapper = ({ children }) => (
 
 const OperationsSettings = () => {
   const navigate = useNavigate();
-  const path= useLocation()
-  const lastKey=path?.pathname?.split("/")
+  const path = useLocation();
+  const lastKey = path?.pathname?.split("/");
 
   const handleOnNavigate = (key) => {
     navigate(key);
@@ -21,10 +21,16 @@ const OperationsSettings = () => {
     <div className=" w-full flex gap-8">
       <div className="w-[10%] ">
         <ListboxWrapper>
-          <Listbox aria-label="Actions" selectedKeys={[lastKey[lastKey?.length-1]]} onAction={handleOnNavigate}>
+          <Listbox
+            aria-label="Actions"
+            selectedKeys={[lastKey[lastKey?.length - 1]]}
+            onAction={handleOnNavigate}
+          >
             <ListboxItem key="userMap">User map</ListboxItem>
             <ListboxItem key="milestones">Milestones</ListboxItem>
             <ListboxItem key="allDocuments">Documents</ListboxItem>
+            <ListboxItem key="departments">Departments</ListboxItem>
+
             {/* <ListboxItem key="delete" className="text-danger" color="danger">
               Delete file
             </ListboxItem> */}
