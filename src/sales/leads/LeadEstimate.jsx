@@ -938,7 +938,9 @@ const LeadEstimate = () => {
   );
 
   useEffect(() => {
-    dispatch(docsUploadListInEstimate(details?.id));
+    if(details?.id){
+      dispatch(docsUploadListInEstimate(details?.id));
+    }
   }, [details]);
 
   const uploadDocs = (fileData) => {
