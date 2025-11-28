@@ -228,14 +228,19 @@ const LeadSearch = () => {
     setPaginationData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const onSearchChange = useCallback(
-    (value) => {
-      setFilterValue(value);
+const onSearchChange = useCallback(
+  (value) => {
+    setFilterValue(value || "");
+    if (value?.length >= 3) {
       setPaginationData((prev) => ({ ...prev, page: 1 }));
       dispatch(searchIvrLeads({ input: value, id: userId }));
-    },
-    [dispatch, userId]
-  );
+    } else {
+      setPaginationData((prev) => ({ ...prev, page: 1 }));
+      dispatch(getAllIvrLeads({ id: userId }));
+    }
+  },
+  [dispatch, userId]
+);
 
   const onClear = useCallback(() => {
     setFilterValue("");
