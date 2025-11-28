@@ -685,957 +685,971 @@ const LeadInfo = () => {
         <LoadingSpinner />
       ) : Object.keys(leadData)?.length > 0 &&
         (leadData?.assigne?.id == userId || adminRole) ? (
-        <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="w-full">
-              <Card className="my-2">
-                <CardBody>
-                  {toggleSlug ? (
-                    <div className="flex justify-between items-center">
-                      <h6 className="font-medium">{leadData?.leadName}</h6>
-                      <Button
-                        onPress={() => setToggleSlug(false)}
-                        size="sm"
-                        isIconOnly
-                        variant="light"
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <Pencil className={iconClass} />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-center">
-                      <NewSelect
-                        data={slugList}
-                        labelKey={"name"}
-                        valueKey={"name"}
-                        label={"Select slug"}
-                        onChange={handleUpdateLeadName}
-                      />
-                      <Button
-                        onPress={() => setToggleSlug(true)}
-                        size="sm"
-                        isIconOnly
-                        variant="light"
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <X className={iconClass} />
-                      </Button>
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
-              <Card className=" my-2">
-                <CardHeader>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      <MapPin className={iconClass} />{" "}
-                      <h3 className="font-medium">Address Info</h3>
-                    </div>
+        <>
+          <div className="w-4xl">
+            <Card className="my-2">
+              <CardBody>
+                {toggleSlug ? (
+                  <div className="flex justify-between items-center">
+                    <h6 className="font-medium">{leadData?.leadName}</h6>
                     <Button
+                      onPress={() => setToggleSlug(false)}
                       size="sm"
                       isIconOnly
                       variant="light"
                       className="w-6 h-6 rounded-full bg-none"
-                      onPress={addressModalPress}
                     >
                       <Pencil className={iconClass} />
                     </Button>
                   </div>
-                </CardHeader>
-                <CardBody>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-default-500 text-sm">Address</p>
-                      <p className="text-sm">{leadData?.address || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">Country</p>
-                      <p className="text-sm">{leadData?.country || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">State</p>
-                      <p className="text-sm">{leadData?.state || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">City</p>
-                      <p className="text-sm">{leadData?.city}</p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">Pin code</p>
-                      <p className="text-sm">{leadData?.pinCode}</p>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-              <Card className="my-2">
-                <CardHeader>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      <Factory className={iconClass} />{" "}
-                      <h3 className="font-medium">Industry Info</h3>
-                    </div>
-                    <Button
-                      size="sm"
-                      isIconOnly
-                      variant="light"
-                      className="w-6 h-6 rounded-full bg-none"
-                      onPress={industryModalPress}
-                    >
-                      <Pencil className={iconClass} />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-default-500 text-sm">Industry</p>
-                      <p className="text-sm">{leadData?.industries?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">Sub Industry</p>
-                      <p className="text-sm">{leadData?.subIndustry?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">Category</p>
-                      <p className="text-sm">
-                        {leadData?.subSubIndustry?.name}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-default-500 text-sm">
-                        Business activity
-                      </p>
-                      <p className="text-sm">
-                        {leadData?.industriesData
-                          ?.map((item) => item?.name)
-                          .join(",")}
-                      </p>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-              <Card className="my-2">
-                <CardHeader>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      <User2 className={iconClass} />{" "}
-                      <h3 className="font-medium">Assignee</h3>
-                    </div>
-
-                    {toggleAssignee ? (
-                      <Button
-                        variant="light"
-                        onPress={() => setToggleAssignee(false)}
-                        size="sm"
-                        isIconOnly
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <Pencil className={iconClass} />
-                      </Button>
-                    ) : (
-                      <Button
-                        onPress={() => setToggleAssignee(true)}
-                        size="sm"
-                        variant="light"
-                        isIconOnly
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <X className={iconClass} />
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {toggleAssignee ? (
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-sm">
-                        {leadData?.assigne?.fullName}
-                      </span>
-                      <span className="text-xs text-default-500">
-                        {leadData?.assigne?.email}
-                      </span>
-                    </div>
-                  ) : (
+                ) : (
+                  <div className="flex justify-between items-center">
                     <NewSelect
-                      data={allUsers || []}
-                      labelKey={"fullName"}
-                      valueKey={"id"}
-                      label={"Select assignee"}
-                      value={String(leadData?.assigne?.id)}
-                      onChange={(e) => changeLeadAssignee(e)}
-                    />
-                  )}
-                </CardBody>
-              </Card>
-
-              <Card className="my-2">
-                <CardHeader>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      <ChartBarDecreasing className={iconClass} />{" "}
-                      <h3 className="font-medium">Status</h3>
-                    </div>
-
-                    {toggleStatus ? (
-                      <Button
-                        variant="light"
-                        onPress={() => {
-                          setToggleStatus(false);
-                          dispatch(getAllStatusData());
-                        }}
-                        size="sm"
-                        isIconOnly
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <Pencil className={iconClass} />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="light"
-                        onPress={() => {
-                          setToggleStatus(true);
-                        }}
-                        size="sm"
-                        isIconOnly
-                        className="w-6 h-6 rounded-full bg-none"
-                      >
-                        <X className={iconClass} />
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {toggleStatus ? (
-                    <div className="flex flex-col">
-                      <span className="text-sm">{leadData?.status?.name}</span>
-                    </div>
-                  ) : (
-                    <NewSelect
-                      data={statusList || []}
+                      data={slugList}
                       labelKey={"name"}
-                      valueKey={"id"}
-                      label={"Select status"}
-                      value={String(leadData?.status?.id)}
-                      onChange={(e) => changeLeadStatus(e)}
+                      valueKey={"name"}
+                      label={"Select slug"}
+                      onChange={handleUpdateLeadName}
                     />
-                  )}
-                </CardBody>
-              </Card>
-            </div>
-            <div className="w-full">
-              <Card className="my-2">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <FileText className={iconClass} />{" "}
-                    <h3 className="font-medium">Lead description</h3>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <p className="text-sm">{leadData?.description}</p>
-                </CardBody>
-              </Card>
-              <Card className="my-2">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Link className={iconClass} />{" "}
-                    <h3 className="font-medium">Link</h3>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <p className="text-sm font-medium">{leadData?.urls}</p>
-                </CardBody>
-              </Card>
-              <Card className="my-2">
-                <CardHeader>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      <Podcast className={iconClass} />{" "}
-                      <h3 className="font-medium">Source</h3>
-                    </div>
-                    {adminRole && (
-                      <>
-                        {toggleSource ? (
-                          <Button
-                            variant="light"
-                            onPress={() => {
-                              setToggleSource(false);
-                            }}
-                            size="sm"
-                            isIconOnly
-                            className="w-6 h-6 rounded-full bg-none"
-                          >
-                            <Pencil className={iconClass} />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="light"
-                            onPress={() => {
-                              setToggleSource(true);
-                            }}
-                            size="sm"
-                            isIconOnly
-                            className="w-6 h-6 rounded-full bg-none"
-                          >
-                            <X className={iconClass} />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {toggleSource ? (
-                    <div className="flex flex-col">
-                      <span className="text-sm">{leadData?.source}</span>
-                    </div>
-                  ) : (
-                    <Select
-                      label="Source"
-                      selectedKeys={[leadData?.source]}
-                      onSelectionChange={(e) => {
-                        let key = Array.from(e)[0];
-                        handleUpdateSource(key);
-                      }}
+                    <Button
+                      onPress={() => setToggleSlug(true)}
+                      size="sm"
+                      isIconOnly
+                      variant="light"
+                      className="w-6 h-6 rounded-full bg-none"
                     >
-                      {leadSource.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {item}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  )}
-                </CardBody>
-              </Card>
-              {(department === "Quality Team" || adminRole) && (
+                      <X className={iconClass} />
+                    </Button>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+          <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[68vh] md:max-h-[62vh] overflow-auto">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="w-full">
+                <Card className=" my-2">
+                  <CardHeader>
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-2">
+                        <MapPin className={iconClass} />{" "}
+                        <h3 className="font-medium">Address Info</h3>
+                      </div>
+                      <Button
+                        size="sm"
+                        isIconOnly
+                        variant="light"
+                        className="w-6 h-6 rounded-full bg-none"
+                        onPress={addressModalPress}
+                      >
+                        <Pencil className={iconClass} />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-default-500 text-sm">Address</p>
+                        <p className="text-sm">{leadData?.address || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">Country</p>
+                        <p className="text-sm">{leadData?.country || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">State</p>
+                        <p className="text-sm">{leadData?.state || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">City</p>
+                        <p className="text-sm">{leadData?.city}</p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">Pin code</p>
+                        <p className="text-sm">{leadData?.pinCode}</p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-2">
+                        <Factory className={iconClass} />{" "}
+                        <h3 className="font-medium">Industry Info</h3>
+                      </div>
+                      <Button
+                        size="sm"
+                        isIconOnly
+                        variant="light"
+                        className="w-6 h-6 rounded-full bg-none"
+                        onPress={industryModalPress}
+                      >
+                        <Pencil className={iconClass} />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-default-500 text-sm">Industry</p>
+                        <p className="text-sm">{leadData?.industries?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">Sub Industry</p>
+                        <p className="text-sm">{leadData?.subIndustry?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">Category</p>
+                        <p className="text-sm">
+                          {leadData?.subSubIndustry?.name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-default-500 text-sm">
+                          Business activity
+                        </p>
+                        <p className="text-sm">
+                          {leadData?.industriesData
+                            ?.map((item) => item?.name)
+                            .join(",")}
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-2">
+                        <User2 className={iconClass} />{" "}
+                        <h3 className="font-medium">Assignee</h3>
+                      </div>
+
+                      {toggleAssignee ? (
+                        <Button
+                          variant="light"
+                          onPress={() => setToggleAssignee(false)}
+                          size="sm"
+                          isIconOnly
+                          className="w-6 h-6 rounded-full bg-none"
+                        >
+                          <Pencil className={iconClass} />
+                        </Button>
+                      ) : (
+                        <Button
+                          onPress={() => setToggleAssignee(true)}
+                          size="sm"
+                          variant="light"
+                          isIconOnly
+                          className="w-6 h-6 rounded-full bg-none"
+                        >
+                          <X className={iconClass} />
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    {toggleAssignee ? (
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">
+                          {leadData?.assigne?.fullName}
+                        </span>
+                        <span className="text-xs text-default-500">
+                          {leadData?.assigne?.email}
+                        </span>
+                      </div>
+                    ) : (
+                      <NewSelect
+                        data={allUsers || []}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        label={"Select assignee"}
+                        value={String(leadData?.assigne?.id)}
+                        onChange={(e) => changeLeadAssignee(e)}
+                      />
+                    )}
+                  </CardBody>
+                </Card>
+
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-2">
+                        <ChartBarDecreasing className={iconClass} />{" "}
+                        <h3 className="font-medium">Status</h3>
+                      </div>
+
+                      {toggleStatus ? (
+                        <Button
+                          variant="light"
+                          onPress={() => {
+                            setToggleStatus(false);
+                            dispatch(getAllStatusData());
+                          }}
+                          size="sm"
+                          isIconOnly
+                          className="w-6 h-6 rounded-full bg-none"
+                        >
+                          <Pencil className={iconClass} />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="light"
+                          onPress={() => {
+                            setToggleStatus(true);
+                          }}
+                          size="sm"
+                          isIconOnly
+                          className="w-6 h-6 rounded-full bg-none"
+                        >
+                          <X className={iconClass} />
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    {toggleStatus ? (
+                      <div className="flex flex-col">
+                        <span className="text-sm">
+                          {leadData?.status?.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <NewSelect
+                        data={statusList || []}
+                        labelKey={"name"}
+                        valueKey={"id"}
+                        label={"Select status"}
+                        value={String(leadData?.status?.id)}
+                        onChange={(e) => changeLeadStatus(e)}
+                      />
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+              <div className="w-full">
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <FileText className={iconClass} />{" "}
+                      <h3 className="font-medium">Lead description</h3>
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    <p className="text-sm">{leadData?.description}</p>
+                  </CardBody>
+                </Card>
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Link className={iconClass} />{" "}
+                      <h3 className="font-medium">Link</h3>
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    <p className="text-sm font-medium">{leadData?.urls}</p>
+                  </CardBody>
+                </Card>
                 <Card className="my-2">
                   <CardHeader>
                     <div className="flex justify-between items-center w-full">
                       <div className="flex items-center gap-2">
                         <Podcast className={iconClass} />{" "}
-                        <h3 className="font-medium">Assigne to same person </h3>
+                        <h3 className="font-medium">Source</h3>
                       </div>
+                      {adminRole && (
+                        <>
+                          {toggleSource ? (
+                            <Button
+                              variant="light"
+                              onPress={() => {
+                                setToggleSource(false);
+                              }}
+                              size="sm"
+                              isIconOnly
+                              className="w-6 h-6 rounded-full bg-none"
+                            >
+                              <Pencil className={iconClass} />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="light"
+                              onPress={() => {
+                                setToggleSource(true);
+                              }}
+                              size="sm"
+                              isIconOnly
+                              className="w-6 h-6 rounded-full bg-none"
+                            >
+                              <X className={iconClass} />
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </CardHeader>
-                  <CardBody className="flex gap-1.5">
-                    <Button color="primary" onPress={sameAssigneePresonFun}>
-                      Same
-                    </Button>
-                    <Button onPress={notSameAssigneePresonFun}>Not same</Button>
+                  <CardBody>
+                    {toggleSource ? (
+                      <div className="flex flex-col">
+                        <span className="text-sm">{leadData?.source}</span>
+                      </div>
+                    ) : (
+                      <Select
+                        label="Source"
+                        selectedKeys={[leadData?.source]}
+                        onSelectionChange={(e) => {
+                          let key = Array.from(e)[0];
+                          handleUpdateSource(key);
+                        }}
+                      >
+                        {leadSource.map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
                   </CardBody>
                 </Card>
-              )}
+                {(department === "Quality Team" || adminRole) && (
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <Podcast className={iconClass} />{" "}
+                          <h3 className="font-medium">
+                            Assigne to same person{" "}
+                          </h3>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="flex gap-1.5">
+                      <Button color="primary" onPress={sameAssigneePresonFun}>
+                        Same
+                      </Button>
+                      <Button onPress={notSameAssigneePresonFun}>
+                        Not same
+                      </Button>
+                    </CardBody>
+                  </Card>
+                )}
+                <Card className="my-2">
+                  <CardHeader>
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-2">
+                        <Phone className={iconClass} />{" "}
+                        <h3 className="font-medium">Contacts</h3>
+                      </div>
+                      <Button
+                        size="sm"
+                        isIconOnly
+                        variant="light"
+                        className="w-6 h-6 rounded-full bg-none"
+                        onPress={() => contactModal.onOpen()}
+                      >
+                        <Plus className={iconClass} />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="max-h-[300px] overflow-auto">
+                    {leadData?.clients?.map((item) => {
+                      return (
+                        <div
+                          key={item?.clientName}
+                          className="flex justify-between items-center border rounded-md mb-2 px-2"
+                        >
+                          <div className="flex flex-col p-3">
+                            <span className="font-medium text-sm">
+                              {item?.clientName || "-"}
+                            </span>
+                            {item?.email && (
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                <div className="flex flex-wrap text-sm text-default-500">
+                                  {item?.email || ""}
+                                </div>
+                              </div>
+                            )}
+                            {item?.contactNo && (
+                              <div className="flex items-center gap-2">
+                                <Smartphone className="w-4 h-4" />
+                                <span className="text-sm text-default-500">
+                                  {item?.contactNo || ""}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <Dropdown>
+                            <DropdownTrigger>
+                              <Button variant="light" isIconOnly size="sm">
+                                <EllipsisVertical className={iconClass} />
+                              </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Static Actions">
+                              <DropdownItem
+                                key="edit"
+                                startContent={<Pencil className={iconClass} />}
+                                onPress={() => editContactModalPress(item)}
+                              >
+                                Edit
+                              </DropdownItem>
+                              {adminRole && (
+                                <DropdownItem
+                                  key="delete"
+                                  color="danger"
+                                  className="text-danger"
+                                  startContent={<Trash className={iconClass} />}
+                                  onPress={() => {
+                                    handleDeleteContact(item);
+                                  }}
+                                >
+                                  Delete
+                                </DropdownItem>
+                              )}
+                            </DropdownMenu>
+                          </Dropdown>
+                        </div>
+                      );
+                    })}
+                  </CardBody>
+                </Card>
+              </div>
+            </div>
+            <div>
               <Card className="my-2">
                 <CardHeader>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      <Phone className={iconClass} />{" "}
-                      <h3 className="font-medium">Contacts</h3>
-                    </div>
-                    <Button
-                      size="sm"
-                      isIconOnly
-                      variant="light"
-                      className="w-6 h-6 rounded-full bg-none"
-                      onPress={() => contactModal.onOpen()}
-                    >
-                      <Plus className={iconClass} />
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className={iconClass} />
+                    <h3 className="font-medium">Comments / Upload </h3>
                   </div>
                 </CardHeader>
-                <CardBody className="max-h-[300px] overflow-auto">
-                  {leadData?.clients?.map((item) => {
+                <CardBody>
+                  <NewSelect
+                    placeholder="Select comment..."
+                    data={[{ name: "Other" }, ...allComments]}
+                    valueKey={"name"}
+                    labelKey={"name"}
+                    label={"Comments"}
+                    isClearable
+                    value={selectedComment}
+                    onChange={(e) => {
+                      setSelectedComment(e);
+                      setCustomComment("");
+                    }}
+                  />
+                  {selectedComment === "Other" && (
+                    <Textarea
+                      className="my-2"
+                      value={customComment}
+                      placeholder="Please write your remarks"
+                      onChange={(e) => setCustomComment(e.target.value)}
+                    />
+                  )}
+                  <BulkFileUploader files={files} setFiles={setFiles} />
+                </CardBody>
+                <CardFooter className="flex justify-end">
+                  <div>
+                    <Button
+                      color="primary"
+                      isDisabled={remarkLoading === "pending"}
+                      isLoading={remarkLoading === "pending"}
+                      onPress={onSubmit}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+              <Card className="my-2">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <MessageSquareMore className={iconClass} />
+                    <h3 className="font-medium">Remarks </h3>
+                  </div>
+                </CardHeader>
+                <CardBody className="max-h-[200px] overflow-auto">
+                  {remarkData?.map((remark) => {
                     return (
                       <div
-                        key={item?.clientName}
-                        className="flex justify-between items-center border rounded-md mb-2 px-2"
+                        key={`remark${remark?.id}`}
+                        className="rounded-md border-1 p-2 my-1"
                       >
-                        <div className="flex flex-col p-3">
-                          <span className="font-medium text-sm">
-                            {item?.clientName || "-"}
-                          </span>
-                          {item?.email && (
+                        <div className="flex justify-between items-center">
+                          <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4" />
-                              <div className="flex flex-wrap text-sm text-default-500">
-                                {item?.email || ""}
-                              </div>
+                              <User
+                                description={dayjs(
+                                  remark?.latestUpdated
+                                )?.format("DD-MM-YYYY, HH:mm A")}
+                                name={remark?.updatedBy?.fullName}
+                              />
                             </div>
-                          )}
-                          {item?.contactNo && (
-                            <div className="flex items-center gap-2">
-                              <Smartphone className="w-4 h-4" />
-                              <span className="text-sm text-default-500">
-                                {item?.contactNo || ""}
-                              </span>
+                            <p className="text-sm">{remark?.message}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex justify-between items-center">
+                              <ImageGroup
+                                images={remark?.imageList?.map(
+                                  (item) => item?.filePath
+                                )}
+                              />
                             </div>
-                          )}
-                        </div>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <Button variant="light" isIconOnly size="sm">
-                              <EllipsisVertical className={iconClass} />
-                            </Button>
-                          </DropdownTrigger>
-                          <DropdownMenu aria-label="Static Actions">
-                            <DropdownItem
-                              key="edit"
-                              startContent={<Pencil className={iconClass} />}
-                              onPress={() => editContactModalPress(item)}
-                            >
-                              Edit
-                            </DropdownItem>
-                            {adminRole && (
-                              <DropdownItem
-                                key="delete"
-                                color="danger"
-                                className="text-danger"
-                                startContent={<Trash className={iconClass} />}
-                                onPress={() => {
-                                  handleDeleteContact(item);
-                                }}
+                            <div className="flex items-center gap-1">
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                variant="light"
+                                onPress={() => updateRemarkModalPress(remark)}
                               >
-                                Delete
-                              </DropdownItem>
-                            )}
-                          </DropdownMenu>
-                        </Dropdown>
+                                <Pencil className={iconClass} />
+                              </Button>
+                              {adminRole && (
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                  onPress={() => deleteRemarkModalPress(remark)}
+                                >
+                                  <Trash className={iconClass} color="red" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
                 </CardBody>
               </Card>
             </div>
-          </div>
-          <div>
-            <Card className="my-2">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <MessageCircle className={iconClass} />
-                  <h3 className="font-medium">Comments / Upload </h3>
-                </div>
-              </CardHeader>
-              <CardBody>
-                <NewSelect
-                  placeholder="Select comment..."
-                  data={[{ name: "Other" }, ...allComments]}
-                  valueKey={"name"}
-                  labelKey={"name"}
-                  label={"Comments"}
-                  isClearable
-                  value={selectedComment}
-                  onChange={(e) => {
-                    setSelectedComment(e);
-                    setCustomComment("");
-                  }}
-                />
-                {selectedComment === "Other" && (
-                  <Textarea
-                    className="my-2"
-                    value={customComment}
-                    placeholder="Please write your remarks"
-                    onChange={(e) => setCustomComment(e.target.value)}
-                  />
-                )}
-                <BulkFileUploader files={files} setFiles={setFiles} />
-              </CardBody>
-              <CardFooter className="flex justify-end">
-                <div>
-                  <Button
-                    color="primary"
-                    isDisabled={remarkLoading === "pending"}
-                    isLoading={remarkLoading === "pending"}
-                    onPress={onSubmit}
-                  >
-                    Submit
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-            <Card className="my-2">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <MessageSquareMore className={iconClass} />
-                  <h3 className="font-medium">Remarks </h3>
-                </div>
-              </CardHeader>
-              <CardBody className="max-h-[200px] overflow-auto">
-                {remarkData?.map((remark) => {
-                  return (
-                    <div
-                      key={`remark${remark?.id}`}
-                      className="rounded-md border-1 p-2 my-1"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2">
-                            <User
-                              description={dayjs(remark?.latestUpdated)?.format(
-                                "DD-MM-YYYY, HH:mm A"
-                              )}
-                              name={remark?.updatedBy?.fullName}
-                            />
-                          </div>
-                          <p className="text-sm">{remark?.message}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex justify-between items-center">
-                            <ImageGroup
-                              images={remark?.imageList?.map(
-                                (item) => item?.filePath
-                              )}
-                            />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              onPress={() => updateRemarkModalPress(remark)}
-                            >
-                              <Pencil className={iconClass} />
-                            </Button>
-                            {adminRole && (
-                              <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                                onPress={() => deleteRemarkModalPress(remark)}
-                              >
-                                <Trash className={iconClass} color="red" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardBody>
-            </Card>
-          </div>
-          <Modal
-            size="3xl"
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={addressModal.isOpen}
-            onOpenChange={addressModal.onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    Update address
-                  </ModalHeader>
-                  <ModalBody>
-                    <form
-                      className="w-full flex flex-col gap-4 "
-                      onSubmit={addressForm.handleSubmit(handleAddressFinish)}
-                    >
-                      <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
-                        <Controller
-                          name="address"
-                          control={addressForm.control}
-                          render={({ field }) => (
-                            <Textarea
-                              label="Address"
-                              name="address"
-                              {...field}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="country"
-                          control={addressForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              data={countryList}
-                              label="Country"
-                              labelKey="name"
-                              valueKey="name"
-                              // errorMessage={addressForm.errors.country?.message}
-                              {...field}
-                              onChange={(value) => {
-                                field.onChange(value);
-                                dispatch(getAllStatesByCountryName(value));
-                              }}
-                            />
-                          )}
-                        />
-
-                        <Controller
-                          name="state"
-                          control={addressForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              data={statesList}
-                              label="State"
-                              labelKey="name"
-                              valueKey="name"
-                              // errorMessage={addressForm.errors.state?.message}
-                              {...field}
-                              onChange={(value) => {
-                                field.onChange(value);
-                                dispatch(getAllCitiesByStateName(value));
-                              }}
-                            />
-                          )}
-                        />
-
-                        <Controller
-                          name="city"
-                          control={addressForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              data={citiesList}
-                              label="City"
-                              labelKey="name"
-                              valueKey="name"
-                              // errorMessage={addressForm.errors.city?.message}
-                              {...field}
-                            />
-                          )}
-                        />
-
-                        <Controller
-                          name="pinCode"
-                          control={addressForm.control}
-                          render={({ field }) => (
-                            <Input label="Pin code" isRequired {...field} />
-                          )}
-                        />
-                      </div>
-                      <ModalFooter className="w-full flex justify-end">
-                        <Button onPress={onClose}>Cancel</Button>
-                        <Button color="primary" type="submit">
-                          Submit
-                        </Button>
-                      </ModalFooter>
-                    </form>
-                  </ModalBody>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-          <Modal
-            size="3xl"
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={industryModal.isOpen}
-            onOpenChange={industryModal.onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    Update industry
-                  </ModalHeader>
-                  <ModalBody>
-                    <form
-                      className="w-full flex flex-col gap-4 "
-                      onSubmit={industryForm.handleSubmit(handleIndustryFinish)}
-                    >
-                      <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
-                        <Controller
-                          name="industriesId"
-                          control={industryForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              isRequired={true}
-                              data={allIndustry || []}
-                              label="Select industry"
-                              name="industriesId"
-                              labelKey="name"
-                              valueKey="id"
-                              value={field.value}
-                              onChange={(selectedValue) => {
-                                dispatch(
-                                  getSubIndustryByIndustryId(selectedValue)
-                                );
-                                field.onChange(selectedValue);
-                              }}
-                              // errorMessage={industryForm.errors.industriesId?.message}
-                            />
-                          )}
-                        />
-
-                        <Controller
-                          name="subIndustryId"
-                          control={industryForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              isRequired={true}
-                              data={subIndustryListById || []}
-                              label="Select sub industry"
-                              name="subIndustryId"
-                              labelKey="name"
-                              valueKey="id"
-                              value={field.value}
-                              onChange={(selectedValue) => {
-                                dispatch(
-                                  getSubSubIndustryBySubIndustryId(
-                                    selectedValue
-                                  )
-                                );
-                                field.onChange(selectedValue);
-                              }}
-                              // errorMessage={industryForm.errors.subIndustryId?.message}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="subsubIndustryId"
-                          control={industryForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              isRequired={true}
-                              data={subSubIndustryListById || []}
-                              label="Select category"
-                              name="subsubIndustryId"
-                              labelKey="name"
-                              valueKey="id"
-                              value={field.value}
-                              onChange={(selectedValue) => {
-                                dispatch(
-                                  getIndustryDataBySubSubIndustryId(
-                                    selectedValue
-                                  )
-                                );
-                                field.onChange(selectedValue);
-                              }}
-                              // errorMessage={industryForm.errors.subsubIndustryId?.message}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="industriesDataId"
-                          control={industryForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              isRequired={true}
-                              data={industryDataListById || []}
-                              label="Select business activity"
-                              name="industriesDataId"
-                              labelKey="name"
-                              valueKey="id"
-                              selectionMode="multiple"
-                              value={field.value}
-                              onChange={(selectedValue) => {
-                                field.onChange(selectedValue);
-                              }}
-                              // errorMessage={industryForm.errors.industriesDataId?.message}
-                            />
-                          )}
-                        />
-                      </div>
-                      <ModalFooter className="w-full flex justify-end">
-                        <Button onPress={onClose}>Cancel</Button>
-                        <Button color="primary" type="submit">
-                          Submit
-                        </Button>
-                      </ModalFooter>
-                    </form>
-                  </ModalBody>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-
-          <Modal
-            size="3xl"
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={contactModal.isOpen}
-            onOpenChange={contactModal.onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    {editContact ? "Edit contact" : "Add contact"}
-                  </ModalHeader>
-                  <ModalBody>
-                    <form
-                      className="w-full flex flex-col gap-4 "
-                      onSubmit={contactForm.handleSubmit(handleContctFinish)}
-                    >
-                      <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
-                        <Controller
-                          name="name"
-                          control={contactForm.control}
-                          render={({ field }) => (
-                            <Input
-                              isRequired
-                              errorMessage="please enter the name "
-                              label="Name"
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                          )}
-                        />
-
-                        <Controller
-                          name="email"
-                          control={contactForm.control}
-                          render={({ field }) => (
-                            <Input
-                              label="Email"
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                          )}
-                        />
-
-                        <Controller
-                          name="contactNo"
-                          control={contactForm.control}
-                          render={({ field }) => (
-                            <Input
-                              isRequired
-                              errorMessage="please enter the contact number "
-                              label="Contact number"
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                          )}
-                        />
-                      </div>
-                      <ModalFooter className="w-full flex justify-end">
-                        <Button onPress={onClose}>Cancel</Button>
-                        <Button color="primary" type="submit">
-                          Submit
-                        </Button>
-                      </ModalFooter>
-                    </form>
-                  </ModalBody>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-
-          <Modal
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={deleteModal.isOpen}
-            onOpenChange={deleteModal.onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    Delete
-                  </ModalHeader>
-                  <ModalBody>
-                    <h3>Are you sure you want to delete this Item?</h3>
-                  </ModalBody>
-                  <ModalFooter className="w-full flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" onPress={confirmDeleteContact}>
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-
-          <Modal
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={deleteRemarkModal.isOpen}
-            onOpenChange={deleteRemarkModal.onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    Delete
-                  </ModalHeader>
-                  <ModalBody>
-                    <h3>Are you sure you want to delete this Item?</h3>
-                  </ModalBody>
-                  <ModalFooter className="w-full flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" onPress={conFirmDeleteRemark}>
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-
-          <Modal
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={remarkModal.isOpen}
-            onOpenChange={remarkModal.onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    Update remark
-                  </ModalHeader>
-                  <ModalBody>
-                    <form
-                      className="w-full flex flex-col gap-4 "
-                      onSubmit={remarkForm.handleSubmit(handleUpdateRemark)}
-                    >
-                      <div className="w-full grid gap-4 max-h-[65vh] overflow-auto px-2 py-1">
-                        <Controller
-                          name="message"
-                          control={remarkForm.control}
-                          render={({ field }) => (
-                            <NewSelect
-                              placeholder="Select comment..."
-                              data={[{ name: "Other" }, ...allComments]}
-                              valueKey={"name"}
-                              labelKey={"name"}
-                              label={"Comments"}
-                              value={field.value}
-                              isClearable
-                              onChange={(e) => {
-                                field.onChange(e);
-                              }}
-                            />
-                          )}
-                        />
-                        {remarkDataItem?.type === "Other" && (
+            <Modal
+              size="3xl"
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={addressModal.isOpen}
+              onOpenChange={addressModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Update address
+                    </ModalHeader>
+                    <ModalBody>
+                      <form
+                        className="w-full flex flex-col gap-4 "
+                        onSubmit={addressForm.handleSubmit(handleAddressFinish)}
+                      >
+                        <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
                           <Controller
-                            name="textMessage"
-                            control={remarkForm.control}
+                            name="address"
+                            control={addressForm.control}
                             render={({ field }) => (
                               <Textarea
-                                isRequired
-                                className="my-2"
+                                label="Address"
+                                name="address"
+                                {...field}
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="country"
+                            control={addressForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                data={countryList}
+                                label="Country"
+                                labelKey="name"
+                                valueKey="name"
+                                // errorMessage={addressForm.errors.country?.message}
+                                {...field}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  dispatch(getAllStatesByCountryName(value));
+                                }}
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="state"
+                            control={addressForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                data={statesList}
+                                label="State"
+                                labelKey="name"
+                                valueKey="name"
+                                // errorMessage={addressForm.errors.state?.message}
+                                {...field}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  dispatch(getAllCitiesByStateName(value));
+                                }}
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="city"
+                            control={addressForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                data={citiesList}
+                                label="City"
+                                labelKey="name"
+                                valueKey="name"
+                                // errorMessage={addressForm.errors.city?.message}
+                                {...field}
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="pinCode"
+                            control={addressForm.control}
+                            render={({ field }) => (
+                              <Input label="Pin code" isRequired {...field} />
+                            )}
+                          />
+                        </div>
+                        <ModalFooter className="w-full flex justify-end">
+                          <Button onPress={onClose}>Cancel</Button>
+                          <Button color="primary" type="submit">
+                            Submit
+                          </Button>
+                        </ModalFooter>
+                      </form>
+                    </ModalBody>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+            <Modal
+              size="3xl"
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={industryModal.isOpen}
+              onOpenChange={industryModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Update industry
+                    </ModalHeader>
+                    <ModalBody>
+                      <form
+                        className="w-full flex flex-col gap-4 "
+                        onSubmit={industryForm.handleSubmit(
+                          handleIndustryFinish
+                        )}
+                      >
+                        <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                          <Controller
+                            name="industriesId"
+                            control={industryForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                isRequired={true}
+                                data={allIndustry || []}
+                                label="Select industry"
+                                name="industriesId"
+                                labelKey="name"
+                                valueKey="id"
                                 value={field.value}
-                                placeholder="Please write your remarks"
+                                onChange={(selectedValue) => {
+                                  dispatch(
+                                    getSubIndustryByIndustryId(selectedValue)
+                                  );
+                                  field.onChange(selectedValue);
+                                }}
+                                // errorMessage={industryForm.errors.industriesId?.message}
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="subIndustryId"
+                            control={industryForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                isRequired={true}
+                                data={subIndustryListById || []}
+                                label="Select sub industry"
+                                name="subIndustryId"
+                                labelKey="name"
+                                valueKey="id"
+                                value={field.value}
+                                onChange={(selectedValue) => {
+                                  dispatch(
+                                    getSubSubIndustryBySubIndustryId(
+                                      selectedValue
+                                    )
+                                  );
+                                  field.onChange(selectedValue);
+                                }}
+                                // errorMessage={industryForm.errors.subIndustryId?.message}
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="subsubIndustryId"
+                            control={industryForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                isRequired={true}
+                                data={subSubIndustryListById || []}
+                                label="Select category"
+                                name="subsubIndustryId"
+                                labelKey="name"
+                                valueKey="id"
+                                value={field.value}
+                                onChange={(selectedValue) => {
+                                  dispatch(
+                                    getIndustryDataBySubSubIndustryId(
+                                      selectedValue
+                                    )
+                                  );
+                                  field.onChange(selectedValue);
+                                }}
+                                // errorMessage={industryForm.errors.subsubIndustryId?.message}
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="industriesDataId"
+                            control={industryForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                isRequired={true}
+                                data={industryDataListById || []}
+                                label="Select business activity"
+                                name="industriesDataId"
+                                labelKey="name"
+                                valueKey="id"
+                                selectionMode="multiple"
+                                value={field.value}
+                                onChange={(selectedValue) => {
+                                  field.onChange(selectedValue);
+                                }}
+                                // errorMessage={industryForm.errors.industriesDataId?.message}
+                              />
+                            )}
+                          />
+                        </div>
+                        <ModalFooter className="w-full flex justify-end">
+                          <Button onPress={onClose}>Cancel</Button>
+                          <Button color="primary" type="submit">
+                            Submit
+                          </Button>
+                        </ModalFooter>
+                      </form>
+                    </ModalBody>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+
+            <Modal
+              size="3xl"
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={contactModal.isOpen}
+              onOpenChange={contactModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      {editContact ? "Edit contact" : "Add contact"}
+                    </ModalHeader>
+                    <ModalBody>
+                      <form
+                        className="w-full flex flex-col gap-4 "
+                        onSubmit={contactForm.handleSubmit(handleContctFinish)}
+                      >
+                        <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                          <Controller
+                            name="name"
+                            control={contactForm.control}
+                            render={({ field }) => (
+                              <Input
+                                isRequired
+                                errorMessage="please enter the name "
+                                label="Name"
+                                value={field.value}
                                 onChange={(e) => field.onChange(e.target.value)}
                               />
                             )}
                           />
-                        )}
-                      </div>
-                      <ModalFooter className="w-full flex justify-end">
-                        <Button onPress={onClose}>Cancel</Button>
-                        <Button color="primary" type="submit">
-                          Submit
-                        </Button>
-                      </ModalFooter>
-                    </form>
-                  </ModalBody>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-        </div>
+
+                          <Controller
+                            name="email"
+                            control={contactForm.control}
+                            render={({ field }) => (
+                              <Input
+                                label="Email"
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value)}
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="contactNo"
+                            control={contactForm.control}
+                            render={({ field }) => (
+                              <Input
+                                isRequired
+                                errorMessage="please enter the contact number "
+                                label="Contact number"
+                                value={field.value}
+                                onChange={(e) => field.onChange(e.target.value)}
+                              />
+                            )}
+                          />
+                        </div>
+                        <ModalFooter className="w-full flex justify-end">
+                          <Button onPress={onClose}>Cancel</Button>
+                          <Button color="primary" type="submit">
+                            Submit
+                          </Button>
+                        </ModalFooter>
+                      </form>
+                    </ModalBody>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+
+            <Modal
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={deleteModal.isOpen}
+              onOpenChange={deleteModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Delete
+                    </ModalHeader>
+                    <ModalBody>
+                      <h3>Are you sure you want to delete this Item?</h3>
+                    </ModalBody>
+                    <ModalFooter className="w-full flex justify-end">
+                      <Button onPress={onClose}>Cancel</Button>
+                      <Button color="primary" onPress={confirmDeleteContact}>
+                        Submit
+                      </Button>
+                    </ModalFooter>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+
+            <Modal
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={deleteRemarkModal.isOpen}
+              onOpenChange={deleteRemarkModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Delete
+                    </ModalHeader>
+                    <ModalBody>
+                      <h3>Are you sure you want to delete this Item?</h3>
+                    </ModalBody>
+                    <ModalFooter className="w-full flex justify-end">
+                      <Button onPress={onClose}>Cancel</Button>
+                      <Button color="primary" onPress={conFirmDeleteRemark}>
+                        Submit
+                      </Button>
+                    </ModalFooter>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+
+            <Modal
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={remarkModal.isOpen}
+              onOpenChange={remarkModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Update remark
+                    </ModalHeader>
+                    <ModalBody>
+                      <form
+                        className="w-full flex flex-col gap-4 "
+                        onSubmit={remarkForm.handleSubmit(handleUpdateRemark)}
+                      >
+                        <div className="w-full grid gap-4 max-h-[65vh] overflow-auto px-2 py-1">
+                          <Controller
+                            name="message"
+                            control={remarkForm.control}
+                            render={({ field }) => (
+                              <NewSelect
+                                placeholder="Select comment..."
+                                data={[{ name: "Other" }, ...allComments]}
+                                valueKey={"name"}
+                                labelKey={"name"}
+                                label={"Comments"}
+                                value={field.value}
+                                isClearable
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                }}
+                              />
+                            )}
+                          />
+                          {remarkDataItem?.type === "Other" && (
+                            <Controller
+                              name="textMessage"
+                              control={remarkForm.control}
+                              render={({ field }) => (
+                                <Textarea
+                                  isRequired
+                                  className="my-2"
+                                  value={field.value}
+                                  placeholder="Please write your remarks"
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                />
+                              )}
+                            />
+                          )}
+                        </div>
+                        <ModalFooter className="w-full flex justify-end">
+                          <Button onPress={onClose}>Cancel</Button>
+                          <Button color="primary" type="submit">
+                            Submit
+                          </Button>
+                        </ModalFooter>
+                      </form>
+                    </ModalBody>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+          </div>
+        </>
       ) : (
         <StatusDisplay type="notfound" message="Lead is not assigned to you " />
       )}
