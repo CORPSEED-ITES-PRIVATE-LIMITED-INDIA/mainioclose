@@ -21,7 +21,6 @@ const EstimatePreview = () => {
     }
   }, [dispatch, leadId, uuid]);
 
-  // Inject Roboto font into the document head (Google Fonts)
   useEffect(() => {
     const id = "roboto-google-font";
     if (!document.getElementById(id)) {

@@ -314,24 +314,25 @@ const Company = () => {
 
   const onSearchChange = useCallback(
     (value) => {
+      setFilterValue(value || ""); // Always update the input value for immediate UI feedback
+
       if (value?.length >= 3) {
-        if (value) {
-          setFilterValue(value);
-          setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
-          dispatch(
-            searchCompanies({
-              searchNameAndGSt: value,
-              userId,
-              type: searchFilterType,
-            })
-          );
-        } else {
-          setFilterValue("");
-          dispatch(getAllNewCompanies(companyFilteration));
-        }
+        // Search only when length >= 3
+        setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
+        dispatch(
+          searchCompanies({
+            searchNameAndGSt: value,
+            userId,
+            type: searchFilterType,
+          })
+        );
+      } else {
+        // Reset to full list when length < 3 (including empty)
+        setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
+        dispatch(getAllNewCompanies({ ...companyFilteration, page: 1 })); // Pass updated pagination; adjust filters as needed if getAllNewCompanies expects specific params
       }
     },
-    [searchFilterType, dispatch, companyFilteration]
+    [searchFilterType, dispatch, companyFilteration, userId] // Added userId to deps if it's stable/defined in scope
   );
 
   const onClear = useCallback(() => {

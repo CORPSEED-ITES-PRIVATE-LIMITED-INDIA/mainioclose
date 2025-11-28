@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas-pro"; // Use the pro fork to support OKLCH colors from Tailwind v4
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { useRef } from "react";
 import logo from "../assets/CORPSEED.webp";
@@ -44,7 +44,6 @@ const EstimateView = ({ details }) => {
       pdf.save(`estimate_${details?.id || "ESTD"}.pdf`);
     } catch (error) {
       console.error("PDF generation failed:", error);
-      // Fallback or user notification here if needed
     }
   };
 
