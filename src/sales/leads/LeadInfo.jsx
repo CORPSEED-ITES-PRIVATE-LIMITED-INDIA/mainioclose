@@ -686,434 +686,446 @@ const LeadInfo = () => {
       ) : Object.keys(leadData)?.length > 0 &&
         (leadData?.assigne?.id == userId || adminRole) ? (
         <>
-          <div className="w-4xl">
-            <Card className="my-2">
-              <CardBody>
-                {toggleSlug ? (
-                  <div className="flex justify-between items-center">
-                    <h6 className="font-medium">{leadData?.leadName}</h6>
-                    <Button
-                      onPress={() => setToggleSlug(false)}
-                      size="sm"
-                      isIconOnly
-                      variant="light"
-                      className="w-6 h-6 rounded-full bg-none"
-                    >
-                      <Pencil className={iconClass} />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <NewSelect
-                      data={slugList}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      label={"Select slug"}
-                      onChange={handleUpdateLeadName}
-                    />
-                    <Button
-                      onPress={() => setToggleSlug(true)}
-                      size="sm"
-                      isIconOnly
-                      variant="light"
-                      className="w-6 h-6 rounded-full bg-none"
-                    >
-                      <X className={iconClass} />
-                    </Button>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-          </div>
-          <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[68vh] md:max-h-[62vh] overflow-auto">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
+            <div>
               <div className="w-full">
-                <Card className=" my-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center gap-2">
-                        <MapPin className={iconClass} />{" "}
-                        <h3 className="font-medium">Address Info</h3>
-                      </div>
-                      <Button
-                        size="sm"
-                        isIconOnly
-                        variant="light"
-                        className="w-6 h-6 rounded-full bg-none"
-                        onPress={addressModalPress}
-                      >
-                        <Pencil className={iconClass} />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardBody>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-default-500 text-sm">Address</p>
-                        <p className="text-sm">{leadData?.address || "-"}</p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">Country</p>
-                        <p className="text-sm">{leadData?.country || "-"}</p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">State</p>
-                        <p className="text-sm">{leadData?.state || "-"}</p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">City</p>
-                        <p className="text-sm">{leadData?.city}</p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">Pin code</p>
-                        <p className="text-sm">{leadData?.pinCode}</p>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
                 <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center gap-2">
-                        <Factory className={iconClass} />{" "}
-                        <h3 className="font-medium">Industry Info</h3>
-                      </div>
-                      <Button
-                        size="sm"
-                        isIconOnly
-                        variant="light"
-                        className="w-6 h-6 rounded-full bg-none"
-                        onPress={industryModalPress}
-                      >
-                        <Pencil className={iconClass} />
-                      </Button>
-                    </div>
-                  </CardHeader>
                   <CardBody>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-default-500 text-sm">Industry</p>
-                        <p className="text-sm">{leadData?.industries?.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">Sub Industry</p>
-                        <p className="text-sm">{leadData?.subIndustry?.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">Category</p>
-                        <p className="text-sm">
-                          {leadData?.subSubIndustry?.name}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-default-500 text-sm">
-                          Business activity
-                        </p>
-                        <p className="text-sm">
-                          {leadData?.industriesData
-                            ?.map((item) => item?.name)
-                            .join(",")}
-                        </p>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
-                <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center gap-2">
-                        <User2 className={iconClass} />{" "}
-                        <h3 className="font-medium">Assignee</h3>
-                      </div>
-
-                      {toggleAssignee ? (
+                    {toggleSlug ? (
+                      <div className="flex justify-between items-center">
+                        <h6 className="font-medium">{leadData?.leadName}</h6>
                         <Button
-                          variant="light"
-                          onPress={() => setToggleAssignee(false)}
+                          onPress={() => setToggleSlug(false)}
                           size="sm"
                           isIconOnly
+                          variant="light"
                           className="w-6 h-6 rounded-full bg-none"
                         >
                           <Pencil className={iconClass} />
                         </Button>
-                      ) : (
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <NewSelect
+                          data={slugList}
+                          labelKey={"name"}
+                          valueKey={"name"}
+                          label={"Select slug"}
+                          onChange={handleUpdateLeadName}
+                        />
                         <Button
-                          onPress={() => setToggleAssignee(true)}
+                          onPress={() => setToggleSlug(true)}
                           size="sm"
-                          variant="light"
                           isIconOnly
+                          variant="light"
                           className="w-6 h-6 rounded-full bg-none"
                         >
                           <X className={iconClass} />
                         </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardBody>
-                    {toggleAssignee ? (
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">
-                          {leadData?.assigne?.fullName}
-                        </span>
-                        <span className="text-xs text-default-500">
-                          {leadData?.assigne?.email}
-                        </span>
                       </div>
-                    ) : (
-                      <NewSelect
-                        data={allUsers || []}
-                        labelKey={"fullName"}
-                        valueKey={"id"}
-                        label={"Select assignee"}
-                        value={String(leadData?.assigne?.id)}
-                        onChange={(e) => changeLeadAssignee(e)}
-                      />
-                    )}
-                  </CardBody>
-                </Card>
-
-                <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center gap-2">
-                        <ChartBarDecreasing className={iconClass} />{" "}
-                        <h3 className="font-medium">Status</h3>
-                      </div>
-
-                      {toggleStatus ? (
-                        <Button
-                          variant="light"
-                          onPress={() => {
-                            setToggleStatus(false);
-                            dispatch(getAllStatusData());
-                          }}
-                          size="sm"
-                          isIconOnly
-                          className="w-6 h-6 rounded-full bg-none"
-                        >
-                          <Pencil className={iconClass} />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="light"
-                          onPress={() => {
-                            setToggleStatus(true);
-                          }}
-                          size="sm"
-                          isIconOnly
-                          className="w-6 h-6 rounded-full bg-none"
-                        >
-                          <X className={iconClass} />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardBody>
-                    {toggleStatus ? (
-                      <div className="flex flex-col">
-                        <span className="text-sm">
-                          {leadData?.status?.name}
-                        </span>
-                      </div>
-                    ) : (
-                      <NewSelect
-                        data={statusList || []}
-                        labelKey={"name"}
-                        valueKey={"id"}
-                        label={"Select status"}
-                        value={String(leadData?.status?.id)}
-                        onChange={(e) => changeLeadStatus(e)}
-                      />
                     )}
                   </CardBody>
                 </Card>
               </div>
-              <div className="w-full">
-                <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <FileText className={iconClass} />{" "}
-                      <h3 className="font-medium">Lead description</h3>
-                    </div>
-                  </CardHeader>
-                  <CardBody>
-                    <p className="text-sm">{leadData?.description}</p>
-                  </CardBody>
-                </Card>
-                <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Link className={iconClass} />{" "}
-                      <h3 className="font-medium">Link</h3>
-                    </div>
-                  </CardHeader>
-                  <CardBody>
-                    <p className="text-sm font-medium">{leadData?.urls}</p>
-                  </CardBody>
-                </Card>
-                <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center gap-2">
-                        <Podcast className={iconClass} />{" "}
-                        <h3 className="font-medium">Source</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="w-full">
+                  <Card className=" my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <MapPin className={iconClass} />{" "}
+                          <h3 className="font-medium">Address Info</h3>
+                        </div>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="light"
+                          className="w-6 h-6 rounded-full bg-none"
+                          onPress={addressModalPress}
+                        >
+                          <Pencil className={iconClass} />
+                        </Button>
                       </div>
-                      {adminRole && (
-                        <>
-                          {toggleSource ? (
-                            <Button
-                              variant="light"
-                              onPress={() => {
-                                setToggleSource(false);
-                              }}
-                              size="sm"
-                              isIconOnly
-                              className="w-6 h-6 rounded-full bg-none"
-                            >
-                              <Pencil className={iconClass} />
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="light"
-                              onPress={() => {
-                                setToggleSource(true);
-                              }}
-                              size="sm"
-                              isIconOnly
-                              className="w-6 h-6 rounded-full bg-none"
-                            >
-                              <X className={iconClass} />
-                            </Button>
-                          )}
-                        </>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-default-500 text-sm">Address</p>
+                          <p className="text-sm">{leadData?.address || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">Country</p>
+                          <p className="text-sm">{leadData?.country || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">State</p>
+                          <p className="text-sm">{leadData?.state || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">City</p>
+                          <p className="text-sm">{leadData?.city}</p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">Pin code</p>
+                          <p className="text-sm">{leadData?.pinCode}</p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <Factory className={iconClass} />{" "}
+                          <h3 className="font-medium">Industry Info</h3>
+                        </div>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="light"
+                          className="w-6 h-6 rounded-full bg-none"
+                          onPress={industryModalPress}
+                        >
+                          <Pencil className={iconClass} />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-default-500 text-sm">Industry</p>
+                          <p className="text-sm">
+                            {leadData?.industries?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">
+                            Sub Industry
+                          </p>
+                          <p className="text-sm">
+                            {leadData?.subIndustry?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">Category</p>
+                          <p className="text-sm">
+                            {leadData?.subSubIndustry?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-default-500 text-sm">
+                            Business activity
+                          </p>
+                          <p className="text-sm">
+                            {leadData?.industriesData
+                              ?.map((item) => item?.name)
+                              .join(",")}
+                          </p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <User2 className={iconClass} />{" "}
+                          <h3 className="font-medium">Assignee</h3>
+                        </div>
+
+                        {toggleAssignee ? (
+                          <Button
+                            variant="light"
+                            onPress={() => setToggleAssignee(false)}
+                            size="sm"
+                            isIconOnly
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <Pencil className={iconClass} />
+                          </Button>
+                        ) : (
+                          <Button
+                            onPress={() => setToggleAssignee(true)}
+                            size="sm"
+                            variant="light"
+                            isIconOnly
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <X className={iconClass} />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      {toggleAssignee ? (
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-sm">
+                            {leadData?.assigne?.fullName}
+                          </span>
+                          <span className="text-xs text-default-500">
+                            {leadData?.assigne?.email}
+                          </span>
+                        </div>
+                      ) : (
+                        <NewSelect
+                          data={allUsers || []}
+                          labelKey={"fullName"}
+                          valueKey={"id"}
+                          label={"Select assignee"}
+                          value={String(leadData?.assigne?.id)}
+                          onChange={(e) => changeLeadAssignee(e)}
+                        />
                       )}
-                    </div>
-                  </CardHeader>
-                  <CardBody>
-                    {toggleSource ? (
-                      <div className="flex flex-col">
-                        <span className="text-sm">{leadData?.source}</span>
+                    </CardBody>
+                  </Card>
+
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <ChartBarDecreasing className={iconClass} />{" "}
+                          <h3 className="font-medium">Status</h3>
+                        </div>
+
+                        {toggleStatus ? (
+                          <Button
+                            variant="light"
+                            onPress={() => {
+                              setToggleStatus(false);
+                              dispatch(getAllStatusData());
+                            }}
+                            size="sm"
+                            isIconOnly
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <Pencil className={iconClass} />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="light"
+                            onPress={() => {
+                              setToggleStatus(true);
+                            }}
+                            size="sm"
+                            isIconOnly
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <X className={iconClass} />
+                          </Button>
+                        )}
                       </div>
-                    ) : (
-                      <Select
-                        label="Source"
-                        selectedKeys={[leadData?.source]}
-                        onSelectionChange={(e) => {
-                          let key = Array.from(e)[0];
-                          handleUpdateSource(key);
-                        }}
-                      >
-                        {leadSource.map((item) => (
-                          <SelectItem key={item} value={item}>
-                            {item}
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    )}
-                  </CardBody>
-                </Card>
-                {(department === "Quality Team" || adminRole) && (
+                    </CardHeader>
+                    <CardBody>
+                      {toggleStatus ? (
+                        <div className="flex flex-col">
+                          <span className="text-sm">
+                            {leadData?.status?.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <NewSelect
+                          data={statusList || []}
+                          labelKey={"name"}
+                          valueKey={"id"}
+                          label={"Select status"}
+                          value={String(leadData?.status?.id)}
+                          onChange={(e) => changeLeadStatus(e)}
+                        />
+                      )}
+                    </CardBody>
+                  </Card>
+                </div>
+                <div className="w-full">
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <FileText className={iconClass} />{" "}
+                        <h3 className="font-medium">Lead description</h3>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <p className="text-sm">{leadData?.description}</p>
+                    </CardBody>
+                  </Card>
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Link className={iconClass} />{" "}
+                        <h3 className="font-medium">Link</h3>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <p className="text-sm font-medium">{leadData?.urls}</p>
+                    </CardBody>
+                  </Card>
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Podcast className={iconClass} />{" "}
-                          <h3 className="font-medium">
-                            Assigne to same person{" "}
-                          </h3>
+                          <h3 className="font-medium">Source</h3>
                         </div>
+                        {adminRole && (
+                          <>
+                            {toggleSource ? (
+                              <Button
+                                variant="light"
+                                onPress={() => {
+                                  setToggleSource(false);
+                                }}
+                                size="sm"
+                                isIconOnly
+                                className="w-6 h-6 rounded-full bg-none"
+                              >
+                                <Pencil className={iconClass} />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="light"
+                                onPress={() => {
+                                  setToggleSource(true);
+                                }}
+                                size="sm"
+                                isIconOnly
+                                className="w-6 h-6 rounded-full bg-none"
+                              >
+                                <X className={iconClass} />
+                              </Button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </CardHeader>
-                    <CardBody className="flex gap-1.5">
-                      <Button color="primary" onPress={sameAssigneePresonFun}>
-                        Same
-                      </Button>
-                      <Button onPress={notSameAssigneePresonFun}>
-                        Not same
-                      </Button>
+                    <CardBody>
+                      {toggleSource ? (
+                        <div className="flex flex-col">
+                          <span className="text-sm">{leadData?.source}</span>
+                        </div>
+                      ) : (
+                        <Select
+                          label="Source"
+                          selectedKeys={[leadData?.source]}
+                          onSelectionChange={(e) => {
+                            let key = Array.from(e)[0];
+                            handleUpdateSource(key);
+                          }}
+                        >
+                          {leadSource.map((item) => (
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
                     </CardBody>
                   </Card>
-                )}
-                <Card className="my-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center gap-2">
-                        <Phone className={iconClass} />{" "}
-                        <h3 className="font-medium">Contacts</h3>
-                      </div>
-                      <Button
-                        size="sm"
-                        isIconOnly
-                        variant="light"
-                        className="w-6 h-6 rounded-full bg-none"
-                        onPress={() => contactModal.onOpen()}
-                      >
-                        <Plus className={iconClass} />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardBody className="max-h-[300px] overflow-auto">
-                    {leadData?.clients?.map((item) => {
-                      return (
-                        <div
-                          key={item?.clientName}
-                          className="flex justify-between items-center border rounded-md mb-2 px-2"
-                        >
-                          <div className="flex flex-col p-3">
-                            <span className="font-medium text-sm">
-                              {item?.clientName || "-"}
-                            </span>
-                            {item?.email && (
-                              <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                <div className="flex flex-wrap text-sm text-default-500">
-                                  {item?.email || ""}
-                                </div>
-                              </div>
-                            )}
-                            {item?.contactNo && (
-                              <div className="flex items-center gap-2">
-                                <Smartphone className="w-4 h-4" />
-                                <span className="text-sm text-default-500">
-                                  {item?.contactNo || ""}
-                                </span>
-                              </div>
-                            )}
+                  {(department === "Quality Team" || adminRole) && (
+                    <Card className="my-2">
+                      <CardHeader>
+                        <div className="flex justify-between items-center w-full">
+                          <div className="flex items-center gap-2">
+                            <Podcast className={iconClass} />{" "}
+                            <h3 className="font-medium">
+                              Assigne to same person{" "}
+                            </h3>
                           </div>
-                          <Dropdown>
-                            <DropdownTrigger>
-                              <Button variant="light" isIconOnly size="sm">
-                                <EllipsisVertical className={iconClass} />
-                              </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="Static Actions">
-                              <DropdownItem
-                                key="edit"
-                                startContent={<Pencil className={iconClass} />}
-                                onPress={() => editContactModalPress(item)}
-                              >
-                                Edit
-                              </DropdownItem>
-                              {adminRole && (
-                                <DropdownItem
-                                  key="delete"
-                                  color="danger"
-                                  className="text-danger"
-                                  startContent={<Trash className={iconClass} />}
-                                  onPress={() => {
-                                    handleDeleteContact(item);
-                                  }}
-                                >
-                                  Delete
-                                </DropdownItem>
-                              )}
-                            </DropdownMenu>
-                          </Dropdown>
                         </div>
-                      );
-                    })}
-                  </CardBody>
-                </Card>
+                      </CardHeader>
+                      <CardBody className="flex gap-1.5">
+                        <Button color="primary" onPress={sameAssigneePresonFun}>
+                          Same
+                        </Button>
+                        <Button onPress={notSameAssigneePresonFun}>
+                          Not same
+                        </Button>
+                      </CardBody>
+                    </Card>
+                  )}
+                  <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <Phone className={iconClass} />{" "}
+                          <h3 className="font-medium">Contacts</h3>
+                        </div>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="light"
+                          className="w-6 h-6 rounded-full bg-none"
+                          onPress={() => contactModal.onOpen()}
+                        >
+                          <Plus className={iconClass} />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="max-h-[300px] overflow-auto">
+                      {leadData?.clients?.map((item) => {
+                        return (
+                          <div
+                            key={item?.clientName}
+                            className="flex justify-between items-center border rounded-md mb-2 px-2"
+                          >
+                            <div className="flex flex-col p-3">
+                              <span className="font-medium text-sm">
+                                {item?.clientName || "-"}
+                              </span>
+                              {item?.email && (
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-4 h-4" />
+                                  <div className="flex flex-wrap text-sm text-default-500">
+                                    {item?.email || ""}
+                                  </div>
+                                </div>
+                              )}
+                              {item?.contactNo && (
+                                <div className="flex items-center gap-2">
+                                  <Smartphone className="w-4 h-4" />
+                                  <span className="text-sm text-default-500">
+                                    {item?.contactNo || ""}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button variant="light" isIconOnly size="sm">
+                                  <EllipsisVertical className={iconClass} />
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu aria-label="Static Actions">
+                                <DropdownItem
+                                  key="edit"
+                                  startContent={
+                                    <Pencil className={iconClass} />
+                                  }
+                                  onPress={() => editContactModalPress(item)}
+                                >
+                                  Edit
+                                </DropdownItem>
+                                {adminRole && (
+                                  <DropdownItem
+                                    key="delete"
+                                    color="danger"
+                                    className="text-danger"
+                                    startContent={
+                                      <Trash className={iconClass} />
+                                    }
+                                    onPress={() => {
+                                      handleDeleteContact(item);
+                                    }}
+                                  >
+                                    Delete
+                                  </DropdownItem>
+                                )}
+                              </DropdownMenu>
+                            </Dropdown>
+                          </div>
+                        );
+                      })}
+                    </CardBody>
+                  </Card>
+                </div>
               </div>
             </div>
             <div>
