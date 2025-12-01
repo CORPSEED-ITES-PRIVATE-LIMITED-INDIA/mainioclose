@@ -16,6 +16,8 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Form,
+  Input,
   Modal,
   ModalBody,
   ModalContent,
@@ -28,6 +30,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addClientLogInCredentialForPortal,
+  getClientLogInCredentialDetailForPortal,
   getOperationProjectDetailById,
   getRequiredDocumentsByProductId,
   updateAssigneeForMileStone,
@@ -44,6 +48,9 @@ import {
   MapPin,
   Pencil,
   Phone,
+  Plus,
+  User2,
+  X,
 } from "lucide-react";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
@@ -51,7 +58,7 @@ import {
   getAllMilestoneStatusesForOperations,
   getUsersListByDepartmentId,
 } from "../../toolkit/slices/commonSlice";
-import { statusColors } from "../../common";
+import { statusColorCode, statusColors } from "../../common";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -99,8 +106,12 @@ const ProjectDetails = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const assigneeModal = useDisclosure();
   const statusModal = useDisclosure();
+  const clientModal = useDisclosure();
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail
+  );
+  const clientLoginPortalCredentials = useSelector(
+    (state) => state.operation.clientLoginCredential
   );
   const requiredDocsList = useSelector(
     (state) => state.operation.requiredDoucmentListOfProduct
@@ -125,9 +136,19 @@ const ProjectDetails = () => {
     changedById: null,
   });
 
+  const [isCredentials, setIsCredentials] = useState(false);
+  const [credentials, setCredentials] = useState({
+    portalName: "",
+    portalUrl: "",
+    username: "",
+    password: "",
+    remarks: "",
+  });
+
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
     dispatch(getAllMilestoneStatusesForOperations());
+    dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
   }, [projectId]);
 
   const handleChangeAssignee = () => {
@@ -188,6 +209,45 @@ const ProjectDetails = () => {
       });
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    dispatch(addClientLogInCredentialForPortal({ projectId, userId, data }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Client login credentials is added !.",
+            color: "success",
+          });
+          setCredentials({
+            portalName: "",
+            portalUrl: "",
+            username: "",
+            password: "",
+            remarks: "",
+          });
+          setIsCredentials(false);
+          dispatch(
+            getClientLogInCredentialDetailForPortal({ projectId, userId })
+          );
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -236,22 +296,38 @@ const ProjectDetails = () => {
             </div>
           </div>
         </div>
-
-        <Button
-          endContent={<BookText className="h-4 w-4" />}
-          onPress={() => {
-            onOpen();
-            dispatch(
-              getRequiredDocumentsByProductId({
-                userId,
-                productId: detailedData?.projectDetails?.productId,
-                projectId,
-              })
-            );
-          }}
-        >
-          Documents
-        </Button>
+        <Dropdown>
+          <DropdownTrigger>
+            <Button variant="light" isIconOnly radius="full">
+              <EllipsisVertical />
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu aria-label="Static Actions">
+            <DropdownItem
+              key="documents"
+              startContent={<BookText />}
+              onPress={() => {
+                onOpen();
+                dispatch(
+                  getRequiredDocumentsByProductId({
+                    userId,
+                    productId: detailedData?.projectDetails?.productId,
+                    projectId,
+                  })
+                );
+              }}
+            >
+              Documents
+            </DropdownItem>
+            <DropdownItem
+              key="clientLoginDetails"
+              startContent={<User2 />}
+              onPress={clientModal.onOpen}
+            >
+              Client login credentials
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
       </div>
 
       <Accordion variant="splitted" defaultExpandedKeys={["0"]}>
@@ -506,6 +582,198 @@ const ProjectDetails = () => {
           )}
         </ModalContent>
       </Modal>
+
+      <Drawer
+        size="3xl"
+        isOpen={clientModal.isOpen}
+        onOpenChange={clientModal.onOpenChange}
+        hideCloseButton
+      >
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex justify-between items-center gap-1">
+                <div>
+                  {isCredentials
+                    ? "Add client portal login credentials"
+                    : "Client portal login credentials"}
+                </div>
+                {isCredentials ? (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    onPress={() => setIsCredentials(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    onPress={() => setIsCredentials(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
+              </DrawerHeader>
+              <DrawerBody className="max-h-[90vh] overflow-auto">
+                {isCredentials ? (
+                  <Form className="w-full" onSubmit={onSubmit}>
+                    <div className="w-full grid grid-cols-2 gap-2">
+                      <Input
+                        label="Portal name"
+                        name="portalName"
+                        isRequired
+                        errorMessage="please ebter portal name"
+                        value={credentials?.portalName}
+                        onChange={handleChange}
+                      />
+                      <Input
+                        label="Portal URL"
+                        name="portalUrl"
+                        isRequired
+                        errorMessage="please ebter portal URL"
+                        value={credentials?.portalUrl}
+                        onChange={handleChange}
+                      />
+                      <Input
+                        label="Username"
+                        name="username"
+                        isRequired
+                        errorMessage="please enter username"
+                        value={credentials?.username}
+                        onChange={handleChange}
+                      />
+                      <Input
+                        label="Password"
+                        name="password"
+                        isRequired
+                        errorMessage="please enter password"
+                        value={credentials?.password}
+                        onChange={handleChange}
+                      />
+                      <Textarea
+                        label="Remarks"
+                        name="remarks"
+                        isRequired
+                        errorMessage="please enter remark"
+                        value={credentials?.remarks}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="w-full flex justify-end gap-2">
+                      <Button
+                        variant="flat"
+                        onPress={() => setIsCredentials(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        color="primary"
+                        isDisabled={!isCredentials}
+                        type="submit"
+                      >
+                        Submit
+                      </Button>
+                    </div>
+                  </Form>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <p className="font-medium">
+                          {clientLoginPortalCredentials?.companyName}
+                        </p>{" "}
+                        <span className="text-sm text-default-400">
+                          {clientLoginPortalCredentials?.projectNo}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {clientLoginPortalCredentials?.portals?.map(
+                        (item, idx) => (
+                          <Card className="" key={idx}>
+                            <CardHeader>
+                              <div className="flex justify-between items-center w-full">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium">
+                                    {item?.portalName}
+                                  </h3>
+                                  <Chip size="sm" color={statusColorCode[item?.status]}>
+                                    {item?.status}
+                                  </Chip>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  isIconOnly
+                                  variant="light"
+                                  className="w-6 h-6 rounded-full bg-none"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardBody>
+                              <div className="flex gap-1.5 items-center">
+                                <span className="text-default-400 text-tiny">
+                                  Portal URL
+                                </span>{" "}
+                                :{" "}
+                                <div className="text-tiny flex flex-wrap">
+                                  {item?.portalUrl}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="flex gap-1.5 items-center">
+                                  <span className="text-default-400 text-tiny">
+                                    User name
+                                  </span>{" "}
+                                  :{" "}
+                                  <span className="text-tiny">
+                                    {item?.username}
+                                  </span>
+                                </div>
+                                <div className="flex gap-1.5 items-center">
+                                  <span className="text-default-400 text-tiny">
+                                    Password
+                                  </span>{" "}
+                                  :{" "}
+                                  <span className="text-tiny">
+                                    {item?.password}
+                                  </span>
+                                </div>
+                                <div className="flex gap-1.5 items-center">
+                                  <span className="text-default-400 text-tiny">
+                                    Remarks
+                                  </span>{" "}
+                                  :{" "}
+                                  <span className="text-tiny">
+                                    {item?.remarks}
+                                  </span>
+                                </div>
+                              </div>
+                            </CardBody>
+                          </Card>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+              </DrawerBody>
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

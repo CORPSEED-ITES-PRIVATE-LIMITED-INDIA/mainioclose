@@ -243,6 +243,35 @@ export const updateDepartmentAutoConfig = createAsyncThunk(
   }
 );
 
+export const addClientLogInCredentialForPortal = createAsyncThunk(
+  "addClientLogInCredentialForPortal",
+  async ({ projectId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/api/projects/${projectId}/portal-details?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const getClientLogInCredentialDetailForPortal = createAsyncThunk(
+  "getClientLogInCredentialDetailForPortal",
+  async ({ projectId, userId }) => {
+    try {
+      const response = await api.get(
+        `/api/projects/${projectId}/portal-details?userId=${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -257,6 +286,7 @@ const OperationSlice = createSlice({
     departmentsList: [],
     departmentAutoConfig: null,
     updatedDepartmentConfig: null,
+    clientLoginCredential: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -379,21 +409,39 @@ const OperationSlice = createSlice({
       state.departmentAutoConfig = null;
     });
 
-    // UPDATE department auto-config
     builder.addCase(updateDepartmentAutoConfig.pending, (state) => {
       state.loading = "pending";
       state.updatedDepartmentConfig = null;
     });
-
     builder.addCase(updateDepartmentAutoConfig.fulfilled, (state, action) => {
       state.loading = "success";
       state.updatedDepartmentConfig = action.payload;
     });
-
     builder.addCase(updateDepartmentAutoConfig.rejected, (state) => {
       state.loading = "rejected";
       state.updatedDepartmentConfig = null;
     });
+
+    builder.addCase(
+      getClientLogInCredentialDetailForPortal.pending,
+      (state) => {
+        state.loading = "pending";
+      }
+    );
+    builder.addCase(
+      getClientLogInCredentialDetailForPortal.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.clientLoginCredential = action.payload;
+      }
+    );
+    builder.addCase(
+      getClientLogInCredentialDetailForPortal.rejected,
+      (state) => {
+        state.loading = "rejected";
+        state.clientLoginCredential = {};
+      }
+    );
   },
 });
 

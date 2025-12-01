@@ -1,21 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllInFlowList,
-  getAllOutFlowList,
-} from "../../toolkit/slices/organizationSlice";
+import { getAllCashFlowDetail } from "../../toolkit/slices/organizationSlice";
 import {
   Button,
   DateRangePicker,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
 } from "@heroui/react";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
@@ -28,131 +19,69 @@ const CashFlow = () => {
   const dispatch = useDispatch();
   const today = dayjs().format("YYYY-MM-DDTHH:mm");
   const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
-  const inFlowList = useSelector((state) => state.organization.inFlowList);
-  const outFlowList = useSelector((state) => state.organization.outFlowList);
-  const cashInOutFlowDetail = useSelector((state) => state.organization.cashInOutFlowDetail);
+  const cashInOutFlowDetail = useSelector(
+    (state) => state.organization.cashInOutFlowDetail
+  );
   const [dateRange, setDateRange] = useState({
     startDate: twoMonthsAgo,
     endDate: today,
   });
-
-  const [dateRange2, setDateRange2] = useState({
-    startDate: twoMonthsAgo,
-    endDate: today,
-  });
+  const [view, setView] = useState("vertical");
 
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getAllInFlowList(dateRange));
+    dispatch(getAllCashFlowDetail(dateRange));
   }, [dispatch, dateRange]);
 
-  useEffect(() => {
-    dispatch(getAllOutFlowList(dateRange2));
-  }, [dispatch, dateRange2]);
+  // Convert API data into inflow / outflow format
+  const inflow = React.useMemo(() => {
+    if (!cashInOutFlowDetail || cashInOutFlowDetail.length === 0) return [];
 
-  const exportData = (inFlowList || [])?.map((row) => ({
-    "Group name": row?.groupName,
-    "Total credit": row?.totalCredit,
-    "Total debit": row?.totalDebit,
-    "Total amount": row?.totalAmount,
+    const inflowData = cashInOutFlowDetail.find(
+      (item) => item.name === "Inflow of Cash"
+    );
+
+    if (!inflowData) return [];
+
+    return Object.entries(inflowData)
+      .filter(([key]) => key !== "name" && key !== "totalAmount")
+      .map(([label, value]) => ({
+        label: label,
+        value: value,
+      }));
+  }, [cashInOutFlowDetail]);
+
+  const outflow = React.useMemo(() => {
+    if (!cashInOutFlowDetail || cashInOutFlowDetail.length === 0) return [];
+
+    const outflowData = cashInOutFlowDetail.find(
+      (item) => item.name === "Outflow of Cash"
+    );
+
+    if (!outflowData) return [];
+
+    return Object.entries(outflowData)
+      .filter(([key]) => key !== "name")
+      .map(([label, value]) => ({
+        label: label,
+        value: value,
+      }));
+  }, [cashInOutFlowDetail]);
+
+  const csvData = [...inflow, ...outflow].map((item) => ({
+    Label: item.label,
+    Amount: item.value,
   }));
-  const headers = ["Group name", "Total credit", "Total debit", "Total amount"];
 
-  const exportData2 = (outFlowList || [])?.map((row) => ({
-    "Group name": row?.groupName,
-    "Total credit": row?.totalCredit,
-    "Total debit": row?.totalDebit,
-    "Total amount": row?.totalAmount,
-  }));
-  const headers2 = [
-    "Group name",
-    "Total credit",
-    "Total debit",
-    "Total amount",
-  ];
-
-  const columns = [
-    {
-      key: "groupName",
-      label: "GROUP NAME",
-    },
-    {
-      key: "totalCredit",
-      label: "TOTAL CREDIT",
-    },
-    {
-      key: "totalDebit",
-      label: "TOTAL DEBIT",
-    },
-    {
-      key: "totalAmount",
-      label: "TOTAL AMOUNT",
-    },
-  ];
-
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "groupName":
-        return (
-          <div className="flex flex-col">
-            <p className="font-medium">{rowData?.groupName || "-"}</p>
-          </div>
-        );
-
-      case "totalCredit":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal">
-              {inrCurrency(rowData.totalCredit) || "-"}
-            </span>
-          </div>
-        );
-      case "totalDebit":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal">
-              {inrCurrency(rowData.totalDebit) || "-"}
-            </span>
-          </div>
-        );
-      case "totalAmount":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="font-normal">
-              {inrCurrency(rowData.totalAmount) || "-"}
-            </span>
-          </div>
-        );
-      default:
-        return rowData[columnKey] || "-";
-    }
-  }, []);
-
-  const [view, setView] = useState("vertical");
-
-  const inflow = [
-    { label: "Loans (Liability)", value: 56830.0 },
-    { label: "Current Liabilities", value: 14848752.68 },
-    { label: "Current Assets", value: 197305599.88 },
-    { label: "Suspense A/c", value: 746074.61 },
-    { label: "Direct Expenses", value: 158230.2 },
-    { label: "Indirect Expenses", value: 59515.49 },
-  ];
-
-  const outflow = [
-    { label: "Loans (Liability)", value: 263490.0 },
-    { label: "Current Liabilities", value: 184825983.17 },
-    { label: "Current Assets", value: 8973589.63 },
-    { label: "Suspense A/c", value: 118700.12 },
-    { label: "Sales Accounts", value: 9650.0 },
-    { label: "Direct Expenses", value: 7919262.55 },
-    { label: "Indirect Expenses", value: 3016984.85 },
+  const csvHeaders = [
+    { label: "Label", key: "Label" },
+    { label: "Amount", key: "Amount" },
   ];
 
   const companyName = "Corpseed Ites Private Limited.";
-  const reportPeriod = "1-Apr-24 to 31-Dec-25";
+  const reportPeriod = `${dayjs(dateRange?.startDate).format("DD-MMM-YYYY")} to ${dayjs(dateRange?.endDate).format("DD-MMM-YYYY")}`;
 
   return (
     <div className="w-full">
@@ -232,12 +161,7 @@ const CashFlow = () => {
             </PopoverContent>
           </Popover>
 
-          <CSVLink
-            className="text-white"
-            data={exportData}
-            headers={headers}
-            filename={"cashflow.csv"}
-          >
+          <CSVLink data={csvData} headers={csvHeaders} filename="cashflow.csv">
             <Button size="sm" isIconOnly>
               <FileUp className="h-4 w-4" />
             </Button>
@@ -352,7 +276,8 @@ const CashFlow = () => {
 
 export default CashFlow;
 
-{/* <div className="grid grid-cols-2 gap-2">
+{
+  /* <div className="grid grid-cols-2 gap-2">
   <div className="flex flex-col gap-2 p-2">
     <div className="flex justify-between items-center">
       <h1 className="font-medium text-xl">In flow</h1>
@@ -524,4 +449,5 @@ export default CashFlow;
       </TableBody>
     </Table>
   </div>
-</div>; */}
+</div>; */
+}

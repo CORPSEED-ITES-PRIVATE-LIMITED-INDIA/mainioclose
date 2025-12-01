@@ -202,3 +202,10 @@ export const statusColors = {
   QUEUED: "default",
   REJECTED: "danger",
 };
+
+
+export const statusColorCode = {
+  APPROVED: "success",
+  PENDING: "warning",
+  REJECTED: "danger",
+};

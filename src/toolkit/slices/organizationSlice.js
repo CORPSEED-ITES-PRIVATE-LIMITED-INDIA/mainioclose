@@ -426,7 +426,7 @@ export const getAllInFlowList = createAsyncThunk(
 
 export const getAllCashFlowDetail = createAsyncThunk(
   "getAllCashFlowDetail",
-  async () => {
+  async ({startDate, endDate}) => {
     const response = await api.get(
       `/accountService/api/v1/cashFlow/getAllCashInAndOutFlow?startDate=${startDate}&endDate=${endDate}`
     );
