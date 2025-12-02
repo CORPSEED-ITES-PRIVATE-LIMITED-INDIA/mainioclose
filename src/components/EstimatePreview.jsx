@@ -61,7 +61,7 @@ const contentRef = useRef();
   };
   return (
 
-        <div className="2xl:max-h-[68vh] md:max-h-[65vh] overflow-auto mt-4 px-2 md:px-4 lg:px-6">
+        <div className="2xl:max-h-[90vh] md:max-h-[85vh] overflow-auto mt-4 px-2 md:px-4 lg:px-6">
           <div className="w-full md:w-[80%] lg:w-[70%] mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-6 shadow-md bg-white">
             <div ref={contentRef} className="relative">
               <div className="absolute -left-4 top-3 bg-green-600 text-white font-medium px-4 py-1.5 rounded-r-md text-sm shadow-md">

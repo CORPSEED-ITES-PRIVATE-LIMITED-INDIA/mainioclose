@@ -649,6 +649,16 @@ export const getEstimateByLeadIdAndUUID = createAsyncThunk(
   }
 );
 
+export const checkPlantSetUpData = createAsyncThunk(
+  "checkPlantSetUpData",
+  async (name) => {
+    const response = await api.get(
+      `/leadService/api/v1/lead/checkPlantSetUp?name=${name}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -687,6 +697,7 @@ export const LeadSlice = createSlice({
     allLeadsTaskList: [],
     allChildLeadList: [],
     estimateDetailByUUID: {},
+    plantSetupDetail:{}
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1080,6 +1091,18 @@ export const LeadSlice = createSlice({
     builder.addCase(getEstimateByLeadIdAndUUID.rejected, (state) => {
       state.loading = "rejected";
       state.estimateDetailByUUID = {};
+    });
+
+    builder.addCase(checkPlantSetUpData.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(checkPlantSetUpData.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.plantSetupDetail = action?.payload;
+    });
+    builder.addCase(checkPlantSetUpData.rejected, (state) => {
+      state.loading = "rejected";
+      state.plantSetupDetail = {};
     });
   },
 });

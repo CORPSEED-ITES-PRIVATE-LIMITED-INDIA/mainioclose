@@ -57,6 +57,7 @@ import {
 import { IndianRupee, Pencil, Percent } from "lucide-react";
 import {
   addDocumentsInEstimate,
+  checkPlantSetUpData,
   createEstimate,
   createEstimateForApprovals,
   docsUploadListInEstimate,
@@ -321,6 +322,7 @@ const LeadEstimate = () => {
     (state) => state.company.contactListByCompanyId
   );
   const details = useSelector((state) => state.leads.estimateDetail);
+  const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
   const companyDetails = useSelector(
     (state) => state?.leads?.companyDetailsById
   );
@@ -426,7 +428,10 @@ const LeadEstimate = () => {
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        dispatch(getProductListByLeadName(resp?.payload?.originalName));
+        if (resp?.payload?.originalName) {
+          dispatch(getProductListByLeadName(resp?.payload?.originalName));
+          dispatch(checkPlantSetUpData(resp?.payload?.originalName));
+        }
       }
     });
   }, [dispatch]);
@@ -938,7 +943,7 @@ const LeadEstimate = () => {
   );
 
   useEffect(() => {
-    if(details?.id){
+    if (details?.id) {
       dispatch(docsUploadListInEstimate(details?.id));
     }
   }, [details]);
