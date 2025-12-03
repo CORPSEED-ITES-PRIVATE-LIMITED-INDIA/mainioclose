@@ -28,7 +28,7 @@
     "@heroui/theme": "^2.4.20",
     "@heroui/toast": "^2.0.14",
     "@heroui/use-theme": "2.1.10",
-    "@hookform/resolvers": "^5.2.1",
+    "@hookform/resolvers": "^5.2.2",
     "@internationalized/date": "^3.8.2",
     "@react-aria/visually-hidden": "3.8.26",
     "@react-pdf/renderer": "^4.3.1",
@@ -63,7 +63,7 @@
     "tailwind-variants": "2.0.1",
     "tailwindcss": "4.1.11",
     "to-words": "^4.7.0",
-    "zod": "^4.0.17"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@eslint/compat": "1.2.8",

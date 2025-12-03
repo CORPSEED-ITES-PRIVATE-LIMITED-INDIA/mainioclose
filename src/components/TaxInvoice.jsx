@@ -2,59 +2,53 @@ import React, { useRef } from "react";
 import { inrCurrency, toWords } from "../common";
 import dayjs from "dayjs";
 import signature from "../assets/signature.png";
-import domToImage from "dom-to-image";
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { Button } from "@heroui/button";
 import { Download } from "lucide-react";
 import logo from "../assets/CORPSEED.webp";
 
 const TaxInvoice = ({ detail }) => {
-  const pdfRef = useRef();
+  const contentRef = useRef();
 
-  const generatePDF = async () => {
-    const element = pdfRef.current;
+  const downloadPDF = async () => {
+    const element = contentRef.current;
+    if (!element) return;
+
     try {
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const scale = 3;
-
-      const cloned = element.cloneNode(true);
-      cloned.style.transform = `scale(${scale})`;
-      cloned.style.transformOrigin = "top left";
-      cloned.style.width = `${element.offsetWidth}px`;
-      cloned.style.height = `${element.offsetHeight}px`;
-      document.body.appendChild(cloned);
-
-      const imgData = await domToImage.toPng(cloned, {
-        quality: 1,
-        width: element.offsetWidth * scale,
-        height: element.offsetHeight * scale,
-        bgcolor: "#ffffff",
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: "#ffffff",
       });
 
-      document.body.removeChild(cloned);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-      const img = new Image();
-      img.src = imgData;
-      img.onload = () => {
-        const imgWidth = img.width;
-        const imgHeight = img.height;
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
 
-        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-        const renderWidth = imgWidth * ratio;
-        const renderHeight = imgHeight * ratio;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
 
-        const x = (pageWidth - renderWidth) / 2;
-        const y = 0;
-
-        pdf.addImage(imgData, "PNG", x, y, renderWidth, renderHeight);
-        pdf.save("estimate.pdf");
-      };
+      pdf.save(`estimate_${detail?.id || "ESTD"}.pdf`);
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("PDF generation failed:", error);
     }
   };
+
 
   const items = [
     {
@@ -100,11 +94,11 @@ const TaxInvoice = ({ detail }) => {
           {
             hsn: detail?.professionalCode,
             taxable: detail?.professionalFees,
-            cgstPercent: detail?.cgstPercent || 9,
-            cgstAmount: detail?.cgstAmount || 1000,
-            sgstPercent: detail?.sgstPercent || 10,
-            sgstAmount: detail?.sgstAmount || 2000,
-            totalTax: detail?.gstAmount || 5000,
+            cgstPercent: detail?.cgst || 0,
+            cgstAmount: detail?.cgstAmount || 0,
+            sgstPercent: detail?.sgst || 0,
+            sgstAmount: detail?.sgstAmount || 0,
+            totalTax: detail?.gstAmount || 0,
           },
         ]),
   ];
@@ -115,7 +109,7 @@ const TaxInvoice = ({ detail }) => {
   return (
     <>
       <div className=" max-h-[80vh] overflow-auto">
-        <div className="flex flex-col gap-2 p-14" ref={pdfRef}>
+        <div className="flex flex-col gap-2 p-14" ref={contentRef}>
           <h1 className="text-center font-medium">Tax Invoice</h1>
           <div className="border-1 border-gray-400">
             <div className="grid grid-cols-2 border-b-1 border-gray-400">
@@ -378,7 +372,7 @@ const TaxInvoice = ({ detail }) => {
                     </td>
                     {detail?.igst ? (
                       <td className="border border-gray-300 px-4 py-2">
-                        {item.igstPercent || 0}%
+                        {item.igstRate || 0}%
                       </td>
                     ) : (
                       <>
@@ -509,7 +503,7 @@ const TaxInvoice = ({ detail }) => {
       <div className="w-full flex justify-center">
         <Button
           className="w-36"
-          onPress={generatePDF}
+          onPress={downloadPDF}
           startContent={<Download />}
         >
           Export as pdf
