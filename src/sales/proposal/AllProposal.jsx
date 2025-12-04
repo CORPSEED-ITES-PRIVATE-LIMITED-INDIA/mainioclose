@@ -33,6 +33,7 @@ import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -91,7 +92,7 @@ const AllProposal = () => {
     comment: "",
   });
   const [proposalData, setProposalData] = useState("");
-
+  const [loading, setLoading] = useState("");
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -164,6 +165,7 @@ const AllProposal = () => {
   };
 
   const handleChangeStatus = () => {
+    setLoading("pending");
     dispatch(proposalApprovalByManager(updateStatusData))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -173,25 +175,28 @@ const AllProposal = () => {
               title: `Proposal approved successfully and sent to client.`,
               color: "success",
             });
-            reset(defaultValues);
           } else {
             addToast({
               title: `Proposal disapproved successfully.`,
               color: "success",
             });
           }
+          setLoading("success");
           setUpdateStatusData({
             proposalId: null,
             status: null,
             userId,
             comment: "",
           });
+          reset(defaultValues);
           onClose();
         } else {
+          setLoading("error");
           addToast({ title: "Something went wrong", color: "danger" });
         }
       })
       .cactch((err) => {
+        setLoading("error");
         addToast({ title: "Something went wrong", color: "danger" });
       });
   };
@@ -438,6 +443,7 @@ const AllProposal = () => {
 
   return (
     <>
+      {loading === "pending" && <LoadingSpinner />}
       <h1 className="font-sans text-2xl font-medium mb-1">All proposal</h1>
       <Table
         isHeaderSticky
@@ -534,11 +540,26 @@ const AllProposal = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Update status</ModalHeader>
+              <ModalHeader className="text-xl font-semibold border-b pb-3">
+                Propsal
+              </ModalHeader>
+
               <ModalBody>
                 <div
+                  className="max-h-screen overflow-auto p-6 bg-white rounded-xl shadow-lg mx-auto w-full max-w-4xl prose prose-sm lg:prose-base prose-headings:font-semibold prose-h1:text-2xl 
+              prose-h2:text-xl 
+              prose-h3:text-lg 
+              prose-p:leading-relaxed 
+              prose-p:my-3 
+              prose-ul:list-disc 
+              prose-ul:pl-6 
+              prose-ol:list-decimal 
+              prose-ol:pl-6 
+              prose-table:border 
+              prose-table:border-collapse 
+              prose-img:rounded-lg
+            "
                   dangerouslySetInnerHTML={{ __html: proposalData }}
-                  style={{ maxHeight: "70vh", overflow: "auto" }}
                 />
               </ModalBody>
             </>
