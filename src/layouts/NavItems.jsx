@@ -173,6 +173,12 @@ export const navItems = [
         url: "admin/vendorPaymentApproval",
         key: "vendorPaymentApproval",
       },
+      {
+        title: "Discounted estimate",
+        icon: "",
+        url: "admin/discountedEstimate",
+        key: "discountedEstimate",
+      },
     ],
   },
   {

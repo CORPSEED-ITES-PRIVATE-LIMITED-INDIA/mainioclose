@@ -250,7 +250,7 @@ const ApplicantTypes = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} applicant types
+            Total {count || 0} applicant types
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -282,7 +282,7 @@ const ApplicantTypes = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys.size} of ${count || 0} selected`}
         </span>
         <Pagination
           isCompact

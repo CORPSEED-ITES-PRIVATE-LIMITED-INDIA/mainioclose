@@ -32,6 +32,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   addClientLogInCredentialForPortal,
   getClientLogInCredentialDetailForPortal,
+  getHistoryByMileStoneIdAndProjectId,
   getOperationProjectDetailById,
   getRequiredDocumentsByProductId,
   updateAssigneeForMileStone,
@@ -121,6 +122,9 @@ const ProjectDetails = () => {
   );
   const milestoneStatusList = useSelector(
     (state) => state.common.milestoneStatusList
+  );
+  const mileStoneHistoryDetail = useSelector(
+    (state) => state.operation.mileStoneEventHistory
   );
   const [assigneeObj, setAssigneeObj] = useState({
     assignmentId: null,
@@ -248,6 +252,12 @@ const ProjectDetails = () => {
       );
   };
 
+  const handleChangeAccordian = (milestoneId, projectId, userId) => {
+    dispatch(
+      getHistoryByMileStoneIdAndProjectId({ milestoneId, projectId, userId })
+    );
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -330,115 +340,164 @@ const ProjectDetails = () => {
         </Dropdown>
       </div>
 
-      <Accordion variant="splitted" defaultExpandedKeys={["0"]}>
-        {detailedData?.milestones?.length > 0 &&
-          detailedData?.milestones?.map((detail, idx) => {
-            return (
-              <AccordionItem
-                key={idx}
-                aria-label="Accordion 1"
-                title={
-                  <>
-                    {detail?.milestoneName}{" "}
-                    <Chip
-                      size="sm"
-                      color={statusColors[detail?.status]}
-                      className="ml-1"
-                    >
-                      {detail?.status}
-                    </Chip>
-                  </>
-                }
-                classNames={{ title: "font-medium" }}
-              >
-                <div className="grid grid-cols-4 border-t border-gray-300 max-h-[60vh] overflow-auto">
-                  <div className="col-span-1 border-r border-gray-300 p-4">
-                    <Card key={`contact${idx}`}>
-                      <CardHeader className="w-full flex justify-between">
-                        <User
-                          description={detail?.assignedUser?.email}
-                          name={detail?.assignedUser?.fullName}
-                          classNames={{ name: "font-medium font-sans" }}
-                        />
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          onPress={() => {
-                            assigneeModal.onOpen();
-                            dispatch(
-                              getUsersListByDepartmentId(detail?.departmentId)
-                            );
-                            setAssigneeObj((prev) => ({
-                              ...prev,
-                              assignmentId: detail?.id,
-                              changedById: userId,
-                            }));
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </CardHeader>
-                      <CardBody>
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
-                          <p className="text-muted-foreground text-sm">
-                            {detail?.assignedUser?.contactNo}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <GitFork className="w-4 h-4" />
-                          <p className="text-muted-foreground text-sm">
-                            {detail?.departmentName}
-                          </p>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  </div>
-
-                  <div className="col-span-3 p-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <h2 className="font-medium">
-                          {detailedData?.projectDetails?.productName}
-                        </h2>
-                        <Chip size="sm" color={statusColors[detail?.status]}>
-                          {detail?.status}
-                        </Chip>
-                      </div>
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button radius="full" variant="flat" isIconOnly>
-                            <EllipsisVertical />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu
-                          aria-label="Static Actions"
-                          selectionMode="single"
-                        >
-                          <DropdownItem
-                            key="updateStatus"
+      <div className="max-h-[70vh] overflow-auto">
+        <Accordion variant="splitted" defaultExpandedKeys={["0"]}>
+          {detailedData?.milestones?.length > 0 &&
+            detailedData?.milestones?.map((detail, idx) => {
+              return (
+                <AccordionItem
+                  onPress={(e) => {
+                    console.log("jkhghjfjdjg", e);
+                    handleChangeAccordian(
+                      detail?.milestoneId,
+                      detail?.projectId,
+                      userId
+                    );
+                  }}
+                  key={idx}
+                  aria-label="Accordion 1"
+                  title={
+                    <>
+                      {detail?.milestoneName}{" "}
+                      <Chip
+                        size="sm"
+                        color={statusColors[detail?.status]}
+                        className="ml-1"
+                      >
+                        {detail?.status}
+                      </Chip>
+                    </>
+                  }
+                  classNames={{ title: "font-medium" }}
+                >
+                  <div className="grid grid-cols-4 border-t border-gray-300 max-h-[60vh] overflow-auto">
+                    <div className="col-span-1 border-r border-gray-300 p-4">
+                      <Card key={`contact${idx}`}>
+                        <CardHeader className="w-full flex justify-between">
+                          <User
+                            description={detail?.assignedUser?.email}
+                            name={detail?.assignedUser?.fullName}
+                            classNames={{ name: "font-medium font-sans" }}
+                          />
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
                             onPress={() => {
-                              statusModal.onOpen();
-                              setStatusObj((prev) => ({
+                              assigneeModal.onOpen();
+                              dispatch(
+                                getUsersListByDepartmentId(detail?.departmentId)
+                              );
+                              setAssigneeObj((prev) => ({
                                 ...prev,
-                                newStatusName: detail?.status,
                                 assignmentId: detail?.id,
                                 changedById: userId,
                               }));
                             }}
                           >
-                            Update status
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </CardHeader>
+                        <CardBody>
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4" />
+                            <p className="text-muted-foreground text-sm">
+                              {detail?.assignedUser?.contactNo}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <GitFork className="w-4 h-4" />
+                            <p className="text-muted-foreground text-sm">
+                              {detail?.departmentName}
+                            </p>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    </div>
+
+                    <div className="col-span-3 p-4">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <h2 className="font-medium">
+                            {detailedData?.projectDetails?.productName}
+                          </h2>
+                          <Chip size="sm" color={statusColors[detail?.status]}>
+                            {detail?.status}
+                          </Chip>
+                        </div>
+                        <Dropdown>
+                          <DropdownTrigger>
+                            <Button radius="full" variant="flat" isIconOnly>
+                              <EllipsisVertical />
+                            </Button>
+                          </DropdownTrigger>
+                          <DropdownMenu
+                            aria-label="Static Actions"
+                            selectionMode="single"
+                          >
+                            <DropdownItem
+                              key="updateStatus"
+                              onPress={() => {
+                                statusModal.onOpen();
+                                setStatusObj((prev) => ({
+                                  ...prev,
+                                  newStatusName: detail?.status,
+                                  assignmentId: detail?.id,
+                                  changedById: userId,
+                                }));
+                              }}
+                            >
+                              Update status
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </Dropdown>
+                      </div>
+                      <div className="max-h-[35vh] overflow-auto bg-white border rounded-lg mt-1.5">
+                        {mileStoneHistoryDetail?.assignmentEvents?.map(
+                          (history, index) => (
+                            <div
+                              key={index}
+                              className="flex gap-3 px-4 py-3 border-b last:border-b-0"
+                            >
+                              {/* Yellow Dot */}
+                              <div className="flex flex-col items-center pt-1">
+                                <span className="w-2.5 h-2.5 bg-yellow-400 rounded-full"></span>
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex flex-col">
+                                {/* Title */}
+                                <div className="text-sm font-medium text-slate-700">
+                                  <p className="text-blue-600 text-wrap">
+                                    {history?.reason || "N/A"}
+                                  </p>
+                                </div>
+
+                                {/* Role Line */}
+                                <div className="text-xs text-slate-500 mt-1">
+                                  Assigned to:{" "}
+                                  {history?.assignedToName || "Unassigned"}
+                                </div>
+
+                                {/* Admin Line */}
+                                <div className="text-xs text-slate-400 mt-0.5">
+                                  Assigned by : {history?.assignedByName}{" "}
+                                  (Administrator) ·{" "}
+                                  {dayjs(history?.date).format("MMM DD, YYYY")}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </AccordionItem>
-            );
-          })}
-      </Accordion>
+                </AccordionItem>
+              );
+            })}
+        </Accordion>
+      </div>
+
       <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
         <DrawerContent>
           {(onClose) => (
@@ -701,7 +760,10 @@ const ProjectDetails = () => {
                                   <h3 className="font-medium">
                                     {item?.portalName}
                                   </h3>
-                                  <Chip size="sm" color={statusColorCode[item?.status]}>
+                                  <Chip
+                                    size="sm"
+                                    color={statusColorCode[item?.status]}
+                                  >
                                     {item?.status}
                                   </Chip>
                                 </div>

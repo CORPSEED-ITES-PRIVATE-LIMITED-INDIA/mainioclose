@@ -659,6 +659,46 @@ export const checkPlantSetUpData = createAsyncThunk(
   }
 );
 
+export const getAllEstimateForApproval = createAsyncThunk(
+  "getAllApprovalForEstimate",
+  async (status) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getAllEstimateForm?status=${status}`
+    );
+    return response.data;
+  }
+);
+
+export const getAllEstimateHistory = createAsyncThunk(
+  "getAllEstimateHistory",
+  async ({ estimateId, name, productSubCategoryId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/leadEstimate/getEstimateHistoryByFormId?estimateId=${estimateId}&name=${name}&productSubCategoryId=${productSubCategoryId}`
+    );
+    return response.data;
+  }
+);
+
+export const approveEstimateApproval = createAsyncThunk(
+  "approveEstimateApproval",
+  async ({ userId, estimateFormId, comment }) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/approveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`
+    );
+    return response.data;
+  }
+);
+
+export const disApproveEstimateApproval = createAsyncThunk(
+  "disApproveEstimateApproval",
+  async ({ userId, estimateFormId, comment }) => {
+    const response = await api.put(
+      `/leadService/api/v1/leadEstimate/disapproveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`
+    );
+    return response.data;
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -697,7 +737,9 @@ export const LeadSlice = createSlice({
     allLeadsTaskList: [],
     allChildLeadList: [],
     estimateDetailByUUID: {},
-    plantSetupDetail:{}
+    plantSetupDetail: {},
+    estimateApprovalList: [],
+    estimateHistoryList: {},
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1103,6 +1145,30 @@ export const LeadSlice = createSlice({
     builder.addCase(checkPlantSetUpData.rejected, (state) => {
       state.loading = "rejected";
       state.plantSetupDetail = {};
+    });
+
+    builder.addCase(getAllEstimateForApproval.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllEstimateForApproval.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateApprovalList = action?.payload;
+    });
+    builder.addCase(getAllEstimateForApproval.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimateApprovalList = [];
+    });
+
+    builder.addCase(getAllEstimateHistory.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllEstimateHistory.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateHistoryList = action?.payload;
+    });
+    builder.addCase(getAllEstimateHistory.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimateHistoryList = {};
     });
   },
 });

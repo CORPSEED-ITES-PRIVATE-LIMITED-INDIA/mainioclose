@@ -24,6 +24,7 @@ import UserManagerApproval from "./users/UserManagerApproval";
 import DeactiveUserList from "./users/DeactiveUserList";
 import EstimatePreview from "./components/EstimatePreview";
 import VendorPaymentApproval from "./admin/VendorPaymentApproval";
+import DiscountedEstimateApproval from "./admin/DiscountedEstimateApproval";
 
 function App() {
   return (
@@ -33,7 +34,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/:email/otp" element={<Otp />} />
-        <Route path="/:leadId/:uuid/estimate-preview" element={<EstimatePreview />} />
+        <Route
+          path="/:leadId/:uuid/estimate-preview"
+          element={<EstimatePreview />}
+        />
         <Route path="/erp" element={<ProtectedRoute />}>
           <Route path=":userId" element={<Layoutpage />}>
             {/*Dashboard */}
@@ -77,6 +81,10 @@ function App() {
             <Route
               path="admin/vendorPaymentApproval"
               element={<VendorPaymentApproval />}
+            />
+            <Route
+              path="admin/discountedEstimate"
+              element={<DiscountedEstimateApproval />}
             />
             {ProcurementRouting()}
 

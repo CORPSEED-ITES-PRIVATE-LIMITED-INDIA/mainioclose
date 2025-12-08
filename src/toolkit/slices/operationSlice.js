@@ -272,6 +272,20 @@ export const getClientLogInCredentialDetailForPortal = createAsyncThunk(
   }
 );
 
+export const getHistoryByMileStoneIdAndProjectId = createAsyncThunk(
+  "getHistoryByMileStoneIdAndProjectId",
+  async ({ milestoneId, projectId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/api/projects/${projectId}/milestones/${milestoneId}/history?userId=${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      rejectWithValue(error?.response.data?.message);
+    }
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -287,6 +301,7 @@ const OperationSlice = createSlice({
     departmentAutoConfig: null,
     updatedDepartmentConfig: null,
     clientLoginCredential: {},
+    mileStoneEventHistory: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -442,6 +457,21 @@ const OperationSlice = createSlice({
         state.clientLoginCredential = {};
       }
     );
+
+    builder.addCase(getHistoryByMileStoneIdAndProjectId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getHistoryByMileStoneIdAndProjectId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.mileStoneEventHistory = action.payload;
+      }
+    );
+    builder.addCase(getHistoryByMileStoneIdAndProjectId.rejected, (state) => {
+      state.loading = "rejected";
+      state.mileStoneEventHistory = {};
+    });
   },
 });
 
