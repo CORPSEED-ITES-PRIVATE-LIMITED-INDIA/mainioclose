@@ -42,73 +42,186 @@ const TaxInvoice = ({ detail }) => {
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
-
       pdf.save(`estimate_${detail?.id || "ESTD"}.pdf`);
     } catch (error) {
       console.error("PDF generation failed:", error);
     }
   };
 
-
   const items = [
-    {
-      particulars: detail?.productName,
-      hsn: detail?.professionalCode,
-      amount: detail?.professionalFees,
-    },
-    ...(detail?.igst
+    ...(detail?.productType === "Product"
       ? [
           {
-            particulars: "IGST",
-            hsn: detail?.gstCode,
-            amount: detail?.gstAmount,
+            particulars: detail?.productName,
+            hsn: detail?.HsnSac,
+            quantity: detail?.quantity,
+            rate: detail?.actualAmount,
+            per: "kg",
+            amount: detail?.amount,
           },
+          ...(detail?.igst
+            ? [
+                {
+                  particulars: "IGST",
+                  hsn: detail?.gstCode,
+                  amount: detail?.gstAmount,
+                },
+              ]
+            : [
+                {
+                  particulars: "CGST",
+                  hsn: detail?.gstCode,
+                  quantity: "",
+                  rate: detail?.cgst,
+                  per: "%",
+                  amount: detail?.cgstAmount,
+                },
+                {
+                  particulars: "SGST",
+                  hsn: detail?.gstCode,
+                  quantity: "",
+                  rate: detail?.sgst,
+                  per: "%",
+                  amount: detail?.sgstAmount,
+                },
+              ]),
         ]
       : [
           {
-            particulars: "CGST",
-            hsn: "",
-            amount: detail?.gstAmount,
+            particulars: detail?.productName,
           },
-          {
-            particulars: "SGST",
-            hsn: "",
-            amount: detail?.gstAmount,
-          },
+          ...(detail?.professionalCode
+            ? [
+                {
+                  particulars: "Professional fee",
+                  hsn: detail?.professionalCode,
+                  amount: detail?.professionalFees,
+                },
+              ]
+            : []),
+          ...(detail?.serviceCode
+            ? [
+                {
+                  particulars: "Service fee",
+                  hsn: detail?.serviceCode,
+                  fees: detail?.serviceFees,
+                  gst: detail?.serviceGst,
+                  gstAmount: detail?.serviceGstAmount,
+                  amount: detail?.serviceFees + detail?.serviceGstAmount,
+                },
+              ]
+            : []),
+          ...(detail?.governmentCode
+            ? [
+                {
+                  particulars: "Government fee",
+                  hsn: detail?.governmentCode,
+                  fees: detail?.govFees,
+                  gst: detail?.govGst,
+                  gstAmount: detail?.govGstAmount,
+                  amount: detail?.govFees + detail?.govGstAmount,
+                },
+              ]
+            : []),
+          ...(detail?.otherCode
+            ? [
+                {
+                  particulars: "Other fee",
+                  hsn: detail?.otherCode,
+                  fees: detail?.professionalFees,
+                  gst: detail?.otherGst,
+                  gstAmount: detail?.gstAmount,
+                  amount: detail?.professionalFees + detail?.gstAmount,
+                },
+              ]
+            : []),
+          ...(detail?.igst
+            ? [
+                {
+                  particulars: "IGST",
+                  hsn: detail?.professionalCode,
+                  rate: detail?.profesionalGst,
+                  per: "%",
+                  amount: detail?.profGst,
+                },
+              ]
+            : [
+                {
+                  particulars: "CGST",
+                  hsn: detail?.professionalCode,
+                  rate: detail?.cgst,
+                  per: "%",
+                  amount: detail?.cgstAmount,
+                },
+                {
+                  particulars: "SGST",
+                  hsn: detail?.professionalCode,
+                  rate: detail?.sgst,
+                  per: "%",
+                  amount: detail?.sgstAmount,
+                },
+              ]),
         ]),
   ];
   const totalAmount = detail?.totalAmount;
 
   const taxAbleItems = [
-    ...(detail?.igst
+    ...(detail?.productType === "Product"
       ? [
-          {
-            hsn: detail?.professionalCode,
-            taxable: detail?.professionalFees,
-            igstRate: detail?.gstPercent,
-            igstAmount: detail?.gstAmount,
-            totalTax: detail?.gstAmount,
-          },
+          ...(detail?.igst
+            ? [
+                {
+                  hsn: detail?.gstCode,
+                  taxable: detail?.amount,
+                  igstRate: detail?.gstPercent,
+                  igstAmount: detail?.gstAmount,
+                  totalTax: detail?.gstAmount,
+                },
+              ]
+            : [
+                {
+                  hsn: detail?.gstCode,
+                  taxable: detail?.amount,
+                  cgstPercent: detail?.cgst || 0,
+                  cgstAmount: detail?.cgstAmount || 0,
+                  sgstPercent: detail?.sgst || 0,
+                  sgstAmount: detail?.sgstAmount || 0,
+                  totalTax: detail?.gstAmount || 0,
+                },
+              ]),
         ]
       : [
-          {
-            hsn: detail?.professionalCode,
-            taxable: detail?.professionalFees,
-            cgstPercent: detail?.cgst || 0,
-            cgstAmount: detail?.cgstAmount || 0,
-            sgstPercent: detail?.sgst || 0,
-            sgstAmount: detail?.sgstAmount || 0,
-            totalTax: detail?.gstAmount || 0,
-          },
+          ...(detail?.igst
+            ? [
+                {
+                  hsn: detail?.professionalCode,
+                  taxable: detail?.professionalFees,
+                  igstRate: detail?.gstPercent,
+                  igstAmount: detail?.gstAmount,
+                  totalTax: detail?.gstAmount,
+                },
+              ]
+            : [
+                {
+                  hsn: detail?.professionalCode,
+                  taxable: detail?.professionalFees,
+                  cgstPercent: detail?.cgst || 0,
+                  cgstAmount: detail?.cgstAmount || 0,
+                  sgstPercent: detail?.sgst || 0,
+                  sgstAmount: detail?.sgstAmount || 0,
+                  totalTax: detail?.gstAmount || 0,
+                },
+              ]),
         ]),
   ];
+
   const totalTaxable = taxAbleItems.reduce((sum, i) => sum + i.taxable, 0);
   const totalIGST = taxAbleItems.reduce((sum, i) => sum + i.igstAmount, 0);
   const totalTaxAmount = taxAbleItems.reduce((sum, i) => sum + i.totalTax, 0);
 
   return (
     <>
-      <div className=" max-h-[80vh] overflow-auto">
+      <div className=" max-h-[80vh] flex flex-col items-center  overflow-auto">
         <div className="flex flex-col gap-2 p-14" ref={contentRef}>
           <h1 className="text-center font-medium">Tax Invoice</h1>
           <div className="border-1 border-gray-400">
@@ -281,7 +394,7 @@ const TaxInvoice = ({ detail }) => {
                 </tbody>
               </table>
             </div>
-            <div className="p-4">
+            <div className="p-4 w-full flex flex-col gap-0.5 items-end">
               <p className="text-xs">Amount Chargeable (in Words) </p>
               <p className="text-sm font-semibold">
                 {totalAmount
@@ -292,21 +405,23 @@ const TaxInvoice = ({ detail }) => {
 
             <table className="w-full border border-gray-300 text-sm text-center">
               <thead>
-                {/* First row with grouped IGST column */}
+                {/* Row 1 */}
                 <tr className="bg-gray-100 dark:bg-gray-600">
-                  <th className="border border-gray-300 px-4 py-2" rowSpan={2}>
-                    HSN/SAC
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2" rowSpan={2}>
+                  <th className="border border-gray-300 px-4 py-2">HSN/SAC</th>
+                  <th className="border border-gray-300 px-4 py-2">
                     Taxable Value (₹)
                   </th>
+
                   {detail?.igst ? (
-                    <th
-                      className="border border-gray-300 px-4 py-2"
-                      colSpan={2}
-                    >
-                      IGST
-                    </th>
+                    <>
+                      <th
+                        className="border border-gray-300 px-4 py-2"
+                        colSpan={2}
+                        style={{ textAlign: "center" }}
+                      >
+                        IGST
+                      </th>
+                    </>
                   ) : (
                     <>
                       <th
@@ -324,26 +439,28 @@ const TaxInvoice = ({ detail }) => {
                     </>
                   )}
 
-                  <th
-                    className="border border-gray-300 px-4 py-2 text-right"
-                    rowSpan={2}
-                  >
+                  <th className="border border-gray-300 px-4 py-2">
                     Total Tax Amount (₹)
                   </th>
                 </tr>
-                {/* Second row under IGST */}
-                {detail?.igst ? (
-                  <tr className="bg-gray-100 dark:bg-gray-600">
-                    <th className="border border-gray-300 px-4 py-2">
-                      Rate (%)
-                    </th>
-                    <th className="border border-gray-300 px-4 py-2">
-                      Amount (₹)
-                    </th>
-                  </tr>
-                ) : (
-                  <>
-                    <tr className="bg-gray-100 dark:bg-gray-600">
+
+                {/* Row 2 – Always same number of columns */}
+                <tr className="bg-gray-100 dark:bg-gray-600">
+                  {/* Empty cells to align properly instead of rowspan */}
+                  <th className="border border-gray-300 px-4 py-2"></th>
+                  <th className="border border-gray-300 px-4 py-2"></th>
+
+                  {detail?.igst ? (
+                    <>
+                      <th className="border border-gray-300 px-4 py-2">
+                        Rate (%)
+                      </th>
+                      <th className="border border-gray-300 px-4 py-2">
+                        Amount (₹)
+                      </th>
+                    </>
+                  ) : (
+                    <>
                       <th className="border border-gray-300 px-4 py-2">
                         Rate (%)
                       </th>
@@ -356,9 +473,11 @@ const TaxInvoice = ({ detail }) => {
                       <th className="border border-gray-300 px-4 py-2">
                         Amount (₹)
                       </th>
-                    </tr>
-                  </>
-                )}
+                    </>
+                  )}
+
+                  <th className="border border-gray-300 px-4 py-2"></th>
+                </tr>
               </thead>
 
               <tbody>

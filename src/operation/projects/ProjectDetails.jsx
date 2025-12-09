@@ -252,6 +252,18 @@ const ProjectDetails = () => {
       );
   };
 
+  useEffect(() => {
+    if (detailedData?.milestones?.length > 0) {
+      dispatch(
+        getHistoryByMileStoneIdAndProjectId({
+          milestoneId: detailedData?.milestones?.[0]?.milestoneId,
+          projectId: detailedData?.milestones?.[0]?.projectId,
+          userId,
+        })
+      );
+    }
+  }, [detailedData]);
+
   const handleChangeAccordian = (milestoneId, projectId, userId) => {
     dispatch(
       getHistoryByMileStoneIdAndProjectId({ milestoneId, projectId, userId })
@@ -283,9 +295,8 @@ const ProjectDetails = () => {
               <MapPin className="w-4 h-4" />{" "}
               <div className="flex flex-col ">
                 <p className="text-sm">
-                  {detailedData?.projectDetails?.address}
-                  {", "}
                   {[
+                    detailedData?.projectDetails?.address,
                     detailedData?.projectDetails?.city,
                     detailedData?.projectDetails?.state,
                     detailedData?.projectDetails?.country,
