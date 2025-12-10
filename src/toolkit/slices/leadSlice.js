@@ -615,9 +615,9 @@ export const updateLeadSource = createAsyncThunk(
 
 export const getAllChildLeads = createAsyncThunk(
   "getAllChildLeads",
-  async (name) => {
-    const response = await api.get(
-      `/leadService/api/v1/urls/getSlugChildByName?name=${name}`
+  async (leadId ) => {
+    const response = await api.post(
+      `/leadService/api/v1/lead/getAllChildLead?leadId=${leadId}`
     );
     return response.data;
   }

@@ -6,6 +6,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Chip,
   Drawer,
   DrawerBody,
@@ -23,6 +24,8 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Select,
+  SelectItem,
   Textarea,
   useDisclosure,
   User,
@@ -35,6 +38,7 @@ import {
   getHistoryByMileStoneIdAndProjectId,
   getOperationProjectDetailById,
   getRequiredDocumentsByProductId,
+  updateApplicantTypeInProject,
   updateAssigneeForMileStone,
   updateAssignmentStatusForMileStone,
 } from "../../toolkit/slices/operationSlice";
@@ -60,6 +64,10 @@ import {
   getUsersListByDepartmentId,
 } from "../../toolkit/slices/commonSlice";
 import { statusColorCode, statusColors } from "../../common";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { getApplicantTypeList } from "../../toolkit/slices/settingSlice";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -101,6 +109,21 @@ export const PdfIcon = (props) => {
   );
 };
 
+const documentSchema = z.object({
+  projectId: z.coerce.number().min(1, "Project is required"),
+  requiredDocumentId: z.coerce.number().min(1, "Required Document is required"),
+  fileName: z.string().min(1, "File name is required"),
+  uploadedById: z.coerce.number().min(1, "Uploader is required"),
+  createdById: z.coerce.number().min(1, "Creator is required"),
+  companyDocSourceId: z.coerce.number().min(1, "Source is required"),
+  isFromCompanyDoc: z.boolean(),
+  expiryDate: z.string().optional(),
+  isPermanent: z.boolean(),
+  fileSizeKb: z.coerce.number().min(1, "File size required"),
+  fileFormat: z.string().min(1, "File format is required"),
+  remarks: z.string().optional(),
+});
+
 const ProjectDetails = () => {
   const dispatch = useDispatch();
   const { projectId, userId } = useParams();
@@ -108,6 +131,7 @@ const ProjectDetails = () => {
   const assigneeModal = useDisclosure();
   const statusModal = useDisclosure();
   const clientModal = useDisclosure();
+  const docModal = useDisclosure();
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail
   );
@@ -126,6 +150,10 @@ const ProjectDetails = () => {
   const mileStoneHistoryDetail = useSelector(
     (state) => state.operation.mileStoneEventHistory
   );
+  const applicantTypeList = useSelector(
+    (state) => state.setting.applicantTypeList
+  );
+
   const [assigneeObj, setAssigneeObj] = useState({
     assignmentId: null,
     newUserId: null,
@@ -153,6 +181,7 @@ const ProjectDetails = () => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
     dispatch(getAllMilestoneStatusesForOperations());
     dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
+    dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   }, [projectId]);
 
   const handleChangeAssignee = () => {
@@ -270,6 +299,44 @@ const ProjectDetails = () => {
     );
   };
 
+  const handleUpdateApplicantType = (applicantTypeId) => {
+    dispatch(updateApplicantTypeInProject({ applicantTypeId, projectId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Applicant type updated successfully !.",
+            color: "success",
+          });
+          dispatch(getOperationProjectDetailById({ projectId, userId }));
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  };
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(documentSchema),
+    defaultValues: {
+      isFromCompanyDoc: false,
+      isPermanent: false,
+    },
+  });
+
+  const onDocumentSubmit = (data) => {
+    console.log("Form Data:", data);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -332,7 +399,6 @@ const ProjectDetails = () => {
                 dispatch(
                   getRequiredDocumentsByProductId({
                     userId,
-                    productId: detailedData?.projectDetails?.productId,
                     projectId,
                   })
                 );
@@ -463,7 +529,7 @@ const ProjectDetails = () => {
                           </DropdownMenu>
                         </Dropdown>
                       </div>
-                      <div className="max-h-[35vh] overflow-auto bg-white border rounded-lg mt-1.5">
+                      <div className="max-h-[35vh] overflow-auto border rounded-lg mt-1.5">
                         {mileStoneHistoryDetail?.assignmentEvents?.map(
                           (history, index) => (
                             <div
@@ -517,24 +583,114 @@ const ProjectDetails = () => {
                 Documents
               </DrawerHeader>
               <DrawerBody className="max-h-[90vh] overflow-auto">
-                {requiredDocsList?.map((doc, idx) => (
-                  <Card
-                    key={`doc${idx}`}
-                    className="min-h-[150px] max-h-[200px]"
-                  >
-                    <CardBody className="flex flex-col gap-2">
-                      <div>
-                        <p className="text-small font-sans">{doc?.name}</p>
-                        <p className="text-small text-default-500">
-                          {doc?.description}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button startContent={<PdfIcon />}>Document</Button>
-                      </div>
-                    </CardBody>
-                  </Card>
-                ))}
+                <NewSelect
+                  label={"Select applicant type"}
+                  labelKey={"name"}
+                  valueKey={"id"}
+                  data={applicantTypeList?.length > 0 ? applicantTypeList : []}
+                  onChange={(e) => handleUpdateApplicantType(e)}
+                />
+
+                {requiredDocsList?.map((doc, idx) => {
+                  const hasFile = !!doc?.fileUrl;
+
+                  return (
+                    <Card
+                      key={`doc${idx}`}
+                      className="min-h-[180px] max-h-[220px] border border-gray-200"
+                    >
+                      <CardBody className="flex flex-col justify-between gap-3">
+                        {/* Top Section */}
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-md font-semibold">
+                              {doc?.documentName}
+                            </h4>
+
+                            <div className="flex gap-2 mt-1 flex-wrap">
+                              {doc?.mandatory && (
+                                <span className="text-[11px] bg-red-100 text-red-600 px-2 py-0.5 rounded">
+                                  Mandatory
+                                </span>
+                              )}
+
+                              {doc?.permanent && (
+                                <span className="text-[11px] bg-green-100 text-green-600 px-2 py-0.5 rounded">
+                                  Permanent
+                                </span>
+                              )}
+
+                              {doc?.expired && (
+                                <span className="text-[11px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded">
+                                  Expired
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Status */}
+                          <span
+                            className={`text-[11px] font-medium px-2 py-1 rounded ${
+                              doc?.status === "PENDING"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {doc?.status}
+                          </span>
+                        </div>
+
+                        {/* Middle Section – File Info */}
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          {hasFile ? (
+                            <>
+                              <span className="truncate max-w-[180px]">
+                                {doc?.fileName || "Uploaded File"}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="italic text-gray-400">
+                              No file uploaded
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Bottom Section – Actions */}
+                        <div className="flex justify-between items-center mt-2">
+                          <div className="text-xs text-gray-400">
+                            {doc?.expiryDate
+                              ? `Expiry: ${doc.expiryDate}`
+                              : doc?.permanent
+                                ? "No Expiry (Permanent)"
+                                : "No expiry date"}
+                          </div>
+
+                          {hasFile ? (
+                            <Button
+                              size="sm"
+                              color="primary"
+                              variant="flat"
+                              style={{ cursor: "pointer" }}
+                              onClick={() =>
+                                window.open(doc?.fileUrl, "_blank")
+                              }
+                            >
+                              Preview
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              color="secondary"
+                              onPress={() => docModal.onOpen()}
+                            >
+                              Upload
+                            </Button>
+                          )}
+                        </div>
+                      </CardBody>
+                    </Card>
+                  );
+                })}
               </DrawerBody>
               <DrawerFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
@@ -648,6 +804,149 @@ const ProjectDetails = () => {
                   Submit
                 </Button>
               </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="4xl"
+        isOpen={docModal.isOpen}
+        onOpenChange={docModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Upload document
+              </ModalHeader>
+              <ModalBody className="max-h-[90vh] overflow-auto">
+                <form onSubmit={handleSubmit(onDocumentSubmit)}>
+                  <div className="max-h-[60vh] overflow-auto grid grid-cols-2 gap-2.5">
+                    <Controller
+                      name="fileName"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          label="File Name"
+                          isInvalid={!!errors.fileName}
+                          errorMessage={errors.fileName?.message}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="fileSizeKb"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          label="File Size (KB)"
+                          isInvalid={!!errors.fileSizeKb}
+                          errorMessage={errors.fileSizeKb?.message}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="companyDocSourceId"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          label="Company Doc Source ID"
+                          isInvalid={!!errors.companyDocSourceId}
+                          errorMessage={errors.companyDocSourceId?.message}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="fileFormat"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          label="File Format"
+                          selectedKeys={field.value ? [field.value] : []}
+                          onSelectionChange={(keys) => {
+                            const value = Array.from(keys)[0];
+                            field.onChange(value);
+                          }}
+                          isInvalid={!!errors.fileFormat}
+                          errorMessage={errors.fileFormat?.message}
+                        >
+                          <SelectItem key="pdf">PDF</SelectItem>
+                          <SelectItem key="png">PNG</SelectItem>
+                          <SelectItem key="jpg">JPG</SelectItem>
+                          <SelectItem key="docx">DOCX</SelectItem>
+                        </Select>
+                      )}
+                    />
+
+                    <Controller
+                      name="expiryDate"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="date"
+                          label="Expiry Date"
+                          isDisabled={false}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="remarks"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          {...field}
+                          label="Remarks"
+                          minRows={3}
+                          placeholder="Add remarks..."
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="isFromCompanyDoc"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          isSelected={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          Is From Company Doc
+                        </Checkbox>
+                      )}
+                    />
+
+                    <Controller
+                      name="isPermanent"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          isSelected={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          Is Permanent
+                        </Checkbox>
+                      )}
+                    />
+                  </div>
+                  <ModalFooter>
+                    <Button variant="light" onPress={onClose}>
+                      Cancel
+                    </Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
             </>
           )}
         </ModalContent>

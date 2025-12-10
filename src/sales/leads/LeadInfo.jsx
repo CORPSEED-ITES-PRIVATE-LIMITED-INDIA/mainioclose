@@ -1024,7 +1024,7 @@ const LeadInfo = () => {
                       <CardHeader>
                         <div className="flex justify-between items-center w-full">
                           <div className="flex items-center gap-2">
-                            <Podcast className={iconClass} />{" "}
+                            <User2 className={iconClass} />{" "}
                             <h3 className="font-medium">
                               Assigne to same person{" "}
                             </h3>

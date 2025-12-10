@@ -63,6 +63,7 @@ import {
   docsUploadListInEstimate,
   editEstimateForApprovals,
   editLeadEstimate,
+  getAllChildLeads,
   getAllLeadUser,
   getEstimateByLeadId,
   getSingleLeadDataByLeadId,
@@ -323,6 +324,7 @@ const LeadEstimate = () => {
   );
   const details = useSelector((state) => state.leads.estimateDetail);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
+  const childLeads = useSelector((state) => state.leads.allChildLeadList);
   const companyDetails = useSelector(
     (state) => state?.leads?.companyDetailsById
   );
@@ -430,7 +432,15 @@ const LeadEstimate = () => {
       if (resp.meta.requestStatus === "fulfilled") {
         if (resp?.payload?.originalName) {
           dispatch(getProductListByLeadName(resp?.payload?.originalName));
-          dispatch(checkPlantSetUpData(resp?.payload?.originalName));
+          dispatch(checkPlantSetUpData(resp?.payload?.originalName)).then(
+            (res) => {
+              if (res.meta.requestStatus === "fulfilled") {
+                if (res.payload) {
+                  dispatch(getAllChildLeads(resp?.payload?.leadId));
+                }
+              }
+            }
+          );
         }
       }
     });
@@ -819,7 +829,9 @@ const LeadEstimate = () => {
 
   const handleFinish = useCallback(
     (values) => {
-      values.leadId = leadId;
+      if (!plantSetupData) {
+        values.leadId = leadId;
+      }
       values.unitCompany = false;
       values.productId = productData?.id;
       values.companyId = companyAndUnitData?.companyId;
@@ -939,6 +951,7 @@ const LeadEstimate = () => {
       dispatch,
       companyAndUnitData,
       discount,
+      plantSetupData
     ]
   );
 
@@ -1033,7 +1046,7 @@ const LeadEstimate = () => {
             </Select>
             <Autocomplete
               size={isMedium ? "md" : "lg"}
-              className="max-w-[82%]"
+              className="max-w-[80%]"
               classNames={{ base: "rounded-tr-none rounded-br-none" }}
               items={searchCompaniesList || []}
               placeholder="Search companies"
@@ -1062,7 +1075,7 @@ const LeadEstimate = () => {
             </Autocomplete>
           </div>
           <form
-            className="2xl:max-h-[67vh] md:max-h-[55vh] overflow-auto px-4 py-2"
+            className="2xl:max-h-[65vh] md:max-h-[53vh] overflow-auto px-4 py-2"
             onSubmit={handleSubmit(handleFinish)}
           >
             <div className="px-2 py-2 my-2">
@@ -1101,6 +1114,26 @@ const LeadEstimate = () => {
               </CardHeader>
 
               <CardBody className="grid grid-cols-3 gap-2">
+                {plantSetupData && (
+                  <Controller
+                    name="leadId"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => {
+                      return (
+                        <NewSelect
+                          data={childLeads}
+                          labelKey={"childLeadName"}
+                          valueKey={"childId"}
+                          label={"Select child lead"}
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      );
+                    }}
+                  />
+                )}
                 <Controller
                   name="unitId"
                   control={control}

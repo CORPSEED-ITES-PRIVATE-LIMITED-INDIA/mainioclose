@@ -27,17 +27,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
   addLeadChild,
-  getAllChildLeads,
+  checkPlantSetUpData,
   getSingleLeadDataByLeadId,
 } from "../../toolkit/slices/leadSlice";
 import NewSelect from "../../components/NewSelect";
 import StatusDisplay from "../../components/StatusDisplay";
+import { getAllSlugList } from "../../toolkit/slices/settingSlice";
 
 export const columns = [
   { name: "ID", uid: "childId" },
-  { name: "NAME", uid: "childLeadName", sortable: true },
-  { name: "STATUS", uid: "childAssigneeName" },
-  { name: "DESCRIPTION", uid: "childAssigneeEmail" },
+  { name: "LEAD NAME", uid: "childLeadName", sortable: true },
+  { name: "ASSIGNEE", uid: "childAssigneeName" },
+  { name: "ASSIGNEE EMAIL", uid: "childAssigneeEmail" },
 ];
 
 export function capitalize(s) {
@@ -60,7 +61,8 @@ const ChildLead = () => {
     (state) => state.leads.singleLeadData?.childLead?.length
   );
   const leadData = useSelector((state) => state.leads.singleLeadData);
-  const childLeads = useSelector((state) => state.leads.allChildLeadList);
+  const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
+  const slugList = useSelector((state) => state.setting.slugList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -76,10 +78,11 @@ const ChildLead = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
+    dispatch(getAllSlugList());
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         const temp = resp.payload;
-        dispatch(getAllChildLeads(temp?.leadName));
+        dispatch(checkPlantSetUpData(temp?.originalName));
       }
     });
   }, [dispatch]);
@@ -137,7 +140,7 @@ const ChildLead = () => {
             color: "success",
           });
           setSelectedItem([]);
-          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+          dispatch(getSingleLeadDataByLeadId({ leadId, userId }))
           onClose();
         } else {
           addToast({ message: "Something went wrong !.", color: "danger" });
@@ -298,7 +301,7 @@ const ChildLead = () => {
 
   return (
     <>
-      {leadData?.parent ? (
+      {plantSetupData ? (
         <>
           <h1 className="font-sans text-2xl font-medium mb-1">
             Child lead list
@@ -331,7 +334,7 @@ const ChildLead = () => {
             </TableHeader>
             <TableBody emptyContent={"No data found"} items={sortedItems}>
               {(item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.childId}>
                   {(columnKey) => (
                     <TableCell>{renderCell(item, columnKey)}</TableCell>
                   )}
@@ -354,13 +357,12 @@ const ChildLead = () => {
                   </ModalHeader>
                   <ModalBody>
                     <NewSelect
-                      placeholder="Select lead..."
-                      data={childLeads || []}
-                      valueKey={"name"}
+                      data={slugList}
                       labelKey={"name"}
+                      valueKey={"name"}
                       label={"Select child lead"}
+                      selectionMode="multiple"
                       value={selectedItem}
-                      isClearable
                       onChange={(e) => {
                         setSelectedItem(e);
                       }}

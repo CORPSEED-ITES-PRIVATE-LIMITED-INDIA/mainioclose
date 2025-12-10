@@ -95,9 +95,9 @@ export const getOperationProjectDetailById = createAsyncThunk(
 
 export const getRequiredDocumentsByProductId = createAsyncThunk(
   "getRequiredDocumentsByProductId",
-  async ({ userId, productId, projectId }) => {
+  async ({ userId, projectId }) => {
     const response = await api.get(
-      `/api/required-documents/project/${projectId}/product/${productId}?userId=${userId}`
+      `/api/projects/${projectId}/document-checklist?userId=${userId}`
     );
     return response.data;
   }
@@ -282,6 +282,35 @@ export const getHistoryByMileStoneIdAndProjectId = createAsyncThunk(
       return response.data;
     } catch (error) {
       rejectWithValue(error?.response.data?.message);
+    }
+  }
+);
+
+export const uploadProjectsDocument = createAsyncThunk(
+  "uploadProjectsDocument",
+  async ({ projectId, milestoneAssignmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/api/projects/${projectId}/milestones/${milestoneAssignmentId}/documents`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  }
+);
+
+export const updateApplicantTypeInProject = createAsyncThunk(
+  "updateApplicantTypeInProject",
+  async ({ projectId, applicantTypeId }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/api/projects/${projectId}/applicant-type?applicantTypeId=${applicantTypeId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
     }
   }
 );
