@@ -163,10 +163,11 @@ const AllProposal = () => {
       proposalModal.onOpen();
     }
   };
+  
 
-  const handleChangeStatus = () => {
+  const handleChangeStatus = (values) => {
     setLoading("pending");
-    dispatch(proposalApprovalByManager(updateStatusData))
+    dispatch(proposalApprovalByManager({...updateStatusData,comment:values?.comment}))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(getAllProposalByUserIdForManager(filteration));
@@ -303,7 +304,7 @@ const AllProposal = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -37,6 +37,11 @@ import {
   createProjectsForOperations,
   getAllOperationsProject,
   getAllProjectsForOperations,
+  getTotalCountForOperationProjects,
+  searchByCompany,
+  searchByContactName,
+  searchByProjectName,
+  searchByProjectNumber,
 } from "../../toolkit/slices/operationSlice";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -131,15 +136,14 @@ const Projects = () => {
   const { userId } = useParams();
   const formModal = useDisclosure();
   const data = useSelector((state) => state.operation.projectListForOperation);
-  const count =
-    useSelector((state) => state.operation.projectListForOperation?.length) ||
-    "";
+  const count = useSelector((state) => state.operation.projectCount) || "";
   const usersList = useSelector((state) => state?.common?.usersList);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
+  const [searchBy, setSearchBy] = useState("projectName");
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
@@ -158,6 +162,7 @@ const Projects = () => {
 
   useEffect(() => {
     dispatch(getAllProjectsForOperations(paginationData));
+    dispatch(getTotalCountForOperationProjects(userId));
     dispatch(getAllUsers());
     dispatch(getAllCountries());
   }, [dispatch, userId]);
@@ -171,13 +176,13 @@ const Projects = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
-      );
-    }
+    // if (hasSearchFilter) {
+    //   filteredUsers = filteredUsers.filter((item) =>
+    //     Object.values(item)?.some((val) =>
+    //       String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
+    //     )
+    //   );
+    // }
     return filteredUsers;
   }, [data, filterValue]);
 
@@ -192,6 +197,21 @@ const Projects = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
+
+  const handleEnterPress = useCallback(() => {
+    if (searchBy === "projectName") {
+      dispatch(searchByProjectName({ projectName: filterValue, userId }));
+    }
+    if (searchBy === "projectNumber") {
+      dispatch(searchByProjectNumber({ projectNumber: filterValue, userId }));
+    }
+    if (searchBy === "company") {
+      dispatch(searchByCompany({ companyName: filterValue, userId }));
+    }
+    if (searchBy === "contactName") {
+      dispatch(searchByContactName({ contactName: filterValue, userId }));
+    }
+  }, [searchBy, filterValue]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -269,6 +289,7 @@ const Projects = () => {
       }));
     } else {
       setFilterValue("");
+      dispatch(getAllProjectsForOperations(paginationData));
     }
   }, []);
 
@@ -278,6 +299,7 @@ const Projects = () => {
       ...prev,
       page: 1,
     }));
+    dispatch(getAllProjectsForOperations(paginationData));
   }, []);
 
   const {
@@ -316,15 +338,37 @@ const Projects = () => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
+          <div className="flex gap-0 items-center w-[35vw]">
+            <Select
+              className="max-w-[30%]"
+              selectionMode="single"
+              selectedKeys={[searchBy]}
+              onSelectionChange={(e) => {
+                let key = Array.from(e)[0];
+                setSearchBy(key);
+              }}
+            >
+              <SelectItem key={"projectName"}>Project name</SelectItem>
+              <SelectItem key={"projectNumber"}>Project number</SelectItem>
+              <SelectItem key={"company"}>Company</SelectItem>
+              <SelectItem key={"contactName"}>Contact name</SelectItem>
+            </Select>
+            <Input
+              isClearable
+              className="w-full sm:max-w-[70%]"
+              placeholder="Search ..."
+              startContent={<Search />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleEnterPress(); // your function
+                }
+              }}
+            />
+          </div>
+
           <div className="flex gap-3">
             <Button
               endContent={<Plus />}
@@ -386,6 +430,7 @@ const Projects = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    searchBy,
   ]);
 
   const bottomContent = React.useMemo(() => {

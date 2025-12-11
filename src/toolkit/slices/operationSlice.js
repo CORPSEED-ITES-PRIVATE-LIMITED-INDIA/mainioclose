@@ -183,6 +183,54 @@ export const getAllProjectsForOperations = createAsyncThunk(
   }
 );
 
+export const getTotalCountForOperationProjects = createAsyncThunk(
+  "getTotalCountForOperationProjects",
+  async (userId) => {
+    const response = await api.get(`/api/projects/count?userId=${userId}`);
+    return response.data;
+  }
+);
+
+export const searchByCompany = createAsyncThunk(
+  "searchByCompany",
+  async ({ companyName, userId }) => {
+    const response = await api.get(
+      `/api/projects/search/by-company?companyName=${companyName}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const searchByProjectNumber = createAsyncThunk(
+  "searchByProjectNumber",
+  async ({ projectNumber, userId }) => {
+    const response = await api.get(
+      `/api/projects/search/by-project-number?projectNumber=${projectNumber}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const searchByProjectName = createAsyncThunk(
+  "searchByProjectName",
+  async ({ projectName, userId }) => {
+    const response = await api.get(
+      `/api/projects/search/by-project-name?projectName=${projectName}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
+export const searchByContactName = createAsyncThunk(
+  "searchByContactName",
+  async ({ contactName, userId }) => {
+    const response = await api.get(
+      `/api/projects/search/by-contact-name?contactName=${contactName}&userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
 export const updateAssigneeForMileStone = createAsyncThunk(
   "updateAssigneeForMileStone",
   async (data, { rejectWithValue }) => {
@@ -331,6 +379,7 @@ const OperationSlice = createSlice({
     updatedDepartmentConfig: null,
     clientLoginCredential: {},
     mileStoneEventHistory: {},
+    projectCount:0
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -422,6 +471,66 @@ const OperationSlice = createSlice({
       state.projectListForOperation = action?.payload;
     });
     builder.addCase(getAllProjectsForOperations.rejected, (state) => {
+      state.loading = "rejected";
+      state.projectListForOperation = [];
+    });
+
+    builder.addCase(getTotalCountForOperationProjects.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTotalCountForOperationProjects.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectCount = action?.payload;
+    });
+    builder.addCase(getTotalCountForOperationProjects.rejected, (state) => {
+      state.loading = "rejected";
+      state.projectCount = 0;
+    });
+
+    builder.addCase(searchByCompany.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchByCompany.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectListForOperation = action?.payload;
+    });
+    builder.addCase(searchByCompany.rejected, (state) => {
+      state.loading = "rejected";
+      state.projectListForOperation = [];
+    });
+
+    builder.addCase(searchByContactName.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchByContactName.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectListForOperation = action?.payload;
+    });
+    builder.addCase(searchByContactName.rejected, (state) => {
+      state.loading = "rejected";
+      state.projectListForOperation = [];
+    });
+
+    builder.addCase(searchByProjectName.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchByProjectName.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectListForOperation = action?.payload;
+    });
+    builder.addCase(searchByProjectName.rejected, (state) => {
+      state.loading = "rejected";
+      state.projectListForOperation = [];
+    });
+
+    builder.addCase(searchByProjectNumber.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchByProjectNumber.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.projectListForOperation = action?.payload;
+    });
+    builder.addCase(searchByProjectNumber.rejected, (state) => {
       state.loading = "rejected";
       state.projectListForOperation = [];
     });
