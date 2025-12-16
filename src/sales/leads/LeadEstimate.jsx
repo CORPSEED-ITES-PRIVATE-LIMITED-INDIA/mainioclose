@@ -1088,7 +1088,7 @@ const LeadEstimate = () => {
             </Autocomplete>
           </div>
           <form
-            className="2xl:max-h-[65vh] md:max-h-[53vh] overflow-auto px-4 py-2"
+            className="overflow-auto px-4 py-2 max-h-[70vh] md:max-h-[75vh] xl:max-h-none"
             onSubmit={handleSubmit(handleFinish)}
           >
             <div className="px-2 py-2 my-2">
