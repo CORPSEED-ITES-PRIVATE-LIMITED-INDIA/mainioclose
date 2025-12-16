@@ -65,6 +65,7 @@ import {
   editLeadEstimate,
   getAllChildLeads,
   getAllLeadUser,
+  getChildLeadEstimateFlagByParentLeadId,
   getEstimateByLeadId,
   getSingleLeadDataByLeadId,
   updateGstTypeInEstimate,
@@ -324,6 +325,9 @@ const LeadEstimate = () => {
   );
   const details = useSelector((state) => state.leads.estimateDetail);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
+  const childLeadEstimateFlag = useSelector(
+    (state) => state.leads.childLeadFlag
+  );
   const childLeads = useSelector((state) => state.leads.allChildLeadList);
   const companyDetails = useSelector(
     (state) => state?.leads?.companyDetailsById
@@ -431,12 +435,15 @@ const LeadEstimate = () => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         if (resp?.payload?.originalName) {
-          dispatch(getProductListByLeadName(resp?.payload?.originalName));
           dispatch(checkPlantSetUpData(resp?.payload?.originalName)).then(
             (res) => {
               if (res.meta.requestStatus === "fulfilled") {
                 if (res.payload) {
                   dispatch(getAllChildLeads(resp?.payload?.leadId));
+                } else {
+                  dispatch(
+                    getProductListByLeadName(resp?.payload?.originalName)
+                  );
                 }
               }
             }
@@ -471,8 +478,12 @@ const LeadEstimate = () => {
   }, [dispatch, productData]);
 
   useEffect(() => {
-    dispatch(getEstimateByLeadId(leadId));
-  }, [dispatch]);
+    if (plantSetupData) {
+      dispatch(getChildLeadEstimateFlagByParentLeadId(leadId));
+    } else {
+      dispatch(getEstimateByLeadId(leadId));
+    }
+  }, [dispatch, plantSetupData]);
 
   useEffect(() => {
     if (details?.discountEstimate) {
@@ -951,7 +962,7 @@ const LeadEstimate = () => {
       dispatch,
       companyAndUnitData,
       discount,
-      plantSetupData
+      plantSetupData,
     ]
   );
 
@@ -1022,7 +1033,9 @@ const LeadEstimate = () => {
           </div>
         )}
       </div>
-      {Object.keys(details)?.length === 0 || editEstimate ? (
+      {Object.keys(details)?.length === 0 ||
+      editEstimate ||
+      !childLeadEstimateFlag ? (
         <div>
           <div className="flex items-center w-full my-2">
             <Select
@@ -1126,6 +1139,11 @@ const LeadEstimate = () => {
                           valueKey={"childId"}
                           label={"Select child lead"}
                           value={field.value}
+                          onItemSelect={(item) => {
+                            dispatch(
+                              getProductListByLeadName(item?.childLeadName)
+                            );
+                          }}
                           onChange={(e) => {
                             field.onChange(e);
                           }}
@@ -2563,7 +2581,21 @@ const LeadEstimate = () => {
           </Modal>
         </div>
       ) : (
-        <EstimateView details={details} />
+        <div className="flex flex-col gap-1">
+          {plantSetupData && (
+            <NewSelect
+              data={childLeads}
+              labelKey={"childLeadName"}
+              valueKey={"childId"}
+              label={"Select child lead"}
+              onChange={(e) => {
+                dispatch(getEstimateByLeadId(e));
+              }}
+            />
+          )}
+
+          <EstimateView details={details} />
+        </div>
       )}
 
       <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>

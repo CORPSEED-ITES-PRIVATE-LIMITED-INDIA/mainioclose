@@ -94,10 +94,10 @@ import "ckeditor5/ckeditor5.css";
 import "ckeditor5-premium-features/ckeditor5-premium-features.css";
 
 const LICENSE_KEY =
-	'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NjcwNTI3OTksImp0aSI6IjRiN2FjYjlmLWU4MzEtNGM4YS05ZmJhLTY0NTYyM2M1NDVmYyIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6IjYxNjZlZjg3In0.th_ulx4AUd-eXj047ljq4AHsO01uBtJLb-l8h_mdd_UBsxiooDr7bniXOM1EmhNc8jCn2G0rp8Zls7PVT4I7cQ';
+  "eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NjcwNTI3OTksImp0aSI6IjRiN2FjYjlmLWU4MzEtNGM4YS05ZmJhLTY0NTYyM2M1NDVmYyIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6IjYxNjZlZjg3In0.th_ulx4AUd-eXj047ljq4AHsO01uBtJLb-l8h_mdd_UBsxiooDr7bniXOM1EmhNc8jCn2G0rp8Zls7PVT4I7cQ";
 
 const CLOUD_SERVICES_TOKEN_URL =
-	'https://7lpmepnjg8g8.cke-cs.com/token/dev/6d7c4dbb5d413f1c4439c1c7c784f9e841cfbd699c8e1f9b951ffd550c2e?limit=10%27';
+  "https://7lpmepnjg8g8.cke-cs.com/token/dev/6d7c4dbb5d413f1c4439c1c7c784f9e841cfbd699c8e1f9b951ffd550c2e?limit=10%27";
 
 class UsersIntegration extends Plugin {
   static get requires() {
@@ -124,13 +124,18 @@ class UsersIntegration extends Plugin {
   }
 }
 
-class CommentsIntegration extends Plugin { }
+class CommentsIntegration extends Plugin {}
 
-class TrackChangesIntegration extends Plugin { }
+class TrackChangesIntegration extends Plugin {}
 
-class RevisionHistoryIntegration extends Plugin { }
+class RevisionHistoryIntegration extends Plugin {}
 
-export default function TextEditor({ data, menu=true, onChange, initialData }) {
+export default function TextEditor({
+  data,
+  menu = true,
+  onChange,
+  initialData,
+}) {
   const editorContainerRef = useRef(null);
   const editorRef = useRef(null);
   const editorAnnotationsRef = useRef(null);
@@ -415,7 +420,7 @@ export default function TextEditor({ data, menu=true, onChange, initialData }) {
         htmlSupport: {
           allow: [
             {
-              name:/^.*$/,
+              name: /^.*$/,
               styles: true,
               attributes: true,
               classes: true,
@@ -594,7 +599,6 @@ export default function TextEditor({ data, menu=true, onChange, initialData }) {
         </div>
       </div>
     </div>
-    
   );
 }
 
