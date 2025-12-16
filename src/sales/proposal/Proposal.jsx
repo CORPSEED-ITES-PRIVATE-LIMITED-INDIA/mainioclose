@@ -18,8 +18,10 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
+  checkPlantSetUpData,
   editLeadPropposal,
   getAllBrochureList,
+  getAllChildLeads,
   getAllProposalTemplateList,
   getProposalDataByLeadId,
   getSingleLeadDataByLeadId,
@@ -27,6 +29,7 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import TextEditor from "../../components/TextEditor";
 import { getProductListByLeadName } from "../../toolkit/slices/productSlice";
+import NewSelect from "../../components/NewSelect";
 
 const formSchema = z.object({
   mailTo: z
@@ -106,6 +109,8 @@ const Proposal = () => {
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail
   );
+  const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
+  const childLeads = useSelector((state) => state.leads.allChildLeadList);
   const [templates, setTemplates] = useState([]);
   const [data, setData] = useState("<h2>Your proposal </h2>");
   const templateModal = useDisclosure();
@@ -118,7 +123,17 @@ const Proposal = () => {
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        dispatch(getProductListByLeadName(resp?.payload?.originalName));
+        dispatch(checkPlantSetUpData(resp?.payload?.originalName)).then(
+          (res) => {
+            if (res.meta.requestStatus === "fulfilled") {
+              if (res.payload) {
+                dispatch(getAllChildLeads(resp?.payload?.leadId));
+              } else {
+                dispatch(getProductListByLeadName(resp?.payload?.originalName));
+              }
+            }
+          }
+        );
       }
     });
   }, [dispatch]);
@@ -188,7 +203,9 @@ const Proposal = () => {
   };
 
   const onSubmit = (values) => {
-    values.leadId = leadId;
+    if (!plantSetupData) {
+      values.leadId = leadId;
+    }
     values.productId = productData?.id;
     values.createdById = userId;
     values.templateName = templateName;
@@ -204,7 +221,7 @@ const Proposal = () => {
           });
           reset(defaultValues);
           dispatch(getProposalDataByLeadId(leadId));
-          setEditProposal(false)
+          setEditProposal(false);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -263,7 +280,7 @@ const Proposal = () => {
           dangerouslySetInnerHTML={{ __html: proposalDataDetail?.template }}
         />
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 ">
           <div className="flex flex-col gap-1">
             <label className="font-medium">
               To <span className="text-red-500">*</span>
@@ -345,6 +362,34 @@ const Proposal = () => {
               )}
             />
           </div>
+          {plantSetupData && (
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">
+                Select service <span className="text-red-500">*</span>
+              </label>
+              <Controller
+                name="leadId"
+                control={control}
+                render={({ field, fieldState: { error } }) => {
+                  return (
+                    <NewSelect
+                      data={childLeads}
+                      labelKey={"childLeadName"}
+                      valueKey={"childId"}
+                      label={"Select child lead"}
+                      value={field.value}
+                      onItemSelect={(item) => {
+                        dispatch(getProductListByLeadName(item?.childLeadName));
+                      }}
+                      onChange={(e) => {
+                        field.onChange(e);
+                      }}
+                    />
+                  );
+                }}
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <label className="font-medium">Select brochure</label>
