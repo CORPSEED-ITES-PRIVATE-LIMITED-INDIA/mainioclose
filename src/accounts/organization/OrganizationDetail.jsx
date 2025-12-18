@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import logo from "../../assets/CORPSEED.webp";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addOrganizationBankDetail,
   addStatutory,
   createOrganization,
   getAllLedgerType,
+  getAllOrganizationBankAccounts,
   getAllOrganizations,
   getOrganizationByName,
 } from "../../toolkit/slices/organizationSlice";
@@ -25,9 +27,15 @@ import {
   ModalHeader,
   Select,
   SelectItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
   useDisclosure,
 } from "@heroui/react";
-import { Plus } from "lucide-react";
+import { EllipsisVertical, Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -106,15 +114,46 @@ const statDefaultValues = {
   classification: "",
 };
 
+const accountDetailSchema = (accountFlag) =>
+  z.object({
+    bankAccountPresent: z.boolean(),
+    ...(accountFlag?.bankAccountPresent
+      ? {
+          bankName: z.string().min(1, "Please enter bank name"),
+          accountNo: z.string().min(1, "Please enter account number"),
+          ifscCode: z.string().min(1, "Please enter IFSC code"),
+          accountHolderName: z
+            .string()
+            .min(1, "Please enter account holder name"),
+          swiftCode: z.string().min(1, "Please enter swift code"),
+          branch: z.string().min(1, "Please enter branch"),
+        }
+      : {}),
+  });
+
+const accountDefaultValues = {
+  bankAccountPresent: "",
+  bankName: "",
+  accountNo: "",
+  ifscCode: "",
+  accountHolderName: "",
+  swiftCode: "",
+  branch: "",
+};
+
 const OrganizationDetail = () => {
   const dispatch = useDispatch();
   const statutoryModal = useDisclosure();
+  const accountModal = useDisclosure();
   const organizationModal = useDisclosure();
   const organizationDetail = useSelector(
     (state) => state.organization.organizationDetail
   );
   const ledgerTypeList = useSelector(
     (state) => state.organization.ledgerTypeList
+  );
+  const allOrganizationBankDetail = useSelector(
+    (state) => state.organization.allOrganizationAccountList
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -124,9 +163,19 @@ const OrganizationDetail = () => {
     bankAccountPresent: false,
   });
 
+  const [accountFlag, setAccountFlag] = useState({
+    bankAccountPresent: false,
+  });
+
   useEffect(() => {
     dispatch(getOrganizationByName("corpseed"));
   }, [dispatch]);
+
+  useEffect(() => {
+    if (organizationDetail?.id) {
+      dispatch(getAllOrganizationBankAccounts(organizationDetail?.id));
+    }
+  }, [organizationDetail]);
 
   const handleOpenOrgModal = () => {
     dispatch(getAllCountries());
@@ -163,13 +212,18 @@ const OrganizationDetail = () => {
     defaultValues: statDefaultValues,
   });
 
+  const accountDetailForm = useForm({
+    resolver: zodResolver(accountDetailSchema(accountFlag)),
+    defaultValues: accountDefaultValues,
+  });
+
   const handleOpenStatModal = () => {
     dispatch(getAllLedgerType());
     statutoryModal.onOpen();
   };
 
   const onStatSubmit = (values) => {
-    console.log("dfjghdfjhdjkhkdfh",values)
+    console.log("dfjghdfjhdjkhkdfh", values);
     dispatch(addStatutory(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -180,6 +234,31 @@ const OrganizationDetail = () => {
           dispatch(getAllOrganizations());
           statForm.reset(statDefaultValues);
           statutoryModal.onClose();
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
+  const onAccountDetailSubmit = (values) => {
+    dispatch(
+      addOrganizationBankDetail({
+        ...values,
+        bankAccountId: organizationDetail?.id,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Bank account created successfully !.",
+            color: "success",
+          });
+          dispatch(getAllOrganizationBankAccounts(organizationDetail?.id));
+          accountDetailForm.reset(accountDefaultValues);
+          accountModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -213,26 +292,35 @@ const OrganizationDetail = () => {
         </div>
       </div>
       <Card className="max-w-full">
-        <CardHeader className="flex gap-3">
-          <Image
-            alt="company logo"
-            height={40}
-            radius="sm"
-            src={logo}
-            width={60}
-          />
-          <div className="flex flex-col">
-            <p className="text-md capitalize font-medium">
-              {organizationDetail?.name}
-            </p>
-            <a
-              className="text-small text-default-500 "
-              href={"https://www.corpseed.com"}
-              target="_blank"
-            >
-              https://www.corpseed.com
-            </a>
+        <CardHeader className="flex justify-between items-center gap-3">
+          <div className="flex gap-2.5">
+            <Image
+              alt="company logo"
+              height={40}
+              radius="sm"
+              src={logo}
+              width={60}
+            />
+            <div className="flex flex-col">
+              <p className="text-md capitalize font-medium">
+                {organizationDetail?.name}
+              </p>
+              <a
+                className="text-small text-default-500 "
+                href={"https://www.corpseed.com"}
+                target="_blank"
+              >
+                https://www.corpseed.com
+              </a>
+            </div>
           </div>
+          <Button
+            color="primary"
+            startContent={<Plus />}
+            onPress={() => accountModal.onOpen()}
+          >
+            Add Bank
+          </Button>
         </CardHeader>
         <Divider />
         <CardBody>
@@ -262,9 +350,31 @@ const OrganizationDetail = () => {
               {organizationDetail?.pin}
             </div>
           </div>
+          <Table aria-label="Example static collection table" className="mt-3">
+            <TableHeader>
+              <TableColumn>ID</TableColumn>
+              <TableColumn>BANK NAME</TableColumn>
+              <TableColumn>BRANCH</TableColumn>
+              <TableColumn>ACCOUNT HOLDER</TableColumn>
+              <TableColumn>ACCOUNT NO.</TableColumn>
+              <TableColumn>IFSC CODE</TableColumn>
+              <TableColumn>SWIFT CODE</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {allOrganizationBankDetail?.map((account) => (
+                <TableRow key={account?.id}>
+                  <TableCell>{account?.id}</TableCell>
+                  <TableCell>{account?.bankName}</TableCell>
+                  <TableCell>{account?.branch}</TableCell>
+                  <TableCell>{account?.accountHolderName}</TableCell>
+                  <TableCell>{account?.accountNo}</TableCell>
+                  <TableCell>{account?.ifscCode}</TableCell>
+                  <TableCell>{account?.swiftCode}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardBody>
-        <Divider />
-        <CardFooter></CardFooter>
       </Card>
       <Modal
         size="2xl"
@@ -727,6 +837,174 @@ const OrganizationDetail = () => {
                         />
                       )}
                     />
+                  </div>
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={accountModal.isOpen}
+        onOpenChange={accountModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Add account detail</ModalHeader>
+              <ModalBody>
+                <form
+                  onSubmit={accountDetailForm.handleSubmit(
+                    onAccountDetailSubmit
+                  )}
+                >
+                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
+                    <Controller
+                      name="bankAccountPresent"
+                      control={accountDetailForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Bank account present"
+                          isRequired
+                          selectedKeys={
+                            field.value !== undefined
+                              ? [field.value.toString()]
+                              : []
+                          }
+                          onSelectionChange={(keys) => {
+                            const value = Array.from(keys)[0];
+                            if (value !== undefined)
+                              field.onChange(value === "true");
+                            setAccountFlag((prev) => ({
+                              ...prev,
+                              bankAccountPresent: value === "true",
+                            }));
+                          }}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        >
+                          {[
+                            { label: "True", value: true },
+                            { label: "False", value: false },
+                          ].map((item) => (
+                            <SelectItem
+                              key={item.value.toString()}
+                              value={item.value}
+                            >
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+
+                    {accountFlag?.bankAccountPresent && (
+                      <>
+                        <Controller
+                          name="bankName"
+                          control={accountDetailForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Bank name"
+                              value={field.value}
+                              name="bankName"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="branch"
+                          control={accountDetailForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Branch"
+                              value={field.value}
+                              name="branch"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="accountHolderName"
+                          control={accountDetailForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Account holder name"
+                              value={field.value}
+                              name="accountHolderName"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="accountNo"
+                          control={accountDetailForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Account number"
+                              value={field.value}
+                              name="accountNo"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="ifscCode"
+                          control={accountDetailForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="IFSC code"
+                              value={field.value}
+                              name="ifscCode"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          name="swiftCode"
+                          control={accountDetailForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Swift code"
+                              value={field.value}
+                              name="swiftCode"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                      </>
+                    )}
                   </div>
                   <ModalFooter className="flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>

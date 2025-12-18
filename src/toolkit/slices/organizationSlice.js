@@ -426,7 +426,7 @@ export const getAllInFlowList = createAsyncThunk(
 
 export const getAllCashFlowDetail = createAsyncThunk(
   "getAllCashFlowDetail",
-  async ({startDate, endDate}) => {
+  async ({ startDate, endDate }) => {
     const response = await api.get(
       `/accountService/api/v1/cashFlow/getAllCashInAndOutFlow?startDate=${startDate}&endDate=${endDate}`
     );
@@ -536,6 +536,28 @@ export const getGstExportedData = createAsyncThunk(
   }
 );
 
+export const getAllOrganizationBankAccounts = createAsyncThunk(
+  "getAllOrganizationBankAccounts",
+  async (organizationId) => {
+    const response = await api.get(
+      `/accountService/api/v1/organization/getAllBankAccountByOrganization?organizationId=${organizationId}`
+    );
+    return response.data;
+  }
+);
+
+export const addOrganizationBankDetail = createAsyncThunk(
+  "addOrganizationBankDetail",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/organization/addBankAccountInOrganization`,
+      data
+    );
+    return response.data;
+  }
+);
+
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -577,6 +599,7 @@ const OrganizationSlice = createSlice({
     profitLossDetail: {},
     balanceSheetDetail: {},
     cashInOutFlowDetail: [],
+    allOrganizationAccountList:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -1027,6 +1050,18 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllBalanceSheetDetail.rejected, (state) => {
       statusbar.loading = "rejected";
       state.balanceSheetDetail = {};
+    });
+
+    builder.addCase(getAllOrganizationBankAccounts.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllOrganizationBankAccounts.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allOrganizationAccountList = action.payload;
+    });
+    builder.addCase(getAllOrganizationBankAccounts.rejected, (state) => {
+      statusbar.loading = "rejected";
+      state.allOrganizationAccountList = [];
     });
   },
 });

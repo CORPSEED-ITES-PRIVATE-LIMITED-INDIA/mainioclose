@@ -31,17 +31,23 @@ import TextEditor from "../../components/TextEditor";
 import { getProductListByLeadName } from "../../toolkit/slices/productSlice";
 import NewSelect from "../../components/NewSelect";
 
-const formSchema = z.object({
-  mailTo: z
-    .array(z.string().email("Invalid email"))
-    .min(1, "Please enter at least one valid email"),
-  mailCc: z.array(z.string().email("Invalid email")).optional(),
-  mailBcc: z.array(z.string().email("Invalid email")).optional(),
-  mailSubject: z.string().min(1, "Please give subject"),
-  brochureBook: z.array(z.number()).optional(),
-  mailBody: z.string().min(1, "Please give mail body"),
-  template: z.string().min(1, "Please give proposal"),
-});
+const formSchema = (flag) =>
+  z.object({
+    ...(flag
+      ? {
+          leadId: z.string().min("please select the service"),
+        }
+      : {}),
+    mailTo: z
+      .array(z.string().email("Invalid email"))
+      .min(1, "Please enter at least one valid email"),
+    mailCc: z.array(z.string().email("Invalid email")).optional(),
+    mailBcc: z.array(z.string().email("Invalid email")).optional(),
+    mailSubject: z.string().min(1, "Please give subject"),
+    brochureBook: z.array(z.number()).optional(),
+    mailBody: z.string().min(1, "Please give mail body"),
+    template: z.string().min(1, "Please give proposal"),
+  });
 
 const defaultValues = {
   mailTo: [],
@@ -145,7 +151,7 @@ const Proposal = () => {
     reset,
     setValue,
   } = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema(plantSetupData)),
     defaultValues,
   });
 
@@ -280,7 +286,10 @@ const Proposal = () => {
           dangerouslySetInnerHTML={{ __html: proposalDataDetail?.template }}
         />
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 ">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4 "
+        >
           <div className="flex flex-col gap-1">
             <label className="font-medium">
               To <span className="text-red-500">*</span>
