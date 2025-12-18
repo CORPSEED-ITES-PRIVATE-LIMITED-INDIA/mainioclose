@@ -72,7 +72,7 @@ const Organizations = () => {
               selectionMode="single"
               onSelectionChange={handleSelectChange}
             >
-              <DropdownItem key="ledgerType">Ledger type</DropdownItem>
+              <DropdownItem key="groups">Group</DropdownItem>
               <DropdownItem key="voucherType">Voucher type</DropdownItem>
               <DropdownItem key="statutory">Statutory</DropdownItem>
             </DropdownMenu>

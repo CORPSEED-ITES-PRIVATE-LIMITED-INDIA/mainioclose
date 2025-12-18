@@ -74,7 +74,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const Voucher = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange,onClose } = useDisclosure();
   const deleteModal = useDisclosure();
   const data = useSelector((state) => state.organization.voucherList);
   const count = useSelector((state) => state.organization.voucherList)?.length;
@@ -330,6 +330,7 @@ const Voucher = () => {
             color: "success",
           });
           dispatch(getAllVoucher());
+          deleteModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -395,7 +396,7 @@ const Voucher = () => {
             color: "success",
           });
           dispatch(getAllVoucher());
-          onOpenChange(false);
+          onClose();
           setRenderedGstData([]);
           setVoucherData({
             companyName: "",

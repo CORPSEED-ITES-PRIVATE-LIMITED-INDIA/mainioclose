@@ -61,22 +61,22 @@ const INITIAL_VISIBLE_COLUMNS = [
 const formSchema = z.object({
   name: z.string().min(1, "Please enter ledger name."),
   id: z.string().min(1, "Please select ledger group"),
-  subLeadger: z.boolean(),
-  isDebitCredit: z.boolean(),
-  usedForCalculation: z.boolean(),
+  subLeadger: z.boolean().optional().default(false),
+  isDebitCredit: z.boolean().optional().default(false),
+  usedForCalculation: z.boolean().optional().default(false),
 });
 
 const defaultValues = {
   name: "",
   id: "",
-  subLeadger: "",
-  isDebitCredit: "",
-  usedForCalculation: "",
+  subLeadger: false,
+  isDebitCredit: false,
+  usedForCalculation:false,
 };
 
 const LedgerType = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange,onClose } = useDisclosure();
   const data = useSelector((state) => state.organization.ledgerTypeList);
   const ledgerTypeList = useSelector(
     (state) => state.organization.ledgerTypeList
@@ -178,10 +178,10 @@ const LedgerType = () => {
           .then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {
               addToast({
-                title: "Ledger type updated successfully !.",
+                title: "Group updated successfully !.",
                 color: "success",
               });
-              onOpenChange(false);
+              onClose()
               dispatch(getAllLedgerType());
               reset(defaultValues);
               setEditData(null);
@@ -197,11 +197,11 @@ const LedgerType = () => {
           .then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {
               addToast({
-                title: "Ledger type created successfully !.",
+                title: "Group created successfully !.",
                 color: "success",
               });
               dispatch(getAllLedgerType());
-              onOpenChange(false);
+              onClose()
               reset(defaultValues);
             } else {
               addToast({ title: "Something went wrong !.", color: "danger" });
@@ -346,7 +346,7 @@ const LedgerType = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} ledger type
+            Total {count} group
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -413,7 +413,7 @@ const LedgerType = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Ledger type list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Groups</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -462,7 +462,7 @@ const LedgerType = () => {
           {(onClose) => (
             <>
               <ModalHeader>
-                {editData ? "Update ledger type" : "Add ledger type"}
+                {editData ? "Update Group" : "Add Group"}
               </ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -473,8 +473,8 @@ const LedgerType = () => {
                       render={({ field }) => (
                         <Input
                           isRequired
-                          errorMessage="please enter ledger name"
-                          label="Ledger name"
+                          errorMessage="please enter group name"
+                          label="Group name"
                           name="name"
                           value={field.value}
                           onChange={(e) => {
@@ -508,7 +508,6 @@ const LedgerType = () => {
                       render={({ field, fieldState: { error } }) => (
                         <Select
                           label="Sub ledger"
-                          isRequired
                           selectedKeys={
                             field.value !== undefined
                               ? [field.value.toString()]
@@ -542,7 +541,6 @@ const LedgerType = () => {
                       render={({ field, fieldState: { error } }) => (
                         <Select
                           label="Debit credit"
-                          isRequired
                           selectedKeys={
                             field.value !== undefined
                               ? [field.value.toString()]
@@ -576,7 +574,6 @@ const LedgerType = () => {
                       render={({ field, fieldState: { error } }) => (
                         <Select
                           label="Used for calculation"
-                          isRequired
                           selectedKeys={
                             field.value !== undefined
                               ? [field.value.toString()]

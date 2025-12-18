@@ -169,7 +169,6 @@ const defaultValues = {
 
 const paymentFormSchema = (isGst) =>
   z.object({
-    estimateNo: z.string().min(1, "Estimate number cannot be empty"),
     serviceName: z.string().min(1, "Service name cannot be empty"),
     vendorCompanyName: z.string().min(1, "Please company name"),
     gstType: z.string().min(1, "please select gst type"),
@@ -199,7 +198,6 @@ const paymentFormSchema = (isGst) =>
   });
 
 const paymentFormDefaultValues = {
-  estimateNo: "",
   serviceName: "",
   quantity: 0,
   vendorCompanyName: "",
@@ -350,7 +348,7 @@ const VendorEstimate = () => {
     setGstError(error);
   };
 
-    const handleSetPaymentGstChange = (e) => {
+  const handleSetPaymentGstChange = (e) => {
     const rawValue = e.target.value;
     const formattedValue = formatGSTInput(rawValue);
     paymentForm.setValue("gstNo", formattedValue);
@@ -370,7 +368,7 @@ const VendorEstimate = () => {
     setGstError(error);
   };
 
-    const handleSetPaymentStateChange = (stateName) => {
+  const handleSetPaymentStateChange = (stateName) => {
     paymentForm.setValue("state", stateName);
     dispatch(getAllCitiesByStateName(stateName));
     const error = validateGST(gstNo, stateName);
@@ -640,8 +638,11 @@ const VendorEstimate = () => {
     paymentForm,
   ]);
 
-
-  console.log('dfjghsdgsjhgjgs',paymentFormSchema(isGst),paymentForm.getValues())
+  console.log(
+    "dfjghsdgsjhgjgs",
+    paymentFormSchema(isGst),
+    paymentForm.getValues()
+  );
 
   const topContent = React.useMemo(() => {
     return (
@@ -760,6 +761,7 @@ const VendorEstimate = () => {
     values.createdById = userId;
     values.leadId = rowItem?.leadId;
     values.estimateId = rowItem?.id;
+    values.estimateNo = rowItem?.id;
     values.createVendorSubDto = [
       {
         name: values.serviceName,
@@ -793,7 +795,7 @@ const VendorEstimate = () => {
   };
 
   const onExternalPaymentSubmit = (values) => {
-    console.log("dfjghsdgsjhgjgs 22222222222",values)
+    console.log("dfjghsdgsjhgjgs 22222222222", values);
     values.createdById = userId;
     dispatch(createExternalVendorsPayment(values))
       .then((resp) => {
@@ -899,24 +901,6 @@ const VendorEstimate = () => {
                   className="flex flex-col gap-4"
                 >
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="estimateNo"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Estimate number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field?.value}
-                          onChange={(e) => {
-                            const temp = e.target.value;
-                            field.onChange(temp);
-                          }}
-                        />
-                      )}
-                    />
-
                     <Controller
                       name="serviceName"
                       control={control}

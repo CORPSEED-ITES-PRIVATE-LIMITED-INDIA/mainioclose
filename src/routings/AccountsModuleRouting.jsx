@@ -62,7 +62,7 @@ export const AccountsModuleRouting = () => {
         <Route path="tds" element={<TDS />} />
         <Route path="gst" element={<GST />} />
         <Route
-          path="/erp/:userId/accounts/organizations/settings/ledgerType"
+          path="/erp/:userId/accounts/organizations/settings/groups"
           element={<LedgerType />}
         />
         <Route
