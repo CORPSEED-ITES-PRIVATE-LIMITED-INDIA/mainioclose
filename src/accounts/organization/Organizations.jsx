@@ -59,6 +59,7 @@ const Organizations = () => {
             <Tab key="trailBalance" title="Trail balance" />
             <Tab key="tds" title="TDS" />
             <Tab key="gst" title="GST" />
+            <Tab key="salesReport" title="Sales report" />
           </Tabs>
           <Dropdown>
             <DropdownTrigger>

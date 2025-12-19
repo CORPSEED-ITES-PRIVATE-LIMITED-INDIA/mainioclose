@@ -536,6 +536,16 @@ export const getGstExportedData = createAsyncThunk(
   }
 );
 
+export const clainGSTAmount = createAsyncThunk(
+  "clainGSTAmount",
+  async ({ id, amount, documents }) => {
+    const response = await api.put(
+      `/accountService/api/v1/gstData/updateGstClaimAmount?id=${id}&amount=${amount}&documents=${documents}`
+    );
+    return response.data;
+  }
+);
+
 export const getAllOrganizationBankAccounts = createAsyncThunk(
   "getAllOrganizationBankAccounts",
   async (organizationId) => {
@@ -557,6 +567,35 @@ export const addOrganizationBankDetail = createAsyncThunk(
   }
 );
 
+export const getAllSalesReport = createAsyncThunk(
+  "getAllSalesReport",
+  async ({ page, size, status, startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/salesReport/getAllSalesReport?page=${page}&size=${size}&status=${status}&startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getSalesReportCount = createAsyncThunk(
+  "getSalesReportCount",
+  async ({ status }) => {
+    const response = await api.get(
+      `/accountService/api/v1/salesReport/getAllSalesReportCount?status=${status}&startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
+
+export const getSalesReportExportedData = createAsyncThunk(
+  "getSalesReportExportedData",
+  async ({ status, startDate, endDate }) => {
+    const response = await api.get(
+      `/accountService/api/v1/salesReport/getAllSalesReportForExport?status=${status}&startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+  }
+);
 
 const OrganizationSlice = createSlice({
   name: "organization",
@@ -599,7 +638,10 @@ const OrganizationSlice = createSlice({
     profitLossDetail: {},
     balanceSheetDetail: {},
     cashInOutFlowDetail: [],
-    allOrganizationAccountList:[]
+    allOrganizationAccountList: [],
+    salesReportList: [],
+    salesReportExportedData: [],
+    salesReportCount: 0,
   },
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
@@ -1024,7 +1066,7 @@ const OrganizationSlice = createSlice({
       state.gstExportedDataList = action.payload;
     });
     builder.addCase(getGstExportedData.rejected, (state) => {
-      statusbar.loading = "rejected";
+      state.loading = "rejected";
       state.gstExportedDataList = [];
     });
 
@@ -1055,13 +1097,52 @@ const OrganizationSlice = createSlice({
     builder.addCase(getAllOrganizationBankAccounts.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getAllOrganizationBankAccounts.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.allOrganizationAccountList = action.payload;
-    });
+    builder.addCase(
+      getAllOrganizationBankAccounts.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.allOrganizationAccountList = action.payload;
+      }
+    );
     builder.addCase(getAllOrganizationBankAccounts.rejected, (state) => {
-      statusbar.loading = "rejected";
+      state.loading = "rejected";
       state.allOrganizationAccountList = [];
+    });
+
+    builder.addCase(getAllSalesReport.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSalesReport.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportList = action.payload;
+    });
+    builder.addCase(getAllSalesReport.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportList = [];
+    });
+
+    builder.addCase(getSalesReportCount.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSalesReportCount.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportCount = action.payload;
+    });
+    builder.addCase(getSalesReportCount.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportCount = 0;
+    });
+
+    builder.addCase(getSalesReportExportedData.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSalesReportExportedData.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesReportExportedData = action.payload;
+    });
+    builder.addCase(getSalesReportExportedData.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesReportExportedData = [];
     });
   },
 });

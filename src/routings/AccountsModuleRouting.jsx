@@ -26,6 +26,7 @@ import VendorPayments from "../accounts/VendorPayments";
 import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
 import GST from "../accounts/organization/GST";
 import TrailBalance from "../accounts/organization/TrailBalance";
+import SalesReport from "../accounts/organization/SalesReport";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -61,6 +62,7 @@ export const AccountsModuleRouting = () => {
         <Route path="trailBalance" element={<TrailBalance />} />
         <Route path="tds" element={<TDS />} />
         <Route path="gst" element={<GST />} />
+        <Route path="salesReport" element={<SalesReport />} />
         <Route
           path="/erp/:userId/accounts/organizations/settings/groups"
           element={<LedgerType />}
@@ -126,6 +128,7 @@ export const accountLoginModuleRouting = () => {
       <Route path="accounts/organizations/trailBalance" element={<TrailBalance />} />
       <Route path="accounts/organizations/tds" element={<TDS />} />
       <Route path="accounts/organizations/gst" element={<GST />} />
+      <Route path="accounts/organizations/salesReport" element={<SalesReport />} />
       <Route path="accounts/settings/ledgerType" element={<LedgerType />} />
       <Route path="accounts/settings/voucherType" element={<VoucherType />} />
       <Route path="accounts/settings/statutory" element={<Statutory />} />

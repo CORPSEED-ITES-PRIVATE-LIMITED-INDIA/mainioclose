@@ -263,9 +263,17 @@ const TDS = () => {
       case "documents":
         return (
           <div>
-            <Link className="font-bold" to={rowData?.documents}>
-              View
-            </Link>
+            {rowData?.documents ? (
+              <Link className="font-bold" to={rowData?.documents}>
+                <Button variant="flat" size="sm">
+                  View
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="flat" size="sm" isDisabled>
+                No document
+              </Button>
+            )}
           </div>
         );
       case "tdsDeductBy":
@@ -381,7 +389,7 @@ const TDS = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {count} tds</span>
+          <span className="text-default-400 text-small">Total {count} TDS</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select

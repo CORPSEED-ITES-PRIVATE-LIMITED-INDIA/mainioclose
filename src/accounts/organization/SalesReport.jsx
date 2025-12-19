@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -18,26 +18,13 @@ import {
   PopoverContent,
   DateRangePicker,
   useDisclosure,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  addToast,
 } from "@heroui/react";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  ListFilter,
-  Search,
-  Upload,
-} from "lucide-react";
+import { ChevronDown, ListFilter, Search, Upload } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  clainGSTAmount,
-  getGstExportedData,
-  getGstList,
-  getGstListCount,
+  getAllSalesReport,
+  getSalesReportCount,
+  getSalesReportExportedData,
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import { useMediaQuery } from "react-responsive";
@@ -45,20 +32,16 @@ import { parseZonedDateTime } from "@internationalized/date";
 import { CSVLink } from "react-csv";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import dayjs from "dayjs";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
-import FileUploader from "../../components/FileUploader";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "COMPANY", uid: "company", sortable: true },
-  { name: "TYPE", uid: "type" },
-  { name: "GST", uid: "gst" },
+  { name: "COMPANY", uid: "companyName", sortable: true },
+  { name: "SERVICE", uid: "serviceName" },
+  { name: "ESTIMATE NO.", uid: "estimateNo" },
+  { name: "DATE", uid: "paymentDate" },
+  { name: "Filing", uid: "filingPersent" },
   { name: "AMOUNT", uid: "amount" },
   { name: "STATUS", uid: "status" },
-  { name: "TYPE", uid: "type" },
-  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
@@ -67,37 +50,24 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
-  "company",
-  "type",
-  "gst",
+  "companyName",
+  "serviceName",
+  "estimateNo",
+  "paymentDate",
+  "filingPersent",
   "amount",
   "status",
-  "type",
-  "actions",
 ];
 
-const headers = ["Id", "Company", "GST", "GST Amount", "status", "type"];
-
-const gstFormSchema = z.object({
-  amount: z.string().min(1, "Please enter amount."),
-  document: z.string().min(1, "Please upload the document."),
-});
-
-const gstFormDefaultValues = {
-  amount: 0,
-  document: "",
-};
-
-const GST = () => {
+const SalesReport = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpenChange, onClose } = useDisclosure();
-  const gstModal = useDisclosure();
   const today = dayjs().format("YYYY-MM-DDTHH:mm");
   const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
-  const data = useSelector((state) => state.organization.gstList);
-  const count = useSelector((state) => state.organization.gstListCount);
+  const data = useSelector((state) => state.organization.salesReportList);
+  const count = useSelector((state) => state.organization.salesReportCount);
   const exportedData = useSelector(
-    (state) => state.organization.gstExportedDataList
+    (state) => state.organization.salesReportExportedData
   );
   const loading = useSelector((state) => state.organization.loading);
   const [filterValue, setFilterValue] = React.useState("");
@@ -119,13 +89,14 @@ const GST = () => {
     endDate: today,
   };
   const [dateFilter, setDateFilter] = useState(initialDates);
-  const [rowItem, setRowItem] = useState(null);
+  const [status, setStatus] = useState("initiated");
 
   useEffect(() => {
-    dispatch(getGstList({ page, size: rowsPerPage, ...dateFilter }));
-    dispatch(getGstListCount(dateFilter));
-    dispatch(getGstExportedData(dateFilter));
-  }, [dispatch, page, rowsPerPage]);
+    dispatch(
+      getAllSalesReport({ page, size: rowsPerPage, status, ...dateFilter })
+    );
+    dispatch(getSalesReportCount({ status, ...dateFilter }));
+  }, [dispatch, page, rowsPerPage, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -170,84 +141,71 @@ const GST = () => {
 
   const exportData = exportedData?.map((row) => ({
     Id: row?.id,
-    Company: row?.company,
-    GST: `${row?.gst}%`,
-    "GST Amount": inrCurrency(row?.gstAmount),
-    status: row?.status,
-    type: row?.type,
+    Company: row?.companyName,
+    Service: row?.serviceName,
+    "Estimate No.": row?.estimateNo,
+    "Payment Date": dayjs(row?.paymentDate).format("DD-MM-YYYY"),
+    Filing: `${row?.filingPersent} %`,
+    "Order Amount": inrCurrency(row?.orderAmount),
+    "Sales Amount": inrCurrency(row?.totalSaleAmount),
+    "Total Amount": inrCurrency(row?.totalAmount),
   }));
 
-  const gstForm = useForm({
-    resolver: zodResolver(gstFormSchema),
-    defaultValues: gstFormDefaultValues,
-  });
-
-  const onGstClaimSubmit = useCallback(
-    (values) => {
-      dispatch(clainGSTAmount({ id: rowItem?.id, ...values }))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "GST claimed successfully !.",
-              color: "success",
-            });
-            dispatch(getGstList({ page, size: rowsPerPage, ...dateFilter }));
-            dispatch(getGstListCount(dateFilter));
-            gstModal.onClose();
-            gstForm.reset();
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
-        );
-    },
-    [dispatch, gstModal, gstForm, rowItem]
-  );
+  const headers = [
+    "Id",
+    "Company",
+    "Service",
+    "Estimate No.",
+    "Payment Date",
+    "Filing",
+    "Order Amount",
+    "Sales Amount",
+    "Total Amount",
+  ];
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "company":
+      case "companyName":
         return (
-          <p className="text-sm font-medium capitalize">{rowData?.company}</p>
+          <p className="text-sm font-medium capitalize">
+            {rowData?.companyName}
+          </p>
         );
-      case "type":
-        return <p className="text-sm capitalize">{rowData?.type}</p>;
-      case "gst":
+      case "serviceName":
+        return <p className="text-sm capitalize">{rowData?.serviceName}</p>;
+      case "estimateNo":
         return (
           <div className="flex flex-col gap-2">
-            <span className="text-sm">{rowData?.gst} %</span>
+            <span className="text-sm">{rowData?.estimateNo}</span>
+          </div>
+        );
+      case "paymentDate":
+        return (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm">
+              {dayjs(rowData?.paymentDate).format("DD-MM-YYYY")}
+            </span>
+          </div>
+        );
+      case "filingPersent":
+        return (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm">{rowData?.filingPersent} %</span>
           </div>
         );
       case "amount":
         return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.gstAmount)}
-          </p>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem
-                  key="claimGst"
-                  onPress={() => {
-                    gstModal.onOpen();
-                    setRowItem(rowData);
-                  }}
-                >
-                  Claim GST
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+          <div>
+            <p className="text-tiny capitalize">
+              ORDER : {inrCurrency(rowData?.orderAmount)}
+            </p>
+            <p className="text-tiny capitalize">
+              SALES : {inrCurrency(rowData?.totalSaleAmount)}
+            </p>
+            <p className="text-tiny capitalize">
+              TOTAL : {inrCurrency(rowData?.totalAmount)}
+            </p>
           </div>
         );
       default:
@@ -287,16 +245,18 @@ const GST = () => {
   }, []);
 
   const handleReset = () => {
-    dispatch(getGstExportedData(initialDates));
-    dispatch(getGstList({ page, size: rowsPerPage, ...initialDates }));
-    dispatch(getGstListCount(initialDates));
+    dispatch(getSalesReportExportedData({ ...initialDates, status }));
+    dispatch(getAllSalesReport({ page, size: rowsPerPage, status }));
+    dispatch(getSalesReportCount({ status, ...initialDates }));
     setDateFilter(initialDates);
   };
 
   const handleApply = () => {
-    dispatch(getGstExportedData(dateFilter));
-    dispatch(getGstList({ page, size: rowsPerPage, ...dateFilter }));
-    dispatch(getGstListCount(dateFilter));
+    dispatch(getSalesReportExportedData({ ...dateFilter, status }));
+    dispatch(
+      getAllSalesReport({ page, size: rowsPerPage, status, ...dateFilter })
+    );
+    dispatch(getSalesReportCount({ status, ...dateFilter }));
   };
 
   const topContent = React.useMemo(() => {
@@ -421,6 +381,39 @@ const GST = () => {
                   endContent={<ChevronDown />}
                   variant="flat"
                   size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  className="capitalize"
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[status]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setStatus(key);
+                }}
+              >
+                <DropdownItem key={"initiated"} className="capitalize">
+                  Initiated
+                </DropdownItem>
+                <DropdownItem key={"approved"} className="capitalize">
+                  Approved
+                </DropdownItem>
+                <DropdownItem key={"disapproved"} className="capitalize">
+                  Disapproved
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  endContent={<ChevronDown />}
+                  variant="flat"
+                  size={isMedium ? "sm" : isLarge ? "md" : ""}
                 >
                   Columns
                 </Button>
@@ -443,7 +436,9 @@ const GST = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {count} GST</span>
+          <span className="text-default-400 text-small">
+            Total {count} sales report
+          </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -472,6 +467,7 @@ const GST = () => {
     isOpen,
     onOpenChange,
     dateFilter,
+    status,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -525,7 +521,7 @@ const GST = () => {
   return (
     <>
       {loading === "pending" && <LoadingSpinner />}
-      <h1 className="font-sans text-2xl font-medium mb-1">GST list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Sales report list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -562,63 +558,8 @@ const GST = () => {
           )}
         </TableBody>
       </Table>
-
-      <Modal
-        size="2xl"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={gstModal.isOpen}
-        onOpenChange={gstModal.onOpenChange}
-        placement="top-center"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Claim GST</ModalHeader>
-              <ModalBody>
-                <form onSubmit={gstForm.handleSubmit(onGstClaimSubmit)}>
-                  <div className="grid gap-4 max-h-[60vh] overflow-auto">
-                    <Controller
-                      name="amount"
-                      control={gstForm.control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="TDS amount"
-                          type="number"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="document"
-                      control={gstForm.control}
-                      render={({ field }) => (
-                        <FileUploader
-                          label={"Upload TDS document"}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e)}
-                        />
-                      )}
-                    />
-                  </div>
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
     </>
   );
 };
 
-export default GST;
+export default SalesReport;
