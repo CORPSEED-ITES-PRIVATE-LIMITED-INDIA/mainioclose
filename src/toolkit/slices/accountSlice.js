@@ -155,12 +155,25 @@ export const getAllVendorsPaymentCountForAccounts = createAsyncThunk(
   }
 );
 
-export const getAllBankAccounts = createAsyncThunk("", async () => {
-  const response = await api.get(
-    `/accountService/api/v1/bankStatements/getAllBankAccounts`
-  );
-  return response.data;
-});
+export const getAllBankAccounts = createAsyncThunk(
+  "getAllBankAccounts",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/bankStatements/getAllBankAccounts`
+    );
+    return response.data;
+  }
+);
+
+export const getUnBilledDetailById = createAsyncThunk(
+  "getUnBilledDetailById",
+  async (id) => {
+    const response = await api.get(
+      `/accountService/api/v1/ledgerType/getUnbilledByIdForView?id=${id}`
+    );
+    return response.data;
+  }
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -176,6 +189,7 @@ const AccountSlice = createSlice({
     remainingAmountDetail: {},
     invoiceDetail: {},
     allBankAccountsList: [],
+    unbilledDetail: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -308,6 +322,18 @@ const AccountSlice = createSlice({
     builder.addCase(getAllBankAccounts.rejected, (state) => {
       state.loading = "rejected";
       state.allBankAccountsList = [];
+    });
+
+    builder.addCase(getUnBilledDetailById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUnBilledDetailById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.unbilledDetail = action.payload;
+    });
+    builder.addCase(getUnBilledDetailById.rejected, (state) => {
+      state.loading = "rejected";
+      state.unbilledDetail = {};
     });
   },
 });

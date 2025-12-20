@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency } from "../common";
 
-const EstimateView = ({ details }) => {
+const EstimateView = ({ details, due }) => {
   const contentRef = useRef();
 
   const downloadPDF = async () => {
@@ -86,6 +86,16 @@ const EstimateView = ({ details }) => {
                     {details?.orderNumber}
                   </p>
                 </div>
+                {due && (
+                  <div>
+                    <h4 className="text-red-600 text-base font-semibold">
+                      Due Amount
+                    </h4>
+                    <p className="font-medium text-gray-700 text-sm">
+                      {inrCurrency(due)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-col md:flex-row justify-between gap-6">

@@ -28,8 +28,12 @@ import {
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import {
+  getInvoiceDetailById,
+  getUnBilledDetailById,
+} from "../../toolkit/slices/accountSlice";
 import InvoiceView from "../../components/InvoiceView";
+import EstimateView from "../../components/EstimateView";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -62,7 +66,7 @@ const Unbill = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
-  const invoiceDetail = useSelector((state) => state.account.invoiceDetail);
+  const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -158,7 +162,7 @@ const Unbill = () => {
                   key="view"
                   onPress={() => {
                     onOpen();
-                    dispatch(getInvoiceDetailById(rowData?.id));
+                    dispatch(getUnBilledDetailById(rowData?.id));
                   }}
                 >
                   View
@@ -310,7 +314,6 @@ const Unbill = () => {
     );
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
-
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Unbilled list</h1>
@@ -321,7 +324,7 @@ const Unbill = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[65vh] overflow-scroll w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -360,11 +363,12 @@ const Unbill = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Invoice
-              </ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Invoice</ModalHeader>
               <ModalBody className="max-h-[85vh] overflow-auto">
-                <InvoiceView details={invoiceDetail} />
+                {/* <EstimateView
+                  details={invoiceDetail?.estimate}
+                  due={invoiceDetail?.dueAmount}
+                /> */}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>

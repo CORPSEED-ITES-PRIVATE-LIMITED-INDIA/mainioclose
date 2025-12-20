@@ -104,7 +104,6 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const formSchema = (isGstMand) =>
   z.object({
-    estimateNo: z.string().min(1, "Estimate number cannot be empty"),
     serviceName: z.string().min(1, "Service name cannot be empty"),
     vendorCompanyName: z.string().min(1, "Please company name"),
     gstType: z.string().min(1, "please select gst type"),
@@ -139,7 +138,6 @@ const formSchema = (isGstMand) =>
   });
 
 const defaultValues = {
-  estimateNo: "",
   serviceName: "",
   quantity: "",
   vendorCompanyName: "",
@@ -380,6 +378,9 @@ const VendorEstimate = () => {
     setValue("serviceName", rowItem?.productName);
     dispatch(getAllBusinessArrangement(rowItem?.productId));
   };
+
+  console.log("hgxjhgfsjdfgjhfgh", getValues());
+  console.log("hgxjhgfsjdfgjhfgh   2161616565", formSchema(isGstMand));
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
