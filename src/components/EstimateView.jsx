@@ -78,7 +78,7 @@ const EstimateView = ({ details, due }) => {
                   </p>
                 </div>
 
-                <div>
+                <div className="flex items-end flex-col">
                   <h4 className="text-green-600 text-base font-semibold">
                     Order No.
                   </h4>
@@ -87,7 +87,7 @@ const EstimateView = ({ details, due }) => {
                   </p>
                 </div>
                 {due && (
-                  <div>
+                  <div className="flex items-end flex-col">
                     <h4 className="text-red-600 text-base font-semibold">
                       Due Amount
                     </h4>
@@ -101,7 +101,7 @@ const EstimateView = ({ details, due }) => {
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="space-y-4 text-xs">
                 <div>
-                  <p className="font-semibold text-gray-800 mb-1">Bill To</p>
+                  <p className="font-semibold text-gray-800 mb-1">Bill To ,</p>
                   <p className="font-medium">{details?.companyName}</p>
                   {details?.gstNo && <p>GSTIN: {details?.gstNo}</p>}
                   <p>{details?.address}</p>
@@ -117,7 +117,7 @@ const EstimateView = ({ details, due }) => {
                   </p>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 mb-1">Ship To</p>
+                  <p className="font-semibold text-gray-800 mb-1">Ship To ,</p>
                   <p className="font-medium">{details?.companyName}</p>
                   {details?.gstNo && <p>GSTIN: {details?.gstNo}</p>}
                   <p>{details?.secondaryAddress}</p>

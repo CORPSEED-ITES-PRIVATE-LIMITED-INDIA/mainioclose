@@ -363,7 +363,7 @@ const Unbill = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Invoice</ModalHeader>
+              {/* <ModalHeader className="flex flex-col gap-1">Invoice</ModalHeader> */}
               <ModalBody className="max-h-[85vh] overflow-auto">
                 <EstimateView
                   details={invoiceDetail?.estimate}
