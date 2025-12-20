@@ -107,12 +107,12 @@ const EstimateView = ({ details, due }) => {
                   <p>{details?.address}</p>
                   <p>
                     {[
-                      details.city,
-                      details.state,
-                      details.country,
-                      details.primaryPinCode,
+                      details?.city,
+                      details?.state,
+                      details?.country,
+                      details?.primaryPinCode,
                     ]
-                      .filter(Boolean)
+                      ?.filter(Boolean)
                       .join(", ")}
                   </p>
                 </div>
@@ -123,12 +123,12 @@ const EstimateView = ({ details, due }) => {
                   <p>{details?.secondaryAddress}</p>
                   <p>
                     {[
-                      details.secondaryCity,
-                      details.secondaryState,
-                      details.secondaryCountry?.name,
-                      details.secondaryPinCode,
+                      details?.secondaryCity,
+                      details?.secondaryState,
+                      details?.secondaryCountry?.name,
+                      details?.secondaryPinCode,
                     ]
-                      .filter(Boolean)
+                      ?.filter(Boolean)
                       .join(", ")}
                   </p>
                 </div>
