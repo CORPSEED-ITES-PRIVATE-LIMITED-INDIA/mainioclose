@@ -365,10 +365,10 @@ const Unbill = () => {
             <>
               <ModalHeader className="flex flex-col gap-1">Invoice</ModalHeader>
               <ModalBody className="max-h-[85vh] overflow-auto">
-                {/* <EstimateView
+                <EstimateView
                   details={invoiceDetail?.estimate}
                   due={invoiceDetail?.dueAmount}
-                /> */}
+                />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>

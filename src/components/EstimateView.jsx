@@ -152,9 +152,13 @@ const EstimateView = ({ details, due }) => {
                     <th className="border p-1">Item & Description</th>
                     <th className="border p-1">HSN</th>
                     <th className="border p-1">
-                      {details?.Type === "Product" ? "Rate/kg" : "Rate"}
+                      {details?.Type === "Product" ||
+                      details?.productType === "Product"
+                        ? "Rate/kg"
+                        : "Rate"}
                     </th>
-                    {details?.Type === "Product" && (
+                    {(details?.Type === "Product" ||
+                      details?.productType === "Product") && (
                       <th className="border p-1">Qty (kg)</th>
                     )}
                     <th className="border p-1">GST %</th>
@@ -168,7 +172,8 @@ const EstimateView = ({ details, due }) => {
                     <td className="border p-1 text-center font-medium">1</td>
                     <td className="border p-1">{details?.productName}</td>
 
-                    {details?.Type === "Product" && (
+                    {(details?.Type === "Product" ||
+                      details?.productType === "Product") && (
                       <>
                         <td className="border p-1 text-center">
                           {details?.gstCode}
@@ -274,7 +279,8 @@ const EstimateView = ({ details, due }) => {
                       )}
                     </>
                   )}
-                  {details?.Type === "Product" ? (
+                  {details?.Type === "Product" ||
+                  details?.productType === "Product" ? (
                     <tr className="bg-gray-50">
                       <td className="border p-1"></td>
                       <td className="border p-1 font-semibold">Total</td>
@@ -304,7 +310,9 @@ const EstimateView = ({ details, due }) => {
               </table>
             </div>
 
-            {details?.Type !== "Product" && details?.totalAmount > 0 ? (
+            {(details?.Type !== "Product" ||
+              details?.productType !== "Product") &&
+            details?.totalAmount > 0 ? (
               <p className="text-right text-xs mt-3">
                 <span className="font-semibold">Amount (in words): </span>
                 <span className="capitalize text-gray-700">
@@ -337,7 +345,8 @@ const EstimateView = ({ details, due }) => {
                 </thead>
 
                 <tbody>
-                  {details?.Type === "Product" ? (
+                  {details?.Type === "Product" ||
+                  details?.productType === "Product" ? (
                     <tr>
                       <td className="border p-1">{details?.gstCode}</td>
                       <td className="border p-1 text-center">0%</td>
