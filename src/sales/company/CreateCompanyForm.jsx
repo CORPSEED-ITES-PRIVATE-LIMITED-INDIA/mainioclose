@@ -49,7 +49,7 @@ import { getClientDesiginationList } from "../../toolkit/slices/settingSlice";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
   createCompanyInOperations,
@@ -338,6 +338,7 @@ const CreateCompanyForm = ({
 }) => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
+  const navigate=useNavigate()
   const allUsers = useSelector((state) => state.common.usersList);
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
   const gstTypeList = useSelector((state) => state.company.gstTypeList);
@@ -709,11 +710,12 @@ const CreateCompanyForm = ({
                 <AutocompleteItem
                   key={item.companyId}
                   onPress={() => {
-                    setCompanyAndUnitData((prev) => ({
-                      ...prev,
-                      companyName: item?.companyName,
-                      companyId: item?.companyId,
-                    }));
+                    // setCompanyAndUnitData((prev) => ({
+                    //   ...prev,
+                    //   companyName: item?.companyName,
+                    //   companyId: item?.companyId,
+                    // }));
+                    navigate(`/erp/${userId}/sales/company/${item?.companyId}/gstDetails`);
                   }}
                 >
                   {item.companyName}

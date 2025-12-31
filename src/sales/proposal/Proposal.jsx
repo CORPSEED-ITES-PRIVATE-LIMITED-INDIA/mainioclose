@@ -62,20 +62,36 @@ const defaultValues = {
 export function TagsInput({
   value = [],
   onChange,
-  placeholder,
-  className,
-  inputClassName,
+  placeholder = "",
+  className = "",
+  inputClassName = "",
 }) {
   const [inputValue, setInputValue] = useState("");
 
-  const handleKeyDown = (e) => {
-    if ([" ", ",", "Enter"].includes(e.key)) {
-      e.preventDefault();
-      if (inputValue.trim()) {
-        onChange([...value, inputValue.trim()]);
-        setInputValue("");
-      }
+  const addTag = (val) => {
+    const trimmed = val.trim();
+    if (!trimmed) return;
+
+    if (!value.includes(trimmed)) {
+      onChange([...value, trimmed]);
     }
+    setInputValue("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (["Enter", " ", ","].includes(e.key)) {
+      e.preventDefault();
+      addTag(inputValue);
+    }
+
+    if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
+      e.preventDefault();
+      onChange(value.slice(0, value.length - 1));
+    }
+  };
+
+  const handleBlur = () => {
+    addTag(inputValue);
   };
 
   const removeTag = (index) => {
@@ -83,22 +99,56 @@ export function TagsInput({
   };
 
   return (
-    <div className={`$${className} flex flex-wrap gap-2 border rounded p-2`}>
+    <div
+      className={`
+        flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2
+        bg-white border-gray-300
+        focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100
+
+        dark:bg-zinc-900 dark:border-zinc-700
+        dark:focus-within:border-blue-400 dark:focus-within:ring-blue-400/20
+
+        ${className}
+      `}
+    >
       {value.map((tag, index) => (
         <div
           key={index}
-          className={`bg-gray-300 dark:text-black px-2 py-1 rounded flex items-center gap-1`}
+          className="
+            flex items-center gap-1 rounded-full px-3 py-1 text-sm
+            bg-blue-100 text-blue-800
+            dark:bg-blue-500/15 dark:text-blue-300
+          "
         >
           {tag}
-          <button onClick={() => removeTag(index)}>&times;</button>
+          <button
+            type="button"
+            onClick={() => removeTag(index)}
+            className="
+              cursor-pointer font-medium
+              text-blue-600 hover:text-red-500
+              dark:text-blue-400 dark:hover:text-red-400
+            "
+          >
+            ×
+          </button>
         </div>
       ))}
+
       <input
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         placeholder={placeholder}
-        className={`${inputClassName} flex-grow outline-none`}
+        className={`
+          flex-1 min-w-[180px] border-none outline-none text-sm
+          bg-transparent text-gray-900 placeholder-gray-400
+
+          dark:text-gray-100 dark:placeholder-gray-500
+
+          ${inputClassName}
+        `}
       />
     </div>
   );
@@ -286,255 +336,293 @@ const Proposal = () => {
           dangerouslySetInnerHTML={{ __html: proposalDataDetail?.template }}
         />
       ) : (
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 "
-        >
-          <div className="flex flex-col gap-1">
-            <label className="font-medium">
-              To <span className="text-red-500">*</span>
-            </label>
-            <Controller
-              name="mailTo"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <TagsInput
-                    {...field}
-                    placeholder="Enter emails separated by space, comma or enter"
-                  />
-                  {error && (
-                    <span className="text-red-500 text-sm">
-                      {error.message || error.root?.message || "Invalid input"}
-                    </span>
-                  )}
-                </>
-              )}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-medium">Cc</label>
-            <Controller
-              name="mailCc"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <TagsInput
-                    {...field}
-                    placeholder="Enter emails separated by space, comma or enter"
-                  />
-                  {error && (
-                    <span className="text-red-500 text-sm">
-                      {error.message || error.root?.message || "Invalid input"}
-                    </span>
-                  )}
-                </>
-              )}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-medium">Bcc</label>
-            <Controller
-              name="mailBcc"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <TagsInput
-                    {...field}
-                    placeholder="Enter emails separated by space, comma or enter"
-                  />
-                  {error && (
-                    <span className="text-red-500 text-sm">
-                      {error.message || error.root?.message || "Invalid input"}
-                    </span>
-                  )}
-                </>
-              )}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-medium">
-              Subject <span className="text-red-500">*</span>
-            </label>
-            <Controller
-              name="mailSubject"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <Input variant="bordered" {...field} />
-                  {error && (
-                    <span className="text-red-500 text-sm">
-                      {error.message}
-                    </span>
-                  )}
-                </>
-              )}
-            />
-          </div>
-          {plantSetupData && (
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">
-                Select service <span className="text-red-500">*</span>
-              </label>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Email Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {["mailTo", "mailCc", "mailBcc"].map((fieldName, index) => (
               <Controller
-                name="leadId"
+                key={fieldName}
+                name={fieldName}
                 control={control}
-                render={({ field, fieldState: { error } }) => {
-                  return (
-                    <NewSelect
-                      data={childLeads}
-                      labelKey={"childLeadName"}
-                      valueKey={"childId"}
-                      label={"Select child lead"}
-                      value={field.value}
-                      onItemSelect={(item) => {
-                        dispatch(getProductListByLeadName(item?.childLeadName));
-                      }}
-                      onChange={(e) => {
-                        field.onChange(e);
-                      }}
+                render={({ field, fieldState: { error } }) => (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      {fieldName === "mailTo"
+                        ? "To *"
+                        : fieldName === "mailCc"
+                          ? "Cc"
+                          : "Bcc"}
+                    </label>
+                    <TagsInput
+                      {...field}
+                      placeholder="Enter email & press enter"
                     />
-                  );
-                }}
+                    {error && (
+                      <span className="text-xs text-red-500">
+                        {error.message}
+                      </span>
+                    )}
+                  </div>
+                )}
               />
-            </div>
-          )}
+            ))}
+          </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="font-medium">Select brochure</label>
-            <Button onPress={brochureModal.onOpen}>
-              Select brochure{" "}
-              {brochureUrl?.length > 0 ? `(${brochureUrl?.length})` : ""}
+          {/* Subject */}
+          <Controller
+            name="mailSubject"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Subject *
+                </label>
+                <Input
+                  {...field}
+                  variant="bordered"
+                  className="cursor-pointer"
+                />
+                {error && (
+                  <span className="text-xs text-red-500">{error.message}</span>
+                )}
+              </div>
+            )}
+          />
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3">
+            <Button
+              className="cursor-pointer"
+              onPress={brochureModal.onOpen}
+              variant="flat"
+            >
+              Select Brochure{" "}
+              {brochureUrl?.length > 0 && `(${brochureUrl.length})`}
+            </Button>
+
+            <Button
+              className="cursor-pointer"
+              onPress={templateModal.onOpen}
+              variant="flat"
+            >
+              Select Proposal Template
             </Button>
           </div>
 
+          {/* Mail Body */}
           <div className="flex flex-col gap-1">
-            <Button onPress={templateModal.onOpen}>
-              Select Proposal template and mail body
-            </Button>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-medium">
-              Mail body <span className="text-red-500">*</span>
+            <label className="text-sm font-medium text-gray-700">
+              Mail Body *
             </label>
-            <Controller
-              name="mailBody"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
+            <div className="rounded-lg border border-gray-300 overflow-hidden">
+              <Controller
+                name="mailBody"
+                control={control}
+                render={({ field }) => (
                   <TextEditor
                     data={mailBody}
                     onChange={(prev, editor) => {
-                      const newData = editor?.getData();
-                      field.onChange(newData);
-                      setMailBody(newData);
+                      const data = editor.getData();
+                      field.onChange(data);
+                      setMailBody(data);
                     }}
                   />
-                  {error && (
-                    <span className="text-red-500 text-sm">
-                      {error.message}
-                    </span>
-                  )}
-                </>
-              )}
-            />
+                )}
+              />
+            </div>
           </div>
 
+          {/* Proposal */}
           <div className="flex flex-col gap-1">
-            <label className="font-medium">
-              Proposal <span className="text-red-500">*</span>
+            <label className="text-sm font-medium text-gray-700">
+              Proposal *
             </label>
-            <Controller
-              name="template"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
+            <div className="rounded-lg border border-gray-300 overflow-hidden">
+              <Controller
+                name="template"
+                control={control}
+                render={({ field }) => (
                   <TextEditor
                     data={data}
                     onChange={(prev, editor) => {
-                      const newData = editor?.getData();
-                      field.onChange(newData);
-                      setData(newData);
+                      const data = editor.getData();
+                      field.onChange(data);
+                      setData(data);
                     }}
                   />
-                  {error && (
-                    <span className="text-red-500 text-sm">
-                      {error.message}
-                    </span>
-                  )}
-                </>
-              )}
-            />
+                )}
+              />
+            </div>
           </div>
-          <Button type="submit" color="primary">
-            Submit
-          </Button>
+
+          {/* Submit */}
+          <div className="sticky bottom-0 bg-white pt-4 border-t">
+            <Button
+              type="submit"
+              color="primary"
+              className="w-full cursor-pointer text-lg"
+            >
+              Submit Proposal
+            </Button>
+          </div>
         </form>
       )}
       <Modal
         isOpen={templateModal.isOpen}
         onOpenChange={templateModal.onOpenChange}
-        size="3xl"
+        size="4xl"
       >
         <ModalContent>
-          <ModalHeader>Select Template</ModalHeader>
+          <ModalHeader className="flex flex-col gap-1">
+            <span className="text-base font-semibold">
+              Select Proposal Template
+            </span>
+            <span className="text-xs text-gray-500">
+              Click a template to apply it instantly
+            </span>
+          </ModalHeader>
+
           <ModalBody>
-            <div className="flex flex-wrap gap-3 max-h-[400px] overflow-auto">
-              {templates?.map((item) => (
-                <div
-                  key={`template${item?.id}`}
-                  className="flex flex-col items-center gap-3 shadow-md rounded-lg p-4 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSetData(item)}
-                >
-                  <img src={template} alt="templates" className="h-24 w-32" />
-                  <span className="font-medium">{item?.name}</span>
+            {/* Search */}
+            <div className="mb-3">
+              <Input
+                size="sm"
+                placeholder="Search template..."
+                startContent={<Search size={14} />}
+                className="cursor-pointer"
+                onChange={(e) => {
+                  const value = e.target.value.toLowerCase();
+                  setTemplates(
+                    templateList.filter((t) =>
+                      t.name.toLowerCase().includes(value)
+                    )
+                  );
+                }}
+              />
+            </div>
+
+            {/* Small Card Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
+              {templates?.length > 0 ? (
+                templates.map((item) => (
+                  <div
+                    key={`template-${item.id}`}
+                    onClick={() => handleSetData(item)}
+                    className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2 transition-all duration-150 hover:border-blue-500 hover:bg-blue-50"
+                  >
+                    {/* Thumbnail */}
+                    <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
+                      <img
+                        src={template}
+                        alt="template"
+                        className="h-12 w-auto object-contain"
+                      />
+                    </div>
+
+                    {/* Name */}
+                    <p
+                      className="text-xs font-medium text-gray-800 truncate text-center"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center text-gray-500 py-8 text-sm">
+                  No templates found
                 </div>
-              ))}
+              )}
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button onPress={templateModal.onClose}>Close</Button>
+
+          <ModalFooter className="border-t pt-3">
+            <Button
+              size="sm"
+              variant="flat"
+              className="cursor-pointer"
+              onPress={templateModal.onClose}
+            >
+              Close
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
+
       <Modal
         isOpen={brochureModal.isOpen}
         onOpenChange={brochureModal.onOpenChange}
-        size="3xl"
+        size="4xl"
       >
         <ModalContent>
-          <ModalHeader>Select Brochure</ModalHeader>
+          <ModalHeader className="flex flex-col gap-1">
+            <span className="text-base font-semibold">Select Brochures</span>
+            <span className="text-xs text-gray-500">
+              You can select multiple brochures
+            </span>
+          </ModalHeader>
+
           <ModalBody>
-            <div className="flex flex-wrap gap-3 max-h-[400px] overflow-auto">
-              {brochureList?.map((item) => {
-                const isSelected = brochureUrl.includes(item.id);
-                return (
-                  <div
-                    key={`brochure${item.id}`}
-                    className={`flex flex-col items-center gap-3 shadow-md rounded-lg p-4 cursor-pointer relative ${
-                      isSelected
-                        ? "border-2 border-blue-500 bg-blue-50"
-                        : "hover:bg-gray-100"
-                    }`}
-                    style={{ width: 140 }}
-                    onClick={() => handleSetBrochureData(item.id)}
-                  >
-                    {isSelected && (
-                      <Check
-                        className="absolute top-2 right-2 text-green-500"
-                        size={24}
-                      />
-                    )}
-                    <img src={template} alt="template" className="h-24 w-32" />
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                );
-              })}
+            {/* Small Card Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
+              {brochureList?.length > 0 ? (
+                brochureList.map((item) => {
+                  const isSelected = brochureUrl.includes(item.id);
+
+                  return (
+                    <div
+                      key={`brochure-${item.id}`}
+                      onClick={() => handleSetBrochureData(item.id)}
+                      className={`relative cursor-pointer rounded-lg border p-2 transition-all duration-150
+                  ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50"
+                  }`}
+                    >
+                      {/* Selected Indicator */}
+                      {isSelected && (
+                        <div className="absolute top-1.5 right-1.5 bg-blue-500 rounded-full p-1">
+                          <Check size={12} className="text-white" />
+                        </div>
+                      )}
+
+                      {/* Thumbnail */}
+                      <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
+                        <img
+                          src={template}
+                          alt="brochure"
+                          className="h-12 w-auto object-contain"
+                        />
+                      </div>
+
+                      {/* Name */}
+                      <p
+                        className="text-xs font-medium text-gray-800 truncate text-center"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </p>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center text-gray-500 py-8 text-sm">
+                  No brochures available
+                </div>
+              )}
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button onPress={brochureModal.onClose}>Close</Button>
+
+          <ModalFooter className="border-t pt-3">
+            <Button
+              size="sm"
+              variant="flat"
+              className="cursor-pointer"
+              onPress={brochureModal.onClose}
+            >
+              Done
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
