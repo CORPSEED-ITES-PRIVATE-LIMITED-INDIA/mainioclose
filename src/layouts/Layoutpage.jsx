@@ -120,7 +120,7 @@ const Layoutpage = () => {
               <ThemeSwitch />
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto p-4 h-full text-neutral-700 dark:text-white shadow">
+          <main className="flex-1 overflow-y-auto px-2 py-0 h-full text-neutral-700 dark:text-white shadow">
             <Outlet />
           </main>
         </main>

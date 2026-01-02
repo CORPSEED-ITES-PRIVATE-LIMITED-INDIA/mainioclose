@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { api } from "../httpRequest";
 
-const BulkFileUploader = ({setFiles,files}) => {
+const BulkFileUploader = ({ setFiles, files }) => {
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -12,8 +12,13 @@ const BulkFileUploader = ({setFiles,files}) => {
     "image/gif",
     "application/pdf",
     "text/plain",
+    "image/webp",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
+    "application/csv",
   ];
 
   const uploadSingleFile = async (fileObj) => {
@@ -109,7 +114,6 @@ const BulkFileUploader = ({setFiles,files}) => {
     };
   }, []);
 
-
   return (
     <div className="w-full">
       <input
@@ -127,44 +131,46 @@ const BulkFileUploader = ({setFiles,files}) => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className="w-full h-[150px] border-2 border-dashed rounded-lg mt-3 border-slate-300 dark:text-white flex items-center justify-center cursor-pointer bg-inherit transition-colors"
+        className="w-full h-[150px] border-2 border-dashed rounded-lg mt-3 border-slate-300 dark:text-white flex items-center justify-center cursor-pointer bg-inherit transition-colors text-xs text-gray-500"
       >
         Drag & Drop Files Here, Click to Choose, or Paste with Ctrl+V
       </div>
 
       <div className="mt-4">
-        <h4 className="font-semibold">Uploaded Files:</h4>
+        <p className="text-sm font-semibold">Uploaded Files:</p>
         <ul className="list-disc list-inside">
-          {files.map((fileObj) => (
-            <li
-              key={fileObj.id}
-              className={`${
-                fileObj.status === "success"
-                  ? "text-green-600"
-                  : fileObj.status === "error"
-                  ? "text-red-600"
-                  : "text-gray-800"
-              }`}
-            >
-              {fileObj.file.name} ({Math.round(fileObj.file.size / 1024)} KB)
-              {fileObj.status === "success" && fileObj.url && (
-                <>
-                  {" "}
-                  –{" "}
-                  <a
-                    href={fileObj.url}
-                    className="underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View
-                  </a>
-                </>
-              )}
-              {fileObj.status === "pending" && " – Uploading..."}
-              {fileObj.status === "error" && " – Failed"}
-            </li>
-          ))}
+          {files?.length > 0 &&
+            files?.map((fileObj) => (
+              <li
+                key={fileObj?.id}
+                className={`${
+                  fileObj?.status === "success"
+                    ? "text-green-600"
+                    : fileObj?.status === "error"
+                      ? "text-red-600"
+                      : "text-gray-800"
+                }`}
+              >
+                {fileObj?.file?.name} ({Math.round(fileObj?.file?.size / 1024)}{" "}
+                KB)
+                {fileObj?.status === "success" && fileObj?.url && (
+                  <>
+                    {" "}
+                    –{" "}
+                    <a
+                      href={fileObj?.url}
+                      className="underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View
+                    </a>
+                  </>
+                )}
+                {fileObj?.status === "pending" && " – Uploading..."}
+                {fileObj?.status === "error" && " – Failed"}
+              </li>
+            ))}
         </ul>
       </div>
     </div>

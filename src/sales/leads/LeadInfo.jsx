@@ -693,7 +693,9 @@ const LeadInfo = () => {
                   <CardBody>
                     {toggleSlug ? (
                       <div className="flex justify-between items-center">
-                        <h6 className="font-medium">{leadData?.leadName}</h6>
+                        <h6 className="text-sm font-medium">
+                          {leadData?.leadName}
+                        </h6>
                         <Button
                           onPress={() => setToggleSlug(false)}
                           size="sm"
@@ -710,7 +712,7 @@ const LeadInfo = () => {
                           data={slugList}
                           labelKey={"name"}
                           valueKey={"name"}
-                          label={"Select slug"}
+                          label={"Select service"}
                           onChange={handleUpdateLeadName}
                         />
                         <Button
@@ -734,7 +736,7 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <MapPin className={iconClass} />{" "}
-                          <h3 className="font-medium">Address Info</h3>
+                          <p className="text-sm font-medium">Address Info</p>
                         </div>
                         <Button
                           size="sm"
@@ -750,24 +752,24 @@ const LeadInfo = () => {
                     <CardBody>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <p className="text-default-500 text-sm">Address</p>
+                          <p className="text-xs text-gray-500">Address</p>
                           <p className="text-sm">{leadData?.address || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">Country</p>
-                          <p className="text-sm">{leadData?.country || "-"}</p>
+                          <p className="text-xs text-gray-500">Country</p>
+                          <p className="text-xs">{leadData?.country || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">State</p>
-                          <p className="text-sm">{leadData?.state || "-"}</p>
+                          <p className="text-xs text-gray-500">State</p>
+                          <p className="text-xs">{leadData?.state || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">City</p>
-                          <p className="text-sm">{leadData?.city}</p>
+                          <p className="text-xs text-gray-500">City</p>
+                          <p className="text-xs">{leadData?.city}</p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">Pin code</p>
-                          <p className="text-sm">{leadData?.pinCode}</p>
+                          <p className="text-xs text-gray-500">Pin code</p>
+                          <p className="text-xs">{leadData?.pinCode}</p>
                         </div>
                       </div>
                     </CardBody>
@@ -777,7 +779,7 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Factory className={iconClass} />{" "}
-                          <h3 className="font-medium">Industry Info</h3>
+                          <p className="text-sm font-medium">Industry Info</p>
                         </div>
                         <Button
                           size="sm"
@@ -793,30 +795,30 @@ const LeadInfo = () => {
                     <CardBody>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <p className="text-default-500 text-sm">Industry</p>
-                          <p className="text-sm">
+                          <p className="text-xs text-gray-500">Industry</p>
+                          <p className="text-xs">
                             {leadData?.industries?.name}
                           </p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">
+                          <p className="text-xs text-gray-500">
                             Sub Industry
                           </p>
-                          <p className="text-sm">
+                          <p className="text-xs">
                             {leadData?.subIndustry?.name}
                           </p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">Category</p>
-                          <p className="text-sm">
+                          <p className="text-xs text-gray-500">Category</p>
+                          <p className="text-xs">
                             {leadData?.subSubIndustry?.name}
                           </p>
                         </div>
                         <div>
-                          <p className="text-default-500 text-sm">
+                          <p className="text-xs text-gray-500">
                             Business activity
                           </p>
-                          <p className="text-sm">
+                          <p className="text-xs">
                             {leadData?.industriesData
                               ?.map((item) => item?.name)
                               .join(",")}
@@ -830,7 +832,7 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <User2 className={iconClass} />{" "}
-                          <h3 className="font-medium">Assignee</h3>
+                          <p className="text-sm font-medium">Assignee</p>
                         </div>
 
                         {toggleAssignee ? (
@@ -862,7 +864,7 @@ const LeadInfo = () => {
                           <span className="font-semibold text-sm">
                             {leadData?.assigne?.fullName}
                           </span>
-                          <span className="text-xs text-default-500">
+                          <span className="text-xs text-gray-500">
                             {leadData?.assigne?.email}
                           </span>
                         </div>
@@ -884,7 +886,7 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <ChartBarDecreasing className={iconClass} />{" "}
-                          <h3 className="font-medium">Status</h3>
+                          <p className="text-sm font-medium">Status</p>
                         </div>
 
                         {toggleStatus ? (
@@ -940,7 +942,7 @@ const LeadInfo = () => {
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <FileText className={iconClass} />{" "}
-                        <h3 className="font-medium">Lead description</h3>
+                        <p className="text-sm font-medium">Lead description</p>
                       </div>
                     </CardHeader>
                     <CardBody>
@@ -951,7 +953,7 @@ const LeadInfo = () => {
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Link className={iconClass} />{" "}
-                        <h3 className="font-medium">Link</h3>
+                        <p className="text-sm font-medium">Link</p>
                       </div>
                     </CardHeader>
                     <CardBody>
@@ -963,7 +965,7 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Podcast className={iconClass} />{" "}
-                          <h3 className="font-medium">Source</h3>
+                          <p className="text-sm font-medium">Source</p>
                         </div>
                         {adminRole && (
                           <>
@@ -1025,9 +1027,9 @@ const LeadInfo = () => {
                         <div className="flex justify-between items-center w-full">
                           <div className="flex items-center gap-2">
                             <User2 className={iconClass} />{" "}
-                            <h3 className="font-medium">
+                            <p className="text-sm font-medium">
                               Assigne to same person{" "}
-                            </h3>
+                            </p>
                           </div>
                         </div>
                       </CardHeader>
@@ -1046,7 +1048,7 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Phone className={iconClass} />{" "}
-                          <h3 className="font-medium">Contacts</h3>
+                          <p className="text-sm font-medium">Contacts</p>
                         </div>
                         <Button
                           size="sm"
@@ -1133,7 +1135,7 @@ const LeadInfo = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <MessageCircle className={iconClass} />
-                    <h3 className="font-medium">Comments / Upload </h3>
+                    <p className="text-sm font-medium">Comments / Upload </p>
                   </div>
                 </CardHeader>
                 <CardBody>
@@ -1177,7 +1179,7 @@ const LeadInfo = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <MessageSquareMore className={iconClass} />
-                    <h3 className="font-medium">Remarks </h3>
+                    <p className="text-sm font-medium">Remarks </p>
                   </div>
                 </CardHeader>
                 <CardBody className="max-h-[200px] overflow-auto">
@@ -1553,7 +1555,7 @@ const LeadInfo = () => {
                       Delete
                     </ModalHeader>
                     <ModalBody>
-                      <h3>Are you sure you want to delete this Item?</h3>
+                      <p>Are you sure you want to delete this Item?</p>
                     </ModalBody>
                     <ModalFooter className="w-full flex justify-end">
                       <Button onPress={onClose}>Cancel</Button>
@@ -1580,7 +1582,9 @@ const LeadInfo = () => {
                       Delete
                     </ModalHeader>
                     <ModalBody>
-                      <h3>Are you sure you want to delete this Item?</h3>
+                      <p className="font-medium">
+                        Are you sure you want to delete this Item?
+                      </p>
                     </ModalBody>
                     <ModalFooter className="w-full flex justify-end">
                       <Button onPress={onClose}>Cancel</Button>

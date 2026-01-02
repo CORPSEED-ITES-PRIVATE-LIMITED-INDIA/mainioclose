@@ -12,7 +12,7 @@ const FileUploader = ({
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
   const [files, setFiles] = useState([]);
-  const [statuses, setStatuses] = useState({}); // Track status for each file
+  const [statuses, setStatuses] = useState({});
 
   const allowedTypes = [
     "image/png",
@@ -20,11 +20,12 @@ const FileUploader = ({
     "image/jpg",
     "image/gif",
     "application/pdf",
+    "image/webp",
     "text/plain",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel", // .xls & sometimes .csv
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/csv",
     "application/csv",
   ];
@@ -48,7 +49,6 @@ const FileUploader = ({
       const url = response?.data;
       if (response?.status === 200 && url) {
         setStatuses((prev) => ({ ...prev, [index]: "success" }));
-        // Update the value array with the new URL
         onChange(uploadingType === "multiple" ? [...(value || []), url] : url);
       } else {
         console.warn("Unexpected response structure:", response?.data);
@@ -117,7 +117,7 @@ const FileUploader = ({
       files.length > 0 &&
       statuses[0] === "success"
     ) {
-      return; // Prevent clicking if single file is already uploaded successfully
+      return;
     }
     fileInputRef.current.click();
   };
@@ -127,7 +127,6 @@ const FileUploader = ({
     setStatuses((prev) => {
       const newStatuses = { ...prev };
       delete newStatuses[index];
-      // Reindex statuses
       const reindexedStatuses = {};
       Object.keys(newStatuses)
         .sort()
@@ -136,7 +135,6 @@ const FileUploader = ({
         });
       return reindexedStatuses;
     });
-    // Update value by removing the URL at the specific index
     if (uploadingType === "multiple") {
       const newValue = (value || []).filter((_, i) => i !== index);
       onChange(newValue.length > 0 ? newValue : []);
@@ -227,12 +225,14 @@ const FileUploader = ({
                 } text-tiny`}
               >
                 {file.name} ({Math.round(file.size / 1024)} KB)
-                {statuses[index] === "success" && value?.[index] && (
+                {statuses[index] === "success" && (
                   <>
                     {" "}
                     –{" "}
                     <a
-                      href={value[index]}
+                      href={
+                        uploadingType === "multiple" ? value?.[index] : value
+                      }
                       className="underline"
                       target="_blank"
                       rel="noreferrer"

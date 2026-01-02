@@ -3,6 +3,7 @@ import { Dot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import DotIcon from "../../components/DotIcon";
 
 const LeadDetail = () => {
   const navigate = useNavigate();
@@ -78,17 +79,17 @@ const LeadDetail = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col">
       <div className="flex items-center">
         {leadData?.originalName ? (
-          <Dot className="h-12 w-12 p-0 m-0" color="red" />
+          <DotIcon margin={"0px 4px 0px 2pxpx"} color="red" />
         ) : (
-          <Dot className="h-12 w-12 p-0 m-0" color="green" />
+          <DotIcon margin={"0px 4px 0px 2px"}  color="green" />
         )}
         <div className="flex items-center gap-1">
-          <h1 className="text-xl font-medium">
+          <h2 className="text-lg font-medium">
             {leadData?.originalName ? leadData?.originalName : "NA"}
-          </h1>
+          </h2>
           {leadData?.count !== undefined && (
             <p className="font-medium">{`(${leadData?.count})`}</p>
           )}
@@ -96,6 +97,7 @@ const LeadDetail = () => {
       </div>
       <Tabs
         aria-label="Dynamic tabs"
+        size="sm"
         items={tabs}
         selectedKey={selectedKey}
         onSelectionChange={handleSelect}
