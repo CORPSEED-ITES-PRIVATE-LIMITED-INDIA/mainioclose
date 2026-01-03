@@ -175,9 +175,6 @@ const LeadInfo = () => {
     (state) => state.common.industryDataListBySubSubIndustryId
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
-  const department = useSelector(
-    (state) => state.auth.getDepartmentDetail?.department
-  );
   const adminRole = userRole?.includes("ADMIN");
   const [toggleSlug, setToggleSlug] = useState(true);
   const [toggleAssignee, setToggleAssignee] = useState(true);

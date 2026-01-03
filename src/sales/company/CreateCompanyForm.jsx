@@ -58,7 +58,7 @@ import {
 import { getOperationCompanyFormValues } from "../../operation/components/commonFunctions";
 import { useMediaQuery } from "react-responsive";
 
-const formSchema = ({ isConsultant, gstAndPanData }) =>
+const formSchema = ({ isConsultant, gstAndPanData, adminRole }) =>
   z.object({
     consultantOrCompany: z.enum(["consultant", "company"], {
       required_error: "Please select role as",
@@ -78,7 +78,11 @@ const formSchema = ({ isConsultant, gstAndPanData }) =>
         }
       : {}),
     establishDate: z.string().min(1, "Please enter company incorporate date"),
-    assigneeId: z.string().min(1, "Please select the assignee"),
+    ...(adminRole
+      ? {
+          assigneeId: z.string().min(1, "Please select the assignee"),
+        }
+      : {}),
     industryId: z.string().min(1, "Please select the industry"),
     subIndustryId: z.string().min(1, "Please select the sub industry"),
     subsubIndustryId: z.string().min(1, "Please select the category"),
@@ -338,13 +342,15 @@ const CreateCompanyForm = ({
 }) => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
-  const navigate=useNavigate()
+  const navigate = useNavigate();
   const allUsers = useSelector((state) => state.common.usersList);
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
   const gstTypeList = useSelector((state) => state.company.gstTypeList);
   const businessTypeList = useSelector(
     (state) => state.company.businessTypeList
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole?.includes("ADMIN");
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -389,7 +395,9 @@ const CreateCompanyForm = ({
     formState: { errors },
     reset,
   } = useForm({
-    resolver: zodResolver(formSchema({ isConsultant, gstAndPanData })),
+    resolver: zodResolver(
+      formSchema({ isConsultant, gstAndPanData, adminRole })
+    ),
     defaultValues: defaultValues({ isConsultant, gstAndPanData }),
   });
 
@@ -514,7 +522,9 @@ const CreateCompanyForm = ({
             industryId: compData?.industry?.id,
             subIndustryId: compData?.subIndustry?.id,
             subsubIndustryId: compData?.subSubIndustry?.id,
-            industrydataId: compData?.industryData?.map((item) => String(item?.id)),
+            industrydataId: compData?.industryData?.map((item) =>
+              String(item?.id)
+            ),
             gstDocuments: compData?.gstDoc,
             rating: compData?.rating,
             paymentTerm: compData?.paymentTerm,
@@ -554,6 +564,7 @@ const CreateCompanyForm = ({
 
   const onSubmit = (data) => {
     data.updatedBy = userId;
+    data.assigneeId = adminRole ? data?.assigneeId : userId;
     if (edit) {
       data.id = editData?.companyId;
       dispatch(updateCompanyDetails(data))
@@ -655,7 +666,7 @@ const CreateCompanyForm = ({
   };
 
   return (
-    <div className="md:max-h-[65vh]">
+    <div className="md:max-h-[70vh]">
       <div className="flex items-center gap-2 my-2">
         {!edit && (
           <Button
@@ -715,7 +726,9 @@ const CreateCompanyForm = ({
                     //   companyName: item?.companyName,
                     //   companyId: item?.companyId,
                     // }));
-                    navigate(`/erp/${userId}/sales/company/${item?.companyId}/gstDetails`);
+                    navigate(
+                      `/erp/${userId}/sales/company/${item?.companyId}/gstDetails`
+                    );
                   }}
                 >
                   {item.companyName}
@@ -727,7 +740,7 @@ const CreateCompanyForm = ({
       </div>
       {isNewCompany && (
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="2xl:max-h-[64vh] md:max-h-[58vh] overflow-auto p-3 flex flex-col gap-12">
+          <div className="2xl:max-h-[70vh] md:max-h-[65vh] overflow-auto p-3 flex flex-col gap-12">
             <div className="p-4 shadow-[0px_10px_36px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] rounded-lg">
               <h2 className="mb-2 font-medium text-lg">Company info</h2>
               <div className="grid grid-cols-3 gap-4">
@@ -905,24 +918,28 @@ const CreateCompanyForm = ({
                     />
                   )}
                 />
-                <Controller
-                  name="assigneeId"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      isRequired={true}
-                      size={isMedium ? "sm" : "md"}
-                      label="Select assignee"
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      data={allUsers || []}
-                      labelKey="fullName"
-                      valueKey="id"
-                      value={field.value}
-                      onChange={(value) => field.onChange(value)}
-                    />
-                  )}
-                />
+
+                {adminRole && (
+                  <Controller
+                    name="assigneeId"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        isRequired={true}
+                        size={isMedium ? "sm" : "md"}
+                        label="Select assignee"
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        data={allUsers || []}
+                        labelKey="fullName"
+                        valueKey="id"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                      />
+                    )}
+                  />
+                )}
+
                 <Controller
                   name="industryId"
                   control={control}
