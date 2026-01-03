@@ -31,22 +31,29 @@ const Login = () => {
                       flag: true,
                     })
                   );
+                  console.log("dsjkhgkjsgkjdghj", response);
                   if (resp?.payload?.roles?.includes("ADMIN")) {
+                    console.log("dsjkhgkjsgkjdghj 1111", response);
                     navigate(`/erp/${resp?.payload?.id}/dashboard`);
                   } else {
                     if (response.payload?.department === "Procurement") {
+                      console.log("dsjkhgkjsgkjdghj 2222", response);
                       navigate(
                         `/erp/${resp?.payload?.id}/procurement/vendors-requests`
                       );
+                      return;
                     }
-                    if (response.payload?.department === "Human Resource") {
-                      navigate(`/erp/${resp?.payload?.id}/hr/userlist`);
+                    if (response.payload?.department === "HR") {
+                      console.log("dsjkhgkjsgkjdghj 33333", response);
+                      navigate(`/erp/${resp?.payload?.id}/hr/usersList`);
+                      return;
                     }
                     if (response.payload?.department === "Accounts") {
+                      console.log("dsjkhgkjsgkjdghj 44444", response);
                       navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
-                    } else {
-                      navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
+                      return;
                     }
+                    navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
                   }
                 }
               );

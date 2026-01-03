@@ -13,6 +13,7 @@ import {
 import { ThemeSwitch } from "../components/theme-switch";
 import {
   accountNavItems,
+  hrItems,
   navItems,
   procurementItems,
   qualityNavItems,
@@ -32,6 +33,7 @@ const getNavItemsByDepartment = (department, admin) => {
     "Quality Team": qualityNavItems,
     Accounts: accountNavItems,
     Procurement: procurementItems,
+    HR: hrItems,
     NA: navItems,
   };
   return items[trimmed] || navItems;

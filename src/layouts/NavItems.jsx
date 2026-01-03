@@ -567,3 +567,14 @@ export const procurementItems = [
     key: "vendors-estimates",
   },
 ];
+
+export const hrItems = [
+  { title: "Users list", icon: "User2", url: "hr/usersList", key: "usersList" },
+  {
+    title: "Users approval list",
+    icon: "User2",
+    url: "hr/usersApprovalList",
+    key: "usersApprovalList",
+  },
+  { title: "Services", icon: "FileText", url: "hr/services", key: "services" },
+];

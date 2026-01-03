@@ -114,7 +114,7 @@ const FileUploader = ({
   const handleClickDropZone = () => {
     if (
       uploadingType !== "multiple" &&
-      files.length > 0 &&
+      files?.length > 0 &&
       statuses[0] === "success"
     ) {
       return;
@@ -137,7 +137,7 @@ const FileUploader = ({
     });
     if (uploadingType === "multiple") {
       const newValue = (value || []).filter((_, i) => i !== index);
-      onChange(newValue.length > 0 ? newValue : []);
+      onChange(newValue?.length > 0 ? newValue : []);
     } else {
       onChange(null);
     }
@@ -169,7 +169,7 @@ const FileUploader = ({
         onDragLeave={handleDragLeave}
         className={`w-full min-h-[52px] border-2 rounded-lg mt-1 border-gray-600 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer transition-colors ${
           uploadingType !== "multiple" &&
-          files.length > 0 &&
+          files?.length > 0 &&
           statuses[0] === "success"
             ? "cursor-not-allowed opacity-70"
             : ""
@@ -186,7 +186,7 @@ const FileUploader = ({
             type="button"
             className={`bg-blue-500 text-white text-tiny px-2 py-[3px] rounded hover:bg-blue-600 ${
               uploadingType !== "multiple" &&
-              files.length > 0 &&
+              files?.length > 0 &&
               statuses[0] === "success"
                 ? "hidden"
                 : ""
@@ -200,12 +200,12 @@ const FileUploader = ({
           </button>
           <p className="text-tiny text-gray-400">
             {uploadingType === "multiple" &&
-            files.length > 0 &&
+            files?.length > 0 &&
             Object.values(statuses).includes("success")
               ? "Files uploaded. Add more or replace."
               : uploadingType === "multiple"
                 ? "or Drag & Drop Files Here, or Paste"
-                : files.length > 0 && statuses[0] === "success"
+                : files?.length > 0 && statuses[0] === "success"
                   ? "File uploaded. Click to replace."
                   : "or Drag & Drop File Here, or Paste"}
           </p>
@@ -224,7 +224,7 @@ const FileUploader = ({
                     : "text-gray-800"
                 } text-tiny`}
               >
-                {file.name} ({Math.round(file.size / 1024)} KB)
+                {file?.name} ({Math.round(file?.size / 1024)} KB)
                 {statuses[index] === "success" && (
                   <>
                     {" "}

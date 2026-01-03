@@ -97,7 +97,7 @@ const formSchema = (flags) =>
   z.object({
     employeeId: z.string().min(1, "Please enter employee id"),
     userName: z.string().min(1, "Please enter username"),
-    email: z.string().min(1,"Please enter a valid email"),
+    email: z.string().min(1, "Please enter a valid email"),
     personalEmail: z.string().optional().or(z.literal("")),
     contactNo: z.string().min(10, "Please enter a valid contact number"),
     companyMobile: z.string().optional().or(z.literal("")),
@@ -261,8 +261,8 @@ const UsersList = () => {
   }, [watch, errors]);
 
   useEffect(() => {
-  reset(getValues());
-}, [formFlags]);
+    reset(getValues());
+  }, [formFlags]);
 
   const handleEdit = useCallback(
     (data) => {
@@ -314,6 +314,8 @@ const UsersList = () => {
     [data, reset, dispatch, onOpen]
   );
 
+  console.log("jkdfgkjdgkjdgkjdhg", getValues());
+  console.log("jkdfgkjdgkjdgkjdhg 111", formSchema(formFlags));
 
   const onSubmit = (values) => {
     if (rowItem) {
@@ -367,7 +369,16 @@ const UsersList = () => {
           });
         });
     } else {
-      dispatch(createNewUserInAuth(values))
+      const authData = {
+        email: values?.email,
+        role: values?.role,
+        designation: values?.designationId,
+        userName: values?.userName,
+        department: values?.departmentId,
+        designationId: values?.designationId,
+        departmentId: values?.departmentId,
+      };
+      dispatch(createNewUserInAuth(authData))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             const temp = resp?.payload?.data?.data;
@@ -383,19 +394,19 @@ const UsersList = () => {
                     title: "User created successfully !.",
                     color: "success",
                   });
-                  dispatch(
-                    createUsersInOperations({
-                      id: userInfo?.id,
-                      fullName: userInfo?.fullName,
-                      email: userInfo?.email,
-                      contactNo: userInfo?.contactNo,
-                      designationId: userInfo?.userDesignation?.id,
-                      departmentIds: [userInfo?.userDepartment?.id],
-                      roleIds: userInfo?.role,
-                      managerId: managers?.id,
-                      managerFlag: true,
-                    })
-                  );
+                  // dispatch(
+                  //   createUsersInOperations({
+                  //     id: userInfo?.id,
+                  //     fullName: userInfo?.fullName,
+                  //     email: userInfo?.email,
+                  //     contactNo: userInfo?.contactNo,
+                  //     designationId: userInfo?.userDesignation?.id,
+                  //     departmentIds: [userInfo?.userDepartment?.id],
+                  //     roleIds: userInfo?.role,
+                  //     managerId: managers?.id,
+                  //     managerFlag: true,
+                  //   })
+                  // );
                   onClose();
                   reset(defaultValues);
                   dispatch(getAllUsers());
