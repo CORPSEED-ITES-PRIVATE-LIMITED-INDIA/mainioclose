@@ -82,7 +82,9 @@ const ChildLead = () => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         const temp = resp.payload;
-        dispatch(checkPlantSetUpData(temp?.originalName));
+        if (temp?.originalName) {
+          dispatch(checkPlantSetUpData(temp?.originalName));
+        }
       }
     });
   }, [dispatch]);
@@ -140,7 +142,7 @@ const ChildLead = () => {
             color: "success",
           });
           setSelectedItem([]);
-          dispatch(getSingleLeadDataByLeadId({ leadId, userId }))
+          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           onClose();
         } else {
           addToast({ message: "Something went wrong !.", color: "danger" });

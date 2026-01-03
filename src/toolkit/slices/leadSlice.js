@@ -747,7 +747,7 @@ export const LeadSlice = createSlice({
     allLeadsTaskList: [],
     allChildLeadList: [],
     estimateDetailByUUID: {},
-    plantSetupDetail: {},
+    plantSetupDetail: false,
     estimateApprovalList: [],
     estimateHistoryList: {},
     childLeadFlag: {},
@@ -1155,7 +1155,7 @@ export const LeadSlice = createSlice({
     });
     builder.addCase(checkPlantSetUpData.rejected, (state) => {
       state.loading = "rejected";
-      state.plantSetupDetail = {};
+      state.plantSetupDetail = false;
     });
 
     builder.addCase(getAllEstimateForApproval.pending, (state) => {

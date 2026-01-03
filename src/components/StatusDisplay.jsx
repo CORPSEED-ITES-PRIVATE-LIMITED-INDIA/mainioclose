@@ -6,7 +6,7 @@ const StatusDisplay = ({ type = "notfound", message }) => {
       case "notfound":
         return (
           <>
-            <div className="w-40 h-40 mb-4 text-gray-400">
+            <div className="w-40 h-[40vh] mb-2 text-gray-400">
               {/* 404 Page Not Found SVG */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -46,7 +46,7 @@ const StatusDisplay = ({ type = "notfound", message }) => {
       case "nodata":
         return (
           <>
-            <div className="w-36 h-36 mb-4 text-gray-400">
+            <div className="w-36 h-[40vh] mb-4 text-gray-400">
               {/* No Data SVG */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
