@@ -33,7 +33,7 @@ const getNavItemsByDepartment = (department, admin) => {
     "Quality Team": qualityNavItems,
     Accounts: accountNavItems,
     Procurement: procurementItems,
-    HR: hrItems,
+    "Human Resource": hrItems,
     NA: navItems,
   };
   return items[trimmed] || navItems;

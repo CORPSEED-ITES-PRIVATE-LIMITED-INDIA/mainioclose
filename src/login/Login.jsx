@@ -43,7 +43,7 @@ const Login = () => {
                       );
                       return;
                     }
-                    if (response.payload?.department === "HR") {
+                    if (response.payload?.department === "Human Resource") {
                       console.log("dsjkhgkjsgkjdghj 33333", response);
                       navigate(`/erp/${resp?.payload?.id}/hr/usersList`);
                       return;
