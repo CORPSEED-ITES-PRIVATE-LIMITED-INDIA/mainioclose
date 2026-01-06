@@ -38,7 +38,7 @@ const OperationsSettings = () => {
         </ListboxWrapper>
       </div>
       <div className="w-[90%]">
-        <Outlet />
+       <Outlet />
       </div>
     </div>
   );

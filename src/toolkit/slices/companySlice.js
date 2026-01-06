@@ -167,7 +167,7 @@ export const getAllCompanyUnits = createAsyncThunk(
   "getAllCompanyUnits",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/company/getAllCompanyUnit?id=${id}`  
+      `/leadService/api/v1/company/getAllCompanyUnit?id=${id}`
     );
     return response.data;
   }
@@ -295,6 +295,24 @@ export const updateMultiCompanyAssignee = createAsyncThunk(
   }
 );
 
+export const addBasicCompanyDetail = createAsyncThunk(
+  "addBasicCompanyDetail",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/leadService/api/v1/basic-company`, data);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.data.message);
+    }
+  }
+);
+
+
+export const getBasicCompanyDetails=createAsyncThunk("getBasicCompanyDetails",async({leadId,userId})=>{
+  const response=await api.get(`/leadService/api/v1/by-lead/${leadId}?userId=${userId}`)
+  return response.data
+})
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -316,6 +334,7 @@ const CompanySlice = createSlice({
     companyHistoryList: [],
     existingCompanyList: [],
     companyDetailById: {},
+    basicCompanyDetail:{}
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {
@@ -549,6 +568,18 @@ const CompanySlice = createSlice({
     builder.addCase(getCompanyDetailsById.rejected, (state, action) => {
       state.loading = "rejected";
       state.companyDetailById = {};
+    });
+
+    builder.addCase(getBasicCompanyDetails.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getBasicCompanyDetails.fulfilled, (state, action) => {
+      state.basicCompanyDetail = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getBasicCompanyDetails.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.basicCompanyDetail = {};
     });
   },
 });
