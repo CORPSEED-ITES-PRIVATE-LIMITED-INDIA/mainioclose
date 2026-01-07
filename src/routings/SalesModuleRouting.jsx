@@ -29,7 +29,7 @@ import CompanyProjects from "../sales/company/CompanyProjects";
 import CompanyLeads from "../sales/company/CompanyLeads";
 import ChildLead from "../sales/leads/ChildLead";
 import BasicCompany from "../sales/company/BasicCompany";
-import LeadEstimates from "../sales/leads/LeadEstimates";
+import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
 
 const SalesModuleRouting = () => {
   return (

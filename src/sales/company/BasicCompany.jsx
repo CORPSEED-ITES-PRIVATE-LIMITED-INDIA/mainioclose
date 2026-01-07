@@ -94,9 +94,6 @@ const BasicCompany = () => {
           reset();
           dispatch(getBasicCompanyDetails({ leadId, userId }));
         } else {
-
-            console.log("jkcgvjdkgkjdg",resp)
-
           addToast({
             title: resp?.payload,
             color: "danger",
