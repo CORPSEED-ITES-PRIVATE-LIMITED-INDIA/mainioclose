@@ -29,6 +29,7 @@ import CompanyProjects from "../sales/company/CompanyProjects";
 import CompanyLeads from "../sales/company/CompanyLeads";
 import ChildLead from "../sales/leads/ChildLead";
 import BasicCompany from "../sales/company/BasicCompany";
+import LeadEstimates from "../sales/leads/LeadEstimates";
 
 const SalesModuleRouting = () => {
   return (
@@ -50,6 +51,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
       </Route>
@@ -70,6 +72,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
       </Route>
@@ -104,6 +107,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
       </Route>
@@ -123,6 +127,7 @@ const SalesModuleRouting = () => {
         <Route path="vendors" element={<Vendors />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
       </Route>
