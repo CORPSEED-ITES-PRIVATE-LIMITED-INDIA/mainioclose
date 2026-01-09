@@ -178,7 +178,7 @@ const Solutions = () => {
         return (
           <Link
             to={
-              rowData?.type === "Service"
+              rowData?.type === "SERVICE"
                 ? `${rowData?.id}/productDetail`
                 : `${rowData?.id}/businessArrangement`
             }
