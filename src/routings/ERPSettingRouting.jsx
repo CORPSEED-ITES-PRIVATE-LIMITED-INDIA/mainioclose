@@ -28,19 +28,19 @@ const ERPSettingRouting = () => {
       <Route path="settings/status" element={<LeadStatus />} />
       <Route path="settings/solutions" element={<Solutions />} />
       <Route
-        path="settings/products/:productId/productDetail"
+        path="settings/solutions/:productId/productDetail"
         element={<ProductDetails />}
       />
       <Route
-        path="settings/products/:productId/businessArrangement"
+        path="settings/solutions/:productId/businessArrangement"
         element={<BusinessArrangement />}
       />
       <Route
-        path="settings/products/:productId/businessArrangement/:businessArrangmentId/productCategory"
+        path="settings/solutions/:productId/businessArrangement/:businessArrangmentId/productCategory"
         element={<ProductCategory />}
       />
       <Route
-        path="settings/products/:productId/businessArrangement/:businessArrangmentId/productCategory/:categoryId/subCategory"
+        path="settings/solutions/:productId/businessArrangement/:businessArrangmentId/productCategory/:categoryId/subCategory"
         element={<ProductSubCategory />}
       />
       <Route path="settings/comments" element={<LeadComments />} />
