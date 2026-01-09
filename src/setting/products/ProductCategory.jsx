@@ -27,16 +27,16 @@ import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
   createProductCategory,
+  deleteProductCategory,
   editProductCategory,
   getAllProductCategoryById,
 } from "../../toolkit/slices/productSlice";
 
 export const columns = [
-  { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
+  { name: "ID", uid: "id", sortable: true },
+  { name: "NAME", uid: "name" },
   { name: "ACTIONS", uid: "actions" },
 ];
-
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
@@ -46,20 +46,20 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
 const ProductCategory = () => {
   const dispatch = useDispatch();
-  const { businessArrangmentId } = useParams();
+  const { businessArrangmentId, solutionId, userId } = useParams();
   const data = useSelector((state) => state.product.productCategoryList);
   const count = useSelector(
     (state) => state.product.productCategoryList?.length
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
-  const modal = useDisclosure();
+  const deleteModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "name",
+    column: "id",
     direction: "ascending",
   });
   const [formData, setFormData] = useState({
@@ -75,7 +75,13 @@ const ProductCategory = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllProductCategoryById(businessArrangmentId));
+    dispatch(
+      getAllProductCategoryById({
+        solutionId,
+        tierId: businessArrangmentId,
+        userId,
+      })
+    );
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -111,6 +117,35 @@ const ProductCategory = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const handleDeleteItem = () => {
+    dispatch(
+      deleteProductCategory({
+        solutionId,
+        tierId: businessArrangmentId,
+        roleId: rowItem?.id,
+        userId,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          deleteModal.onClose();
+          dispatch(
+              getAllProductCategoryById({
+                solutionId,
+                tierId: businessArrangmentId,
+                userId,
+              })
+            );
+          setRowItem(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const handleEditPress = (row) => {
     setRowItem(row);
     setFormData({ name: row?.name });
@@ -121,9 +156,11 @@ const ProductCategory = () => {
     if (rowItem) {
       dispatch(
         editProductCategory({
-          ...values,
-          businessArrangmentId: businessArrangmentId,
-          id: rowItem?.id,
+          data: values,
+          tierId: businessArrangmentId,
+          roleId: rowItem?.id,
+          solutionId,
+          userId,
         })
       )
         .then((resp) => {
@@ -135,7 +172,13 @@ const ProductCategory = () => {
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllProductCategoryById(businessArrangmentId));
+            dispatch(
+              getAllProductCategoryById({
+                solutionId,
+                tierId: businessArrangmentId,
+                userId,
+              })
+            );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -146,8 +189,10 @@ const ProductCategory = () => {
     } else {
       dispatch(
         createProductCategory({
-          ...values,
-          businessArrangmentId: businessArrangmentId,
+          data: values,
+          tierId: businessArrangmentId,
+          solutionId,
+          userId,
         })
       )
         .then((resp) => {
@@ -159,7 +204,13 @@ const ProductCategory = () => {
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllProductCategoryById(businessArrangmentId));
+            dispatch(
+              getAllProductCategoryById({
+                solutionId,
+                tierId: businessArrangmentId,
+                userId,
+              })
+            );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -190,6 +241,15 @@ const ProductCategory = () => {
                   onPress={() => handleEditPress(rowData)}
                 >
                   Edit
+                </DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  onPress={() => {
+                    deleteModal.onOpen();
+                    setRowItem(rowData);
+                  }}
+                >
+                  Delete
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -391,7 +451,7 @@ const ProductCategory = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={`${item.id}-${item.name}`}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -453,21 +513,21 @@ const ProductCategory = () => {
         </ModalContent>
       </Modal>
       <Modal
-        isOpen={modal.isOpen}
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
         backdrop="blur"
-        onOpenChange={modal.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteItem}>
+                  Yes
                 </Button>
               </ModalFooter>
             </>

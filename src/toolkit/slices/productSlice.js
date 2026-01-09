@@ -1,22 +1,21 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
-import { ca } from "zod/v4/locales";
 
 export const getAllProductCategoryById = createAsyncThunk(
   "getAllProductCategoryById",
-  async (businessArragmentId) => {
+  async ({ solutionId, tierId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/productCategory/getAllProductCategoryByBusinessArragmentId?businessArragmentId=${businessArragmentId}`
+      `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles?userId=${userId}`
     );
     return response.data;
   }
 );
 
-export const getAllBusinessArrangement = createAsyncThunk(
-  "getAllBusinessArrangement",
-  async (productId) => {
+export const getAllBusinessArrangementBySolutionId = createAsyncThunk(
+  "getAllBusinessArrangementBySolutionId",
+  async ({ solutionId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/businessArrangment/getAllBusinessArrangmentByProductId?productId=${productId}`
+      `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`
     );
     return response.data;
   }
@@ -24,9 +23,9 @@ export const getAllBusinessArrangement = createAsyncThunk(
 
 export const getAllProductSubCategoryListByCategoryId = createAsyncThunk(
   "getAllProductSubCategoryList",
-  async (id) => {
+  async ({ productRoleId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/productSubCategory/getAllProductSubCategoryByProductCategoryId?productCategoryId=${id}`
+      `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules?userId=${userId}`
     );
     return response.data;
   }
@@ -44,9 +43,9 @@ export const getProductListByLeadName = createAsyncThunk(
 
 export const createProductCategory = createAsyncThunk(
   "createProductCategory",
-  async (data) => {
+  async ({ solutionId, tierId, userId, data }) => {
     const response = await api.post(
-      `/leadService/api/v1/productCategory/createProductCategory`,
+      `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles?userId=${userId}`,
       data
     );
     return response.data;
@@ -55,34 +54,77 @@ export const createProductCategory = createAsyncThunk(
 
 export const editProductCategory = createAsyncThunk(
   "editProductCategory",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/productCategory/editProductCategory`,
-      data
-    );
-    return response.data;
+  async ({ solutionId, tierId, roleId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles/${roleId}?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
+export const deleteProductCategory = createAsyncThunk(
+  "deleteProductCategory",
+  async ({ solutionId, tierId, roleId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/roles/${roleId}?userId=${userId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
 export const createProductSubCategory = createAsyncThunk(
   "createProductSubCategory",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/productSubCategory/createProductSubCategory`,
-      data
-    );
-    return response.data;
+  async ({ productRoleId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
 export const editProductSubCategory = createAsyncThunk(
   "editProductSubCategory",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/productSubCategory/editProductSubCategory`,
-      data
-    );
-    return response.data;
+  async (
+    { productRoleId, ruleId, userId, data },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
+export const deleteProductSubCategory = createAsyncThunk(
+  "deleteProductSubCategory",
+  async ({ tierId, productRoleId, ruleId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
@@ -151,7 +193,6 @@ export const getAllDocumentCheckListByProductId = createAsyncThunk(
   }
 );
 
-
 const ProductSlice = createSlice({
   name: "product",
   initialState: {
@@ -176,14 +217,17 @@ const ProductSlice = createSlice({
       state.productCategoryList = [];
     });
 
-    builder.addCase(getAllBusinessArrangement.pending, (state) => {
+    builder.addCase(getAllBusinessArrangementBySolutionId.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getAllBusinessArrangement.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.businessArrangementList = action.payload;
-    });
-    builder.addCase(getAllBusinessArrangement.rejected, (state) => {
+    builder.addCase(
+      getAllBusinessArrangementBySolutionId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.businessArrangementList = action.payload;
+      }
+    );
+    builder.addCase(getAllBusinessArrangementBySolutionId.rejected, (state) => {
       state.loading = "rejected";
       state.businessArrangementList = [];
     });
@@ -236,14 +280,20 @@ const ProductSlice = createSlice({
     builder.addCase(getAllDocumentCheckListByProductId.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getAllDocumentCheckListByProductId.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.allDocumentCheckListForProduct = action?.payload?.documentGroups;
-    });
-    builder.addCase(getAllDocumentCheckListByProductId.rejected, (state, action) => {
-      state.loading = "rejected";
-      state.allDocumentCheckListForProduct = [];
-    });
+    builder.addCase(
+      getAllDocumentCheckListByProductId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.allDocumentCheckListForProduct = action?.payload?.documentGroups;
+      }
+    );
+    builder.addCase(
+      getAllDocumentCheckListByProductId.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.allDocumentCheckListForProduct = [];
+      }
+    );
   },
 });
 

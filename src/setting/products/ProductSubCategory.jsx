@@ -29,14 +29,15 @@ import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
   createProductSubCategory,
+  deleteProductSubCategory,
   editProductSubCategory,
   getAllProductSubCategoryListByCategoryId,
   toggleForRoundOffValue,
 } from "../../toolkit/slices/productSlice";
 
 export const columns = [
-  { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
+  { name: "ID", uid: "id", sortable: true },
+  { name: "NAME", uid: "name" },
   { name: "PRODUCT FEE", uid: "productFees" },
   { name: "PRODUCT GST %", uid: "productGst" },
   { name: "HSN CODE", uid: "productCode" },
@@ -60,28 +61,30 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const ProductSubCategory = () => {
   const dispatch = useDispatch();
-  const { categoryId } = useParams();
+  const { businessArrangmentId, categoryId, userId } = useParams();
   const data = useSelector((state) => state.product.productSubcategoryList);
   const count = useSelector(
     (state) => state.product.productSubcategoryList?.length
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
-  const modal = useDisclosure();
+  const deleteModal  = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "name",
+    column: "id",
     direction: "ascending",
   });
+
   const [formData, setFormData] = useState({
     name: "",
-    productFees: "",
-    productGst: "",
-    productCode: "",
-    roundValue: "",
+    code: "",
+    feePerUnit: "",
+    gstPercentage: "",
+    unit: "",
+    roundOff: false,
   });
   const [rowItem, setRowItem] = useState(null);
 
@@ -93,7 +96,12 @@ const ProductSubCategory = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
+    dispatch(
+      getAllProductSubCategoryListByCategoryId({
+        productRoleId: categoryId,
+        userId,
+      })
+    );
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -129,6 +137,33 @@ const ProductSubCategory = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const handleDeleteItem = () => {
+    dispatch(
+      deleteProductSubCategory({
+        productRoleId: categoryId,
+        ruleId: rowItem?.id,
+        userId,
+      })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          deleteModal.onClose();
+          dispatch(
+            getAllProductSubCategoryListByCategoryId({
+              productRoleId: categoryId,
+              userId,
+            })
+          );
+          setRowItem(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const handleEditPress = (row) => {
     setRowItem(row);
     setFormData({
@@ -137,6 +172,12 @@ const ProductSubCategory = () => {
       productGst: row?.productGst,
       roundValue: row?.roundValue,
       productCode: row?.productCode,
+      name: row?.name,
+      code: row?.code,
+      feePerUnit: row?.feePerUnit,
+      gstPercentage: row?.gstPercentage,
+      unit: row?.unit,
+      roundOff: row?.roundOff,
     });
     onOpen();
   };
@@ -145,21 +186,34 @@ const ProductSubCategory = () => {
     if (rowItem) {
       dispatch(
         editProductSubCategory({
-          ...values,
-          productCategoryId: categoryId,
-          id: rowItem?.id,
+          data: formData,
+          productRoleId: categoryId,
+          ruleId: rowItem?.id,
+          userId,
         })
       )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Sub category updated successfully",
               color: "success",
             });
             onClose();
-            setFormData({ name: "" });
+            setFormData({
+              name: "",
+              code: "",
+              feePerUnit: "",
+              gstPercentage: "",
+              unit: "",
+              roundOff: false,
+            });
             setRowItem(null);
-            dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
+            dispatch(
+              getAllProductSubCategoryListByCategoryId({
+                productRoleId: categoryId,
+                userId,
+              })
+            );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -167,11 +221,12 @@ const ProductSubCategory = () => {
         .catch(() =>
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
-    } else {
+      } else {
       dispatch(
         createProductSubCategory({
-          ...values,
-          productCategoryId: categoryId,
+          data: formData,
+          productRoleId: categoryId,
+          userId,
         })
       )
         .then((resp) => {
@@ -181,9 +236,21 @@ const ProductSubCategory = () => {
               color: "success",
             });
             onClose();
-            setFormData({ name: "" });
+            setFormData({
+              name: "",
+              code: "",
+              feePerUnit: "",
+              gstPercentage: "",
+              unit: "",
+              roundOff: false,
+            });
             setRowItem(null);
-            dispatch(getAllProductSubCategoryListByCategoryId(categoryId));
+            dispatch(
+              getAllProductSubCategoryListByCategoryId({
+                productRoleId: categoryId,
+                userId,
+              })
+            );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -200,11 +267,11 @@ const ProductSubCategory = () => {
       case "name":
         return <p> {rowData?.name}</p>;
       case "productFees":
-        return <p> {rowData?.productFees}</p>;
+        return <p> {rowData?.feePerUnit}</p>;
       case "productGst":
-        return <p> {rowData?.productGst}</p>;
+        return <p> {rowData?.gstPercentage}</p>;
       case "productCode":
-        return <p> {rowData?.productCode}</p>;
+        return <p> {rowData?.code}</p>;
       case "roundoff":
         return <p> {rowData?.roundValue ? "True" : "False"}</p>;
       case "actions":
@@ -224,34 +291,14 @@ const ProductSubCategory = () => {
                   Edit
                 </DropdownItem>
                 <DropdownItem
-                  key="roundoff"
-                  onPress={() =>
-                    dispatch(toggleForRoundOffValue(rowData?.id))
-                      .then((resp) => {
-                        if (resp.meta.requestStatus === "fulfilled") {
-                          addToast({
-                            title: "Toggle updated successfully !.",
-                            color: "success",
-                          });
-                          dispatch(
-                            getAllProductSubCategoryListByCategoryId(categoryId)
-                          );
-                        } else {
-                          addToast({
-                            title: "Something went wrong !.",
-                            color: "danger",
-                          });
-                        }
-                      })
-                      .catch(() =>
-                        addToast({
-                          title: "Something went wrong !.",
-                          color: "danger",
-                        })
-                      )
-                  }
+                  key="delete"
+                  color="danger"
+                  onPress={() => {
+                    deleteModal.onOpen();
+                    setRowItem(rowData);
+                  }}
                 >
-                  Roundoff
+                  Delete
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -421,7 +468,6 @@ const ProductSubCategory = () => {
     );
   }, [selectedKeys, initialFilteration?.page, pages, hasSearchFilter, count]);
 
-
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
@@ -488,7 +534,7 @@ const ProductSubCategory = () => {
                     handleFinish(data);
                   }}
                 >
-                  <div className="w-full grid grid-cols-2 gap-5 max-h-[65vh] overflow-auto p-4">
+                  <div className="w-full grid grid-cols-2 gap-2 max-h-[65vh] overflow-auto p-4">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
@@ -505,56 +551,70 @@ const ProductSubCategory = () => {
                     />
                     <Input
                       isRequired
-                      errorMessage="Please enter product name"
-                      label="Product fee ₹/kg"
-                      name="productFees"
+                      errorMessage="Please enter unit name"
+                      label="Unit name (e.g, kg,Tonne etc)"
+                      name="unit"
                       type="text"
-                      value={formData?.productFees}
+                      value={formData?.unit}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          productFees: e.target.value,
+                          unit: e.target.value,
                         }))
                       }
                     />
                     <Input
                       isRequired
-                      errorMessage="Please enter product name"
+                      errorMessage="Please enter fees per unit"
+                      label="Product fee ₹/unit"
+                      name="feePerUnit"
+                      type="text"
+                      value={formData?.feePerUnit}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          feePerUnit: e.target.value,
+                        }))
+                      }
+                    />
+                    <Input
+                      isRequired
+                      errorMessage="Please enter gst"
                       label="Product gst %"
-                      name="productGst"
+                      name="gstPercentage"
                       type="text"
-                      value={formData?.productGst}
+                      value={formData?.gstPercentage}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          productGst: e.target.value,
+                          gstPercentage: e.target.value,
                         }))
                       }
                     />
                     <Input
                       isRequired
-                      errorMessage="Please enter product name"
+                      errorMessage="Please enter HSN code"
                       label="HSN code"
-                      name="productCode"
+                      name="code"
                       type="text"
-                      value={formData?.productCode}
+                      value={formData?.code}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          productCode: e.target.value,
+                          code: e.target.value,
                         }))
                       }
                     />
                     <Select
                       label="Roundoff on product fee"
-                      name="roundValue"
+                      name="roundOff"
                       isRequired
-                      selectedKeys={[String(formData?.roundValue)]}
+                      selectedKeys={[String(formData?.roundOff)]}
                       onSelectionChange={(keys) => {
                         const value = Array.from(keys)[0];
                         setFormData((prev) => ({
                           ...prev,
-                          roundValue: value === "true",
+                          roundOff: value === "true",
                         }));
                       }}
                     >
@@ -563,7 +623,7 @@ const ProductSubCategory = () => {
                         { label: "False", value: false },
                       ].map((item) => (
                         <SelectItem
-                          key={item.value.toString()}
+                          key={item.value}
                           value={item.value}
                         >
                           {item.label}
@@ -585,21 +645,21 @@ const ProductSubCategory = () => {
         </ModalContent>
       </Modal>
       <Modal
-        isOpen={modal.isOpen}
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
         backdrop="blur"
-        onOpenChange={modal.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteItem}>
+                  Yes
                 </Button>
               </ModalFooter>
             </>

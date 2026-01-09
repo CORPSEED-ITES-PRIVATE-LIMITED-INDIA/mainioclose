@@ -25,18 +25,18 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   createBusinessArrangement,
+  deleteBusinessArrangement,
   updateBusinessArrangement,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { getAllBusinessArrangement } from "../../toolkit/slices/productSlice";
+import { getAllBusinessArrangementBySolutionId } from "../../toolkit/slices/productSlice";
 
 export const columns = [
-  { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
+  { name: "ID", uid: "id", sortable: true },
+  { name: "NAME", uid: "name" },
   { name: "ACTIONS", uid: "actions" },
 ];
-
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
@@ -46,20 +46,20 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
 const BusinessArrangement = () => {
   const dispatch = useDispatch();
-  const { productId } = useParams();
+  const { solutionId, userId } = useParams();
   const data = useSelector((state) => state.product.businessArrangementList);
   const count = useSelector(
     (state) => state.product.businessArrangementList?.length
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
-  const modal = useDisclosure();
+  const deleteModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "name",
+    column: "id",
     direction: "ascending",
   });
   const [formData, setFormData] = useState({
@@ -75,7 +75,7 @@ const BusinessArrangement = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllBusinessArrangement(productId));
+    dispatch(getAllBusinessArrangementBySolutionId({ solutionId, userId }));
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -111,6 +111,26 @@ const BusinessArrangement = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
+  const handleDeleteItem = () => {
+    dispatch(
+      deleteBusinessArrangement({ solutionId, tierId: rowItem?.id, userId })
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          deleteModal.onClose();
+          dispatch(
+            getAllBusinessArrangementBySolutionId({ solutionId, userId })
+          );
+          setRowItem(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const handleEditPress = (row) => {
     setRowItem(row);
     setFormData({ name: row?.name });
@@ -121,9 +141,10 @@ const BusinessArrangement = () => {
     if (rowItem) {
       dispatch(
         updateBusinessArrangement({
-          ...values,
-          productId: productId,
-          id: rowItem?.id,
+          data: values,
+          solutionId,
+          tierId: rowItem?.id,
+          userId,
         })
       )
         .then((resp) => {
@@ -135,7 +156,9 @@ const BusinessArrangement = () => {
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllBusinessArrangement(productId));
+            dispatch(
+              getAllBusinessArrangementBySolutionId({ solutionId, userId })
+            );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -144,7 +167,7 @@ const BusinessArrangement = () => {
           addToast({ title: "Something went wrong !.", color: "danger" })
         );
     } else {
-      dispatch(createBusinessArrangement({ ...values, productId: productId }))
+      dispatch(createBusinessArrangement({ data: values, solutionId, userId }))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
@@ -154,7 +177,9 @@ const BusinessArrangement = () => {
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
-            dispatch(getAllBusinessArrangement(productId));
+            dispatch(
+              getAllBusinessArrangementBySolutionId({ solutionId, userId })
+            );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -169,7 +194,9 @@ const BusinessArrangement = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
-        return <Link to={`${rowData?.id}/productCategory`}>{rowData?.name}</Link>;
+        return (
+          <Link to={`${rowData?.id}/productCategory`}>{rowData?.name}</Link>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -185,6 +212,16 @@ const BusinessArrangement = () => {
                   onPress={() => handleEditPress(rowData)}
                 >
                   Edit
+                </DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  onPress={() => {
+                    deleteModal.onOpen();
+                    setRowItem(rowData);
+                  }}
+                >
+                  Delete
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -408,7 +445,9 @@ const BusinessArrangement = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {rowItem ? "Update product" : "Create product"}
+                {rowItem
+                  ? "Update business arrangement"
+                  : "Create business arrangement"}
               </ModalHeader>
               <ModalBody>
                 <Form
@@ -423,7 +462,7 @@ const BusinessArrangement = () => {
                   <div className="w-full grid gap-5 max-h-[65vh] overflow-auto p-4">
                     <Input
                       isRequired
-                      errorMessage="Please enter product name"
+                      errorMessage="Please enter business arrangement name"
                       label="Business arrangement name"
                       name="name"
                       type="text"
@@ -450,21 +489,21 @@ const BusinessArrangement = () => {
         </ModalContent>
       </Modal>
       <Modal
-        isOpen={modal.isOpen}
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
         backdrop="blur"
-        onOpenChange={modal.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>Are you sure to delete the item ?</ModalBody>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDelete}>
-                  Delete
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteItem}>
+                  Yes
                 </Button>
               </ModalFooter>
             </>

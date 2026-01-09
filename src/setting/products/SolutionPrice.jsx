@@ -1,9 +1,6 @@
 import {
   addToast,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -34,129 +31,141 @@ import {
   Plus,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllCountries,
-  getAllStatesByCountryName,
-} from "../../toolkit/slices/commonSlice";
-import NewSelect from "../../components/NewSelect";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  addAmountForProduct,
-  editAmountForProduct,
-  getSingleProductByProductId,
+  addPriceInServiceTypeSolution,
+  deletePriceServiceTypeSolution,
+  getSolutionPriceListById,
   importProductAmountDoument,
+  updatePriceInServiceTypeSolution,
 } from "../../toolkit/slices/settingSlice";
-import SingleFileUploader from "../../components/SingleFileUploader";
 import FileUploader from "../../components/FileUploader";
+import { inrCurrency } from "../../common";
 const iconClass = "w-5 h-5";
 
-const ProductPrice = ({ data, details }) => {
+const SolutionPrice = () => {
   const dispatch = useDispatch();
-  const { userId, productId } = useParams();
-  const countryList = useSelector((state) => state.common.countriesList);
-  const statesList = useSelector((state) => state.common.statesList);
+  const { userId, solutionId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const deleteModal = useDisclosure();
   const uploadModal = useDisclosure();
+  const data = useSelector((state) => state.setting.solutionPriceList);
   const [isEdit, setIsEdit] = useState(false);
   const [itemId, setItemId] = useState(null);
   const formValues = {
-    productId: productId,
-    categoryId: 0,
-    userId,
     name: "",
-    fees: 0,
-    hsnNo: "",
-    taxAmount: "",
-    centralName: details?.serviceType === "central" ? "India" : "",
-    stateName: "",
-    country: "",
+    baseAmount: "",
+    hsnCode: "",
+    gstPercentage: "",
+    displayOrder: "",
   };
   const [formData, setFormData] = useState(formValues);
   const [fileUrl, setFileUrl] = useState("");
 
   useEffect(() => {
-    dispatch(getAllCountries());
-    dispatch(getAllStatesByCountryName("India"));
-  }, []);
+    dispatch(getSolutionPriceListById({ solutionId, userId }));
+  }, [solutionId, userId]);
+
+  const handleDeleteItem = (feeId) => {
+    dispatch(deletePriceServiceTypeSolution({ solutionId, feeId:itemId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          deleteModal.onClose();
+          dispatch(getSolutionPriceListById({ solutionId, userId }));
+          setItemId(null);
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
 
   const handleEdit = (values) => {
     setFormData({
-      productId: productId,
-      categoryId: 0,
-      userId,
       name: values?.name,
-      fees: values?.fees,
-      hsnNo: values?.hsnNo,
-      taxAmount: values?.taxAmount,
-      centralName: values?.centralName,
-      stateName: values?.stateName,
-      country: values?.country,
+      baseAmount: values?.baseAmount,
+      hsnCode: values?.hsnSacCode,
+      gstPercentage: values?.gstPercentage,
+      displayOrder: values?.displayOrder,
     });
     setIsEdit(true);
     setItemId(values?.id);
     onOpen();
   };
 
-  const handleSubmit = useCallback(
-    (values) => {
-      if (isEdit) {
-        dispatch(editAmountForProduct({ productAmountId: itemId, ...values }))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              addToast({
-                title: "Fee details updated successfully !.",
-                color: "success",
-              });
-              onOpenChange(false);
-              dispatch(getSingleProductByProductId(productId));
-              setIsEdit(false);
-              setItemId(null);
-              setFormData(formValues);
-            } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
-            }
-          })
-          .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
-          );
-      } else {
-        dispatch(addAmountForProduct(formData))
-          .then((resp) => {
-            if (resp.meta.requestStatus === "fulfilled") {
-              addToast({
-                title: "Fee details created successfully !.",
-                color: "success",
-              });
-              onOpenChange(false);
-              dispatch(getSingleProductByProductId(productId));
-              setIsEdit(false);
-              setItemId(null);
-              setFormData(formValues);
-            } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
-            }
-          })
-          .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
-          );
-      }
-    },
-    [formData]
-  );
+  const handleSubmit = (values) => {
+    if (isEdit) {
+      dispatch(
+        updatePriceInServiceTypeSolution({
+          feeId: itemId,
+          solutionId,
+          userId,
+          data: values,
+        })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Fee details updated successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getSolutionPriceListById({ solutionId, userId }));
+            setIsEdit(false);
+            setItemId(null);
+            setFormData(formValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    } else {
+      dispatch(
+        addPriceInServiceTypeSolution({ solutionId, userId, data: formData })
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Fee details created successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getSolutionPriceListById({ solutionId, userId }));
+            setIsEdit(false);
+            setItemId(null);
+            setFormData(formValues);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" })
+        );
+    }
+  };
 
   const handleSubmitUploadDoc = useCallback(() => {
     dispatch(importProductAmountDoument(fileUrl))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Document uploaded successfully !.",color:"success" });
+          addToast({
+            title: "Document uploaded successfully !.",
+            color: "success",
+          });
           setFileUrl("");
           uploadModal.onOpenChange(false);
         } else {
-          addToast({ title: "Something went wrong !.",color:"danger" });
+          addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
-      .catch(() => addToast({ title: "Something went wrong !.",color:"danger" }));
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
   }, [dispatch, fileUrl]);
 
   return (
@@ -176,7 +185,10 @@ const ProductPrice = ({ data, details }) => {
             isIconOnly
             variant="light"
             className="w-6 h-6 rounded-full bg-none"
-            onPress={onOpen}
+            onPress={() => {
+              onOpen();
+              setFormData(formValues);
+            }}
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -198,28 +210,16 @@ const ProductPrice = ({ data, details }) => {
               label: "FEE TYPE",
             },
             {
-              key: "fees",
+              key: "baseAmount",
               label: "FEE",
             },
             {
-              key: "hsnNo",
+              key: "hsnSacCode",
               label: "HSN",
             },
             {
-              key: "taxAmount",
-              label: "TAX %",
-            },
-            {
-              key: "country",
-              label: "COUNTRY",
-            },
-            {
-              key: "centralName",
-              label: "CENTRAL",
-            },
-            {
-              key: "stateName",
-              label: "STATE",
+              key: "gstPercentage",
+              label: "GST %",
             },
             {
               key: "actions",
@@ -254,7 +254,10 @@ const ProductPrice = ({ data, details }) => {
                           <DropdownItem
                             key="delete"
                             color="danger"
-                            // onClick={modal.onOpen} q
+                            onPress={() => {
+                              deleteModal.onOpen();
+                              setItemId(item?.id);
+                            }}
                           >
                             Delete
                           </DropdownItem>
@@ -263,7 +266,11 @@ const ProductPrice = ({ data, details }) => {
                     </div>
                   </TableCell>
                 ) : (
-                  <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                  <TableCell>
+                    {columnKey === "baseAmount"
+                      ? inrCurrency(getKeyValue(item, columnKey))
+                      : getKeyValue(item, columnKey)}
+                  </TableCell>
                 )
               }
             </TableRow>
@@ -276,7 +283,7 @@ const ProductPrice = ({ data, details }) => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Product fee detail
+                Solution fee detail
               </ModalHeader>
               <ModalBody className="w-full">
                 <Form
@@ -290,34 +297,6 @@ const ProductPrice = ({ data, details }) => {
                   }}
                 >
                   <div className="grid grid-cols-2 gap-4 w-full">
-                    {details?.serviceType === "international" && (
-                      <NewSelect
-                        data={countryList}
-                        label="Country"
-                        name="country"
-                        labelKey="name"
-                        valueKey="name"
-                        value={formData?.country}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, country: e }))
-                        }
-                      />
-                    )}
-
-                    {details?.serviceType === "central" && (
-                      <NewSelect
-                        data={statesList}
-                        label="State"
-                        name="stateName"
-                        labelKey="name"
-                        valueKey="name"
-                        value={formData?.stateName}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, stateName: e }))
-                        }
-                      />
-                    )}
-
                     <Select
                       items={[
                         {
@@ -346,14 +325,14 @@ const ProductPrice = ({ data, details }) => {
                       isRequired
                       label="Fee"
                       errorMessage="please enter fee amount"
-                      name="fees"
+                      name="baseAmount"
                       type="number"
                       startContent={<IndianRupee className="h-4 w-4" />}
-                      value={formData?.fees}
+                      value={formData?.baseAmount}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          fees: e.target.value,
+                          baseAmount: e.target.value,
                         }))
                       }
                     />
@@ -361,25 +340,37 @@ const ProductPrice = ({ data, details }) => {
                       isRequired
                       label="HSN number"
                       errorMessage="please enter HSN number"
-                      name="hsnNo"
-                      value={formData?.hsnNo}
+                      name="hsnCode"
+                      value={formData?.hsnCode}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          hsnNo: e.target.value,
+                          hsnCode: e.target.value,
                         }))
                       }
                     />
                     <Input
                       isRequired
-                      label="Tax %"
+                      label="GST %"
                       errorMessage="please enter tax %"
-                      name="taxAmount"
-                      value={formData?.taxAmount}
+                      name="gstPercentage"
+                      value={formData?.gstPercentage}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          taxAmount: e.target.value,
+                          gstPercentage: e.target.value,
+                        }))
+                      }
+                    />
+
+                    <Input
+                      label="Display order"
+                      name="displayOrder"
+                      value={formData?.displayOrder}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          displayOrder: e.target.value,
                         }))
                       }
                     />
@@ -412,7 +403,10 @@ const ProductPrice = ({ data, details }) => {
                     onChange={(e) => setFileUrl(e)}
                   />
                   <div>
-                    <a className="text-primary" href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794100973productAmount_(1).xlsx">
+                    <a
+                      className="text-primary"
+                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1753794100973productAmount_(1).xlsx"
+                    >
                       Download the sample document
                     </a>
                   </div>
@@ -428,8 +422,31 @@ const ProductPrice = ({ data, details }) => {
           )}
         </ModalContent>
       </Modal>
+
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+              <ModalBody>
+                <p>Are you sure to delete this item ?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>No</Button>
+                <Button color="primary" onPress={handleDeleteItem}>
+                  Yes
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };
 
-export default ProductPrice;
+export default SolutionPrice;

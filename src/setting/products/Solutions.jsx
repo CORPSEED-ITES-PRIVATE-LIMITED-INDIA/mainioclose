@@ -179,7 +179,7 @@ const Solutions = () => {
           <Link
             to={
               rowData?.type === "SERVICE"
-                ? `${rowData?.id}/productDetail`
+                ? `${rowData?.id}/detail/solutionPrice`
                 : `${rowData?.id}/businessArrangement`
             }
             className="font-medium"

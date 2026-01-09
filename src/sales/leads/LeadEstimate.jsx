@@ -49,7 +49,7 @@ import NewSelect from "../../components/NewSelect";
 import { TagsInput } from "../proposal/Proposal";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import {
-  getAllBusinessArrangement,
+  getAllBusinessArrangementBySolutionId,
   getAllProductCategoryById,
   getAllProductSubCategoryListByCategoryId,
   getProductListByLeadName,
@@ -473,7 +473,7 @@ const LeadEstimate = () => {
 
   useEffect(() => {
     if (productData?.id) {
-      dispatch(getAllBusinessArrangement(productData?.id));
+      dispatch(getAllBusinessArrangementBySolutionId(productData?.id));
     }
   }, [dispatch, productData]);
 

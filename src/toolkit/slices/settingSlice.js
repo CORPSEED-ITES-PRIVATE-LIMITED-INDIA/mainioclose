@@ -118,23 +118,45 @@ export const createProduct = createAsyncThunk("createProduct", async (data) => {
 
 export const createBusinessArrangement = createAsyncThunk(
   "createBusinessArrangement",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/businessArrangment/createBusinessArrangment`,
-      data
-    );
-    return response.data;
+  async ({ solutionId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
 export const updateBusinessArrangement = createAsyncThunk(
   "updateBusinessArrangement",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/businessArrangment/editBusinessArrangment`,
-      data
-    );
-    return response.data;
+  async ({ solutionId, tierId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
+export const deleteBusinessArrangement = createAsyncThunk(
+  "deleteBusinessArrangement",
+  async ({ solutionId, tierId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}?userId=${userId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
@@ -178,25 +200,47 @@ export const addAmountForProduct = createAsyncThunk(
   }
 );
 
-export const editAmountForProduct = createAsyncThunk(
-  "editAmountForProduct",
-  async (data) => {
-    const response = await api.put(
-      `/leadService/api/v1/product/updateAmountInProduct`,
-      data
-    );
-    return response.data;
+export const updatePriceInServiceTypeSolution = createAsyncThunk(
+  "updatePriceInServiceTypeSolution",
+  async ({ userId, solutionId, feeId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/service-solutions/${solutionId}/fees/${feeId}?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
-export const addDocumentProduct = createAsyncThunk(
-  "addDocumentProduct",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/product/addDocumentsInProduct`,
-      data
-    );
-    return response.categoryData;
+export const addPriceInServiceTypeSolution = createAsyncThunk(
+  "addPriceInServiceTypeSolution",
+  async ({ userId, solutionId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/service-solutions/${solutionId}/fees?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
+export const deletePriceServiceTypeSolution = createAsyncThunk(
+  "deletePriceServiceTypeSolution",
+  async ({ solutionId, feeId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/service-solutions/${solutionId}/fees/${feeId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 
@@ -480,7 +524,7 @@ export const getApplicantTypeList = createAsyncThunk(
 
 export const getAllSolutionsByType = createAsyncThunk(
   "getAllSolutionsByType",
-  async ({ page, size, userId,type }, { rejectWithValue }) => {
+  async ({ page, size, userId, type }, { rejectWithValue }) => {
     try {
       const response = await api.get(
         `/leadService/api/v1/getAllSolutionForSolutionPage?page=${page}&size=${size}&userId=${userId}&type=${type}`
@@ -518,6 +562,16 @@ export const createSolution = createAsyncThunk(
   }
 );
 
+export const getSolutionPriceListById = createAsyncThunk(
+  "getSolutionPriceListById",
+  async ({ solutionId, userId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/service-solutions/${solutionId}/fees?userId=${userId}`
+    );
+    return response.data;
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -541,6 +595,7 @@ export const SettingSlice = createSlice({
     applicantTypeList: [],
     solutionsList: [],
     solutionsCount: 0,
+    solutionPriceList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -806,6 +861,18 @@ export const SettingSlice = createSlice({
     builder.addCase(getAllSolutionCountByType.rejected, (state) => {
       state.loading = "rejected";
       state.solutionsCount = 0;
+    });
+
+    builder.addCase(getSolutionPriceListById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSolutionPriceListById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.solutionPriceList = action.payload;
+    });
+    builder.addCase(getSolutionPriceListById.rejected, (state) => {
+      state.loading = "rejected";
+      state.solutionPriceList = [];
     });
   },
 });

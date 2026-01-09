@@ -64,7 +64,7 @@ import {
 } from "../toolkit/slices/vendorsSlice";
 import InvoiceView from "../components/InvoiceView";
 import {
-  getAllBusinessArrangement,
+  getAllBusinessArrangementBySolutionId,
   getAllProductCategoryById,
   getAllProductSubCategoryListByCategoryId,
 } from "../toolkit/slices/productSlice";
@@ -376,11 +376,9 @@ const VendorEstimate = () => {
   const handleActionsPress = (rowItem) => {
     setRowItem(rowItem);
     setValue("serviceName", rowItem?.productName);
-    dispatch(getAllBusinessArrangement(rowItem?.productId));
+    dispatch(getAllBusinessArrangementBySolutionId(rowItem?.productId));
   };
 
-  console.log("hgxjhgfsjdfgjhfgh", getValues());
-  console.log("hgxjhgfsjdfgjhfgh   2161616565", formSchema(isGstMand));
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {

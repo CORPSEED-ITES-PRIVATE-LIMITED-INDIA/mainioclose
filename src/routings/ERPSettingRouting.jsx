@@ -1,7 +1,6 @@
 import React from "react";
 import { Route } from "react-router-dom";
 import LeadStatus from "../setting/status/LeadStatus";
-import ProductDetails from "../setting/products/ProductDetails";
 import LeadComments from "../setting/comments/LeadComments";
 import IpAddress from "../setting/ipaddress/IpAddress";
 import OperationsSettings from "../operation/Settings/OperationsSettings";
@@ -17,6 +16,8 @@ import ProductSubCategory from "../setting/products/ProductSubCategory";
 import TemplatesAndEmailBody from "../setting/proposalAndTemplates/TemplatesAndEmailBody";
 import ApplicantTypes from "../setting/applicantType/ApplicantTypes";
 import Solutions from "../setting/products/Solutions";
+import SolutionDetails from "../setting/products/SolutionDetails";
+import SolutionPrice from "../setting/products/SolutionPrice";
 
 const ERPSettingRouting = () => {
   return (
@@ -28,19 +29,22 @@ const ERPSettingRouting = () => {
       <Route path="settings/status" element={<LeadStatus />} />
       <Route path="settings/solutions" element={<Solutions />} />
       <Route
-        path="settings/solutions/:productId/productDetail"
-        element={<ProductDetails />}
-      />
+        path="settings/solutions/:solutionId/detail"
+        element={<SolutionDetails />}
+      >
+        <Route index path="solutionPrice" element={<SolutionPrice />} />
+        <Route />
+      </Route>
       <Route
-        path="settings/solutions/:productId/businessArrangement"
+        path="settings/solutions/:solutionId/businessArrangement"
         element={<BusinessArrangement />}
       />
       <Route
-        path="settings/solutions/:productId/businessArrangement/:businessArrangmentId/productCategory"
+        path="settings/solutions/:solutionId/businessArrangement/:businessArrangmentId/productCategory"
         element={<ProductCategory />}
       />
       <Route
-        path="settings/solutions/:productId/businessArrangement/:businessArrangmentId/productCategory/:categoryId/subCategory"
+        path="settings/solutions/:solutionId/businessArrangement/:businessArrangmentId/productCategory/:categoryId/subCategory"
         element={<ProductSubCategory />}
       />
       <Route path="settings/comments" element={<LeadComments />} />
