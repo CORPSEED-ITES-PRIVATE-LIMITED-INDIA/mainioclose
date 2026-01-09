@@ -478,6 +478,46 @@ export const getApplicantTypeList = createAsyncThunk(
   }
 );
 
+export const getAllSolutionsByType = createAsyncThunk(
+  "getAllSolutionsByType",
+  async ({ page, size, userId,type }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/getAllSolutionForSolutionPage?page=${page}&size=${size}&userId=${userId}&type=${type}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
+export const getAllSolutionCountByType = createAsyncThunk(
+  "getAllSolutionCountByType",
+  async ({ userId, type }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/getActiveSolutionCount?userId=${userId}&type=${type}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
+export const createSolution = createAsyncThunk(
+  "createSolution",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/leadService/api/v1/`, data);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -499,6 +539,8 @@ export const SettingSlice = createSlice({
     designationList: [],
     templateAndMailList: [],
     applicantTypeList: [],
+    solutionsList: [],
+    solutionsCount: 0,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -740,6 +782,30 @@ export const SettingSlice = createSlice({
     builder.addCase(getApplicantTypeList.rejected, (state) => {
       state.applicantTypeList = [];
       state.loading = "rejected";
+    });
+
+    builder.addCase(getAllSolutionsByType.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSolutionsByType.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.solutionsList = action.payload;
+    });
+    builder.addCase(getAllSolutionsByType.rejected, (state) => {
+      state.loading = "rejected";
+      state.solutionsList = [];
+    });
+
+    builder.addCase(getAllSolutionCountByType.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSolutionCountByType.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.solutionsCount = action.payload;
+    });
+    builder.addCase(getAllSolutionCountByType.rejected, (state) => {
+      state.loading = "rejected";
+      state.solutionsCount = 0;
     });
   },
 });

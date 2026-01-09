@@ -265,10 +265,10 @@ export const navItems = [
     children: [
       { title: "Status", icon: "", url: "settings/status", key: "status" },
       {
-        title: "Products",
+        title: "Solutions",
         icon: "",
-        url: "settings/products",
-        key: "products",
+        url: "settings/solutions",
+        key: "solutions",
       },
       {
         title: "Comments",

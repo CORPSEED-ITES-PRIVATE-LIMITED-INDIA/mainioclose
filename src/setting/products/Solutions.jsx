@@ -23,13 +23,13 @@ import {
   SelectItem,
   addToast,
   ModalFooter,
+  Textarea,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createProduct,
-  deleteProduct,
-  getAllProductListByType,
-  getAllProductListCount,
+  createSolution,
+  getAllSolutionCountByType,
+  getAllSolutionsByType,
   searchProducts,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
@@ -38,7 +38,7 @@ import { addProductsInOperations } from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "productName" },
+  { name: "NAME", uid: "name" },
   { name: "TYPE", uid: "type" },
 ];
 
@@ -52,13 +52,13 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "productName", "type"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "type"];
 
-const LeadProducts = () => {
+const Solutions = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
-  const data = useSelector((state) => state.setting.productList);
-  const count = useSelector((state) => state.setting.productListCount);
+  const data = useSelector((state) => state.setting.solutionsList);
+  const count = useSelector((state) => state.setting.solutionsCount);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
@@ -73,20 +73,22 @@ const LeadProducts = () => {
   const [formData, setFormData] = useState({
     name: "",
     type: "",
-    serviceType: "",
+    description: "",
+    scope: "",
   });
 
   const [initialFilteration, setInitialFilteration] = useState({
     type: "all",
     page: 1,
     size: 50,
+    userId,
   });
 
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllProductListByType(initialFilteration));
-    dispatch(getAllProductListCount(initialFilteration));
+    dispatch(getAllSolutionsByType(initialFilteration));
+    dispatch(getAllSolutionCountByType(initialFilteration));
   }, [dispatch, initialFilteration]);
 
   const headerColumns = React.useMemo(() => {
@@ -135,7 +137,7 @@ const LeadProducts = () => {
   // };
 
   const handleSubmit = (values) => {
-    dispatch(createProduct({ userId, ...values }))
+    dispatch(createSolution({ createdById: userId, ...values }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           const productInfo = resp.payload;
@@ -144,21 +146,21 @@ const LeadProducts = () => {
             color: "success",
           });
           onOpenChange(false);
-          dispatch(getAllProductListByType(initialFilteration));
-          dispatch(
-            addProductsInOperations([
-              {
-                productId: productInfo?.id,
-                productName: productInfo?.productName,
-                description: productInfo?.description || "Something",
-                createdBy: productInfo?.createdBy?.id,
-                updatedBy: productInfo?.createdBy?.id,
-                date: productInfo?.createdDate,
-                active: true,
-              },
-            ])
-          );
-          setFormData({ name: "", type: "" });
+          dispatch(getAllSolutionsByType(initialFilteration));
+          // dispatch(
+          //   addProductsInOperations([
+          //     {
+          //       productId: productInfo?.id,
+          //       productName: productInfo?.productName,
+          //       description: productInfo?.description || "Something",
+          //       createdBy: productInfo?.createdBy?.id,
+          //       updatedBy: productInfo?.createdBy?.id,
+          //       date: productInfo?.createdDate,
+          //       active: true,
+          //     },
+          //   ])
+          // );
+          setFormData({ name: "", type: "", description: "" });
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
@@ -172,7 +174,7 @@ const LeadProducts = () => {
     const cellValue = rowData[columnKey];
 
     switch (columnKey) {
-      case "productName":
+      case "name":
         return (
           <Link
             to={
@@ -180,8 +182,9 @@ const LeadProducts = () => {
                 ? `${rowData?.id}/productDetail`
                 : `${rowData?.id}/businessArrangement`
             }
+            className="font-medium"
           >
-            {rowData?.productName}
+            {rowData?.name}
           </Link>
         );
 
@@ -244,8 +247,8 @@ const LeadProducts = () => {
       dispatch(searchProducts(value));
     } else {
       setFilterValue("");
-      dispatch(getAllProductListByType(initialFilteration));
-      dispatch(getAllProductListCount(initialFilteration));
+      dispatch(getAllSolutionsByType(initialFilteration));
+      dispatch(getAllSolutionCountByType(initialFilteration));
     }
   }, []);
 
@@ -333,7 +336,7 @@ const LeadProducts = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} products
+            Total {count} solutions
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -403,7 +406,7 @@ const LeadProducts = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead products</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Solutions</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -450,7 +453,7 @@ const LeadProducts = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create product
+                Create solution
               </ModalHeader>
               <ModalBody>
                 <Form
@@ -468,7 +471,7 @@ const LeadProducts = () => {
                       errorMessage="Please enter product name"
                       label="Product name"
                       name="name"
-                      type="text"
+                      type="SERVICE"
                       value={formData?.name}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -477,20 +480,19 @@ const LeadProducts = () => {
                         }))
                       }
                     />
-
                     <Select
                       isRequired
-                      errorMessage="please select the product type"
-                      label="Select product type"
+                      errorMessage="please select the solution type"
+                      label="Select solution type"
                       name="type"
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, type: e }))
                       }
                     >
                       {[
-                        { label: "Product", value: "Product" },
-                        { label: "Service", value: "Service" },
-                        { label: "Plant setup", value: "plantsetup" },
+                        { label: "PRODUCT", value: "PRODUCT" },
+                        { label: "SERVICE", value: "SERVICE" },
+                        { label: "PLANT_SETUP", value: "PLANT_SETUP" },
                       ].map((info) => (
                         <SelectItem key={info.value}>{info.label}</SelectItem>
                       ))}
@@ -498,21 +500,34 @@ const LeadProducts = () => {
 
                     <Select
                       isRequired
-                      errorMessage="please select the product type"
-                      label="Select service type"
-                      name="serviceType"
+                      errorMessage="please select the scope"
+                      label="Select scope"
+                      name="scope"
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, serviceType: e }))
+                        setFormData((prev) => ({ ...prev, scope: e }))
                       }
                     >
                       {[
-                        { label: "International", value: "international" },
-                        { label: "Central", value: "central" },
-                        { label: "State", value: "state" },
+                        { label: "GLOBAL", value: "GLOBAL" },
+                        { label: "CENTRAL", value: "CENTRAL" },
+                        { label: "STATE", value: "STATE" },
                       ].map((info) => (
                         <SelectItem key={info.value}>{info.label}</SelectItem>
                       ))}
                     </Select>
+
+                    <Textarea
+                      className="max-w-xs"
+                      label="Description"
+                      name="description"
+                      value={formData?.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                    />
                   </div>
 
                   <ModalFooter className="w-full flex justify-end">
@@ -553,4 +568,4 @@ const LeadProducts = () => {
   );
 };
 
-export default LeadProducts;
+export default Solutions;

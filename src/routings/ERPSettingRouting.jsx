@@ -1,7 +1,6 @@
 import React from "react";
 import { Route } from "react-router-dom";
 import LeadStatus from "../setting/status/LeadStatus";
-import LeadProducts from "../setting/products/LeadProducts";
 import ProductDetails from "../setting/products/ProductDetails";
 import LeadComments from "../setting/comments/LeadComments";
 import IpAddress from "../setting/ipaddress/IpAddress";
@@ -17,6 +16,7 @@ import ProductCategory from "../setting/products/ProductCategory";
 import ProductSubCategory from "../setting/products/ProductSubCategory";
 import TemplatesAndEmailBody from "../setting/proposalAndTemplates/TemplatesAndEmailBody";
 import ApplicantTypes from "../setting/applicantType/ApplicantTypes";
+import Solutions from "../setting/products/Solutions";
 
 const ERPSettingRouting = () => {
   return (
@@ -26,7 +26,7 @@ const ERPSettingRouting = () => {
         element={<OperationsSettings />}
       ></Route>
       <Route path="settings/status" element={<LeadStatus />} />
-      <Route path="settings/products" element={<LeadProducts />} />
+      <Route path="settings/solutions" element={<Solutions />} />
       <Route
         path="settings/products/:productId/productDetail"
         element={<ProductDetails />}
