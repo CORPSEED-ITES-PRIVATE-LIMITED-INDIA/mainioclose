@@ -61,7 +61,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const ProductSubCategory = () => {
   const dispatch = useDispatch();
-  const { businessArrangmentId, categoryId, userId } = useParams();
+  const { categoryId, userId } = useParams();
   const data = useSelector((state) => state.product.productSubcategoryList);
   const count = useSelector(
     (state) => state.product.productSubcategoryList?.length
@@ -167,11 +167,6 @@ const ProductSubCategory = () => {
   const handleEditPress = (row) => {
     setRowItem(row);
     setFormData({
-      name: row?.name,
-      productFees: row?.productFees,
-      productGst: row?.productGst,
-      roundValue: row?.roundValue,
-      productCode: row?.productCode,
       name: row?.name,
       code: row?.code,
       feePerUnit: row?.feePerUnit,
@@ -534,7 +529,7 @@ const ProductSubCategory = () => {
                     handleFinish(data);
                   }}
                 >
-                  <div className="w-full grid grid-cols-2 gap-2 max-h-[65vh] overflow-auto p-4">
+                  <div className="w-full grid grid-cols-2 gap-2 max-h-[65vh] overflow-auto">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"

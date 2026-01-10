@@ -12,9 +12,23 @@ import { companyFormSchema } from "./EstimateFormSchema";
 import AddressFields from "../../../components/AddressFields";
 import Section from "../../../components/Section";
 import FormInput from "../../../components/FormInput";
+import ProductFormFieldsDetails from "./ProductFormFieldsDetails";
+import ServiceFormFieldsDetail from "./ServiceFormFieldsDetail";
+import { useEffect } from "react";
+import { getAllBusinessArrangementBySolutionId } from "../../../toolkit/slices/productSlice";
+import { useParams } from "react-router-dom";
 
-
-export const LeadEstimates = () => {
+export const LeadEstimates = ({
+  productData,
+  setValue,
+  getValues,
+  setProductSubCategoryData,
+  setProductSubCategoryFees,
+  isMedium,
+  calculateTotalPriceWithGST,
+  productSubCategoryData,
+}) => {
+  const { userId } = useParams();
   const {
     control,
     handleSubmit,
@@ -27,19 +41,25 @@ export const LeadEstimates = () => {
     },
   });
 
+  useEffect(() => {
+    dispatch(getAllBusinessArrangementBySolutionId({ solutionId: 1, userId }));
+  }, []);
+
   const onSubmit = (data) => {
     console.log("Form Data:", data);
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-h-[80vh] overflow-auto">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="w-full max-h-[80vh] overflow-auto space-y-4"
+    >
+      {/* COMPANY DETAILS */}
       <Card className="shadow-xl">
         <CardHeader className="text-xl font-semibold">
           Company Details
         </CardHeader>
-
         <CardBody className="space-y-4">
-          {/* Company Info */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <FormInput
               label="Company Name"
@@ -67,7 +87,30 @@ export const LeadEstimates = () => {
             />
           </div>
 
-          {/* Billing Address */}
+          {true ? (
+            <ProductFormFieldsDetails
+              control={control}
+              isMedium={isMedium}
+              businessArrangementList={businessArrangementList}
+              productCategoryList={productCategoryList}
+              productSubcategoryList={productSubcategoryList}
+              dispatch={dispatch}
+              getValues={getValues}
+              setValue={setValue}
+              setProductSubCategoryData={setProductSubCategoryData}
+              setProductSubCategoryFees={setProductSubCategoryFees}
+              productSubCategoryData={productSubCategoryData}
+              calculateTotalPriceWithGST={calculateTotalPriceWithGST}
+            />
+          ) : (
+            <ServiceFormFieldsDetail
+              control={control}
+              isMedium={isMedium}
+              productData={productData}
+            />
+          )}
+
+          {/* BILLING ADDRESS */}
           <Section title="Billing Address">
             <AddressFields
               prefix="billingAddress"
@@ -76,7 +119,7 @@ export const LeadEstimates = () => {
             />
           </Section>
 
-          {/* Shipping Address */}
+          {/* SHIPPING ADDRESS */}
           <Section title="Shipping Address">
             <AddressFields
               prefix="shippingAddress"
@@ -85,7 +128,7 @@ export const LeadEstimates = () => {
             />
           </Section>
 
-          {/* Order Info */}
+          {/* ORDER INFO */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <FormInput
               label="Order Number"
@@ -93,7 +136,6 @@ export const LeadEstimates = () => {
               control={control}
               error={errors.orderNumber}
             />
-
             <Controller
               name="date"
               control={control}
@@ -116,20 +158,20 @@ export const LeadEstimates = () => {
               <Textarea label="Remark" {...field} minRows={3} />
             )}
           />
-
-          {/* Submit */}
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              color="primary"
-              size="lg"
-              className="cursor-pointer"
-            >
-              Submit
-            </Button>
-          </div>
         </CardBody>
       </Card>
+
+      {/* SUBMIT BUTTON */}
+      <div className="flex justify-end mt-4">
+        <Button
+          type="submit"
+          color="primary"
+          size="lg"
+          className="cursor-pointer"
+        >
+          Submit
+        </Button>
+      </div>
     </form>
   );
 };

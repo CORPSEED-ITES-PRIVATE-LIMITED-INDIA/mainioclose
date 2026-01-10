@@ -103,7 +103,7 @@ export const editProductSubCategory = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post(
+      const response = await api.put(
         `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`,
         data
       );

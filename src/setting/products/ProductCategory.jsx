@@ -483,7 +483,7 @@ const ProductCategory = () => {
                     handleFinish(data);
                   }}
                 >
-                  <div className="w-full grid gap-5 max-h-[65vh] overflow-auto p-4">
+                  <div className="w-full grid gap-5 max-h-[65vh] overflow-auto">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
