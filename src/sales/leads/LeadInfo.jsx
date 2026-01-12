@@ -85,6 +85,7 @@ import dayjs from "dayjs";
 import StatusDisplay from "../../components/StatusDisplay";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { leadSource } from "../../common";
+import BasicCompany from "../company/BasicCompany";
 const iconClass = "h-4 w-4";
 
 const addressFormSchema = z.object({
@@ -812,6 +813,7 @@ const LeadInfo = () => {
                       })}
                     </CardBody>
                   </Card>
+                  <BasicCompany/>
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">

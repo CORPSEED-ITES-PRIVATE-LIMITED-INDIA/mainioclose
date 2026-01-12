@@ -28,7 +28,6 @@ import UnitDetails from "../sales/company/UnitDetails";
 import CompanyProjects from "../sales/company/CompanyProjects";
 import CompanyLeads from "../sales/company/CompanyLeads";
 import ChildLead from "../sales/leads/ChildLead";
-import BasicCompany from "../sales/company/BasicCompany";
 import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
 
 const SalesModuleRouting = () => {
@@ -45,7 +44,6 @@ const SalesModuleRouting = () => {
       <Route path="sales/allTask/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="childLead" element={<ChildLead />} />
-        <Route path="basicCompany" element={<BasicCompany />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
@@ -66,7 +64,6 @@ const SalesModuleRouting = () => {
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="childLead" element={<ChildLead />} />
-        <Route path="basicCompany" element={<BasicCompany />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
@@ -101,7 +98,6 @@ const SalesModuleRouting = () => {
       >
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="childLead" element={<ChildLead />} />
-        <Route path="basicCompany" element={<BasicCompany />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
@@ -121,7 +117,6 @@ const SalesModuleRouting = () => {
       <Route path="sales/autoHistory/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="childLead" element={<ChildLead />} />
-        <Route path="basicCompany" element={<BasicCompany />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />

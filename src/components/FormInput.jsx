@@ -1,7 +1,7 @@
 import { Input } from "@heroui/input";
 import { Controller } from "react-hook-form";
 
-const FormInput = ({ label, name, control, error }) => {
+const FormInput = ({ label, name, control, error, readOnly = false }) => {
   return (
     <Controller
       name={name}
@@ -11,6 +11,7 @@ const FormInput = ({ label, name, control, error }) => {
           label={label}
           {...field}
           isInvalid={!!error}
+          readOnly={readOnly}
           errorMessage={error?.message}
         />
       )}
@@ -18,4 +19,4 @@ const FormInput = ({ label, name, control, error }) => {
   );
 };
 
-export default FormInput
+export default FormInput;

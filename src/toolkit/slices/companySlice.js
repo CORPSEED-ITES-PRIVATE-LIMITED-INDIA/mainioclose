@@ -299,7 +299,7 @@ export const addBasicCompanyDetail = createAsyncThunk(
   "addBasicCompanyDetail",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/leadService/api/v1/basic-company`, data);
+      const response = await api.post(`/leadService/api/companies/basic-company`, data);
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response.data.message);
@@ -307,11 +307,30 @@ export const addBasicCompanyDetail = createAsyncThunk(
   }
 );
 
+export const getBasicCompanyDetails = createAsyncThunk(
+  "getBasicCompanyDetails",
+  async ({ leadId, userId }) => {
+    const response = await api.get(
+      `/leadService/api/companies/by-lead/${leadId}?userId=${userId}`
+    );
+    return response.data;
+  }
+);
 
-export const getBasicCompanyDetails=createAsyncThunk("getBasicCompanyDetails",async({leadId,userId})=>{
-  const response=await api.get(`/leadService/api/v1/by-lead/${leadId}?userId=${userId}`)
-  return response.data
-})
+export const createCompanyInAccounts = createAsyncThunk(
+  "createCompanyInAccounts",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/basic-company`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
 
 const CompanySlice = createSlice({
   name: "company",
@@ -334,7 +353,7 @@ const CompanySlice = createSlice({
     companyHistoryList: [],
     existingCompanyList: [],
     companyDetailById: {},
-    basicCompanyDetail:{}
+    basicCompanyDetail: {},
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {

@@ -5,15 +5,18 @@ import { IndianRupee, Percent } from "lucide-react";
 import NewSelect from "../../../components/NewSelect";
 import Section from "../../../components/Section";
 import { useSelector } from "react-redux";
+import {
+  getAllProductCategoryById,
+  getAllProductSubCategoryListByCategoryId,
+} from "../../../toolkit/slices/productSlice";
 
 const ProductFormFieldsDetails = ({
   control,
   isMedium,
   dispatch,
   getValues,
+  reset,
   setValue,
-  setProductSubCategoryData,
-  setProductSubCategoryFees,
   productSubCategoryData,
   calculateTotalPriceWithGST,
 }) => {
@@ -92,19 +95,12 @@ const ProductFormFieldsDetails = ({
               onChange={(value) => field.onChange(value)}
               onItemSelect={(item) => {
                 const currentValues = getValues();
-                setProductSubCategoryData(item);
                 reset({
                   ...currentValues,
                   actualPrice: String(item?.productFees),
                   gstCode: item?.productCode,
                   gst: item?.productGst,
                 });
-                setProductSubCategoryFees((prev) => ({
-                  ...prev,
-                  actualPrice: String(item?.productFees),
-                  gst: item?.productGst,
-                  roundOff: item?.roundValue,
-                }));
               }}
             />
           )}

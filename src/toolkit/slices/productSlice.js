@@ -98,10 +98,7 @@ export const createProductSubCategory = createAsyncThunk(
 
 export const editProductSubCategory = createAsyncThunk(
   "editProductSubCategory",
-  async (
-    { productRoleId, ruleId, userId, data },
-    { rejectWithValue }
-  ) => {
+  async ({ productRoleId, ruleId, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`,
@@ -203,6 +200,7 @@ const ProductSlice = createSlice({
     productDataByLeadName: {},
     allDocumentList: [],
     allDocumentCheckListForProduct: [],
+    solutionServiceFeeDetails: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllProductCategoryById.pending, (state) => {
