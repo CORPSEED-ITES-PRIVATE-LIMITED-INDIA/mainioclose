@@ -1,5 +1,7 @@
 import { parseAbsolute } from "@internationalized/date";
 import { ToWords } from "to-words";
+import numWords from "num-words";
+
 
 export const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 export const gstRegex =
@@ -209,3 +211,31 @@ export const statusColorCode = {
   PENDING: "warning",
   REJECTED: "danger",
 };
+
+
+
+
+export function numberToWords(value) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+
+  const num = Number(value);
+
+  if (isNaN(num)) {
+    return "";
+  }
+
+  const [integerPart, decimalPart] = num.toFixed(2).split(".");
+
+  const rupees = parseInt(integerPart, 10);
+  const paise = parseInt(decimalPart, 10);
+
+  let words = numWords(rupees);
+
+  if (paise > 0) {
+    words += " and " + numWords(paise) + " paise";
+  }
+
+  return words.replace(/^\w/, c => c.toUpperCase()) + " only";
+}

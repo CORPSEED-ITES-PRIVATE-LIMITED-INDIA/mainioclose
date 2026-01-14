@@ -1,25 +1,29 @@
-import React, { memo } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { Controller } from "react-hook-form";
 import { Input } from "@heroui/react";
 import { IndianRupee, Percent } from "lucide-react";
 import NewSelect from "../../../components/NewSelect";
 import Section from "../../../components/Section";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   getAllProductCategoryById,
   getAllProductSubCategoryListByCategoryId,
 } from "../../../toolkit/slices/productSlice";
+import { useParams } from "react-router-dom";
 
 const ProductFormFieldsDetails = ({
   control,
   isMedium,
-  dispatch,
   getValues,
   reset,
   setValue,
-  productSubCategoryData,
-  calculateTotalPriceWithGST,
 }) => {
+  const { userId } = useParams();
+  const dispatch = useDispatch();
+
+  const solutionDetail = useSelector(
+    (state) => state.setting.solutionDetailById
+  );
   const businessArrangementList = useSelector(
     (state) => state.product.businessArrangementList
   );
@@ -30,12 +34,57 @@ const ProductFormFieldsDetails = ({
     (state) => state.product.productSubcategoryList
   );
 
+  const [productPrices, setProductPrices] = useState(null);
+
+  // Ensure lineItems[0] exists for product flow
+  useEffect(() => {
+    const values = getValues();
+    if (!values?.lineItems?.length) {
+      reset({
+        ...values,
+        lineItems: [
+          {
+            itemName: "",
+            unitPriceExGst: "",
+            hsnSacCode: "",
+            gstRate: "",
+            quantity: 1,
+            categoryCode: "",
+            feeType: "",
+          },
+        ],
+      });
+    }
+  }, [getValues, reset]);
+
+  const handleSetProductPrices = (item) => {
+    setProductPrices(item);
+
+    const values = getValues();
+    const existing = values?.lineItems?.[0] || {};
+
+    reset({
+      ...values,
+      lineItems: [
+        {
+          ...existing, // ✅ keeps categoryCode, feeType, etc
+          itemName: item?.name || existing.itemName || "",
+          unitPriceExGst: item?.feePerUnit ?? "",
+          hsnSacCode: item?.code ?? "",
+          gstRate: item?.gstPercentage ?? "",
+          quantity: existing?.quantity ?? 1,
+        },
+        ...(values?.lineItems?.slice(1) || []),
+      ],
+    });
+  };
+
   return (
     <Section title="Product Details">
       {/* Product Selectors */}
       <div className="grid grid-cols-3 gap-2 mt-2">
         <Controller
-          name="businessArrangmentId"
+          name="lineItems.0.categoryCode"
           control={control}
           render={({ field, fieldState: { error } }) => (
             <NewSelect
@@ -46,18 +95,26 @@ const ProductFormFieldsDetails = ({
               isInvalid={!!error}
               data={businessArrangementList || []}
               labelKey="name"
-              valueKey="id"
-              value={String(field.value)}
+              valueKey="name"
+              value={String(field.value || "")}
               onChange={(value) => {
-                dispatch(getAllProductCategoryById(value));
                 field.onChange(value);
+              }}
+              onItemSelect={(item) => {
+                dispatch(
+                  getAllProductCategoryById({
+                    userId,
+                    tierId: item?.id,
+                    solutionId: solutionDetail?.id,
+                  })
+                );
               }}
             />
           )}
         />
 
         <Controller
-          name="productCategoryId"
+          name="lineItems.0.feeType"
           control={control}
           render={({ field, fieldState: { error } }) => (
             <NewSelect
@@ -68,18 +125,25 @@ const ProductFormFieldsDetails = ({
               isInvalid={!!error}
               data={productCategoryList || []}
               labelKey="name"
-              valueKey="id"
-              value={String(field.value)}
+              valueKey="name"
+              value={String(field.value || "")}
               onChange={(value) => {
-                dispatch(getAllProductSubCategoryListByCategoryId(value));
                 field.onChange(value);
+              }}
+              onItemSelect={(item) => {
+                dispatch(
+                  getAllProductSubCategoryListByCategoryId({
+                    productRoleId: item?.id,
+                    userId,
+                  })
+                );
               }}
             />
           )}
         />
 
         <Controller
-          name="productSubCategoryId"
+          name="lineItems.0.itemName"
           control={control}
           render={({ field, fieldState: { error } }) => (
             <NewSelect
@@ -90,137 +154,100 @@ const ProductFormFieldsDetails = ({
               isInvalid={!!error}
               data={productSubcategoryList || []}
               labelKey="name"
-              valueKey="id"
-              value={String(field.value)}
-              onChange={(value) => field.onChange(value)}
+              valueKey="name"
+              value={String(field.value || "")}
+              onChange={(value) => {
+                field.onChange(value);
+              }}
               onItemSelect={(item) => {
-                const currentValues = getValues();
-                reset({
-                  ...currentValues,
-                  actualPrice: String(item?.productFees),
-                  gstCode: item?.productCode,
-                  gst: item?.productGst,
-                });
+                handleSetProductPrices(item);
               }}
             />
           )}
         />
       </div>
 
-      {/* Product Pricing */}
-      {Object.keys(productSubCategoryData || {})?.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 mt-2">
-          {/* Actual Price */}
+      {/* Product Pricing (lineItems[0]) */}
+      {productPrices && (
+        <div className="grid grid-cols-5 gap-2 mt-2">
+          {/* Item Name */}
           <Controller
-            name="actualPrice"
+            name={`lineItems.0.itemName`}
             control={control}
             render={({ field }) => (
               <Input
+                {...field}
+                size={isMedium ? "sm" : "md"}
+                label="Item name"
+                isReadOnly
+              />
+            )}
+          />
+
+          {/* Actual Price */}
+          <Controller
+            name={`lineItems.0.unitPriceExGst`}
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
                 size={isMedium ? "sm" : "md"}
                 type="number"
                 startContent={<IndianRupee className="h-4 w-4" />}
+                isReadOnly
                 isRequired
                 label="Actual price"
-                {...field}
-                onChange={(e) => {
-                  field.onChange(e.target.value);
-                  const { quantity, gst } = getValues();
-                  setValue(
-                    "totalPrice",
-                    String(
-                      calculateTotalPriceWithGST(e.target.value, quantity, gst)
-                    )
-                  );
-                }}
+                onChange={(e) => field.onChange(e.target.value)}
               />
             )}
           />
 
           {/* HSN */}
           <Controller
-            name="gstCode"
+            name={`lineItems.0.hsnSacCode`}
             control={control}
             render={({ field }) => (
               <Input
+                {...field}
                 size={isMedium ? "sm" : "md"}
                 isRequired
+                isReadOnly
                 label="HSN code"
-                {...field}
               />
             )}
           />
 
           {/* GST % */}
           <Controller
-            name="gst"
+            name={`lineItems.0.gstRate`}
             control={control}
             render={({ field }) => (
               <Input
+                {...field}
                 size={isMedium ? "sm" : "md"}
                 isRequired
                 label="GST %"
+                isReadOnly
                 endContent={<Percent className="h-4 w-4" />}
-                {...field}
-                onChange={(e) => {
-                  const { actualPrice, quantity } = getValues();
-                  setValue(
-                    "totalPrice",
-                    String(
-                      calculateTotalPriceWithGST(
-                        actualPrice,
-                        quantity,
-                        e.target.value
-                      )
-                    )
-                  );
-                  field.onChange(e.target.value);
-                }}
+                onChange={(e) => field.onChange(e.target.value)}
               />
             )}
           />
 
           {/* Quantity */}
           <Controller
-            name="quantity"
+            name={`lineItems.0.quantity`}
             control={control}
             render={({ field }) => (
               <Input
+                {...field}
                 size={isMedium ? "sm" : "md"}
                 isRequired
                 type="number"
                 label="Quantity in kg"
-                {...field}
                 onChange={(e) => {
-                  const { actualPrice, gst } = getValues();
                   field.onChange(e.target.value);
-                  setValue(
-                    "totalPrice",
-                    String(
-                      calculateTotalPriceWithGST(
-                        actualPrice,
-                        e.target.value,
-                        gst
-                      )
-                    )
-                  );
                 }}
-              />
-            )}
-          />
-
-          {/* Total Price */}
-          <Controller
-            name="totalPrice"
-            control={control}
-            render={({ field }) => (
-              <Input
-                size={isMedium ? "sm" : "md"}
-                isRequired
-                label="Total price (₹)"
-                type="number"
-                isDisabled
-                startContent={<IndianRupee className="h-4 w-4" />}
-                {...field}
               />
             )}
           />

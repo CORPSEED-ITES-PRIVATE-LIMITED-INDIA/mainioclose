@@ -1,10 +1,10 @@
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import logo from '../../../assets/CORPSEED.webp'
 import dayjs from "dayjs";
 import numWords from "num-words";
-import { inrCurrency } from "../../../common";
+import { inrCurrency, numberToWords } from "../../../common";
 
 const NewEstimatePreview = ({ details, due }) => {
   const contentRef = useRef();
@@ -74,7 +74,7 @@ const NewEstimatePreview = ({ details, due }) => {
                     {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
                   </h4>
                   <p className="font-medium text-gray-700 text-sm">
-                    #{`ESTD0${details?.id}`}
+                    {details?.estimateNumber}
                   </p>
                 </div>
 
@@ -101,32 +101,32 @@ const NewEstimatePreview = ({ details, due }) => {
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="space-y-4 text-xs">
                 <div>
-                  <p className="font-semibold text-gray-800 mb-1">Bill To ,</p>
-                  <p className="font-medium">{details?.companyName}</p>
-                  {details?.gstNo && <p>GSTIN: {details?.gstNo}</p>}
-                  <p>{details?.address}</p>
+                  <p className="font-semibold text-gray-400 mb-1">Bill To ,</p>
+                  <p className="font-medium">{details?.unit?.unitName}</p>
+                  {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
+                  <p>{details?.unit?.addressLine1}</p>
                   <p>
                     {[
-                      details?.city,
-                      details?.state,
-                      details?.country,
-                      details?.primaryPinCode,
+                      details?.unit?.city,
+                      details?.unit?.state,
+                      details?.unit?.country,
+                      details?.unit?.pinCode,
                     ]
                       ?.filter(Boolean)
                       .join(", ")}
                   </p>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 mb-1">Ship To ,</p>
-                  <p className="font-medium">{details?.companyName}</p>
-                  {details?.gstNo && <p>GSTIN: {details?.gstNo}</p>}
-                  <p>{details?.secondaryAddress}</p>
+                  <p className="font-semibold text-gray-400 mb-1">Ship To ,</p>
+                  <p className="font-medium">{details?.unit?.unitName}</p>
+                  {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
+                  <p>{details?.unit?.addressLine1}</p>
                   <p>
                     {[
-                      details?.secondaryCity,
-                      details?.secondaryState,
-                      details?.secondaryCountry?.name,
-                      details?.secondaryPinCode,
+                      details?.unit?.city,
+                      details?.unit?.state,
+                      details?.unit?.country,
+                      details?.unit?.pinCode,
                     ]
                       ?.filter(Boolean)
                       .join(", ")}
@@ -135,12 +135,12 @@ const NewEstimatePreview = ({ details, due }) => {
               </div>
               <div className="text-xs space-y-1 md:text-right">
                 <p>
-                  <span className="font-semibold">Estimate Date:</span>{" "}
+                  <span className="font-semibold">Estimate date:</span>{" "}
                   {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
                 </p>
                 <p>
-                  <span className="font-semibold">Order Date:</span>{" "}
-                  {dayjs(details?.createDate).format("DD-MM-YYYY")}
+                  <span className="font-semibold">Valid till date:</span>{" "}
+                  {dayjs(details?.validUntil).format("DD-MM-YYYY")}
                 </p>
               </div>
             </div>
@@ -246,7 +246,7 @@ const NewEstimatePreview = ({ details, due }) => {
             <p className="text-right text-xs mt-3">
               <span className="font-semibold">Amount (in words): </span>
               <span className="capitalize text-gray-700">
-                {numWords(details?.grandTotal)} only
+                {numberToWords(details?.grandTotal)}
               </span>
             </p>
 
@@ -389,4 +389,4 @@ const NewEstimatePreview = ({ details, due }) => {
   );
 };
 
-export default NewEstimatePreview;
+export default memo(NewEstimatePreview);

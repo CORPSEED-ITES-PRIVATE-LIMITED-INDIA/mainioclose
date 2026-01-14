@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
 import { Input } from "@heroui/react";
 import { IndianRupee } from "lucide-react";
@@ -81,4 +81,4 @@ const ServiceFormFieldsDetail = ({ control, isMedium }) => {
   );
 };
 
-export default ServiceFormFieldsDetail;
+export default memo(ServiceFormFieldsDetail);

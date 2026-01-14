@@ -238,7 +238,7 @@ export const getAllEstimateByUserId = createAsyncThunk(
   "getAllEstimateByUserId",
   async ({ userId, page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateByUserId?userId=${userId}&page=${page}&size=${size}`
+      `/accountService/api/v1/estimates/all?userId=${userId}&page=${page}&size=${size}`
     );
     return response.data;
   }
@@ -248,7 +248,7 @@ export const getTotalCountOfEstimate = createAsyncThunk(
   "getTotalCountOfEstimate",
   async (userId) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllEstimateCount?userId=${userId}`
+      `/accountService/api/v1/estimates/count?userId=${userId}`
     );
     return response.data;
   }

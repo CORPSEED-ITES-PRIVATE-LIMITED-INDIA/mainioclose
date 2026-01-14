@@ -218,7 +218,7 @@ const BasicCompany = () => {
                       render={({ field }) => (
                         <Input
                           {...field}
-                          label="Name"
+                          label="Company name"
                           isRequired
                           isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
