@@ -79,11 +79,12 @@ const AllInvoice = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const [status, setStatus] = useState("GENERATED");
 
   useEffect(() => {
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage }));
-    dispatch(getAllInvoiceCount(userId));
-  }, [dispatch, userId]);
+    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+    dispatch(getAllInvoiceCount({ userId, status }));
+  }, [dispatch, userId, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -245,6 +246,36 @@ const AllInvoice = () => {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[status]}
+                selectionMode="single"
+                variant="flat"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setStatus(key);
+                }}
+              >
+                <DropdownItem key="GENERATED">GENERATED</DropdownItem>
+                <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
+                <DropdownItem key="VIEWED">VIEWED</DropdownItem>
+                <DropdownItem key="PAID">PAID</DropdownItem>
+                <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
+                <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
+                <DropdownItem key="CREDIT_NOTED">CREDIT_NOTED</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
+              <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
                   Columns
                 </Button>
@@ -292,6 +323,7 @@ const AllInvoice = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    status
   ]);
 
   const bottomContent = React.useMemo(() => {

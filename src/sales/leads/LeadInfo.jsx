@@ -692,7 +692,7 @@ const LeadInfo = () => {
                     {toggleSlug ? (
                       <div className="flex justify-between items-center">
                         <h6 className="text-sm font-medium">
-                          {leadData?.leadName}
+                          {leadData?.lead?.name}
                         </h6>
                         <Button
                           onPress={() => setToggleSlug(false)}

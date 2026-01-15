@@ -249,9 +249,9 @@ export const paymentRegisterAction = createAsyncThunk(
 
 export const getAllInvoice = createAsyncThunk(
   "getAllInvoice",
-  async ({ userId, page, size }) => {
+  async ({ userId, page, size,status }) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllInvoice?userId=${userId}&page=${page}&size=${size}`
+      `/accountService/api/v1/invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`
     );
     return response.data;
   }
@@ -259,9 +259,9 @@ export const getAllInvoice = createAsyncThunk(
 
 export const getAllInvoiceCount = createAsyncThunk(
   "getAllInvoiceCount",
-  async (userId) => {
+  async ({userId,status}) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllInvoiceCount?userId=${userId}`
+      `/accountService/api/v1/invoices/count?status=${status}&createdById=${userId}`
     );
     return response.data;
   }
@@ -269,9 +269,9 @@ export const getAllInvoiceCount = createAsyncThunk(
 
 export const getAllUnbillList = createAsyncThunk(
   "getAllUnbillList",
-  async ({ page, size }) => {
+  async ({ page, size, status,userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/ledgerType/getAllUnbilled?page=${page}&size=${size}`
+      `/accountService/api/v1/unbilled-invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`
     );
     return response.data;
   }
@@ -279,11 +279,26 @@ export const getAllUnbillList = createAsyncThunk(
 
 export const getAllUnbillCount = createAsyncThunk(
   "getAllUnbillCount",
-  async () => {
+  async ({ status, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/ledgerType/getAllUnbilledCount`
+      `/accountService/api/v1/unbilled-invoices/count?status=${status}&userId=${userId}`
     );
     return response.data;
+  }
+);
+
+export const updateStatusForUnbill = createAsyncThunk(
+  "updateStatusForUnbill",
+  async ({ unbilledId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/unbilled-invoices/${unbilledId}/approve`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   }
 );
 

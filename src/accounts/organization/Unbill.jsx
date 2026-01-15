@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -19,29 +19,37 @@ import {
   ModalFooter,
   ModalContent,
   ModalHeader,
+  Textarea,
+  Select,
+  SelectItem,
+  addToast,
+  Chip,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllUnbillCount,
   getAllUnbillList,
+  updateStatusForUnbill,
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
 import {
-  getInvoiceDetailById,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
-import InvoiceView from "../../components/InvoiceView";
 import EstimateView from "../../components/EstimateView";
+import { useParams } from "react-router-dom";
 
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "UNBILL NO.", uid: "unbillNo", sortable: true },
+  { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
+  { name: "UNBILL NO.", uid: "unbillNo" },
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
-  { name: "COMPANY", uid: "company" },
-  { name: "TXN. AMOUNT", uid: "txnAmount" },
+  { name: "COMPANY", uid: "companyName" },
+  { name: "TOTAL AMOUNT", uid: "totalAmount" },
+  { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
+  { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
   { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -53,17 +61,22 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "unbillNo",
+  "estimateNumber",
   "service",
   "client",
-  "company",
-  "txnAmount",
+  "companyName",
+  "totalAmount",
+  "receivedAmount",
+  "outstandingAmount",
   "addedBy",
   "actions",
 ];
 
 const Unbill = () => {
   const dispatch = useDispatch();
+  const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const statusModal = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
@@ -79,11 +92,18 @@ const Unbill = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+  const [rowItem, setRowItem] = useState(null);
+  const [status, setStatus] = useState("PENDING_APPROVAL");
+  const [updatedStatusData, setUpdatedStatusData] = useState({
+    approverUserId: userId,
+    approvalRemarks: "",
+    rejectionReason: "",
+  });
 
   useEffect(() => {
-    dispatch(getAllUnbillList({ page, size: rowsPerPage }));
-    dispatch(getAllUnbillCount());
-  }, [dispatch, page, rowsPerPage]);
+    dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
+    dispatch(getAllUnbillCount({ userId, status }));
+  }, [dispatch, page, rowsPerPage, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -124,9 +144,12 @@ const Unbill = () => {
     switch (columnKey) {
       case "date":
         return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.date).format("DD-MM-YYYY")}
-          </p>
+          <div>
+            <p className="text-sm capitalize">
+              {dayjs(rowData?.date).format("DD-MM-YYYY")}
+            </p>
+            <Chip size="sm">{rowData?.status}</Chip>
+          </div>
         );
       case "unbillNo":
         return <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>;
@@ -137,17 +160,29 @@ const Unbill = () => {
       case "client":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.clientName}</p>
+            <p className="text-sm capitalize">{rowData?.contactName}</p>
           </div>
         );
-      case "txnAmount":
+      case "totalAmount":
         return (
           <p className="text-sm capitalize">
-            {inrCurrency(rowData?.txnAmount)}
+            {inrCurrency(rowData?.totalAmount)}
+          </p>
+        );
+      case "receivedAmount":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.receivedAmount)}
+          </p>
+        );
+      case "outstandingAmount":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.outstandingAmount)}
           </p>
         );
       case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
+        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -167,7 +202,15 @@ const Unbill = () => {
                 >
                   View
                 </DropdownItem>
-                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
+                <DropdownItem
+                  key="status"
+                  onPress={() => {
+                    statusModal.onOpen();
+                    setRowItem(rowData);
+                  }}
+                >
+                  Update status
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -208,6 +251,36 @@ const Unbill = () => {
     setPage(1);
   }, []);
 
+  const handleUpdateStatus = () => {
+    dispatch(
+      updateStatusForUnbill({
+        unbilledId: rowItem?.id,
+        data: updatedStatusData,
+      })
+    )
+      .then((resp) => {
+        console.log("sdkfjhsjk",resp)
+        if (resp.meta.requestStatus === "fullfilled") {
+          addToast({
+            title: "Status updated successfully !.",
+            color: "success",
+          });
+          setRowItem(null);
+          setUpdatedStatusData({
+            approverUserId: userId,
+            approvalRemarks: "",
+            rejectionReason: "",
+          });
+          statusModal.onClose();
+        } else {
+          addToast({ title: resp?.payload?.data?.message, color: "danger" });
+        }
+      })
+      .catch((err) =>
+        addToast({ title: "Something went wrong !.", color: "danger" })
+      );
+  };
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -222,6 +295,37 @@ const Unbill = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[status]}
+                selectionMode="single"
+                variant="flat"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setStatus(key);
+                }}
+              >
+                <DropdownItem key="PENDING_APPROVAL">
+                  PENDING_APPROVAL
+                </DropdownItem>
+                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
+                <DropdownItem key="FULLY_PAID">FULLY_PAID</DropdownItem>
+                <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
+                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -273,6 +377,7 @@ const Unbill = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    status
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -375,6 +480,68 @@ const Unbill = () => {
                   Close
                 </Button>
                 <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={statusModal.isOpen}
+        onOpenChange={statusModal.onOpenChange}
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update Status
+              </ModalHeader>
+              <ModalBody className="max-h-[85vh] overflow-auto">
+                <Select
+                  label="Select status"
+                  isRequired
+                  selectedKeys={[updatedStatusData?.approvalRemarks]}
+                  onSelectionChange={(e) => {
+                    let key = Array.from(e)[0];
+                    setUpdatedStatusData((prev) => ({
+                      ...prev,
+                      approvalRemarks: key,
+                    }));
+                  }}
+                >
+                  {[
+                    { key: "PENDING_APPROVAL", label: "PENDING_APPROVAL" },
+                    { key: "APPROVED", label: "APPROVED" },
+                    { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
+                    { key: "FULLY_PAID", label: "FULLY_PAID" },
+                    { key: "CANCELLED", label: "CANCELLED" },
+                    { key: "REJECTED", label: "REJECTED" },
+                  ].map((item) => (
+                    <SelectItem key={item.key}>{item.label}</SelectItem>
+                  ))}
+                </Select>
+                {updatedStatusData?.approvalRemarks === "REJECTED" && (
+                  <Textarea
+                    label="Remark"
+                    isRequired
+                    value={updatedStatusData?.rejectionReason}
+                    onChange={(e) =>
+                      setUpdatedStatusData((prev) => ({
+                        ...prev,
+                        rejectionReason: e.target.value,
+                      }))
+                    }
+                  />
+                )}
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={handleUpdateStatus}>
                   Action
                 </Button>
               </ModalFooter>
