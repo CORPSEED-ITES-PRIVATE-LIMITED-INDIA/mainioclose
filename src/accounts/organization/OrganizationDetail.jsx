@@ -17,6 +17,7 @@ import {
   CardBody,
   CardFooter,
   CardHeader,
+  DatePicker,
   Divider,
   Image,
   Input,
@@ -40,17 +41,42 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import {
+  getAllCitiesByStateName,
   getAllCountries,
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
+import SingleFileUploader from "../../components/SingleFileUploader";
+import { getLocalTimeZone, parseDate, toCalendarDate, today } from "@internationalized/date";
 
 const orgFormSchema = z.object({
-  name: z.string().min(1, "Please enter organization name."),
-  address: z.string().min(1, "Please enter organization name."),
-  country: z.string().min(1, "Please select country"),
-  state: z.string().min(1, "Please select state"),
-  pin: z.string().min(1, "Please enter pin code"),
+  name: z.string().min(1, "Company name is required"),
+  addressLine1: z.string().min(1, "Address Line 1 is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  country: z.string().min(1, "Country is required"),
+  pinCode: z.string().min(4, "Invalid pincode"),
+  gstNo: z.string().min(),
+  panNo: z.string().optional(),
+  cinNumber: z.string().optional(),
+  establishedDate: z.string(),
+  bankAccountPresent: z.boolean(),
+  accountHolderName: z.string().optional(),
+  accountNo: z.string().optional(),
+  ifscCode: z.string().optional(),
+  swiftCode: z.string().optional(),
+  bankName: z.string().optional(),
+  branch: z.string().optional(),
+  upiId: z.string().optional(),
+  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
+  paymentPageLink: z
+    .string()
+    .url("Invalid payment link")
+    .optional()
+    .or(z.literal("")),
+  logoUrl: z.string().url("Invalid logo URL").optional().or(z.literal("")),
+  email: z.string().email("Invalid email"),
+  phone: z.string().min(8, "Invalid phone number"),
 });
 
 const orgDefaultValues = {
@@ -157,12 +183,14 @@ const OrganizationDetail = () => {
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
+  const citiesList = useSelector((state) => state.common.citiesList);
   const [flagValues, setFlagValues] = useState({
     hsnSacPresent: false,
     gstRateDetailPresent: false,
     bankAccountPresent: false,
   });
-
+  const [panError, setPanError] = useState("");
+  const [gstError, setGstError] = useState("");
   const [accountFlag, setAccountFlag] = useState({
     bankAccountPresent: false,
   });
@@ -220,6 +248,51 @@ const OrganizationDetail = () => {
   const handleOpenStatModal = () => {
     dispatch(getAllLedgerType());
     statutoryModal.onOpen();
+  };
+
+  const bankAccountPresent = orgForm.watch("bankAccountPresent");
+
+  const validateGST = (gstNo, stateName) => {
+    if (!gstNo) return "";
+    if (
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNo)
+    ) {
+      return "Invalid GST Number";
+    }
+    const selectedState = statesList?.find((s) => s.name === stateName);
+    if (selectedState && gstNo.slice(0, 2) !== selectedState.gstCode) {
+      return "GST code does not match selected state";
+    }
+    return "";
+  };
+
+  const handlePanChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatPANInput(rawValue);
+    orgForm.setValue("panNo", formattedValue);
+    if (
+      formattedValue.length === 10 &&
+      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedValue)
+    ) {
+      setPanError("Invalid PAN Number");
+    } else {
+      setPanError("");
+    }
+  };
+
+  const handleGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    orgForm.setValue("gstNo", formattedValue);
+    const error = validateGST(formattedValue, state);
+    setGstError(error);
+  };
+
+  const handleStateChange = (stateName) => {
+    orgForm.setValue("state", stateName);
+    dispatch(getAllCitiesByStateName(stateName));
+    const error = validateGST(gstNo, stateName);
+    setGstError(error);
   };
 
   const onStatSubmit = (values) => {
@@ -392,13 +465,13 @@ const OrganizationDetail = () => {
                 <form onSubmit={orgForm.handleSubmit(onOrgSubmit)}>
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
                     <Controller
-                      name="organization"
+                      name="name"
                       control={orgForm.control}
                       render={({ field }) => (
                         <Input
                           isRequired
                           label="Organization name"
-                          name="organization"
+                          name="name"
                           value={field.value}
                           onChange={(e) => {
                             field.onChange(e.target.value);
@@ -406,8 +479,80 @@ const OrganizationDetail = () => {
                         />
                       )}
                     />
+
                     <Controller
-                      name="address"
+                      name="gstNo"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="GST number"
+                          maxLength={15}
+                          errorMessage={error?.message || gstError}
+                          isInvalid={!!error || !!gstError}
+                          {...field}
+                          onChange={(e) => {
+                            handleGstChange(e);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="panNo"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Pan number"
+                          maxLength={10}
+                          errorMessage={error?.message || panError}
+                          isInvalid={!!error || !!panError}
+                          {...field}
+                          onChange={(e) => {
+                            handlePanChange(e);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="cinNumber"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="CIN number"
+                          maxLength={10}
+                          errorMessage={error?.message || panError}
+                          isInvalid={!!error || !!panError}
+                          {...field}
+                          onChange={(e) => {
+                            handlePanChange(e);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="establishedDate"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <DatePicker
+                          isRequired
+                          label="Company incorporate date"
+                          showMonthAndYearPickers
+                          maxValue={today(getLocalTimeZone())}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field.value ? parseDate(field.value) : null}
+                          onChange={(e) =>
+                            field.onChange(toCalendarDate(e).toString())
+                          }
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="addressLine1"
                       control={orgForm.control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
@@ -416,7 +561,7 @@ const OrganizationDetail = () => {
                           value={field.value}
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          name="address"
+                          name="addressLine1"
                           onChange={(e) => {
                             field.onChange(e.target.value);
                           }}
@@ -463,20 +608,274 @@ const OrganizationDetail = () => {
                       )}
                     />
                     <Controller
-                      name="pin"
+                      name="city"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="City"
+                          data={citiesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="pinCode"
                       control={orgForm.control}
                       render={({ field }) => (
                         <Input
                           isRequired
                           label="Pin code"
                           value={field.value}
-                          name="pin"
+                          name="pinCode"
                           onChange={(e) => {
                             field.onChange(e.target.value);
                           }}
                         />
                       )}
                     />
+                    <Controller
+                      name="ownerName"
+                      control={orgForm.control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          label="Owner name"
+                          value={field.value}
+                          name="ownerName"
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="bankAccountPresent"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Bank account present"
+                          isRequired
+                          selectedKeys={
+                            field.value !== undefined
+                              ? [field.value.toString()]
+                              : []
+                          }
+                          onSelectionChange={(keys) => {
+                            const value = Array.from(keys)[0];
+                            if (value !== undefined)
+                              field.onChange(value === "true");
+                            setFlagValues((prev) => ({
+                              ...prev,
+                              bankAccountPresent: value === "true",
+                            }));
+                          }}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        >
+                          {[
+                            { label: "True", value: true },
+                            { label: "False", value: false },
+                          ].map((item) => (
+                            <SelectItem
+                              key={item.value.toString()}
+                              value={item.value}
+                            >
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+
+                    {bankAccountPresent && (
+                      <>
+                        <Controller
+                          name="bankName"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Bank name"
+                              value={field.value}
+                              name="bankName"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="accountNo"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Account number"
+                              value={field.value}
+                              name="accountNo"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="ifscCode"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="IFSC code"
+                              value={field.value}
+                              name="ifscCode"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="accountHolderName"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Account holder name"
+                              value={field.value}
+                              name="accountHolderName"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="swiftCode"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Swift code"
+                              value={field.value}
+                              name="swiftCode"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="branch"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Branch"
+                              value={field.value}
+                              name="branch"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="upiId"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="UPI ID"
+                              value={field.value}
+                              name="upiId"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="website"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Website"
+                              value={field.value}
+                              name="website"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="paymentPageLink"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Payment page link"
+                              value={field.value}
+                              name="paymentPageLink"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="logoUrl"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <SingleFileUploader
+                              label="Company logo"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              errorMessage={error?.message}
+                              isInvalid={!!error}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="email"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Email"
+                              value={field.value}
+                              name="email"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="phone"
+                          control={orgForm.control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Input
+                              isRequired
+                              label="Phone"
+                              value={field.value}
+                              maxLength={10}
+                              name="phone"
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          )}
+                        />
+                      </>
+                    )}
                   </div>
                   <ModalFooter className="flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>

@@ -121,11 +121,10 @@ const AllInvoice = () => {
   }, [sortDescriptor, filteredItems]);
 
   const handleViewEstimate = (value) => {
-    dispatch(getInvoiceDetailById(value?.id))
+    dispatch(getInvoiceDetailById({ id: value?.id, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           let tempData = resp?.payload;
-          console.log("sdkgfkjsdgjksdgjhs", tempData);
           setInvoiceDetail(tempData);
           onOpen();
         } else {
@@ -133,6 +132,7 @@ const AllInvoice = () => {
             title: "There is Some Issue in Invoice",
             color: "danger",
           });
+          onOpen();
         }
       })
       .catch(() =>
@@ -323,7 +323,7 @@ const AllInvoice = () => {
     count,
     onSearchChange,
     hasSearchFilter,
-    status
+    status,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -415,7 +415,7 @@ const AllInvoice = () => {
         <ModalContent>
           <ModalHeader>Tax Invoice</ModalHeader>
           <ModalBody className="max-h-[90vh] overflow-auto">
-            <TaxInvoice detail={invoiceDetail} />
+            <TaxInvoice invoiceData={invoiceDetail} />
           </ModalBody>
         </ModalContent>
       </Modal>

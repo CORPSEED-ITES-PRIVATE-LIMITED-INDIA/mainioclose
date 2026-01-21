@@ -105,7 +105,7 @@ const buildTaxSummaryRows = (lineItems = []) => {
 /** -------------------------
  * Component
  * ------------------------- */
-const TaxInvoice = ({ invoiceData, heading }) => {
+const UnbilledView = ({ invoiceData, heading }) => {
   const printRef = useRef(null);
 
   const seller = useMemo(
@@ -197,7 +197,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
     const y = (pageH - imgH) / 2; // centered vertically
     pdf.addImage(imgData, "PNG", x, y, imgW, imgH, undefined, "FAST");
 
-    pdf.save(`${inv?.invoiceNumber || "invoice"}.pdf`);
+    pdf.save(`${inv?.unbilledNumber || "unbill"}.pdf`);
   };
 
   // Forward props so colSpan/rowSpan works
@@ -595,4 +595,4 @@ const TaxInvoice = ({ invoiceData, heading }) => {
   );
 };
 
-export default memo(TaxInvoice);
+export default memo(UnbilledView);

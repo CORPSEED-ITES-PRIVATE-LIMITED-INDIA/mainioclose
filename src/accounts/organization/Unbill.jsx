@@ -39,6 +39,8 @@ import {
 } from "../../toolkit/slices/accountSlice";
 import EstimateView from "../../components/EstimateView";
 import { useParams } from "react-router-dom";
+import TaxInvoice from "../../components/TaxInvoice";
+import UnbilledView from "../../components/UnbilledView";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -197,7 +199,7 @@ const Unbill = () => {
                   key="view"
                   onPress={() => {
                     onOpen();
-                    dispatch(getUnBilledDetailById(rowData?.id));
+                    dispatch(getUnBilledDetailById({id:rowData?.id,userId}));
                   }}
                 >
                   View
@@ -468,12 +470,9 @@ const Unbill = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              {/* <ModalHeader className="flex flex-col gap-1">Invoice</ModalHeader> */}
+              <ModalHeader className="flex flex-col gap-1">Unbill</ModalHeader>
               <ModalBody className="max-h-[85vh] overflow-auto">
-                <EstimateView
-                  details={invoiceDetail?.estimate}
-                  due={invoiceDetail?.dueAmount}
-                />
+                <UnbilledView invoiceData={invoiceDetail} heading={"Unbill"} />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>

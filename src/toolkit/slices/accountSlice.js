@@ -34,7 +34,7 @@ export const createPurchaseOrder = createAsyncThunk(
 
 export const createPaymentRegister = createAsyncThunk(
   "createPaymentRegister",
-  async ({userId,data}) => {
+  async ({ userId, data }) => {
     const response = await api.post(
       `/accountService/api/v1/payments/register?userId=${userId}`,
       data
@@ -127,9 +127,9 @@ export const paymentRegisterRemainingAmount = createAsyncThunk(
 
 export const getInvoiceDetailById = createAsyncThunk(
   "getInvoiceDetailById",
-  async (id) => {
+  async ({ id, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/invoice/getInvoiceById?id=${id}`
+      `/accountService/api/v1/invoices/${id}?userId=${userId}`
     );
     return response.data;
   }
@@ -167,9 +167,9 @@ export const getAllBankAccounts = createAsyncThunk(
 
 export const getUnBilledDetailById = createAsyncThunk(
   "getUnBilledDetailById",
-  async (id) => {
+  async ({ id, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/ledgerType/getUnbilledByIdForView?id=${id}`
+      `/accountService/api/v1/unbilled-invoices/${id}?userId=${userId}`
     );
     return response.data;
   }

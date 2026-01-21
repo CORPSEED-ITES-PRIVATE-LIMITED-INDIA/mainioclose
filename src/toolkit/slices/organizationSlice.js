@@ -3,19 +3,17 @@ import { api } from "../../httpRequest";
 
 export const getOrganizationByName = createAsyncThunk(
   "getOrganizationByName",
-  async (name) => {
-    const response = await api.get(
-      `/accountService/api/v1/organization/getAllOrganizationByName?name=${name}`
-    );
+  async () => {
+    const response = await api.get(`/accountService/api/v1`);
     return response.data;
   }
 );
 
 export const createOrganization = createAsyncThunk(
   "createOrganization",
-  async (data) => {
+  async ({ userId, data }) => {
     const response = await api.post(
-      `/accountService/api/v1/organization/createOrganization`,
+      `/accountService/api/v1/createOrganization?userId=${userId}`,
       data
     );
     return response.data;
@@ -249,7 +247,7 @@ export const paymentRegisterAction = createAsyncThunk(
 
 export const getAllInvoice = createAsyncThunk(
   "getAllInvoice",
-  async ({ userId, page, size,status }) => {
+  async ({ userId, page, size, status }) => {
     const response = await api.get(
       `/accountService/api/v1/invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`
     );
@@ -259,7 +257,7 @@ export const getAllInvoice = createAsyncThunk(
 
 export const getAllInvoiceCount = createAsyncThunk(
   "getAllInvoiceCount",
-  async ({userId,status}) => {
+  async ({ userId, status }) => {
     const response = await api.get(
       `/accountService/api/v1/invoices/count?status=${status}&createdById=${userId}`
     );
@@ -269,7 +267,7 @@ export const getAllInvoiceCount = createAsyncThunk(
 
 export const getAllUnbillList = createAsyncThunk(
   "getAllUnbillList",
-  async ({ page, size, status,userId }) => {
+  async ({ page, size, status, userId }) => {
     const response = await api.get(
       `/accountService/api/v1/unbilled-invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`
     );
