@@ -13,7 +13,7 @@ const LeadDetail = () => {
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
-    (state) => state.auth.getDepartmentDetail?.department
+    (state) => state.auth.getDepartmentDetail?.department,
   );
 
   const [selectedKey, setSelectedKey] = useState("leadEstimate");
@@ -26,9 +26,10 @@ const LeadDetail = () => {
     navigate(key);
     setSelectedKey(key);
   };
+  
 
   const tabs =
-    department === "Quality Team" && !adminRole
+    (department === "Quality Team" || "Temp Admin") && !adminRole
       ? [
           { id: "leadDetail", label: "Details" },
           { id: "leadHistory", label: "Lead history" },

@@ -159,7 +159,7 @@ const Leads = () => {
   const count = useSelector((state) => state.leads.totalCount);
   const leadsLoading = useSelector((state) => state.leads.leadresponseStatus);
   const allLeadsForExport = useSelector(
-    (state) => state.leads.allLeadsForExport
+    (state) => state.leads.allLeadsForExport,
   );
   const roles = useSelector((state) => state.auth.currentUser?.roles);
   const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
@@ -174,7 +174,7 @@ const Leads = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
+    new Set(INITIAL_VISIBLE_COLUMNS(adminRole)),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "id",
@@ -242,7 +242,7 @@ const Leads = () => {
     if (visibleColumns === "all") return cols;
 
     return cols.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns, adminRole]);
 
@@ -361,7 +361,7 @@ const Leads = () => {
           currentUerId: userId,
           leadId: data?.id,
           isMarked: data?.reopenByQuality ? false : true,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -377,10 +377,10 @@ const Leads = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch, userId, allMultiFilterData]
+    [dispatch, userId, allMultiFilterData],
   );
 
   const renderCell = useCallback(
@@ -543,9 +543,11 @@ const Leads = () => {
                   Lead tasks
                 </DropdownItem> */}
                   {/* <DropdownItem key="edit">Edit</DropdownItem> */}
-                  <DropdownItem key="delete" color="danger">
-                    Delete
-                  </DropdownItem>
+                  {adminRole && (
+                    <DropdownItem key="delete" color="danger">
+                      Delete
+                    </DropdownItem>
+                  )}
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -554,7 +556,7 @@ const Leads = () => {
           return lead[columnKey] || "-";
       }
     },
-    [adminRole, department]
+    [adminRole, department],
   );
 
   const onNextPage = useCallback(() => {
@@ -592,7 +594,7 @@ const Leads = () => {
         dispatch(getAllLeadsForExport(initialFilterValues));
       }
     },
-    [dispatch, userId, initialFilterValues]
+    [dispatch, userId, initialFilterValues],
   );
 
   const onClear = useCallback(() => {
@@ -731,7 +733,7 @@ const Leads = () => {
           />
 
           <div className="flex gap-3">
-            {adminRole && (
+            {(adminRole || department === "Temp Admin") && (
               <Popover
                 size="lg"
                 showArrow
@@ -789,16 +791,19 @@ const Leads = () => {
                       </div>
                       <div className="flex justify-between gap-2 my-2 w-full">
                         <div className="flex gap-0.5">
-                          <Button
-                            color="danger"
-                            isDisabled={selectedKeys?.size === 0}
-                            onPress={() => {
-                              multiDeleteModal.onOpen();
-                              actionPopOver.onClose();
-                            }}
-                          >
-                            Delete
-                          </Button>
+                          {adminRole && (
+                            <Button
+                              color="danger"
+                              isDisabled={selectedKeys?.size === 0}
+                              onPress={() => {
+                                multiDeleteModal.onOpen();
+                                actionPopOver.onClose();
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          )}
+
                           <Button
                             onPress={() => {
                               actionPopOver.onClose();
@@ -810,12 +815,14 @@ const Leads = () => {
                         </div>
 
                         <div className="flex items-center gap-0.5">
-                          <Button
-                            onPress={handleTransferLeads}
-                            isDisabled={selectedKeys?.size === 0}
-                          >
-                            Transfer leads
-                          </Button>
+                          {adminRole && (
+                            <Button
+                              onPress={handleTransferLeads}
+                              isDisabled={selectedKeys?.size === 0}
+                            >
+                              Transfer leads
+                            </Button>
+                          )}
                           <Button
                             color="primary"
                             isDisabled={selectedKeys?.size === 0}
@@ -913,217 +920,219 @@ const Leads = () => {
                 )}
               </PopoverContent>
             </Popover>
-            <Popover
-              showArrow
-              isOpen={filterPopOver.isOpen}
-              onOpenChange={(e) => filterPopOver.onOpenChange(e)}
-            >
-              <PopoverTrigger>
-                <Button variant="flat" endContent={<ListFilter />}>
-                  Filter
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="min-w-[550px]">
-                {(titleProps) => (
-                  <div className="px-1 py-2">
-                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
-                      Lead filter
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 min-w-[500px]">
-                      <NewSelect
-                        data={allLeadUser || []}
-                        selectionMode="multiple"
-                        label={"Select users"}
-                        name={"userIdFilter"}
-                        labelKey={"fullName"}
-                        valueKey={"id"}
-                        value={allMultiFilterData?.userIdFilter}
-                        onChange={(selectedSet) => {
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            userIdFilter: selectedSet,
-                          }));
-                        }}
-                      />
-                      <NewSelect
-                        data={allLeadUser || []}
-                        label={"Updated by"}
-                        name={"updatedById"}
-                        labelKey={"fullName"}
-                        valueKey={"id"}
-                        value={allMultiFilterData?.updatedById}
-                        onChange={(selectedSet) => {
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            updatedById: selectedSet,
-                          }));
-                        }}
-                      />
-                      <div>
-                        <DateRangePicker
-                          hideTimeZone
-                          granularity="minute"
-                          hourCycle={24}
-                          visibleMonths={2}
-                          label="Created date"
-                          value={{
-                            start: allMultiFilterData?.toDate
-                              ? parseZonedDateTime(
-                                  `${allMultiFilterData?.toDate}[Asia/kolkata]`
-                                )
-                              : null,
-                            end: allMultiFilterData?.fromDate
-                              ? parseZonedDateTime(
-                                  `${allMultiFilterData?.fromDate}[Asia/kolkata]`
-                                )
-                              : null,
-                          }}
-                          onChange={(value) => {
-                            const formattedStart = value.start
-                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                              : null;
-                            const formattedEnd = value.end
-                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
-                              : null;
-                            setAllMultiFilterData((prev) => ({
-                              ...prev,
-                              toDate: formattedStart,
-                              fromDate: formattedEnd,
-                            }));
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <Select
-                          label={"Status"}
-                          name={"statusId"}
+            {!department === "Temp Admin" && (
+              <Popover
+                showArrow
+                isOpen={filterPopOver.isOpen}
+                onOpenChange={(e) => filterPopOver.onOpenChange(e)}
+              >
+                <PopoverTrigger>
+                  <Button variant="flat" endContent={<ListFilter />}>
+                    Filter
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="min-w-[550px]">
+                  {(titleProps) => (
+                    <div className="px-1 py-2">
+                      <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                        Lead filter
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 min-w-[500px]">
+                        <NewSelect
+                          data={allLeadUser || []}
                           selectionMode="multiple"
-                          selectedKeys={
-                            new Set(allMultiFilterData?.statusId || [])
-                          }
-                          onSelectionChange={(e) => {
-                            let values = Array.from(e);
-                            console.log("values", values);
+                          label={"Select users"}
+                          name={"userIdFilter"}
+                          labelKey={"fullName"}
+                          valueKey={"id"}
+                          value={allMultiFilterData?.userIdFilter}
+                          onChange={(selectedSet) => {
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              statusId: values.length > 0 ? values : [],
-                            }));
-                          }}
-                        >
-                          {statusList.map((status) => (
-                            <SelectItem key={status?.id}>
-                              {status?.name}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      </div>
-
-                      <NewSelect
-                        data={urlList || []}
-                        selectionMode="multiple"
-                        label={"Service"}
-                        name={"originalName"}
-                        labelKey={"urlsName"}
-                        valueKey={"urlsName"}
-                        value={allMultiFilterData?.originalName}
-                        onChange={(selectedSet) => {
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            originalName: selectedSet,
-                          }));
-                        }}
-                      />
-
-                      <div>
-                        <DateRangePicker
-                          hideTimeZone
-                          granularity="minute"
-                          hourCycle={24}
-                          visibleMonths={2}
-                          label="Updated date"
-                          value={{
-                            start: allMultiFilterData?.updatedToDate
-                              ? parseZonedDateTime(
-                                  `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`
-                                )
-                              : null,
-                            end: allMultiFilterData?.updatedfromDate
-                              ? parseZonedDateTime(
-                                  `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`
-                                )
-                              : null,
-                          }}
-                          onChange={(value) => {
-                            const formattedStart = value.start
-                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                              : null;
-                            const formattedEnd = value.end
-                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
-                              : null;
-                            setAllMultiFilterData((prev) => ({
-                              ...prev,
-                              updatedToDate: formattedStart,
-                              updatedfromDate: formattedEnd,
+                              userIdFilter: selectedSet,
                             }));
                           }}
                         />
-                      </div>
+                        <NewSelect
+                          data={allLeadUser || []}
+                          label={"Updated by"}
+                          name={"updatedById"}
+                          labelKey={"fullName"}
+                          valueKey={"id"}
+                          value={allMultiFilterData?.updatedById}
+                          onChange={(selectedSet) => {
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              updatedById: selectedSet,
+                            }));
+                          }}
+                        />
+                        <div>
+                          <DateRangePicker
+                            hideTimeZone
+                            granularity="minute"
+                            hourCycle={24}
+                            visibleMonths={2}
+                            label="Created date"
+                            value={{
+                              start: allMultiFilterData?.toDate
+                                ? parseZonedDateTime(
+                                    `${allMultiFilterData?.toDate}[Asia/kolkata]`,
+                                  )
+                                : null,
+                              end: allMultiFilterData?.fromDate
+                                ? parseZonedDateTime(
+                                    `${allMultiFilterData?.fromDate}[Asia/kolkata]`,
+                                  )
+                                : null,
+                            }}
+                            onChange={(value) => {
+                              const formattedStart = value.start
+                                ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                                : null;
+                              const formattedEnd = value.end
+                                ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                                : null;
+                              setAllMultiFilterData((prev) => ({
+                                ...prev,
+                                toDate: formattedStart,
+                                fromDate: formattedEnd,
+                              }));
+                            }}
+                          />
+                        </div>
 
-                      <Select
-                        label="Source"
-                        selectionMode="multiple"
-                        items={
-                          leadSource?.map((item) => ({
-                            label: item,
-                            key: item,
-                          })) || []
-                        }
-                        selectedKeys={allMultiFilterData?.source}
-                        onSelectionChange={(e) =>
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            source: Array.from(e),
-                          }))
-                        }
-                      >
-                        {(source) => (
-                          <SelectItem key={source.key}>
-                            {source.label}
-                          </SelectItem>
-                        )}
-                      </Select>
-                      <Input
-                        label="Mobile number"
-                        value={allMultiFilterData?.contactMobileNo}
-                        onChange={(e) =>
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            contactMobileNo: e.target.value,
-                          }))
-                        }
-                      />
-                      <Input
-                        label="Email address"
-                        value={allMultiFilterData?.contactEmail}
-                        onChange={(e) =>
-                          setAllMultiFilterData((prev) => ({
-                            ...prev,
-                            contactEmail: e.target.value,
-                          }))
-                        }
-                      />
+                        <div>
+                          <Select
+                            label={"Status"}
+                            name={"statusId"}
+                            selectionMode="multiple"
+                            selectedKeys={
+                              new Set(allMultiFilterData?.statusId || [])
+                            }
+                            onSelectionChange={(e) => {
+                              let values = Array.from(e);
+                              setAllMultiFilterData((prev) => ({
+                                ...prev,
+                                statusId: values.length > 0 ? values : [],
+                              }));
+                            }}
+                          >
+                            {statusList.map((status) => (
+                              <SelectItem key={status?.id}>
+                                {status?.name}
+                              </SelectItem>
+                            ))}
+                          </Select>
+                        </div>
+
+                        <NewSelect
+                          data={urlList || []}
+                          selectionMode="multiple"
+                          label={"Service"}
+                          name={"originalName"}
+                          labelKey={"urlsName"}
+                          valueKey={"urlsName"}
+                          value={allMultiFilterData?.originalName}
+                          onChange={(selectedSet) => {
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              originalName: selectedSet,
+                            }));
+                          }}
+                        />
+
+                        <div>
+                          <DateRangePicker
+                            hideTimeZone
+                            granularity="minute"
+                            hourCycle={24}
+                            visibleMonths={2}
+                            label="Updated date"
+                            value={{
+                              start: allMultiFilterData?.updatedToDate
+                                ? parseZonedDateTime(
+                                    `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`,
+                                  )
+                                : null,
+                              end: allMultiFilterData?.updatedfromDate
+                                ? parseZonedDateTime(
+                                    `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`,
+                                  )
+                                : null,
+                            }}
+                            onChange={(value) => {
+                              const formattedStart = value.start
+                                ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                                : null;
+                              const formattedEnd = value.end
+                                ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                                : null;
+                              setAllMultiFilterData((prev) => ({
+                                ...prev,
+                                updatedToDate: formattedStart,
+                                updatedfromDate: formattedEnd,
+                              }));
+                            }}
+                          />
+                        </div>
+
+                        <Select
+                          label="Source"
+                          selectionMode="multiple"
+                          items={
+                            leadSource?.map((item) => ({
+                              label: item,
+                              key: item,
+                            })) || []
+                          }
+                          selectedKeys={allMultiFilterData?.source}
+                          onSelectionChange={(e) =>
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              source: Array.from(e),
+                            }))
+                          }
+                        >
+                          {(source) => (
+                            <SelectItem key={source.key}>
+                              {source.label}
+                            </SelectItem>
+                          )}
+                        </Select>
+                        <Input
+                          label="Mobile number"
+                          value={allMultiFilterData?.contactMobileNo}
+                          onChange={(e) =>
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              contactMobileNo: e.target.value,
+                            }))
+                          }
+                        />
+                        <Input
+                          label="Email address"
+                          value={allMultiFilterData?.contactEmail}
+                          onChange={(e) =>
+                            setAllMultiFilterData((prev) => ({
+                              ...prev,
+                              contactEmail: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2 my-2">
+                        <Button onPress={handleResetFilter}>Reset</Button>
+                        <Button color="primary" onPress={handleApplyFilter}>
+                          Apply
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex justify-end gap-2 my-2">
-                      <Button onPress={handleResetFilter}>Reset</Button>
-                      <Button color="primary" onPress={handleApplyFilter}>
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+                  )}
+                </PopoverContent>
+              </Popover>
+            )}
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">

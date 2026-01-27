@@ -25,6 +25,7 @@ import DeactiveUserList from "./users/DeactiveUserList";
 import EstimatePreview from "./components/EstimatePreview";
 import VendorPaymentApproval from "./admin/VendorPaymentApproval";
 import DiscountedEstimateApproval from "./admin/DiscountedEstimateApproval";
+import TempAdminRouting from "./routings/TempAdminRouting";
 
 function App() {
   return (
@@ -56,6 +57,9 @@ function App() {
 
             {/* IVR */}
             {QualityRouting()}
+
+            {/* Temp Admin routing */}
+            {TempAdminRouting()}
 
             {/* HR */}
             {HRModuleRouting()}

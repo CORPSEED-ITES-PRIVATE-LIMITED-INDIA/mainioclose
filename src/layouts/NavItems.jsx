@@ -547,6 +547,35 @@ export const qualityNavItems = [
   },
 ];
 
+
+export const tempAdminNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "quality/dashboard",
+    key: "dashboard",
+  },
+  {
+    title: "Leads",
+    icon: "PanelBottomClose",
+    url: "quality/leads",
+    key: "leads",
+  },
+  {
+    title: "Lead search",
+    icon: "FileSearch2",
+    url: "quality/leadsSearch",
+    key: "leadsSearch",
+  },
+  { title: "IVR", icon: "PhoneCall", url: "quality/ivr", key: "ivr" },
+  {
+    title: "Report",
+    icon: "NotepadTextDashed",
+    url: "quality/report",
+    key: "report",
+  },
+];
+
 export const procurementItems = [
   {
     title: "Vendor",

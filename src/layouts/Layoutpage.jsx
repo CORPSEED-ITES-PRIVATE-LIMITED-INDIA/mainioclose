@@ -18,6 +18,7 @@ import {
   procurementItems,
   qualityNavItems,
   salesNavItems,
+  tempAdminNavItems,
 } from "./NavItems";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -31,6 +32,7 @@ const getNavItemsByDepartment = (department, admin) => {
   const items = {
     Sales: salesNavItems,
     "Quality Team": qualityNavItems,
+    "Temp Admin": tempAdminNavItems,
     Accounts: accountNavItems,
     Procurement: procurementItems,
     "Human Resource": hrItems,
@@ -46,7 +48,7 @@ const Layoutpage = () => {
   const automationStatus = useSelector((state) => state.auth.automationStatus);
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
-    (state) => state?.auth?.getDepartmentDetail?.department
+    (state) => state?.auth?.getDepartmentDetail?.department,
   );
   const pathname = location.pathname;
   const segments = pathname.split("/");
