@@ -114,6 +114,7 @@ const BasicCompany = () => {
           dispatch(
             createCompanyInAccounts({
               leadCompanyId: resp?.payload?.id,
+              companyUnitId:resp?.payload?.units?.[0]?.id,
               ...values,
             })
           )
