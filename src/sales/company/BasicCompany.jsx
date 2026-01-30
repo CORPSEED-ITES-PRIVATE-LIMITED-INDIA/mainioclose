@@ -21,25 +21,19 @@ import {
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import NewSelect from "../../components/NewSelect";
 import { useMediaQuery } from "react-responsive";
-import { Building, Plus, X } from "lucide-react";
+import { Building, Plus } from "lucide-react";
 import {
   addBasicCompanyDetail,
   createCompanyInAccounts,
   getBasicCompanyDetails,
 } from "../../toolkit/slices/companySlice";
+import { formatGSTInput, formatPANInput } from "../../common";
 
 const iconClass = "h-4 w-4";
-
-const Info = ({ label, value }) => (
-  <div>
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="text-gray-900 font-medium">{value}</p>
-  </div>
-);
 
 export const unitSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -60,8 +54,6 @@ const BasicCompany = () => {
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const company = useSelector((state) => state.company.basicCompanyDetail);
-  const [isAddCompany, setIsAddCompany] = useState(false);
-  const info = (value) => value ?? "—";
 
   useEffect(() => {
     dispatch(getAllCountries());
@@ -76,6 +68,7 @@ const BasicCompany = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: zodResolver(unitSchema),
     defaultValues: {
@@ -94,7 +87,42 @@ const BasicCompany = () => {
   });
 
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
-  const isLarge = useMediaQuery({ minWidth: 1536 });
+
+  const validateGST = (gstNo, stateName) => {
+    if (!gstNo) return "";
+    if (
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNo)
+    ) {
+      return "Invalid GST Number";
+    }
+    const selectedState = statesList?.find((s) => s.name === stateName);
+    if (selectedState && gstNo.slice(0, 2) !== selectedState.gstCode) {
+      return "GST code does not match selected state";
+    }
+    return "";
+  };
+
+  const handleGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    setValue("gstNo", formattedValue);
+    // const error = validateGST(formattedValue, state);
+    // setGstError(error);
+  };
+
+  const handlePanChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatPANInput(rawValue);
+    setValue("panNo", formattedValue);
+    // if (
+    //   formattedValue.length === 10 &&
+    //   !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedValue)
+    // ) {
+    //   setPanError("Invalid PAN Number");
+    // } else {
+    //   setPanError("");
+    // }
+  };
 
   const onSubmit = (values) => {
     values.leadId = leadId;
@@ -107,16 +135,12 @@ const BasicCompany = () => {
             title: "Company details added successfully !.",
             color: "success",
           });
-          setIsAddCompany(false);
-          reset();
-          onClose()
-          dispatch(getBasicCompanyDetails({ leadId, userId }));
           dispatch(
             createCompanyInAccounts({
               leadCompanyId: resp?.payload?.id,
-              companyUnitId:resp?.payload?.units?.[0]?.id,
+              companyUnitId: resp?.payload?.units?.[0]?.id,
               ...values,
-            })
+            }),
           )
             .then((companyRes) => {
               if (companyRes.meta.requestStatus === "fulfilled") {
@@ -124,9 +148,12 @@ const BasicCompany = () => {
                   title: "Company created in account service is done.",
                   color: "success",
                 });
+                reset();
+                onClose();
+                dispatch(getBasicCompanyDetails({ leadId, userId }));
               } else {
                 addToast({
-                  title: companyRes?.payload,
+                  title: `${companyRes?.payload?.data?.message} with status ${companyRes?.payload?.data?.status}`,
                   color: "danger",
                 });
               }
@@ -135,18 +162,18 @@ const BasicCompany = () => {
               addToast({
                 title: "Something went wrong in account service !.",
                 color: "danger",
-              })
+              }),
             );
         } else {
           addToast({
-            title: resp?.payload,
+            title: resp?.payload?.data?.message,
             color: "danger",
           });
         }
       })
       .catch((err) =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      ); 
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
   };
 
   return (
@@ -232,7 +259,14 @@ const BasicCompany = () => {
                       name="gstNo"
                       control={control}
                       render={({ field }) => (
-                        <Input {...field} label="GST Number" maxLength={15} />
+                        <Input
+                          value={field.value}
+                          label="GST Number"
+                          maxLength={15}
+                          onChange={(e) => {
+                            handleGstChange(e);
+                          }}
+                        />
                       )}
                     />
 
@@ -241,7 +275,14 @@ const BasicCompany = () => {
                       name="panNo"
                       control={control}
                       render={({ field }) => (
-                        <Input {...field} label="PAN Number" maxLength={10} />
+                        <Input
+                          value={field.value}
+                          label="PAN Number"
+                          maxLength={10}
+                          onChange={(e) => {
+                            handlePanChange(e);
+                          }}
+                        />
                       )}
                     />
 

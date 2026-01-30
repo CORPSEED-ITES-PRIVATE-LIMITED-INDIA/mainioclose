@@ -1,3 +1,5 @@
+"use client";
+
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -8,15 +10,35 @@ import {
   CardHeader,
   DatePicker,
   addToast,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input,
+  useDisclosure,
 } from "@heroui/react";
-import { estimateFormSchema } from "./EstimateFormSchema";
-import FormInput from "../../../components/FormInput";
-import ProductFormFieldsDetails from "./ProductFormFieldsDetails";
-import ServiceFormFieldsDetail from "./ServiceFormFieldsDetail";
 import { useEffect, useMemo, useState } from "react";
-import { getAllBusinessArrangementBySolutionId } from "../../../toolkit/slices/productSlice";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { useMediaQuery } from "react-responsive";
+import {
+  getLocalTimeZone,
+  parseDate,
+  toCalendarDate,
+  today,
+} from "@internationalized/date";
+import dayjs from "dayjs";
+import { z } from "zod";
+
+import { estimateFormSchema } from "./EstimateFormSchema";
+import FormInput from "../../../components/FormInput";
+import FormSelect from "../../../components/FormSelect";
+import ProductFormFieldsDetails from "./ProductFormFieldsDetails";
+import ServiceFormFieldsDetail from "./ServiceFormFieldsDetail";
+import NewEstimatePreview from "./NewEstimatePreview";
+
+import { getAllBusinessArrangementBySolutionId } from "../../../toolkit/slices/productSlice";
 import {
   getSolutionDetailByName,
   getSolutionPriceListById,
@@ -26,18 +48,32 @@ import {
   getNewEstimateByLeadId,
   getSingleLeadDataByLeadId,
 } from "../../../toolkit/slices/leadSlice";
-import FormSelect from "../../../components/FormSelect";
-import { getBasicCompanyDetails } from "../../../toolkit/slices/companySlice";
-import { useMediaQuery } from "react-responsive";
-import { getAllCountries } from "../../../toolkit/slices/commonSlice";
 import {
-  getLocalTimeZone,
-  parseDate,
-  toCalendarDate,
-  today,
-} from "@internationalized/date";
-import NewEstimatePreview from "./NewEstimatePreview";
-import dayjs from "dayjs";
+  createBasicUnitByCompanyId,
+  createBasicUnitByCompanyIdInAccounts,
+  getBasicCompanyDetails,
+} from "../../../toolkit/slices/companySlice";
+import {
+  getAllCitiesByStateName,
+  getAllCountries,
+  getAllStatesByCountryName,
+} from "../../../toolkit/slices/commonSlice";
+import NewSelect from "../../../components/NewSelect";
+import { formatGSTInput, formatPANInput } from "../../../common";
+
+/* ===========================
+   ✅ Unit Modal Schema (ONLY unitName required)
+=========================== */
+const unitModalSchema = z.object({
+  unitName: z.string().min(1, "Unit name is required"),
+  gstNo: z.string().optional().or(z.literal("")),
+  panNo: z.string().optional().or(z.literal("")),
+  address: z.string().optional().or(z.literal("")),
+  city: z.string().optional().or(z.literal("")),
+  state: z.string().optional().or(z.literal("")),
+  pinCode: z.string().optional().or(z.literal("")),
+  country: z.string().optional().or(z.literal("")),
+});
 
 export const LeadEstimates = () => {
   const { userId, leadId } = useParams();
@@ -46,15 +82,17 @@ export const LeadEstimates = () => {
 
   const company = useSelector((state) => state.company.basicCompanyDetail);
   const solutionDetail = useSelector(
-    (state) => state.setting.solutionDetailById
+    (state) => state.setting.solutionDetailById,
   );
   const serviceFeeList = useSelector(
-    (state) => state.setting.solutionPriceList
+    (state) => state.setting.solutionPriceList,
   );
   const newEstimateDetail = useSelector(
-    (state) => state.leads.newEstimateByLeadId
+    (state) => state.leads.newEstimateByLeadId,
   );
-
+  const countryList = useSelector((state) => state.common.countriesList);
+  const statesList = useSelector((state) => state.common.statesList);
+  const citiesList = useSelector((state) => state.common.citiesList);
   // ✅ Mode: list or form
   const [showForm, setShowForm] = useState(false);
 
@@ -62,12 +100,15 @@ export const LeadEstimates = () => {
   const [openPreview, setOpenPreview] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState(null);
 
+  // ✅ Unit modal state + saved payload
+  const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
+
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
     return arr.sort(
       (a, b) =>
         new Date(b?.createdDate || b?.estimateDate || 0) -
-        new Date(a?.createdDate || a?.estimateDate || 0)
+        new Date(a?.createdDate || a?.estimateDate || 0),
     );
   }, [newEstimateDetail]);
 
@@ -92,6 +133,9 @@ export const LeadEstimates = () => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [openPreview]);
 
+  /* ===========================
+     Estimate form (existing)
+  =========================== */
   const {
     control,
     handleSubmit,
@@ -108,6 +152,50 @@ export const LeadEstimates = () => {
     },
   });
 
+  /* ===========================
+     ✅ Unit modal form
+  =========================== */
+  const {
+    control: unitControl,
+    handleSubmit: handleUnitSubmit,
+    reset: resetUnitForm,
+    formState: { errors: unitErrors },
+    setValue: setUnitValue,
+  } = useForm({
+    resolver: zodResolver(unitModalSchema),
+    defaultValues: {
+      unitName: "",
+      gstNo: "",
+      panNo: "",
+      address: "",
+      city: "",
+      state: "",
+      pinCode: "",
+      country: "",
+    },
+  });
+
+  const handleGstChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatGSTInput(rawValue);
+    setUnitValue("gstNo", formattedValue);
+  };
+
+  const handlePanChange = (e) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatPANInput(rawValue);
+    setUnitValue("panNo", formattedValue);
+  };
+
+  const onOpenUnitModal = () => {
+    resetUnitForm((prev) => ({
+      ...prev,
+      createdById: Number(userId) || 0,
+      updatedById: Number(userId) || 0,
+    }));
+    onOpen();
+  };
+
   // service line items auto-fill
   useEffect(() => {
     if (serviceFeeList?.length) {
@@ -122,7 +210,7 @@ export const LeadEstimates = () => {
         })),
       });
     }
-  }, [serviceFeeList, reset]);
+  }, [serviceFeeList, reset, getValues]);
 
   // load lead + solution + price/tier
   useEffect(() => {
@@ -133,7 +221,7 @@ export const LeadEstimates = () => {
             getSolutionDetailByName({
               name: resp?.payload?.originalName,
               userId,
-            })
+            }),
           ).then((res) => {
             if (res.meta.requestStatus === "fulfilled") {
               if (res.payload?.type === "SERVICE") {
@@ -141,14 +229,14 @@ export const LeadEstimates = () => {
                   getSolutionPriceListById({
                     solutionId: res?.payload?.id,
                     userId,
-                  })
+                  }),
                 );
               } else {
                 dispatch(
                   getAllBusinessArrangementBySolutionId({
                     solutionId: res?.payload?.id,
                     userId,
-                  })
+                  }),
                 );
               }
             }
@@ -156,7 +244,7 @@ export const LeadEstimates = () => {
         }
       }
     });
-  }, [dispatch]);
+  }, [dispatch, leadId, userId]);
 
   // company + countries
   useEffect(() => {
@@ -166,16 +254,14 @@ export const LeadEstimates = () => {
       }
     });
     dispatch(getAllCountries());
-  }, [dispatch]);
+  }, [dispatch, leadId, userId, setValue]);
 
   // estimates list
   useEffect(() => {
     dispatch(getNewEstimateByLeadId({ leadId, userId }));
-  }, [dispatch]);
+  }, [dispatch, leadId, userId]);
 
   // ✅ Default UI:
-  // - If estimates exist → show list (showForm=false)
-  // - If no estimates → show form (showForm=true)
   useEffect(() => {
     setShowForm(!hasEstimates);
   }, [hasEstimates]);
@@ -186,7 +272,6 @@ export const LeadEstimates = () => {
     data.solutionType = solutionDetail?.type;
     data.sourceSolutionIds = solutionDetail?.id;
     data.createdByUserId = userId;
-
     dispatch(createNewEstimate(data))
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
@@ -194,8 +279,6 @@ export const LeadEstimates = () => {
             title: "Estimate created successfully !.",
             color: "success",
           });
-
-          // refresh list & go back to card view
           dispatch(getNewEstimateByLeadId({ leadId, userId }));
           setShowForm(false);
         } else {
@@ -203,23 +286,99 @@ export const LeadEstimates = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
   const onCancelForm = () => {
-    // optional: reset form when cancel
     const values = getValues();
-    reset({
-      ...values,
-      lineItems: [],
-    });
-
+    reset({ ...values, lineItems: [] });
     setShowForm(false);
+  };
+
+  const onSaveUnitModal = (data) => {
+    data.createdById = userId;
+    data.updatedById = userId;
+    dispatch(
+      createBasicUnitByCompanyId({
+        companyId: company?.id,
+        updatedBy: userId,
+        data,
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({ title: "Unit details saved.", color: "success" });
+          dispatch(
+            createBasicUnitByCompanyIdInAccounts({
+              companyId: company?.id,
+              updatedBy: userId,
+              data: { ...data, companyUnitId: resp?.payload?.id },
+            }),
+          )
+            .then((res) => {
+              if (res.meta.requestStatus === "fulfilled") {
+                addToast({ title: "Unit details saved in accounts .", color: "success" });
+                resetUnitForm();
+                onClose();
+                dispatch(getBasicCompanyDetails({ leadId, userId }));
+              } else {
+                addToast({ title: resp.payload, color: "danger" });
+              }
+            })
+            .catch(() =>
+              addToast({ title: "Something went wrong !.", color: "danger" }),
+            );
+        } else {
+          addToast({ title: resp.payload, color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
   };
 
   return (
     <>
+      {/* ===================== TOP ACTION BAR (ALWAYS VISIBLE) ===================== */}
+      <div className="w-full flex items-center justify-end mb-3 gap-2">
+        <Button
+          type="button"
+          color="secondary"
+          variant="flat"
+          size="sm"
+          className="cursor-pointer"
+          onPress={onOpenUnitModal}
+        >
+          Add Unit Details
+        </Button>
+
+        {!showForm && (
+          <Button
+            type="button"
+            color="primary"
+            size="sm"
+            className="cursor-pointer"
+            onPress={() => setShowForm(true)}
+          >
+            Create Estimate
+          </Button>
+        )}
+
+        {showForm && hasEstimates && (
+          <Button
+            type="button"
+            color="default"
+            variant="flat"
+            size="sm"
+            className="cursor-pointer"
+            onPress={onCancelForm}
+          >
+            Cancel
+          </Button>
+        )}
+      </div>
+
       {/* ===================== LIST MODE ===================== */}
       {!showForm && hasEstimates && (
         <div className="w-full">
@@ -232,15 +391,6 @@ export const LeadEstimates = () => {
                 {sortedEstimates.length} total
               </p>
             </div>
-
-            <Button
-              color="primary"
-              size="md"
-              className="cursor-pointer"
-              onClick={() => setShowForm(true)}
-            >
-              Create Estimate
-            </Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -296,22 +446,10 @@ export const LeadEstimates = () => {
           <Card className="shadow-xl">
             <CardHeader className="text-xl font-semibold flex items-center justify-between">
               <span>Create Estimate</span>
-
-              {hasEstimates && (
-                <Button
-                  type="button"
-                  color="default"
-                  variant="flat"
-                  size="sm"
-                  className="cursor-pointer"
-                  onClick={onCancelForm}
-                >
-                  Cancel
-                </Button>
-              )}
             </CardHeader>
 
             <CardBody className="space-y-4">
+              {/* Optional: show saved unit summary */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <FormInput
                   label="Company Name"
@@ -421,19 +559,6 @@ export const LeadEstimates = () => {
           </Card>
 
           <div className="flex justify-end mt-4 gap-2">
-            {hasEstimates && (
-              <Button
-                type="button"
-                color="default"
-                variant="flat"
-                size="lg"
-                className="cursor-pointer"
-                onClick={onCancelForm}
-              >
-                Cancel
-              </Button>
-            )}
-
             <Button
               type="submit"
               color="primary"
@@ -445,6 +570,163 @@ export const LeadEstimates = () => {
           </div>
         </form>
       )}
+
+      {/* ===================== ✅ UNIT DETAILS MODAL ===================== */}
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="center"
+        size="3xl"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <form onSubmit={handleUnitSubmit(onSaveUnitModal)}>
+              <ModalHeader className="flex flex-col gap-1">
+                Add Unit Details
+                <span className="text-xs text-slate-500 font-normal">
+                  Only Unit Name is mandatory
+                </span>
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="max-h-[80vh] overflow-auto  grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Controller
+                    name="unitName"
+                    control={unitControl}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        label="Unit Name"
+                        isRequired
+                        isInvalid={!!unitErrors.unitName}
+                        errorMessage={unitErrors.unitName?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="address"
+                    control={control}
+                    render={({ field }) => <Input {...field} label="Address" />}
+                  />
+
+                  <Controller
+                    name="country"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        label="Country"
+                        size={isMedium ? "sm" : "md"}
+                        data={countryList || []}
+                        labelKey="name"
+                        valueKey="name"
+                        value={field.value}
+                        onChange={(value) => {
+                          dispatch(getAllStatesByCountryName(value));
+                          field.onChange(value);
+                        }}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="state"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        label="State"
+                        size={isMedium ? "sm" : "md"}
+                        data={statesList || []}
+                        labelKey="name"
+                        valueKey="name"
+                        value={field.value}
+                        onChange={(value) => {
+                          dispatch(getAllCitiesByStateName(value));
+                          field.onChange(value);
+                        }}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="city"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        label="City"
+                        size={isMedium ? "sm" : "md"}
+                        data={citiesList || []}
+                        labelKey="name"
+                        valueKey="name"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                      />
+                    )}
+                  />
+
+                  {/* Pin Code */}
+                  <Controller
+                    name="pinCode"
+                    control={control}
+                    render={({ field }) => (
+                      <Input {...field} label="Pin Code" maxLength={6} />
+                    )}
+                  />
+
+                  <Controller
+                    name="gstNo"
+                    control={unitControl}
+                    render={({ field }) => (
+                      <Input
+                        value={field.value}
+                        onChange={(e) => {
+                          handleGstChange(e);
+                        }}
+                        label="GST No"
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="panNo"
+                    control={unitControl}
+                    render={({ field }) => (
+                      <Input
+                        value={field.value}
+                        onChange={(e) => {
+                          handlePanChange(e);
+                        }}
+                        label="PAN No"
+                      />
+                    )}
+                  />
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  type="button"
+                  variant="flat"
+                  color="default"
+                  className="cursor-pointer"
+                  onPress={onClose}
+                >
+                  Close
+                </Button>
+
+                <Button
+                  type="submit"
+                  color="primary"
+                  className="cursor-pointer"
+                >
+                  Save
+                </Button>
+              </ModalFooter>
+            </form>
+          )}
+        </ModalContent>
+      </Modal>
 
       {/* ===================== FULLSCREEN PREVIEW ===================== */}
       {openPreview && (

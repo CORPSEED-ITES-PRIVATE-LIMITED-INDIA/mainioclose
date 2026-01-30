@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo } from "react";
+import React, { memo, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,9 @@ import {
 } from "@internationalized/date";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { useParams } from "react-router-dom";
+import NewSelect from "../../components/NewSelect";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 
 const numberLike = (label) =>
   z
@@ -34,7 +37,7 @@ const numberLike = (label) =>
 const paymentRegisterSchema = z.object({
   amount: numberLike("Amount").refine(
     (v) => v > 0,
-    "Amount must be greater than 0"
+    "Amount must be greater than 0",
   ),
   paymentDate: z.string().min(1, "Payment date is required"),
   paymentMode: z.string().min(1, "Payment mode is required"),
@@ -43,7 +46,7 @@ const paymentRegisterSchema = z.object({
 
   paymentTypeId: numberLike("Payment type").refine(
     (v) => v > 0,
-    "Payment type is required"
+    "Payment type is required",
   ),
   eprFinancialYear: z.string().optional(),
   eprPortalRegistrationNumber: z.string().optional(),
@@ -59,6 +62,13 @@ const EstimatePaymentRegister = ({
   paymentTypes = [],
 }) => {
   const { userId } = useParams();
+  const dispatch = useDispatch();
+  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+
+  useEffect(() => {
+    dispatch(getAllPaymentType());
+  }, [dispatch]);
+
   const {
     control,
     handleSubmit,
@@ -195,25 +205,20 @@ const EstimatePaymentRegister = ({
                   <Controller
                     name="paymentTypeId"
                     control={control}
-                    render={({ field }) => (
-                      <Select
-                        selectedKeys={
-                          field.value
-                            ? new Set([String(field.value)])
-                            : new Set([])
-                        }
-                        onSelectionChange={(keys) =>
-                          field.onChange(Array.from(keys)?.[0] || "")
-                        }
-                        label="Payment Type"
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
                         isRequired
-                        isInvalid={!!errors.paymentTypeId}
-                        errorMessage={errors.paymentTypeId?.message}
-                      >
-                        {(paymentTypes || []).map((pt) => (
-                          <SelectItem key={String(pt.id)}>{pt.name}</SelectItem>
-                        ))}
-                      </Select>
+                        label="Company structure"
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        data={paymentTypeList || []}
+                        labelKey="name"
+                        valueKey="id"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                      />
                     )}
                   />
 

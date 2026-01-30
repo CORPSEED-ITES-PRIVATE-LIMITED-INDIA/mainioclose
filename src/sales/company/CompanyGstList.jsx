@@ -47,16 +47,17 @@ import {
 import { formatGSTInput, gstRegex } from "../../common";
 
 const columns = [
-  { name: "STATE ID", uid: "stateId" },
-  { name: "STATE NAME", uid: "state", sortable: true },
-  { name: "GST NUMBER", uid: "gstNo", sortable: true },
+  { name: "ID", uid: "id" },
+  { name: "UNIT NAME", uid: "name" },
+  { name: "STATE NAME", uid: "state" },
+  { name: "GST NUMBER", uid: "gstNo" },
 ];
 
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["stateId", "state", "gstNo"];
+const INITIAL_VISIBLE_COLUMNS = ["id","name", "state", "gstNo"];
 
 const CompanyGstList = () => {
   const { userId, companyId } = useParams();
@@ -67,26 +68,26 @@ const CompanyGstList = () => {
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const contactListByCompanyId = useSelector(
-    (state) => state.common.contactListByCompanyId
+    (state) => state.common.contactListByCompanyId,
   );
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const subIndustryListById = useSelector(
-    (state) => state.common.subIndustryListByIndustryId
+    (state) => state.common.subIndustryListByIndustryId,
   );
   const subSubIndustryListById = useSelector(
-    (state) => state.common.subSubIndustryListBySubIndustryId
+    (state) => state.common.subSubIndustryListBySubIndustryId,
   );
   const industryDataListById = useSelector(
-    (state) => state.common.industryDataListBySubSubIndustryId
+    (state) => state.common.industryDataListBySubSubIndustryId,
   );
   const desiginationList = useSelector(
-    (state) => state.setting.clientDesiginationList
+    (state) => state.setting.clientDesiginationList,
   );
 
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortDescriptor, setSortDescriptor] = useState({
@@ -140,7 +141,7 @@ const CompanyGstList = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -150,8 +151,8 @@ const CompanyGstList = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -178,7 +179,7 @@ const CompanyGstList = () => {
 
   const renderCell = useCallback((company, columnKey) => {
     switch (columnKey) {
-      case "state":
+      case "name":
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
@@ -186,9 +187,16 @@ const CompanyGstList = () => {
                 to={`${company?.state}/companyUnits`}
                 className="font-semibold"
               >
-                {company?.state || "-"}
+                {company?.unitName || "-"}
               </Link>
             </div>
+          </div>
+        );
+
+      case "state":
+        return (
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col">{company?.state || "-"}</div>
           </div>
         );
 
@@ -386,7 +394,6 @@ const CompanyGstList = () => {
     );
   }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
 
-
   const handleFinish = useCallback(
     (values) => {
       dispatch(addGstInCompany({ ...formData, companyId }))
@@ -404,10 +411,10 @@ const CompanyGstList = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [companyId, formValues, formData, dispatch]
+    [companyId, formValues, formData, dispatch],
   );
 
   return (
@@ -420,7 +427,7 @@ const CompanyGstList = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -469,7 +476,7 @@ const CompanyGstList = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleFinish(data);
                   }}

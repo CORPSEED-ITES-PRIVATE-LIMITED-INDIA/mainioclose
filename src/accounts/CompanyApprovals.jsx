@@ -23,7 +23,7 @@ import { getAllCompaniesForApprovals } from "../toolkit/slices/accountSlice";
 const columns = [
   { name: "ID", uid: "companyId" },
   { name: "COMPANY", uid: "companyName", sortable: true },
-  { name: "GST", uid: "gstNo" },
+  { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "PRIMARY ADDRESS", uid: "address" },
   { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
@@ -47,13 +47,13 @@ const CompanyApprovals = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.account.approvalCompanyList[0]?.total
+    (state) => state.account.approvalCompanyList[0]?.total,
   );
   const data = useSelector((state) => state.account.approvalCompanyList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -63,7 +63,7 @@ const CompanyApprovals = () => {
     userId: userId,
     page: 1,
     size: 50,
-    status: "initiated",
+    status: "ALL",
   });
 
   const hasSearchFilter = Boolean(filterValue);
@@ -76,7 +76,7 @@ const CompanyApprovals = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -86,8 +86,8 @@ const CompanyApprovals = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -121,29 +121,35 @@ const CompanyApprovals = () => {
           </div>
         );
 
-      case "gstNo":
+      case "status":
         return (
           <div className="flex flex-col">
-            <span className="font-normal capitalize">
-              {rowData?.gstNo || "Unknown"}
-            </span>
-            {rowData?.gstType && (
-              <Chip size="sm" className="text-tiny capitalize" variant="flat">
-                {rowData?.gstType}
-              </Chip>
-            )}
+            <Chip
+              size="sm"
+              className="text-tiny capitalize"
+              variant="flat"
+              color={
+                rowData?.onboardingStatus === "approved"
+                  ? "success"
+                  : rowData?.onboardingStatus === "disapproved"
+                    ? "danger"
+                    : "secondary"
+              }
+            >
+              {rowData?.onboardingStatus}
+            </Chip>
           </div>
         );
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.assignee || "-"}</span>
+            <span className="font-normal">{rowData?.assigneeName || "-"}</span>
           </div>
         );
       case "address":
-        return rowData?.address ? (
+        return rowData?.registeredAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.address || "-"}</span>
+            <span className="font-normal">{rowData?.registeredAddress || "-"}</span>
             <div className="flex items-center gap-1">
               {" "}
               <span className="text-gray-400 text-tiny">
@@ -271,15 +277,11 @@ const CompanyApprovals = () => {
                   }));
                 }}
               >
-                {[
-                  { label: "Initiated", uid: "initiated" },
-                  { label: "Approved", uid: "approved" },
-                  { label: "Disapproved", uid: "disapproved" },
-                ].map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.label)}
-                  </DropdownItem>
-                ))}
+                <DropdownItem key="ALL">ALL</DropdownItem>
+                <DropdownItem key="INITIATED">INITIATED</DropdownItem>
+                <DropdownItem key="MINIMAL">MINIMAL</DropdownItem>
+                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                <DropdownItem key="DISAPPROVED">DISAPPROVED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
             <Dropdown>

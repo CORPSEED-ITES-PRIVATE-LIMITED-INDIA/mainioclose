@@ -34,6 +34,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import {
   getAllNewCompanies,
+  getAllNewCompaniesCount,
   getHistoryByCompanyId,
   searchCompanies,
   updateMultiCompanyAssignee,
@@ -47,9 +48,9 @@ import { getAllLeadUser } from "../../toolkit/slices/leadSlice";
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
   { name: "COMPANY NAME", uid: "companyName" },
-  { name: "GST", uid: "gstNo" },
+  { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
-  { name: "CLIENT", uid: "client" },
+  // { name: "CLIENT", uid: "client" },
   { name: "PRIMARY ADDRESS", uid: "primaryAddres" },
   { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
   { name: "ACTIONS", uid: "actions" },
@@ -61,10 +62,10 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "companyName",
-  "gstNo",
+  "status",
   "email",
   "assignee",
-  "client",
+  // "client",
   "primaryAddres",
   "actions",
 ];
@@ -75,12 +76,10 @@ const Company = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const updateModal = useDisclosure();
   const historyDrawer = useDisclosure();
-  const count = useSelector(
-    (state) => state.company.newCompaniesList?.[0]?.total
-  );
+  const count = useSelector((state) => state.company.newCompaniesTotalCount);
   const data = useSelector((state) => state.company.newCompaniesList);
   const companyHistory = useSelector(
-    (state) => state.company.companyHistoryList
+    (state) => state.company.companyHistoryList,
   );
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
@@ -88,7 +87,7 @@ const Company = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "companyId",
@@ -101,6 +100,7 @@ const Company = () => {
     filterUserId: "",
     type: "all",
     rating: "all",
+    status: "ALL",
   });
   const [editData, setEditData] = useState(null);
   const [searchFilterType, setSearchFilterType] = useState("name");
@@ -111,6 +111,7 @@ const Company = () => {
 
   useEffect(() => {
     dispatch(getAllNewCompanies(companyFilteration));
+    dispatch(getAllNewCompaniesCount(companyFilteration));
   }, [dispatch]);
 
   useEffect(() => {
@@ -121,7 +122,7 @@ const Company = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -156,46 +157,34 @@ const Company = () => {
       case "companyName":
         return (
           <div className="flex items-start gap-2">
-            <Tooltip content={company?.rating}>
-              <Award
-                className="w-5 h-5 mt-1"
-                color={
-                  company?.rating === "Gold"
-                    ? "#FFD700"
-                    : company?.rating === "Silver"
-                      ? "#C0C0C0"
-                      : "#CD7F32"
-                }
-              />
-            </Tooltip>
             <div className="flex flex-col">
-              <Link
-                to={`${company?.companyId}/gstDetails`}
-                className="font-semibold"
-              >
-                {company?.companyName || "-"}
+              <Link to={`${company?.id}/gstDetails`} className="font-semibold">
+                {company?.name || "-"}
               </Link>
               <span className="text-sm text-gray-400">
-                Age:{company?.age || "---"} yrs
+                Age:{company?.companyAge || "---"} yrs
               </span>
             </div>
           </div>
         );
 
-      case "gstNo":
+      case "status":
         return (
           <div className="flex flex-col gap-1">
-            <span className="font-normal">{company.gstNo || "-"}</span>
-            {company?.gstType && (
-              <Chip
-                className="capitalize text-tiny"
-                color="secondary"
-                size="sm"
-                variant="flat"
-              >
-                {company?.gstType || "-"}
-              </Chip>
-            )}
+            <Chip
+              className="capitalize text-tiny"
+              color={
+                company?.status === "approved"
+                  ? "success"
+                  : company?.status === "disapproved"
+                    ? "danger"
+                    : "secondary"
+              }
+              size="sm"
+              variant="flat"
+            >
+              {company?.status || "-"}
+            </Chip>
           </div>
         );
       case "assignee":
@@ -230,7 +219,7 @@ const Company = () => {
             <span className="font-normal">{company.secAddress || "-"}</span>
             <span className="text-sm text-gray-400">
               {[company?.secCity, company?.secState, company?.seCountry].join(
-                ","
+                ",",
               )}
             </span>
           </div>
@@ -287,7 +276,7 @@ const Company = () => {
         getAllNewCompanies({
           ...companyFilteration,
           page: companyFilteration.page + 1,
-        })
+        }),
       );
     }
   }, [companyFilteration, pages, dispatch]);
@@ -299,7 +288,7 @@ const Company = () => {
         getAllNewCompanies({
           ...companyFilteration,
           page: companyFilteration.page - 1,
-        })
+        }),
       );
     }
   }, [companyFilteration, dispatch]);
@@ -324,7 +313,7 @@ const Company = () => {
             searchNameAndGSt: value,
             userId,
             type: searchFilterType,
-          })
+          }),
         );
       } else {
         // Reset to full list when length < 3 (including empty)
@@ -332,7 +321,7 @@ const Company = () => {
         dispatch(getAllNewCompanies({ ...companyFilteration, page: 1 })); // Pass updated pagination; adjust filters as needed if getAllNewCompanies expects specific params
       }
     },
-    [searchFilterType, dispatch, companyFilteration, userId] // Added userId to deps if it's stable/defined in scope
+    [searchFilterType, dispatch, companyFilteration, userId], // Added userId to deps if it's stable/defined in scope
   );
 
   const onClear = useCallback(() => {
@@ -347,7 +336,7 @@ const Company = () => {
           selectedKeys.size === 0 ? companyId : Array.from(selectedKeys),
         currentUserId: userId,
         assigneeId: assigneeIds,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -418,7 +407,7 @@ const Company = () => {
           </div>
 
           <div className="flex gap-3">
-            {adminRole && (
+            {/* {adminRole && (
               <Button
                 variant="flat"
                 onPress={updateModal.onOpen}
@@ -426,9 +415,9 @@ const Company = () => {
               >
                 Update assignee
               </Button>
-            )}
+            )} */}
 
-            <div className="w-[200px]">
+            {/* <div className="w-[200px]">
               {" "}
               <NewSelect
                 data={allLeadUser}
@@ -446,11 +435,11 @@ const Company = () => {
                     getAllNewCompanies({
                       ...companyFilteration,
                       filterUserId: e,
-                    })
+                    }),
                   );
                 }}
               />
-            </div>
+            </div> */}
             <Dropdown>
               <DropdownTrigger>
                 <Button
@@ -458,30 +447,39 @@ const Company = () => {
                   variant="flat"
                   endContent={<ChevronDown />}
                 >
-                  {companyFilteration?.type}
+                  {companyFilteration?.status}
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Single selection example"
-                selectedKeys={[companyFilteration?.type]}
+                selectedKeys={[companyFilteration?.status]}
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let key = Array.from(e)[0];
-                  setCompanyFilteration((prev) => ({ ...prev, type: key }));
+                  setCompanyFilteration((prev) => ({ ...prev, status: key }));
                   dispatch(
                     getAllNewCompanies({
                       ...companyFilteration,
-                      type: key,
-                    })
+                      status: key,
+                    }),
+                  );
+                  dispatch(
+                    getAllNewCompaniesCount({
+                      ...companyFilteration,
+                      status: key,
+                    }),
                   );
                 }}
               >
-                <DropdownItem key="all">All</DropdownItem>
-                <DropdownItem key="company">Company</DropdownItem>
-                <DropdownItem key="consultant">Consultant</DropdownItem>
+                <DropdownItem key="ALL">ALL</DropdownItem>
+                <DropdownItem key="INITIATED">INITIATED</DropdownItem>
+                <DropdownItem key="MINIMAL">MINIMAL</DropdownItem>
+                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                <DropdownItem key="DISAPPROVED">DISAPPROVED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
+            {/* 
             <Dropdown>
               <DropdownTrigger>
                 <Button
@@ -514,7 +512,7 @@ const Company = () => {
                 <DropdownItem key="Silver">Silver</DropdownItem>
                 <DropdownItem key="Bronze">Bronze</DropdownItem>
               </DropdownMenu>
-            </Dropdown>
+            </Dropdown> */}
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
@@ -704,7 +702,7 @@ const Company = () => {
                           <TableCell>
                             {columnKey === "createDate"
                               ? dayjs(item?.createDate).format(
-                                  "DD-MM-YYYY , HH:mm a"
+                                  "DD-MM-YYYY , HH:mm a",
                                 )
                               : getKeyValue(item, columnKey)}
                           </TableCell>

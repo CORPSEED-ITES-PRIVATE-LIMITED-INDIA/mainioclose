@@ -32,11 +32,11 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { inrCurrency } from "../../common";
-import {
-  createPaymentRegister,
-} from "../../toolkit/slices/accountSlice";
+import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
 import InvoiceView from "../../components/InvoiceView";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
+import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
+import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 
 const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -73,13 +73,14 @@ const Estimate = () => {
   const { userId } = useParams();
   const viewModal = useDisclosure();
   const paymentModal = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [estimateDetail, setEstimateDetail] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [activeEstimateId, setActiveEstimateId] = useState(null);
   const paymentTypes = useMemo(
@@ -88,7 +89,7 @@ const Estimate = () => {
       { id: 2, name: "Partial" },
       { id: 3, name: "Full" },
     ],
-    []
+    [],
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -107,7 +108,7 @@ const Estimate = () => {
         userId,
         page: filteration?.page,
         size: filteration?.size,
-      })
+      }),
     );
     dispatch(getTotalCountOfEstimate(userId));
   }, [dispatch, userId, filteration]);
@@ -115,7 +116,7 @@ const Estimate = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -125,8 +126,8 @@ const Estimate = () => {
     if (hasSearchFilter) {
       filteredData = filteredData.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -159,7 +160,7 @@ const Estimate = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" })
+        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
       );
   };
 
@@ -337,9 +338,19 @@ const Estimate = () => {
                     paymentModal.onOpen();
                   } else if (item === "viewEstimate") {
                     handleViewEstimate(rowData);
+                  } else if (item === "updateCompanyDetail") {
+                    dispatch(
+                      getBasicCompanyDetails({
+                        leadId: rowData?.rowData,
+                        userId,
+                      }),
+                    );
                   }
                 }}
               >
+                <DropdownItem key="updateCompanyDetail" onPress={onOpen}>
+                  Update company detail
+                </DropdownItem>
                 <DropdownItem key="paymentRegister">
                   Add payment register
                 </DropdownItem>
@@ -575,6 +586,12 @@ const Estimate = () => {
         estimateId={activeEstimateId}
         paymentTypes={paymentTypes}
         onSubmitPayment={(payload) => dispatch(createPaymentRegister(payload))}
+      />
+
+      <FullCompanyDetailsForm
+        isOpen={isOpen}
+        onOpen={onOpen}
+        onOpenChange={onOpenChange}
       />
     </>
   );

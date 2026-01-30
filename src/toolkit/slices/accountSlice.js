@@ -5,7 +5,7 @@ export const getAllCompaniesForApprovals = createAsyncThunk(
   "getAllCompaniesForApprovals",
   async ({ userId, page, size, status }) => {
     const response = await api.get(
-      `/leadService/api/v1/company/getAllParentCompanyForAccount?userId=${userId}&page=${page}&size=${size}&status=${status}`
+      `/leadService/api/companies/accounts/pending-review?assigneeId=${userId}&onboardingStatus=${status}&page=${page}&size=${size}`
     );
     return response.data;
   }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback, memo } from "react";
 import { Select, SelectItem, Input } from "@heroui/react";
 import { ChevronDownIcon } from "lucide-react";
 
@@ -194,4 +194,4 @@ const NewSelect = ({
   );
 };
 
-export default NewSelect;
+export default memo(NewSelect);
