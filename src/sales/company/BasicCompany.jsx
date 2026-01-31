@@ -130,6 +130,7 @@ const BasicCompany = () => {
     values.updatedById = userId;
     dispatch(addBasicCompanyDetail(values))
       .then((resp) => {
+        console.log("jkdghsjkdgjhsdgh",resp)
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Company details added successfully !.",
@@ -166,7 +167,7 @@ const BasicCompany = () => {
             );
         } else {
           addToast({
-            title: resp?.payload?.data?.message,
+            title: resp?.payload,
             color: "danger",
           });
         }

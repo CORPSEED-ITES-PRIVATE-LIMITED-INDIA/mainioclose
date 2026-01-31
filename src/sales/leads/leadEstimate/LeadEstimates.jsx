@@ -272,6 +272,7 @@ export const LeadEstimates = () => {
     data.solutionType = solutionDetail?.type;
     data.sourceSolutionIds = solutionDetail?.id;
     data.createdByUserId = userId;
+    data.leadId=leadId
     dispatch(createNewEstimate(data))
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {

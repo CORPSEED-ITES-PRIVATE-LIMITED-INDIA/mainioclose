@@ -27,11 +27,13 @@ import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
 import GST from "../accounts/organization/GST";
 import TrailBalance from "../accounts/organization/TrailBalance";
 import SalesReport from "../accounts/organization/SalesReport";
+import CompanyUnitsInAccount from "../accounts/CompanyUnitsInAccount";
 
 export const AccountsModuleRouting = () => {
   return (
     <>
       <Route path="accounts/companyApprovals" element={<CompanyApprovals />} />
+      <Route path="accounts/companyApprovals/:companyId/units" element={<CompanyUnitsInAccount />} />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
       <Route path="accounts/orgEstimate" element={<OrganizationEstimate />} />

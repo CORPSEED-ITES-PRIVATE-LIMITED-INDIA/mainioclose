@@ -1,7 +1,7 @@
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { memo, useRef } from "react";
-import logo from '../../../assets/CORPSEED.webp'
+import logo from "../../../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency, numberToWords } from "../../../common";
@@ -160,6 +160,20 @@ const NewEstimatePreview = ({ details, due }) => {
                 </thead>
 
                 <tbody>
+                  {details?.solutionName && (
+                    <tr className="bg-gray-50">
+                      <td className="border p-1 text-center font-medium">
+                        
+                      </td>
+                      <td colSpan={8} className="border p-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-800">
+                            {details.solutionName}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {details?.lineItems?.map((item, index) => (
                     <tr key={item.id}>
                       <td className="border p-1 text-center font-medium">

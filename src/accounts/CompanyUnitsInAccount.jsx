@@ -1,7 +1,6 @@
 import {
   addToast,
   Button,
-  Chip,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -20,27 +19,23 @@ import {
   TableHeader,
   TableRow,
   Textarea,
-  Tooltip,
   useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Info, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getAllCompaniesForApprovals } from "../toolkit/slices/accountSlice";
 import {
-  approvedCompanyInAccount,
-  approvedCompanyInLeads,
+  approvedCompanyUnitsInAccount,
+  approvedCompanyUnitsInLeads,
+  getGstListByCompanyIdInAccounts,
 } from "../toolkit/slices/companySlice";
 
 const columns = [
-  { name: "ID", uid: "companyId" },
-  { name: "COMPANY", uid: "companyName", sortable: true },
-  { name: "INDUSTRY", uid: "industryName" },
-  { name: "STATUS", uid: "status" },
-  { name: "ASSIGNEE", uid: "assignee" },
-  { name: "PRIMARY ADDRESS", uid: "address" },
-  { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
+  { name: "ID", uid: "unitId" },
+  { name: "UNIT NAME", uid: "name" },
+  { name: "STATE NAME", uid: "state" },
+  { name: "GST NUMBER", uid: "gstNo" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -48,24 +43,16 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
-  "companyName",
-  "gstNo",
-  "industryName",
-  "status",
-  "assignee",
-  "address",
-  "actions",
-];
+const INITIAL_VISIBLE_COLUMNS = ["unitId", "name", "state", "gstNo", "actions"];
 
-const CompanyApprovals = () => {
-  const { userId } = useParams();
+const CompanyUnitsInAccount = () => {
+  const { userId, companyId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const count = useSelector(
-    (state) => state.account.approvalCompanyList?.length,
+    (state) => state.company.companyUnitListForAccounts?.length,
   );
-  const data = useSelector((state) => state.account.approvalCompanyList);
+  const data = useSelector((state) => state.company.companyUnitListForAccounts);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -75,24 +62,25 @@ const CompanyApprovals = () => {
     column: "age",
     direction: "ascending",
   });
-  const [filteration, setFilteration] = useState({
+  const [companyFilteration, setCompanyFilteration] = useState({
     userId: userId,
     page: 1,
     size: 50,
     status: "ALL",
+    companyId,
   });
 
   const [statusData, setStatusData] = useState({
     approve: null,
     remark: "",
-    companyId: null,
+    unitId: null,
   });
 
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllCompaniesForApprovals(filteration));
-  }, [dispatch, filteration]);
+    dispatch(getGstListByCompanyIdInAccounts(companyFilteration));
+  }, [dispatch, companyId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -115,23 +103,31 @@ const CompanyApprovals = () => {
     return filteredUsers;
   }, [data, filterValue]);
 
-  const pages = Math.ceil(count / filteration?.size) || 1;
+  const pages = Math.ceil(count / companyFilteration?.size) || 1;
+
+  const items = useMemo(() => {
+    const start = (companyFilteration?.page - 1) * companyFilteration?.size;
+    const end = start + companyFilteration?.size;
+
+    return filteredItems.slice(start, end);
+  }, [companyFilteration, filteredItems]);
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
+    return [...items].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, items]);
 
   const handleChangeCompanyStatus = () => {
     dispatch(
-      approvedCompanyInLeads({
-        companyId: statusData?.companyId,
+      approvedCompanyUnitsInLeads({
+        companyId: companyId,
         reviewedBy: userId,
+        unitId: statusData?.unitId,
         data: { approve: statusData?.approve, remark: statusData?.remark },
       }),
     )
@@ -142,9 +138,10 @@ const CompanyApprovals = () => {
             color: "success",
           });
           dispatch(
-            approvedCompanyInAccount({
-              companyId: statusData?.companyId,
+            approvedCompanyUnitsInAccount({
+              companyId: companyId,
               reviewedBy: userId,
+              unitId: statusData?.unitId,
               data: {
                 approve: statusData?.approve,
                 remark: statusData?.remark,
@@ -155,147 +152,59 @@ const CompanyApprovals = () => {
               if (res.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Company status updated successfully in accounts !.",
-                  color: "success",
                 });
                 onClose();
-                dispatch(getAllCompaniesForApprovals(filteration));
+                dispatch(getGstListByCompanyIdInAccounts(companyFilteration));
               } else {
                 addToast({ title: res.payload.data.message, color: "danger" });
               }
             })
-            .catch((err) => {
+            .catch((err) =>
               addToast({
                 title: "Something went wrong in accounts",
                 color: "danger",
-              });
-            });
+              }),
+            );
         } else {
           addToast({ title: resp.payload.data.message, color: "danger" });
         }
       })
-      .catch(() => {
+      .catch(() =>
         addToast({
           title: "Something went wrong in accounts",
           color: "danger",
-        });
-      });
+        }),
+      );
   };
 
-  const renderCell = useCallback((rowData, columnKey) => {
+  const renderCell = useCallback((company, columnKey) => {
     switch (columnKey) {
-      case "companyName":
+      case "name":
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
               <Link
-                to={`${rowData?.companyId}/units`}
-                className="font-medium capitalize"
+                to={`${company?.state}/companyUnits`}
+                className="font-semibold"
               >
-                {rowData?.companyName || "-"}
+                {company?.unitName || "-"}
               </Link>
-              <p className="font-normal text-xs text-gray-400">
-                Age : {rowData?.age || "-"}
-              </p>
             </div>
           </div>
         );
 
-      case "industryName":
+      case "state":
         return (
-          rowData?.industryName && (
-            <div className="flex justify-between">
-              {rowData?.industryName}{" "}
-              <Tooltip
-                content={
-                  <div className="w-full">
-                    <div className="grid grid-cols-[150px_20px_1fr] gap-y-2 text-sm">
-                      <div className="text-gray-600">Industry name</div>
-                      <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
-                        {rowData?.industryName}
-                      </div>
-
-                      <div className="text-gray-600">Category</div>
-                      <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
-                        {rowData?.subIndustryName}
-                      </div>
-
-                      <div className="text-gray-600">Subcategory</div>
-                      <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
-                        {rowData?.subSubIndustryName}
-                      </div>
-
-                      <div className="text-gray-600">Business activity</div>
-                      <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
-                        {rowData?.industryName}
-                      </div>
-                    </div>
-                  </div>
-                }
-              >
-                <Info className="w-3 h-3" />
-              </Tooltip>
-            </div>
-          )
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col">{company?.state || "-"}</div>
+          </div>
         );
 
-      case "status":
+      case "gstNo":
         return (
           <div className="flex flex-col">
-            <Chip
-              size="sm"
-              className="text-tiny capitalize"
-              variant="flat"
-              color={
-                rowData?.onboardingStatus === "APPROVED"
-                  ? "success"
-                  : rowData?.onboardingStatus === "DISAPPROVED"
-                    ? "danger"
-                    : "secondary"
-              }
-            >
-              {rowData?.onboardingStatus}
-            </Chip>
+            <span className="font-normal">{company.gstNo || "-"}</span>
           </div>
-        );
-
-      case "assignee":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.assigneeName || "-"}</span>
-          </div>
-        );
-      case "address":
-        return rowData?.address ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.address || "-"}</span>
-            <span className="text-sm text-gray-400">
-              {[rowData?.city, rowData?.state, rowData?.country].join(",")}
-            </span>
-          </div>
-        ) : (
-          "-"
-        );
-      case "secondaryAddress":
-        return rowData?.secAddress ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.secAddress || "-"}</span>
-            <div className="flex items-center gap-1">
-              {" "}
-              <span className="text-gray-400">{rowData?.secCity || "-"}</span>,
-              <span className="text-gray-400">{rowData?.secState || "-"}</span>,
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
-                {rowData?.seCountry || "-"}
-              </span>
-            </div>
-          </div>
-        ) : (
-          "-"
         );
       case "actions":
         return (
@@ -312,7 +221,7 @@ const CompanyApprovals = () => {
                   setStatusData((pre) => ({
                     ...pre,
                     approve: true,
-                    companyId: rowData?.companyId,
+                    unitId: company?.unitId,
                   }));
                 }}
               >
@@ -324,7 +233,7 @@ const CompanyApprovals = () => {
                   setStatusData((pre) => ({
                     ...pre,
                     approve: false,
-                    companyId: rowData?.companyId,
+                    unitId: company?.unitId,
                   }));
                 }}
               >
@@ -334,24 +243,24 @@ const CompanyApprovals = () => {
           </Dropdown>
         );
       default:
-        return rowData[columnKey] || "-";
+        return company[columnKey] || "-";
     }
   }, []);
 
   const onNextPage = useCallback(() => {
-    if (filteration?.page < pages) {
-      setFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
+    if (companyFilteration?.page < pages) {
+      setCompanyFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
     }
-  }, [filteration, pages]);
+  }, [companyFilteration, pages]);
 
   const onPreviousPage = useCallback(() => {
-    if (filteration?.page > 1) {
-      setFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
+    if (companyFilteration?.page > 1) {
+      setCompanyFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
     }
-  }, [filteration]);
+  }, [companyFilteration]);
 
   const onRowsPerPageChange = useCallback((e) => {
-    setFilteration((prev) => ({
+    setCompanyFilteration((prev) => ({
       ...prev,
       size: Number(e.target.value),
       page: 1,
@@ -361,7 +270,7 @@ const CompanyApprovals = () => {
   const onSearchChange = useCallback((value) => {
     if (value) {
       setFilterValue(value);
-      setFilteration((prev) => ({ ...prev, page: 1 }));
+      setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
     } else {
       setFilterValue("");
     }
@@ -369,7 +278,7 @@ const CompanyApprovals = () => {
 
   const onClear = useCallback(() => {
     setFilterValue("");
-    setFilteration((prev) => ({ ...prev, page: 1 }));
+    setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const topContent = useMemo(() => {
@@ -379,7 +288,7 @@ const CompanyApprovals = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
+            placeholder="Search by name..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -393,17 +302,17 @@ const CompanyApprovals = () => {
                   variant="flat"
                   className="capitalize"
                 >
-                  {filteration?.status}
+                  {companyFilteration?.status}
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
                 selectionMode="single"
-                selectedKeys={[filteration.status]}
+                selectedKeys={[companyFilteration.status]}
                 onSelectionChange={(selectedKeys) => {
                   const selected = Array.from(selectedKeys)[0];
-                  setFilteration((prev) => ({
+                  setCompanyFilteration((prev) => ({
                     ...prev,
                     status: selected || prev.status,
                   }));
@@ -422,6 +331,7 @@ const CompanyApprovals = () => {
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -441,14 +351,14 @@ const CompanyApprovals = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} companies for approvals
+            Total {count} GST units
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-hidden text-default-400 text-small"
               onChange={onRowsPerPageChange}
-              value={filteration?.size}
+              value={companyFilteration?.size}
             >
               <option value="5">5</option>
               <option value="15">15</option>
@@ -466,7 +376,7 @@ const CompanyApprovals = () => {
     data.length,
     onSearchChange,
     hasSearchFilter,
-    filteration?.status,
+    companyFilteration?.status,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -482,12 +392,12 @@ const CompanyApprovals = () => {
           showControls
           showShadow
           color="primary"
-          page={filteration?.page}
+          page={companyFilteration?.page}
           total={pages}
           onChange={(e) => {
-            setFilteration((prev) => ({ ...prev, page: e }));
-            if (e > filteration?.page) {
-              dispatch(getAllNewCompanies({ ...filteration, page: e }));
+            setCompanyFilteration((prev) => ({ ...prev, page: e }));
+            if (e > companyFilteration?.page) {
+              dispatch(getAllNewCompanies({ ...companyFilteration, page: e }));
             }
           }}
         />
@@ -511,13 +421,11 @@ const CompanyApprovals = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
+  }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Companies for approvals
-      </h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">GST list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -548,7 +456,7 @@ const CompanyApprovals = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.companyId}>
+            <TableRow key={item.unitId}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -561,8 +469,7 @@ const CompanyApprovals = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Updated status{" "}
-                {statusData?.approve ? "Approved" : "Disapproved"}
+                Updated status {statusData?.approve?"Approved":"Disapproved"}
               </ModalHeader>
               <ModalBody>
                 <Textarea
@@ -597,4 +504,4 @@ const CompanyApprovals = () => {
   );
 };
 
-export default CompanyApprovals;
+export default CompanyUnitsInAccount;

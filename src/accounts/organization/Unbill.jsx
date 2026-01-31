@@ -261,8 +261,7 @@ const Unbill = () => {
       })
     )
       .then((resp) => {
-        console.log("sdkfjhsjk",resp)
-        if (resp.meta.requestStatus === "fullfilled") {
+        if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Status updated successfully !.",
             color: "success",

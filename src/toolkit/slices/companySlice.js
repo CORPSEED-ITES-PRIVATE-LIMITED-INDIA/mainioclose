@@ -405,6 +405,76 @@ export const updateFullCompanyDetailsInAccounts = createAsyncThunk(
   },
 );
 
+export const approvedCompanyInLeads = createAsyncThunk(
+  "approvedCompanyInLeads",
+  async ({ companyId, reviewedBy, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/companies/${companyId}/review?reviewedBy=${reviewedBy}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const approvedCompanyInAccount = createAsyncThunk(
+  "approvedCompanyInAccount",
+  async ({ companyId, reviewedBy, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/${companyId}/review?reviewedBy=${reviewedBy}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const getGstListByCompanyIdInAccounts = createAsyncThunk(
+  "getGstListByCompanyIdInAccounts",
+  async ({ userId, status, companyId }) => {
+    const response = await api.get(
+      `/leadService/api/companies/accounts/pending-review-units?assigneeId=${userId}&onboardingStatus=${status}&companyId=${companyId}`,
+    );
+    return response.data;
+  },
+);
+
+export const approvedCompanyUnitsInLeads = createAsyncThunk(
+  "approvedCompanyUnitsInLeads",
+  async ({ companyId, unitId, reviewedBy, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/companies/${companyId}/units/${unitId}/review?reviewedBy=${reviewedBy}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const approvedCompanyUnitsInAccount = createAsyncThunk(
+  "approvedCompanyUnitsInAccount",
+  async ({ companyId, unitId, reviewedBy, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/companies/${companyId}/units/${unitId}/review?reviewedBy=${reviewedBy}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -428,6 +498,7 @@ const CompanySlice = createSlice({
     existingCompanyList: [],
     companyDetailById: {},
     basicCompanyDetail: {},
+    companyUnitListForAccounts: [],
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {
@@ -686,6 +757,27 @@ const CompanySlice = createSlice({
       state.loading = "rejected";
       state.newCompaniesTotalCount = 0;
     });
+
+    builder.addCase(
+      getGstListByCompanyIdInAccounts.pending,
+      (state, action) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getGstListByCompanyIdInAccounts.fulfilled,
+      (state, action) => {
+        state.companyUnitListForAccounts = action.payload;
+        state.loading = "success";
+      },
+    );
+    builder.addCase(
+      getGstListByCompanyIdInAccounts.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.companyUnitListForAccounts = [];
+      },
+    );
   },
 });
 

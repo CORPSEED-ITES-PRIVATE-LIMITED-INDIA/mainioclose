@@ -334,14 +334,24 @@ const Estimate = () => {
                 onSelectionChange={(e) => {
                   let item = Array.from(e)[0];
                   if (item === "paymentRegister") {
-                    setActiveEstimateId(rowData?.id); // ✅ estimateId
-                    paymentModal.onOpen();
+                    if (
+                      rowData?.company?.onboardingStatus === "MINIMAL" ||
+                      rowData?.unit?.onboardingStatus === "MINIMAL"
+                    ) {
+                      addToast({
+                        title: "Please update the full company detail !.",
+                        color: "danger",
+                      });
+                    } else {
+                      setActiveEstimateId(rowData?.id); // ✅ estimateId
+                      paymentModal.onOpen();
+                    }
                   } else if (item === "viewEstimate") {
                     handleViewEstimate(rowData);
                   } else if (item === "updateCompanyDetail") {
                     dispatch(
                       getBasicCompanyDetails({
-                        leadId: rowData?.rowData,
+                        leadId: rowData?.leadId,
                         userId,
                       }),
                     );

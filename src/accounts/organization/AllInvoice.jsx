@@ -64,13 +64,13 @@ const AllInvoice = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.organization.allInvoiceList);
   const count = useSelector(
-    (state) => state.organization.allInvoiceList?.length
+    (state) => state.organization.allInvoiceList?.length,
   );
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -90,7 +90,7 @@ const AllInvoice = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -100,8 +100,8 @@ const AllInvoice = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -136,7 +136,7 @@ const AllInvoice = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in Invoice", color: "danger" })
+        addToast({ title: "There is Some Issue in Invoice", color: "danger" }),
       );
   };
 
@@ -146,13 +146,13 @@ const AllInvoice = () => {
       case "date":
         return (
           <p className="text-sm capitalize">
-            {dayjs(rowData?.createDate).format("DD-MM-YYYY")}
+            {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
           </p>
         );
       case "invoiceNo":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{rowData?.invoiceNo}</p>
+            <p className="text-sm capitalize">{rowData?.invoiceNumber}</p>
           </div>
         );
       case "service":
@@ -163,13 +163,22 @@ const AllInvoice = () => {
         return <p className="text-sm capitalize">{rowData?.companyName}</p>;
       case "txnAmount":
         return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.txnAmount)}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.grandTotal)}
+            </p>
+            <div className="flex gap-1.5">
+              <span className="text-gray-500 text-tiny">GST</span>
+              <span className="text-gray-500 text-tiny">:</span>
+              <span className="text-gray-500 text-tiny">
+                {inrCurrency(rowData?.totalGstAmount)}
+              </span>
+            </div>
+          </div>
         );
       case "addedBy":
         return (
-          <p className="text-sm capitalize">{rowData?.addedBy?.fullName}</p>
+          <p className="text-sm capitalize">{rowData?.createdByName}</p>
         );
       case "actions":
         return (
