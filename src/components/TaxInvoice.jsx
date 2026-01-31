@@ -5,6 +5,7 @@ import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import numWords from "num-words";
+import { inrCurrency } from "../common";
 
 /** -------------------------
  * PDF / Layout constants
@@ -60,8 +61,8 @@ const getHalfGstRatesLabel = (items = []) => {
     new Set(
       (items || [])
         .map((x) => toNumber(x?.gstRate))
-        .filter((r) => Number.isFinite(r) && r > 0)
-    )
+        .filter((r) => Number.isFinite(r) && r > 0),
+    ),
   ).sort((a, b) => a - b);
 
   if (unique.length === 0) return "";
@@ -121,7 +122,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
       accountNo: "10052624515",
       branchIfsc: "Noida,Sector-63 Branch & IDFB0021331",
     }),
-    []
+    [],
   );
 
   // invoiceData can be object OR JSON string
@@ -142,7 +143,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
   const items = useMemo(() => {
     const arr = Array.isArray(inv?.lineItems) ? inv.lineItems : [];
     return [...arr].sort(
-      (a, b) => toNumber(a?.displayOrder) - toNumber(b?.displayOrder)
+      (a, b) => toNumber(a?.displayOrder) - toNumber(b?.displayOrder),
     );
   }, [inv]);
 
@@ -417,13 +418,13 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                         {toNumber(it?.quantity)}
                       </TableTd>
                       <TableTd className="text-right">
-                        {formatINR(it?.unitPriceExGst)}
+                        {inrCurrency(formatINR(it?.unitPriceExGst))}
                       </TableTd>
                       <TableTd className="text-center">
                         {it?.unit || "NOS"}
                       </TableTd>
                       <TableTd className="text-right">
-                        {formatINR(it?.lineTotalExGst)}
+                        {inrCurrency(formatINR(it?.lineTotalExGst))}
                       </TableTd>
                     </tr>
                   ))
@@ -439,7 +440,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                   </TableTd>
                   <TableTd className="text-center">%</TableTd>
                   <TableTd className="text-right">
-                    {formatINR(cgstAmount)}
+                    {inrCurrency(formatINR(cgstAmount))}
                   </TableTd>
                 </tr>
 
@@ -453,7 +454,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                   </TableTd>
                   <TableTd className="text-center">%</TableTd>
                   <TableTd className="text-right">
-                    {formatINR(sgstAmount)}
+                    {inrCurrency(formatINR(sgstAmount))}
                   </TableTd>
                 </tr>
 
@@ -463,7 +464,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                     Total
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(grandTotal)}
+                    {inrCurrency(formatINR(grandTotal))}
                   </TableTd>
                 </tr>
               </tbody>
@@ -512,22 +513,22 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                   <tr key={i}>
                     <TableTd className="text-center">{r.hsn}</TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.taxableValue)}
+                      {inrCurrency(formatINR(r.taxableValue))}
                     </TableTd>
                     <TableTd className="text-center">
                       {toNumber(r.cgstRate).toFixed(2)}
                     </TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.cgstAmount)}
+                      {inrCurrency(formatINR(r.cgstAmount))}
                     </TableTd>
                     <TableTd className="text-center">
                       {toNumber(r.sgstRate).toFixed(2)}
                     </TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.sgstAmount)}
+                      {inrCurrency(formatINR(r.sgstAmount))}
                     </TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.totalTax)}
+                      {inrCurrency(formatINR(r.totalTax))}
                     </TableTd>
                   </tr>
                 ))}
@@ -535,18 +536,18 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                 <tr>
                   <TableTd className="font-bold">Total</TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(subTotalExGst)}
+                    {inrCurrency(formatINR(subTotalExGst))}
                   </TableTd>
                   <TableTd className="text-center">-</TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(cgstAmount)}
+                    {inrCurrency(formatINR(cgstAmount))}
                   </TableTd>
                   <TableTd className="text-center">-</TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(sgstAmount)}
+                    {inrCurrency(formatINR(sgstAmount))}
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(totalGstAmount)}
+                    {inrCurrency(formatINR(totalGstAmount))}
                   </TableTd>
                 </tr>
               </tbody>

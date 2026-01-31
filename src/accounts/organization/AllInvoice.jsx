@@ -156,7 +156,7 @@ const AllInvoice = () => {
           </div>
         );
       case "service":
-        return <p className="text-sm capitalize">{rowData?.service}</p>;
+        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
       case "clientName":
         return <p className="text-sm capitalize">{rowData?.clientName}</p>;
       case "companyName":
