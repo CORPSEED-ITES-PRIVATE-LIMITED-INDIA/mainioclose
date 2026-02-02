@@ -40,7 +40,7 @@ export const estimateFormSchema = z.object({
   email: z.string().email("Invalid email").optional(),
   contactNumber: z.string().optional(),
   lineItems: z.array(lineItemSchema).min(1, "At least one item is required"),
-  orderNumber: z.string().optional(),
+  // orderNumber: z.string().optional(),
   estimateDate: z.string(),
   validUntil: z.string(),
   customerNotes: z.string().optional(),

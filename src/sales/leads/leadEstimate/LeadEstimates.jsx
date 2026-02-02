@@ -272,7 +272,7 @@ export const LeadEstimates = () => {
     data.solutionType = solutionDetail?.type;
     data.sourceSolutionIds = solutionDetail?.id;
     data.createdByUserId = userId;
-    data.leadId=leadId
+    data.leadId = leadId;
     dispatch(createNewEstimate(data))
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
@@ -300,6 +300,7 @@ export const LeadEstimates = () => {
   const onSaveUnitModal = (data) => {
     data.createdById = userId;
     data.updatedById = userId;
+    console.log("dsjghskjdgsjkgs", data);
     dispatch(
       createBasicUnitByCompanyId({
         companyId: company?.id,
@@ -319,7 +320,10 @@ export const LeadEstimates = () => {
           )
             .then((res) => {
               if (res.meta.requestStatus === "fulfilled") {
-                addToast({ title: "Unit details saved in accounts .", color: "success" });
+                addToast({
+                  title: "Unit details saved in accounts .",
+                  color: "success",
+                });
                 resetUnitForm();
                 onClose();
                 dispatch(getBasicCompanyDetails({ leadId, userId }));
@@ -412,10 +416,10 @@ export const LeadEstimates = () => {
                         {est?.performaInvoice ? "Proforma" : "Estimate"}
                       </span>
                     </div>
-
+{/* 
                     <p className="text-sm text-slate-600">
                       Order: {est?.orderNumber || "NA"}
-                    </p>
+                    </p> */}
 
                     <p className="text-xs text-slate-500">
                       Date:{" "}
@@ -442,7 +446,7 @@ export const LeadEstimates = () => {
       {showForm && (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="w-full max-h-[80vh] overflow-auto space-y-4"
+          className="w-full max-h-[70vh] overflow-auto space-y-4"
         >
           <Card className="shadow-xl">
             <CardHeader className="text-xl font-semibold flex items-center justify-between">
@@ -491,12 +495,12 @@ export const LeadEstimates = () => {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <FormInput
+                {/* <FormInput
                   label="Order Number"
                   name="orderNumber"
                   control={control}
                   error={errors.orderNumber}
-                />
+                /> */}
 
                 <Controller
                   name="estimateDate"
@@ -582,7 +586,7 @@ export const LeadEstimates = () => {
       >
         <ModalContent>
           {(onClose) => (
-            <form onSubmit={handleUnitSubmit(onSaveUnitModal)}>
+            <>
               <ModalHeader className="flex flex-col gap-1">
                 Add Unit Details
                 <span className="text-xs text-slate-500 font-normal">
@@ -591,140 +595,147 @@ export const LeadEstimates = () => {
               </ModalHeader>
 
               <ModalBody>
-                <div className="max-h-[80vh] overflow-auto  grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Controller
-                    name="unitName"
-                    control={unitControl}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="Unit Name"
-                        isRequired
-                        isInvalid={!!unitErrors.unitName}
-                        errorMessage={unitErrors.unitName?.message}
-                      />
-                    )}
-                  />
+                <form onSubmit={handleUnitSubmit(onSaveUnitModal)}>
+                  <div className="max-h-[80vh] overflow-auto  grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Controller
+                      name="unitName"
+                      control={unitControl}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          label="Unit Name"
+                          isRequired
+                          isInvalid={!!unitErrors.unitName}
+                          errorMessage={unitErrors.unitName?.message}
+                        />
+                      )}
+                    />
 
-                  <Controller
-                    name="address"
-                    control={control}
-                    render={({ field }) => <Input {...field} label="Address" />}
-                  />
+                    <Controller
+                      name="address"
+                      control={unitControl}
+                      render={({ field }) => (
+                        <Input
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          label="Address"
+                        />
+                      )}
+                    />
 
-                  <Controller
-                    name="country"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        label="Country"
-                        size={isMedium ? "sm" : "md"}
-                        data={countryList || []}
-                        labelKey="name"
-                        valueKey="name"
-                        value={field.value}
-                        onChange={(value) => {
-                          dispatch(getAllStatesByCountryName(value));
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
+                    <Controller
+                      name="country"
+                      control={unitControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Country"
+                          size={isMedium ? "sm" : "md"}
+                          data={countryList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllStatesByCountryName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
 
-                  <Controller
-                    name="state"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        label="State"
-                        size={isMedium ? "sm" : "md"}
-                        data={statesList || []}
-                        labelKey="name"
-                        valueKey="name"
-                        value={field.value}
-                        onChange={(value) => {
-                          dispatch(getAllCitiesByStateName(value));
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
+                    <Controller
+                      name="state"
+                      control={unitControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="State"
+                          size={isMedium ? "sm" : "md"}
+                          data={statesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllCitiesByStateName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
+                    />
 
-                  <Controller
-                    name="city"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        label="City"
-                        size={isMedium ? "sm" : "md"}
-                        data={citiesList || []}
-                        labelKey="name"
-                        valueKey="name"
-                        value={field.value}
-                        onChange={(value) => field.onChange(value)}
-                      />
-                    )}
-                  />
+                    <Controller
+                      name="city"
+                      control={unitControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="City"
+                          size={isMedium ? "sm" : "md"}
+                          data={citiesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
 
-                  {/* Pin Code */}
-                  <Controller
-                    name="pinCode"
-                    control={control}
-                    render={({ field }) => (
-                      <Input {...field} label="Pin Code" maxLength={6} />
-                    )}
-                  />
+                    {/* Pin Code */}
+                    <Controller
+                      name="pinCode"
+                      control={unitControl}
+                      render={({ field }) => (
+                        <Input {...field} label="Pin Code" maxLength={6} />
+                      )}
+                    />
 
-                  <Controller
-                    name="gstNo"
-                    control={unitControl}
-                    render={({ field }) => (
-                      <Input
-                        value={field.value}
-                        onChange={(e) => {
-                          handleGstChange(e);
-                        }}
-                        label="GST No"
-                      />
-                    )}
-                  />
+                    <Controller
+                      name="gstNo"
+                      control={unitControl}
+                      render={({ field }) => (
+                        <Input
+                          value={field.value}
+                          onChange={(e) => {
+                            handleGstChange(e);
+                          }}
+                          label="GST No"
+                        />
+                      )}
+                    />
 
-                  <Controller
-                    name="panNo"
-                    control={unitControl}
-                    render={({ field }) => (
-                      <Input
-                        value={field.value}
-                        onChange={(e) => {
-                          handlePanChange(e);
-                        }}
-                        label="PAN No"
-                      />
-                    )}
-                  />
-                </div>
+                    <Controller
+                      name="panNo"
+                      control={unitControl}
+                      render={({ field }) => (
+                        <Input
+                          value={field.value}
+                          onChange={(e) => {
+                            handlePanChange(e);
+                          }}
+                          label="PAN No"
+                        />
+                      )}
+                    />
+                  </div>
+                  <ModalFooter>
+                    <Button
+                      type="button"
+                      variant="flat"
+                      color="default"
+                      className="cursor-pointer"
+                      onPress={onClose}
+                    >
+                      Close
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      color="primary"
+                      className="cursor-pointer"
+                    >
+                      Save
+                    </Button>
+                  </ModalFooter>
+                </form>
               </ModalBody>
-
-              <ModalFooter>
-                <Button
-                  type="button"
-                  variant="flat"
-                  color="default"
-                  className="cursor-pointer"
-                  onPress={onClose}
-                >
-                  Close
-                </Button>
-
-                <Button
-                  type="submit"
-                  color="primary"
-                  className="cursor-pointer"
-                >
-                  Save
-                </Button>
-              </ModalFooter>
-            </form>
+            </>
           )}
         </ModalContent>
       </Modal>
