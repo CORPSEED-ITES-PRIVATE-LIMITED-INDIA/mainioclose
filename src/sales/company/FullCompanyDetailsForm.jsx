@@ -100,72 +100,85 @@ const unitSchema = z.object({
   secondaryContactId: z.coerce.number().optional().default(0),
 });
 
-const companySchema = z.object({
-  // company basics
-  name: z.string().min(1, "Company name is required"),
+const companySchema = (gstAndPanData) =>
+  z.object({
+    // company basics
+    name: z.string().min(1, "Company name is required"),
 
-  // ✅ these are conditional in your UI; keep optional in schema, validate by UI when required
-  gstNo: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || gstRegex.test(v), "Invalid GST format"),
-  panNo: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || panRegex.test(v), "Invalid PAN format (ABCDE1234F)"),
+    // ✅ these are conditional in your UI; keep optional in schema, validate by UI when required
+    ...(gstAndPanData?.gstNo
+      ? {
+          gstNo: z
+            .string()
+            .optional()
+            .default("")
+            .refine((v) => !v || gstRegex.test(v), "Invalid GST format"),
+        }
+      : {}),
 
-  // ✅ new selects you shared
-  companyType: z.coerce.number().optional().default(0),
-  gstType: z.coerce.number().optional().default(0),
-  businessType: z.coerce.number().optional().default(0),
+    ...(gstAndPanData?.panNo
+      ? {
+          panNo: z
+            .string()
+            .optional()
+            .default("")
+            .refine(
+              (v) => !v || panRegex.test(v),
+              "Invalid PAN format (ABCDE1234F)",
+            ),
+        }
+      : {}),
 
-  // admin
-  assigneeId: z.coerce.number().optional().default(0),
+    // ✅ new selects you shared
+    companyType: z.coerce.number().optional().default(0),
+    gstType: z.coerce.number().optional().default(0),
+    businessType: z.coerce.number().optional().default(0),
 
-  // industry chain
-  industryId: z.coerce.number().optional().default(0),
-  subIndustryId: z.coerce.number().optional().default(0),
-  subsubIndustryId: z.coerce.number().optional().default(0),
-  industrydataId: z.any().optional().default([]), // selectionMode multiple
+    // admin
+    assigneeId: z.coerce.number().optional().default(0),
 
-  // uploads
-  companyFileUrl: z.string().optional().default(""),
-  agreementFileUrl: z.string().optional().default(""),
-  ndaFileUrl: z.string().optional().default(""),
+    // industry chain
+    industryId: z.coerce.number().optional().default(0),
+    subIndustryId: z.coerce.number().optional().default(0),
+    subsubIndustryId: z.coerce.number().optional().default(0),
+    industrydataId: z.any().optional().default([]), // selectionMode multiple
 
-  // payment/flags
-  paymentTerm: z.string().optional().default(""),
-  aggrementPresent: z.coerce.boolean().optional().default(true),
-  ndaPresent: z.coerce.boolean().optional().default(true),
+    // uploads
+    companyFileUrl: z.string().optional().default(""),
+    agreementFileUrl: z.string().optional().default(""),
+    ndaFileUrl: z.string().optional().default(""),
 
-  // contact fields
-  primaryTitle: z.string().optional().default(""),
-  contactName: z.string().optional().default(""),
-  primaryDesignation: z.coerce.number().optional().default(0),
-  contactEmails: z.string().optional().default(""),
-  contactNo: z.string().optional().default(""),
-  contactWhatsappNo: z.string().optional().default(""),
+    // payment/flags
+    paymentTerm: z.string().optional().default(""),
+    aggrementPresent: z.coerce.boolean().optional().default(true),
+    ndaPresent: z.coerce.boolean().optional().default(true),
 
-  // address (company)
-  address: z.string().optional().default(""),
-  country: z.string().optional().default("India"),
-  state: z.string().optional().default(""),
-  city: z.string().optional().default(""),
-  primaryPinCode: z.string().optional().default(""),
+    // contact fields
+    primaryTitle: z.string().optional().default(""),
+    contactName: z.string().optional().default(""),
+    primaryDesignation: z.coerce.number().optional().default(0),
+    contactEmails: z.string().optional().default(""),
+    contactNo: z.string().optional().default(""),
+    contactWhatsappNo: z.string().optional().default(""),
 
-  // existing fields (keep if you need)
-  rating: z.string().optional().default(""),
-  companyAge: z.string().optional().default(""),
-  establishDate: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Invalid date"),
-  revenue: z.string().optional().default(""),
-  units: z.array(unitSchema).min(1, "At least one unit is required"),
-});
+    // address (company)
+    address: z.string().optional().default(""),
+    country: z.string().optional().default("India"),
+    state: z.string().optional().default(""),
+    city: z.string().optional().default(""),
+    primaryPinCode: z.string().optional().default(""),
+
+    // existing fields (keep if you need)
+    rating: z.string().optional().default(""),
+    companyAge: z.string().optional().default(""),
+    establishDate: z
+      .string()
+      .optional()
+      .default("")
+      .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Invalid date"),
+    revenue: z.string().optional().default(""),
+    units: z.array(unitSchema).min(1, "At least one unit is required"),
+  });
 
 const getEmptyUnit = () => ({
   id: 0,
@@ -275,7 +288,7 @@ const FullCompanyDetailsForm = ({
 
 export default memo(FullCompanyDetailsForm);
 
-export function CompanyAndUnitsForm({ onCancel,onClose }) {
+export function CompanyAndUnitsForm({ onCancel, onClose }) {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const defaultValues = useMemo(() => getDefaultValues(), []);
@@ -305,6 +318,11 @@ export function CompanyAndUnitsForm({ onCancel,onClose }) {
   );
   const company = useSelector((state) => state.company.basicCompanyDetail);
 
+  const [gstAndPanData, setGstAndPanData] = useState({
+    pan: false,
+    gst: false,
+  });
+
   const {
     control,
     handleSubmit,
@@ -313,7 +331,7 @@ export function CompanyAndUnitsForm({ onCancel,onClose }) {
     formState: { errors, isSubmitting },
     setValue,
   } = useForm({
-    resolver: zodResolver(companySchema),
+    resolver: zodResolver(companySchema(gstAndPanData)),
     mode: "onChange",
     defaultValues,
   });
@@ -324,10 +342,7 @@ export function CompanyAndUnitsForm({ onCancel,onClose }) {
   });
 
   // ✅ your conditional UI flag (as in snippet)
-  const [gstAndPanData, setGstAndPanData] = useState({
-    pan: false,
-    gst: false,
-  });
+
   const [panError, setPanError] = useState("");
   const [gstError, setGstError] = useState("");
   const aggrementPresent = watch("aggrementPresent");
@@ -426,7 +441,10 @@ export function CompanyAndUnitsForm({ onCancel,onClose }) {
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({title:'Compamy detail updated successfully in leads !.',color:'success'})
+          addToast({
+            title: "Compamy detail updated successfully in leads !.",
+            color: "success",
+          });
           dispatch(
             updateFullCompanyDetailsInAccounts({
               companyId: company?.id,
@@ -437,7 +455,10 @@ export function CompanyAndUnitsForm({ onCancel,onClose }) {
             .then((res) => {
               if (res.meta.requestStatus === "fulfilled") {
                 onClose();
-                addToast({title:'Compamy detail updated successfully !.',color:'success'})
+                addToast({
+                  title: "Compamy detail updated successfully !.",
+                  color: "success",
+                });
                 dispatch(
                   getAllEstimateByUserId({
                     userId,
