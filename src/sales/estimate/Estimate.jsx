@@ -602,6 +602,7 @@ const Estimate = () => {
         isOpen={isOpen}
         onOpen={onOpen}
         onOpenChange={onOpenChange}
+        filteration={filteration}
       />
     </>
   );

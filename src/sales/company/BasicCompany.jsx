@@ -130,7 +130,7 @@ const BasicCompany = () => {
     values.updatedById = userId;
     dispatch(addBasicCompanyDetail(values))
       .then((resp) => {
-        console.log("jkdghsjkdgjhsdgh",resp)
+        console.log("jkdghsjkdgjhsdgh", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Company details added successfully !.",
@@ -186,15 +186,17 @@ const BasicCompany = () => {
               <Building className={iconClass} />{" "}
               <p className="text-sm font-medium">Company detail</p>
             </div>
-            <Button
-              size="sm"
-              isIconOnly
-              variant="light"
-              className="w-6 h-6 rounded-full bg-none"
-              onPress={onOpen}
-            >
-              <Plus className={iconClass} />
-            </Button>
+            {!company?.name && (
+              <Button
+                size="sm"
+                isIconOnly
+                variant="light"
+                className="w-6 h-6 rounded-full bg-none"
+                onPress={onOpen}
+              >
+                <Plus className={iconClass} />
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardBody className="max-h-[300px] overflow-auto">

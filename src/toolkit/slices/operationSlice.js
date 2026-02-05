@@ -75,6 +75,14 @@ export const addProductsInOperations = createAsyncThunk(
   }
 );
 
+export const updateProductsInOperations = createAsyncThunk(
+  "addProductsInOperations",
+  async ({id,data}) => {
+    const response = await api.put(`/api/products/${id}`, data);
+    return response.data;
+  }
+);
+
 export const addDocumentsInProductsForOperation = createAsyncThunk(
   "addDocumentsInProductsForOperation",
   async (data) => {

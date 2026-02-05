@@ -93,6 +93,7 @@ const unitSchema = z.object({
   consultantPresent: z.coerce.boolean().optional().default(false),
 
   // optional numeric ids
+  companyTypeId: z.coerce.number().default(0),
   gstTypeId: z.coerce.number().optional().default(0),
   gstBusinessTypeId: z.coerce.number().optional().default(0),
   gstTypePriceId: z.coerce.number().optional().default(0),
@@ -100,103 +101,69 @@ const unitSchema = z.object({
   secondaryContactId: z.coerce.number().optional().default(0),
 });
 
-const companySchema = (gstAndPanData) =>
-  z.object({
-    // company basics
-    name: z.string().min(1, "Company name is required"),
+const companySchema = z.object({
+  // company basics
+  name: z.string().min(1, "Company name is required"),
+  panNo: z.string().optional(),
+  assigneeId: z.coerce.number().optional().default(0),
+  // industry chain
+  industryId: z.coerce.number().optional().default(0),
+  subIndustryId: z.coerce.number().optional().default(0),
+  subsubIndustryId: z.coerce.number().optional().default(0),
+  industrydataId: z.any().optional().default([]), // selectionMode multiple
 
-    // ✅ these are conditional in your UI; keep optional in schema, validate by UI when required
-    ...(gstAndPanData?.gstNo
-      ? {
-          gstNo: z
-            .string()
-            .optional()
-            .default("")
-            .refine((v) => !v || gstRegex.test(v), "Invalid GST format"),
-        }
-      : {}),
+  // uploads
+  companyFileUrl: z.string().optional().default(""),
+  agreementFileUrl: z.string().optional().default(""),
+  ndaFileUrl: z.string().optional().default(""),
 
-    ...(gstAndPanData?.panNo
-      ? {
-          panNo: z
-            .string()
-            .optional()
-            .default("")
-            .refine(
-              (v) => !v || panRegex.test(v),
-              "Invalid PAN format (ABCDE1234F)",
-            ),
-        }
-      : {}),
+  // payment/flags
+  paymentTerm: z.string().optional().default(""),
+  aggrementPresent: z.coerce.boolean().optional().default(true),
+  ndaPresent: z.coerce.boolean().optional().default(true),
 
-    // ✅ new selects you shared
-    companyType: z.coerce.number().optional().default(0),
-    gstType: z.coerce.number().optional().default(0),
-    businessType: z.coerce.number().optional().default(0),
+  // contact fields
+  primaryTitle: z.string().optional().default(""),
+  contactName: z.string().optional().default(""),
+  primaryDesignation: z.coerce.number().optional().default(0),
+  contactEmails: z.string().optional().default(""),
+  contactNo: z.string().optional().default(""),
+  contactWhatsappNo: z.string().optional().default(""),
 
-    // admin
-    assigneeId: z.coerce.number().optional().default(0),
+  // address (company)
+  address: z.string().optional().default(""),
+  country: z.string().optional().default("India"),
+  state: z.string().optional().default(""),
+  city: z.string().optional().default(""),
+  primaryPinCode: z.string().optional().default(""),
 
-    // industry chain
-    industryId: z.coerce.number().optional().default(0),
-    subIndustryId: z.coerce.number().optional().default(0),
-    subsubIndustryId: z.coerce.number().optional().default(0),
-    industrydataId: z.any().optional().default([]), // selectionMode multiple
-
-    // uploads
-    companyFileUrl: z.string().optional().default(""),
-    agreementFileUrl: z.string().optional().default(""),
-    ndaFileUrl: z.string().optional().default(""),
-
-    // payment/flags
-    paymentTerm: z.string().optional().default(""),
-    aggrementPresent: z.coerce.boolean().optional().default(true),
-    ndaPresent: z.coerce.boolean().optional().default(true),
-
-    // contact fields
-    primaryTitle: z.string().optional().default(""),
-    contactName: z.string().optional().default(""),
-    primaryDesignation: z.coerce.number().optional().default(0),
-    contactEmails: z.string().optional().default(""),
-    contactNo: z.string().optional().default(""),
-    contactWhatsappNo: z.string().optional().default(""),
-
-    // address (company)
-    address: z.string().optional().default(""),
-    country: z.string().optional().default("India"),
-    state: z.string().optional().default(""),
-    city: z.string().optional().default(""),
-    primaryPinCode: z.string().optional().default(""),
-
-    // existing fields (keep if you need)
-    rating: z.string().optional().default(""),
-    companyAge: z.string().optional().default(""),
-    establishDate: z
-      .string()
-      .optional()
-      .default("")
-      .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Invalid date"),
-    revenue: z.string().optional().default(""),
-    units: z.array(unitSchema).min(1, "At least one unit is required"),
-  });
+  // existing fields (keep if you need)
+  rating: z.string().optional().default(""),
+  companyAge: z.string().optional().default(""),
+  establishDate: z
+    .string()
+    .optional()
+    .default("")
+    .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Invalid date"),
+  revenue: z.string().optional().default(""),
+  units: z.array(unitSchema).min(1, "At least one unit is required"),
+});
 
 const getEmptyUnit = () => ({
   id: 0,
   unitName: "",
+  gstNo: "",
+  companyTypeId: 0,
+  gstTypeId: 0,
+  gstBusinessTypeId: 0,
+  gstTypePriceId: 0,
   addressLine1: "",
   addressLine2: "",
   city: "",
   state: "",
   country: "India",
   pinCode: "",
-  gstNo: "",
-  gstTypeId: 0,
-  gstBusinessTypeId: 0,
-  gstTypePriceId: 0,
-  primaryContactId: 0,
-  secondaryContactId: 0,
   unitOpeningDate: "",
-  status: "",
   consultantPresent: true,
 });
 
@@ -318,10 +285,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
   );
   const company = useSelector((state) => state.company.basicCompanyDetail);
 
-  const [gstAndPanData, setGstAndPanData] = useState({
-    pan: false,
-    gst: false,
-  });
+  const [gstAndPanData, setGstAndPanData] = useState({});
 
   const {
     control,
@@ -331,7 +295,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
     formState: { errors, isSubmitting },
     setValue,
   } = useForm({
-    resolver: zodResolver(companySchema(gstAndPanData)),
+    resolver: zodResolver(companySchema),
     mode: "onChange",
     defaultValues,
   });
@@ -578,114 +542,21 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
             />
 
             <Controller
-              name="companyType"
+              name="panNo"
               control={control}
               render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="Company structure"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={companyTypeList || []}
-                  labelKey="name"
-                  valueKey="id"
+                <Input
+                  label="Pan number"
+                  maxLength={10}
                   value={field.value}
-                  onChange={(value) => {
-                    dispatch(getAllGstTypeByCompanyTypeId(value));
-                    field.onChange(value);
+                  errorMessage={error?.message || panError}
+                  isInvalid={!!error || !!panError}
+                  onChange={(e) => {
+                    handlePanChange(e);
                   }}
                 />
               )}
             />
-
-            <Controller
-              name="gstType"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="GST type"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={gstTypeList?.gstBussinessType || []}
-                  labelKey="name"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    dispatch(getBusinessTypeByGstTypeId(value));
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="businessType"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <NewSelect
-                  label="Business type"
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  data={businessTypeList?.gstTypePrice || []}
-                  labelKey="name"
-                  valueKey="id"
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-
-                    const foundObject = businessTypeList?.gstTypePrice?.find(
-                      (item) => item.id == value,
-                    );
-
-                    setGstAndPanData({
-                      pan: foundObject?.panPresent || false,
-                      gst: foundObject?.gstPresent || false,
-                    });
-                  }}
-                />
-              )}
-            />
-
-            {gstAndPanData.gst && (
-              <Controller
-                name="gstNo"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <Input
-                    label="GST number"
-                    maxLength={15}
-                    value={field.value}
-                    errorMessage={error?.message || gstError}
-                    isInvalid={!!error || !!gstError}
-                    onChange={(e) => {
-                      // you already have this handler
-                      handleGstChange?.(e);
-                      // keep RHF in sync
-                      field.onChange(e.target.value);
-                    }}
-                  />
-                )}
-              />
-            )}
-
-            {gstAndPanData.pan && (
-              <Controller
-                name="panNo"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <Input
-                    label="Pan number"
-                    maxLength={10}
-                    value={field.value}
-                    errorMessage={error?.message || panError}
-                    isInvalid={!!error || !!panError}
-                    onChange={(e) => {
-                      handlePanChange?.(e);
-                      field.onChange(e.target.value);
-                    }}
-                  />
-                )}
-              />
-            )}
 
             {/* Assignee (Admin only) */}
             {adminRole && (
@@ -1147,6 +1018,73 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
                       onChange={(e) => field.onChange(e.target.value)}
                       errorMessage={error?.message}
                       isInvalid={!!error}
+                    />
+                  )}
+                />
+
+                {/* UNIT GST STRUCTURE */}
+                <Controller
+                  name={`units.${index}.companyTypeId`}
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Company Structure"
+                      data={companyTypeList || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      errorMessage={error?.message}
+                      onChange={(value) => {
+                        dispatch(getAllGstTypeByCompanyTypeId(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name={`units.${index}.gstTypeId`}
+                  control={control}
+                  render={({ field }) => (
+                    <NewSelect
+                      label="GST Type"
+                      data={gstTypeList?.gstBussinessType || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        dispatch(getBusinessTypeByGstTypeId(value));
+                        field.onChange(value);
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name={`units.${index}.gstTypePriceId`}
+                  control={control}
+                  render={({ field }) => (
+                    <NewSelect
+                      label="Business Type"
+                      data={businessTypeList?.gstTypePrice || []}
+                      labelKey="name"
+                      valueKey="id"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+
+                        const found = businessTypeList?.gstTypePrice?.find(
+                          (x) => x.id === value,
+                        );
+
+                        setGstAndPanData((prev) => ({
+                          ...prev,
+                          [index]: {
+                            gst: found?.gstPresent || false,
+                            pan: found?.panPresent || false,
+                          },
+                        }));
+                      }}
                     />
                   )}
                 />

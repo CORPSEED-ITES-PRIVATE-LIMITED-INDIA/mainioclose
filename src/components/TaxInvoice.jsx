@@ -391,6 +391,18 @@ const TaxInvoice = ({ invoiceData, heading }) => {
               </thead>
 
               <tbody>
+                {inv?.solutionName && (
+                  <tr className="bg-gray-50">
+                    <td className="border p-1 text-center font-medium"></td>
+                    <td colSpan={8} className="border p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-800">
+                          {inv.solutionName}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
                 {items.length === 0 ? (
                   <tr>
                     <TableTd className="text-center text-gray-500" colSpan={7}>

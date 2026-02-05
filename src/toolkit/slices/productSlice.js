@@ -149,10 +149,10 @@ export const createDocumentsForProduct = createAsyncThunk(
 
 export const getAllDocumentsForProduct = createAsyncThunk(
   "getAllDocumentsForProduct",
-  async (userId, { rejectWithValue }) => {
+  async ({page,size,userId}, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/product-required-documents?userId=${userId}`
+        `/api/product-required-documents/active?page=${page}&size=${size}&userId=${userId}`
       );
       return response.data;
     } catch (error) {

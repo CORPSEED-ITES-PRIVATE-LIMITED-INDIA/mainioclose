@@ -34,13 +34,12 @@ import {
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import {
-  getUnBilledDetailById,
-} from "../../toolkit/slices/accountSlice";
+import { getUnBilledDetailById } from "../../toolkit/slices/accountSlice";
 import EstimateView from "../../components/EstimateView";
 import { useParams } from "react-router-dom";
 import TaxInvoice from "../../components/TaxInvoice";
 import UnbilledView from "../../components/UnbilledView";
+import { createProjectsForOperations } from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -85,7 +84,7 @@ const Unbill = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -111,7 +110,7 @@ const Unbill = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -121,8 +120,8 @@ const Unbill = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -199,7 +198,9 @@ const Unbill = () => {
                   key="view"
                   onPress={() => {
                     onOpen();
-                    dispatch(getUnBilledDetailById({id:rowData?.id,userId}));
+                    dispatch(
+                      getUnBilledDetailById({ id: rowData?.id, userId }),
+                    );
                   }}
                 >
                   View
@@ -258,13 +259,23 @@ const Unbill = () => {
       updateStatusForUnbill({
         unbilledId: rowItem?.id,
         data: updatedStatusData,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Status updated successfully !.",
             color: "success",
+          });
+          dispatch(createProjectsForOperations(resp?.payload)).then((pro) => {
+            if (pro.meta.requestStatus === "fulfilled") {
+              addToast({
+                title: "Project created successfully !.",
+                color: "success",
+              });
+            } else {
+              addToast({ title: "Something went wrong !.", color: "danger" });
+            }
           });
           setRowItem(null);
           setUpdatedStatusData({
@@ -278,7 +289,7 @@ const Unbill = () => {
         }
       })
       .catch((err) =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -378,7 +389,7 @@ const Unbill = () => {
     count,
     onSearchChange,
     hasSearchFilter,
-    status
+    status,
   ]);
 
   const bottomContent = React.useMemo(() => {

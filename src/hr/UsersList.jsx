@@ -178,20 +178,20 @@ const UsersList = () => {
   const count = useSelector((state) => state.common.usersList?.length || 0);
   const data = useSelector((state) => state.common.usersList || []);
   const departmentList = useSelector(
-    (state) => state?.setting?.departmentList || []
+    (state) => state?.setting?.departmentList || [],
   );
   const allRoles = useSelector((state) => state.common.allRoles || []);
   const allDesiginationListById = useSelector(
-    (state) => state.common.desiginationListById || []
+    (state) => state.common.desiginationListById || [],
   );
   const managerListById = useSelector(
-    (state) => state.common.managerListById || []
+    (state) => state.common.managerListById || [],
   );
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "fullName",
@@ -216,7 +216,7 @@ const UsersList = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -225,8 +225,8 @@ const UsersList = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -311,7 +311,7 @@ const UsersList = () => {
       setRowItem(data);
       onOpen();
     },
-    [data, reset, dispatch, onOpen]
+    [data, reset, dispatch, onOpen],
   );
 
   console.log("jkdfgkjdgkjdgkjdhg", getValues());
@@ -394,19 +394,31 @@ const UsersList = () => {
                     title: "User created successfully !.",
                     color: "success",
                   });
-                  // dispatch(
-                  //   createUsersInOperations({
-                  //     id: userInfo?.id,
-                  //     fullName: userInfo?.fullName,
-                  //     email: userInfo?.email,
-                  //     contactNo: userInfo?.contactNo,
-                  //     designationId: userInfo?.userDesignation?.id,
-                  //     departmentIds: [userInfo?.userDepartment?.id],
-                  //     roleIds: userInfo?.role,
-                  //     managerId: managers?.id,
-                  //     managerFlag: true,
-                  //   })
-                  // );
+                  dispatch(
+                    createUsersInOperations({
+                      id: userInfo?.id,
+                      fullName: userInfo?.fullName,
+                      email: userInfo?.email,
+                      contactNo: userInfo?.contactNo,
+                      designationId: userInfo?.userDesignation?.id,
+                      departmentIds: [userInfo?.userDepartment?.id],
+                      roleIds: userInfo?.role,
+                      managerId: managers?.id,
+                      managerFlag: true,
+                    }),
+                  ).then((oper) => {
+                    if ((oper.meta, requestStatus === "fulfilled")) {
+                      addToast({
+                        title: "User created in operation",
+                        color: "success",
+                      });
+                    } else {
+                      addToast({
+                        title: "Something went wrong in Operations",
+                        color: "danger",
+                      });
+                    }
+                  });
                   onClose();
                   reset(defaultValues);
                   dispatch(getAllUsers());

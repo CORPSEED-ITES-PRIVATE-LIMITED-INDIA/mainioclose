@@ -31,15 +31,20 @@ import {
   getAllSolutionCountByType,
   getAllSolutionsByType,
   searchProducts,
+  updateSolution,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { addProductsInOperations } from "../../toolkit/slices/operationSlice";
+import {
+  addProductsInOperations,
+  updateProductsInOperations,
+} from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "NAME", uid: "name" },
   { name: "TYPE", uid: "type" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export const statusOptions = [
@@ -52,7 +57,7 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "type"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "type", "actions"];
 
 const Solutions = () => {
   const dispatch = useDispatch();
@@ -64,7 +69,7 @@ const Solutions = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -83,6 +88,7 @@ const Solutions = () => {
     size: 50,
     userId,
   });
+  const [rowItem, setRowItem] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -95,7 +101,7 @@ const Solutions = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -111,10 +117,16 @@ const Solutions = () => {
     });
   }, [sortDescriptor, data]);
 
-  // const handleDeleteOpen =(row)=>{
-  //   setRowItem(row)
-  //   modal.onOpen()
-  // }
+  const handleOpen = (row) => {
+    setRowItem(row);
+    setFormData({
+      name: row?.name,
+      type: row?.type,
+      description: row?.description,
+      scope: row?.scope,
+    });
+    onOpen();
+  };
 
   // const handleDelete = () => {
   //   dispatch(deleteProduct(deleteId))
@@ -137,37 +149,72 @@ const Solutions = () => {
   // };
 
   const handleSubmit = (values) => {
-    dispatch(createSolution({ createdById: userId, ...values }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          const productInfo = resp.payload;
-          addToast({
-            title: "Product created successfully !.",
-            color: "success",
-          });
-          onOpenChange(false);
-          dispatch(getAllSolutionsByType(initialFilteration));
-          // dispatch(
-          //   addProductsInOperations([
-          //     {
-          //       productId: productInfo?.id,
-          //       productName: productInfo?.productName,
-          //       description: productInfo?.description || "Something",
-          //       createdBy: productInfo?.createdBy?.id,
-          //       updatedBy: productInfo?.createdBy?.id,
-          //       date: productInfo?.createdDate,
-          //       active: true,
-          //     },
-          //   ])
-          // );
-          setFormData({ name: "", type: "", description: "" });
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
+    if (rowItem) {
+      dispatch(updateSolution({ id: rowItem?.id, userId, data: values }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            const productInfo = resp.payload;
+            addToast({
+              title: "Product updated successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getAllSolutionsByType(initialFilteration));
+            dispatch(
+              updateProductsInOperations({
+                id: rowItem?.id,
+                userId,
+                data: {
+                  productId: productInfo?.id,
+                  productName: productInfo?.name,
+                  description: productInfo?.description || "Something",
+                  createdBy: productInfo?.createdById,
+                  updatedBy: productInfo?.createdById,
+                  // date: productInfo?.createdDate,
+                  active: true,
+                },
+              }),
+            );
+            setFormData({ name: "", type: "", description: "" });
+            setRowItem(null);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    } else {
+      dispatch(createSolution({ createdById: userId, ...values }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            const productInfo = resp.payload;
+            addToast({
+              title: "Product created successfully !.",
+              color: "success",
+            });
+            onOpenChange(false);
+            dispatch(getAllSolutionsByType(initialFilteration));
+            dispatch(
+              addProductsInOperations({
+                productId: productInfo?.id,
+                productName: productInfo?.name,
+                description: productInfo?.description || "Something",
+                createdBy: productInfo?.createdById,
+                updatedBy: productInfo?.createdById,
+                // date: productInfo?.createdDate,
+                active: true,
+              }),
+            );
+            setFormData({ name: "", type: "", description: "" });
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -188,28 +235,30 @@ const Solutions = () => {
           </Link>
         );
 
-      // case "actions":
-      //   return (
-      //     <div className="relative flex justify-center items-center gap-2">
-      //       <Dropdown>
-      //         <DropdownTrigger>
-      //           <Button isIconOnly size="sm" variant="light">
-      //             <EllipsisVertical className="text-default-300" />
-      //           </Button>
-      //         </DropdownTrigger>
-      //         <DropdownMenu>
-      //           <DropdownItem key="edit">Edit</DropdownItem>
-      //           <DropdownItem
-      //             key="delete"
-      //             color="danger"
-      //             onClick={()=>handleDeleteOpen(rowData)}
-      //           >
-      //             Delete
-      //           </DropdownItem>
-      //         </DropdownMenu>
-      //       </Dropdown>
-      //     </div>
-      //   );
+      case "actions":
+        return (
+          <div className="relative flex justify-center items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical className="text-default-300" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="edit" onPress={() => handleOpen(rowData)}>
+                  Edit
+                </DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  onPress={() => handleOpen(rowData)}
+                >
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
       default:
         return cellValue;
     }
@@ -453,14 +502,14 @@ const Solutions = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Create solution
+                {rowItem ? "Update solution" : "Create solution"}
               </ModalHeader>
               <ModalBody>
                 <Form
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleSubmit(data);
                   }}

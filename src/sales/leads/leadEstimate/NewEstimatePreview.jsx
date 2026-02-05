@@ -78,14 +78,14 @@ const NewEstimatePreview = ({ details, due }) => {
                   </p>
                 </div>
 
-                <div className="flex items-end flex-col">
+                {/* <div className="flex items-end flex-col">
                   <h4 className="text-green-600 text-base font-semibold">
                     Order No.
                   </h4>
                   <p className="font-medium text-gray-700 text-sm">
                     {details?.orderNumber}
                   </p>
-                </div>
+                </div> */}
                 {due && (
                   <div className="flex items-end flex-col">
                     <h4 className="text-red-600 text-base font-semibold">

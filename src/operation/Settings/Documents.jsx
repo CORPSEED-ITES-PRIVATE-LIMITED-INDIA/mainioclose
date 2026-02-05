@@ -122,7 +122,7 @@ const Documents = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
 
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
@@ -136,15 +136,15 @@ const Documents = () => {
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getAllDocumentsForProduct(userId));
+    dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
     dispatch(getAllCountries());
-  }, [dispatch]);
+  }, [dispatch, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -154,8 +154,8 @@ const Documents = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
-        )
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase()),
+        ),
       );
     }
 
@@ -199,7 +199,7 @@ const Documents = () => {
           createdBy: userId,
           updatedBy: userId,
           productIds: userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -219,10 +219,10 @@ const Documents = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch, onClose, reset, userId]
+    [dispatch, onClose, reset, userId],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -235,9 +235,7 @@ const Documents = () => {
           <div className="flex flex-wrap text-tiny">{rowData?.description}</div>
         );
       case "maxValidityYears":
-        return (
-          <div className="flex">{rowData?.maxValidityYears} yrs</div>
-        );
+        return <div className="flex">{rowData?.maxValidityYears} yrs</div>;
       case "createdDate":
         return (
           <div className="flex flex-wrap text-tiny">

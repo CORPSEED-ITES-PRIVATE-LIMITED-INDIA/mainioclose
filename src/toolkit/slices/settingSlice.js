@@ -15,15 +15,15 @@ export const createComments = createAsyncThunk(
   "createComments",
   async (data) => {
     const respose = await api.post(
-      `/leadService/api/v1/lead/createComment?comment=${data?.comment}`
+      `/leadService/api/v1/lead/createComment?comment=${data?.comment}`,
     );
     return respose.data;
-  }
+  },
 );
 
 export const deleteComments = createAsyncThunk("deletecomments", async (id) => {
   const response = await api.delete(
-    `/leadService/api/v1/lead/deleteComments?id=${id}`
+    `/leadService/api/v1/lead/deleteComments?id=${id}`,
   );
   return response.data;
 });
@@ -32,10 +32,10 @@ export const updateComments = createAsyncThunk(
   "updateComments",
   async (data) => {
     const response = await api.put(
-      `/leadService/api/v1/lead/updateComments?id=${data?.id}&comment=${data?.comment}`
+      `/leadService/api/v1/lead/updateComments?id=${data?.id}&comment=${data?.comment}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllStatusData = createAsyncThunk(
@@ -43,7 +43,7 @@ export const getAllStatusData = createAsyncThunk(
   async () => {
     const response = await api.get(`/leadService/api/v1/status/getAllStatus`);
     return response.data;
-  }
+  },
 );
 
 export const createLeadStatus = createAsyncThunk(
@@ -51,10 +51,10 @@ export const createLeadStatus = createAsyncThunk(
   async (createStatus) => {
     const response = await api.post(
       `/leadService/api/v1/status/CreateLeadStatus`,
-      createStatus
+      createStatus,
     );
     return response.data;
-  }
+  },
 );
 
 export const editLeadStatus = createAsyncThunk(
@@ -62,56 +62,56 @@ export const editLeadStatus = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/status/updateInLeadStatus`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const deleteLeadStatus = createAsyncThunk(
   "deleteLeadStatus",
   async (statusId) => {
     const response = await api.delete(
-      `/leadService/api/v1/status/deleteStaus?id=${statusId}`
+      `/leadService/api/v1/status/deleteStaus?id=${statusId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProductListByType = createAsyncThunk(
   "getAllProductListByType",
   async (data) => {
     const response = await api.get(
-      `/leadService/api/v1/product/getAllProductList?page=${data?.page}&size=${data?.size}&type=${data?.type}`
+      `/leadService/api/v1/product/getAllProductList?page=${data?.page}&size=${data?.size}&type=${data?.type}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const searchProducts = createAsyncThunk(
   "searchProducts",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/product/productSearch?name=${name}`
+      `/leadService/api/v1/product/productSearch?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProductListCount = createAsyncThunk(
   "getAllProductListCount",
   async (data) => {
     const response = await api.get(
-      `/leadService/api/v1/product/getAllProductListCount?type=${data?.type}`
+      `/leadService/api/v1/product/getAllProductListCount?type=${data?.type}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createProduct = createAsyncThunk("createProduct", async (data) => {
   const response = await api.post(
     `/leadService/api/v1/product/createProduct`,
-    data
+    data,
   );
   return response.data;
 });
@@ -122,13 +122,13 @@ export const createBusinessArrangement = createAsyncThunk(
     try {
       const response = await api.post(
         `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const updateBusinessArrangement = createAsyncThunk(
@@ -137,13 +137,13 @@ export const updateBusinessArrangement = createAsyncThunk(
     try {
       const response = await api.put(
         `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const deleteBusinessArrangement = createAsyncThunk(
@@ -151,18 +151,18 @@ export const deleteBusinessArrangement = createAsyncThunk(
   async ({ solutionId, tierId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.delete(
-        `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}?userId=${userId}`
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}?userId=${userId}`,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const deleteProduct = createAsyncThunk("deleteProduct", async (data) => {
   const response = await api.put(
-    `/leadService/api/v1/lead/deleteProductInLead?leadId=${data?.leadid}&serviceId=${data?.serviceId}&userId=${data?.userid}`
+    `/leadService/api/v1/lead/deleteProductInLead?leadId=${data?.leadid}&serviceId=${data?.serviceId}&userId=${data?.userid}`,
   );
   return response.data;
 });
@@ -171,10 +171,10 @@ export const getSingleProductByProductId = createAsyncThunk(
   "getSingleProductByProductId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/product/getProduct?id=${id}`
+      `/leadService/api/v1/product/getProduct?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllIpAddress = createAsyncThunk("allIpAddress", async () => {
@@ -184,7 +184,7 @@ export const getAllIpAddress = createAsyncThunk("allIpAddress", async () => {
 
 export const addIpAddress = createAsyncThunk("addIpAddress", async (data) => {
   const response = await api.post(
-    `/securityService/api/auth/addIpAddress?ipAddressName=${data?.ipaddress}`
+    `/securityService/api/auth/addIpAddress?ipAddressName=${data?.ipaddress}`,
   );
   return response.data;
 });
@@ -194,10 +194,10 @@ export const addAmountForProduct = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/product/addAmountInProduct`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const updatePriceInServiceTypeSolution = createAsyncThunk(
@@ -206,13 +206,13 @@ export const updatePriceInServiceTypeSolution = createAsyncThunk(
     try {
       const response = await api.put(
         `/leadService/api/v1/service-solutions/${solutionId}/fees/${feeId}?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const addPriceInServiceTypeSolution = createAsyncThunk(
@@ -221,13 +221,13 @@ export const addPriceInServiceTypeSolution = createAsyncThunk(
     try {
       const response = await api.post(
         `/leadService/api/v1/service-solutions/${solutionId}/fees?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const deletePriceServiceTypeSolution = createAsyncThunk(
@@ -235,13 +235,13 @@ export const deletePriceServiceTypeSolution = createAsyncThunk(
   async ({ solutionId, feeId }, { rejectWithValue }) => {
     try {
       const response = await api.delete(
-        `/leadService/api/v1/service-solutions/${solutionId}/fees/${feeId}`
+        `/leadService/api/v1/service-solutions/${solutionId}/fees/${feeId}`,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const addDocsInProduct = createAsyncThunk(
@@ -249,10 +249,10 @@ export const addDocsInProduct = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/product/addProductDocumentsInProduct`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const addSalesTatInProduct = createAsyncThunk(
@@ -260,62 +260,62 @@ export const addSalesTatInProduct = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/product/addSalesTat`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSalesTatInProduct = createAsyncThunk(
   "getAllSalesTatInProduct",
   async (productId) => {
     const response = await api.get(
-      `/leadService/api/v1/product/getAllSalesTat?productId=${productId}`
+      `/leadService/api/v1/product/getAllSalesTat?productId=${productId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const importProductAmountDoument = createAsyncThunk(
   "importProductAmountDoument",
   async (s3Url) => {
     const response = await api.post(
-      `/leadService/api/v1/import-product-amount-csv-from-s3?s3Url=${s3Url}`
+      `/leadService/api/v1/import-product-amount-csv-from-s3?s3Url=${s3Url}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const importProductCheckListDoument = createAsyncThunk(
   "importProductCheckListDoument",
   async (s3Url) => {
     const response = await api.post(
-      `/leadService/api/v1/import-product-checklist-doc-csv-from-s3?s3Url=${s3Url}`
+      `/leadService/api/v1/import-product-checklist-doc-csv-from-s3?s3Url=${s3Url}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getClientDesiginationList = createAsyncThunk(
   "getClientDesiginationList",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/clientDesignation/getAllClientDesignation`
+      `/leadService/api/v1/clientDesignation/getAllClientDesignation`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createSlug = createAsyncThunk("createSlug", async (data) => {
   const response = await api.post(
-    `/leadService/api/v1/slug/createSlug?name=${data?.name}`
+    `/leadService/api/v1/slug/createSlug?name=${data?.name}`,
   );
   return response.data;
 });
 
 export const editSulg = createAsyncThunk("editSlug", async (data) => {
   const response = await api.put(
-    `/leadService/api/v1/slug/updateSlug?name=${data?.name}&id=${data?.id}`
+    `/leadService/api/v1/slug/updateSlug?name=${data?.name}&id=${data?.id}`,
   );
   return response.data;
 });
@@ -324,30 +324,30 @@ export const getAllSlugs = createAsyncThunk(
   "getAllSlugs",
   async ({ size, page }) => {
     const response = await api.get(
-      `/leadService/api/v1/slug/getSlug?pageSize=${size}&pageNo=${page}`
+      `/leadService/api/v1/slug/getSlug?pageSize=${size}&pageNo=${page}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const searchSlugList = createAsyncThunk(
   "searchSlugList",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/slug/getGlobalSlug?name=${name}`
+      `/leadService/api/v1/slug/getGlobalSlug?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSlugCount = createAsyncThunk(
   "allTotalSlugCount",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/urls/getTotalSlugCount`
+      `/leadService/api/v1/urls/getTotalSlugCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createPlantSetup = createAsyncThunk(
@@ -355,20 +355,20 @@ export const createPlantSetup = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/slug/createPlantSetUp`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllUrlsList = createAsyncThunk(
   "getAllUrlsList",
   async ({ page, size }) => {
     const showLeadUrl = await api.get(
-      `/leadService/api/v1/urls/getUrls?pageSize=${size}&pageNo=${page}`
+      `/leadService/api/v1/urls/getUrls?pageSize=${size}&pageNo=${page}`,
     );
     return showLeadUrl?.data;
-  }
+  },
 );
 
 export const getAllUrlCount = createAsyncThunk("getTotalUrlCount", async () => {
@@ -380,16 +380,16 @@ export const searchLeadUrlList = createAsyncThunk(
   "searchLeadUrlList",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/urls/getGlobalSearchUrls?name=${name}`
+      `/leadService/api/v1/urls/getGlobalSearchUrls?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createUrl = createAsyncThunk("createUrl", async (data) => {
   const createLeadUrl = await api.post(
     `/leadService/api/v1/urls/createUrls`,
-    data
+    data,
   );
   return createLeadUrl?.data;
 });
@@ -404,40 +404,40 @@ export const convertUrlsToProduct = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/product/importProductByUrls`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllDepartment = createAsyncThunk(
   "getAllDepartment",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/designation/getAllDepartment`
+      `/leadService/api/v1/designation/getAllDepartment`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createDepartment = createAsyncThunk(
   "createDepartment",
   async (data) => {
     const response = await api.post(
-      `/leadService/api/v1/designation/createDepartment?name=${data?.name}`
+      `/leadService/api/v1/designation/createDepartment?name=${data?.name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllDesiginations = createAsyncThunk(
   "allDesiginations",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/designation/getAllDesignation`
+      `/leadService/api/v1/designation/getAllDesignation`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createDesiginationByDepartmentId = createAsyncThunk(
@@ -445,10 +445,10 @@ export const createDesiginationByDepartmentId = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/designation/createDepartmentInDesignation`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const addStatusInDepartment = createAsyncThunk(
@@ -456,30 +456,30 @@ export const addStatusInDepartment = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/status/addStatusInDepartment`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createDesigination = createAsyncThunk(
   "createDesination",
   async (data) => {
     const response = await api.post(
-      `/leadService/api/v1/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`
+      `/leadService/api/v1/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProposalAndEmailTemplates = createAsyncThunk(
   "getAllProposalAndEmailTemplates",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`
+      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createProposalTemplate = createAsyncThunk(
@@ -487,10 +487,10 @@ export const createProposalTemplate = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/leadEstimate/createProposalTempalte`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const editProposalAndEmailTemplate = createAsyncThunk(
@@ -498,10 +498,10 @@ export const editProposalAndEmailTemplate = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/leadEstimate/editProposalTempalte`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const addApplicantType = createAsyncThunk(
@@ -509,17 +509,17 @@ export const addApplicantType = createAsyncThunk(
   async (data) => {
     const response = await api.post(`/api/applicant-types`, data);
     return response.data;
-  }
+  },
 );
 
 export const getApplicantTypeList = createAsyncThunk(
   "getApplicantTypeList",
   async ({ page, size }) => {
     const response = await api.get(
-      `/api/applicant-types?page=${page}&size=${size}`
+      `/api/applicant-types?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSolutionsByType = createAsyncThunk(
@@ -527,13 +527,13 @@ export const getAllSolutionsByType = createAsyncThunk(
   async ({ page, size, userId, type }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/leadService/api/v1/getAllSolutionForSolutionPage?page=${page}&size=${size}&userId=${userId}&type=${type}`
+        `/leadService/api/v1/getAllSolutionForSolutionPage?page=${page}&size=${size}&userId=${userId}&type=${type}`,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const getAllSolutionCountByType = createAsyncThunk(
@@ -541,13 +541,13 @@ export const getAllSolutionCountByType = createAsyncThunk(
   async ({ userId, type }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/leadService/api/v1/getActiveSolutionCount?userId=${userId}&type=${type}`
+        `/leadService/api/v1/getActiveSolutionCount?userId=${userId}&type=${type}`,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const createSolution = createAsyncThunk(
@@ -559,33 +559,51 @@ export const createSolution = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
+);
+
+export const updateSolution = createAsyncThunk(
+  "updateSolution",
+  async ({ id, data, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/updateSolution?id=${id}&userId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
 );
 
 export const getSolutionPriceListById = createAsyncThunk(
   "getSolutionPriceListById",
   async ({ solutionId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/service-solutions/${solutionId}/fees?userId=${userId}`
+      `/leadService/api/v1/service-solutions/${solutionId}/fees?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSolutionDetailByName = createAsyncThunk(
   "getSolutionDetailByName",
   async ({ name, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/getSolutionByName?name=${name}&userId=${userId}`
+      `/leadService/api/v1/getSolutionByName?name=${name}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
-export const getAllPaymentType=createAsyncThunk("getAllPaymentType",async()=>{
-  const response=await api.get(`/api/payment-types`)
-  return response.data
-})
+export const getAllPaymentType = createAsyncThunk(
+  "getAllPaymentType",
+  async () => {
+    const response = await api.get(`/api/payment-types`);
+    return response.data;
+  },
+);
 
 export const SettingSlice = createSlice({
   name: "setting",
@@ -611,8 +629,8 @@ export const SettingSlice = createSlice({
     solutionsList: [],
     solutionsCount: 0,
     solutionPriceList: [],
-    solutionDetailById:{},
-    paymentTypeList:[]
+    solutionDetailById: {},
+    paymentTypeList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -836,7 +854,7 @@ export const SettingSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.templateAndMailList = action?.payload;
-      }
+      },
     );
     builder.addCase(getAllProposalAndEmailTemplates.rejected, (state) => {
       state.templateAndMailList = [];
