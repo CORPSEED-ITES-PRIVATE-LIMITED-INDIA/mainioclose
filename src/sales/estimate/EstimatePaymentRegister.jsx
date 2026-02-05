@@ -273,17 +273,6 @@ const EstimatePaymentRegister = ({
                   />
 
                   <Controller
-                    name="transactionReference"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="Transaction reference No."
-                      />
-                    )}
-                  />
-
-                  <Controller
                     name="remarks"
                     control={control}
                     render={({ field }) => (
