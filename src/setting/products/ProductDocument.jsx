@@ -31,9 +31,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
-  addDocumentProduct,
   getApplicantTypeList,
-  getSingleProductByProductId,
   importProductCheckListDoument,
 } from "../../toolkit/slices/settingSlice";
 import NewSelect from "../../components/NewSelect";
@@ -52,32 +50,38 @@ const iconClass = "w-5 h-5";
 
 const ProductDocument = () => {
   const dispatch = useDispatch();
-  const { userId, productId } = useParams();
+  const { userId, solutionId } = useParams();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const uploadModal = useDisclosure();
   const applicantTypeList = useSelector(
-    (state) => state.setting.applicantTypeList
+    (state) => state.setting.applicantTypeList,
   );
   const allDocumentList = useSelector((state) => state.product.allDocumentList);
   const data = useSelector(
-    (state) => state.product.allDocumentCheckListForProduct
+    (state) => state.product.allDocumentCheckListForProduct,
   );
   const formValues = {
-    productId: productId,
+    productId: solutionId,
     applicantTypeId: null,
     requiredDocumentIds: [],
     updatedBy: userId,
   };
   const [formData, setFormData] = useState(formValues);
   const [fileUrl, setFileUrl] = useState("");
+  const [applicantTypeId, setApplicatTypeId] = useState("-1");
 
   useEffect(() => {
-    dispatch(getAllDocumentCheckListByProductId(productId));
+    dispatch(
+      getAllDocumentCheckListByProductId({
+        productId: solutionId,
+        applicantTypeId,
+      }),
+    );
     dispatch(getAllCountries());
     dispatch(getAllStatesByCountryName("India"));
     dispatch(getApplicantTypeList({ page: 0, size: 1000 }));
-    dispatch(getAllDocumentsForProduct(userId));
-  }, [dispatch]);
+    dispatch(getAllDocumentsForProduct({ page: 1, size: 1000, userId }));
+  }, [dispatch, applicantTypeId]);
 
   const handleSubmit = useCallback(
     (values) => {
@@ -89,7 +93,7 @@ const ProductDocument = () => {
               color: "success",
             });
             onClose();
-            dispatch(getAllDocumentCheckListByProductId(productId));
+            dispatch(getAllDocumentCheckListByProductId(solutionId));
             setFormData(formValues);
           } else {
             addToast({
@@ -100,10 +104,10 @@ const ProductDocument = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [formData, productId, dispatch]
+    [formData, solutionId, dispatch],
   );
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -215,21 +219,32 @@ const ProductDocument = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   }, [dispatch, fileUrl]);
 
   return (
     <>
-      <div className="flex justify-between items-center w-full">
+      <div className="flex justify-between items-center w-full my-2.5">
         <div className="flex items-center gap-2 my-2">
           <FileText className={iconClass} />{" "}
           <h1 className="font-medium">Documents</h1>
         </div>
         <div className="flex items-center gap-2">
+          <div className="min-w-[200px]">
+            <NewSelect
+              label={"Applicant type"}
+              data={[{ id: "-1", name: "All" }, ...applicantTypeList]}
+              labelKey="name"
+              valueKey="id"
+              value={applicantTypeId}
+              onChange={(e) => setApplicatTypeId(e)}
+            />
+          </div>
           <Button variant="light" onPress={uploadModal.onOpen}>
             <Download className="h-4 w-4" /> Import
           </Button>
+
           <Button
             size="sm"
             isIconOnly
@@ -253,16 +268,20 @@ const ProductDocument = () => {
         <TableHeader
           columns={[
             {
-              key: "applicantTypeId",
+              key: "requiredDocumentId",
               label: "ID",
+            },
+            {
+              key: "documentName",
+              label: "DOCUMENT name",
             },
             {
               key: "applicantTypeName",
               label: "APPLICANT TYPE",
             },
             {
-              key: "documents",
-              label: "DOCUMENTS",
+              key: "actions",
+              label: "ACTIONS",
             },
           ]}
         >
@@ -272,7 +291,7 @@ const ProductDocument = () => {
         </TableHeader>
         <TableBody items={data || []}>
           {(item) => (
-            <TableRow key={item.applicantTypeId}>
+            <TableRow key={item.requiredDocumentId}>
               {(columnKey) =>
                 columnKey === "actions" ? (
                   <TableCell>
@@ -317,7 +336,7 @@ const ProductDocument = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleSubmit(data);
                   }}

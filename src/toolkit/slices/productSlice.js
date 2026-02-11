@@ -178,10 +178,10 @@ export const mapDocumentToProduct = createAsyncThunk(
 
 export const getAllDocumentCheckListByProductId = createAsyncThunk(
   "getAllDocumentCheckListByProductId",
-  async (productId, { rejectWithValue }) => {
+  async ({productId,applicantTypeId}, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/products/${productId}/documents/requirements`
+        `/api/products/${productId}/documents?applicantTypeId=${applicantTypeId}`
       );
       return response.data;
     } catch (error) {
@@ -282,7 +282,7 @@ const ProductSlice = createSlice({
       getAllDocumentCheckListByProductId.fulfilled,
       (state, action) => {
         state.loading = "success";
-        state.allDocumentCheckListForProduct = action?.payload?.documentGroups;
+        state.allDocumentCheckListForProduct = action?.payload;
       }
     );
     builder.addCase(

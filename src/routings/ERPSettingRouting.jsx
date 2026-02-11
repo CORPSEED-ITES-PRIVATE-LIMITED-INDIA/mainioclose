@@ -18,6 +18,7 @@ import ApplicantTypes from "../setting/applicantType/ApplicantTypes";
 import Solutions from "../setting/products/Solutions";
 import SolutionDetails from "../setting/products/SolutionDetails";
 import SolutionPrice from "../setting/products/SolutionPrice";
+import ProductDocument from "../setting/products/ProductDocument";
 
 const ERPSettingRouting = () => {
   return (
@@ -33,6 +34,7 @@ const ERPSettingRouting = () => {
         element={<SolutionDetails />}
       >
         <Route index path="solutionPrice" element={<SolutionPrice />} />
+        <Route  path="documents" element={<ProductDocument />} />
         <Route />
       </Route>
       <Route

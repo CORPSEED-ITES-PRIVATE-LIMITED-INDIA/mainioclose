@@ -20,7 +20,7 @@ const SolutionDetails = () => {
     setSelectedKey(key);
   };
 
-  const tabs = [{ id: "solutionPrice", label: "Price" }];
+  const tabs = [{ id: "solutionPrice", label: "Price" },{ id: "documents", label: "Documents" }];
 
   return (
     <div className="relative">

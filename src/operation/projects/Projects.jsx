@@ -323,7 +323,7 @@ const Projects = () => {
             title: "Project created successfully !.",
             color: "success",
           });
-          dispatch(getAllOperationsProject(paginationData));
+           dispatch(getAllProjectsForOperations(paginationData));
           formModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });

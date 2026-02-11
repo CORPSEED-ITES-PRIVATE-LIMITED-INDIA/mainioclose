@@ -207,7 +207,7 @@ const Documents = () => {
               title: "Milestone created successfully !.",
               color: "success",
             });
-            dispatch(getAllDocumentsForProduct(userId));
+            dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
             onClose();
             reset(defaultValues);
           } else {
