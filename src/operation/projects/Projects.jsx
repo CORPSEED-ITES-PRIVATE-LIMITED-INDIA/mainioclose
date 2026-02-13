@@ -29,6 +29,7 @@ import {
   SelectItem,
   Textarea,
   addToast,
+  Chip,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Plus, Search } from "lucide-react";
@@ -145,7 +146,7 @@ const Projects = () => {
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [searchBy, setSearchBy] = useState("projectName");
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -170,7 +171,7 @@ const Projects = () => {
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -218,9 +219,27 @@ const Projects = () => {
     switch (columnKey) {
       case "name":
         return (
-          <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
-            {rowData?.name}
-          </Link>
+          <div className="flex flex-col gap-0.5">
+            <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
+              {rowData?.name}
+            </Link>
+            <Chip
+              size="sm"
+              color={
+                rowData?.statusName === "COMPLETED"
+                  ? "success"
+                  : rowData?.statusName === "REJECTED"
+                    ? "danger"
+                    : rowData?.statusName === "ON_HOLD"
+                      ? "warning"
+                      : rowData?.statusName === "NEW"
+                        ? "primary"
+                        : ""
+              }
+            >
+              {rowData?.statusName}
+            </Chip>
+          </div>
         );
       case "projectNo":
         return <p className="text-sm">{rowData?.projectNo}</p>;
@@ -323,14 +342,14 @@ const Projects = () => {
             title: "Project created successfully !.",
             color: "success",
           });
-           dispatch(getAllProjectsForOperations(paginationData));
+          dispatch(getAllProjectsForOperations(paginationData));
           formModal.onClose();
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 

@@ -93,7 +93,12 @@ const ProductDocument = () => {
               color: "success",
             });
             onClose();
-            dispatch(getAllDocumentCheckListByProductId(solutionId));
+            dispatch(
+              getAllDocumentCheckListByProductId({
+                applicantTypeId,
+                productId: solutionId,
+              }),
+            );
             setFormData(formValues);
           } else {
             addToast({

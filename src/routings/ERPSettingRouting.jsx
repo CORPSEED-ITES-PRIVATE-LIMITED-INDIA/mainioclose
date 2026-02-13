@@ -19,6 +19,7 @@ import Solutions from "../setting/products/Solutions";
 import SolutionDetails from "../setting/products/SolutionDetails";
 import SolutionPrice from "../setting/products/SolutionPrice";
 import ProductDocument from "../setting/products/ProductDocument";
+import ProductMilestones from "../setting/products/ProductMilestones";
 
 const ERPSettingRouting = () => {
   return (
@@ -35,6 +36,7 @@ const ERPSettingRouting = () => {
       >
         <Route index path="solutionPrice" element={<SolutionPrice />} />
         <Route  path="documents" element={<ProductDocument />} />
+        <Route  path="milestones" element={<ProductMilestones />} />
         <Route />
       </Route>
       <Route

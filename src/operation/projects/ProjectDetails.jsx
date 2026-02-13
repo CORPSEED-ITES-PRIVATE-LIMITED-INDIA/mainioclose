@@ -41,8 +41,9 @@ import {
   updateApplicantTypeInProject,
   updateAssigneeForMileStone,
   updateAssignmentStatusForMileStone,
+  uploadDocumentInProjects,
 } from "../../toolkit/slices/operationSlice";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   BookText,
   Building,
@@ -68,6 +69,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { getApplicantTypeList } from "../../toolkit/slices/settingSlice";
+import FileUploader from "../../components/FileUploader";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -110,11 +112,7 @@ export const PdfIcon = (props) => {
 };
 
 const documentSchema = z.object({
-  projectId: z.coerce.number().min(1, "Project is required"),
-  requiredDocumentId: z.coerce.number().min(1, "Required Document is required"),
   fileName: z.string().min(1, "File name is required"),
-  uploadedById: z.coerce.number().min(1, "Uploader is required"),
-  createdById: z.coerce.number().min(1, "Creator is required"),
   companyDocSourceId: z.coerce.number().min(1, "Source is required"),
   isFromCompanyDoc: z.boolean(),
   expiryDate: z.string().optional(),
@@ -133,25 +131,25 @@ const ProjectDetails = () => {
   const clientModal = useDisclosure();
   const docModal = useDisclosure();
   const detailedData = useSelector(
-    (state) => state.operation.operationProjectDetail
+    (state) => state.operation.operationProjectDetail,
   );
   const clientLoginPortalCredentials = useSelector(
-    (state) => state.operation.clientLoginCredential
+    (state) => state.operation.clientLoginCredential,
   );
   const requiredDocsList = useSelector(
-    (state) => state.operation.requiredDoucmentListOfProduct
+    (state) => state.operation.requiredDoucmentListOfProduct,
   );
   const userListBydepartment = useSelector(
-    (state) => state.common.userListByDepartment
+    (state) => state.common.userListByDepartment,
   );
   const milestoneStatusList = useSelector(
-    (state) => state.common.milestoneStatusList
+    (state) => state.common.milestoneStatusList,
   );
   const mileStoneHistoryDetail = useSelector(
-    (state) => state.operation.mileStoneEventHistory
+    (state) => state.operation.mileStoneEventHistory,
   );
   const applicantTypeList = useSelector(
-    (state) => state.setting.applicantTypeList
+    (state) => state.setting.applicantTypeList,
   );
 
   const [assigneeObj, setAssigneeObj] = useState({
@@ -176,6 +174,7 @@ const ProjectDetails = () => {
     password: "",
     remarks: "",
   });
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
@@ -266,7 +265,7 @@ const ProjectDetails = () => {
           });
           setIsCredentials(false);
           dispatch(
-            getClientLogInCredentialDetailForPortal({ projectId, userId })
+            getClientLogInCredentialDetailForPortal({ projectId, userId }),
           );
         } else {
           addToast({
@@ -277,7 +276,7 @@ const ProjectDetails = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -288,14 +287,14 @@ const ProjectDetails = () => {
           milestoneId: detailedData?.milestones?.[0]?.milestoneId,
           projectId: detailedData?.milestones?.[0]?.projectId,
           userId,
-        })
+        }),
       );
     }
   }, [detailedData]);
 
   const handleChangeAccordian = (milestoneId, projectId, userId) => {
     dispatch(
-      getHistoryByMileStoneIdAndProjectId({ milestoneId, projectId, userId })
+      getHistoryByMileStoneIdAndProjectId({ milestoneId, projectId, userId }),
     );
   };
 
@@ -325,16 +324,71 @@ const ProjectDetails = () => {
     control,
     handleSubmit,
     formState: { errors },
+    setValue,
+    reset,
   } = useForm({
     resolver: zodResolver(documentSchema),
     defaultValues: {
+      fileName: "",
+      fileSizeKb: "",
+      companyDocSourceId: "",
+      fileFormat: "",
+      expiryDate: "",
+      remarks: "",
       isFromCompanyDoc: false,
       isPermanent: false,
     },
   });
 
+  const openUploadForDoc = (doc) => {
+    setSelectedDoc(doc);
+
+    // reset form each time you open for a new card
+    reset({
+      fileName: doc?.fileName || "",
+      fileSizeKb: doc?.fileSizeKb || "",
+      companyDocSourceId: doc?.companyDocSourceId || "",
+      fileFormat: doc?.fileFormat || "",
+      expiryDate: doc?.expiryDate || "",
+      remarks: doc?.remarks || "",
+      isFromCompanyDoc: !!doc?.isFromCompanyDoc,
+      isPermanent: !!doc?.permanent || !!doc?.isPermanent,
+    });
+
+    docModal.onOpen();
+  };
+
   const onDocumentSubmit = (data) => {
-    console.log("Form Data:", data);
+    data.projectId = projectId;
+    data.requiredDocumentId = selectedDoc.documentId;
+    data.uploadedById = Number(userId);
+    data.createdById = Number(userId);
+    dispatch(uploadDocumentInProjects({ projectId, data }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Doucment uploaded successfully !.",
+            color: "success",
+          });
+          reset();
+          docModal.onClose();
+          dispatch(
+            getRequiredDocumentsByProductId({
+              userId,
+              projectId,
+            }),
+          );
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
   };
 
   return (
@@ -377,7 +431,7 @@ const ProjectDetails = () => {
                 <p className="text-sm">
                   Last updated :{" "}
                   {dayjs(detailedData?.projectDetails?.updatedDate).format(
-                    "DD-MM-YYYY"
+                    "DD-MM-YYYY",
                   )}
                 </p>
               </div>
@@ -400,7 +454,7 @@ const ProjectDetails = () => {
                   getRequiredDocumentsByProductId({
                     userId,
                     projectId,
-                  })
+                  }),
                 );
               }}
             >
@@ -428,7 +482,7 @@ const ProjectDetails = () => {
                     handleChangeAccordian(
                       detail?.milestoneId,
                       detail?.projectId,
-                      userId
+                      userId,
                     );
                   }}
                   key={idx}
@@ -463,7 +517,9 @@ const ProjectDetails = () => {
                             onPress={() => {
                               assigneeModal.onOpen();
                               dispatch(
-                                getUsersListByDepartmentId(detail?.departmentId)
+                                getUsersListByDepartmentId(
+                                  detail?.departmentId,
+                                ),
                               );
                               setAssigneeObj((prev) => ({
                                 ...prev,
@@ -564,7 +620,7 @@ const ProjectDetails = () => {
                                 </div>
                               </div>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     </div>
@@ -593,6 +649,23 @@ const ProjectDetails = () => {
 
                 {requiredDocsList?.map((doc, idx) => {
                   const hasFile = !!doc?.fileUrl;
+
+                  const openPreview = () => {
+                    const raw = String(doc?.fileUrl || "").trim();
+                    const fixed =
+                      raw.includes("amazonaws.com") &&
+                      !raw.includes("amazonaws.com/")
+                        ? raw.replace("amazonaws.com", "amazonaws.com/")
+                        : raw;
+
+                    const href =
+                      fixed.startsWith("http://") ||
+                      fixed.startsWith("https://")
+                        ? fixed
+                        : `https://${fixed}`;
+
+                    window.open(href, "_blank", "noopener,noreferrer");
+                  };
 
                   return (
                     <Card
@@ -666,22 +739,18 @@ const ProjectDetails = () => {
                           </div>
 
                           {hasFile ? (
-                            <Button
-                              size="sm"
-                              color="primary"
-                              variant="flat"
-                              style={{ cursor: "pointer" }}
-                              onClick={() =>
-                                window.open(doc?.fileUrl, "_blank")
-                              }
+                            <button
+                              type="button"
+                              onClick={openPreview}
+                              className="py-1.5 px-2 bg-gray-300 rounded-md text-sm cursor-pointer"
                             >
                               Preview
-                            </Button>
+                            </button>
                           ) : (
                             <Button
                               size="sm"
                               color="secondary"
-                              onPress={() => docModal.onOpen()}
+                              onPress={() => openUploadForDoc(doc)}
                             >
                               Upload
                             </Button>
@@ -812,14 +881,23 @@ const ProjectDetails = () => {
       <Modal
         size="4xl"
         isOpen={docModal.isOpen}
-        onOpenChange={docModal.onOpenChange}
+        onOpenChange={(open) => {
+          docModal.onOpenChange(open);
+          if (!open) setSelectedDoc(null);
+        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
                 Upload document
+                {selectedDoc?.documentName ? (
+                  <span className="text-xs text-default-400">
+                    For: {selectedDoc.documentName}
+                  </span>
+                ) : null}
               </ModalHeader>
+
               <ModalBody className="max-h-[90vh] overflow-auto">
                 <form onSubmit={handleSubmit(onDocumentSubmit)}>
                   <div className="max-h-[60vh] overflow-auto grid grid-cols-2 gap-2.5">
@@ -827,11 +905,10 @@ const ProjectDetails = () => {
                       name="fileName"
                       control={control}
                       render={({ field }) => (
-                        <Input
-                          {...field}
-                          label="File Name"
-                          isInvalid={!!errors.fileName}
-                          errorMessage={errors.fileName?.message}
+                        <FileUploader
+                          label={"Upload file"}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e)}
                         />
                       )}
                     />
@@ -1128,7 +1205,7 @@ const ProjectDetails = () => {
                               </div>
                             </CardBody>
                           </Card>
-                        )
+                        ),
                       )}
                     </div>
                   </div>

@@ -62,7 +62,6 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "id",
   "milestoneName",
   "order",
   "tatInDays",
@@ -103,7 +102,7 @@ const defaultValues = {
 };
 
 const ProductMilestones = ({ details }) => {
-  const { userId, productId } = useParams();
+  const { userId, solutionId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const deleteModal = useDisclosure();
@@ -124,7 +123,7 @@ const ProductMilestones = ({ details }) => {
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getProductMileStonesListByProductId({ userId, productId }));
+    dispatch(getProductMileStonesListByProductId({ userId, productId:solutionId }));
     dispatch(getAllMilestones());
   }, [dispatch]);
 
@@ -199,7 +198,7 @@ const ProductMilestones = ({ details }) => {
             title: "Milestone deleted successfully !.",
             color: "success",
           });
-          dispatch(getProductMileStonesListByProductId({ userId, productId }));
+          dispatch(getProductMileStonesListByProductId({ userId, productId:solutionId }));
           setRowItem(null);
           deleteModal.onClose();
         } else {
@@ -276,7 +275,7 @@ const ProductMilestones = ({ details }) => {
     (values) => {
       const obj = {
         ...values,
-        productId,
+        productId:solutionId,
       };
       if (rowItem) {
         dispatch(updateMilestoneInProduct({ id: rowItem?.id, data: obj }))
@@ -287,7 +286,7 @@ const ProductMilestones = ({ details }) => {
                 color: "success",
               });
               dispatch(
-                getProductMileStonesListByProductId({ userId, productId })
+                getProductMileStonesListByProductId({ userId, productId:solutionId })
               );
               onClose();
               setRowItem(null);
@@ -308,7 +307,7 @@ const ProductMilestones = ({ details }) => {
                 color: "success",
               });
               dispatch(
-                getProductMileStonesListByProductId({ userId, productId })
+                getProductMileStonesListByProductId({ userId, productId:solutionId })
               );
               onClose();
               reset(defaultValues);
@@ -321,7 +320,7 @@ const ProductMilestones = ({ details }) => {
           );
       }
     },
-    [dispatch, onClose, reset, userId, productId, rowItem]
+    [dispatch, onClose, reset, userId, solutionId, rowItem]
   );
 
   const topContent = React.useMemo(() => {
