@@ -35,12 +35,12 @@ const LeadDetail = () => {
         ]
       : [
           { id: "leadDetail", label: "Details" },
-          { id: "childLead", label: "Child lead" },
-          { id: "companyForm", label: "Company" },
+          // { id: "childLead", label: "Child lead" },
+          // { id: "companyForm", label: "Company" },
           { id: "leadCompanyForm", label: "Lead company" },
           { id: "vendors", label: "Vendors" },
           { id: "proposal", label: "Proposal" },
-          { id: "leadEstimate", label: "Estimate" },
+          // { id: "leadEstimate", label: "Estimate" },
           { id: "leadEstimates", label: "Estimates" },
           { id: "leadTasks", label: "Tasks" },
           { id: "leadHistory", label: "Lead history" },
