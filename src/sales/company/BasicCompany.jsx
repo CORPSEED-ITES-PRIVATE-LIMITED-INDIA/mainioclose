@@ -46,7 +46,7 @@ export const unitSchema = z.object({
   panNo: z.string().optional(),
 });
 
-const BasicCompany = () => {
+const BasicCompany = ({ isEstimate }) => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
@@ -179,51 +179,62 @@ const BasicCompany = () => {
 
   return (
     <>
-      <Card className="my-2">
-        <CardHeader>
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
-              <Building className={iconClass} />{" "}
-              <p className="text-sm font-medium">Company detail</p>
+      {isEstimate ? (
+        !company?.name && (
+          <span
+            className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
+            onClick={onOpen}
+          >
+            + Add
+          </span>
+        )
+      ) : (
+        <Card className="my-2">
+          <CardHeader>
+            <div className="flex justify-between items-center w-full">
+              <div className="flex items-center gap-2">
+                <Building className={iconClass} />{" "}
+                <p className="text-sm font-medium">Company detail</p>
+              </div>
+              {!company?.name && (
+                <Button
+                  size="sm"
+                  isIconOnly
+                  variant="light"
+                  className="w-6 h-6 rounded-full bg-none"
+                  onPress={onOpen}
+                >
+                  <Plus className={iconClass} />
+                </Button>
+              )}
             </div>
-            {!company?.name && (
-              <Button
-                size="sm"
-                isIconOnly
-                variant="light"
-                className="w-6 h-6 rounded-full bg-none"
-                onPress={onOpen}
-              >
-                <Plus className={iconClass} />
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardBody className="max-h-[300px] overflow-auto">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div className="col-span-2">
-              <p className="font-medium text-gray-900">
-                {company?.name || "NA"}
+          </CardHeader>
+          <CardBody className="max-h-[300px] overflow-auto">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div className="col-span-2">
+                <p className="font-medium text-gray-900">
+                  {company?.name || "NA"}
+                </p>
+              </div>
+
+              <p className="text-gray-500">
+                <span className="text-gray-700 font-medium">GST:</span>{" "}
+                {company?.gstNo || "NA"}
+              </p>
+
+              <p className="text-gray-500">
+                <span className="text-gray-700 font-medium">PAN:</span>{" "}
+                {company?.panNo || "NA"}
+              </p>
+
+              <p className="text-gray-500 col-span-2">
+                <span className="text-gray-700 font-medium">Location:</span>{" "}
+                {company?.city || "NA"}, {company?.state || "NA"}
               </p>
             </div>
-
-            <p className="text-gray-500">
-              <span className="text-gray-700 font-medium">GST:</span>{" "}
-              {company?.gstNo || "NA"}
-            </p>
-
-            <p className="text-gray-500">
-              <span className="text-gray-700 font-medium">PAN:</span>{" "}
-              {company?.panNo || "NA"}
-            </p>
-
-            <p className="text-gray-500 col-span-2">
-              <span className="text-gray-700 font-medium">Location:</span>{" "}
-              {company?.city || "NA"}, {company?.state || "NA"}
-            </p>
-          </div>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      )}
 
       <Modal
         size="3xl"

@@ -601,6 +601,68 @@ const TaxInvoice = ({ invoiceData, heading }) => {
               </div>
               <div className="text-gray-500">(Authorised Signatory)</div>
             </div>
+            <div
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                paddingTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                fontSize: 13,
+                color: "#374151",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: 16,
+                    fontWeight: 500,
+                    color: "#111827",
+                  }}
+                >
+                  Terms & Conditions
+                </h4>
+
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: 18,
+                    lineHeight: 1.45,
+                    listStyle: "outside",
+                  }}
+                >
+                  <li>
+                    This invoice constitutes a final and binding demand for
+                    payment and shall be payable strictly within the due date
+                    mentioned, without any deduction, withholding, or set-off
+                    whatsoever.
+                  </li>
+                  <li>
+                    Any delay or default in payment shall automatically attract
+                    interest at the rate of 24% per annum, compounded monthly,
+                    from the due date until full and final realization, without
+                    further notice.
+                  </li>
+                  <li>
+                    All statutory taxes, government fees, levies, and charges
+                    applicable at the time of invoicing shall be borne entirely
+                    by the client.
+                  </li>
+                  <li>
+                    Services rendered or initiated pursuant to this invoice are
+                    non-cancellable and non-refundable, except in case of
+                    material default solely attributable to the issuing company.
+                  </li>
+                  <li>
+                    The issuing company reserves the right to suspend services,
+                    withhold deliverables, and/or terminate engagement in the
+                    event of non-payment, without prejudice to its right to
+                    recover dues.
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>

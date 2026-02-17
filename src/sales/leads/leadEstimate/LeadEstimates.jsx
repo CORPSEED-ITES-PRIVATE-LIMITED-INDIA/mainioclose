@@ -60,6 +60,7 @@ import {
 } from "../../../toolkit/slices/commonSlice";
 import NewSelect from "../../../components/NewSelect";
 import { formatGSTInput, formatPANInput } from "../../../common";
+import BasicCompany from "../../company/BasicCompany";
 
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
@@ -416,7 +417,7 @@ export const LeadEstimates = () => {
                         {est?.performaInvoice ? "Proforma" : "Estimate"}
                       </span>
                     </div>
-{/* 
+                    {/* 
                     <p className="text-sm text-slate-600">
                       Order: {est?.orderNumber || "NA"}
                     </p> */}
@@ -462,6 +463,7 @@ export const LeadEstimates = () => {
                   readOnly
                   control={control}
                   error={errors.companyName}
+                  endContent={<BasicCompany isEstimate={true} />}
                 />
 
                 <FormSelect

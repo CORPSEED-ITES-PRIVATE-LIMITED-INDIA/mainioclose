@@ -162,9 +162,7 @@ const NewEstimatePreview = ({ details, due }) => {
                 <tbody>
                   {details?.solutionName && (
                     <tr className="bg-gray-50">
-                      <td className="border p-1 text-center font-medium">
-                        
-                      </td>
+                      <td className="border p-1 text-center font-medium"></td>
                       <td colSpan={8} className="border p-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold text-gray-800">
@@ -331,31 +329,26 @@ const NewEstimatePreview = ({ details, due }) => {
                     }}
                   >
                     <li>
-                      All prices are inclusive/exclusive of taxes as applicable.
+                      This estimate is valid for the period mentioned and
+                      subject to revision upon change in scope or statutory
+                      requirements.
                     </li>
                     <li>
-                      Validity of this estimate is 30 days from the date of
-                      issue.
+                      Payments shall be made as per agreed timelines; delays may
+                      attract applicable charges.
                     </li>
                     <li>
-                      Work will commence only after receiving the agreed advance
-                      payment.
+                      Taxes, government fees, and statutory charges shall be
+                      payable as applicable at the time of invoicing.
                     </li>
                     <li>
-                      Delivery timelines may vary depending on government
-                      processing time.
-                    </li>
-                    <li>
-                      No refund will be applicable once the work has been
-                      initiated.
-                    </li>
-                    <li>
-                      Any additional requirements will be charged separately.
+                      Services once initiated are non-refundable, except in case
+                      of material default attributable to the service provider.
                     </li>
                   </ul>
                 </div>
 
-                <div
+                {/* <div
                   style={{ display: "flex", flexDirection: "column", gap: 6 }}
                 >
                   <h4
@@ -387,7 +380,7 @@ const NewEstimatePreview = ({ details, due }) => {
                       physical signature.
                     </li>
                   </ul>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
