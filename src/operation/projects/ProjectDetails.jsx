@@ -359,8 +359,8 @@ const ProjectDetails = () => {
   };
 
   const onDocumentSubmit = (data) => {
-    data.projectId = projectId;
-    data.requiredDocumentId = selectedDoc.documentId;
+    data.projectId = Number(projectId);
+    data.requiredDocumentId = Number(selectedDoc.documentId);
     data.uploadedById = Number(userId);
     data.createdById = Number(userId);
     dispatch(uploadDocumentInProjects({ projectId, data }))
@@ -738,7 +738,7 @@ const ProjectDetails = () => {
                                 : "No expiry date"}
                           </div>
 
-                          {hasFile ? (
+                          {hasFile && (
                             <button
                               type="button"
                               onClick={openPreview}
@@ -746,7 +746,8 @@ const ProjectDetails = () => {
                             >
                               Preview
                             </button>
-                          ) : (
+                          )}
+                          {doc?.status === "UPLOADED" && (
                             <Button
                               size="sm"
                               color="secondary"

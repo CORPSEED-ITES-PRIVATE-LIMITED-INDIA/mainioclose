@@ -248,13 +248,13 @@ const Solutions = () => {
                 <DropdownItem key="edit" onPress={() => handleOpen(rowData)}>
                   Edit
                 </DropdownItem>
-                <DropdownItem
+                {/* <DropdownItem
                   key="delete"
                   color="danger"
                   onPress={() => handleOpen(rowData)}
                 >
                   Delete
-                </DropdownItem>
+                </DropdownItem> */}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -518,7 +518,7 @@ const Solutions = () => {
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
-                      label="Product name"
+                      label="Solution name"
                       name="name"
                       type="SERVICE"
                       value={formData?.name}
