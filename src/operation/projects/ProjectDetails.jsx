@@ -747,7 +747,7 @@ const ProjectDetails = () => {
                               Preview
                             </button>
                           )}
-                          {!doc?.status === "UPLOADED" && (
+                          {doc?.status !== "UPLOADED" && (
                             <Button
                               size="sm"
                               color="secondary"
