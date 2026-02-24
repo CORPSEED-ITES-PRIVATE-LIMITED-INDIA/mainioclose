@@ -2,6 +2,7 @@ import {
   addToast,
   Button,
   Chip,
+  DateRangePicker,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -13,6 +14,11 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -31,26 +37,38 @@ import {
   getTotalCountOfEstimate,
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
-import { inrCurrency } from "../../common";
+import { inrCurrency, statusColorCode } from "../../common";
 import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
 import InvoiceView from "../../components/InvoiceView";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
+import { parseDate, parseZonedDateTime } from "@internationalized/date";
 
 const columns = [
   { name: "ID", uid: "id", sortable: true },
+  { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "COMPANY", uid: "companyName" },
   { name: "UNIT NAME", uid: "unitName" },
+  { name: "STATUS", uid: "status" },
   { name: "CREATED DATE", uid: "createDate" },
   { name: "GST NUMBER", uid: "gstNo" },
   { name: "PRIMARY CONTACT", uid: "primaryContact" },
   { name: "SECONDARY CONTACT", uid: "secondaryContact" },
-  { name: "Amount", uid: "amount" },
+  { name: "AMOUNT", uid: "amount" },
   { name: "INVOICE NOTE", uid: "invoiceNote" },
   { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },
+];
+
+const ESTIMATE_STATUS = [
+  "DRAFT",
+  "SENT_TO_CLIENT",
+  "VIEWED",
+  "APPROVED",
+  "REJECTED",
+  "EXPIRED",
 ];
 
 function capitalize(s) {
@@ -58,9 +76,11 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "id",
+  "estimateNumber",
   "solutionName",
+  "companyName",
   "unitName",
+  "status",
   "createDate",
   "gstNo",
   "amount",
@@ -99,6 +119,12 @@ const Estimate = () => {
     page: 1,
     size: 50,
   });
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "",
+    fromDate: "",
+    toDate: "",
+  });
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -106,12 +132,29 @@ const Estimate = () => {
     dispatch(
       getAllEstimateByUserId({
         userId,
-        page: filteration?.page,
-        size: filteration?.size,
+        page: filteration.page,
+        size: filteration.size,
+        data: {
+          search: filters.search || "",
+          status: filters.status || "",
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+        },
       }),
     );
-    dispatch(getTotalCountOfEstimate(userId));
-  }, [dispatch, userId, filteration]);
+
+    dispatch(
+      getTotalCountOfEstimate({
+        userId,
+        data: {
+          search: filters.search || "",
+          status: filters.status || "",
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+        },
+      }),
+    );
+  }, [dispatch, userId, filteration, filters]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -178,16 +221,28 @@ const Estimate = () => {
       case "companyName":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.companyName}</span>
-            <span className="text-sm text-gray-400">
+            <span className="font-normal">{rowData?.company?.name}</span>
+            {/* <span className="text-sm text-gray-400">
               Age:{rowData?.companyAge || "---"} yrs
-            </span>
+            </span> */}
           </div>
         );
       case "unitName":
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.unit?.unitName}</span>
+            <Chip
+              size="sm"
+              color={statusColorCode[rowData?.unit?.onboardingStatus]}
+            >
+              {rowData?.unit?.onboardingStatus}
+            </Chip>
+          </div>
+        );
+      case "status":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">{rowData?.status}</span>
           </div>
         );
       case "createDate":
@@ -195,6 +250,9 @@ const Estimate = () => {
           <div className="flex flex-col">
             <span className="font-normal">
               {dayjs(rowData?.estimateDate).format("DD-MM-YYYY")}
+            </span>
+            <span className="font-normal text-sm text-gray-400">
+              Valid till : {dayjs(rowData?.validUntil).format("DD-MM-YYYY")}
             </span>
           </div>
         );
@@ -417,15 +475,114 @@ const Estimate = () => {
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <Input
-            isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
+            placeholder="Search..."
+            startContent={<Search size={16} />}
+            value={filters.search}
+            onClear={onClear}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, search: e.target.value }))
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setFilteration((prev) => ({ ...prev, page: 1 }));
+              }
+            }}
           />
           <div className="flex gap-3">
+            <Popover placement="bottom-end">
+              <PopoverTrigger>
+                <Button variant="flat" endContent={<ChevronDown />}>
+                  Filters
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-4">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <DateRangePicker
+                    showMonthAndYearPickers
+                    hideTimeZone
+                    label="Date range"
+                    // value={{
+                    //   start: filters?.fromDate
+                    //     ? parseZonedDateTime(
+                    //         `${filters?.fromDate}[Asia/kolkata]`,
+                    //       )
+                    //     : null,
+                    //   end: filters?.toDate
+                    //     ? parseZonedDateTime(`${filters?.toDate}[Asia/kolkata]`)
+                    //     : null,
+                    // }}
+
+                    value={{
+                      start: filters?.fromDate
+                        ? parseDate(filters.fromDate)
+                        : null,
+                      end: filters?.toDate ? parseDate(filters.toDate) : null,
+                    }}
+                    onChange={(value) => {
+                      const formattedStart = value?.start
+                        ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                        : null;
+
+                      const formattedEnd = value?.end
+                        ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                        : null;
+
+                      setFilters((prev) => ({
+                        ...prev,
+                        fromDate: formattedStart,
+                        toDate: formattedEnd,
+                      }));
+                    }}
+                  />
+
+                  <Select
+                    isRequired
+                    errorMessage="please select rating for users"
+                    label="Status"
+                    items={ESTIMATE_STATUS?.map((stat) => ({
+                      key: stat,
+                      label: stat,
+                    }))}
+                    selectedKeys={
+                      filters.status ? new Set([filters.status]) : new Set([])
+                    }
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0] || "";
+                      setFilters((prev) => ({ ...prev, status: selected }));
+                    }}
+                  >
+                    {(item) => (
+                      <SelectItem key={item?.key}>{item?.label}</SelectItem>
+                    )}
+                  </Select>
+                </div>
+                <div className="w-full flex justify-end gap-2 mt-4">
+                  <Button
+                    variant="flat"
+                    onPress={() =>
+                      setFilters({
+                        search: "",
+                        status: "",
+                        fromDate: "",
+                        toDate: "",
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+
+                  {/* <Button
+                    color="primary"
+                    onPress={() =>
+                      setFilteration((prev) => ({ ...prev, page: 1 }))
+                    }
+                  >
+                    Apply
+                  </Button> */}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -469,7 +626,14 @@ const Estimate = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
+  }, [
+    filterValue,
+    visibleColumns,
+    onRowsPerPageChange,
+    count,
+    onSearchChange,
+    filters,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (

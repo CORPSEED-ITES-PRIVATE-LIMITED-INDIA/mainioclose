@@ -17,6 +17,8 @@ import {
   ModalFooter,
   Input,
   useDisclosure,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -40,6 +42,7 @@ import NewEstimatePreview from "./NewEstimatePreview";
 
 import { getAllBusinessArrangementBySolutionId } from "../../../toolkit/slices/productSlice";
 import {
+  getClientDesiginationList,
   getSolutionDetailByName,
   getSolutionPriceListById,
 } from "../../../toolkit/slices/settingSlice";
@@ -54,13 +57,16 @@ import {
   getBasicCompanyDetails,
 } from "../../../toolkit/slices/companySlice";
 import {
+  createContactViaEstimateInCompany,
   getAllCitiesByStateName,
   getAllCountries,
   getAllStatesByCountryName,
+  getContactDetailListByCompanyId,
 } from "../../../toolkit/slices/commonSlice";
 import NewSelect from "../../../components/NewSelect";
 import { formatGSTInput, formatPANInput } from "../../../common";
 import BasicCompany from "../../company/BasicCompany";
+import { Plus } from "lucide-react";
 
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
@@ -74,6 +80,16 @@ const unitModalSchema = z.object({
   state: z.string().optional().or(z.literal("")),
   pinCode: z.string().optional().or(z.literal("")),
   country: z.string().optional().or(z.literal("")),
+});
+
+const contactModalSchema = z.object({
+  title: z.string().optional().or(z.literal("")),
+  name: z.string().min(1, "Name is required"),
+  emails: z.string().optional().or(z.literal("")),
+  contactNo: z.string().optional().or(z.literal("")),
+  whatsappNo: z.string().optional().or(z.literal("")),
+  clientDesignationId: z.string().optional().or(z.literal("")),
+  companyUnitId: z.string().optional().or(z.literal("")),
 });
 
 export const LeadEstimates = () => {
@@ -94,8 +110,14 @@ export const LeadEstimates = () => {
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
-  // ✅ Mode: list or form
+  const allContactList = useSelector(
+    (state) => state.common.contactListByCompanyId,
+  );
+  const desiginationList = useSelector(
+    (state) => state.setting.clientDesiginationList,
+  );
   const [showForm, setShowForm] = useState(false);
+  const [companyDetail, setCompanyDetail] = useState(null);
 
   // ✅ Preview overlay state
   const [openPreview, setOpenPreview] = useState(false);
@@ -103,6 +125,7 @@ export const LeadEstimates = () => {
 
   // ✅ Unit modal state + saved payload
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
+  const contactModal = useDisclosure();
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -175,6 +198,22 @@ export const LeadEstimates = () => {
       country: "",
     },
   });
+
+  const {
+    control: contactControl,
+    handleSubmit: handleContactSubmit,
+    formState: { errors: contactErrors },
+    getValues: getContactValue,
+    reset: resetContactValue,
+    setValue: setContactValue,
+  } = useForm({
+    resolver: zodResolver(contactModalSchema),
+    defaultValues: {},
+  });
+
+  useEffect(() => {
+    dispatch(getClientDesiginationList());
+  }, [dispatch]);
 
   const handleGstChange = (e) => {
     const rawValue = e.target.value;
@@ -252,6 +291,13 @@ export const LeadEstimates = () => {
     dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         setValue("companyName", resp?.payload?.name);
+        setCompanyDetail(resp?.payload);
+        dispatch(
+          getContactDetailListByCompanyId({
+            companyId: resp?.payload?.id,
+            userId,
+          }),
+        );
       }
     });
     dispatch(getAllCountries());
@@ -335,6 +381,29 @@ export const LeadEstimates = () => {
             .catch(() =>
               addToast({ title: "Something went wrong !.", color: "danger" }),
             );
+        } else {
+          addToast({ title: resp.payload, color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
+  };
+
+  const handleSubmitContact = (data) => {
+    data.companyId = companyDetail?.id;
+    dispatch(createContactViaEstimateInCompany(data))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({ title: "Unit details saved.", color: "success" });
+          contactModal.onClose();
+          resetContactValue();
+          dispatch(
+            getContactDetailListByCompanyId({
+              companyId: companyDetail?.id,
+              userId,
+            }),
+          );
         } else {
           addToast({ title: resp.payload, color: "danger" });
         }
@@ -475,6 +544,26 @@ export const LeadEstimates = () => {
                     label: item?.unitName,
                     value: item?.id,
                   }))}
+                  onChangeExtra={(e) => setContactValue("companyUnitId", e)}
+                />
+
+                <FormSelect
+                  label="Contact"
+                  name="contactId"
+                  control={control}
+                  error={errors.contactId}
+                  data={allContactList}
+                  labelKey="name"
+                  valueKey="id"
+                  endContent={
+                    <Button
+                      size="sm"
+                      isIconOnly
+                      onPress={() => contactModal.onOpen()}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  }
                 />
               </div>
 
@@ -783,6 +872,161 @@ export const LeadEstimates = () => {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={contactModal.isOpen}
+        onOpenChange={contactModal.onOpenChange}
+        placement="center"
+        size="3xl"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Add contact Details
+              </ModalHeader>
+
+              <ModalBody>
+                <form onSubmit={handleContactSubmit(handleSubmitContact)}>
+                  <div className="max-h-[80vh] overflow-auto  grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormSelect
+                      label="Select Unit"
+                      name="companyUnitId"
+                      isRequired
+                      control={contactControl}
+                      error={contactErrors.companyUnitId}
+                      data={company?.units?.map((item) => ({
+                        label: item?.unitName,
+                        value: item?.id,
+                      }))}
+                    />
+                    <Controller
+                      name="title"
+                      control={contactControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          isRequired={true}
+                          size={isMedium ? "sm" : "md"}
+                          label="Salutation"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          items={[
+                            { label: "Master.", key: "master" },
+                            { label: "Mr.", key: "mr" },
+                            { label: "Mrs.", key: "mrs" },
+                            { label: "Miss.", key: "miss" },
+                          ]}
+                        >
+                          {(item) => (
+                            <SelectItem key={item.key}>{item.label}</SelectItem>
+                          )}
+                        </Select>
+                      )}
+                    />
+                    <Controller
+                      name="name"
+                      control={contactControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired={true}
+                          size={isMedium ? "sm" : "md"}
+                          label="Name"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="clientDesignationId"
+                      control={contactControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired={true}
+                          size={isMedium ? "sm" : "md"}
+                          label="Designation"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={desiginationList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="emails"
+                      control={contactControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired={true}
+                          size={isMedium ? "sm" : "md"}
+                          label="Email"
+                          type="email"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="contactNo"
+                      control={contactControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired={true}
+                          size={isMedium ? "sm" : "md"}
+                          label="Contact number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="contactWhatsappNo"
+                      control={contactControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired={true}
+                          size={isMedium ? "sm" : "md"}
+                          label="Whatsapp number"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          {...field}
+                        />
+                      )}
+                    />
+                  </div>
+                  <ModalFooter>
+                    <Button
+                      type="button"
+                      variant="flat"
+                      color="default"
+                      className="cursor-pointer"
+                      onPress={onClose}
+                    >
+                      Close
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      color="primary"
+                      className="cursor-pointer"
+                    >
+                      Save
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

@@ -20,6 +20,7 @@ const NewSelect = ({
   placeholder,
   isDisabled,
   onItemSelect = () => {},
+  endContent=null
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
@@ -131,6 +132,7 @@ const NewSelect = ({
     <div className="w-full">
       <Select
         size={size}
+        endContent={endContent}
         isDisabled={isDisabled}
         errorMessage={errorMessage}
         isRequired={isRequired}

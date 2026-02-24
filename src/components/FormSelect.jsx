@@ -10,6 +10,8 @@ const FormSelect=({
   valueKey = "value",
   size = "md",
   onChangeExtra,
+  isRequired=false,
+  endContent
 })=> {
   return (
     <Controller
@@ -20,11 +22,13 @@ const FormSelect=({
           label={label}
           size={size}
           data={data}
+          isRequired={isRequired}
           labelKey={labelKey}
           valueKey={valueKey}
           value={field.value}
           isInvalid={!!error}
           errorMessage={error?.message}
+          endContent={endContent}
           onChange={(value) => {
             onChangeExtra?.(value);
             field.onChange(value);

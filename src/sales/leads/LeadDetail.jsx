@@ -37,7 +37,7 @@ const LeadDetail = () => {
           { id: "leadDetail", label: "Details" },
           // { id: "childLead", label: "Child lead" },
           // { id: "companyForm", label: "Company" },
-          { id: "leadCompanyForm", label: "Lead company" },
+          // { id: "leadCompanyForm", label: "Lead company" },
           { id: "vendors", label: "Vendors" },
           { id: "proposal", label: "Proposal" },
           // { id: "leadEstimate", label: "Estimate" },

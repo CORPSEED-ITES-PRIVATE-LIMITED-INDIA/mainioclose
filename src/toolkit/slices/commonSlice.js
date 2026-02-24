@@ -3,7 +3,7 @@ import { api } from "../../httpRequest";
 
 export const emailChecker = createAsyncThunk("emailChecker", async (email) => {
   const response = await api.get(
-    `/leadService/api/v1/users/checkEmailExist?email=${email}`
+    `/leadService/api/v1/users/checkEmailExist?email=${email}`,
   );
   return response;
 });
@@ -11,15 +11,15 @@ export const getDesiginationById = createAsyncThunk(
   "getDesiginationByID",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/designation/getAllDesignationByDepartment?departmentId=${id}`
+      `/leadService/api/v1/designation/getAllDesignationByDepartment?departmentId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getManagerById = createAsyncThunk("getManagerById", async (id) => {
   const response = await api.get(
-    `/leadService/api/v1/users/getUserManagerByDepartment?departmentId=${id}`
+    `/leadService/api/v1/users/getUserManagerByDepartment?departmentId=${id}`,
   );
   return response.data;
 });
@@ -28,10 +28,10 @@ export const getProcurementAssigneeList = createAsyncThunk(
   "getProcurementAssigneeList",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/users/fetchProcurementUsers?userId=${id}`
+      `/leadService/api/v1/users/fetchProcurementUsers?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createContacts = createAsyncThunk(
@@ -39,10 +39,10 @@ export const createContacts = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/contact/createContact`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createNewContacts = createAsyncThunk(
@@ -50,10 +50,10 @@ export const createNewContacts = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/contact/createNewContact`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllCountries = createAsyncThunk("getAllCountries", async () => {
@@ -66,77 +66,77 @@ export const getAllSecondaryCountries = createAsyncThunk(
   async () => {
     const response = await api.get(`/leadService/api/v1/country/getAllCountry`);
     return response.data;
-  }
+  },
 );
 
 export const getAllStatesByCountryId = createAsyncThunk(
   "getAllStatesByCountryId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/country/getAllStateByCountryId?id=${id}`
+      `/leadService/api/v1/country/getAllStateByCountryId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllStatesByCountryName = createAsyncThunk(
   "getAllStatesByCountryName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`
+      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSecondaryStatesBySecondaryCountryName = createAsyncThunk(
   "getAllSecondaryStatesBySecondaryCountryName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`
+      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllCitiesByStateId = createAsyncThunk(
   "getAllCitiesByStateId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/state/getAllCityByStateId?id=${id}`
+      `/leadService/api/v1/state/getAllCityByStateId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllCitiesByStateName = createAsyncThunk(
   "getAllCitiesByStateName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`
+      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSecondaryCitiesBySecondaryStateName = createAsyncThunk(
   "getAllSecondaryCitiesBySecondaryStateName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`
+      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const panNumberExistOrNot = createAsyncThunk(
   "panNumberExistOrNot",
   async (panNo) => {
     const response = await api.get(
-      `/leadService/api/v1/company/getCompanyPanNo?panNo=${panNo}`
+      `/leadService/api/v1/company/getCompanyPanNo?panNo=${panNo}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllUsers = createAsyncThunk("allUsers", async () => {
@@ -148,20 +148,20 @@ export const activateOrDeActivateUser = createAsyncThunk(
   "deActivateUser",
   async ({ currentUserId, id }) => {
     const statusUserData = await api.put(
-      `/leadService/api/v1/users/autoActive?userId=${id}&currentUser=${currentUserId}`
+      `/leadService/api/v1/users/autoActive?userId=${id}&currentUser=${currentUserId}`,
     );
     return statusUserData?.data;
-  }
+  },
 );
 
 export const deleteUserInLeadService = createAsyncThunk(
   "deleteUserInLeadService",
   async (id) => {
     const response = await api.delete(
-      `/leadService/api/v1/users/deleteUser?id=${id}`
+      `/leadService/api/v1/users/deleteUser?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllRoles = createAsyncThunk("allRoles", async () => {
@@ -174,10 +174,10 @@ export const createUserByHr = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/users/createUserByHr`,
-      data
+      data,
     );
     return response;
-  }
+  },
 );
 
 export const updateLeadByHr = createAsyncThunk(
@@ -185,50 +185,50 @@ export const updateLeadByHr = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/users/editUserByHr`,
-      data
+      data,
     );
     return response;
-  }
+  },
 );
 
 export const getAllMainIndustry = createAsyncThunk(
   "getAllMainIndustry",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustry`
+      `/leadService/api/v1/industryData/getAllIndustry`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSubIndustryByIndustryId = createAsyncThunk(
   "getSubIndustryByIndustryId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getSubIndustryByIndustryId?id=${id}`
+      `/leadService/api/v1/industryData/getSubIndustryByIndustryId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSubSubIndustryBySubIndustryId = createAsyncThunk(
   "getSubSubIndustryBySubIndustryId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubSubIndustryBySubIndustryId?id=${id}`
+      `/leadService/api/v1/industryData/getAllSubSubIndustryBySubIndustryId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getIndustryDataBySubSubIndustryId = createAsyncThunk(
   "getIndustryDataBySubSubIndustryId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustryDataBySubSubIndustryId?id=${id}`
+      `/leadService/api/v1/industryData/getAllIndustryDataBySubSubIndustryId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllContactDetails = createAsyncThunk(
@@ -236,77 +236,77 @@ export const getAllContactDetails = createAsyncThunk(
   async () => {
     const response = await api.get(`/leadService/api/v1/contact/getAllContact`);
     return response.data;
-  }
+  },
 );
 
 export const getAllContactListById = createAsyncThunk(
   "getAllContactListById",
   async (companyId) => {
     const response = await api.get(
-      `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`
+      `/leadService/api/v1/company/getContactByCompanyId?companyId=${companyId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getUserApprovalList = createAsyncThunk(
   "allhrUserApprovalList",
   async ({ userId }) => {
     const allDataUser = await api.get(
-      `/leadService/api/v1/hrManagment/getUserApprovalHr?userId=${userId}`
+      `/leadService/api/v1/hrManagment/getUserApprovalHr?userId=${userId}`,
     );
     return allDataUser?.data;
-  }
+  },
 );
 
 export const approvedUserByHr = createAsyncThunk(
   "approvedUserByHr",
   async ({ currentUserId, userId }) => {
     const approvedUser = await api.put(
-      `/leadService/api/v1/hrManagment/approvedUserByHr?currentUserId=${currentUserId}&userId=${userId}&flag=${true}`
+      `/leadService/api/v1/hrManagment/approvedUserByHr?currentUserId=${currentUserId}&userId=${userId}&flag=${true}`,
     );
     return approvedUser?.data;
-  }
+  },
 );
 
 export const getAllDeactivateUserList = createAsyncThunk(
   "getAllDeactivateUserList",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/users/getAllDeactivateUser`
+      `/leadService/api/v1/users/getAllDeactivateUser`,
     );
     return response.data;
-  }
+  },
 );
 
 export const allUserListForManagerApproval = createAsyncThunk(
   "allUserListForManagerApproval",
   async (id) => {
     const managerUserData = await api.get(
-      `/leadService/api/v1/users/getUserForManager?id=${id}`
+      `/leadService/api/v1/users/getUserForManager?id=${id}`,
     );
     return managerUserData?.data;
-  }
+  },
 );
 
 export const approvedAndDisapprovedUserByManager = createAsyncThunk(
   "approvedAndDisapprovedUserByManager",
   async ({ currentUserId, userId, status }) => {
     const approvedUser = await api.put(
-      `/leadService/api/v1/users/approvedUserByManager?currentUserId=${currentUserId}&userId=${userId}&status=${status}`
+      `/leadService/api/v1/users/approvedUserByManager?currentUserId=${currentUserId}&userId=${userId}&status=${status}`,
     );
     return approvedUser?.data;
-  }
+  },
 );
 
 export const activeUserByAdmin = createAsyncThunk(
   "activeUserByAdmin",
   async (id) => {
     const response = await api.put(
-      `/leadService/api/v1/users/activateUser?id=${id}`
+      `/leadService/api/v1/users/activateUser?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllUrlList = createAsyncThunk("allUrlsList", async () => {
@@ -318,10 +318,10 @@ export const getUsersListByServiceRatingId = createAsyncThunk(
   "getUsersListByServiceRatingId",
   async ({ serviceId }) => {
     const response = await api.get(
-      `/leadService/api/v1/rating/getRetingByUrls?urlsId=${serviceId}`
+      `/leadService/api/v1/rating/getRetingByUrls?urlsId=${serviceId}`,
     );
     return response?.data;
-  }
+  },
 );
 
 export const addNewRating = createAsyncThunk(
@@ -329,10 +329,10 @@ export const addNewRating = createAsyncThunk(
   async (data) => {
     const createRating = await api.post(
       `/leadService/api/v1/rating/addUserAndRating`,
-      data
+      data,
     );
     return createRating;
-  }
+  },
 );
 
 export const addMultiuserForRating = createAsyncThunk(
@@ -340,10 +340,10 @@ export const addMultiuserForRating = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/rating/addUserAndMultiRating`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const editUserRatingAssignee = createAsyncThunk(
@@ -351,45 +351,45 @@ export const editUserRatingAssignee = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/rating/updateUserRatingService`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const deleteRatingAssignee = createAsyncThunk(
   "deleteRatingAssignee",
   async (id) => {
     const response = await api.delete(
-      `/leadService/api/v1/rating/deleteUserByRatingId?id=${id}`
+      `/leadService/api/v1/rating/deleteUserByRatingId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getTotalIvrCount = createAsyncThunk(
   "getTotalIvrCount",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/rating/getAllIvrDataCount`
+      `/leadService/api/v1/rating/getAllIvrDataCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllIvrWithPage = createAsyncThunk(
   "getAllIvrWithPage",
   async (data) => {
     const response = await api.get(
-      `/leadService/api/v1/rating/getAllIvrDataWithPage?page=${data?.page}&size=${data?.size}`
+      `/leadService/api/v1/rating/getAllIvrDataWithPage?page=${data?.page}&size=${data?.size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createIvr = createAsyncThunk("createIvr", async (data) => {
   const response = await api.get(
-    `/leadService/api/v1/rating/createIvrData?callerNumber=${data?.callerNumber}&agentName=${data?.agentName}&aggentNumber=${data?.aggentNumber}&startTime=${data?.startTime}&duration=${data?.duration}&endTime=${data?.endTime}&callRecordingUrl=${data?.callRecordingUrl}`
+    `/leadService/api/v1/rating/createIvrData?callerNumber=${data?.callerNumber}&agentName=${data?.agentName}&aggentNumber=${data?.aggentNumber}&startTime=${data?.startTime}&duration=${data?.duration}&endTime=${data?.endTime}&callRecordingUrl=${data?.callRecordingUrl}`,
   );
   return response.data;
 });
@@ -399,60 +399,60 @@ export const createMainIndustry = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/industryData/createIndustry`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllIndustriesWithPagination = createAsyncThunk(
   "getAllIndustriesWithPagination",
   async ({ page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustryForIndustryPage?page=${page}&size=${size}`
+      `/leadService/api/v1/industryData/getAllIndustryForIndustryPage?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const allIndstriesCount = createAsyncThunk(
   "allIndstriesCount",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustryCount`
+      `/leadService/api/v1/industryData/getAllIndustryCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSubIndustry = createAsyncThunk(
   "getAllSubIndustry",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubIndustry`
+      `/leadService/api/v1/industryData/getAllSubIndustry`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSubIndustryWithPagination = createAsyncThunk(
   "getAllSubIndustryWithPagination",
   async ({ page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubIndustryForPage?page=${page}&size=${size}`
+      `/leadService/api/v1/industryData/getAllSubIndustryForPage?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSubIndustyCount = createAsyncThunk(
   "getAllSubIndustyCount",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubIndustryCount`
+      `/leadService/api/v1/industryData/getAllSubIndustryCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createSubIndustry = createAsyncThunk(
@@ -460,40 +460,40 @@ export const createSubIndustry = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/industryData/createSubIndustry`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSubsubIndustry = createAsyncThunk(
   "getAllSubsubIndustry",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubSubIndustry`
+      `/leadService/api/v1/industryData/getAllSubSubIndustry`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSubSubIndustryWithPagination = createAsyncThunk(
   "getAllSubSubIndustryWithPagination",
   async ({ page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubSubIndustryForPage?page=${page}&size=${size}`
+      `/leadService/api/v1/industryData/getAllSubSubIndustryForPage?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getTotalSubSubIndustryCount = createAsyncThunk(
   "getTotalSubSubIndustryCount",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllSubSubIndustryCount`
+      `/leadService/api/v1/industryData/getAllSubSubIndustryCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createSubsubIndustry = createAsyncThunk(
@@ -501,50 +501,50 @@ export const createSubsubIndustry = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/industryData/createSubSubIndustry`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllIndustriesData = createAsyncThunk(
   "getAllIndustriesData",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustryData`
+      `/leadService/api/v1/industryData/getAllIndustryData`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllIndustryDataWithPagination = createAsyncThunk(
   "getAllIndustryDataWithPagination",
   async ({ page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustryDataForPage?page=${page}&size=${size}`
+      `/leadService/api/v1/industryData/getAllIndustryDataForPage?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getIndustryDataCount = createAsyncThunk(
   "getIndustryDataCount",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/industryData/getAllIndustryDataCount`
+      `/leadService/api/v1/industryData/getAllIndustryDataCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createIndustry = createAsyncThunk(
   "createIndustry",
   async (data) => {
     const response = await api.post(
-      `/leadService/api/v1/industryData/createIndustryData?name=${data?.name}`
+      `/leadService/api/v1/industryData/createIndustryData?name=${data?.name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllTaskStatus = createAsyncThunk("allTaskStatus", async () => {
@@ -556,10 +556,10 @@ export const getUserHistoryById = createAsyncThunk(
   "getUserHistoryById",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/rating/getAllUserHistory?userId=${id}`
+      `/leadService/api/v1/rating/getAllUserHistory?userId=${id}`,
     );
     return response?.data;
-  }
+  },
 );
 
 export const getUsersListByDepartmentId = createAsyncThunk(
@@ -567,7 +567,7 @@ export const getUsersListByDepartmentId = createAsyncThunk(
   async (id) => {
     const response = await api.get(`/api/departments/${id}/users`);
     return response.data;
-  }
+  },
 );
 
 export const getAllMilestoneStatusesForOperations = createAsyncThunk(
@@ -575,7 +575,32 @@ export const getAllMilestoneStatusesForOperations = createAsyncThunk(
   async () => {
     const response = await api.get("/api/milestone-statuses");
     return response.data;
-  }
+  },
+);
+
+export const createContactViaEstimateInCompany = createAsyncThunk(
+  "createContactViaEstimateInCompany",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/contact/associated`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.message);
+    }
+  },
+);
+
+export const getContactDetailListByCompanyId = createAsyncThunk(
+  "getContactDetailListByCompanyId",
+  async ({companyId,userId}) => {
+    const response = await api.get(
+      `/leadService/api/v1/contacts/by-company/${companyId}?requestingUserId=${userId}`,
+    );
+    return response.data;
+  },
 );
 
 const CommonSlice = createSlice({
@@ -623,6 +648,7 @@ const CommonSlice = createSlice({
     deactiveUserList: [],
     userListByDepartment: [],
     milestoneStatusList: [],
+    contactListByCompanyId: [],
   },
   reducers: {
     handleReset: (state) => {
@@ -711,20 +737,20 @@ const CommonSlice = createSlice({
       getAllSecondaryStatesBySecondaryCountryName.pending,
       (state) => {
         state.loading = "pending";
-      }
+      },
     );
     builder.addCase(
       getAllSecondaryStatesBySecondaryCountryName.fulfilled,
       (state, action) => {
         state.loading = "success";
         state.secondaryStateList = action.payload;
-      }
+      },
     );
     builder.addCase(
       getAllSecondaryStatesBySecondaryCountryName.rejected,
       (state) => {
         state.loading = "rejected";
-      }
+      },
     );
 
     builder.addCase(getAllCitiesByStateId.pending, (state) => {
@@ -753,20 +779,20 @@ const CommonSlice = createSlice({
       getAllSecondaryCitiesBySecondaryStateName.pending,
       (state) => {
         state.loading = "pending";
-      }
+      },
     );
     builder.addCase(
       getAllSecondaryCitiesBySecondaryStateName.fulfilled,
       (state, action) => {
         state.loading = "success";
         state.secondaryCitiesList = action.payload;
-      }
+      },
     );
     builder.addCase(
       getAllSecondaryCitiesBySecondaryStateName.rejected,
       (state) => {
         state.loading = "rejected";
-      }
+      },
     );
 
     builder.addCase(getAllUsers.pending, (state) => {
@@ -815,7 +841,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.industryLoading = "fulfilled";
         state.subSubIndustryListBySubIndustryId = action.payload;
-      }
+      },
     );
     builder.addCase(getSubSubIndustryBySubIndustryId.rejected, (state) => {
       state.industryLoading = "rejected";
@@ -831,7 +857,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.industryLoading = "fulfilled";
         state.industryDataListBySubSubIndustryId = action.payload;
-      }
+      },
     );
     builder.addCase(getIndustryDataBySubSubIndustryId.rejected, (state) => {
       state.industryLoading = "rejected";
@@ -893,7 +919,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.usersListByServiceId = action.payload;
         state.loading = "success";
-      }
+      },
     );
     builder.addCase(getUsersListByServiceRatingId.rejected, (state) => {
       state.loading = "success";
@@ -932,7 +958,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.industryLoading = "fulfilled";
         state.allIndustriesWithPage = action.payload;
-      }
+      },
     );
     builder.addCase(getAllIndustriesWithPagination.rejected, (state) => {
       state.industryLoading = "rejected";
@@ -970,7 +996,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.industryLoading = "fulfilled";
         state.allSubIndustryWithPage = action.payload;
-      }
+      },
     );
     builder.addCase(getAllSubIndustryWithPagination.rejected, (state) => {
       state.industryLoading = "rejected";
@@ -1008,7 +1034,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.industryLoading = "fulfilled";
         state.allSubSubIndustryWithPage = action.payload;
-      }
+      },
     );
     builder.addCase(getAllSubSubIndustryWithPagination.rejected, (state) => {
       state.industryLoading = "rejected";
@@ -1042,14 +1068,14 @@ const CommonSlice = createSlice({
       getAllIndustryDataWithPagination.pending,
       (state, action) => {
         state.industryLoading = "pending";
-      }
+      },
     );
     builder.addCase(
       getAllIndustryDataWithPagination.fulfilled,
       (state, action) => {
         state.industryLoading = "fulfilled";
         state.allIndustryDataWithPage = action.payload;
-      }
+      },
     );
     builder.addCase(getAllIndustryDataWithPagination.rejected, (state) => {
       state.industryLoading = "rejected";
@@ -1110,7 +1136,7 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.userManagerApprovalList = action.payload;
-      }
+      },
     );
     builder.addCase(allUserListForManagerApproval.rejected, (state, action) => {
       state.loading = "rejected";
@@ -1146,9 +1172,23 @@ const CommonSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.milestoneStatusList = action.payload;
-      }
+      },
     );
     builder.addCase(getAllMilestoneStatusesForOperations.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getContactDetailListByCompanyId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getContactDetailListByCompanyId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.contactListByCompanyId = action.payload;
+      },
+    );
+    builder.addCase(getContactDetailListByCompanyId.rejected, (state) => {
       state.loading = "rejected";
     });
   },

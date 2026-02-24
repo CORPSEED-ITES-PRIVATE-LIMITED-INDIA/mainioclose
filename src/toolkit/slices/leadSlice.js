@@ -236,9 +236,9 @@ export const deleteLeadContact = createAsyncThunk(
 
 export const getAllEstimateByUserId = createAsyncThunk(
   "getAllEstimateByUserId",
-  async ({ userId, page, size }) => {
-    const response = await api.get(
-      `/accountService/api/v1/estimates/all?userId=${userId}&page=${page}&size=${size}`
+  async ({ userId, page, size,data }) => {
+    const response = await api.post(
+      `/accountService/api/v1/estimates/all?userId=${userId}&page=${page}&size=${size}`,data
     );
     return response.data;
   }
@@ -246,9 +246,9 @@ export const getAllEstimateByUserId = createAsyncThunk(
 
 export const getTotalCountOfEstimate = createAsyncThunk(
   "getTotalCountOfEstimate",
-  async (userId) => {
-    const response = await api.get(
-      `/accountService/api/v1/estimates/count?userId=${userId}`
+  async ({userId,data}) => {
+    const response = await api.post(
+      `/accountService/api/v1/estimates/count?userId=${userId}`,data
     );
     return response.data;
   }

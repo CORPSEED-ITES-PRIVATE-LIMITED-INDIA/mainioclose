@@ -100,6 +100,7 @@ const EstimatePaymentRegister = ({
         paymentDate: values.paymentDate,
       };
       const res = await onSubmitPayment({ userId, data: payload });
+      console.log("sdgvshgs",res)
       if (res?.meta?.requestStatus === "fulfilled" || res?.ok === true) {
         addToast({
           title: "Payment registered successfully!",
