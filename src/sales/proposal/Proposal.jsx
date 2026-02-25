@@ -160,11 +160,12 @@ const Proposal = () => {
   const templateList = useSelector((state) => state.leads.templateList);
   const brochureList = useSelector((state) => state.leads.brochureList);
   const productData = useSelector(
-    (state) => state.product.productDataByLeadName
+    (state) => state.product.productDataByLeadName,
   );
   const proposalDataDetail = useSelector(
-    (state) => state.leads.proposalDataDetail
+    (state) => state.leads.proposalDataDetail,
   );
+  const userDetail = useSelector((state) => state.auth.currentUser);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
   const childLeads = useSelector((state) => state.leads.allChildLeadList);
   const [templates, setTemplates] = useState([]);
@@ -188,7 +189,7 @@ const Proposal = () => {
                 dispatch(getProductListByLeadName(resp?.payload?.originalName));
               }
             }
-          }
+          },
         );
       }
     });
@@ -237,15 +238,115 @@ const Proposal = () => {
     }
   }, [proposalDataDetail, reset]);
 
+  const modifyTemplateHtml = (html, variables) => {
+    if (!html) return "";
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const body = doc.body;
+
+    // =====================================
+    // 1️⃣ AUTO DATE
+    // =====================================
+    const today = new Date();
+    const formattedDate = `${String(today.getDate()).padStart(2, "0")}.${String(
+      today.getMonth() + 1,
+    ).padStart(2, "0")}.${today.getFullYear()}`;
+
+    body.querySelectorAll("td, p, div").forEach((el) => {
+      if (el.textContent.trim().startsWith("Date-")) {
+        el.innerHTML = `Date- ${formattedDate}`;
+      }
+    });
+
+    // =====================================
+    // 2️⃣ FORCE HEADER FULL WIDTH (AGGRESSIVE CLEAN)
+    // =====================================
+    const tables = body.querySelectorAll("table");
+
+    if (tables.length > 0) {
+      const firstTable = tables[0];
+
+      // Remove width attributes
+      firstTable.removeAttribute("width");
+
+      // Remove inline width styles (px / pt / %)
+      firstTable.style.width = "100%";
+      firstTable.style.maxWidth = "100%";
+      firstTable.style.minWidth = "100%";
+      firstTable.style.margin = "0";
+      firstTable.style.tableLayout = "fixed";
+      firstTable.style.borderCollapse = "collapse";
+
+      // Remove width from all cells
+      firstTable.querySelectorAll("tr, td, th").forEach((cell) => {
+        cell.removeAttribute("width");
+
+        cell.style.width = "auto";
+        cell.style.maxWidth = "100%";
+        cell.style.minWidth = "auto";
+      });
+    }
+
+    // =====================================
+    // 3️⃣ REMOVE OLD SIGNATURE
+    // =====================================
+    const blockTags = ["P", "DIV"];
+    let removeCount = 0;
+
+    for (let i = body.children.length - 1; i >= 0; i--) {
+      const el = body.children[i];
+
+      if (blockTags.includes(el.tagName)) {
+        body.removeChild(el);
+        removeCount++;
+      }
+
+      if (removeCount >= 4) break;
+    }
+
+    // =====================================
+    // 4️⃣ ADD NEW SIGNATURE
+    // =====================================
+    const signatureDiv = doc.createElement("div");
+    signatureDiv.style.textAlign = "right";
+    signatureDiv.style.marginTop = "40px";
+
+    signatureDiv.innerHTML = `
+    <strong>Warm Regards,</strong><br/>
+    ${variables.userName || ""}<br/>
+    ${variables.userDesignation || ""}<br/>
+    ${variables.userEmail || ""} ${
+      variables.userPhone ? `| ${variables.userPhone}` : ""
+    }<br/>
+    <strong>Corpseed ITES Private Limited</strong>
+  `;
+
+    body.appendChild(signatureDiv);
+
+    return body.innerHTML;
+  };
+
   const handleSetData = (item) => {
+    const variables = {
+      userName: userDetail?.username || "",
+      userDesignation: userDetail?.roles?.join(", ") || "",
+      userPhone: userDetail?.phone || "",
+      userEmail: userDetail?.email || "",
+    };
+
     if (item.description) {
-      setData(item?.description);
-      setValue("template", item?.description);
+      const modifiedTemplate = modifyTemplateHtml(item.description, variables);
+
+      setData(modifiedTemplate);
+      setValue("template", modifiedTemplate);
     }
+
     if (item.body) {
-      setMailBody(item?.body);
-      setValue("mailBody", item?.body);
+      setMailBody(item.body);
+      setValue("mailBody", item.body);
     }
+
     setTemplateName(item?.name);
     templateModal.onClose();
   };
@@ -268,7 +369,7 @@ const Proposal = () => {
     values.brochureBook = brochureUrl;
     if (Object.keys(proposalDataDetail)?.length > 0) {
       dispatch(
-        editLeadPropposal({ id: proposalDataDetail?.id, ...values })
+        editLeadPropposal({ id: proposalDataDetail?.id, ...values }),
       ).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
@@ -494,8 +595,8 @@ const Proposal = () => {
                   const value = e.target.value.toLowerCase();
                   setTemplates(
                     templateList.filter((t) =>
-                      t.name.toLowerCase().includes(value)
-                    )
+                      t.name.toLowerCase().includes(value),
+                    ),
                   );
                 }}
               />

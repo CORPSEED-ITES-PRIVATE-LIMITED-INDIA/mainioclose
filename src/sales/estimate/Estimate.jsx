@@ -401,7 +401,7 @@ const Estimate = () => {
                         color: "danger",
                       });
                     } else {
-                      setActiveEstimateId(rowData?.id); // ✅ estimateId
+                      setActiveEstimateId(rowData?.id);
                       paymentModal.onOpen();
                     }
                   } else if (item === "viewEstimate") {

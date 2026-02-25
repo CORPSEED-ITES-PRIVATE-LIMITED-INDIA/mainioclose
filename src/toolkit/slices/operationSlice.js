@@ -386,6 +386,17 @@ export const uploadDocumentInProjects = createAsyncThunk(
   },
 );
 
+export const updateDocumentStatus = createAsyncThunk(
+  "operation/updateDocumentStatus",
+  async ({ documentId, data }) => {
+    const response = await api.put(
+      `/api/projects/documents/${documentId}/status`,
+      data
+    );
+    return response.data;
+  }
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {

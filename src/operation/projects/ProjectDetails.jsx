@@ -41,6 +41,7 @@ import {
   updateApplicantTypeInProject,
   updateAssigneeForMileStone,
   updateAssignmentStatusForMileStone,
+  updateDocumentStatus,
   uploadDocumentInProjects,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useParams } from "react-router-dom";
@@ -122,6 +123,11 @@ const documentSchema = z.object({
   remarks: z.string().optional(),
 });
 
+const verifySchema = z.object({
+  newStatus: z.string().min(1, "Please select status"),
+  remarks: z.string().min(1, "Remarks is required"),
+});
+
 const ProjectDetails = () => {
   const dispatch = useDispatch();
   const { projectId, userId } = useParams();
@@ -130,6 +136,8 @@ const ProjectDetails = () => {
   const statusModal = useDisclosure();
   const clientModal = useDisclosure();
   const docModal = useDisclosure();
+  const verifyModal = useDisclosure();
+
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
   );
@@ -175,6 +183,7 @@ const ProjectDetails = () => {
     remarks: "",
   });
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [verifyDocId, setVerifyDocId] = useState(null);
 
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
@@ -340,6 +349,19 @@ const ProjectDetails = () => {
     },
   });
 
+  const {
+    control: verifyControl,
+    handleSubmit: handleVerifySubmit,
+    formState: { errors: verifyErrors },
+    reset: verifyReset,
+  } = useForm({
+    resolver: zodResolver(verifySchema),
+    defaultValues: {
+      newStatus: "",
+      remarks: "",
+    },
+  });
+
   const openUploadForDoc = (doc) => {
     setSelectedDoc(doc);
 
@@ -356,6 +378,49 @@ const ProjectDetails = () => {
     });
 
     docModal.onOpen();
+  };
+
+  const openVerify = (doc) => {
+    setVerifyDocId(doc.uploadId);
+    verifyReset({
+      newStatus: "",
+      remarks: "",
+    });
+    verifyModal.onOpen();
+  };
+
+  const handleVerifyDocument = (values) => {
+    const payload = {
+      newStatus: values.newStatus,
+      remarks: values.remarks,
+      changedById: Number(userId), // NOT in form schema
+    };
+
+    dispatch(
+      updateDocumentStatus({
+        documentId: verifyDocId,
+        data: payload,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Document verified successfully!",
+          color: "success",
+        });
+        verifyModal.onClose();
+        dispatch(
+          getRequiredDocumentsByProductId({
+            userId,
+            projectId,
+          }),
+        );
+      } else {
+        addToast({
+          title: "Something went wrong!",
+          color: "danger",
+        });
+      }
+    });
   };
 
   const onDocumentSubmit = (data) => {
@@ -670,93 +735,114 @@ const ProjectDetails = () => {
                   return (
                     <Card
                       key={`doc${idx}`}
-                      className="min-h-[180px] max-h-[220px] border border-gray-200"
+                      className="rounded-2xl shadow-sm border border-gray-200 bg-white"
                     >
-                      <CardBody className="flex flex-col justify-between gap-3">
-                        {/* Top Section */}
+                      <CardBody className="p-4 flex flex-col gap-4">
+                        {/* HEADER */}
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className="text-md font-semibold">
+                            <h4 className="text-lg font-semibold text-gray-800">
                               {doc?.documentName}
                             </h4>
 
-                            <div className="flex gap-2 mt-1 flex-wrap">
+                            <div className="flex gap-2 mt-2 flex-wrap">
                               {doc?.mandatory && (
-                                <span className="text-[11px] bg-red-100 text-red-600 px-2 py-0.5 rounded">
+                                <span className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md font-medium">
                                   Mandatory
                                 </span>
                               )}
 
                               {doc?.permanent && (
-                                <span className="text-[11px] bg-green-100 text-green-600 px-2 py-0.5 rounded">
+                                <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-md font-medium">
                                   Permanent
                                 </span>
                               )}
 
                               {doc?.expired && (
-                                <span className="text-[11px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded">
+                                <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-medium">
                                   Expired
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          {/* Status */}
+                          {/* STATUS BADGE */}
                           <span
-                            className={`text-[11px] font-medium px-2 py-1 rounded ${
-                              doc?.status === "PENDING"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
+                            className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                              doc?.status === "VERIFIED"
+                                ? "bg-green-100 text-green-700"
+                                : doc?.status === "PENDING"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-gray-100 text-gray-600"
                             }`}
                           >
                             {doc?.status}
                           </span>
                         </div>
 
-                        {/* Middle Section – File Info */}
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        {/* FILE SECTION */}
+                        <div>
+                          <p className="text-sm text-gray-500 mb-2">
+                            Uploaded File
+                          </p>
+
                           {hasFile ? (
-                            <>
-                              <span className="truncate max-w-[180px]">
-                                {doc?.fileName || "Uploaded File"}
-                              </span>
-                            </>
+                            <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                              <div className="flex items-center gap-3">
+                                {/* PDF ICON */}
+                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                  <PdfIcon className="text-red-500 w-5 h-5" />
+                                </div>
+
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium text-gray-800 truncate max-w-[180px]">
+                                    {doc?.fileName || "Document.pdf"}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    {doc?.fileSizeKb
+                                      ? `${doc.fileSizeKb} KB`
+                                      : ""}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <Button
+                                size="sm"
+                                className="bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
+                                onPress={openPreview}
+                              >
+                                Download
+                              </Button>
+                            </div>
                           ) : (
-                            <span className="italic text-gray-400">
+                            <div className="text-sm italic text-gray-400">
                               No file uploaded
-                            </span>
+                            </div>
                           )}
                         </div>
 
-                        {/* Bottom Section – Actions */}
-                        <div className="flex justify-between items-center mt-2">
-                          <div className="text-xs text-gray-400">
-                            {doc?.expiryDate
-                              ? `Expiry: ${doc.expiryDate}`
-                              : doc?.permanent
-                                ? "No Expiry (Permanent)"
-                                : "No expiry date"}
-                          </div>
+                        {/* EXPIRY */}
+                        <div className="text-sm text-gray-500">
+                          {doc?.expiryDate
+                            ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
+                            : doc?.permanent
+                              ? "No expiry date"
+                              : "No expiry date"}
+                        </div>
 
-                          {hasFile && (
-                            <button
-                              type="button"
-                              onClick={openPreview}
-                              className="py-1.5 px-2 bg-gray-300 rounded-md text-sm cursor-pointer"
-                            >
-                              Preview
-                            </button>
-                          )}
-                          {doc?.status !== "UPLOADED" && (
+                        {/* VERIFY BUTTON ONLY IF NEEDED */}
+                        {doc?.status !== "VERIFIED" && hasFile && (
+                          <div className="pt-2">
                             <Button
                               size="sm"
-                              color="secondary"
-                              onPress={() => openUploadForDoc(doc)}
+                              color="primary"
+                              className="rounded-full px-6"
+                              onPress={() => openVerify(doc)}
                             >
-                              Upload
+                              Verify
                             </Button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </CardBody>
                     </Card>
                   );
@@ -1224,6 +1310,71 @@ const ProjectDetails = () => {
           )}
         </DrawerContent>
       </Drawer>
+
+      <Modal
+        isOpen={verifyModal.isOpen}
+        onOpenChange={verifyModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Verify Document</ModalHeader>
+
+              <ModalBody>
+                <form
+                  onSubmit={handleVerifySubmit(handleVerifyDocument)}
+                  className="flex flex-col gap-4"
+                >
+                  {/* Status Select */}
+                  <Controller
+                    name="newStatus"
+                    control={verifyControl}
+                    render={({ field }) => (
+                      <Select
+                        label="Select Status"
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={(keys) => {
+                          const value = Array.from(keys)[0];
+                          field.onChange(value);
+                        }}
+                        isInvalid={!!verifyErrors.newStatus}
+                        errorMessage={verifyErrors.newStatus?.message}
+                      >
+                        <SelectItem key="VERIFIED">VERIFIED</SelectItem>
+                        <SelectItem key="REJECTED">REJECTED</SelectItem>
+                      </Select>
+                    )}
+                  />
+
+                  {/* Remarks */}
+                  <Controller
+                    name="remarks"
+                    control={verifyControl}
+                    render={({ field }) => (
+                      <Textarea
+                        {...field}
+                        label="Remarks"
+                        minRows={3}
+                        isInvalid={!!verifyErrors.remarks}
+                        errorMessage={verifyErrors.remarks?.message}
+                      />
+                    )}
+                  />
+
+                  <ModalFooter className="px-0">
+                    <Button variant="light" onPress={onClose}>
+                      Cancel
+                    </Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 };
