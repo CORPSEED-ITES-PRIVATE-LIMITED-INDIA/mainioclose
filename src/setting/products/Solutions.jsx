@@ -535,9 +535,10 @@ const Solutions = () => {
                       label="Select solution type"
                       name="type"
                       selectedKeys={[formData?.type]}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, type: e }))
-                      }
+                      onSelectionChange={(e) => {
+                        let key = Array.from(e)[0];
+                        setFormData((prev) => ({ ...prev, type: key }));
+                      }}
                     >
                       {[
                         { label: "PRODUCT", value: "PRODUCT" },
@@ -554,9 +555,10 @@ const Solutions = () => {
                       label="Select scope"
                       name="scope"
                       selectedKeys={[formData?.scope]}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, scope: e }))
-                      }
+                      onSelectionChange={(e) => {
+                        let key = Array.from(e)[0];
+                        setFormData((prev) => ({ ...prev, scope: key }));
+                      }}
                     >
                       {[
                         { label: "GLOBAL", value: "GLOBAL" },
