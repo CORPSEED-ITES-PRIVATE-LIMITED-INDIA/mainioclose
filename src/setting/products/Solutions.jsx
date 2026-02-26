@@ -534,6 +534,7 @@ const Solutions = () => {
                       errorMessage="please select the solution type"
                       label="Select solution type"
                       name="type"
+                      selectedKeys={[formData?.type]}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, type: e }))
                       }
@@ -552,6 +553,7 @@ const Solutions = () => {
                       errorMessage="please select the scope"
                       label="Select scope"
                       name="scope"
+                      selectedKeys={[formData?.scope]}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, scope: e }))
                       }

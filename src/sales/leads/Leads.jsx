@@ -159,7 +159,7 @@ const Leads = () => {
   const count = useSelector((state) => state.leads.totalCount);
   const leadsLoading = useSelector((state) => state.leads.leadresponseStatus);
   const allLeadsForExport = useSelector(
-    (state) => state.leads.allLeadsForExport
+    (state) => state.leads.allLeadsForExport,
   );
   const roles = useSelector((state) => state.auth.currentUser?.roles);
   const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
@@ -174,7 +174,7 @@ const Leads = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
+    new Set(INITIAL_VISIBLE_COLUMNS(adminRole)),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "id",
@@ -242,7 +242,7 @@ const Leads = () => {
     if (visibleColumns === "all") return cols;
 
     return cols.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns, adminRole]);
 
@@ -361,7 +361,7 @@ const Leads = () => {
           currentUerId: userId,
           leadId: data?.id,
           isMarked: data?.reopenByQuality ? false : true,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -377,10 +377,10 @@ const Leads = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch, userId, allMultiFilterData]
+    [dispatch, userId, allMultiFilterData],
   );
 
   const renderCell = useCallback(
@@ -554,7 +554,7 @@ const Leads = () => {
           return lead[columnKey] || "-";
       }
     },
-    [adminRole, department]
+    [adminRole, department],
   );
 
   const onNextPage = useCallback(() => {
@@ -592,7 +592,7 @@ const Leads = () => {
         dispatch(getAllLeadsForExport(initialFilterValues));
       }
     },
-    [dispatch, userId, initialFilterValues]
+    [dispatch, userId, initialFilterValues],
   );
 
   const onClear = useCallback(() => {
@@ -969,12 +969,12 @@ const Leads = () => {
                           value={{
                             start: allMultiFilterData?.toDate
                               ? parseZonedDateTime(
-                                  `${allMultiFilterData?.toDate}[Asia/kolkata]`
+                                  `${allMultiFilterData?.toDate}[Asia/kolkata]`,
                                 )
                               : null,
                             end: allMultiFilterData?.fromDate
                               ? parseZonedDateTime(
-                                  `${allMultiFilterData?.fromDate}[Asia/kolkata]`
+                                  `${allMultiFilterData?.fromDate}[Asia/kolkata]`,
                                 )
                               : null,
                           }}
@@ -1045,12 +1045,12 @@ const Leads = () => {
                           value={{
                             start: allMultiFilterData?.updatedToDate
                               ? parseZonedDateTime(
-                                  `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`
+                                  `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`,
                                 )
                               : null,
                             end: allMultiFilterData?.updatedfromDate
                               ? parseZonedDateTime(
-                                  `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`
+                                  `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`,
                                 )
                               : null,
                           }}
@@ -1294,6 +1294,13 @@ const Leads = () => {
   };
 
   const handleFinish = (values) => {
+    if (!values.email && !values.mobileNo) {
+      addToast({
+        title: "Please enter email or phone number",
+        color: "danger",
+      });
+      return;
+    }
     setLoading("pending");
     values.categoryId = "1";
     values.createdById = userId;
