@@ -42,6 +42,7 @@ import NewEstimatePreview from "./NewEstimatePreview";
 
 import { getAllBusinessArrangementBySolutionId } from "../../../toolkit/slices/productSlice";
 import {
+  getAllSolutionList,
   getClientDesiginationList,
   getSolutionDetailByName,
   getSolutionPriceListById,
@@ -96,8 +97,8 @@ export const LeadEstimates = () => {
   const { userId, leadId } = useParams();
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const dispatch = useDispatch();
-
   const company = useSelector((state) => state.company.basicCompanyDetail);
+  const solutionList = useSelector((state) => state.setting.allSolutionList);
   const solutionDetail = useSelector(
     (state) => state.setting.solutionDetailById,
   );
@@ -252,6 +253,33 @@ export const LeadEstimates = () => {
     }
   }, [serviceFeeList, reset, getValues]);
 
+  const handleSelectSolution = (e) => {
+    dispatch(
+      getSolutionDetailByName({
+        name: e,
+        userId,
+      }),
+    ).then((res) => {
+      if (res.meta.requestStatus === "fulfilled") {
+        if (res.payload?.type === "SERVICE") {
+          dispatch(
+            getSolutionPriceListById({
+              solutionId: res?.payload?.id,
+              userId,
+            }),
+          );
+        } else {
+          dispatch(
+            getAllBusinessArrangementBySolutionId({
+              solutionId: res?.payload?.id,
+              userId,
+            }),
+          );
+        }
+      }
+    });
+  };
+
   // load lead + solution + price/tier
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
@@ -301,6 +329,7 @@ export const LeadEstimates = () => {
       }
     });
     dispatch(getAllCountries());
+    dispatch(getAllSolutionList(userId));
   }, [dispatch, leadId, userId, setValue]);
 
   // estimates list
@@ -315,7 +344,6 @@ export const LeadEstimates = () => {
 
   const onSubmit = (data) => {
     data.companyId = company?.id;
-    data.solutionName = solutionDetail?.name;
     data.solutionType = solutionDetail?.type;
     data.sourceSolutionIds = solutionDetail?.id;
     data.createdByUserId = userId;
@@ -556,14 +584,32 @@ export const LeadEstimates = () => {
                   labelKey="name"
                   valueKey="id"
                   endContent={
-                    <Button
-                      size="sm"
-                      isIconOnly
-                      onPress={() => contactModal.onOpen()}
+                    <span
+                      className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
+                      onClick={() => contactModal.onOpen()}
                     >
-                      <Plus className="h-3 w-3" />
-                    </Button>
+                      + Add
+                    </span>
                   }
+                />
+
+                <Controller
+                  name="solutionName"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Select solutions"
+                      size={isMedium ? "sm" : "md"}
+                      data={solutionList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        handleSelectSolution(value);
+                      }}
+                    />
+                  )}
                 />
               </div>
 

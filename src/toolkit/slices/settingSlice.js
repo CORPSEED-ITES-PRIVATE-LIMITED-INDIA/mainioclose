@@ -605,6 +605,16 @@ export const getAllPaymentType = createAsyncThunk(
   },
 );
 
+export const getAllSolutionList = createAsyncThunk(
+  "getAllSolutionList",
+  async (userId) => {
+    const response = await api.get(
+      `leadService/api/v1/getAllSolution?userId=${userId}`,
+    );
+    return response.data;
+  },
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -631,6 +641,7 @@ export const SettingSlice = createSlice({
     solutionPriceList: [],
     solutionDetailById: {},
     paymentTypeList: [],
+    allSolutionList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -932,6 +943,18 @@ export const SettingSlice = createSlice({
     builder.addCase(getAllPaymentType.rejected, (state) => {
       state.loading = "rejected";
       state.paymentTypeList = {};
+    });
+
+    builder.addCase(getAllSolutionList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSolutionList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allSolutionList = action.payload;
+    });
+    builder.addCase(getAllSolutionList.rejected, (state) => {
+      state.loading = "rejected";
+      state.allSolutionList = [];
     });
   },
 });
