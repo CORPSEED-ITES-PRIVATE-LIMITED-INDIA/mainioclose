@@ -88,11 +88,11 @@ export const getAllProductListByType = createAsyncThunk(
   },
 );
 
-export const searchProducts = createAsyncThunk(
-  "searchProducts",
-  async (name) => {
+export const searchSolutionsByName = createAsyncThunk(
+  "searchSolutionsByName",
+  async ({ name, page, size, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/product/productSearch?name=${name}`,
+      `/leadService/api/v1/searchSolutionByName?name=${name}&page=${page}&size=${size}&userId=${userId}`,
     );
     return response.data;
   },
@@ -696,17 +696,17 @@ export const SettingSlice = createSlice({
       state.productList = [];
     });
 
-    builder.addCase(searchProducts.pending, (state) => {
+    builder.addCase(searchSolutionsByName.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(searchProducts.fulfilled, (state, action) => {
+    builder.addCase(searchSolutionsByName.fulfilled, (state, action) => {
       state.loading = "success";
-      state.productList = action.payload;
-      state.productListCount = action?.payload?.length;
+      state.solutionsList = action?.payload;
+      state.solutionsCount = action?.payload?.length;
     });
-    builder.addCase(searchProducts.rejected, (state) => {
+    builder.addCase(searchSolutionsByName.rejected, (state) => {
       state.loading = "rejected";
-      state.productList = [];
+      state.solutionsList = [];
     });
 
     builder.addCase(getAllProductListCount.pending, (state) => {

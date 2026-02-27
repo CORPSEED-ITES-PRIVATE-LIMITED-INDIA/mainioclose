@@ -49,9 +49,9 @@ const NewEstimatePreview = ({ details, due }) => {
 
   return (
     <div className="2xl:max-h-[68vh] md:max-h-[65vh] overflow-auto mt-4 px-2 md:px-4 lg:px-6">
-      <div className="w-full md:w-[80%] lg:w-[70%] mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-6 shadow-md bg-white">
+      <div className="w-full md:w-full lg:w-full mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-6 shadow-md bg-white">
         <div ref={contentRef} className="relative">
-          <div className="absolute -left-4 top-3 bg-green-600 text-white font-medium px-4 py-1.5 rounded-r-md text-sm shadow-md">
+          <div className="absolute -left-6 -top-4 bg-green-600 text-white font-medium px-4 py-1.5 rounded-r-md text-sm shadow-md">
             {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
           </div>
           <div className="bg-white rounded-xl p-4 md:p-8 space-y-6">
@@ -100,12 +100,12 @@ const NewEstimatePreview = ({ details, due }) => {
             </div>
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="space-y-4 text-xs">
-                <div>
+                <div className="max-w-[50%] text-wrap">
                   <p className="font-semibold text-gray-400 mb-1">Bill To ,</p>
                   <p className="font-medium">{details?.unit?.unitName}</p>
                   {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
-                  <p>{details?.unit?.addressLine1}</p>
                   <p>
+                    {details?.unit?.addressLine1}{" "}
                     {[
                       details?.unit?.city,
                       details?.unit?.state,
@@ -113,15 +113,15 @@ const NewEstimatePreview = ({ details, due }) => {
                       details?.unit?.pinCode,
                     ]
                       ?.filter(Boolean)
-                      .join(", ")}
+                      .join(", ")}{" "}
                   </p>
                 </div>
-                <div>
+                <div className="max-w-[50%] text-wrap">
                   <p className="font-semibold text-gray-400 mb-1">Ship To ,</p>
                   <p className="font-medium">{details?.unit?.unitName}</p>
                   {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
-                  <p>{details?.unit?.addressLine1}</p>
                   <p>
+                    {details?.unit?.addressLine1}{" "}
                     {[
                       details?.unit?.city,
                       details?.unit?.state,
@@ -133,12 +133,12 @@ const NewEstimatePreview = ({ details, due }) => {
                   </p>
                 </div>
               </div>
-              <div className="text-xs space-y-1 md:text-right">
-                <p>
+              <div className="text-xs space-y-1 md:text-right max-w-[40%]">
+                <p className="whitespace-nowrap">
                   <span className="font-semibold">Estimate date:</span>{" "}
                   {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
                 </p>
-                <p>
+                <p className="whitespace-nowrap">
                   <span className="font-semibold">Valid till date:</span>{" "}
                   {dayjs(details?.validUntil).format("DD-MM-YYYY")}
                 </p>

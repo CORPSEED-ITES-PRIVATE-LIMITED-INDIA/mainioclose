@@ -33,17 +33,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
   getAllEstimateByUserId,
-  getEstimateByLeadId,
+  getEstimateByEstimateId,
   getTotalCountOfEstimate,
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
 import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
-import InvoiceView from "../../components/InvoiceView";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
+import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
 
 const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -189,9 +189,10 @@ const Estimate = () => {
   }, [sortDescriptor, filteredItems]);
 
   const handleViewEstimate = (rowData) => {
-    dispatch(getEstimateByLeadId(rowData?.leadId))
+    dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
+          console.log("dsjkgjkgdkj", resp);
           let data = resp?.payload;
           setEstimateDetail(data);
           viewModal.onOpen();
@@ -728,7 +729,7 @@ const Estimate = () => {
         </TableBody>
       </Table>
       <Modal
-        size="5xl"
+        size="4xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={viewModal.isOpen}
@@ -740,7 +741,7 @@ const Estimate = () => {
             <>
               <ModalHeader>Estimate</ModalHeader>
               <ModalBody className="max-h-[70vh] overflow-auto">
-                <InvoiceView details={estimateDetail} />
+                <NewEstimatePreview details={estimateDetail} />
               </ModalBody>
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>

@@ -595,7 +595,7 @@ export const createContactViaEstimateInCompany = createAsyncThunk(
 
 export const getContactDetailListByCompanyId = createAsyncThunk(
   "getContactDetailListByCompanyId",
-  async ({companyId,userId}) => {
+  async ({ companyId, userId }) => {
     const response = await api.get(
       `/leadService/api/v1/contacts/by-company/${companyId}?requestingUserId=${userId}`,
     );
@@ -624,7 +624,6 @@ const CommonSlice = createSlice({
     subSubIndustryListBySubIndustryId: [],
     industryDataListBySubSubIndustryId: [],
     allContactList: [],
-    contactListByCompanyId: [],
     approvalUserList: [],
     urlList: [],
     usersListByServiceId: [],

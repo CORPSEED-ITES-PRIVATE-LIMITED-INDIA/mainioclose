@@ -7,15 +7,15 @@ export const getAllLeadsByFilter = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/lead/getAllLeadV1?page=${data?.page}&size=${data?.size}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const searchLeads = createAsyncThunk("searchLeads", async (data) => {
   const response = await api.get(
-    `/leadService/api/v1/lead/searchLead?searchParam=${data.input}&userId=${data.id}`
+    `/leadService/api/v1/lead/searchLead?searchParam=${data.input}&userId=${data.id}`,
   );
   return response.data;
 });
@@ -25,10 +25,10 @@ export const getAllLeadCount = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/lead/getAllLeadCount`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLeadsForExport = createAsyncThunk(
@@ -36,10 +36,10 @@ export const getAllLeadsForExport = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/lead/getAllLeadForImport`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createLeads = createAsyncThunk("createLeads", async (data) => {
@@ -51,10 +51,10 @@ export const handleDeleteSingleLead = createAsyncThunk(
   "handleDeleteSingleLead",
   async (data) => {
     const response = await api.delete(
-      `/leadService/api/v1/lead/deleteLead?leadId=${data?.id}&userId=${data?.userId}`
+      `/leadService/api/v1/lead/deleteLead?leadId=${data?.id}&userId=${data?.userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const deleteMultipleLeads = createAsyncThunk(
@@ -64,10 +64,10 @@ export const deleteMultipleLeads = createAsyncThunk(
       `/leadService/api/v1/lead/deleteMultiLead`,
       {
         data: data,
-      }
+      },
     );
     return response.data;
-  }
+  },
 );
 
 export const multiAssignedLeads = createAsyncThunk(
@@ -75,30 +75,30 @@ export const multiAssignedLeads = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/lead/updateMultiLeadAssigne`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSingleLeadDataByLeadId = createAsyncThunk(
   "getSingleLeadData",
   async ({ leadId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/lead/getSingleLeadData?leadId=${leadId}&currentUserId=${userId}`
+      `/leadService/api/v1/lead/getSingleLeadData?leadId=${leadId}&currentUserId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateSingleLeadName = createAsyncThunk(
   "updateSingleLeadName",
   async ({ leadName, leadId, userId }) => {
     const response = await api.put(
-      `/leadService/api/v1/lead/updateLeadName?leadName=${leadName}&leadId=${leadId}&userId=${userId}`
+      `/leadService/api/v1/lead/updateLeadName?leadName=${leadName}&leadId=${leadId}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createRemakWithFile = createAsyncThunk(
@@ -106,17 +106,17 @@ export const createRemakWithFile = createAsyncThunk(
   async (data) => {
     const response = await api.post(`/leadService/api/v1/createRemarks`, data);
     return response.data;
-  }
+  },
 );
 
 export const getAllRemarkAndCommnts = createAsyncThunk(
   "getAllRemarks",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/getAllRemarks?leadId=${id}`
+      `/leadService/api/v1/getAllRemarks?leadId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateRemarks = createAsyncThunk("updateRemarks", async (data) => {
@@ -126,7 +126,7 @@ export const updateRemarks = createAsyncThunk("updateRemarks", async (data) => {
 
 export const deleteRemarks = createAsyncThunk("deleteRemarks", async (data) => {
   const response = await api.delete(
-    `/leadService/api/v1/deleteRemark?remarkId=${data?.remarkId}&currentUser=${data?.userId}&leadId=${data?.leadId}`
+    `/leadService/api/v1/deleteRemark?remarkId=${data?.remarkId}&currentUser=${data?.userId}&leadId=${data?.leadId}`,
   );
   return response.data;
 });
@@ -135,30 +135,30 @@ export const getEstimateListByUserId = createAsyncThunk(
   "getEstimateListByUserId",
   async ({ userId, status }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllEstimateFormByUserId?status=${status}&userId=${userId}`
+      `/leadService/api/v1/leadEstimate/getAllEstimateFormByUserId?status=${status}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getProjectAction = createAsyncThunk(
   "getProjectAction",
   async ({ userId, page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/project/getAllProject?userId=${userId}&page=${page}&size=${size}`
+      `/leadService/api/v1/project/getAllProject?userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLeadUser = createAsyncThunk(
   "getAllLeadUserss",
   async (userid) => {
     const response = await api.get(
-      `/leadService/api/v1/users/getAllUserByHierarchy?userId=${userid}`
+      `/leadService/api/v1/users/getAllUserByHierarchy?userId=${userid}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateAddressInLeads = createAsyncThunk(
@@ -166,10 +166,10 @@ export const updateAddressInLeads = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/lead/addAddressInLead`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateIndustriesInLeads = createAsyncThunk(
@@ -177,30 +177,30 @@ export const updateIndustriesInLeads = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/lead/addIndustryInLead`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const changeLeadAssigneeLeads = createAsyncThunk(
   "changeLeadAssignee",
   async ({ leadId, assigneeId, userId }) => {
     const response = await api.put(
-      `/leadService/api/v1/lead/updateAssignee?leadId=${leadId}&userId=${assigneeId}&updatedById=${userId}`
+      `/leadService/api/v1/lead/updateAssignee?leadId=${leadId}&userId=${assigneeId}&updatedById=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateLeadStatus = createAsyncThunk(
   "updateLeadStatus",
   async ({ leadId, statusId, userId }) => {
     const response = await api.put(
-      `/leadService/api/v1/status/updateLeadStatus?leadId=${leadId}&statusId=${statusId}&currentUserId=${userId}`
+      `/leadService/api/v1/status/updateLeadStatus?leadId=${leadId}&statusId=${statusId}&currentUserId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createLeadContacts = createAsyncThunk(
@@ -208,10 +208,10 @@ export const createLeadContacts = createAsyncThunk(
   async (createContact) => {
     const response = await api.post(
       `/leadService/api/v1/client/createClient`,
-      createContact
+      createContact,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateLeadsContact = createAsyncThunk(
@@ -219,65 +219,67 @@ export const updateLeadsContact = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/client/updateClientInfo`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 export const deleteLeadContact = createAsyncThunk(
   "deleteLeadContacts",
   async ({ leadId, clientId, userId }) => {
     const response = await api.delete(
-      `/leadService/api/v1/client/deleteClient?leadId=${leadId}&clientId=${clientId}&currentUserId=${userId}`
+      `/leadService/api/v1/client/deleteClient?leadId=${leadId}&clientId=${clientId}&currentUserId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllEstimateByUserId = createAsyncThunk(
   "getAllEstimateByUserId",
-  async ({ userId, page, size,data }) => {
+  async ({ userId, page, size, data }) => {
     const response = await api.post(
-      `/accountService/api/v1/estimates/all?userId=${userId}&page=${page}&size=${size}`,data
+      `/accountService/api/v1/estimates/all?userId=${userId}&page=${page}&size=${size}`,
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getTotalCountOfEstimate = createAsyncThunk(
   "getTotalCountOfEstimate",
-  async ({userId,data}) => {
+  async ({ userId, data }) => {
     const response = await api.post(
-      `/accountService/api/v1/estimates/count?userId=${userId}`,data
+      `/accountService/api/v1/estimates/count?userId=${userId}`,
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProposalTemplateList = createAsyncThunk(
   "getAllProposalTemplateList",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`
+      `/leadService/api/v1/leadEstimate/getAllProposalTempalte`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBrochureList = createAsyncThunk(
   "getAllBrochureList",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/brochureBook/getAllBrochureBook`
+      `/leadService/api/v1/brochureBook/getAllBrochureBook`,
     );
     return response.data;
-  }
+  },
 );
 
 export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
   const response = await api.post(
     `/leadService/api/v1/proposal/createProposal`,
-    data
+    data,
   );
   return response.data;
 });
@@ -287,30 +289,40 @@ export const editLeadPropposal = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/proposal/editProposal`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getProposalDataByLeadId = createAsyncThunk(
   "getProposalDataByLeadId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/proposal/getProposalByLeadId?proposalId=${id}`
+      `/leadService/api/v1/proposal/getProposalByLeadId?proposalId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getEstimateByLeadId = createAsyncThunk(
   "getEstimateByLeadId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateByLeadId?leadId=${id}`
+      `/leadService/api/v1/leadEstimate/getEstimateByLeadId?leadId=${id}`,
     );
     return response.data;
-  }
+  },
+);
+
+export const getEstimateByEstimateId = createAsyncThunk(
+  "getEstimateByEstimateId",
+  async ({ estimateId, userId }) => {
+    const response = await api.get(
+      `/accountService/api/v1/estimates/${estimateId}?userId=${userId}`,
+    );
+    return response.data;
+  },
 );
 
 export const getQualityLeadsReport = createAsyncThunk(
@@ -318,40 +330,40 @@ export const getQualityLeadsReport = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/leadRepot/getAllAutoLeadQualityReport`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProposalByUserIdForManager = createAsyncThunk(
   "getAllProposalByUserIdForManager",
   async ({ id, page, size, status }) => {
     const response = await api.get(
-      `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}&status=${status}`
+      `/leadService/api/v1/proposal/getAllProposalForManger?userId=${id}&page=${page}&size=${size}&status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllPropsalListCount = createAsyncThunk(
   "getAllPropsalListCount",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/proposal/getAllProposalForMangerCount?userId=${id}`
+      `/leadService/api/v1/proposal/getAllProposalForMangerCount?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const proposalApprovalByManager = createAsyncThunk(
   "proposalApprovalByManager",
   async ({ proposalId, status, userId, comment }) => {
     const response = await api.put(
-      `/leadService/api/v1/proposal/approvedProposalByManager?proposalId=${proposalId}&status=${status}&userId=${userId}&comment=${comment}`
+      `/leadService/api/v1/proposal/approvedProposalByManager?proposalId=${proposalId}&status=${status}&userId=${userId}&comment=${comment}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllAutoHistoryList = createAsyncThunk(
@@ -359,10 +371,10 @@ export const getAllAutoHistoryList = createAsyncThunk(
   async ({ page, size, data }) => {
     const response = await api.post(
       `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterNew?page=${page}&size=${size}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllAutoHistroryCount = createAsyncThunk(
@@ -370,10 +382,10 @@ export const getAllAutoHistroryCount = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/lead/getAllAutoHistoryDetailWithDateFilterCount`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllAutoHistoryForExportByDate = createAsyncThunk(
@@ -381,25 +393,25 @@ export const getAllAutoHistoryForExportByDate = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/lead/getAutoHistoryDetailsForExportWithDateFilterNew`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllHistory = createAsyncThunk(
   "allLeadsDataHistorys",
   async (id) => {
     const allHistoryRes = await api.get(
-      `/leadService/api/v1/leadHistory/getAllLeadHistory?leadId=${id}`
+      `/leadService/api/v1/leadHistory/getAllLeadHistory?leadId=${id}`,
     );
     return allHistoryRes?.data;
-  }
+  },
 );
 
 export const getAllTaskData = createAsyncThunk("getAllTaskData", async (id) => {
   const response = await api.get(
-    `/leadService/api/v1/task/getAllTaskByLead?leadId=${id}`
+    `/leadService/api/v1/task/getAllTaskByLead?leadId=${id}`,
   );
   return response.data;
 });
@@ -409,10 +421,10 @@ export const createNewLeadTask = createAsyncThunk(
   async (taskData) => {
     const response = await api.post(
       `/leadService/api/v1/task/createTask`,
-      taskData
+      taskData,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateLeadTask = createAsyncThunk(
@@ -420,15 +432,15 @@ export const updateLeadTask = createAsyncThunk(
   async (addNewTask) => {
     const response = await api.post(
       `/leadService/api/v1/task/updateTaskData`,
-      addNewTask
+      addNewTask,
     );
     return response.data;
-  }
+  },
 );
 
 export const deleteTask = createAsyncThunk("deleteTask", async (data) => {
   const response = await api.delete(
-    `/leadService/api/v1/task/deleteTaskById?taskId=${data?.id}&currentUserId=${data?.userId}`
+    `/leadService/api/v1/task/deleteTaskById?taskId=${data?.id}&currentUserId=${data?.userId}`,
   );
   return response.data;
 });
@@ -438,10 +450,10 @@ export const createEstimateForApprovals = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/leadEstimate/createEstimateForm`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const editEstimateForApprovals = createAsyncThunk(
@@ -449,10 +461,10 @@ export const editEstimateForApprovals = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/leadEstimate/editEstimateForm`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const editLeadEstimate = createAsyncThunk(
@@ -460,10 +472,10 @@ export const editLeadEstimate = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/leadEstimate/editEstimateInvoice`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createEstimate = createAsyncThunk(
@@ -471,20 +483,20 @@ export const createEstimate = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/leadEstimate/createEstimate`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateGstTypeInEstimate = createAsyncThunk(
   "updateGstTypeInEstimate",
   async (data) => {
     const response = await api.post(
-      `/leadService/api/v1/company/updateCompanyGst?companyId=${data?.companyId}&companyType=${data?.companyType}&gstType=${data?.gstType}&bussinessType=${data?.businessType}&gstNo=${data?.gstNo}&panNo=${data?.panNo}`
+      `/leadService/api/v1/company/updateCompanyGst?companyId=${data?.companyId}&companyType=${data?.companyType}&gstType=${data?.gstType}&bussinessType=${data?.businessType}&gstNo=${data?.gstNo}&panNo=${data?.panNo}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAutomationLeads = createAsyncThunk(
@@ -492,20 +504,20 @@ export const getAutomationLeads = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/leadRepot/getAllAutoReport`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const searchIvrLeads = createAsyncThunk(
   "searchIvrLeads",
   async (data) => {
     const response = await api.get(
-      `/leadService/api/v1/lead/leadSearchByQuality?searchParam=${data.input}&userId=${data.id}`
+      `/leadService/api/v1/lead/leadSearchByQuality?searchParam=${data.input}&userId=${data.id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSaleReportByFilter = createAsyncThunk(
@@ -513,10 +525,10 @@ export const getSaleReportByFilter = createAsyncThunk(
   async ({ page, size, data }) => {
     const response = await api.post(
       `/leadService/api/v1/salesReport/getAllSalesAssigneeReport?page=${page}&size=${size}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSaleReportByFilterCount = createAsyncThunk(
@@ -524,10 +536,10 @@ export const getSaleReportByFilterCount = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/salesReport/getAllSalesAssigneeReportCount`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSalesReportByFilterForExport = createAsyncThunk(
@@ -535,40 +547,40 @@ export const getSalesReportByFilterForExport = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/salesReport/getAllSalesAssigneeReportForExport`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const handleViewHistory = createAsyncThunk(
   "viewHistory",
   async ({ userId, leadId }) => {
     const response = await api.put(
-      `/leadService/api/v1/lead/viewHistoryCreate?userId=${userId}&leadId=${leadId}`
+      `/leadService/api/v1/lead/viewHistoryCreate?userId=${userId}&leadId=${leadId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const handleFlagByQualityTeam = createAsyncThunk(
   "handleFlagByQualityTeam",
   async ({ currentUerId, leadId, isMarked }) => {
     const response = await api.put(
-      `/leadService/api/v1/lead/addReopenByQuality?currentUerId=${currentUerId}&leadId=${leadId}&isMarked=${isMarked}`
+      `/leadService/api/v1/lead/addReopenByQuality?currentUerId=${currentUerId}&leadId=${leadId}&isMarked=${isMarked}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const docsUploadListInEstimate = createAsyncThunk(
   "docsUploadListInEstimate",
   async (estimateId) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getRequiredDocByEstimate?estimateId=${estimateId}`
+      `/leadService/api/v1/leadEstimate/getRequiredDocByEstimate?estimateId=${estimateId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const addDocumentsInEstimate = createAsyncThunk(
@@ -576,20 +588,20 @@ export const addDocumentsInEstimate = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/leadEstimate/addRequiredDocInEstimate`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLeadsTask = createAsyncThunk(
   "getAllLeadsTask",
   async (userId) => {
     const response = await api.get(
-      `/leadService/api/v1/task/getAllTaskByAssignee?assigneeId=${userId}`
+      `/leadService/api/v1/task/getAllTaskByAssignee?assigneeId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const transferLeadToAnotherUser = createAsyncThunk(
@@ -597,30 +609,30 @@ export const transferLeadToAnotherUser = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/lead/updateMultiTransferLead`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateLeadSource = createAsyncThunk(
   "updateLeadSource",
   async ({ sourceName, leadId, userId }) => {
     const response = await api.put(
-      `/leadService/api/v1/lead/updateLeadSource?sourceName=${sourceName}&leadId=${leadId}&userId=${userId}`
+      `/leadService/api/v1/lead/updateLeadSource?sourceName=${sourceName}&leadId=${leadId}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllChildLeads = createAsyncThunk(
   "getAllChildLeads",
   async (leadId) => {
     const response = await api.post(
-      `/leadService/api/v1/lead/getAllChildLead?leadId=${leadId}`
+      `/leadService/api/v1/lead/getAllChildLead?leadId=${leadId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const addLeadChild = createAsyncThunk("addLeadChild", async (data) => {
@@ -633,80 +645,80 @@ export const updateAutoAssignnee = createAsyncThunk(
   async (data) => {
     const autoresponse = await api.put(
       `/leadService/api/v1/lead/updateStatusAndAutoSame`,
-      data
+      data,
     );
     return autoresponse?.data;
-  }
+  },
 );
 
 export const getEstimateByLeadIdAndUUID = createAsyncThunk(
   "getEstimateByLeadIdAndUUID",
   async ({ leadId, uuid }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateByLeadIdAndUuid?leadId=${leadId}&uuid=${uuid}`
+      `/leadService/api/v1/leadEstimate/getEstimateByLeadIdAndUuid?leadId=${leadId}&uuid=${uuid}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const checkPlantSetUpData = createAsyncThunk(
   "checkPlantSetUpData",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/lead/checkPlantSetUp?name=${name}`
+      `/leadService/api/v1/lead/checkPlantSetUp?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllEstimateForApproval = createAsyncThunk(
   "getAllApprovalForEstimate",
   async (status) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllEstimateForm?status=${status}`
+      `/leadService/api/v1/leadEstimate/getAllEstimateForm?status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllEstimateHistory = createAsyncThunk(
   "getAllEstimateHistory",
   async ({ estimateId, name, productSubCategoryId }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateHistoryByFormId?estimateId=${estimateId}&name=${name}&productSubCategoryId=${productSubCategoryId}`
+      `/leadService/api/v1/leadEstimate/getEstimateHistoryByFormId?estimateId=${estimateId}&name=${name}&productSubCategoryId=${productSubCategoryId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const approveEstimateApproval = createAsyncThunk(
   "approveEstimateApproval",
   async ({ userId, estimateFormId, comment }) => {
     const response = await api.put(
-      `/leadService/api/v1/leadEstimate/approveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`
+      `/leadService/api/v1/leadEstimate/approveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const disApproveEstimateApproval = createAsyncThunk(
   "disApproveEstimateApproval",
   async ({ userId, estimateFormId, comment }) => {
     const response = await api.put(
-      `/leadService/api/v1/leadEstimate/disapproveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`
+      `/leadService/api/v1/leadEstimate/disapproveEstimateForm?userId=${userId}&estimateFormId=${estimateFormId}&comment=${comment}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getChildLeadEstimateFlagByParentLeadId = createAsyncThunk(
   "getChildLeadEstimateFlagByParentLeadId",
   async (leadId) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/checkEstimate?leadId=${leadId}`
+      `/leadService/api/v1/leadEstimate/checkEstimate?leadId=${leadId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createNewEstimate = createAsyncThunk(
@@ -719,17 +731,17 @@ export const createNewEstimate = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const getNewEstimateByLeadId = createAsyncThunk(
   "getNewEstimateByLeadId",
   async ({ leadId, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/estimates/lead/${leadId}?userId=${userId}`
+      `/accountService/api/v1/estimates/lead/${leadId}?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const LeadSlice = createSlice({
@@ -753,6 +765,7 @@ export const LeadSlice = createSlice({
     brochureList: [],
     proposalDataDetail: {},
     estimateDetail: {},
+    estimateDetailByEstimateId: {},
     qualityReportList: [],
     proposalList: [],
     proposalCount: 0,
@@ -960,6 +973,18 @@ export const LeadSlice = createSlice({
       state.loading = "rejected";
     });
 
+    builder.addCase(getEstimateByEstimateId.pending, (state, action) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getEstimateByEstimateId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateDetailByEstimateId = action?.payload;
+    });
+    builder.addCase(getEstimateByEstimateId.rejected, (state, action) => {
+      state.estimateDetailByEstimateId = {};
+      state.loading = "rejected";
+    });
+
     builder.addCase(getQualityLeadsReport.pending, (state) => {
       state.loading = "pending";
       state.qualityReportList = [];
@@ -981,7 +1006,7 @@ export const LeadSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.proposalList = action?.payload;
-      }
+      },
     );
     builder.addCase(getAllProposalByUserIdForManager.rejected, (state) => {
       state.proposalList = [];
@@ -1033,7 +1058,7 @@ export const LeadSlice = createSlice({
       (state, action) => {
         state.autoHistoryExportList = action?.payload;
         state.autoExportLoading = "success";
-      }
+      },
     );
     builder.addCase(getAllAutoHistoryForExportByDate.rejected, (state) => {
       state.autoHistoryExportList = [];
@@ -1093,7 +1118,7 @@ export const LeadSlice = createSlice({
       (state, action) => {
         state.salesReportExportLoading = "success";
         state.salesReportListForExport = action.payload;
-      }
+      },
     );
     builder.addCase(getSalesReportByFilterForExport.rejected, (state) => {
       state.salesReportExportLoading = "rejected";
@@ -1214,14 +1239,14 @@ export const LeadSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.childLeadFlag = action?.payload;
-      }
+      },
     );
     builder.addCase(
       getChildLeadEstimateFlagByParentLeadId.rejected,
       (state) => {
         state.loading = "rejected";
         state.childLeadFlag = {};
-      }
+      },
     );
 
     builder.addCase(getNewEstimateByLeadId.pending, (state) => {

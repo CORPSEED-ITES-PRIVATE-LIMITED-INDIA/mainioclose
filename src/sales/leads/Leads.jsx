@@ -1460,6 +1460,9 @@ const Leads = () => {
                       )}
                     />
 
+                    {/* These fields commented by Kausal  ----------------------- start--------------- */}
+
+                    {/* 
                     <Controller
                       name="country"
                       control={control}
@@ -1477,9 +1480,9 @@ const Leads = () => {
                           }}
                         />
                       )}
-                    />
+                    /> */}
 
-                    <Controller
+                    {/* <Controller
                       name="state"
                       control={control}
                       render={({ field }) => (
@@ -1496,9 +1499,9 @@ const Leads = () => {
                           }}
                         />
                       )}
-                    />
+                    /> */}
 
-                    <Controller
+                    {/* <Controller
                       name="city"
                       control={control}
                       render={({ field }) => (
@@ -1511,7 +1514,9 @@ const Leads = () => {
                           {...field}
                         />
                       )}
-                    />
+                    /> */}
+
+                    {/* These fields commented by Kausal  ----------------------- end--------------- */}
 
                     <Controller
                       name="ipAddress"
@@ -1546,7 +1551,7 @@ const Leads = () => {
                       )}
                     />
 
-                    <Controller
+                    {/* <Controller
                       name="auto"
                       control={control}
                       render={({ field }) => (
@@ -1565,7 +1570,7 @@ const Leads = () => {
                           ))}
                         </Select>
                       )}
-                    />
+                    /> */}
 
                     <Controller
                       name="source"

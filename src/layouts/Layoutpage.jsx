@@ -46,13 +46,15 @@ const Layoutpage = () => {
   const automationStatus = useSelector((state) => state.auth.automationStatus);
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
-    (state) => state?.auth?.getDepartmentDetail?.department
+    (state) => state?.auth?.getDepartmentDetail?.department,
   );
   const pathname = location.pathname;
   const segments = pathname.split("/");
   const userIndex = segments.indexOf("erp");
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
+
+  console.log("users ----->    ", userRole, department);
 
   useEffect(() => {
     dispatch(getAutomationStatus());

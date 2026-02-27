@@ -30,7 +30,7 @@ import {
   createSolution,
   getAllSolutionCountByType,
   getAllSolutionsByType,
-  searchProducts,
+  searchSolutionsByName,
   updateSolution,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
@@ -290,16 +290,24 @@ const Solutions = () => {
     }));
   }, []);
 
-  const onSearchChange = React.useCallback((value) => {
-    if (value) {
+  const onSearchChange = React.useCallback(
+    (value) => {
       setFilterValue(value);
-      dispatch(searchProducts(value));
-    } else {
-      setFilterValue("");
-      dispatch(getAllSolutionsByType(initialFilteration));
-      dispatch(getAllSolutionCountByType(initialFilteration));
-    }
-  }, []);
+      const trimmedValue = value?.trim() || "";
+      if (trimmedValue.length > 2) {
+        dispatch(
+          searchSolutionsByName({
+            name: trimmedValue,
+            ...initialFilteration,
+          }),
+        );
+      } else if (trimmedValue.length === 0) {
+        dispatch(getAllSolutionsByType(initialFilteration));
+        dispatch(getAllSolutionCountByType(initialFilteration));
+      }
+    },
+    [dispatch, initialFilteration],
+  );
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
@@ -307,6 +315,8 @@ const Solutions = () => {
       ...prev,
       page: 1,
     }));
+    dispatch(getAllSolutionsByType(initialFilteration));
+    dispatch(getAllSolutionCountByType(initialFilteration));
   }, []);
 
   const topContent = React.useMemo(() => {
