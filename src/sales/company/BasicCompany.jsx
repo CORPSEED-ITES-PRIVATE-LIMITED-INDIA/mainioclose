@@ -42,17 +42,6 @@ export const unitSchema = (isEstimate) => {
   if (isEstimate) {
     return z.object({
       name: z.string().min(1, "Name is required"),
-      address: z.string().optional(),
-      city: z.string().optional(),
-      state: z.string().optional(),
-      country: z.string().optional(),
-      pinCode: z.string().optional(),
-      gstNo: z.string().optional(),
-      panNo: z.string().optional(),
-    });
-  } else {
-    return z.object({
-      name: z.string().min(1, "Name is required"),
       address: z.string().min(1, "Address is required"),
       city: z.string().min(1, "City is required"),
       state: z.string().min(1, "State is required"),
@@ -60,6 +49,17 @@ export const unitSchema = (isEstimate) => {
       pinCode: z.string().min(1, "Pincode is required"),
       gstNo: z.string().optional(),
       panNo: z.string().min(1, "Pan number is required"),
+    });
+  } else {
+    return z.object({
+      name: z.string().min(1, "Name is required"),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      country: z.string().optional(),
+      pinCode: z.string().optional(),
+      gstNo: z.string().optional(),
+      panNo: z.string().optional(),
     });
   }
 };
