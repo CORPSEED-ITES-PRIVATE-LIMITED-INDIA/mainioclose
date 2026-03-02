@@ -415,7 +415,6 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                         <Input
                           value={field.value}
                           label="GST Number"
-                          isRequired={isEstimate ? true : false}
                           maxLength={15}
                           onChange={(e) => {
                             handleGstChange(e);
