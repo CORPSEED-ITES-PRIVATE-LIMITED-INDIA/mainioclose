@@ -37,6 +37,7 @@ const lineItemSchema = z.object({
 export const estimateFormSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   unitId: z.string().min(1, "Unit is required"),
+  solutionName: z.string().min(1, "Solution is required"),
   // email: z.string().email("Invalid email").optional(),
   contactId: z.string().min(1, "contact is required"),
   lineItems: z.array(lineItemSchema).min(1, "At least one item is required"),
