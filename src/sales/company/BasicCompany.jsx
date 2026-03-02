@@ -415,6 +415,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                         <Input
                           value={field.value}
                           label="GST Number"
+                          isRequired={isEstimate ? true : false}
                           maxLength={15}
                           onChange={(e) => {
                             handleGstChange(e);
@@ -433,6 +434,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                         <Input
                           value={field.value}
                           label="PAN Number"
+                          isRequired={isEstimate ? true : false}
                           maxLength={10}
                           onChange={(e) => {
                             handlePanChange(e);
@@ -451,6 +453,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                         <Input
                           {...field}
                           label="Address"
+                          isRequired={isEstimate ? true : false}
                           isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
                         />
@@ -467,6 +470,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                           data={countryList || []}
                           labelKey="name"
                           valueKey="name"
+                          isRequired={isEstimate ? true : false}
                           value={field.value}
                           onChange={(value) => {
                             dispatch(getAllStatesByCountryName(value));
@@ -488,6 +492,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                           data={statesList || []}
                           labelKey="name"
                           valueKey="name"
+                          isRequired={isEstimate ? true : false}
                           value={field.value}
                           isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
@@ -509,6 +514,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                           data={citiesList || []}
                           labelKey="name"
                           valueKey="name"
+                          isRequired={isEstimate ? true : false}
                           value={field.value}
                           isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
@@ -526,6 +532,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                           {...field}
                           label="Pin Code"
                           maxLength={6}
+                          isRequired={isEstimate ? true : false}
                           isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
                         />
