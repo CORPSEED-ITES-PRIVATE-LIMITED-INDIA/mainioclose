@@ -404,6 +404,7 @@ export const LeadEstimates = () => {
                   title: "Unit details saved in accounts .",
                   color: "success",
                 });
+                dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
                 resetUnitForm();
                 onClose();
                 dispatch(getBasicCompanyDetails({ leadId, userId }));
