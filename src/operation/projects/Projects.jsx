@@ -25,6 +25,7 @@ import {
   Textarea,
   addToast,
   Chip,
+  Progress,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Plus, Search } from "lucide-react";
@@ -64,6 +65,7 @@ export const columns = [
   { name: "UNBILL NO.", uid: "unbilledNumber" },
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "DATE", uid: "date" },
+  { name: "MILESTONE", uid: "mileStone" },
   { name: "AMOUNT", uid: "amount" },
   { name: "ADDRESS", uid: "address" },
 ];
@@ -81,6 +83,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "salesPersonName",
   "contactName",
   "date",
+  "mileStone",
   "amount",
   "address",
 ];
@@ -244,6 +247,20 @@ const Projects = () => {
         return <p className="text-sm">{rowData?.estimateNumber}</p>;
       case "date":
         return <p>{rowData?.date}</p>;
+      case "mileStone":
+        let progess = Math.ceil((2 / 3) * 100);
+        return (
+          <div>
+            <Progress
+              aria-label="Downloading..."
+              className="max-w-md"
+              color="success"
+              showValueLabel={true}
+              size="sm"
+              value={progess}
+            />
+          </div>
+        );
       case "amount":
         return (
           <div className="flex flex-col gap-0.5">

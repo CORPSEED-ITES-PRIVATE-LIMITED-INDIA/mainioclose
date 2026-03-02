@@ -24,6 +24,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Progress,
   Select,
   SelectItem,
   Textarea,
@@ -501,9 +502,44 @@ const ProjectDetails = () => {
                 </p>
               </div>
             </div>
+            <Progress
+              label={"Completed"}
+              aria-label="Downloading..."
+              className="max-w-md"
+              color="success"
+              showValueLabel={true}
+              size="sm"
+              value={100}
+            />
           </div>
         </div>
-        <Dropdown>
+        <div className="flex flex-col justify-between gap-2.5 py-1.5">
+          <div className="flex items-center gap-1.5">
+            <Button
+              radius="sm"
+              onPress={() => {
+                onOpen();
+                dispatch(
+                  getRequiredDocumentsByProductId({
+                    userId,
+                    projectId,
+                  }),
+                );
+              }}
+            >
+              Documents
+            </Button>
+            <Button radius="sm" onPress={clientModal.onOpen}>
+              Client login credentials
+            </Button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-xl font-medium">Due Amount</h3>
+            <h3 className="text-xl font-medium">:</h3>
+            <h3 className="text-xl font-medium">₹ 0</h3>
+          </div>
+        </div>
+        {/* <Dropdown>
           <DropdownTrigger>
             <Button variant="light" isIconOnly radius="full">
               <EllipsisVertical />
@@ -533,10 +569,10 @@ const ProjectDetails = () => {
               Client login credentials
             </DropdownItem>
           </DropdownMenu>
-        </Dropdown>
+        </Dropdown> */}
       </div>
 
-      <div className="max-h-[70vh] overflow-auto">
+      <div className="max-h-[70vh] overflow-auto py-2.5">
         <Accordion variant="splitted" defaultExpandedKeys={["0"]}>
           {detailedData?.milestones?.length > 0 &&
             detailedData?.milestones?.map((detail, idx) => {
@@ -696,14 +732,14 @@ const ProjectDetails = () => {
         </Accordion>
       </div>
 
-      <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
           {(onClose) => (
             <>
-              <DrawerHeader className="flex flex-col gap-1">
+              <ModalHeader className="flex flex-col gap-1">
                 Documents
-              </DrawerHeader>
-              <DrawerBody className="max-h-[90vh] overflow-auto">
+              </ModalHeader>
+              <ModalBody className="max-h-[90vh] overflow-auto">
                 <NewSelect
                   label={"Select applicant type"}
                   labelKey={"name"}
@@ -847,19 +883,19 @@ const ProjectDetails = () => {
                     </Card>
                   );
                 })}
-              </DrawerBody>
-              <DrawerFooter>
+              </ModalBody>
+              <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
                 <Button color="primary" onPress={onClose}>
                   Action
                 </Button>
-              </DrawerFooter>
+              </ModalFooter>
             </>
           )}
-        </DrawerContent>
-      </Drawer>
+        </ModalContent>
+      </Modal>
 
       <Modal
         isOpen={assigneeModal.isOpen}
@@ -1116,16 +1152,16 @@ const ProjectDetails = () => {
         </ModalContent>
       </Modal>
 
-      <Drawer
+      <Modal
         size="3xl"
         isOpen={clientModal.isOpen}
         onOpenChange={clientModal.onOpenChange}
         hideCloseButton
       >
-        <DrawerContent>
+        <ModalContent>
           {(onClose) => (
             <>
-              <DrawerHeader className="flex justify-between items-center gap-1">
+              <ModalHeader className="flex justify-between items-center gap-1">
                 <div>
                   {isCredentials
                     ? "Add client portal login credentials"
@@ -1150,8 +1186,8 @@ const ProjectDetails = () => {
                     <Plus className="w-4 h-4" />
                   </Button>
                 )}
-              </DrawerHeader>
-              <DrawerBody className="max-h-[90vh] overflow-auto">
+              </ModalHeader>
+              <ModalBody className="max-h-[90vh] overflow-auto">
                 {isCredentials ? (
                   <Form className="w-full" onSubmit={onSubmit}>
                     <div className="w-full grid grid-cols-2 gap-2">
@@ -1196,7 +1232,7 @@ const ProjectDetails = () => {
                         onChange={handleChange}
                       />
                     </div>
-                    <div className="w-full flex justify-end gap-2">
+                    <ModalFooter className="w-full flex justify-end gap-2">
                       <Button
                         variant="flat"
                         onPress={() => setIsCredentials(false)}
@@ -1210,7 +1246,7 @@ const ProjectDetails = () => {
                       >
                         Submit
                       </Button>
-                    </div>
+                    </ModalFooter>
                   </Form>
                 ) : (
                   <div className="flex flex-col gap-2.5">
@@ -1297,19 +1333,19 @@ const ProjectDetails = () => {
                     </div>
                   </div>
                 )}
-              </DrawerBody>
-              <DrawerFooter>
+              </ModalBody>
+              {/* <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
                 <Button color="primary" onPress={onClose}>
                   Action
                 </Button>
-              </DrawerFooter>
+              </ModalFooter> */}
             </>
           )}
-        </DrawerContent>
-      </Drawer>
+        </ModalContent>
+      </Modal>
 
       <Modal
         isOpen={verifyModal.isOpen}

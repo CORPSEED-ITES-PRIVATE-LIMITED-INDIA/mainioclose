@@ -475,6 +475,51 @@ export const approvedCompanyUnitsInAccount = createAsyncThunk(
   },
 );
 
+export const getAllCompanyByUserId = createAsyncThunk(
+  "getAllCompanyByUserId",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/companies/getBasicCompany?assigneeId=${userId}`,
+    );
+    return response.data;
+  },
+);
+
+export const getAllUnitListByCompanyId = createAsyncThunk(
+  "getAllUnitListByCompanyId",
+  async (companyId) => {
+    const response = await api.get(
+      `/leadService/api/companies/${companyId}/units`,
+    );
+    return response.data;
+  },
+);
+
+export const getBasicCompanyDetailByCompanyId = createAsyncThunk(
+  "getBasicCompanyDetailByCompanyId",
+  async (companyId) => {
+    const response = await api.get(
+      `/leadService/api/companies/getCompany/${companyId}`,
+    );
+    return response.data;
+  },
+);
+
+export const updateBasicCompanyDetail = createAsyncThunk(
+  "updateBasicCompanyDetail",
+  async ({ companyId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/companies/${companyId}/partial-details?updatedBy=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.payload);
+    }
+  },
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -499,6 +544,8 @@ const CompanySlice = createSlice({
     companyDetailById: {},
     basicCompanyDetail: {},
     companyUnitListForAccounts: [],
+    basicCompanyList: [],
+    basicUnitList: [],
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {
@@ -758,12 +805,9 @@ const CompanySlice = createSlice({
       state.newCompaniesTotalCount = 0;
     });
 
-    builder.addCase(
-      getGstListByCompanyIdInAccounts.pending,
-      (state, action) => {
-        state.loading = "pending";
-      },
-    );
+    builder.addCase(getGstListByCompanyIdInAccounts.pending, (state) => {
+      state.loading = "pending";
+    });
     builder.addCase(
       getGstListByCompanyIdInAccounts.fulfilled,
       (state, action) => {
@@ -771,13 +815,49 @@ const CompanySlice = createSlice({
         state.loading = "success";
       },
     );
+    builder.addCase(getGstListByCompanyIdInAccounts.rejected, (state) => {
+      state.loading = "rejected";
+      state.companyUnitListForAccounts = [];
+    });
+
+    builder.addCase(getAllCompanyByUserId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCompanyByUserId.fulfilled, (state, action) => {
+      state.basicCompanyList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllCompanyByUserId.rejected, (state) => {
+      state.loading = "rejected";
+      state.basicCompanyList = [];
+    });
+
+    builder.addCase(getAllUnitListByCompanyId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUnitListByCompanyId.fulfilled, (state, action) => {
+      state.basicUnitList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getAllUnitListByCompanyId.rejected, (state) => {
+      state.loading = "rejected";
+      state.basicUnitList = [];
+    });
+
+    builder.addCase(getBasicCompanyDetailByCompanyId.pending, (state) => {
+      state.loading = "pending";
+    });
     builder.addCase(
-      getGstListByCompanyIdInAccounts.rejected,
+      getBasicCompanyDetailByCompanyId.fulfilled,
       (state, action) => {
-        state.loading = "rejected";
-        state.companyUnitListForAccounts = [];
+        state.basicCompanyDetail = action.payload;
+        state.loading = "success";
       },
     );
+    builder.addCase(getBasicCompanyDetailByCompanyId.rejected, (state) => {
+      state.loading = "rejected";
+      state.basicCompanyDetail = {};
+    });
   },
 });
 

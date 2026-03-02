@@ -29,24 +29,42 @@ import { Building, Plus } from "lucide-react";
 import {
   addBasicCompanyDetail,
   createCompanyInAccounts,
+  getAllUnitListByCompanyId,
+  getBasicCompanyDetailByCompanyId,
   getBasicCompanyDetails,
+  updateBasicCompanyDetail,
 } from "../../toolkit/slices/companySlice";
 import { formatGSTInput, formatPANInput } from "../../common";
 
 const iconClass = "h-4 w-4";
 
-export const unitSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  pinCode: z.string().optional(),
-  gstNo: z.string().optional(),
-  panNo: z.string().optional(),
-});
+export const unitSchema = (isEstimate) => {
+  if (isEstimate) {
+    return z.object({
+      name: z.string().min(1, "Name is required"),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      country: z.string().optional(),
+      pinCode: z.string().optional(),
+      gstNo: z.string().optional(),
+      panNo: z.string().optional(),
+    });
+  } else {
+    return z.object({
+      name: z.string().min(1, "Name is required"),
+      address: z.string().min(1, "Address is required"),
+      city: z.string().min(1, "City is required"),
+      state: z.string().min(1, "State is required"),
+      country: z.string().min(1, "Country is required"),
+      pinCode: z.string().min(1, "Pincode is required"),
+      gstNo: z.string().optional(),
+      panNo: z.string().min(1, "Pan number is required"),
+    });
+  }
+};
 
-const BasicCompany = ({ isEstimate }) => {
+const BasicCompany = ({ isEstimate, companyDetail }) => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
@@ -55,14 +73,6 @@ const BasicCompany = ({ isEstimate }) => {
   const citiesList = useSelector((state) => state.common.citiesList);
   const company = useSelector((state) => state.company.basicCompanyDetail);
 
-  useEffect(() => {
-    dispatch(getAllCountries());
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(getBasicCompanyDetails({ leadId, userId }));
-  }, [dispatch, leadId, userId]);
-
   const {
     control,
     handleSubmit,
@@ -70,7 +80,7 @@ const BasicCompany = ({ isEstimate }) => {
     reset,
     setValue,
   } = useForm({
-    resolver: zodResolver(unitSchema),
+    resolver: zodResolver(unitSchema(isEstimate)),
     defaultValues: {
       name: "",
       address: "",
@@ -85,6 +95,50 @@ const BasicCompany = ({ isEstimate }) => {
       updatedById: userId,
     },
   });
+
+  useEffect(() => {
+    dispatch(getAllCountries());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (isEstimate && companyDetail?.id) {
+      dispatch(getBasicCompanyDetailByCompanyId(companyDetail?.id)).then(
+        (resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
+            const data = resp.payload;
+            reset({
+              name: data?.name,
+              address: data?.address,
+              city: data?.city,
+              state: data?.state,
+              country: data?.country,
+              pinCode: data?.pinCode,
+              gstNo: data?.gstNo,
+              panNo: data?.panNo,
+            });
+          }
+        },
+      );
+    } else {
+      dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
+          const data = resp.payload;
+          reset({
+            name: data?.name,
+            address: data?.address,
+            city: data?.city,
+            state: data?.state,
+            country: data?.country,
+            pinCode: data?.pinCode,
+            gstNo: data?.gstNo,
+            panNo: data?.panNo,
+          });
+        }
+      });
+    }
+  }, [dispatch, leadId, userId, companyDetail]);
 
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
 
@@ -128,64 +182,149 @@ const BasicCompany = ({ isEstimate }) => {
     values.leadId = leadId;
     values.createdById = userId;
     values.updatedById = userId;
-    dispatch(addBasicCompanyDetail(values))
-      .then((resp) => {
-        console.log("jkdghsjkdgjhsdgh", resp);
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Company details added successfully !.",
-            color: "success",
-          });
-          dispatch(
-            createCompanyInAccounts({
-              leadCompanyId: resp?.payload?.id,
-              companyUnitId: resp?.payload?.units?.[0]?.id,
-              ...values,
-            }),
-          )
-            .then((companyRes) => {
-              if (companyRes.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Company created in account service is done.",
-                  color: "success",
-                });
-                reset();
-                onClose();
-                dispatch(getBasicCompanyDetails({ leadId, userId }));
-              } else {
-                addToast({
-                  title: `${companyRes?.payload?.data?.message} with status ${companyRes?.payload?.data?.status}`,
-                  color: "danger",
-                });
-              }
-            })
-            .catch((err) =>
-              addToast({
-                title: "Something went wrong in account service !.",
-                color: "danger",
-              }),
-            );
-        } else {
-          addToast({
-            title: resp?.payload,
-            color: "danger",
-          });
-        }
-      })
-      .catch((err) =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
-      );
+    if (isEstimate && companyDetail?.id) {
+      dispatch(
+        updateBasicCompanyDetail({
+          companyId: companyDetail?.id,
+          userId,
+          data: values,
+        }),
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Company details updated successfully !.",
+              color: "success",
+            });
+            reset();
+            onClose();
+            dispatch(getBasicCompanyDetails({ leadId, userId }));
+
+            // dispatch(
+            //   createCompanyInAccounts({
+            //     leadCompanyId: resp?.payload?.id,
+            //     companyUnitId: resp?.payload?.units?.[0]?.id,
+            //     ...values,
+            //   }),
+            // )
+            //   .then((companyRes) => {
+            //     if (companyRes.meta.requestStatus === "fulfilled") {
+            //       addToast({
+            //         title: "Company created in account service is done.",
+            //         color: "success",
+            //       });
+            //       reset();
+            //       onClose();
+            //       dispatch(getBasicCompanyDetails({ leadId, userId }));
+            //     } else {
+            //       addToast({
+            //         title: `${companyRes?.payload?.data?.message} with status ${companyRes?.payload?.data?.status}`,
+            //         color: "danger",
+            //       });
+            //     }
+            //   })
+            //   .catch((err) =>
+            //     addToast({
+            //       title: "Something went wrong in account service !.",
+            //       color: "danger",
+            //     }),
+            //   );
+          } else {
+            addToast({
+              title: resp?.payload,
+              color: "danger",
+            });
+          }
+        })
+        .catch((err) =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    } else {
+      dispatch(addBasicCompanyDetail(values))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Company details added successfully !.",
+              color: "success",
+            });
+            reset();
+            onClose();
+            dispatch(getBasicCompanyDetails({ leadId, userId }));
+
+            // dispatch(
+            //   createCompanyInAccounts({
+            //     leadCompanyId: resp?.payload?.id,
+            //     companyUnitId: resp?.payload?.units?.[0]?.id,
+            //     ...values,
+            //   }),
+            // )
+            //   .then((companyRes) => {
+            //     if (companyRes.meta.requestStatus === "fulfilled") {
+            //       addToast({
+            //         title: "Company created in account service is done.",
+            //         color: "success",
+            //       });
+            //       reset();
+            //       onClose();
+            //       dispatch(getBasicCompanyDetails({ leadId, userId }));
+            //     } else {
+            //       addToast({
+            //         title: `${companyRes?.payload?.data?.message} with status ${companyRes?.payload?.data?.status}`,
+            //         color: "danger",
+            //       });
+            //     }
+            //   })
+            //   .catch((err) =>
+            //     addToast({
+            //       title: "Something went wrong in account service !.",
+            //       color: "danger",
+            //     }),
+            //   );
+          } else {
+            addToast({
+              title: resp?.payload,
+              color: "danger",
+            });
+          }
+        })
+        .catch((err) =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    }
   };
 
   return (
     <>
       {isEstimate ? (
-        !company?.name && (
+        !company?.name ? (
           <span
             className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
-            onClick={onOpen}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpen();
+            }}
           >
             + Add
+          </span>
+        ) : (
+          <span
+            className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpen();
+            }}
+          >
+            Update
           </span>
         )
       ) : (
@@ -280,6 +419,8 @@ const BasicCompany = ({ isEstimate }) => {
                           onChange={(e) => {
                             handleGstChange(e);
                           }}
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
                         />
                       )}
                     />
@@ -296,6 +437,8 @@ const BasicCompany = ({ isEstimate }) => {
                           onChange={(e) => {
                             handlePanChange(e);
                           }}
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
                         />
                       )}
                     />
@@ -305,7 +448,12 @@ const BasicCompany = ({ isEstimate }) => {
                       name="address"
                       control={control}
                       render={({ field }) => (
-                        <Input {...field} label="Address" />
+                        <Input
+                          {...field}
+                          label="Address"
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
+                        />
                       )}
                     />
 
@@ -324,6 +472,8 @@ const BasicCompany = ({ isEstimate }) => {
                             dispatch(getAllStatesByCountryName(value));
                             field.onChange(value);
                           }}
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
                         />
                       )}
                     />
@@ -339,6 +489,8 @@ const BasicCompany = ({ isEstimate }) => {
                           labelKey="name"
                           valueKey="name"
                           value={field.value}
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
                           onChange={(value) => {
                             dispatch(getAllCitiesByStateName(value));
                             field.onChange(value);
@@ -358,6 +510,8 @@ const BasicCompany = ({ isEstimate }) => {
                           labelKey="name"
                           valueKey="name"
                           value={field.value}
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
                           onChange={(value) => field.onChange(value)}
                         />
                       )}
@@ -368,7 +522,13 @@ const BasicCompany = ({ isEstimate }) => {
                       name="pinCode"
                       control={control}
                       render={({ field }) => (
-                        <Input {...field} label="Pin Code" maxLength={6} />
+                        <Input
+                          {...field}
+                          label="Pin Code"
+                          maxLength={6}
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name?.message}
+                        />
                       )}
                     />
                   </div>

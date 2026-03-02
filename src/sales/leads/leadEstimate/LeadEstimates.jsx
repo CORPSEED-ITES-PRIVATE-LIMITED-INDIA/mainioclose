@@ -55,6 +55,9 @@ import {
 import {
   createBasicUnitByCompanyId,
   createBasicUnitByCompanyIdInAccounts,
+  getAllCompanyByUserId,
+  getAllUnitListByCompanyId,
+  getBasicCompanyDetailByCompanyId,
   getBasicCompanyDetails,
 } from "../../../toolkit/slices/companySlice";
 import {
@@ -67,7 +70,6 @@ import {
 import NewSelect from "../../../components/NewSelect";
 import { formatGSTInput, formatPANInput } from "../../../common";
 import BasicCompany from "../../company/BasicCompany";
-import { Plus } from "lucide-react";
 
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
@@ -98,6 +100,8 @@ export const LeadEstimates = () => {
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const dispatch = useDispatch();
   const company = useSelector((state) => state.company.basicCompanyDetail);
+  const companyList = useSelector((state) => state.company.basicCompanyList);
+  const unitList = useSelector((state) => state.company.basicUnitList);
   const solutionList = useSelector((state) => state.setting.allSolutionList);
   const solutionDetail = useSelector(
     (state) => state.setting.solutionDetailById,
@@ -214,6 +218,7 @@ export const LeadEstimates = () => {
 
   useEffect(() => {
     dispatch(getClientDesiginationList());
+    dispatch(getAllCompanyByUserId(userId));
   }, [dispatch]);
 
   const handleGstChange = (e) => {
@@ -320,6 +325,7 @@ export const LeadEstimates = () => {
       if (resp.meta.requestStatus === "fulfilled") {
         setValue("companyName", resp?.payload?.name);
         setCompanyDetail(resp?.payload);
+        dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
         dispatch(
           getContactDetailListByCompanyId({
             companyId: resp?.payload?.id,
@@ -375,7 +381,6 @@ export const LeadEstimates = () => {
   const onSaveUnitModal = (data) => {
     data.createdById = userId;
     data.updatedById = userId;
-    console.log("dsjghskjdgsjkgs", data);
     dispatch(
       createBasicUnitByCompanyId({
         companyId: company?.id,
@@ -440,6 +445,8 @@ export const LeadEstimates = () => {
         addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
+
+  console.log("ddddddddddddddddddddddddddddddddjsdsfj", unitList);
 
   return (
     <>
@@ -554,13 +561,54 @@ export const LeadEstimates = () => {
             <CardBody className="space-y-4">
               {/* Optional: show saved unit summary */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <FormInput
+                {/* <FormInput
                   label="Company Name"
                   name="companyName"
                   readOnly
                   control={control}
                   error={errors.companyName}
                   endContent={<BasicCompany isEstimate={true} />}
+                /> */}
+
+                <Controller
+                  name="companyName"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Select company"
+                      size={isMedium ? "sm" : "md"}
+                      data={companyList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value}
+                      onItemSelect={(item) => {
+                        dispatch(
+                          getBasicCompanyDetailByCompanyId(item?.id),
+                        ).then((resp) => {
+                          if (resp.meta.requestStatus === "fulfilled") {
+                            setValue("companyName", resp?.payload?.name);
+                            setCompanyDetail(resp?.payload);
+                            dispatch(
+                              getContactDetailListByCompanyId({
+                                companyId: resp?.payload?.id,
+                                userId,
+                              }),
+                            );
+                          }
+                        });
+                        getAllUnitListByCompanyId(item?.id);
+                      }}
+                      onChange={(value) => {
+                        field.onChange(value);
+                      }}
+                      endContent={
+                        <BasicCompany
+                          isEstimate={true}
+                          companyDetail={companyDetail}
+                        />
+                      }
+                    />
+                  )}
                 />
 
                 <FormSelect
@@ -568,10 +616,14 @@ export const LeadEstimates = () => {
                   name="unitId"
                   control={control}
                   error={errors.unitName}
-                  data={company?.units?.map((item) => ({
-                    label: item?.unitName,
-                    value: item?.id,
-                  }))}
+                  data={
+                    unitList?.length > 0
+                      ? unitList?.map((item) => ({
+                          label: item?.unitName,
+                          value: item?.id,
+                        }))
+                      : []
+                  }
                   onChangeExtra={(e) => setContactValue("companyUnitId", e)}
                 />
 
@@ -586,7 +638,15 @@ export const LeadEstimates = () => {
                   endContent={
                     <span
                       className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
-                      onClick={() => contactModal.onOpen()}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        contactModal.onOpen();
+                      }}
                     >
                       + Add
                     </span>
