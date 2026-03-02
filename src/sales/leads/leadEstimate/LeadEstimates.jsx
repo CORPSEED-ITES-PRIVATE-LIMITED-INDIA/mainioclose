@@ -123,12 +123,9 @@ export const LeadEstimates = () => {
   );
   const [showForm, setShowForm] = useState(false);
   const [companyDetail, setCompanyDetail] = useState(null);
-
-  // ✅ Preview overlay state
   const [openPreview, setOpenPreview] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState(null);
-
-  // ✅ Unit modal state + saved payload
+  const [selectedSolutionDetail, setSelectedSolutionDetail] = useState(null);
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
 
@@ -244,8 +241,9 @@ export const LeadEstimates = () => {
 
   // service line items auto-fill
   useEffect(() => {
-    if (serviceFeeList?.length) {
-      const values = getValues();
+    const values = getValues();
+
+    if (solutionDetail?.type === "SERVICE" && serviceFeeList?.length) {
       reset({
         ...values,
         lineItems: serviceFeeList.map((item) => ({
@@ -255,8 +253,17 @@ export const LeadEstimates = () => {
           gstRate: item?.gstPercentage,
         })),
       });
+    } else {
+      // 🔥 CLEAR lineItems when:
+      // - no serviceFeeList
+      // - switching to PRODUCT
+      // - API returns empty
+      reset({
+        ...values,
+        lineItems: [],
+      });
     }
-  }, [serviceFeeList, reset, getValues]);
+  }, [solutionDetail?.type, serviceFeeList, reset, getValues]);
 
   const handleSelectSolution = (e) => {
     dispatch(
@@ -285,7 +292,6 @@ export const LeadEstimates = () => {
     });
   };
 
-  // load lead + solution + price/tier
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
@@ -350,8 +356,8 @@ export const LeadEstimates = () => {
 
   const onSubmit = (data) => {
     data.companyId = company?.id;
-    data.solutionType = solutionDetail?.type;
-    data.sourceSolutionIds = solutionDetail?.id;
+    data.solutionType = selectedSolutionDetail?.type;
+    data.solutionId = selectedSolutionDetail?.id;
     data.createdByUserId = userId;
     data.leadId = leadId;
     dispatch(createNewEstimate(data))
@@ -446,8 +452,6 @@ export const LeadEstimates = () => {
         addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
-
-  console.log("ddddddddddddddddddddddddddddddddjsdsfj", unitList);
 
   return (
     <>
@@ -560,17 +564,7 @@ export const LeadEstimates = () => {
             </CardHeader>
 
             <CardBody className="space-y-4">
-              {/* Optional: show saved unit summary */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* <FormInput
-                  label="Company Name"
-                  name="companyName"
-                  readOnly
-                  control={control}
-                  error={errors.companyName}
-                  endContent={<BasicCompany isEstimate={true} />}
-                /> */}
-
                 <Controller
                   name="companyName"
                   control={control}
@@ -665,6 +659,7 @@ export const LeadEstimates = () => {
                       labelKey="name"
                       valueKey="name"
                       value={field.value}
+                      onItemSelect={(item) => setSelectedSolutionDetail(item)}
                       onChange={(value) => {
                         field.onChange(value);
                         handleSelectSolution(value);

@@ -725,7 +725,6 @@ export const createNewEstimate = createAsyncThunk(
   "createNewEstimate",
   async (data, { rejectWithValue }) => {
     try {
-      console.log("dfljkghjksdhkjshjk", data);
       const response = await api.post(`/accountService/api/v1/estimates`, data);
       return response.data;
     } catch (err) {
