@@ -199,6 +199,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
             reset();
             onClose();
             dispatch(getBasicCompanyDetails({ leadId, userId }));
+            dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
 
             // dispatch(
             //   createCompanyInAccounts({
