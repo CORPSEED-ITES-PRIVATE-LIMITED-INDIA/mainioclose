@@ -20,7 +20,7 @@ const NewSelect = ({
   placeholder,
   isDisabled,
   onItemSelect = () => {},
-  endContent=null
+  endContent = null,
 }) => {
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
@@ -71,12 +71,12 @@ const NewSelect = ({
         setFilteredData(data);
       } else {
         const filter = data?.filter((user) =>
-          user?.[labelKey]?.toLowerCase()?.includes(e?.toLowerCase())
+          user?.[labelKey]?.toLowerCase()?.includes(e?.toLowerCase()),
         );
         setFilteredData(filter || []);
       }
     },
-    [data, labelKey]
+    [data, labelKey],
   );
 
   const topContent = useMemo(
@@ -94,7 +94,7 @@ const NewSelect = ({
         />
       </div>
     ),
-    [searchQuery, handleSearchQuery]
+    [searchQuery, handleSearchQuery],
   );
 
   const handleSelectionChange = useCallback(
@@ -116,11 +116,21 @@ const NewSelect = ({
       setSelectedKeys(selectedValue);
       setSearchQuery("");
 
+      // 🔥 Remove focus from Select trigger
+      if (triggerRef.current) {
+        triggerRef.current.blur();
+      }
+
+      // Extra safety (HeroUI wraps button internally)
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
       if (onChange) {
         onChange(selectedValue);
       }
     },
-    [onChange, selectionMode, data, valueKey]
+    [onChange, selectionMode, data, valueKey],
   );
 
   const selectKeys =
@@ -156,6 +166,15 @@ const NewSelect = ({
         listboxProps={{
           topContent: topContent,
           emptyContent: "No data found",
+        }}
+        onKeyDown={(e) => {
+          const isTriggerFocused = document.activeElement === e.currentTarget;
+
+          // If space/enter pressed but select is NOT focused → ignore
+          if (!isTriggerFocused && (e.key === " " || e.key === "Enter")) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
         }}
         renderValue={(items) => {
           if (!items.length) {

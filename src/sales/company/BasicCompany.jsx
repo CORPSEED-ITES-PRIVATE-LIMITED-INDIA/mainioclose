@@ -390,7 +390,22 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                 Add company
               </ModalHeader>
               <ModalBody>
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  onKeyDown={(e) => {
+                    const tag = e.target.tagName;
+
+                    const isTextInput =
+                      tag === "INPUT" ||
+                      tag === "TEXTAREA" ||
+                      e.target.isContentEditable;
+
+                    // 🔥 If typing inside input, block space bubbling
+                    if (isTextInput && e.key === " ") {
+                      e.stopPropagation();
+                    }
+                  }}
+                >
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Name */}
                     <Controller
@@ -452,9 +467,9 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
                         <Input
                           {...field}
                           label="Address"
-                          isRequired={isEstimate ? true : false}
-                          isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          // isRequired={isEstimate ? true : false}
+                          // isInvalid={!!errors.name}
+                          // errorMessage={errors.name?.message}
                         />
                       )}
                     />
