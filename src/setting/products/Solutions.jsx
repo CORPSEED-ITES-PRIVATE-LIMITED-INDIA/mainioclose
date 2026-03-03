@@ -196,15 +196,17 @@ const Solutions = () => {
             onOpenChange(false);
             dispatch(getAllSolutionsByType(initialFilteration));
             dispatch(
-              addProductsInOperations({
-                productId: productInfo?.id,
-                productName: productInfo?.name,
-                description: productInfo?.description || "Something",
-                createdBy: productInfo?.createdById,
-                updatedBy: productInfo?.createdById,
-                // date: productInfo?.createdDate,
-                active: true,
-              }),
+              addProductsInOperations([
+                {
+                  productId: productInfo?.id,
+                  productName: productInfo?.name,
+                  description: productInfo?.description || "Something",
+                  createdBy: productInfo?.createdById,
+                  updatedBy: productInfo?.createdById,
+                  // date: productInfo?.createdDate,
+                  active: true,
+                },
+              ]),
             );
             setFormData({ name: "", type: "", description: "" });
           } else {
