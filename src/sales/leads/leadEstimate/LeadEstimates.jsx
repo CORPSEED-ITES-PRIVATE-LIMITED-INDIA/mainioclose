@@ -397,37 +397,47 @@ export const LeadEstimates = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({ title: "Unit details saved.", color: "success" });
-          dispatch(
-            createBasicUnitByCompanyIdInAccounts({
-              companyId: company?.id,
-              updatedBy: userId,
-              data: { ...data, companyUnitId: resp?.payload?.id },
-            }),
-          )
-            .then((res) => {
-              if (res.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Unit details saved in accounts .",
-                  color: "success",
-                });
-                dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-                resetUnitForm();
-                onClose();
-                dispatch(getBasicCompanyDetails({ leadId, userId }));
-              } else {
-                addToast({ title: resp.payload, color: "danger" });
-              }
-            })
-            .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" }),
-            );
+          if (resp?.payload?.id) {
+            dispatch(
+              createBasicUnitByCompanyIdInAccounts({
+                companyId: company?.id,
+                updatedBy: userId,
+                data: { ...data, companyUnitId: resp?.payload?.id },
+              }),
+            )
+              .then((res) => {
+                if (res.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "Unit details saved in accounts .",
+                    color: "success",
+                  });
+                  dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
+                  resetUnitForm();
+                  onClose();
+                  dispatch(getBasicCompanyDetails({ leadId, userId }));
+                } else {
+                  addToast({
+                    title: `${res?.payload?.data?.message} in accounts`,
+                    color: "danger",
+                  });
+                }
+              })
+              .catch(() => {
+                addToast({ title: "Something went wrong !.", color: "danger" });
+              });
+          } else {
+            dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
+            resetUnitForm();
+            onClose();
+            dispatch(getBasicCompanyDetails({ leadId, userId }));
+          }
         } else {
           addToast({ title: resp.payload, color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
-      );
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const handleSubmitContact = (data) => {
