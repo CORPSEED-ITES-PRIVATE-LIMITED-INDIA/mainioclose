@@ -879,6 +879,16 @@ const ProjectDetails = () => {
                             </Button>
                           </div>
                         )}
+
+                        {doc?.status !== "UPLOADED" && (
+                          <Button
+                            size="sm"
+                            color="secondary"
+                            onPress={() => openUploadForDoc(doc)}
+                          >
+                            Upload
+                          </Button>
+                        )}
                       </CardBody>
                     </Card>
                   );

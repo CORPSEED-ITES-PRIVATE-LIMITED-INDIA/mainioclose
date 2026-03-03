@@ -83,7 +83,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "salesPersonName",
   "contactName",
   "date",
-  "mileStone",
+  // "mileStone",
   "amount",
   "address",
 ];

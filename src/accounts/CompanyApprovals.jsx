@@ -37,6 +37,7 @@ const columns = [
   { name: "ID", uid: "companyId" },
   { name: "COMPANY", uid: "companyName", sortable: true },
   { name: "INDUSTRY", uid: "industryName" },
+  { name: "PAN NUMBER", uid: "panNo" },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "PRIMARY ADDRESS", uid: "address" },
@@ -49,9 +50,11 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
+  "companyId",
   "companyName",
   "gstNo",
   "industryName",
+  "panNo",
   "status",
   "assignee",
   "address",
@@ -242,6 +245,8 @@ const CompanyApprovals = () => {
           )
         );
 
+      case "panNo":
+        return <div className="flex flex-col">{rowData?.panNo}</div>;
       case "status":
         return (
           <div className="flex flex-col">
@@ -527,12 +532,12 @@ const CompanyApprovals = () => {
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
           table: "w-full",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        // onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
