@@ -328,14 +328,8 @@ const Unbill = () => {
                   setStatus(key);
                 }}
               >
-                <DropdownItem key="PENDING_APPROVAL">
-                  PENDING_APPROVAL
-                </DropdownItem>
                 <DropdownItem key="APPROVED">APPROVED</DropdownItem>
-                <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
-                <DropdownItem key="FULLY_PAID">FULLY_PAID</DropdownItem>
-                <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
-                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+                <DropdownItem key="DISAPPROVED">DISAPPROVED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
             <Dropdown>

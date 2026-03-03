@@ -5,6 +5,7 @@ import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import numWords from "num-words";
+import { inrCurrency } from "../common";
 
 /** -------------------------
  * PDF / Layout constants
@@ -60,8 +61,8 @@ const getHalfGstRatesLabel = (items = []) => {
     new Set(
       (items || [])
         .map((x) => toNumber(x?.gstRate))
-        .filter((r) => Number.isFinite(r) && r > 0)
-    )
+        .filter((r) => Number.isFinite(r) && r > 0),
+    ),
   ).sort((a, b) => a - b);
 
   if (unique.length === 0) return "";
@@ -121,7 +122,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
       accountNo: "10052624515",
       branchIfsc: "Noida,Sector-63 Branch & IDFB0021331",
     }),
-    []
+    [],
   );
 
   // invoiceData can be object OR JSON string
@@ -142,7 +143,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
   const items = useMemo(() => {
     const arr = Array.isArray(inv?.lineItems) ? inv.lineItems : [];
     return [...arr].sort(
-      (a, b) => toNumber(a?.displayOrder) - toNumber(b?.displayOrder)
+      (a, b) => toNumber(a?.displayOrder) - toNumber(b?.displayOrder),
     );
   }, [inv]);
 
@@ -316,10 +317,10 @@ const UnbilledView = ({ invoiceData, heading }) => {
 
                 <div className="grid grid-cols-2 border-b border-gray-300">
                   <div className="border-r border-gray-300 p-2.5">
-                    <div className="text-[10px] text-gray-500">
-                      Other References
+                    <div className="text-[10px] text-gray-500">Due amount</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {inrCurrency(inv?.outstandingAmount)}
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">

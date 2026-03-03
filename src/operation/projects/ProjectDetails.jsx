@@ -502,7 +502,7 @@ const ProjectDetails = () => {
                 </p>
               </div>
             </div>
-            <Progress
+            {/* <Progress
               label={"Completed"}
               aria-label="Downloading..."
               className="max-w-md"
@@ -510,7 +510,7 @@ const ProjectDetails = () => {
               showValueLabel={true}
               size="sm"
               value={100}
-            />
+            /> */}
           </div>
         </div>
         <div className="flex flex-col justify-between gap-2.5 py-1.5">
@@ -533,11 +533,11 @@ const ProjectDetails = () => {
               Client login credentials
             </Button>
           </div>
-          <div className="flex items-center gap-1.5">
+          {/* <div className="flex items-center gap-1.5">
             <h3 className="text-xl font-medium">Due Amount</h3>
             <h3 className="text-xl font-medium">:</h3>
             <h3 className="text-xl font-medium">₹ 0</h3>
-          </div>
+          </div> */}
         </div>
         {/* <Dropdown>
           <DropdownTrigger>

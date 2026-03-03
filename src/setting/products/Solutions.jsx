@@ -581,6 +581,61 @@ const Solutions = () => {
                       ))}
                     </Select>
 
+                    <Select
+                      label="Require client portal"
+                      name="requiresClientPortal"
+                      selectedKeys={
+                        formData?.requiresClientPortal !== undefined
+                          ? [formData?.requiresClientPortal.toString()]
+                          : []
+                      }
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0];
+                        if (value !== undefined)
+                          setFormData((prev) => ({
+                            ...prev,
+                            requiresClientPortal: value === "true",
+                          }));
+                      }}
+                    >
+                      {[
+                        { label: "True", value: true },
+                        { label: "False", value: false },
+                      ].map((item) => (
+                        <SelectItem
+                          key={item.value.toString()}
+                          value={item.value}
+                        >
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+
+                    <Input
+                      label="Portal name"
+                      name="expectedPortalName"
+                      value={formData?.expectedPortalName}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          expectedPortalName: e.target.value,
+                        }))
+                      }
+                    />
+
+                    <Input
+                      errorMessage="Please enter product name"
+                      label="Default portal name"
+                      name="defaultPortalUrl"
+                      value={formData?.defaultPortalUrl}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          defaultPortalUrl: e.target.value,
+                        }))
+                      }
+                    />
+
                     <Textarea
                       className="max-w-xs"
                       label="Description"

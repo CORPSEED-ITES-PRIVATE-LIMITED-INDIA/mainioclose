@@ -220,6 +220,7 @@ const FullCompanyDetailsForm = ({
   modalTitle = "Create / Edit Company",
   isOpen,
   onOpenChange,
+  filteration,
 }) => {
   return (
     <>
@@ -243,7 +244,11 @@ const FullCompanyDetailsForm = ({
               <Divider />
 
               <ModalBody className="py-5">
-                <CompanyAndUnitsForm onClose={onClose} onCancel={onClose} />
+                <CompanyAndUnitsForm
+                  onClose={onClose}
+                  onCancel={onClose}
+                  filteration={filteration}
+                />
               </ModalBody>
             </>
           )}
@@ -255,7 +260,7 @@ const FullCompanyDetailsForm = ({
 
 export default memo(FullCompanyDetailsForm);
 
-export function CompanyAndUnitsForm({ onCancel, onClose }) {
+export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const defaultValues = useMemo(() => getDefaultValues(), []);
@@ -368,15 +373,35 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
   }, [dispatch]);
 
   // Prefill
+
+  console.log("sdkljhghghghghghghghghghghghghghgj", company);
+
   useEffect(() => {
     if (!company) return;
-    dispatch(getAllStatesByCountryName(company?.country));
-    dispatch(getAllCitiesByStateName(company?.state));
+
+    if (company?.country) {
+      dispatch(getAllStatesByCountryName(company?.country));
+    }
+    if (company?.state) {
+      dispatch(getAllCitiesByStateName(company?.state));
+    }
+    if (company?.industryId) {
+      dispatch(getSubIndustryByIndustryId(company?.industryId));
+    }
+    if (company?.subIndustryId) {
+      dispatch(getSubSubIndustryBySubIndustryId(company?.subIndustryId));
+    }
+    if (company?.subsubIndustryId) {
+      dispatch(getIndustryDataBySubSubIndustryId(company?.subsubIndustryId));
+    }
     reset({
       ...getDefaultValues(),
       ...company,
-      panNo: (company?.panNo || "").toUpperCase(),
-      gstNo: (company?.gstNo || "").toUpperCase(),
+      assigneeId: String(company?.assigneeId),
+      ndaPresent: String(company?.ndaPresent),
+      industryId: String(company?.industryId),
+      panNo: company?.panNo || "",
+      gstNo: company?.gstNo || "",
       establishDate: company?.establishDate
         ? String(company.establishDate).slice(0, 10)
         : "",
@@ -384,14 +409,13 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
         (u) => ({
           ...getEmptyUnit(),
           ...u,
-          gstNo: (u?.gstNo || "").toUpperCase(),
+          gstNo: u?.gstNo || "",
           unitOpeningDate: u?.unitOpeningDate
             ? String(u.unitOpeningDate).slice(0, 10)
             : "",
         }),
       ),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company, reset]);
 
   const onSubmit = (values) => {
@@ -525,8 +549,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
                   label="Rating"
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  {...field}
-                  value={[field.value]}
+                  selectedKeys={[field.value]}
                   onSelectionChange={(e) => field.onChange(Array.from(e)[0])}
                   items={[
                     { label: "Gold", key: "Gold" },
@@ -591,7 +614,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose }) {
                   data={allIndustry || []}
                   labelKey="name"
                   valueKey="id"
-                  value={field.value}
+                  value={String(field.value)}
                   onChange={(value) => {
                     dispatch(getSubIndustryByIndustryId(value));
                     field.onChange(value);
