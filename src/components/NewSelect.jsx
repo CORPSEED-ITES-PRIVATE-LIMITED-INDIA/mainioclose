@@ -181,22 +181,15 @@ const NewSelect = ({
             return <span className="text-default-400">Select data</span>;
           }
 
-          return (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {items.map((item) => {
-                return (
-                  <div
-                    key={item?.key}
-                    className="flex items-center gap-2 selectable-text"
-                  >
-                    <span className="text-sm flex flex-wrap py-0.5">
-                      {item?.data?.[labelKey] || "Unknown"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          );
+          if (selectionMode === "multiple") {
+            return (
+              <span className="text-sm">
+                {items.map((i) => i?.data?.[labelKey]).join(", ")}
+              </span>
+            );
+          }
+
+          return <span className="text-sm">{items[0]?.data?.[labelKey]}</span>;
         }}
       >
         {(item) => (
