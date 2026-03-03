@@ -1,6 +1,7 @@
 import {
   addToast,
   Button,
+  Chip,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -35,7 +36,9 @@ const columns = [
   { name: "ID", uid: "unitId" },
   { name: "UNIT NAME", uid: "name" },
   { name: "STATE NAME", uid: "state" },
+  { name: "STATUS", uid: "status" },
   { name: "GST NUMBER", uid: "gstNo" },
+  { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -43,7 +46,15 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["unitId", "name", "state", "gstNo", "actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "unitId",
+  "name",
+  "state",
+  "status",
+  "gstNo",
+  "address",
+  "actions",
+];
 
 const CompanyUnitsInAccount = () => {
   const { userId, companyId } = useParams();
@@ -183,12 +194,7 @@ const CompanyUnitsInAccount = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link
-                to={`${company?.state}/companyUnits`}
-                className="font-semibold"
-              >
-                {company?.unitName || "-"}
-              </Link>
+              <p>{company?.unitName || "-"}</p>
             </div>
           </div>
         );
@@ -199,12 +205,36 @@ const CompanyUnitsInAccount = () => {
             <div className="flex flex-col">{company?.state || "-"}</div>
           </div>
         );
+      case "status":
+        return (
+          <div className="flex items-start gap-2">
+            <Chip size="sm">{company?.onboardingStatus || "-"}</Chip>
+          </div>
+        );
 
       case "gstNo":
         return (
           <div className="flex flex-col">
             <span className="font-normal">{company.gstNo || "-"}</span>
           </div>
+        );
+      case "address":
+        return company?.addressLine1 ? (
+          <div className="flex flex-col">
+            <span className="font-semibold">
+              {company?.addressLine1 || "-"}
+            </span>
+            <span className="text-sm text-gray-400">
+              {[
+                company?.city,
+                company?.state,
+                company?.country,
+                company?.pinCode,
+              ].join(",")}
+            </span>
+          </div>
+        ) : (
+          "-"
         );
       case "actions":
         return (
@@ -469,7 +499,8 @@ const CompanyUnitsInAccount = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Updated status {statusData?.approve?"Approved":"Disapproved"}
+                Updated status{" "}
+                {statusData?.approve ? "Approved" : "Disapproved"}
               </ModalHeader>
               <ModalBody>
                 <Textarea
