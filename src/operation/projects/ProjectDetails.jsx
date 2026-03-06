@@ -317,6 +317,12 @@ const ProjectDetails = () => {
             color: "success",
           });
           dispatch(getOperationProjectDetailById({ projectId, userId }));
+          dispatch(
+            getRequiredDocumentsByProductId({
+              userId,
+              projectId,
+            }),
+          );
         } else {
           addToast({
             title: resp?.payload?.status,
