@@ -267,7 +267,12 @@ const Unbill = () => {
             title: "Status updated successfully !.",
             color: "success",
           });
-          dispatch(createProjectsForOperations(resp?.payload)).then((pro) => {
+          dispatch(
+            createProjectsForOperations({
+              ...resp?.payload,
+              unitId: resp?.payload?.companyUnitId,
+            }),
+          ).then((pro) => {
             if (pro.meta.requestStatus === "fulfilled") {
               addToast({
                 title: "Project created successfully !.",
@@ -516,11 +521,11 @@ const Unbill = () => {
                   }}
                 >
                   {[
-                    { key: "PENDING_APPROVAL", label: "PENDING_APPROVAL" },
+                    // { key: "PENDING_APPROVAL", label: "PENDING_APPROVAL" },
                     { key: "APPROVED", label: "APPROVED" },
-                    { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
-                    { key: "FULLY_PAID", label: "FULLY_PAID" },
-                    { key: "CANCELLED", label: "CANCELLED" },
+                    // { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
+                    // { key: "FULLY_PAID", label: "FULLY_PAID" },
+                    // { key: "CANCELLED", label: "CANCELLED" },
                     { key: "REJECTED", label: "REJECTED" },
                   ].map((item) => (
                     <SelectItem key={item.key}>{item.label}</SelectItem>

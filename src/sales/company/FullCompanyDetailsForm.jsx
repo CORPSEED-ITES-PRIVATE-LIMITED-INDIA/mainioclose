@@ -104,13 +104,13 @@ const unitSchema = z.object({
 const companySchema = z.object({
   // company basics
   name: z.string().min(1, "Company name is required"),
-  panNo: z.string().optional(),
-  assigneeId: z.coerce.number().optional().default(0),
+  panNo: z.string().min(1, "please give pan number."),
+  assigneeId: z.string().optional(),
   // industry chain
-  industryId: z.coerce.number().optional().default(0),
-  subIndustryId: z.coerce.number().optional().default(0),
-  subsubIndustryId: z.coerce.number().optional().default(0),
-  industrydataId: z.any().optional().default([]), // selectionMode multiple
+  industryId: z.string().optional(),
+  subIndustryId: z.string().optional(),
+  subsubIndustryId: z.string().optional(),
+  industrydataId: z.array(z.string()).optional(),
 
   // uploads
   companyFileUrl: z.string().optional().default(""),
@@ -118,21 +118,21 @@ const companySchema = z.object({
   ndaFileUrl: z.string().optional().default(""),
 
   // payment/flags
-  paymentTerm: z.string().optional().default(""),
-  aggrementPresent: z.coerce.boolean().optional().default(true),
-  ndaPresent: z.coerce.boolean().optional().default(true),
+  paymentTerm: z.string().nullable().optional(),
+  aggrementPresent: z.boolean().optional(),
+  ndaPresent: z.boolean().optional(),
 
   // contact fields
   primaryTitle: z.string().optional().default(""),
   contactName: z.string().optional().default(""),
-  primaryDesignation: z.coerce.number().optional().default(0),
+  primaryDesignation: z.coerce.number().optional(),
   contactEmails: z.string().optional().default(""),
   contactNo: z.string().optional().default(""),
   contactWhatsappNo: z.string().optional().default(""),
 
   // address (company)
   address: z.string().optional().default(""),
-  country: z.string().optional().default("India"),
+  country: z.string().optional().default(""),
   state: z.string().optional().default(""),
   city: z.string().optional().default(""),
   primaryPinCode: z.string().optional().default(""),
@@ -140,11 +140,7 @@ const companySchema = z.object({
   // existing fields (keep if you need)
   rating: z.string().optional().default(""),
   companyAge: z.string().optional().default(""),
-  establishDate: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Invalid date"),
+  establishDate: z.string().optional(),
   revenue: z.string().optional().default(""),
   units: z.array(unitSchema).min(1, "At least one unit is required"),
 });
@@ -171,32 +167,32 @@ const getDefaultValues = () => ({
   name: "",
   gstNo: "",
   panNo: "",
-  companyType: 0,
-  gstType: 0,
-  businessType: 0,
-  assigneeId: 0,
+  companyType: "",
+  gstType: "",
+  businessType: "",
+  assigneeId: "",
 
-  industryId: 0,
-  subIndustryId: 0,
-  subsubIndustryId: 0,
+  industryId: "",
+  subIndustryId: "",
+  subsubIndustryId: "",
   industrydataId: [],
 
   companyFileUrl: "",
   paymentTerm: "",
-  aggrementPresent: true,
+  aggrementPresent: false,
   agreementFileUrl: "",
-  ndaPresent: true,
+  ndaPresent: false,
   ndaFileUrl: "",
 
   primaryTitle: "",
   contactName: "",
-  primaryDesignation: 0,
+  primaryDesignation: "",
   contactEmails: "",
   contactNo: "",
   contactWhatsappNo: "",
 
   address: "",
-  country: "India",
+  country: "",
   state: "",
   city: "",
   primaryPinCode: "",
@@ -207,9 +203,8 @@ const getDefaultValues = () => ({
   revenue: "",
   stage: "",
   status: "",
-  isConsultant: true,
-  actualClientCompanyId: 0,
-
+  isConsultant: false,
+  actualClientCompanyId: "",
   units: [getEmptyUnit()],
 });
 
@@ -497,6 +492,8 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   isRequired
                   value={field?.value}
                   onChange={(e) => field.onChange(e.target.value)}
+                  errorMessage={error?.message}
+                  isInvalid={!!error}
                 />
               )}
             />
@@ -570,6 +567,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Pan number"
+                  isRequired
                   maxLength={10}
                   value={field.value}
                   errorMessage={error?.message || panError}
@@ -706,7 +704,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={
-                    field.value ? new Set([field.value]) : new Set()
+                    field.value ? new Set([String(field.value)]) : new Set()
                   }
                   onSelectionChange={(keys) => {
                     const v = Array.from(keys)[0] || "";
@@ -756,7 +754,6 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Select
-                  isRequired
                   label="NDA"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -1056,6 +1053,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                       labelKey="name"
                       valueKey="id"
                       value={field.value}
+                      isInvalid={!!error}
                       errorMessage={error?.message}
                       onChange={(value) => {
                         dispatch(getAllGstTypeByCompanyTypeId(value));

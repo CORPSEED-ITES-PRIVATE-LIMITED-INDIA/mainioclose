@@ -418,13 +418,13 @@ const UnbilledView = ({ invoiceData, heading }) => {
                         {toNumber(it?.quantity)}
                       </TableTd>
                       <TableTd className="text-right">
-                        {formatINR(it?.unitPriceExGst)}
+                        {inrCurrency(formatINR(it?.unitPriceExGst))}
                       </TableTd>
                       <TableTd className="text-center">
                         {it?.unit || "NOS"}
                       </TableTd>
                       <TableTd className="text-right">
-                        {formatINR(it?.lineTotalExGst)}
+                        {inrCurrency(formatINR(it?.lineTotalExGst))}
                       </TableTd>
                     </tr>
                   ))
@@ -440,7 +440,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   </TableTd>
                   <TableTd className="text-center">%</TableTd>
                   <TableTd className="text-right">
-                    {formatINR(cgstAmount)}
+                    {inrCurrency(formatINR(cgstAmount))}
                   </TableTd>
                 </tr>
 
@@ -454,7 +454,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   </TableTd>
                   <TableTd className="text-center">%</TableTd>
                   <TableTd className="text-right">
-                    {formatINR(sgstAmount)}
+                    {inrCurrency(formatINR(sgstAmount))}
                   </TableTd>
                 </tr>
 
@@ -464,7 +464,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                     Total
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(grandTotal)}
+                    {inrCurrency(formatINR(grandTotal))}
                   </TableTd>
                 </tr>
               </tbody>
@@ -525,10 +525,10 @@ const UnbilledView = ({ invoiceData, heading }) => {
                       {toNumber(r.sgstRate).toFixed(2)}
                     </TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.sgstAmount)}
+                      {inrCurrency(formatINR(r.sgstAmount))}
                     </TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.totalTax)}
+                      {inrCurrency(formatINR(r.totalTax))}
                     </TableTd>
                   </tr>
                 ))}
@@ -536,18 +536,18 @@ const UnbilledView = ({ invoiceData, heading }) => {
                 <tr>
                   <TableTd className="font-bold">Total</TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(subTotalExGst)}
+                    {inrCurrency(formatINR(subTotalExGst))}
                   </TableTd>
                   <TableTd className="text-center">-</TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(cgstAmount)}
+                    {inrCurrency(formatINR(cgstAmount))}
                   </TableTd>
                   <TableTd className="text-center">-</TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(sgstAmount)}
+                    {inrCurrency(formatINR(sgstAmount))}
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {formatINR(totalGstAmount)}
+                    {inrCurrency(formatINR(totalGstAmount))}
                   </TableTd>
                 </tr>
               </tbody>

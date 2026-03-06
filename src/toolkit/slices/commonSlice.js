@@ -588,7 +588,8 @@ export const createContactViaEstimateInCompany = createAsyncThunk(
       );
       return response.data;
     } catch (err) {
-      return rejectWithValue(err.response.message);
+      console.log("dssssssssssssssssssss", err);
+      return rejectWithValue(err.response.data.message);
     }
   },
 );

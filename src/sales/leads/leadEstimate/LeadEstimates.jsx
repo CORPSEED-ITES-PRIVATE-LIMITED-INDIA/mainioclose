@@ -68,7 +68,13 @@ import {
   getContactDetailListByCompanyId,
 } from "../../../toolkit/slices/commonSlice";
 import NewSelect from "../../../components/NewSelect";
-import { formatGSTInput, formatPANInput } from "../../../common";
+import {
+  allowOnlyNumbers,
+  formatEmail,
+  formatGSTInput,
+  formatPANInput,
+  isValidEmail,
+} from "../../../common";
 import BasicCompany from "../../company/BasicCompany";
 
 /* ===========================
@@ -418,6 +424,7 @@ export const LeadEstimates = () => {
     data.companyId = companyDetail?.id;
     dispatch(createContactViaEstimateInCompany(data))
       .then((resp) => {
+        console.log("dssssssssssssssssssss  11111", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({ title: "Unit details saved.", color: "success" });
           contactModal.onClose();
@@ -429,7 +436,10 @@ export const LeadEstimates = () => {
             }),
           );
         } else {
-          addToast({ title: resp.payload?.message, color: "danger" });
+          addToast({
+            title: resp.payload?.message || resp?.payload,
+            color: "danger",
+          });
         }
       })
       .catch(() =>
@@ -942,7 +952,7 @@ export const LeadEstimates = () => {
             onClick={closeEstimatePreview}
           />
 
-          <div className="relative w-[95vw] h-[92vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+          <div className="relative w-[60vw] h-[92vh] bg-white rounded-xl shadow-2xl overflow-hidden">
             <div className="h-12 px-4 flex items-center justify-between border-b bg-white">
               <div className="flex items-center gap-3">
                 <p className="font-semibold text-slate-900">
@@ -1060,6 +1070,12 @@ export const LeadEstimates = () => {
                     <Controller
                       name="emails"
                       control={contactControl}
+                      rules={{
+                        validate: (value) =>
+                          !value ||
+                          isValidEmail(value) ||
+                          "Please enter a valid email address",
+                      }}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired={true}
@@ -1068,7 +1084,10 @@ export const LeadEstimates = () => {
                           type="email"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          {...field}
+                          value={field?.value}
+                          onChange={(e) =>
+                            field.onChange(formatEmail(e.target.value))
+                          }
                         />
                       )}
                     />
@@ -1082,7 +1101,10 @@ export const LeadEstimates = () => {
                           label="Contact number"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          {...field}
+                          value={field?.value}
+                          onChange={(e) =>
+                            field.onChange(allowOnlyNumbers(e.target.value))
+                          }
                         />
                       )}
                     />
@@ -1096,7 +1118,10 @@ export const LeadEstimates = () => {
                           label="Whatsapp number"
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          {...field}
+                          value={field?.value}
+                          onChange={(e) =>
+                            field.onChange(allowOnlyNumbers(e.target.value))
+                          }
                         />
                       )}
                     />

@@ -34,7 +34,7 @@ import {
   getBasicCompanyDetails,
   updateBasicCompanyDetail,
 } from "../../toolkit/slices/companySlice";
-import { formatGSTInput, formatPANInput } from "../../common";
+import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../../common";
 
 const iconClass = "h-4 w-4";
 
@@ -550,12 +550,15 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                       control={control}
                       render={({ field }) => (
                         <Input
-                          {...field}
                           label="Pin Code"
                           maxLength={6}
                           isRequired={isEstimate ? true : false}
                           isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(allowOnlyNumbers(e.target.value, 6))
+                          }
                         />
                       )}
                     />
