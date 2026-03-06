@@ -1,7 +1,7 @@
 import { Controller } from "react-hook-form";
 import NewSelect from "./NewSelect";
 
-const FormSelect=({
+const FormSelect = ({
   name,
   control,
   label,
@@ -10,9 +10,11 @@ const FormSelect=({
   valueKey = "value",
   size = "md",
   onChangeExtra,
-  isRequired=false,
-  endContent
-})=> {
+  isRequired = false,
+  endContent,
+  isOpen,
+  onOpenChange,
+}) => {
   return (
     <Controller
       name={name}
@@ -22,6 +24,8 @@ const FormSelect=({
           label={label}
           size={size}
           data={data}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
           isRequired={isRequired}
           labelKey={labelKey}
           valueKey={valueKey}
@@ -37,7 +41,6 @@ const FormSelect=({
       )}
     />
   );
-}
+};
 
-
-export default FormSelect
+export default FormSelect;

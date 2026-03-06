@@ -126,6 +126,10 @@ export const LeadEstimates = () => {
   const [openPreview, setOpenPreview] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState(null);
   const [selectedSolutionDetail, setSelectedSolutionDetail] = useState(null);
+  const [isDropDownOpen, setIsDropDownOpen] = useState({
+    company: false,
+    contact: false,
+  });
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
 
@@ -397,42 +401,12 @@ export const LeadEstimates = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({ title: "Unit details saved.", color: "success" });
-          if (resp?.payload?.id) {
-            dispatch(
-              createBasicUnitByCompanyIdInAccounts({
-                companyId: company?.id,
-                updatedBy: userId,
-                data: { ...data, companyUnitId: resp?.payload?.id },
-              }),
-            )
-              .then((res) => {
-                if (res.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "Unit details saved in accounts .",
-                    color: "success",
-                  });
-                  dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-                  resetUnitForm();
-                  onClose();
-                  dispatch(getBasicCompanyDetails({ leadId, userId }));
-                } else {
-                  addToast({
-                    title: `${res?.payload?.data?.message} in accounts`,
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() => {
-                addToast({ title: "Something went wrong !.", color: "danger" });
-              });
-          } else {
-            dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-            resetUnitForm();
-            onClose();
-            dispatch(getBasicCompanyDetails({ leadId, userId }));
-          }
+          dispatch(getAllUnitListByCompanyId(company?.id));
+          resetUnitForm();
+          onClose();
+          dispatch(getBasicCompanyDetails({ leadId, userId }));
         } else {
-          addToast({ title: resp.payload, color: "danger" });
+          addToast({ title: resp.payload?.message, color: "danger" });
         }
       })
       .catch(() => {
@@ -455,7 +429,7 @@ export const LeadEstimates = () => {
             }),
           );
         } else {
-          addToast({ title: resp.payload, color: "danger" });
+          addToast({ title: resp.payload?.message, color: "danger" });
         }
       })
       .catch(() =>
@@ -585,7 +559,11 @@ export const LeadEstimates = () => {
                       data={companyList || []}
                       labelKey="name"
                       valueKey="name"
+                      isOpen={isDropDownOpen?.company}
                       value={field.value}
+                      onOpenChange={(e) =>
+                        setIsDropDownOpen((prev) => ({ ...prev, company: e }))
+                      }
                       onItemSelect={(item) => {
                         dispatch(
                           getBasicCompanyDetailByCompanyId(item?.id),
@@ -608,6 +586,7 @@ export const LeadEstimates = () => {
                       }}
                       endContent={
                         <BasicCompany
+                          setIsDropDownOpen={setIsDropDownOpen}
                           isEstimate={true}
                           companyDetail={companyDetail}
                         />
@@ -636,6 +615,10 @@ export const LeadEstimates = () => {
                   label="Contact"
                   name="contactId"
                   control={control}
+                  isOpen={isDropDownOpen?.contact}
+                  onOpenChange={(e) =>
+                    setIsDropDownOpen((prev) => ({ ...prev, contact: e }))
+                  }
                   error={errors.contactId}
                   data={allContactList}
                   labelKey="name"
@@ -651,6 +634,10 @@ export const LeadEstimates = () => {
                         e.preventDefault();
                         e.stopPropagation();
                         contactModal.onOpen();
+                        setIsDropDownOpen((prev) => ({
+                          ...prev,
+                          contact: false,
+                        }));
                       }}
                     >
                       + Add

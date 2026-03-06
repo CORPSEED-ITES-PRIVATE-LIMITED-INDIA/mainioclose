@@ -570,11 +570,20 @@ const Leads = () => {
   }, [allMultiFilterData]);
 
   const onRowsPerPageChange = useCallback((e) => {
+    dispatch(
+      getAllLeadsByFilter({
+        ...allMultiFilterData,
+        size: Number(e.target.value),
+      }),
+    );
+    dispatch(
+      getAllLeadCount({ ...allMultiFilterData, size: Number(e.target.value) }),
+    );
     setAllMultiFilterData((prev) => ({
       ...prev,
+      page: 1,
       size: Number(e.target.value),
     }));
-    setAllMultiFilterData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const onSearchChange = useCallback(

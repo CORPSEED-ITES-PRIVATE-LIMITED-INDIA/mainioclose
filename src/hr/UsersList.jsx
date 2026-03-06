@@ -53,7 +53,13 @@ import {
 } from "../toolkit/slices/authSlice";
 import { createUsersInOperations } from "../toolkit/slices/operationSlice";
 import { getAllDepartment } from "../toolkit/slices/settingSlice";
-import { padZero } from "../common";
+import {
+  allowOnlyNumbers,
+  formatEmail,
+  formatPANInput,
+  isValidEmail,
+  padZero,
+} from "../common";
 import {
   parseAbsoluteToLocal,
   parseDate,
@@ -98,50 +104,50 @@ const formSchema = (flags) =>
     employeeId: z.string().min(1, "Please enter employee id"),
     userName: z.string().min(1, "Please enter username"),
     email: z.string().min(1, "Please enter a valid email"),
-    personalEmail: z.string().optional().or(z.literal("")),
+    personalEmail: z.string().optional(),
     contactNo: z.string().min(10, "Please enter a valid contact number"),
-    companyMobile: z.string().optional().or(z.literal("")),
+    companyMobile: z.string().optional(),
     role: z.array(z.string()).min(1, "Please select at least one role"),
     departmentId: z.string().min(1, "Please select a department"),
     designationId: z.string().min(1, "Please select a designation"),
-    epfNo: z.string().optional().or(z.literal("")),
+    epfNo: z.string().optional(),
     aadharCard: z.string().min(1, "Please enter aadhar card number"),
     panNumber: z.string().min(1, "Please enter pan number"),
-    managerId: z.string().optional().or(z.literal(null)),
-    lockerSize: z.string().optional().or(z.literal("")),
+    managerId: z.string().optional(),
+    lockerSize: z.string().optional(),
     expInYear: z.string().min(1, "Please enter experience in years"),
     expInMonth: z.string().min(1, "Please enter experience in months"),
     dateOfJoining: z.string().min(1, "please select date of joining."),
     type: z.string().min(1, "please select the gender."),
     maritalStatus: z.string().min(1, "please select the status."),
-    ...(flags?.maritalStatus
+    ...(flags?.maritalStatus === "Married"
       ? {
           spouseName: z.string().min(1, "Please enter spouse name"),
-          spouseContactNo: z.string().optional().or(z.literal("")),
+          spouseContactNo: z.string().optional(),
         }
       : {}),
     fatherName: z.string().min(1, "Please enter father's name"),
-    fatherOccupation: z.string().optional().or(z.literal("")),
-    fatherContactNo: z.string().optional().or(z.literal("")),
+    fatherOccupation: z.string().optional(),
+    fatherContactNo: z.string().optional(),
     motherName: z.string().min(1, "Please enter mother's name"),
-    motherContactNo: z.string().optional().or(z.literal("")),
-    nationality: z.string().optional().or(z.literal("")),
-    language: z.string().optional().or(z.literal("")),
+    motherContactNo: z.string().optional(),
+    nationality: z.string().optional(),
+    language: z.string().optional(),
     ...(flags?.master
       ? {
-          master: z.boolean().optional().or(z.literal("")),
-          backupTeam: z.boolean().optional().or(z.literal("")),
+          master: z.boolean().optional(),
+          backupTeam: z.boolean().optional(),
         }
       : {}),
-    emergencyNumber: z.string().optional().or(z.literal("")),
+    emergencyNumber: z.string().optional(),
     permanentAddress: z.string().min(1, "Please enter permanent address"),
-    residentialAddress: z.string().optional().or(z.literal("")),
+    residentialAddress: z.string().optional(),
   });
 
 const defaultValues = {
   userName: "",
   email: "",
-  personalEmail: null,
+  personalEmail: "",
   contactNo: "",
   companyMobile: "",
   role: [],
@@ -153,7 +159,7 @@ const defaultValues = {
   lockerSize: "",
   expInYear: "",
   expInMonth: "",
-  dateOfJoining: null,
+  dateOfJoining: "",
   type: "",
   maritalStatus: "",
   spouseName: "",
@@ -270,6 +276,11 @@ const UsersList = () => {
       dispatch(getAllDepartment());
       dispatch(getDesiginationById(data?.userDepartment?.id));
       dispatch(getManagerById(data?.userDepartment?.id));
+      setFormFlags((prev) => ({
+        ...prev,
+        master: data?.master,
+        maritalStatus: data?.maritalStatus,
+      }));
       reset({
         employeeId: data?.employeeId,
         userName: data?.fullName,
@@ -301,7 +312,7 @@ const UsersList = () => {
         permanentAddress: data?.permanentAddress,
         residentialAddress: data?.residentialAddress,
         backupTeam: data?.backupTeam,
-        master: data?.master,
+        master: String(data?.master),
         maritalStatus: data?.maritalStatus,
         personalEmail: data?.personalEmail,
         companyMobile: data?.companyMobile,
@@ -314,18 +325,17 @@ const UsersList = () => {
     [data, reset, dispatch, onOpen],
   );
 
-  console.log("jkdfgkjdgkjdgkjdhg", getValues());
-  console.log("jkdfgkjdgkjdgkjdhg 111", formSchema(formFlags));
-
   const onSubmit = (values) => {
+    values.departmentId = Number(values?.departmentId);
+    values.designationId = Number(values?.designationId);
     if (rowItem) {
       values.id = rowItem?.id;
       let tempObj = {
         id: rowItem?.id,
         userName: values?.userName,
         email: values?.email,
-        designationId: values?.designationId,
-        departmentId: values?.departmentId,
+        designationId: Number(values?.designationId),
+        departmentId: Number(values?.departmentId),
         role: values?.role,
       };
       dispatch(updateUserData(tempObj))
@@ -372,11 +382,11 @@ const UsersList = () => {
       const authData = {
         email: values?.email,
         role: values?.role,
-        designation: values?.designationId,
+        designation: Number(values?.designationId),
         userName: values?.userName,
-        department: values?.departmentId,
-        designationId: values?.designationId,
-        departmentId: values?.departmentId,
+        department: Number(values?.departmentId),
+        designationId: Number(values?.designationId),
+        departmentId: Number(values?.departmentId),
       };
       dispatch(createNewUserInAuth(authData))
         .then((resp) => {
@@ -866,13 +876,21 @@ const UsersList = () => {
                       <Controller
                         name="email"
                         control={control}
+                        rules={{
+                          validate: (value) =>
+                            !value ||
+                            isValidEmail(value) ||
+                            "Please enter a valid email address",
+                        }}
                         render={({ field }) => (
                           <Input
                             label="Email"
                             isRequired
                             type="email"
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(formatEmail(e.target.value))
+                            }
                             errorMessage={errors.email?.message}
                             isInvalid={!!errors.email}
                           />
@@ -881,12 +899,20 @@ const UsersList = () => {
                       <Controller
                         name="personalEmail"
                         control={control}
+                        rules={{
+                          validate: (value) =>
+                            !value ||
+                            isValidEmail(value) ||
+                            "Please enter a valid email address",
+                        }}
                         render={({ field }) => (
                           <Input
                             label="Personal email"
                             type="email"
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(formatEmail(e.target.value))
+                            }
                           />
                         )}
                       />
@@ -898,7 +924,9 @@ const UsersList = () => {
                             label="Contact number"
                             isRequired
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(allowOnlyNumbers(e.target.value))
+                            }
                             maxLength={10}
                             errorMessage={errors.contactNo?.message}
                             isInvalid={!!errors.contactNo}
@@ -912,7 +940,9 @@ const UsersList = () => {
                           <Input
                             label="Company mobile number"
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(allowOnlyNumbers(e.target.value))
+                            }
                             maxLength={10}
                           />
                         )}
@@ -946,6 +976,7 @@ const UsersList = () => {
                           </Select>
                         )}
                       />
+
                       <Controller
                         name="departmentId"
                         control={control}
@@ -984,6 +1015,7 @@ const UsersList = () => {
                           </Select>
                         )}
                       />
+
                       <Controller
                         name="designationId"
                         control={control}
@@ -1017,6 +1049,7 @@ const UsersList = () => {
                           </Select>
                         )}
                       />
+
                       <Controller
                         name="epfNo"
                         control={control}
@@ -1028,6 +1061,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="aadharCard"
                         control={control}
@@ -1037,12 +1071,17 @@ const UsersList = () => {
                             isRequired
                             maxLength={12}
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(
+                                allowOnlyNumbers(e.target.value, 12),
+                              )
+                            }
                             errorMessage={errors.aadharCard?.message}
                             isInvalid={!!errors.aadharCard}
                           />
                         )}
                       />
+
                       <Controller
                         name="panNumber"
                         control={control}
@@ -1052,12 +1091,15 @@ const UsersList = () => {
                             isRequired
                             maxLength={10}
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(formatPANInput(e.target.value))
+                            }
                             errorMessage={errors.panNumber?.message}
                             isInvalid={!!errors.panNumber}
                           />
                         )}
                       />
+
                       <Controller
                         name="managerId"
                         control={control}
@@ -1084,6 +1126,7 @@ const UsersList = () => {
                           </Select>
                         )}
                       />
+
                       <Controller
                         name="lockerSize"
                         control={control}
@@ -1095,6 +1138,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="expInYear"
                         control={control}
@@ -1109,6 +1153,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="expInMonth"
                         control={control}
@@ -1123,6 +1168,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="dateOfJoining"
                         control={control}
@@ -1144,6 +1190,7 @@ const UsersList = () => {
                           );
                         }}
                       />
+
                       <Controller
                         name="type"
                         control={control}
@@ -1171,6 +1218,7 @@ const UsersList = () => {
                           </Select>
                         )}
                       />
+
                       <Controller
                         name="maritalStatus"
                         control={control}
@@ -1185,7 +1233,7 @@ const UsersList = () => {
                                 field.onChange(value);
                                 setFormFlags((prev) => ({
                                   ...prev,
-                                  maritalStatus: value === "Married",
+                                  maritalStatus: value,
                                 }));
                               }
                             }}
@@ -1203,7 +1251,8 @@ const UsersList = () => {
                           </Select>
                         )}
                       />
-                      {formFlags?.maritalStatus && (
+
+                      {formFlags?.maritalStatus === "Married" && (
                         <>
                           <Controller
                             name="spouseName"
@@ -1219,6 +1268,7 @@ const UsersList = () => {
                               />
                             )}
                           />
+
                           <Controller
                             name="spouseContactNo"
                             control={control}
@@ -1227,12 +1277,17 @@ const UsersList = () => {
                                 label="Spouse contact number"
                                 maxLength={10}
                                 value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    allowOnlyNumbers(e.target.value),
+                                  )
+                                }
                               />
                             )}
                           />
                         </>
                       )}
+
                       <Controller
                         name="fatherName"
                         control={control}
@@ -1259,6 +1314,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="fatherContactNo"
                         control={control}
@@ -1267,10 +1323,13 @@ const UsersList = () => {
                             label="Father's contact no."
                             maxLength={10}
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(allowOnlyNumbers(e.target.value))
+                            }
                           />
                         )}
                       />
+
                       <Controller
                         name="motherName"
                         control={control}
@@ -1285,6 +1344,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="motherContactNo"
                         control={control}
@@ -1293,10 +1353,13 @@ const UsersList = () => {
                             label="Mother's contact no."
                             maxLength={10}
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(allowOnlyNumbers(e.target.value))
+                            }
                           />
                         )}
                       />
+
                       <Controller
                         name="nationality"
                         control={control}
@@ -1308,6 +1371,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="language"
                         control={control}
@@ -1319,6 +1383,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       {formFlags?.master && (
                         <>
                           <Controller
@@ -1352,6 +1417,7 @@ const UsersList = () => {
                               </Select>
                             )}
                           />
+
                           <Controller
                             name="backupTeam"
                             control={control}
@@ -1385,6 +1451,7 @@ const UsersList = () => {
                           />
                         </>
                       )}
+
                       <Controller
                         name="emergencyNumber"
                         control={control}
@@ -1392,10 +1459,13 @@ const UsersList = () => {
                           <Input
                             label="Emergency contact no."
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(allowOnlyNumbers(e.target.value))
+                            }
                           />
                         )}
                       />
+
                       <Controller
                         name="permanentAddress"
                         control={control}
@@ -1410,6 +1480,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <Controller
                         name="residentialAddress"
                         control={control}
@@ -1421,6 +1492,7 @@ const UsersList = () => {
                           />
                         )}
                       />
+
                       <div />
                     </div>
                   </div>

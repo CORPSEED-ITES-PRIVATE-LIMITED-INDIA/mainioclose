@@ -2,7 +2,6 @@ import { parseAbsolute } from "@internationalized/date";
 import { ToWords } from "to-words";
 import numWords from "num-words";
 
-
 export const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 export const gstRegex =
   /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
@@ -205,15 +204,11 @@ export const statusColors = {
   REJECTED: "danger",
 };
 
-
 export const statusColorCode = {
   APPROVED: "success",
   PENDING: "warning",
   REJECTED: "danger",
 };
-
-
-
 
 export function numberToWords(value) {
   if (value === null || value === undefined || value === "") {
@@ -237,5 +232,20 @@ export function numberToWords(value) {
     words += " and " + numWords(paise) + " paise";
   }
 
-  return words.replace(/^\w/, c => c.toUpperCase()) + " only";
+  return words.replace(/^\w/, (c) => c.toUpperCase()) + " only";
 }
+
+export const allowOnlyNumbers = (value, maxLength = 10) => {
+  if (!value) return "";
+  return value.replace(/\D/g, "").slice(0, maxLength);
+};
+
+export const formatEmail = (value) => {
+  if (!value) return "";
+  return value.replace(/\s/g, "").toLowerCase();
+};
+
+export const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};

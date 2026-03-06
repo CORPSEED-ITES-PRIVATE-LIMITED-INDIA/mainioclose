@@ -64,7 +64,7 @@ export const unitSchema = (isEstimate) => {
   }
 };
 
-const BasicCompany = ({ isEstimate, companyDetail }) => {
+const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
@@ -107,13 +107,15 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
           if (resp.meta.requestStatus === "fulfilled") {
             dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
             const data = resp.payload;
+            dispatch(getAllStatesByCountryName(data?.country));
+            dispatch(getAllCitiesByStateName(data?.state));
             reset({
               name: data?.name,
               address: data?.address,
               city: data?.city,
               state: data?.state,
               country: data?.country,
-              pinCode: data?.pinCode,
+              pinCode: data?.primaryPinCode,
               gstNo: data?.gstNo,
               panNo: data?.panNo,
             });
@@ -125,13 +127,15 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
           const data = resp.payload;
+          dispatch(getAllStatesByCountryName(data?.country));
+          dispatch(getAllCitiesByStateName(data?.state));
           reset({
             name: data?.name,
             address: data?.address,
             city: data?.city,
             state: data?.state,
             country: data?.country,
-            pinCode: data?.pinCode,
+            pinCode: data?.primaryPinCode,
             gstNo: data?.gstNo,
             panNo: data?.panNo,
           });
@@ -308,6 +312,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
               e.preventDefault();
               e.stopPropagation();
               onOpen();
+              setIsDropDownOpen((prev) => ({ ...prev, company: false }));
             }}
           >
             + Add
@@ -322,6 +327,7 @@ const BasicCompany = ({ isEstimate, companyDetail }) => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              setIsDropDownOpen((prev) => ({ ...prev, company: false }));
               onOpen();
             }}
           >

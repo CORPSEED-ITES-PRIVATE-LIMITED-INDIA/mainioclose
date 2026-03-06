@@ -21,7 +21,11 @@ const NewSelect = ({
   isDisabled,
   onItemSelect = () => {},
   endContent = null,
+  isOpen = null,
+  onOpenChange = () => {},
 }) => {
+  const isControlled = isOpen !== null && isOpen !== undefined;
+
   const [selectedKeys, setSelectedKeys] = useState(() => {
     if (selectionMode === "multiple") {
       return Array.isArray(value) ? value.map(String) : [];
@@ -142,6 +146,7 @@ const NewSelect = ({
     <div className="w-full">
       <Select
         size={size}
+        {...(isControlled ? { isOpen, onOpenChange } : {})}
         endContent={endContent}
         isDisabled={isDisabled}
         errorMessage={errorMessage}
