@@ -55,6 +55,7 @@ import {
 import {
   createBasicUnitByCompanyId,
   createBasicUnitByCompanyIdInAccounts,
+  createCompanyAndUnitsForAccountsViaLeadEstimate,
   getAllCompanyByUserId,
   getAllUnitListByCompanyId,
   getBasicCompanyDetailByCompanyId,
@@ -370,17 +371,41 @@ export const LeadEstimates = () => {
     data.solutionId = selectedSolutionDetail?.id;
     data.createdByUserId = userId;
     data.leadId = leadId;
-    dispatch(createNewEstimate(data))
-      .then((res) => {
-        if (res.meta.requestStatus === "fulfilled") {
+
+    dispatch(
+      createCompanyAndUnitsForAccountsViaLeadEstimate({
+        ...company,
+        units: [...unitList],
+      }),
+    )
+      .then((compRes) => {
+        if (compRes.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Estimate created successfully !.",
+            title: "Company and Its units added suuccessfully in Accounts",
             color: "success",
           });
-          dispatch(getNewEstimateByLeadId({ leadId, userId }));
-          setShowForm(false);
+
+          dispatch(createNewEstimate(data))
+            .then((res) => {
+              if (res.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Estimate created successfully !.",
+                  color: "success",
+                });
+                dispatch(getNewEstimateByLeadId({ leadId, userId }));
+                setShowForm(false);
+              } else {
+                addToast({
+                  title: res?.payload?.data?.message,
+                  color: "danger",
+                });
+              }
+            })
+            .catch(() =>
+              addToast({ title: "Something went wrong !.", color: "danger" }),
+            );
         } else {
-          addToast({ title: res?.payload?.data?.message, color: "danger" });
+          addToast({ title: compRes?.payload?.data?.message, color: "danger" });
         }
       })
       .catch(() =>

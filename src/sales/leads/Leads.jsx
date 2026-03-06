@@ -559,12 +559,36 @@ const Leads = () => {
 
   const onNextPage = useCallback(() => {
     if (allMultiFilterData?.page < pages) {
+      dispatch(
+        getAllLeadsByFilter({
+          ...allMultiFilterData,
+          page: allMultiFilterData.page + 1,
+        }),
+      );
+      dispatch(
+        getAllLeadCount({
+          ...allMultiFilterData,
+          page: allMultiFilterData.page + 1,
+        }),
+      );
       setAllMultiFilterData((prev) => ({ ...prev, page: prev.page + 1 }));
     }
   }, [allMultiFilterData, pages]);
 
   const onPreviousPage = useCallback(() => {
     if (allMultiFilterData?.page > 1) {
+      dispatch(
+        getAllLeadsByFilter({
+          ...allMultiFilterData,
+          page: allMultiFilterData.page - 1,
+        }),
+      );
+      dispatch(
+        getAllLeadCount({
+          ...allMultiFilterData,
+          page: allMultiFilterData.page - 1,
+        }),
+      );
       setAllMultiFilterData((prev) => ({ ...prev, page: prev.page - 1 }));
     }
   }, [allMultiFilterData]);

@@ -484,19 +484,22 @@ const ProjectDetails = () => {
                 {detailedData?.projectDetails?.companyName}
               </h3>
             </div>
-            <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4" />{" "}
-              <div className="flex flex-col ">
-                <p className="text-sm">
-                  {[
-                    detailedData?.projectDetails?.address,
-                    detailedData?.projectDetails?.city,
-                    detailedData?.projectDetails?.state,
-                    detailedData?.projectDetails?.country,
-                  ].join(",")}
-                </p>
+            {detailedData?.projectDetails?.address && (
+              <div className="flex items-start gap-2">
+                <MapPin className="w-4 h-4" />{" "}
+                <div className="flex flex-col ">
+                  <p className="text-sm">
+                    {[
+                      detailedData?.projectDetails?.address,
+                      detailedData?.projectDetails?.city,
+                      detailedData?.projectDetails?.state,
+                      detailedData?.projectDetails?.country,
+                    ].join(",")}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
+
             <div className="flex items-start gap-2">
               <Calendar className="w-4 h-4" />{" "}
               <div className="flex flex-col ">
