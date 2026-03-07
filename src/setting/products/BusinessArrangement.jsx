@@ -435,7 +435,6 @@ const BusinessArrangement = () => {
         </TableBody>
       </Table>
       <Modal
-        size="2xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}
@@ -460,7 +459,7 @@ const BusinessArrangement = () => {
                     handleFinish(data);
                   }}
                 >
-                  <div className="w-full grid gap-5 max-h-[65vh] overflow-auto p-4">
+                  <div className="w-full grid gap-5 max-h-[65vh] overflow-auto">
                     <Input
                       isRequired
                       errorMessage="Please enter business arrangement name"

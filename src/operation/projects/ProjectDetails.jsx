@@ -72,6 +72,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { getApplicantTypeList } from "../../toolkit/slices/settingSlice";
 import FileUploader from "../../components/FileUploader";
+import {
+  getLocalTimeZone,
+  parseDate,
+  toCalendarDate,
+  today,
+} from "@internationalized/date";
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -113,16 +119,19 @@ export const PdfIcon = (props) => {
   );
 };
 
-const documentSchema = z.object({
-  fileName: z.string().min(1, "File name is required"),
-  companyDocSourceId: z.coerce.number().min(1, "Source is required"),
-  isFromCompanyDoc: z.boolean(),
-  expiryDate: z.string().optional(),
-  isPermanent: z.boolean(),
-  fileSizeKb: z.coerce.number().min(1, "File size required"),
-  fileFormat: z.string().min(1, "File format is required"),
-  remarks: z.string().optional(),
-});
+const documentSchema = (isPermanentFlag) =>
+  z.object({
+    fileName: z.string().min(1, "File name is required"),
+    companyDocSourceId: z.coerce.number().min(1, "Source is required"),
+    isFromCompanyDoc: z.boolean(),
+    isPermanent: z.boolean(),
+    ...(isPermanentFlag
+      ? { expiryDate: z.string().min(1, "please enter the date") }
+      : {}),
+    fileSizeKb: z.coerce.number().min(1, "File size required"),
+    fileFormat: z.string().min(1, "File format is required"),
+    remarks: z.string().optional(),
+  });
 
 const verifySchema = z.object({
   newStatus: z.string().min(1, "Please select status"),
@@ -185,6 +194,7 @@ const ProjectDetails = () => {
   });
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyDocId, setVerifyDocId] = useState(null);
+  const [isPermanent, setIsPermanent] = useState(false);
 
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
@@ -343,7 +353,7 @@ const ProjectDetails = () => {
     setValue,
     reset,
   } = useForm({
-    resolver: zodResolver(documentSchema),
+    resolver: zodResolver(documentSchema(isPermanent)),
     defaultValues: {
       fileName: "",
       fileSizeKb: "",
@@ -741,14 +751,14 @@ const ProjectDetails = () => {
         </Accordion>
       </div>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
                 Documents
               </ModalHeader>
-              <ModalBody className="max-h-[90vh] overflow-auto">
+              <ModalBody>
                 <NewSelect
                   label={"Select applicant type"}
                   labelKey={"name"}
@@ -757,159 +767,161 @@ const ProjectDetails = () => {
                   onChange={(e) => handleUpdateApplicantType(e)}
                 />
 
-                {requiredDocsList?.map((doc, idx) => {
-                  const hasFile = !!doc?.fileUrl;
+                <div className="max-h-[80vh] overflow-auto grid grid-cols-2 gap-2">
+                  {requiredDocsList?.map((doc, idx) => {
+                    const hasFile = !!doc?.fileUrl;
 
-                  const openPreview = () => {
-                    const raw = String(doc?.fileUrl || "").trim();
-                    const fixed =
-                      raw.includes("amazonaws.com") &&
-                      !raw.includes("amazonaws.com/")
-                        ? raw.replace("amazonaws.com", "amazonaws.com/")
-                        : raw;
+                    const openPreview = () => {
+                      const raw = String(doc?.fileUrl || "").trim();
+                      const fixed =
+                        raw.includes("amazonaws.com") &&
+                        !raw.includes("amazonaws.com/")
+                          ? raw.replace("amazonaws.com", "amazonaws.com/")
+                          : raw;
 
-                    const href =
-                      fixed.startsWith("http://") ||
-                      fixed.startsWith("https://")
-                        ? fixed
-                        : `https://${fixed}`;
+                      const href =
+                        fixed.startsWith("http://") ||
+                        fixed.startsWith("https://")
+                          ? fixed
+                          : `https://${fixed}`;
 
-                    window.open(href, "_blank", "noopener,noreferrer");
-                  };
+                      window.open(href, "_blank", "noopener,noreferrer");
+                    };
 
-                  return (
-                    <Card
-                      key={`doc${idx}`}
-                      className="rounded-2xl shadow-sm border border-gray-200 bg-white"
-                    >
-                      <CardBody className="p-4 flex flex-col gap-4">
-                        {/* HEADER */}
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="text-lg font-semibold text-gray-800">
-                              {doc?.documentName}
-                            </h4>
+                    return (
+                      <Card
+                        key={`doc${idx}`}
+                        className="rounded-2xl shadow-sm border border-gray-200 bg-white my-1.5"
+                      >
+                        <CardBody className="p-4 flex flex-col gap-4">
+                          {/* HEADER */}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-[14px] font-semibold text-gray-800">
+                                {doc?.documentName}
+                              </h4>
 
-                            <div className="flex gap-2 mt-2 flex-wrap">
-                              {doc?.mandatory && (
-                                <span className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md font-medium">
-                                  Mandatory
-                                </span>
-                              )}
+                              <div className="flex gap-2 mt-2 flex-wrap">
+                                {doc?.mandatory && (
+                                  <span className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md font-medium">
+                                    Mandatory
+                                  </span>
+                                )}
 
-                              {doc?.permanent && (
-                                <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-md font-medium">
-                                  Permanent
-                                </span>
-                              )}
+                                {doc?.permanent && (
+                                  <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-md font-medium">
+                                    Permanent
+                                  </span>
+                                )}
 
-                              {doc?.expired && (
-                                <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-medium">
-                                  Expired
-                                </span>
-                              )}
+                                {doc?.expired && (
+                                  <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-medium">
+                                    Expired
+                                  </span>
+                                )}
+                              </div>
                             </div>
+
+                            {/* STATUS BADGE */}
+                            <span
+                              className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                                doc?.status === "VERIFIED"
+                                  ? "bg-green-100 text-green-700"
+                                  : doc?.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {doc?.status}
+                            </span>
                           </div>
 
-                          {/* STATUS BADGE */}
-                          <span
-                            className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                              doc?.status === "VERIFIED"
-                                ? "bg-green-100 text-green-700"
-                                : doc?.status === "PENDING"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {doc?.status}
-                          </span>
-                        </div>
+                          {/* FILE SECTION */}
+                          <div>
+                            <p className="text-sm text-gray-500 mb-2">
+                              Uploaded File
+                            </p>
 
-                        {/* FILE SECTION */}
-                        <div>
-                          <p className="text-sm text-gray-500 mb-2">
-                            Uploaded File
-                          </p>
+                            {hasFile ? (
+                              <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                                <div className="flex items-center gap-3">
+                                  {/* PDF ICON */}
+                                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <PdfIcon className="text-red-500 w-5 h-5" />
+                                  </div>
 
-                          {hasFile ? (
-                            <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                              <div className="flex items-center gap-3">
-                                {/* PDF ICON */}
-                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                  <PdfIcon className="text-red-500 w-5 h-5" />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[180px]">
+                                      {doc?.fileName || "Document.pdf"}
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                      {doc?.fileSizeKb
+                                        ? `${doc.fileSizeKb} KB`
+                                        : ""}
+                                    </span>
+                                  </div>
                                 </div>
 
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-gray-800 truncate max-w-[180px]">
-                                    {doc?.fileName || "Document.pdf"}
-                                  </span>
-                                  <span className="text-xs text-gray-400">
-                                    {doc?.fileSizeKb
-                                      ? `${doc.fileSizeKb} KB`
-                                      : ""}
-                                  </span>
-                                </div>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
+                                  onPress={openPreview}
+                                >
+                                  Download
+                                </Button>
                               </div>
+                            ) : (
+                              <div className="text-sm italic text-gray-400">
+                                No file uploaded
+                              </div>
+                            )}
+                          </div>
 
+                          {/* EXPIRY */}
+                          <div className="text-sm text-gray-500">
+                            {doc?.expiryDate
+                              ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
+                              : doc?.permanent
+                                ? "No expiry date"
+                                : "No expiry date"}
+                          </div>
+
+                          {/* VERIFY BUTTON ONLY IF NEEDED */}
+                          {doc?.status !== "VERIFIED" && hasFile && (
+                            <div className="pt-2">
                               <Button
                                 size="sm"
-                                className="bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
-                                onPress={openPreview}
+                                color="primary"
+                                className="rounded-full px-6"
+                                onPress={() => openVerify(doc)}
                               >
-                                Download
+                                Verify
                               </Button>
                             </div>
-                          ) : (
-                            <div className="text-sm italic text-gray-400">
-                              No file uploaded
-                            </div>
                           )}
-                        </div>
 
-                        {/* EXPIRY */}
-                        <div className="text-sm text-gray-500">
-                          {doc?.expiryDate
-                            ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
-                            : doc?.permanent
-                              ? "No expiry date"
-                              : "No expiry date"}
-                        </div>
-
-                        {/* VERIFY BUTTON ONLY IF NEEDED */}
-                        {doc?.status !== "VERIFIED" && hasFile && (
-                          <div className="pt-2">
+                          {doc?.status !== "UPLOADED" && (
                             <Button
                               size="sm"
-                              color="primary"
-                              className="rounded-full px-6"
-                              onPress={() => openVerify(doc)}
+                              color="secondary"
+                              onPress={() => openUploadForDoc(doc)}
                             >
-                              Verify
+                              Upload
                             </Button>
-                          </div>
-                        )}
-
-                        {doc?.status !== "UPLOADED" && (
-                          <Button
-                            size="sm"
-                            color="secondary"
-                            onPress={() => openUploadForDoc(doc)}
-                          >
-                            Upload
-                          </Button>
-                        )}
-                      </CardBody>
-                    </Card>
-                  );
-                })}
+                          )}
+                        </CardBody>
+                      </Card>
+                    );
+                  })}
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
-                <Button color="primary" onPress={onClose}>
+                {/* <Button color="primary" onPress={onClose}>
                   Action
-                </Button>
+                </Button> */}
               </ModalFooter>
             </>
           )}
@@ -1061,6 +1073,7 @@ const ProjectDetails = () => {
                       render={({ field }) => (
                         <Input
                           {...field}
+                          isRequired
                           type="number"
                           label="File Size (KB)"
                           isInvalid={!!errors.fileSizeKb}
@@ -1073,6 +1086,7 @@ const ProjectDetails = () => {
                       control={control}
                       render={({ field }) => (
                         <Input
+                          isRequired
                           {...field}
                           type="number"
                           label="Company Doc Source ID"
@@ -1088,6 +1102,7 @@ const ProjectDetails = () => {
                       render={({ field }) => (
                         <Select
                           label="File Format"
+                          isRequired
                           selectedKeys={field.value ? [field.value] : []}
                           onSelectionChange={(keys) => {
                             const value = Array.from(keys)[0];
@@ -1105,17 +1120,61 @@ const ProjectDetails = () => {
                     />
 
                     <Controller
-                      name="expiryDate"
+                      name="isPermanent"
                       control={control}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          type="date"
-                          label="Expiry Date"
-                          isDisabled={false}
-                        />
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Document type"
+                          isRequired
+                          selectedKeys={
+                            field.value !== undefined
+                              ? [field.value.toString()]
+                              : []
+                          }
+                          onSelectionChange={(keys) => {
+                            const value = Array.from(keys)[0];
+                            if (value !== undefined)
+                              field.onChange(value === "true");
+                            setIsPermanent(value === "true");
+                          }}
+                          isInvalid={!!errors.isPermanent}
+                          errorMessage={errors.isPermanent?.message}
+                        >
+                          {[
+                            { label: "True", value: true },
+                            { label: "False", value: false },
+                          ].map((item) => (
+                            <SelectItem
+                              key={item.value.toString()}
+                              value={item.value}
+                            >
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
                       )}
                     />
+
+                    {isPermanent && (
+                      <Controller
+                        name="expiryDate"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <DatePicker
+                            isRequired
+                            label="Expiry date"
+                            showMonthAndYearPickers
+                            minValue={today(getLocalTimeZone())}
+                            isInvalid={!!errors.expiryDate}
+                            errorMessage={errors.expiryDate?.message}
+                            value={field.value ? parseDate(field.value) : null}
+                            onChange={(e) =>
+                              field.onChange(toCalendarDate(e).toString())
+                            }
+                          />
+                        )}
+                      />
+                    )}
 
                     <Controller
                       name="remarks"
@@ -1139,19 +1198,6 @@ const ProjectDetails = () => {
                           onValueChange={field.onChange}
                         >
                           Is From Company Doc
-                        </Checkbox>
-                      )}
-                    />
-
-                    <Controller
-                      name="isPermanent"
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          isSelected={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          Is Permanent
                         </Checkbox>
                       )}
                     />
