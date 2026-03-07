@@ -57,6 +57,7 @@ import {
   handleDeleteSingleLead,
   handleFlagByQualityTeam,
   handleViewHistory,
+  importLeadsSheet,
   multiAssignedLeads,
   searchLeads,
   transferLeadToAnotherUser,
@@ -79,6 +80,7 @@ import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
 import { toggleAutoOnFeature } from "../../toolkit/slices/authSlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import FileUploader from "../../components/FileUploader";
 
 const getRowClassName = (item) => {
   if (!item.view) {
@@ -188,6 +190,7 @@ const Leads = () => {
   const multiDeleteModal = useDisclosure();
   const filterPopOver = useDisclosure();
   const actionPopOver = useDisclosure();
+  const importLeadModal = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initialFilterValues = {
     userId: userId,
@@ -211,6 +214,7 @@ const Leads = () => {
     useState(initialFilterValues);
   const [itemId, setItemId] = useState(null);
   const [loading, setLoading] = useState("");
+  const [leadsFileUploadingUrl, setLeadsFileUploadingUrl] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -382,6 +386,27 @@ const Leads = () => {
     },
     [dispatch, userId, allMultiFilterData],
   );
+
+  const handleUploadLeadsFile = () => {
+    dispatch(importLeadsSheet(leadsFileUploadingUrl))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Leads uploaded successfully !.",
+            color: "success",
+          });
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
+          dispatch(getAllLeadCount(allMultiFilterData));
+          dispatch(getAllLeadsForExport(allMultiFilterData));
+          setLeadsFileUploadingUrl(null);
+        } else {
+          addToast({ title: resp?.payload?.data?.message, color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
+  };
 
   const renderCell = useCallback(
     (lead, columnKey) => {
@@ -1224,7 +1249,11 @@ const Leads = () => {
                   </DropdownItem>
                 )}
                 {adminRole && (
-                  <DropdownItem key="import" endContent={<ArrowDownToLine />}>
+                  <DropdownItem
+                    key="import"
+                    endContent={<ArrowDownToLine />}
+                    onPress={importLeadModal.onOpen}
+                  >
                     Import
                   </DropdownItem>
                 )}
@@ -1711,6 +1740,42 @@ const Leads = () => {
                 </Button>
                 <Button color="primary" onPress={handleDeleteMutipleLeads}>
                   Yes
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={importLeadModal.isOpen}
+        onOpenChange={importLeadModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Create bulk leads
+              </ModalHeader>
+              <ModalBody>
+                <FileUploader
+                  label={"Upload excel sheet"}
+                  isRequired
+                  value={leadsFileUploadingUrl}
+                  onChange={(value) => setLeadsFileUploadingUrl(value)}
+                />
+              </ModalBody>
+              <ModalFooter className="w-full flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
+                <Button
+                  color="primary"
+                  onPress={handleUploadLeadsFile}
+                  isDisabled={!leadsFileUploadingUrl}
+                >
+                  Submit
                 </Button>
               </ModalFooter>
             </>

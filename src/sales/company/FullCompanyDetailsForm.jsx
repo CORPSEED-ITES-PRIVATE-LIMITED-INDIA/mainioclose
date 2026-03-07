@@ -400,7 +400,6 @@ export function CompanyAndUnitsForm({
       ndaPresent: String(company?.ndaPresent),
       industryId: String(company?.industryId),
       subIndustryId: String(company?.subIndustryId),
-      subIndustryId: String(company?.subIndustryId),
       subSubIndustryId: String(company?.subSubIndustryId),
       panNo: company?.panNo || "",
       gstNo: company?.gstNo || "",

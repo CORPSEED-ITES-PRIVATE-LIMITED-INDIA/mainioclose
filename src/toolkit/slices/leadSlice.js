@@ -41,6 +41,16 @@ export const getAllLeadsForExport = createAsyncThunk(
   },
 );
 
+export const importLeadsSheet = createAsyncThunk(
+  "importLeadsSheet",
+  async (url) => {
+    const response = await api.post(
+      `/leadService/api/v1/import-csv-from-s3?s3Url=${url}`,
+    );
+    return response.data;
+  },
+);
+
 export const createLeads = createAsyncThunk("createLeads", async (data) => {
   const response = await api.post(`/leadService/api/v1/lead/createLead`, data);
   return response.data;
