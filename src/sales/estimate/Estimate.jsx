@@ -768,6 +768,7 @@ const Estimate = () => {
         onOpen={onOpen}
         onOpenChange={onOpenChange}
         filteration={filteration}
+        filters={filters}
       />
     </>
   );

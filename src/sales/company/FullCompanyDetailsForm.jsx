@@ -209,6 +209,7 @@ const FullCompanyDetailsForm = ({
   isOpen,
   onOpenChange,
   filteration,
+  filters,
 }) => {
   return (
     <>
@@ -236,6 +237,7 @@ const FullCompanyDetailsForm = ({
                   onClose={onClose}
                   onCancel={onClose}
                   filteration={filteration}
+                  filters={filters}
                 />
               </ModalBody>
             </>
@@ -248,7 +250,12 @@ const FullCompanyDetailsForm = ({
 
 export default memo(FullCompanyDetailsForm);
 
-export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
+export function CompanyAndUnitsForm({
+  onCancel,
+  onClose,
+  filteration,
+  filters,
+}) {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const defaultValues = useMemo(() => getDefaultValues(), []);
@@ -450,7 +457,17 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                     size: filteration?.size,
                   }),
                 );
-                dispatch(getTotalCountOfEstimate(userId));
+                dispatch(
+                  getTotalCountOfEstimate({
+                    userId,
+                    data: {
+                      search: filters.search || "",
+                      status: filters.status || "",
+                      fromDate: filters.fromDate || "",
+                      toDate: filters.toDate || "",
+                    },
+                  }),
+                );
               } else {
                 addToast({ title: res.payload.data.message, color: "danger" });
               }
