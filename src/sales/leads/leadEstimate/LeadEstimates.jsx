@@ -375,7 +375,7 @@ export const LeadEstimates = () => {
     dispatch(
       createCompanyAndUnitsForAccountsViaLeadEstimate({
         ...company,
-        units: [...unitList],
+        companyId: company?.id,
       }),
     )
       .then((compRes) => {
@@ -460,6 +460,7 @@ export const LeadEstimates = () => {
               userId,
             }),
           );
+          dispatch(getBasicCompanyDetails({ leadId, userId }));
         } else {
           addToast({
             title: resp.payload?.message || resp?.payload,

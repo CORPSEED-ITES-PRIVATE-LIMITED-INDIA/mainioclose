@@ -522,12 +522,12 @@ export const updateBasicCompanyDetail = createAsyncThunk(
 
 export const createCompanyAndUnitsForAccountsViaLeadEstimate = createAsyncThunk(
   "createCompanyAndUnitsForAccountsViaLeadEstimate",
-  async (data) => {
+  async (data, { rejectWithValue }) => {
     try {
       const response = await api.post(`/accountService/api/v1/company`, data);
       return response.data;
     } catch (err) {
-      return rejectWithValue(err.response.payload);
+      return rejectWithValue(err.response);
     }
   },
 );
