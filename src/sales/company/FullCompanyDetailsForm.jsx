@@ -278,6 +278,12 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
 
   const [gstAndPanData, setGstAndPanData] = useState({});
 
+  const [formCondition, setFormCondition] = useState({
+    adminRole,
+    aggrementPresent: false,
+    ndaPresent: false,
+  });
+
   const {
     control,
     handleSubmit,
@@ -286,7 +292,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
     formState: { errors, isSubmitting },
     setValue,
   } = useForm({
-    resolver: zodResolver(companySchema),
+    resolver: zodResolver(companySchema(formCondition)),
     mode: "onChange",
     defaultValues,
   });
@@ -359,8 +365,6 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
   }, [dispatch]);
 
   // Prefill
-
-  console.log("sdkljhghghghghghghghghghghghghghgj", company);
 
   useEffect(() => {
     if (!company) return;
@@ -748,6 +752,10 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   onSelectionChange={(keys) => {
                     const v = Array.from(keys)[0];
                     field.onChange(v === "true");
+                    setFormCondition((prev) => ({
+                      ...prev,
+                      aggrementPresent: v === "true",
+                    }));
                   }}
                 >
                   <SelectItem key="true">Yes</SelectItem>
@@ -756,28 +764,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               )}
             />
 
-            <Controller
-              name="ndaPresent"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Select
-                  label="NDA"
-                  isRequired
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  selectedKeys={new Set([String(!!field.value)])}
-                  onSelectionChange={(keys) => {
-                    const v = Array.from(keys)[0];
-                    field.onChange(v === "true");
-                  }}
-                >
-                  <SelectItem key="true">Yes</SelectItem>
-                  <SelectItem key="false">No</SelectItem>
-                </Select>
-              )}
-            />
-
-            {aggrementPresent && (
+            {formCondition?.aggrementPresent && (
               <Controller
                 name="agreementFileUrl"
                 control={control}
@@ -794,7 +781,32 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               />
             )}
 
-            {ndaPresent && (
+            <Controller
+              name="ndaPresent"
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <Select
+                  label="NDA"
+                  isRequired
+                  errorMessage={error?.message}
+                  isInvalid={!!error}
+                  selectedKeys={new Set([String(!!field.value)])}
+                  onSelectionChange={(keys) => {
+                    const v = Array.from(keys)[0];
+                    field.onChange(v === "true");
+                    setFormCondition((prev) => ({
+                      ...prev,
+                      ndaPresent: v === "true",
+                    }));
+                  }}
+                >
+                  <SelectItem key="true">Yes</SelectItem>
+                  <SelectItem key="false">No</SelectItem>
+                </Select>
+              )}
+            />
+
+            {formCondition?.ndaPresent && (
               <Controller
                 name="ndaFileUrl"
                 control={control}
