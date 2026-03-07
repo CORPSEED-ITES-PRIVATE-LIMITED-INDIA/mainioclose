@@ -49,14 +49,14 @@ const BusinessArrangement = () => {
   const { solutionId, userId } = useParams();
   const data = useSelector((state) => state.product.businessArrangementList);
   const count = useSelector(
-    (state) => state.product.businessArrangementList?.length
+    (state) => state.product.businessArrangementList?.length,
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const deleteModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -82,7 +82,7 @@ const BusinessArrangement = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -92,8 +92,8 @@ const BusinessArrangement = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -113,13 +113,13 @@ const BusinessArrangement = () => {
 
   const handleDeleteItem = () => {
     dispatch(
-      deleteBusinessArrangement({ solutionId, tierId: rowItem?.id, userId })
+      deleteBusinessArrangement({ solutionId, tierId: rowItem?.id, userId }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           deleteModal.onClose();
           dispatch(
-            getAllBusinessArrangementBySolutionId({ solutionId, userId })
+            getAllBusinessArrangementBySolutionId({ solutionId, userId }),
           );
           setRowItem(null);
         } else {
@@ -127,7 +127,7 @@ const BusinessArrangement = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -145,7 +145,7 @@ const BusinessArrangement = () => {
           solutionId,
           tierId: rowItem?.id,
           userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -157,18 +157,19 @@ const BusinessArrangement = () => {
             setFormData({ name: "" });
             setRowItem(null);
             dispatch(
-              getAllBusinessArrangementBySolutionId({ solutionId, userId })
+              getAllBusinessArrangementBySolutionId({ solutionId, userId }),
             );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(createBusinessArrangement({ data: values, solutionId, userId }))
         .then((resp) => {
+          console.log("dfkljhdkj", resp);
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Business arrangement created successfully",
@@ -178,14 +179,14 @@ const BusinessArrangement = () => {
             setFormData({ name: "" });
             setRowItem(null);
             dispatch(
-              getAllBusinessArrangementBySolutionId({ solutionId, userId })
+              getAllBusinessArrangementBySolutionId({ solutionId, userId }),
             );
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({ title: resp?.payload?.data?.message, color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -454,7 +455,7 @@ const BusinessArrangement = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleFinish(data);
                   }}

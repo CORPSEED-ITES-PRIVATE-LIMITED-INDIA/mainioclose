@@ -142,7 +142,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
         }
       });
     }
-  }, [dispatch, leadId, userId, companyDetail]);
+  }, [dispatch, leadId, userId, companyDetail, isEstimate]);
 
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
 
@@ -364,7 +364,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Add company
+                {isEstimate ? "Update company" : "Add company"}
               </ModalHeader>
               <ModalBody>
                 <form
@@ -399,7 +399,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                       )}
                     />
 
-                    {/* GST */}
+                    {/* GST
                     <Controller
                       name="gstNo"
                       control={control}
@@ -415,7 +415,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           errorMessage={errors.name?.message}
                         />
                       )}
-                    />
+                    /> */}
 
                     {/* PAN */}
                     <Controller

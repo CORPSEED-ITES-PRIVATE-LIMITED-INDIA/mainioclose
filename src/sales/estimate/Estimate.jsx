@@ -424,10 +424,10 @@ const Estimate = () => {
                   Add payment register
                 </DropdownItem>
                 <DropdownItem key="viewEstimate">View estimate</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem>
                 <DropdownItem key="delete" color="danger">
                   Delete
-                </DropdownItem>
+                </DropdownItem> */}
               </DropdownMenu>
             </Dropdown>
           </div>

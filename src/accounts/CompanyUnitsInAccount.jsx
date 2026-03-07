@@ -91,7 +91,7 @@ const CompanyUnitsInAccount = () => {
 
   useEffect(() => {
     dispatch(getGstListByCompanyIdInAccounts(companyFilteration));
-  }, [dispatch, companyId]);
+  }, [dispatch, companyId, companyFilteration]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -221,9 +221,7 @@ const CompanyUnitsInAccount = () => {
       case "address":
         return company?.addressLine1 ? (
           <div className="flex flex-col">
-            <span className="font-semibold">
-              {company?.addressLine1 || "-"}
-            </span>
+            <span className="font-normal">{company?.addressLine1 || "-"}</span>
             <span className="text-sm text-gray-400">
               {[
                 company?.city,
@@ -455,7 +453,7 @@ const CompanyUnitsInAccount = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">GST list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Unit list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

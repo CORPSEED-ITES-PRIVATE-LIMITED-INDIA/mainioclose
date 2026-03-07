@@ -5,17 +5,15 @@ import { IndianRupee } from "lucide-react";
 import Section from "../../../components/Section";
 
 const ServiceFormFieldsDetail = ({ control, isMedium }) => {
-
   const { fields } = useFieldArray({
     control,
-    name: "lineItems"
+    name: "lineItems",
   });
 
   return (
     <Section title="Service Details">
       {fields.map((field, idx) => (
         <div key={field.id} className="grid grid-cols-4 gap-3 my-2">
-
           {/* Fee Name (Read-Only) */}
           <Controller
             name={`lineItems.${idx}.itemName`}
@@ -74,7 +72,6 @@ const ServiceFormFieldsDetail = ({ control, isMedium }) => {
               />
             )}
           />
-
         </div>
       ))}
     </Section>

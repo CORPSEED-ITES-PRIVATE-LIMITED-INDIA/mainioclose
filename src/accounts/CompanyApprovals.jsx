@@ -36,12 +36,12 @@ import {
 const columns = [
   { name: "ID", uid: "companyId" },
   { name: "COMPANY", uid: "companyName", sortable: true },
+  { name: "ESTABLISHED DATE", uid: "establishDate" },
   { name: "INDUSTRY", uid: "industryName" },
   { name: "PAN NUMBER", uid: "panNo" },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
-  { name: "PRIMARY ADDRESS", uid: "address" },
-  { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
+  { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -52,7 +52,7 @@ function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "companyId",
   "companyName",
-  "gstNo",
+  "establishDate",
   "industryName",
   "panNo",
   "status",
@@ -199,6 +199,23 @@ const CompanyApprovals = () => {
               <p className="font-normal text-xs text-gray-400">
                 Age : {rowData?.age || "-"}
               </p>
+              <p className="font-normal text-xs text-gray-400">
+                Pending units : {rowData?.pendingUnitsCount || "-"}
+              </p>
+            </div>
+          </div>
+        );
+
+      case "establishDate":
+        return (
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col">
+              <p className="font-normal">{rowData?.establishDate || "-"}</p>
+              {rowData?.revenue && (
+                <p className="font-normal">
+                  Revenue : {rowData?.revenue || "-"}
+                </p>
+              )}
             </div>
           </div>
         );

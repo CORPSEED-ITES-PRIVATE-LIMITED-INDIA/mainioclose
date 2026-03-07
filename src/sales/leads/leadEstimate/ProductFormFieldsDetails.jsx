@@ -22,16 +22,16 @@ const ProductFormFieldsDetails = ({
   const dispatch = useDispatch();
 
   const solutionDetail = useSelector(
-    (state) => state.setting.solutionDetailById
+    (state) => state.setting.solutionDetailById,
   );
   const businessArrangementList = useSelector(
-    (state) => state.product.businessArrangementList
+    (state) => state.product.businessArrangementList,
   );
   const productCategoryList = useSelector(
-    (state) => state.product.productCategoryList
+    (state) => state.product.productCategoryList,
   );
   const productSubcategoryList = useSelector(
-    (state) => state.product.productSubcategoryList
+    (state) => state.product.productSubcategoryList,
   );
 
   const [productPrices, setProductPrices] = useState(null);
@@ -106,7 +106,7 @@ const ProductFormFieldsDetails = ({
                     userId,
                     tierId: item?.id,
                     solutionId: solutionDetail?.id,
-                  })
+                  }),
                 );
               }}
             />
@@ -135,7 +135,7 @@ const ProductFormFieldsDetails = ({
                   getAllProductSubCategoryListByCategoryId({
                     productRoleId: item?.id,
                     userId,
-                  })
+                  }),
                 );
               }}
             />
@@ -188,16 +188,23 @@ const ProductFormFieldsDetails = ({
           <Controller
             name={`lineItems.0.unitPriceExGst`}
             control={control}
-            render={({ field }) => (
+            rules={{
+              validate: (value) =>
+                Number(value) >= Number(productPrices?.feePerUnit) ||
+                `Price cannot be less than ₹${productPrices?.feePerUnit}`,
+            }}
+            render={({ field, fieldState }) => (
               <Input
                 {...field}
                 size={isMedium ? "sm" : "md"}
                 type="number"
-                startContent={<IndianRupee className="h-4 w-4" />}
-                isReadOnly
-                isRequired
                 label="Actual price"
-                onChange={(e) => field.onChange(e.target.value)}
+                startContent={<IndianRupee className="h-4 w-4" />}
+                min={productPrices?.feePerUnit}
+                isRequired
+                isInvalid={!!fieldState.error}
+                errorMessage={fieldState.error?.message}
+                onChange={(e) => field.onChange(Number(e.target.value))}
               />
             )}
           />
@@ -221,15 +228,23 @@ const ProductFormFieldsDetails = ({
           <Controller
             name={`lineItems.0.gstRate`}
             control={control}
-            render={({ field }) => (
+            rules={{
+              validate: (value) =>
+                Number(value) >= Number(productPrices?.gstPercentage) ||
+                `GST cannot be less than ${productPrices?.gstPercentage}%`,
+            }}
+            render={({ field, fieldState }) => (
               <Input
                 {...field}
                 size={isMedium ? "sm" : "md"}
-                isRequired
+                type="number"
                 label="GST %"
-                isReadOnly
                 endContent={<Percent className="h-4 w-4" />}
-                onChange={(e) => field.onChange(e.target.value)}
+                min={productPrices?.gstPercentage}
+                isRequired
+                isInvalid={!!fieldState.error}
+                errorMessage={fieldState.error?.message}
+                onChange={(e) => field.onChange(Number(e.target.value))}
               />
             )}
           />

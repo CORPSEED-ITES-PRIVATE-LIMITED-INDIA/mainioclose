@@ -34,6 +34,7 @@ import {
   getAllProductSubCategoryListByCategoryId,
   toggleForRoundOffValue,
 } from "../../toolkit/slices/productSlice";
+import { allowOnlyNumbers } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -64,14 +65,14 @@ const ProductSubCategory = () => {
   const { categoryId, userId } = useParams();
   const data = useSelector((state) => state.product.productSubcategoryList);
   const count = useSelector(
-    (state) => state.product.productSubcategoryList?.length
+    (state) => state.product.productSubcategoryList?.length,
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
-  const deleteModal  = useDisclosure();
+  const deleteModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -100,7 +101,7 @@ const ProductSubCategory = () => {
       getAllProductSubCategoryListByCategoryId({
         productRoleId: categoryId,
         userId,
-      })
+      }),
     );
   }, [dispatch, initialFilteration]);
 
@@ -108,7 +109,7 @@ const ProductSubCategory = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -118,8 +119,8 @@ const ProductSubCategory = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -143,7 +144,7 @@ const ProductSubCategory = () => {
         productRoleId: categoryId,
         ruleId: rowItem?.id,
         userId,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -152,7 +153,7 @@ const ProductSubCategory = () => {
             getAllProductSubCategoryListByCategoryId({
               productRoleId: categoryId,
               userId,
-            })
+            }),
           );
           setRowItem(null);
         } else {
@@ -160,7 +161,7 @@ const ProductSubCategory = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -185,10 +186,10 @@ const ProductSubCategory = () => {
           productRoleId: categoryId,
           ruleId: rowItem?.id,
           userId,
-        })
+        }),
       )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Sub category updated successfully",
               color: "success",
@@ -207,22 +208,22 @@ const ProductSubCategory = () => {
               getAllProductSubCategoryListByCategoryId({
                 productRoleId: categoryId,
                 userId,
-              })
+              }),
             );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
-      } else {
+    } else {
       dispatch(
         createProductSubCategory({
           data: formData,
           productRoleId: categoryId,
           userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -244,14 +245,14 @@ const ProductSubCategory = () => {
               getAllProductSubCategoryListByCategoryId({
                 productRoleId: categoryId,
                 userId,
-              })
+              }),
             );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -524,7 +525,7 @@ const ProductSubCategory = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleFinish(data);
                   }}
@@ -568,7 +569,7 @@ const ProductSubCategory = () => {
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          feePerUnit: e.target.value,
+                          feePerUnit: allowOnlyNumbers(e.target.value),
                         }))
                       }
                     />
@@ -582,7 +583,7 @@ const ProductSubCategory = () => {
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          gstPercentage: e.target.value,
+                          gstPercentage: allowOnlyNumbers(e.target.value),
                         }))
                       }
                     />
@@ -617,10 +618,7 @@ const ProductSubCategory = () => {
                         { label: "True", value: true },
                         { label: "False", value: false },
                       ].map((item) => (
-                        <SelectItem
-                          key={item.value}
-                          value={item.value}
-                        >
+                        <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>
                       ))}

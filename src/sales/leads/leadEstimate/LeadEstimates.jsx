@@ -449,7 +449,6 @@ export const LeadEstimates = () => {
     data.companyId = companyDetail?.id;
     dispatch(createContactViaEstimateInCompany(data))
       .then((resp) => {
-        console.log("dssssssssssssssssssss  11111", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({ title: "Unit details saved.", color: "success" });
           contactModal.onClose();
@@ -955,6 +954,14 @@ export const LeadEstimates = () => {
                       type="submit"
                       color="primary"
                       className="cursor-pointer"
+                      onPress={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                     >
                       Save
                     </Button>
@@ -1157,7 +1164,6 @@ export const LeadEstimates = () => {
                       type="button"
                       variant="flat"
                       color="default"
-                      className="cursor-pointer"
                       onPress={onClose}
                     >
                       Close
@@ -1166,7 +1172,14 @@ export const LeadEstimates = () => {
                     <Button
                       type="submit"
                       color="primary"
-                      className="cursor-pointer"
+                      onPress={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                     >
                       Save
                     </Button>
