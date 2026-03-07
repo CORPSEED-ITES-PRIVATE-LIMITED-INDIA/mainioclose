@@ -204,36 +204,6 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
             onClose();
             dispatch(getBasicCompanyDetails({ leadId, userId }));
             dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-
-            // dispatch(
-            //   createCompanyInAccounts({
-            //     leadCompanyId: resp?.payload?.id,
-            //     companyUnitId: resp?.payload?.units?.[0]?.id,
-            //     ...values,
-            //   }),
-            // )
-            //   .then((companyRes) => {
-            //     if (companyRes.meta.requestStatus === "fulfilled") {
-            //       addToast({
-            //         title: "Company created in account service is done.",
-            //         color: "success",
-            //       });
-            //       reset();
-            //       onClose();
-            //       dispatch(getBasicCompanyDetails({ leadId, userId }));
-            //     } else {
-            //       addToast({
-            //         title: `${companyRes?.payload?.data?.message} with status ${companyRes?.payload?.data?.status}`,
-            //         color: "danger",
-            //       });
-            //     }
-            //   })
-            //   .catch((err) =>
-            //     addToast({
-            //       title: "Something went wrong in account service !.",
-            //       color: "danger",
-            //     }),
-            //   );
           } else {
             addToast({
               title: resp?.payload,

@@ -24,7 +24,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import NewSelect from "../../components/NewSelect";
 import SingleFileUploader from "../../components/SingleFileUploader";
-import { formatGSTInput, formatPANInput } from "../../common";
+import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../../common";
 import {
   getAllCitiesByStateName,
   getAllContactDetails,
@@ -63,87 +63,78 @@ import { useParams } from "react-router-dom";
 /* -----------------------------
  * Zod Schemas
  * ---------------------------- */
-const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-
 // NOTE: I added the new fields you showed (companyType, gstType, businessType, files, contact fields etc.)
 const unitSchema = z.object({
-  id: z.coerce.number().optional().default(0),
   unitName: z.string().min(1, "Unit name is required"),
   addressLine1: z.string().min(1, "Address Line 1 is required"),
   addressLine2: z.string().optional().default(""),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   country: z.string().min(1, "Country is required"),
-  pinCode: z
-    .string()
-    .min(4, "Pin code is required")
-    .max(10, "Invalid pin code"),
-  gstNo: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || gstRegex.test(v), "Invalid GST format"),
-  unitOpeningDate: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Invalid date"),
-  status: z.string().optional().default(""),
-  consultantPresent: z.coerce.boolean().optional().default(false),
-
-  // optional numeric ids
-  companyTypeId: z.coerce.number().default(0),
-  gstTypeId: z.coerce.number().optional().default(0),
-  gstBusinessTypeId: z.coerce.number().optional().default(0),
-  gstTypePriceId: z.coerce.number().optional().default(0),
-  primaryContactId: z.coerce.number().optional().default(0),
-  secondaryContactId: z.coerce.number().optional().default(0),
+  pinCode: z.string().min(1, "Pin code is required"),
+  gstNo: z.string().min(1, "please enter gst number"),
+  unitOpeningDate: z.string().min("please enter enter"),
+  companyTypeId: z.string().min(1, "please select company type"),
+  gstTypeId: z.string().min(1, "please select gst type"),
+  gstBusinessTypeId: z.string().min(1, "please select business type"),
 });
 
-const companySchema = z.object({
-  // company basics
-  name: z.string().min(1, "Company name is required"),
-  panNo: z.string().min(1, "please give pan number."),
-  assigneeId: z.string().optional(),
-  // industry chain
-  industryId: z.string().optional(),
-  subIndustryId: z.string().optional(),
-  subsubIndustryId: z.string().optional(),
-  industrydataId: z.array(z.string()).optional(),
+const companySchema = (obj) =>
+  z.object({
+    // company basics
+    name: z.string().min(1, "Company name is required."),
+    panNo: z.string().min(1, "please give pan number."),
+    ...(obj?.adminRole
+      ? {
+          assigneeId: z.string().min(1, "Please select assignee."),
+        }
+      : {}),
+    // industry chain
+    industryId: z.string().min(1, "Please select industry."),
+    subIndustryId: z.string().min(1, "Please select sub industry."),
+    subsubIndustryId: z.string().min(1, "Please select category."),
+    industrydataId: z
+      .array(z.string())
+      .min(1, "Please select business activity."),
 
-  // uploads
-  companyFileUrl: z.string().optional().default(""),
-  agreementFileUrl: z.string().optional().default(""),
-  ndaFileUrl: z.string().optional().default(""),
+    // uploads
+    companyFileUrl: z.string().min(1, "please upload attachement"),
+    ...(obj?.aggrementPresent
+      ? { agreementFileUrl: z.string().min(1, "please upload attachement") }
+      : {}),
+    ...(obj?.ndaPresent
+      ? {
+          ndaFileUrl: z.string().min(1, "please upload attachement"),
+        }
+      : {}),
 
-  // payment/flags
-  paymentTerm: z.string().nullable().optional(),
-  aggrementPresent: z.boolean().optional(),
-  ndaPresent: z.boolean().optional(),
+    // payment/flags
+    paymentTerm: z.string().min(1, "Please select payment term"),
+    aggrementPresent: z.boolean(),
+    ndaPresent: z.boolean(),
 
-  // contact fields
-  primaryTitle: z.string().optional().default(""),
-  contactName: z.string().optional().default(""),
-  primaryDesignation: z.coerce.number().optional(),
-  contactEmails: z.string().optional().default(""),
-  contactNo: z.string().optional().default(""),
-  contactWhatsappNo: z.string().optional().default(""),
+    // contact fields
+    // primaryTitle: z.string().min(1, "please select salutation"),
+    // contactName: z.string().min(1, "please enter contact name."),
+    // primaryDesignation: z.string.min(1, "please select Designation."),
+    // contactEmails: z.string().min(1, "please enter email."),
+    // contactNo: z.string().min(1, "please enter contact."),
+    // contactWhatsappNo: z.string().min(1, "please eneter whatsapp number."),
 
-  // address (company)
-  address: z.string().optional().default(""),
-  country: z.string().optional().default(""),
-  state: z.string().optional().default(""),
-  city: z.string().optional().default(""),
-  primaryPinCode: z.string().optional().default(""),
+    // address (company)
+    address: z.string().min(1, "please enter address."),
+    country: z.string().min(1, "please select country."),
+    state: z.string().min(1, "please select state."),
+    city: z.string().min(1, "please select city."),
+    primaryPinCode: z.string().min(1, "please select pin code"),
 
-  // existing fields (keep if you need)
-  rating: z.string().optional().default(""),
-  companyAge: z.string().optional().default(""),
-  establishDate: z.string().optional(),
-  revenue: z.string().optional().default(""),
-  units: z.array(unitSchema).min(1, "At least one unit is required"),
-});
+    // existing fields (keep if you need)
+    rating: z.string().min(1, "please select rating"),
+    companyAge: z.string().min(1, "please enter company age."),
+    establishDate: z.string().min(1, "please enter established data"),
+    revenue: z.string().min(1, "please enter revenue"),
+    units: z.array(unitSchema).min(1, "At least one unit is required"),
+  });
 
 const getEmptyUnit = () => ({
   id: 0,
@@ -343,10 +334,10 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
     }
   };
 
-  const handleGstChange = (e) => {
+  const handleGstChange = (e, name) => {
     const rawValue = e.target.value;
     const formattedValue = formatGSTInput(rawValue);
-    setValue("gstNo", formattedValue);
+    setValue(name, formattedValue);
     // const error = validateGST(formattedValue, state);
     // setGstError(error);
   };
@@ -504,8 +495,11 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Company age"
+                  isRequired
                   value={field?.value}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  onChange={(e) =>
+                    field.onChange(allowOnlyNumbers(e.target.value))
+                  }
                 />
               )}
             />
@@ -515,6 +509,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <DatePicker
+                  isRequired
                   label="Company incorporate date"
                   showMonthAndYearPickers
                   maxValue={today(getLocalTimeZone())}
@@ -532,8 +527,11 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Company revenue"
+                  isRequired
                   value={field?.value}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  onChange={(e) =>
+                    field.onChange(allowOnlyNumbers(e.target.value))
+                  }
                 />
               )}
             />
@@ -544,6 +542,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Select
                   label="Rating"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={[field.value]}
@@ -589,6 +588,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                     label="Select assignee"
                     errorMessage={error?.message}
                     isInvalid={!!error}
+                    isRequired
                     data={allUsers || []}
                     labelKey="fullName"
                     valueKey="id"
@@ -606,6 +606,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  isRequired
                   label="Select industry"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -626,6 +627,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
+                  isRequired
                   label="Select sub industry"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -647,6 +649,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="Select category"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={subSubIndustryListById || []}
@@ -667,6 +670,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="Select business activity"
+                  isRequired
                   selectionMode="multiple"
                   errorMessage={error?.message}
                   isInvalid={!!error}
@@ -685,6 +689,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <SingleFileUploader
                   label="Company document"
+                  isRequired
                   value={field.value}
                   onChange={(value) => field.onChange(value)}
                   errorMessage={error?.message}
@@ -701,6 +706,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Select
                   label="Payment term"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={
@@ -735,6 +741,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Select
                   label="Agreement"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={new Set([String(!!field.value)])}
@@ -755,6 +762,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Select
                   label="NDA"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={new Set([String(!!field.value)])}
@@ -776,6 +784,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                 render={({ field, fieldState: { error } }) => (
                   <SingleFileUploader
                     label="Agreement document"
+                    isRequired
                     value={field.value}
                     onChange={(value) => field.onChange(value)}
                     errorMessage={error?.message}
@@ -792,6 +801,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                 render={({ field, fieldState: { error } }) => (
                   <SingleFileUploader
                     label="NDA document"
+                    isRequired
                     value={field.value}
                     onChange={(value) => field.onChange(value)}
                     errorMessage={error?.message}
@@ -802,12 +812,13 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
             )}
 
             {/* Contact */}
-            <Controller
+            {/* <Controller
               name="primaryTitle"
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Select
                   label="Salutation"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   selectedKeys={
@@ -832,6 +843,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Name"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   {...field}
@@ -845,6 +857,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="Designation"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={desiginationList || []}
@@ -863,6 +876,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                 <Input
                   label="Email"
                   type="email"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   {...field}
@@ -876,9 +890,13 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Contact number"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  {...field}
+                  value={field.value}
+                  onChange={(e) =>
+                    field.onChange(allowOnlyNumbers(e.target.value))
+                  }
                 />
               )}
             />
@@ -889,12 +907,16 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Whatsapp number"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  {...field}
+                  value={field.value}
+                  onChange={(e) =>
+                    field.onChange(allowOnlyNumbers(e.target.value))
+                  }
                 />
               )}
-            />
+            /> */}
 
             {/* Address */}
 
@@ -904,6 +926,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Address"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   {...field}
@@ -917,6 +940,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="Country"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={countryList || []}
@@ -937,6 +961,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="State"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={statesList || []}
@@ -957,6 +982,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
                   label="City"
+                  isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
                   data={citiesList || []}
@@ -974,9 +1000,14 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <Input
                   label="Pin code"
+                  isRequired
+                  maxLength={6}
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  {...field}
+                  value={field.value}
+                  onChange={(e) =>
+                    field.onChange(allowOnlyNumbers(e.target.value, 6))
+                  }
                 />
               )}
             />
@@ -1034,6 +1065,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Unit Name"
+                      isRequired
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                       errorMessage={error?.message}
@@ -1052,6 +1084,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                       data={companyTypeList || []}
                       labelKey="name"
                       valueKey="id"
+                      isRequired
                       value={field.value}
                       isInvalid={!!error}
                       errorMessage={error?.message}
@@ -1069,6 +1102,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   render={({ field }) => (
                     <NewSelect
                       label="GST Type"
+                      isRequired
                       data={gstTypeList?.gstBussinessType || []}
                       labelKey="name"
                       valueKey="id"
@@ -1082,11 +1116,12 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                 />
 
                 <Controller
-                  name={`units.${index}.gstTypePriceId`}
+                  name={`units.${index}.gstBusinessTypeId`}
                   control={control}
                   render={({ field }) => (
                     <NewSelect
                       label="Business Type"
+                      isRequired
                       data={businessTypeList?.gstTypePrice || []}
                       labelKey="name"
                       valueKey="id"
@@ -1116,10 +1151,11 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="GST No"
+                      isRequired
                       value={field.value}
-                      onChange={(e) =>
-                        field.onChange((e.target.value || "").toUpperCase())
-                      }
+                      onChange={(e) => {
+                        handleGstChange(e, `units.${index}.gstNo`);
+                      }}
                       errorMessage={error?.message}
                       isInvalid={!!error}
                     />
@@ -1130,13 +1166,17 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   control={control}
                   name={`units.${index}.unitOpeningDate`}
                   render={({ field, fieldState: { error } }) => (
-                    <Input
-                      type="date"
+                    <DatePicker
+                      isRequired
                       label="Unit Opening Date"
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
+                      showMonthAndYearPickers
+                      maxValue={today(getLocalTimeZone())}
                       errorMessage={error?.message}
                       isInvalid={!!error}
+                      value={field.value ? parseDate(field.value) : null}
+                      onChange={(e) =>
+                        field.onChange(toCalendarDate(e).toString())
+                      }
                     />
                   )}
                 />
@@ -1148,8 +1188,8 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   name={`units.${index}.addressLine1`}
                   render={({ field, fieldState: { error } }) => (
                     <Input
-                      label="Address Line 1 *"
-                      placeholder="Address line 1"
+                      isRequired
+                      label="Address Line 1"
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                       errorMessage={error?.message}
@@ -1164,7 +1204,6 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   render={({ field, fieldState: { error } }) => (
                     <Input
                       label="Address Line 2"
-                      placeholder="Address line 2"
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                       errorMessage={error?.message}
@@ -1178,6 +1217,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      isRequired
                       label="Country"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1198,6 +1238,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
+                      isRequired
                       label="State"
                       errorMessage={error?.message}
                       isInvalid={!!error}
@@ -1219,6 +1260,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="City"
+                      isRequired
                       errorMessage={error?.message}
                       isInvalid={!!error}
                       data={citiesList || []}
@@ -1235,10 +1277,12 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
                   name={`units.${index}.pinCode`}
                   render={({ field, fieldState: { error } }) => (
                     <Input
-                      label="Pin Code *"
-                      placeholder="452001"
+                      isRequired
+                      label="Pin Code"
                       value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
+                      onChange={(e) =>
+                        field.onChange(allowOnlyNumbers(e.target.value))
+                      }
                       errorMessage={error?.message}
                       isInvalid={!!error}
                     />
