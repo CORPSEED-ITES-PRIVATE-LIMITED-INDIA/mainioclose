@@ -65,6 +65,7 @@ import { useParams } from "react-router-dom";
  * ---------------------------- */
 // NOTE: I added the new fields you showed (companyType, gstType, businessType, files, contact fields etc.)
 const unitSchema = z.object({
+  id: z.coerce.number().optional().default(0),
   unitName: z.string().min(1, "Unit name is required"),
   addressLine1: z.string().min(1, "Address Line 1 is required"),
   addressLine2: z.string().optional().default(""),
@@ -73,7 +74,7 @@ const unitSchema = z.object({
   country: z.string().min(1, "Country is required"),
   pinCode: z.string().min(1, "Pin code is required"),
   gstNo: z.string().min(1, "please enter gst number"),
-  unitOpeningDate: z.string().min("please enter enter"),
+  unitOpeningDate: z.string().min(1, "please enter date"),
   companyTypeId: z.string().min(1, "please select company type"),
   gstTypeId: z.string().min(1, "please select gst type"),
   gstBusinessTypeId: z.string().min(1, "please select business type"),
@@ -98,7 +99,8 @@ const companySchema = (obj) =>
       .min(1, "Please select business activity."),
 
     // uploads
-    companyFileUrl: z.string().min(1, "please upload attachement"),
+    // companyFileUrl: z.string().min(1, "please upload attachement"),
+    companyFileUrl: z.string().optional(),
     ...(obj?.aggrementPresent
       ? { agreementFileUrl: z.string().min(1, "please upload attachement") }
       : {}),
@@ -131,7 +133,7 @@ const companySchema = (obj) =>
     // existing fields (keep if you need)
     rating: z.string().min(1, "please select rating"),
     companyAge: z.string().min(1, "please enter company age."),
-    establishDate: z.string().min(1, "please enter established data"),
+    establishDate: z.string().min(1, "please enter established date"),
     revenue: z.string().min(1, "please enter revenue"),
     units: z.array(unitSchema).min(1, "At least one unit is required"),
   });
@@ -140,15 +142,15 @@ const getEmptyUnit = () => ({
   id: 0,
   unitName: "",
   gstNo: "",
-  companyTypeId: 0,
-  gstTypeId: 0,
-  gstBusinessTypeId: 0,
-  gstTypePriceId: 0,
+  companyTypeId: "",
+  gstTypeId: "",
+  gstBusinessTypeId: "",
+  gstTypePriceId: "",
   addressLine1: "",
   addressLine2: "",
   city: "",
   state: "",
-  country: "India",
+  country: "",
   pinCode: "",
   unitOpeningDate: "",
   consultantPresent: true,
@@ -390,6 +392,9 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
       assigneeId: String(company?.assigneeId),
       ndaPresent: String(company?.ndaPresent),
       industryId: String(company?.industryId),
+      subIndustryId: String(company?.subIndustryId),
+      subIndustryId: String(company?.subIndustryId),
+      subSubIndustryId: String(company?.subSubIndustryId),
       panNo: company?.panNo || "",
       gstNo: company?.gstNo || "",
       establishDate: company?.establishDate
@@ -418,6 +423,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
       }),
     )
       .then((resp) => {
+        console.log("jdvfgdkdfjdf", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Compamy detail updated successfully in leads !.",
@@ -427,7 +433,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
             updateFullCompanyDetailsInAccounts({
               companyId: company?.id,
               updatedBy: userId,
-              data: values,
+              data: resp?.payload,
             }),
           )
             .then((res) => {
@@ -693,7 +699,7 @@ export function CompanyAndUnitsForm({ onCancel, onClose, filteration }) {
               render={({ field, fieldState: { error } }) => (
                 <SingleFileUploader
                   label="Company document"
-                  isRequired
+                  // isRequired
                   value={field.value}
                   onChange={(value) => field.onChange(value)}
                   errorMessage={error?.message}
