@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
-import axios from "axios";
 
 export const getAllLeadsByFilter = createAsyncThunk(
   "getAllLeadsByFilter",

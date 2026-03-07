@@ -78,6 +78,17 @@ const NewEstimatePreview = ({ details, due }) => {
                   </p>
                 </div>
 
+                <div className="text-xs space-y-1 mt-2.5">
+                  <p className="whitespace-nowrap">
+                    <span className="font-semibold">Estimate date:</span>{" "}
+                    {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
+                  </p>
+                  <p className="whitespace-nowrap">
+                    <span className="font-semibold">Valid till date:</span>{" "}
+                    {dayjs(details?.validUntil).format("DD-MM-YYYY")}
+                  </p>
+                </div>
+
                 {/* <div className="flex items-end flex-col">
                   <h4 className="text-green-600 text-base font-semibold">
                     Order No.
@@ -99,48 +110,36 @@ const NewEstimatePreview = ({ details, due }) => {
               </div>
             </div>
             <div className="flex flex-col md:flex-row justify-between gap-6">
-              <div className="space-y-4 text-xs">
-                <div className="max-w-[50%] text-wrap">
-                  <p className="font-semibold text-gray-400 mb-1">Bill To ,</p>
-                  <p className="font-medium">{details?.unit?.unitName}</p>
-                  {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
-                  <p>
-                    {details?.unit?.addressLine1}{" "}
-                    {[
-                      details?.unit?.city,
-                      details?.unit?.state,
-                      details?.unit?.country,
-                      details?.unit?.pinCode,
-                    ]
-                      ?.filter(Boolean)
-                      .join(", ")}{" "}
-                  </p>
-                </div>
-                <div className="max-w-[50%] text-wrap">
-                  <p className="font-semibold text-gray-400 mb-1">Ship To ,</p>
-                  <p className="font-medium">{details?.unit?.unitName}</p>
-                  {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
-                  <p>
-                    {details?.unit?.addressLine1}{" "}
-                    {[
-                      details?.unit?.city,
-                      details?.unit?.state,
-                      details?.unit?.country,
-                      details?.unit?.pinCode,
-                    ]
-                      ?.filter(Boolean)
-                      .join(", ")}
-                  </p>
-                </div>
-              </div>
-              <div className="text-xs space-y-1 md:text-right max-w-[40%]">
-                <p className="whitespace-nowrap">
-                  <span className="font-semibold">Estimate date:</span>{" "}
-                  {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
+              <div className="max-w-[35%] text-wrap text-xs">
+                <p className="font-semibold text-gray-400 mb-1">Bill To ,</p>
+                <p className="font-medium">{details?.unit?.unitName}</p>
+                {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
+                <p>
+                  {details?.unit?.addressLine1}{" "}
+                  {[
+                    details?.unit?.city,
+                    details?.unit?.state,
+                    details?.unit?.country,
+                    details?.unit?.pinCode,
+                  ]
+                    ?.filter(Boolean)
+                    .join(", ")}{" "}
                 </p>
-                <p className="whitespace-nowrap">
-                  <span className="font-semibold">Valid till date:</span>{" "}
-                  {dayjs(details?.validUntil).format("DD-MM-YYYY")}
+              </div>
+              <div className="max-w-[35%] text-wrap text-xs text-right">
+                <p className="font-semibold text-gray-400 mb-1">Ship To ,</p>
+                <p className="font-medium">{details?.unit?.unitName}</p>
+                {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
+                <p>
+                  {details?.unit?.addressLine1}{" "}
+                  {[
+                    details?.unit?.city,
+                    details?.unit?.state,
+                    details?.unit?.country,
+                    details?.unit?.pinCode,
+                  ]
+                    ?.filter(Boolean)
+                    .join(", ")}
                 </p>
               </div>
             </div>

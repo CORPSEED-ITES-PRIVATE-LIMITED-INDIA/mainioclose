@@ -84,7 +84,7 @@ import BasicCompany from "../../company/BasicCompany";
 const unitModalSchema = z.object({
   unitName: z.string().min(1, "Unit name is required"),
   gstNo: z.string().optional().or(z.literal("")),
-  panNo: z.string().optional().or(z.literal("")),
+  // panNo: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
   city: z.string().optional().or(z.literal("")),
   state: z.string().optional().or(z.literal("")),
@@ -838,6 +838,20 @@ export const LeadEstimates = () => {
                     />
 
                     <Controller
+                      name="gstNo"
+                      control={unitControl}
+                      render={({ field }) => (
+                        <Input
+                          value={field.value}
+                          onChange={(e) => {
+                            handleGstChange(e);
+                          }}
+                          label="GST No"
+                        />
+                      )}
+                    />
+
+                    <Controller
                       name="address"
                       control={unitControl}
                       render={({ field }) => (
@@ -912,21 +926,7 @@ export const LeadEstimates = () => {
                       )}
                     />
 
-                    <Controller
-                      name="gstNo"
-                      control={unitControl}
-                      render={({ field }) => (
-                        <Input
-                          value={field.value}
-                          onChange={(e) => {
-                            handleGstChange(e);
-                          }}
-                          label="GST No"
-                        />
-                      )}
-                    />
-
-                    <Controller
+                    {/* <Controller
                       name="panNo"
                       control={unitControl}
                       render={({ field }) => (
@@ -938,7 +938,7 @@ export const LeadEstimates = () => {
                           label="PAN No"
                         />
                       )}
-                    />
+                    /> */}
                   </div>
                   <ModalFooter>
                     <Button

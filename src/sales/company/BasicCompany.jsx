@@ -47,7 +47,7 @@ export const unitSchema = (isEstimate) => {
       state: z.string().min(1, "State is required"),
       country: z.string().min(1, "Country is required"),
       pinCode: z.string().min(1, "Pincode is required"),
-      gstNo: z.string().optional(),
+      // gstNo: z.string().optional(),
       panNo: z.string().min(1, "Pan number is required"),
     });
   } else {
@@ -58,7 +58,7 @@ export const unitSchema = (isEstimate) => {
       state: z.string().optional(),
       country: z.string().optional(),
       pinCode: z.string().optional(),
-      gstNo: z.string().optional(),
+      // gstNo: z.string().optional(),
       panNo: z.string().optional(),
     });
   }
