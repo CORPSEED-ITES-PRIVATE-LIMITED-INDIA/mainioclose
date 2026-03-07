@@ -376,6 +376,7 @@ export const LeadEstimates = () => {
       createCompanyAndUnitsForAccountsViaLeadEstimate({
         ...company,
         companyId: company?.id,
+        createdById: userId,
       }),
     )
       .then((compRes) => {
