@@ -13,15 +13,15 @@ export const navItems = [
     children: [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
-      { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
+      // { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
       { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
       { title: "Proposal", icon: "", url: "sales/proposal", key: "proposal" },
-      {
-        title: "Discounted Estimate",
-        icon: "",
-        url: "sales/discountedEstimate",
-        key: "discountedEstimate",
-      },
+      // {
+      //   title: "Discounted Estimate",
+      //   icon: "",
+      //   url: "sales/discountedEstimate",
+      //   key: "discountedEstimate",
+      // },
       {
         title: "Auto history",
         icon: "",
@@ -34,19 +34,19 @@ export const navItems = [
         url: "sales/salesReport",
         key: "salesReport",
       },
-      {
-        title: "Automation report",
-        icon: "",
-        url: "sales/automationReport",
-        key: "automationReport",
-      },
-      { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
-      {
-        title: "Serving Companies",
-        icon: "",
-        url: "sales/servingCompanies",
-        key: "servingCompanies",
-      },
+      // {
+      //   title: "Automation report",
+      //   icon: "",
+      //   url: "sales/automationReport",
+      //   key: "automationReport",
+      // },
+      // { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
+      // {
+      //   title: "Serving Companies",
+      //   icon: "",
+      //   url: "sales/servingCompanies",
+      //   key: "servingCompanies",
+      // },
     ],
   },
   {
@@ -61,12 +61,12 @@ export const navItems = [
         url: "accounts/organizations",
         key: "organizations",
       },
-      {
-        title: "Company form",
-        icon: "",
-        url: "accounts/companyForm",
-        key: "companyForm",
-      },
+      // {
+      //   title: "Company form",
+      //   icon: "",
+      //   url: "accounts/companyForm",
+      //   key: "companyForm",
+      // },
       {
         title: "Company approvals",
         icon: "",
@@ -79,16 +79,16 @@ export const navItems = [
       //   url: "accounts/paymentApprovals",
       //   key: "paymentApprovals",
       // },
-      {
-        title: "Bank statement",
-        url: "accounts/bankStatement",
-        key: "bankStatement",
-      },
-      {
-        title: "Payment register",
-        url: "accounts/paymentRegister",
-        key: "paymentRegister",
-      },
+      // {
+      //   title: "Bank statement",
+      //   url: "accounts/bankStatement",
+      //   key: "bankStatement",
+      // },
+      // {
+      //   title: "Payment register",
+      //   url: "accounts/paymentRegister",
+      //   key: "paymentRegister",
+      // },
       {
         title: "All invoice",
         url: "accounts/allInvoice",
@@ -105,12 +105,12 @@ export const navItems = [
         key: "accounts/orgEstimate",
         icon: "",
       },
-      {
-        title: "Vendors payment",
-        url: "accounts/vendorsPayment",
-        key: "accounts/vendorsPayment",
-        icon: "",
-      },
+      // {
+      //   title: "Vendors payment",
+      //   url: "accounts/vendorsPayment",
+      //   key: "accounts/vendorsPayment",
+      //   icon: "",
+      // },
     ],
   },
   {
@@ -353,12 +353,12 @@ export const accountNavItems = [
   //   url: "accounts/paymentApprovals",
   //   key: "paymentApprovals",
   // },
-  {
-    title: "Bank statement",
-    url: "accounts/bankStatement",
-    key: "bankStatement",
-    icon: "NotebookText",
-  },
+  // {
+  //   title: "Bank statement",
+  //   url: "accounts/bankStatement",
+  //   key: "bankStatement",
+  //   icon: "NotebookText",
+  // },
   {
     title: "Payment register",
     url: "accounts/paymentRegister",
@@ -383,12 +383,12 @@ export const accountNavItems = [
     key: "accounts/orgEstimate",
     icon: "Book",
   },
-  {
-    title: "Vendor's payments",
-    url: "accounts/vendorsPayment",
-    key: "accounts/vendorsPayment",
-    icon: "HandCoins",
-  },
+  // {
+  //   title: "Vendor's payments",
+  //   url: "accounts/vendorsPayment",
+  //   key: "accounts/vendorsPayment",
+  //   icon: "HandCoins",
+  // },
   {
     title: "Organization",
     icon: "Building2",
@@ -481,12 +481,12 @@ export const salesNavItems = [
     key: "leads",
   },
   { title: "Company", icon: "Building", url: "sales/company", key: "company" },
-  {
-    title: "Lead form",
-    icon: "FileText",
-    url: "sales/leadForm",
-    key: "leadForm",
-  },
+  // {
+  //   title: "Lead form",
+  //   icon: "FileText",
+  //   url: "sales/leadForm",
+  //   key: "leadForm",
+  // },
   {
     title: "Estimate",
     icon: "FileText",
@@ -499,24 +499,24 @@ export const salesNavItems = [
     url: "sales/proposal",
     key: "proposal",
   },
-  {
-    title: "Discounted Estimate",
-    icon: "FileMinus",
-    url: "sales/discountedEstimate",
-    key: "discountedEstimate",
-  },
-  {
-    title: "Projects",
-    icon: "FolderKanban",
-    url: "sales/projects",
-    key: "projects",
-  },
-  {
-    title: "Serving Companies",
-    icon: "University",
-    url: "sales/servingCompanies",
-    key: "servingCompanies",
-  },
+  // {
+  //   title: "Discounted Estimate",
+  //   icon: "FileMinus",
+  //   url: "sales/discountedEstimate",
+  //   key: "discountedEstimate",
+  // },
+  // {
+  //   title: "Projects",
+  //   icon: "FolderKanban",
+  //   url: "sales/projects",
+  //   key: "projects",
+  // },
+  // {
+  //   title: "Serving Companies",
+  //   icon: "University",
+  //   url: "sales/servingCompanies",
+  //   key: "servingCompanies",
+  // },
 ];
 
 export const qualityNavItems = [
