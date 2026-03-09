@@ -155,7 +155,7 @@ const LeadInfo = () => {
   const deleteRemarkModal = useDisclosure();
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const leadDetailLoading = useSelector(
-    (state) => state.leads.leadDetailLoading
+    (state) => state.leads.leadDetailLoading,
   );
   const allUsers = useSelector((state) => state.leads.leadUsersList);
   const slugList = useSelector((state) => state.setting.slugList);
@@ -167,13 +167,13 @@ const LeadInfo = () => {
   const citiesList = useSelector((state) => state.common.citiesList);
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const subIndustryListById = useSelector(
-    (state) => state.common.subIndustryListByIndustryId
+    (state) => state.common.subIndustryListByIndustryId,
   );
   const subSubIndustryListById = useSelector(
-    (state) => state.common.subSubIndustryListBySubIndustryId
+    (state) => state.common.subSubIndustryListBySubIndustryId,
   );
   const industryDataListById = useSelector(
-    (state) => state.common.industryDataListBySubSubIndustryId
+    (state) => state.common.industryDataListBySubSubIndustryId,
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
@@ -460,7 +460,7 @@ const LeadInfo = () => {
   const editContactModalPress = (value) => {
     contactModal.onOpen();
     contactForm.reset({
-      name: value?.clientName,
+      name: value?.name,
       email: value?.email || "",
       contactNo: value?.contactNo,
     });
@@ -475,7 +475,7 @@ const LeadInfo = () => {
   const confirmDeleteContact = () => {
     setContactLoading("pending");
     dispatch(
-      deleteLeadContact({ leadId, clientId: editContact?.clientId, userId })
+      deleteLeadContact({ leadId, clientId: editContact?.clientId, userId }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -619,7 +619,7 @@ const LeadInfo = () => {
           updatedById: userId,
           status: "Badfit",
           autoSame: true,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -646,7 +646,7 @@ const LeadInfo = () => {
           updatedById: userId,
           status: "Badfit",
           autoSame: false,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -741,7 +741,14 @@ const LeadInfo = () => {
                           isIconOnly
                           variant="light"
                           className="w-6 h-6 rounded-full bg-none"
-                          onPress={() => contactModal.onOpen()}
+                          onPress={() => {
+                            contactModal.onOpen();
+                            contactForm.reset({
+                              name: "",
+                              email: "",
+                              contactNo: "",
+                            });
+                          }}
                         >
                           <Plus className={iconClass} />
                         </Button>
@@ -751,12 +758,12 @@ const LeadInfo = () => {
                       {leadData?.clients?.map((item) => {
                         return (
                           <div
-                            key={item?.clientName}
+                            key={item?.name}
                             className="flex justify-between items-center border rounded-md mb-2 px-2"
                           >
                             <div className="flex flex-col p-3">
-                              <span className="font-medium text-sm">
-                                {item?.clientName || "-"}
+                              <span className="font-medium text-xm">
+                                {item?.name || "-"}
                               </span>
                               {item?.email && (
                                 <div className="flex items-center gap-2">
@@ -813,7 +820,7 @@ const LeadInfo = () => {
                       })}
                     </CardBody>
                   </Card>
-                  <BasicCompany/>
+                  <BasicCompany />
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">
@@ -1192,7 +1199,7 @@ const LeadInfo = () => {
                             <div className="flex items-center gap-2">
                               <User
                                 description={dayjs(
-                                  remark?.latestUpdated
+                                  remark?.latestUpdated,
                                 )?.format("DD-MM-YYYY, HH:mm A")}
                                 name={remark?.updatedBy?.fullName}
                               />
@@ -1203,7 +1210,7 @@ const LeadInfo = () => {
                             <div className="flex justify-between items-center">
                               <ImageGroup
                                 images={remark?.imageList?.map(
-                                  (item) => item?.filePath
+                                  (item) => item?.filePath,
                                 )}
                               />
                             </div>
@@ -1357,7 +1364,7 @@ const LeadInfo = () => {
                       <form
                         className="w-full flex flex-col gap-4 "
                         onSubmit={industryForm.handleSubmit(
-                          handleIndustryFinish
+                          handleIndustryFinish,
                         )}
                       >
                         <div className="w-full grid grid-cols-2 gap-4 max-h-[65vh] overflow-auto px-2 py-1">
@@ -1375,7 +1382,7 @@ const LeadInfo = () => {
                                 value={field.value}
                                 onChange={(selectedValue) => {
                                   dispatch(
-                                    getSubIndustryByIndustryId(selectedValue)
+                                    getSubIndustryByIndustryId(selectedValue),
                                   );
                                   field.onChange(selectedValue);
                                 }}
@@ -1399,8 +1406,8 @@ const LeadInfo = () => {
                                 onChange={(selectedValue) => {
                                   dispatch(
                                     getSubSubIndustryBySubIndustryId(
-                                      selectedValue
-                                    )
+                                      selectedValue,
+                                    ),
                                   );
                                   field.onChange(selectedValue);
                                 }}
@@ -1423,8 +1430,8 @@ const LeadInfo = () => {
                                 onChange={(selectedValue) => {
                                   dispatch(
                                     getIndustryDataBySubSubIndustryId(
-                                      selectedValue
-                                    )
+                                      selectedValue,
+                                    ),
                                   );
                                   field.onChange(selectedValue);
                                 }}
@@ -1467,7 +1474,7 @@ const LeadInfo = () => {
             </Modal>
 
             <Modal
-              size="3xl"
+              size="2xl"
               isDismissable={false}
               isKeyboardDismissDisabled={true}
               isOpen={contactModal.isOpen}

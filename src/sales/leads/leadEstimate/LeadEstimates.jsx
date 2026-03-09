@@ -446,7 +446,9 @@ export const LeadEstimates = () => {
       });
   };
 
-  const handleSubmitContact = (data) => {
+  const handleSubmitContact = (data, e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     data.companyId = companyDetail?.id;
     dispatch(createContactViaEstimateInCompany(data))
       .then((resp) => {
@@ -1031,7 +1033,13 @@ export const LeadEstimates = () => {
               </ModalHeader>
 
               <ModalBody>
-                <form onSubmit={handleContactSubmit(handleSubmitContact)}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleContactSubmit(handleSubmitContact)(e);
+                  }}
+                >
                   <div className="max-h-[80vh] overflow-auto  grid grid-cols-1 md:grid-cols-2 gap-3">
                     <FormSelect
                       label="Select Unit"
@@ -1052,8 +1060,7 @@ export const LeadEstimates = () => {
                           isRequired={true}
                           size={isMedium ? "sm" : "md"}
                           label="Salutation"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                          error={contactErrors.title}
                           {...field}
                           onChange={(e) => field.onChange(e.target.value)}
                           items={[
@@ -1077,8 +1084,7 @@ export const LeadEstimates = () => {
                           isRequired={true}
                           size={isMedium ? "sm" : "md"}
                           label="Name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                          error={contactErrors.name}
                           {...field}
                         />
                       )}
@@ -1091,8 +1097,7 @@ export const LeadEstimates = () => {
                           isRequired={true}
                           size={isMedium ? "sm" : "md"}
                           label="Designation"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                          error={contactErrors.clientDesignationId}
                           data={desiginationList || []}
                           labelKey="name"
                           valueKey="id"
@@ -1116,8 +1121,7 @@ export const LeadEstimates = () => {
                           size={isMedium ? "sm" : "md"}
                           label="Email"
                           type="email"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                          error={contactErrors.emails}
                           value={field?.value}
                           onChange={(e) =>
                             field.onChange(formatEmail(e.target.value))
@@ -1133,8 +1137,7 @@ export const LeadEstimates = () => {
                           isRequired={true}
                           size={isMedium ? "sm" : "md"}
                           label="Contact number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                          error={contactErrors.contactNo}
                           value={field?.value}
                           onChange={(e) =>
                             field.onChange(allowOnlyNumbers(e.target.value))
@@ -1150,8 +1153,7 @@ export const LeadEstimates = () => {
                           isRequired={true}
                           size={isMedium ? "sm" : "md"}
                           label="Whatsapp number"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
+                          error={contactErrors.contactWhatsappNo}
                           value={field?.value}
                           onChange={(e) =>
                             field.onChange(allowOnlyNumbers(e.target.value))

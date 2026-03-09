@@ -100,7 +100,7 @@ const EstimatePaymentRegister = ({
         paymentDate: values.paymentDate,
       };
       const res = await onSubmitPayment({ userId, data: payload });
-      console.log("sdgvshgs",res)
+      console.log("sdgvshgs", res);
       if (res?.meta?.requestStatus === "fulfilled" || res?.ok === true) {
         addToast({
           title: "Payment registered successfully!",
@@ -209,7 +209,7 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
-                        label="Company structure"
+                        label="Payment term"
                         errorMessage={error?.message}
                         isInvalid={!!error}
                         data={paymentTypeList || []}

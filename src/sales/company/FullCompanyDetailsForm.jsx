@@ -55,6 +55,7 @@ import {
   today,
 } from "@internationalized/date";
 import { useParams } from "react-router-dom";
+import { IndianRupee } from "lucide-react";
 
 // ✅ your custom components
 // import NewSelect from ".../NewSelect";
@@ -68,7 +69,7 @@ const unitSchema = z.object({
   id: z.coerce.number().optional().default(0),
   unitName: z.string().min(1, "Unit name is required"),
   addressLine1: z.string().min(1, "Address Line 1 is required"),
-  addressLine2: z.string().optional().default(""),
+  // addressLine2: z.string().optional().default(""),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   country: z.string().min(1, "Country is required"),
@@ -111,7 +112,7 @@ const companySchema = (obj) =>
       : {}),
 
     // payment/flags
-    paymentTerm: z.string().min(1, "Please select payment term"),
+    // paymentTerm: z.string().min(1, "Please select payment term"),
     aggrementPresent: z.boolean(),
     ndaPresent: z.boolean(),
 
@@ -268,8 +269,7 @@ export function CompanyAndUnitsForm({
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
   const countryList = useSelector((state) => state.common.countriesList);
-  const statesList = useSelector((state) => state.common.statesList);
-  const citiesList = useSelector((state) => state.common.citiesList);
+
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const subIndustryListById = useSelector(
     (state) => state.common.subIndustryListByIndustryId,
@@ -320,6 +320,21 @@ export function CompanyAndUnitsForm({
   const state = watch("state");
   const gstNo = watch("gstNo");
   const isConsultant = watch("isConsultant");
+
+  const companyAge = watch("companyAge");
+  const establishDate = watch("establishDate");
+
+  const companyCountry = watch("country");
+
+  const companyState = watch("state");
+
+  const statesList = useSelector(
+    (state) => state.common.statesByCountry[companyCountry] || [],
+  );
+
+  const citiesList = useSelector(
+    (state) => state.common.citiesByState[companyState] || [],
+  );
 
   const validateGST = (gstNo, stateName) => {
     if (!gstNo) return "";
@@ -376,14 +391,66 @@ export function CompanyAndUnitsForm({
   // Prefill
 
   useEffect(() => {
-    if (!company) return;
+    if (companyAge) {
+      const age = Number(companyAge);
+      const currentYear = new Date().getFullYear();
 
-    if (company?.country) {
-      dispatch(getAllStatesByCountryName(company?.country));
+      const establishYear = currentYear - age;
+
+      const date = new Date();
+      date.setFullYear(establishYear);
+
+      const formatted = date.toISOString().split("T")[0];
+
+      setValue("establishDate", formatted);
     }
-    if (company?.state) {
-      dispatch(getAllCitiesByStateName(company?.state));
+  }, [companyAge]);
+
+  useEffect(() => {
+    if (establishDate) {
+      const estDate = new Date(establishDate);
+      const today = new Date();
+
+      let age = today.getFullYear() - estDate.getFullYear();
+
+      const m = today.getMonth() - estDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < estDate.getDate())) {
+        age--;
+      }
+
+      setValue("companyAge", age.toString());
     }
+  }, [establishDate]);
+
+  useEffect(() => {
+    if (!company) return;
+    const countries = new Set();
+    const states = new Set();
+
+    if (company?.country) countries.add(company.country);
+    if (company?.state) states.add(company.state);
+    // if (company?.country) {
+    //   dispatch(getAllStatesByCountryName(company?.country));
+    // }
+    // if (company?.state) {
+    //   dispatch(getAllCitiesByStateName(company?.state));
+    // }
+
+    company?.units?.forEach((unit) => {
+      if (unit?.country) countries.add(unit.country);
+      if (unit?.state) states.add(unit.state);
+    });
+
+    // Fetch states for unique countries
+    countries.forEach((country) => {
+      dispatch(getAllStatesByCountryName(country));
+    });
+
+    // Fetch cities for unique states
+    states.forEach((stateName) => {
+      dispatch(getAllCitiesByStateName(stateName));
+    });
+
     if (company?.industryId) {
       dispatch(getSubIndustryByIndustryId(company?.industryId));
     }
@@ -552,9 +619,10 @@ export function CompanyAndUnitsForm({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <Input
-                  label="Company revenue"
+                  label="Company revenue (in rupees)"
                   isRequired
                   value={field?.value}
+                  startContent={<IndianRupee className="h-4 w-4" />}
                   onChange={(e) =>
                     field.onChange(allowOnlyNumbers(e.target.value))
                   }
@@ -714,7 +782,7 @@ export function CompanyAndUnitsForm({
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <SingleFileUploader
-                  label="Company document"
+                  label="Company incorporate document"
                   // isRequired
                   value={field.value}
                   onChange={(value) => field.onChange(value)}
@@ -726,7 +794,7 @@ export function CompanyAndUnitsForm({
 
             {/* Payment / Agreement / NDA */}
 
-            <Controller
+            {/* <Controller
               name="paymentTerm"
               control={control}
               render={({ field, fieldState: { error } }) => (
@@ -759,7 +827,7 @@ export function CompanyAndUnitsForm({
                   ))}
                 </Select>
               )}
-            />
+            /> */}
 
             <Controller
               name="aggrementPresent"
@@ -770,7 +838,7 @@ export function CompanyAndUnitsForm({
                   isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  selectedKeys={new Set([String(!!field.value)])}
+                  selectedKeys={[String(field.value)]}
                   onSelectionChange={(keys) => {
                     const v = Array.from(keys)[0];
                     field.onChange(v === "true");
@@ -812,7 +880,7 @@ export function CompanyAndUnitsForm({
                   isRequired
                   errorMessage={error?.message}
                   isInvalid={!!error}
-                  selectedKeys={new Set([String(!!field.value)])}
+                  selectedKeys={[String(field.value)]}
                   onSelectionChange={(keys) => {
                     const v = Array.from(keys)[0];
                     field.onChange(v === "true");
@@ -951,7 +1019,15 @@ export function CompanyAndUnitsForm({
                 />
               )}
             /> */}
+          </div>
+        </CardBody>
+      </Card>
 
+      <Card className="border border-default-200 shadow-sm">
+        <CardHeader className="text-base font-bold">Address</CardHeader>
+        <Divider />
+        <CardBody>
+          <div className="grid grid-cols-3 gap-8">
             {/* Address */}
 
             <Controller
@@ -1059,27 +1135,36 @@ export function CompanyAndUnitsForm({
             </p>
           </div>
 
-          <Button
+          {/* <Button
             type="button"
             variant="bordered"
             className="cursor-pointer"
             onPress={() => append(getEmptyUnit())}
           >
             + Add Unit
-          </Button>
+          </Button> */}
         </CardHeader>
 
         <Divider />
 
         <CardBody className="space-y-5">
-          {fields.map((item, index) => (
-            <div
-              key={item.id}
-              className="rounded-xl border border-dashed border-default-300 p-4"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-bold">Unit #{index + 1}</p>
-
+          {fields.map((item, index) => {
+            const unitCountry = watch(`units.${index}.country`);
+            const unitStatesList = useSelector(
+              (state) => state.common.statesByCountry[unitCountry] || [],
+            );
+            const unitState = watch(`units.${index}.state`);
+            const unitCitiesList = useSelector(
+              (state) => state.common.citiesByState[unitState] || [],
+            );
+            return (
+              <div
+                key={item.id}
+                className="rounded-xl border border-dashed border-default-300 p-4"
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm font-bold">Unit #{index + 1} Details</p>
+                  {/* 
                 <Button
                   type="button"
                   color="danger"
@@ -1089,150 +1174,169 @@ export function CompanyAndUnitsForm({
                   onPress={() => remove(index)}
                 >
                   Remove
-                </Button>
-              </div>
+                </Button> */}
+                </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Controller
-                  control={control}
-                  name={`units.${index}.unitName`}
-                  render={({ field, fieldState: { error } }) => (
-                    <Input
-                      label="Unit Name"
-                      isRequired
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
+                <div className="rounded-xl border border-default-300 p-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Controller
+                      control={control}
+                      name={`units.${index}.unitName`}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="Unit Name"
+                          isRequired
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                {/* UNIT GST STRUCTURE */}
-                <Controller
-                  name={`units.${index}.companyTypeId`}
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      label="Company Structure"
-                      data={companyTypeList || []}
-                      labelKey="name"
-                      valueKey="id"
-                      isRequired
-                      value={field.value}
-                      isInvalid={!!error}
-                      errorMessage={error?.message}
-                      onChange={(value) => {
-                        dispatch(getAllGstTypeByCompanyTypeId(value));
-                        field.onChange(value);
-                      }}
+                    {/* UNIT GST STRUCTURE */}
+                    <Controller
+                      name={`units.${index}.companyTypeId`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Company Structure"
+                          data={companyTypeList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          isRequired
+                          value={field.value}
+                          isInvalid={!!error}
+                          errorMessage={error?.message}
+                          onChange={(value) => {
+                            dispatch(getAllGstTypeByCompanyTypeId(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name={`units.${index}.gstTypeId`}
-                  control={control}
-                  render={({ field }) => (
-                    <NewSelect
-                      label="GST Type"
-                      isRequired
-                      data={gstTypeList?.gstBussinessType || []}
-                      labelKey="name"
-                      valueKey="id"
-                      value={field.value}
-                      onChange={(value) => {
-                        dispatch(getBusinessTypeByGstTypeId(value));
-                        field.onChange(value);
-                      }}
+                    <Controller
+                      name={`units.${index}.gstTypeId`}
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          label="GST Type"
+                          isRequired
+                          data={gstTypeList?.gstBussinessType || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getBusinessTypeByGstTypeId(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name={`units.${index}.gstBusinessTypeId`}
-                  control={control}
-                  render={({ field }) => (
-                    <NewSelect
-                      label="Business Type"
-                      isRequired
-                      data={businessTypeList?.gstTypePrice || []}
-                      labelKey="name"
-                      valueKey="id"
-                      value={field.value}
-                      onChange={(value) => {
-                        field.onChange(value);
+                    <Controller
+                      name={`units.${index}.gstBusinessTypeId`}
+                      control={control}
+                      render={({ field }) => (
+                        <NewSelect
+                          label="Business Type"
+                          isRequired
+                          data={businessTypeList?.gstTypePrice || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
 
-                        const found = businessTypeList?.gstTypePrice?.find(
-                          (x) => x.id === value,
-                        );
+                            const found = businessTypeList?.gstTypePrice?.find(
+                              (x) => x.id === value,
+                            );
 
-                        setGstAndPanData((prev) => ({
-                          ...prev,
-                          [index]: {
-                            gst: found?.gstPresent || false,
-                            pan: found?.panPresent || false,
-                          },
-                        }));
-                      }}
+                            setGstAndPanData((prev) => ({
+                              ...prev,
+                              [index]: {
+                                gst: found?.gstPresent || false,
+                                pan: found?.panPresent || false,
+                              },
+                            }));
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  control={control}
-                  name={`units.${index}.gstNo`}
-                  render={({ field, fieldState: { error } }) => (
-                    <Input
-                      label="GST No"
-                      isRequired
-                      value={field.value}
-                      onChange={(e) => {
-                        handleGstChange(e, `units.${index}.gstNo`);
-                      }}
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
+                    <Controller
+                      control={control}
+                      name={`units.${index}.gstNo`}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          label="GST No"
+                          isRequired
+                          value={field.value}
+                          onChange={(e) => {
+                            handleGstChange(e, `units.${index}.gstNo`);
+                          }}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  control={control}
-                  name={`units.${index}.unitOpeningDate`}
-                  render={({ field, fieldState: { error } }) => (
-                    <DatePicker
-                      isRequired
-                      label="Unit Opening Date"
-                      showMonthAndYearPickers
-                      maxValue={today(getLocalTimeZone())}
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      value={field.value ? parseDate(field.value) : null}
-                      onChange={(e) =>
-                        field.onChange(toCalendarDate(e).toString())
-                      }
+                    <Controller
+                      control={control}
+                      name={`units.${index}.unitOpeningDate`}
+                      render={({ field, fieldState: { error } }) => (
+                        <DatePicker
+                          isRequired
+                          label="Unit Opening Date"
+                          showMonthAndYearPickers
+                          maxValue={today(getLocalTimeZone())}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          value={field.value ? parseDate(field.value) : null}
+                          onChange={(e) =>
+                            field.onChange(toCalendarDate(e).toString())
+                          }
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
+                </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Controller
-                  control={control}
-                  name={`units.${index}.addressLine1`}
-                  render={({ field, fieldState: { error } }) => (
-                    <Input
-                      isRequired
-                      label="Address Line 1"
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
+                <div className="rounded-xl border border-default-300 p-4 mt-2.5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <p className="text-sm font-bold">
+                      Unit #{index + 1} Address
+                    </p>
+                    {/* 
+                <Button
+                  type="button"
+                  color="danger"
+                  variant="bordered"
+                  className="cursor-pointer"
+                  isDisabled={fields.length === 1}
+                  onPress={() => remove(index)}
+                >
+                  Remove
+                </Button> */}
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Controller
+                      control={control}
+                      name={`units.${index}.addressLine1`}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Address Line 1"
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
+                    {/* <Controller
                   control={control}
                   name={`units.${index}.addressLine2`}
                   render={({ field, fieldState: { error } }) => (
@@ -1244,87 +1348,89 @@ export function CompanyAndUnitsForm({
                       isInvalid={!!error}
                     />
                   )}
-                />
+                /> */}
 
-                <Controller
-                  name={`units.${index}.country`}
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      isRequired
-                      label="Country"
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      data={countryList || []}
-                      labelKey="name"
-                      valueKey="name"
-                      value={field.value}
-                      onChange={(value) => {
-                        dispatch(getAllStatesByCountryName(value));
-                        field.onChange(value);
-                      }}
+                    <Controller
+                      name={`units.${index}.country`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          label="Country"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={countryList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllStatesByCountryName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name={`units.${index}.state`}
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      isRequired
-                      label="State"
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      data={statesList || []}
-                      labelKey="name"
-                      valueKey="name"
-                      value={field.value}
-                      onChange={(value) => {
-                        dispatch(getAllCitiesByStateName(value));
-                        field.onChange(value);
-                      }}
+                    <Controller
+                      name={`units.${index}.state`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          label="State"
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={unitStatesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => {
+                            dispatch(getAllCitiesByStateName(value));
+                            field.onChange(value);
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name={`units.${index}.city`}
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      label="City"
-                      isRequired
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                      data={citiesList || []}
-                      labelKey="name"
-                      valueKey="name"
-                      value={field.value}
-                      onChange={(value) => field.onChange(value)}
+                    <Controller
+                      name={`units.${index}.city`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="City"
+                          isRequired
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                          data={unitCitiesList || []}
+                          labelKey="name"
+                          valueKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  control={control}
-                  name={`units.${index}.pinCode`}
-                  render={({ field, fieldState: { error } }) => (
-                    <Input
-                      isRequired
-                      label="Pin Code"
-                      value={field.value}
-                      onChange={(e) =>
-                        field.onChange(allowOnlyNumbers(e.target.value))
-                      }
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
+                    <Controller
+                      control={control}
+                      name={`units.${index}.pinCode`}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Pin Code"
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(allowOnlyNumbers(e.target.value))
+                          }
+                          errorMessage={error?.message}
+                          isInvalid={!!error}
+                        />
+                      )}
                     />
-                  )}
-                />
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardBody>
       </Card>
 

@@ -29,6 +29,7 @@ import { Building, Plus } from "lucide-react";
 import {
   addBasicCompanyDetail,
   createCompanyInAccounts,
+  getAllCompanyByUserId,
   getAllUnitListByCompanyId,
   getBasicCompanyDetailByCompanyId,
   getBasicCompanyDetails,
@@ -107,8 +108,12 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
           if (resp.meta.requestStatus === "fulfilled") {
             dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
             const data = resp.payload;
-            dispatch(getAllStatesByCountryName(data?.country));
-            dispatch(getAllCitiesByStateName(data?.state));
+            if (data?.country) {
+              dispatch(getAllStatesByCountryName(data?.country));
+            }
+            if (data?.state) {
+              dispatch(getAllCitiesByStateName(data?.state));
+            }
             reset({
               name: data?.name,
               address: data?.address,
@@ -127,8 +132,12 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
           const data = resp.payload;
-          dispatch(getAllStatesByCountryName(data?.country));
-          dispatch(getAllCitiesByStateName(data?.state));
+          if (data?.country) {
+            dispatch(getAllStatesByCountryName(data?.country));
+          }
+          if (data?.state) {
+            dispatch(getAllCitiesByStateName(data?.state));
+          }
           reset({
             name: data?.name,
             address: data?.address,
@@ -224,6 +233,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
             });
             reset();
             onClose();
+            dispatch(getAllCompanyByUserId(userId));
             dispatch(getBasicCompanyDetails({ leadId, userId }));
 
             // dispatch(
@@ -333,10 +343,10 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                 </p>
               </div>
 
-              <p className="text-gray-500">
+              {/* <p className="text-gray-500">
                 <span className="text-gray-700 font-medium">GST:</span>{" "}
                 {company?.gstNo || "NA"}
-              </p>
+              </p> */}
 
               <p className="text-gray-500">
                 <span className="text-gray-700 font-medium">PAN:</span>{" "}

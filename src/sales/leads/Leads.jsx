@@ -81,6 +81,7 @@ import { parseZonedDateTime } from "@internationalized/date";
 import { toggleAutoOnFeature } from "../../toolkit/slices/authSlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import FileUploader from "../../components/FileUploader";
+import { getAllSolutionsByUserId } from "../../toolkit/slices/productSlice";
 
 const getRowClassName = (item) => {
   if (!item.view) {
@@ -125,11 +126,11 @@ const formSchema = z.object({
     .optional()
     .or(z.literal("")),
   mobileNo: z.string().optional().or(z.literal("")),
-  urls: z.string().min(1, "Please enter company name"),
-  country: z.string().optional().or(z.literal("")),
-  state: z.string().optional().or(z.literal("")),
-  city: z.string().optional().or(z.literal("")),
-  ipAddress: z.string().optional().or(z.literal("")),
+  // urls: z.string().min(1, "Please enter company name"),
+  // country: z.string().optional().or(z.literal("")),
+  // state: z.string().optional().or(z.literal("")),
+  // city: z.string().optional().or(z.literal("")),
+  // ipAddress: z.string().optional().or(z.literal("")),
   assigneeId: z.string().optional().or(z.literal("")),
   auto: z.string().optional().or(z.literal("")),
   source: z.string().min(1, "Please select the lead source"),
@@ -166,6 +167,9 @@ const Leads = () => {
   const roles = useSelector((state) => state.auth.currentUser?.roles);
   const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
   const statusList = useSelector((state) => state?.setting?.statusList);
+  const solutionList = useSelector(
+    (state) => state.product.solutionListByUserId,
+  );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -1216,6 +1220,7 @@ const Leads = () => {
                   let key = Array.from(e)[0];
                   if (key === "add") {
                     handleOpenModal();
+                    dispatch(getAllSolutionsByUserId(userId));
                   }
                 }}
               >
@@ -1457,12 +1462,16 @@ const Leads = () => {
                       name="leadName"
                       control={control}
                       render={({ field }) => (
-                        <Input
+                        <NewSelect
                           isRequired
-                          errorMessage={errors.leadName?.message}
-                          label="Lead name"
-                          type="text"
-                          {...field}
+                          data={solutionList || []}
+                          label="Select service"
+                          labelKey="name"
+                          valueKey="name"
+                          errorMessage={errors?.leadName?.message}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
                         />
                       )}
                     />
@@ -1508,7 +1517,7 @@ const Leads = () => {
                       )}
                     />
 
-                    <Controller
+                    {/* <Controller
                       name="urls"
                       control={control}
                       render={({ field }) => (
@@ -1520,7 +1529,7 @@ const Leads = () => {
                           {...field}
                         />
                       )}
-                    />
+                    /> */}
 
                     {/* These fields commented by Kausal  ----------------------- start--------------- */}
 
@@ -1580,7 +1589,7 @@ const Leads = () => {
 
                     {/* These fields commented by Kausal  ----------------------- end--------------- */}
 
-                    <Controller
+                    {/* <Controller
                       name="ipAddress"
                       control={control}
                       render={({ field }) => (
@@ -1591,7 +1600,7 @@ const Leads = () => {
                           {...field}
                         />
                       )}
-                    />
+                    /> */}
 
                     <Controller
                       name="assigneeId"

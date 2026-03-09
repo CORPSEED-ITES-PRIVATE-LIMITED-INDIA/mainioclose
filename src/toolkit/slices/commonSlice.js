@@ -649,6 +649,8 @@ const CommonSlice = createSlice({
     userListByDepartment: [],
     milestoneStatusList: [],
     contactListByCompanyId: [],
+    statesByCountry: {},
+    citiesByState: {},
   },
   reducers: {
     handleReset: (state) => {
@@ -728,6 +730,8 @@ const CommonSlice = createSlice({
     builder.addCase(getAllStatesByCountryName.fulfilled, (state, action) => {
       state.loading = "success";
       state.statesList = action.payload;
+      const countryName = action.meta.arg;
+      state.statesByCountry[countryName] = action.payload;
     });
     builder.addCase(getAllStatesByCountryName.rejected, (state) => {
       state.loading = "rejected";
@@ -770,6 +774,8 @@ const CommonSlice = createSlice({
     builder.addCase(getAllCitiesByStateName.fulfilled, (state, action) => {
       state.loading = "success";
       state.citiesList = action.payload;
+      const stateName = action.meta.arg; // the country you passed
+      state.citiesByState[stateName] = action.payload;
     });
     builder.addCase(getAllCitiesByStateName.rejected, (state) => {
       state.loading = "rejected";

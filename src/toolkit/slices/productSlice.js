@@ -5,40 +5,40 @@ export const getAllProductCategoryById = createAsyncThunk(
   "getAllProductCategoryById",
   async ({ solutionId, tierId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles?userId=${userId}`
+      `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBusinessArrangementBySolutionId = createAsyncThunk(
   "getAllBusinessArrangementBySolutionId",
   async ({ solutionId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`
+      `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProductSubCategoryListByCategoryId = createAsyncThunk(
   "getAllProductSubCategoryList",
   async ({ productRoleId, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules?userId=${userId}`
+      `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getProductListByLeadName = createAsyncThunk(
   "getProductListByLeadName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/product/getProductByName?name=${name}`
+      `/leadService/api/v1/product/getProductByName?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createProductCategory = createAsyncThunk(
@@ -46,10 +46,10 @@ export const createProductCategory = createAsyncThunk(
   async ({ solutionId, tierId, userId, data }) => {
     const response = await api.post(
       `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles?userId=${userId}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const editProductCategory = createAsyncThunk(
@@ -58,13 +58,13 @@ export const editProductCategory = createAsyncThunk(
     try {
       const response = await api.post(
         `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles/${roleId}?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const deleteProductCategory = createAsyncThunk(
@@ -72,13 +72,13 @@ export const deleteProductCategory = createAsyncThunk(
   async ({ solutionId, tierId, roleId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.delete(
-        `/leadService/api/v1/product-solutions/${solutionId}/tiers/roles/${roleId}?userId=${userId}`
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/roles/${roleId}?userId=${userId}`,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const createProductSubCategory = createAsyncThunk(
@@ -87,13 +87,13 @@ export const createProductSubCategory = createAsyncThunk(
     try {
       const response = await api.post(
         `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const editProductSubCategory = createAsyncThunk(
@@ -102,13 +102,13 @@ export const editProductSubCategory = createAsyncThunk(
     try {
       const response = await api.put(
         `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const deleteProductSubCategory = createAsyncThunk(
@@ -116,23 +116,23 @@ export const deleteProductSubCategory = createAsyncThunk(
   async ({ tierId, productRoleId, ruleId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.delete(
-        `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`
+        `/leadService/api/v1/product-solutions/product-roles/${productRoleId}/fee-rules/${ruleId}?userId=${userId}`,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const toggleForRoundOffValue = createAsyncThunk(
   "toggleForRoundOffValue",
   async (id) => {
     const response = await api.put(
-      `/leadService/api/v1/productSubCategory/roundValueOnAndOff?id=${id}`
+      `/leadService/api/v1/productSubCategory/roundValueOnAndOff?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createDocumentsForProduct = createAsyncThunk(
@@ -144,21 +144,21 @@ export const createDocumentsForProduct = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error?.response?.data);
     }
-  }
+  },
 );
 
 export const getAllDocumentsForProduct = createAsyncThunk(
   "getAllDocumentsForProduct",
-  async ({page,size,userId}, { rejectWithValue }) => {
+  async ({ page, size, userId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/product-required-documents/active?page=${page}&size=${size}&userId=${userId}`
+        `/api/product-required-documents/active?page=${page}&size=${size}&userId=${userId}`,
       );
       return response.data;
     } catch (error) {
       return rejectWithValue(error?.response?.data);
     }
-  }
+  },
 );
 
 export const mapDocumentToProduct = createAsyncThunk(
@@ -167,27 +167,37 @@ export const mapDocumentToProduct = createAsyncThunk(
     try {
       const response = await api.post(
         `/api/products/${data?.productId}/documents/map`,
-        data
+        data,
       );
       return response.data;
     } catch (error) {
       return rejectWithValue(error?.response?.data);
     }
-  }
+  },
 );
 
 export const getAllDocumentCheckListByProductId = createAsyncThunk(
   "getAllDocumentCheckListByProductId",
-  async ({productId,applicantTypeId}, { rejectWithValue }) => {
+  async ({ productId, applicantTypeId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/products/${productId}/documents?applicantTypeId=${applicantTypeId}`
+        `/api/products/${productId}/documents?applicantTypeId=${applicantTypeId}`,
       );
       return response.data;
     } catch (error) {
       return rejectWithValue(error?.response?.data);
     }
-  }
+  },
+);
+
+export const getAllSolutionsByUserId = createAsyncThunk(
+  "getAllSolutionsByUserId",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/v1/solutions?userId=${userId}`,
+    );
+    return response.data;
+  },
 );
 
 const ProductSlice = createSlice({
@@ -201,6 +211,7 @@ const ProductSlice = createSlice({
     allDocumentList: [],
     allDocumentCheckListForProduct: [],
     solutionServiceFeeDetails: [],
+    solutionListByUserId: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllProductCategoryById.pending, (state) => {
@@ -223,7 +234,7 @@ const ProductSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.businessArrangementList = action.payload;
-      }
+      },
     );
     builder.addCase(getAllBusinessArrangementBySolutionId.rejected, (state) => {
       state.loading = "rejected";
@@ -234,21 +245,21 @@ const ProductSlice = createSlice({
       getAllProductSubCategoryListByCategoryId.pending,
       (state) => {
         state.loading = "pending";
-      }
+      },
     );
     builder.addCase(
       getAllProductSubCategoryListByCategoryId.fulfilled,
       (state, action) => {
         state.loading = "success";
         state.productSubcategoryList = action.payload;
-      }
+      },
     );
     builder.addCase(
       getAllProductSubCategoryListByCategoryId.rejected,
       (state) => {
         state.loading = "rejected";
         state.productSubcategoryList = [];
-      }
+      },
     );
 
     builder.addCase(getProductListByLeadName.pending, (state) => {
@@ -283,15 +294,27 @@ const ProductSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.allDocumentCheckListForProduct = action?.payload;
-      }
+      },
     );
     builder.addCase(
       getAllDocumentCheckListByProductId.rejected,
       (state, action) => {
         state.loading = "rejected";
         state.allDocumentCheckListForProduct = [];
-      }
+      },
     );
+
+    builder.addCase(getAllSolutionsByUserId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSolutionsByUserId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.solutionListByUserId = action?.payload;
+    });
+    builder.addCase(getAllSolutionsByUserId.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.solutionListByUserId = [];
+    });
   },
 });
 
