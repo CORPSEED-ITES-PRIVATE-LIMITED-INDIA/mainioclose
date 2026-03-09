@@ -21,7 +21,7 @@ import {
   getAllStatesByCountryName,
 } from "../../toolkit/slices/commonSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import NewSelect from "../../components/NewSelect";
 import { useMediaQuery } from "react-responsive";
@@ -73,6 +73,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const company = useSelector((state) => state.company.basicCompanyDetail);
+  const [update, setUpdate] = useState(false);
 
   const {
     control,
@@ -151,7 +152,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
         }
       });
     }
-  }, [dispatch, leadId, userId, companyDetail, isEstimate]);
+  }, [dispatch, leadId, userId, companyDetail, isEstimate, update]);
 
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
 
@@ -191,7 +192,9 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
     // }
   };
 
-  const onSubmit = (values) => {
+  const onSubmit = (values, e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     values.leadId = leadId;
     values.createdById = userId;
     values.updatedById = userId;
@@ -211,6 +214,8 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
             });
             reset();
             onClose();
+            setUpdate((prev) => !prev);
+            dispatch(getAllCompanyByUserId(userId));
             dispatch(getBasicCompanyDetails({ leadId, userId }));
             dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
           } else {
@@ -233,6 +238,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
             });
             reset();
             onClose();
+            setUpdate((prev) => !prev);
             dispatch(getAllCompanyByUserId(userId));
             dispatch(getBasicCompanyDetails({ leadId, userId }));
 
@@ -378,7 +384,11 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
               </ModalHeader>
               <ModalBody>
                 <form
-                  onSubmit={handleSubmit(onSubmit)}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSubmit(onSubmit)(e);
+                  }}
                   onKeyDown={(e) => {
                     const tag = e.target.tagName;
 
@@ -453,10 +463,11 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                       render={({ field }) => (
                         <Input
                           {...field}
+                          isRequired={isEstimate ? true : false}
                           label="Address"
                           // isRequired={isEstimate ? true : false}
                           // isInvalid={!!errors.name}
-                          // errorMessage={errors.name?.message}
+                          errorMessage={errors.name?.message}
                         />
                       )}
                     />
