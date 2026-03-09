@@ -134,7 +134,7 @@ const formSchema = z.object({
   assigneeId: z.string().optional().or(z.literal("")),
   auto: z.string().optional().or(z.literal("")),
   source: z.string().min(1, "Please select the lead source"),
-  primaryAddress: z.string().min(1, "Please enter address"),
+  // primaryAddress: z.string().min(1, "Please enter address"),
   leadDescription: z.string().min(1, "Please enter lead description"),
 });
 
@@ -1662,7 +1662,7 @@ const Leads = () => {
                       )}
                     />
 
-                    <Controller
+                    {/* <Controller
                       name="primaryAddress"
                       control={control}
                       render={({ field }) => (
@@ -1673,7 +1673,7 @@ const Leads = () => {
                           {...field}
                         />
                       )}
-                    />
+                    /> */}
 
                     <Controller
                       name="leadDescription"
