@@ -74,7 +74,7 @@ const unitSchema = z.object({
   state: z.string().min(1, "State is required"),
   country: z.string().min(1, "Country is required"),
   pinCode: z.string().min(1, "Pin code is required"),
-  gstNo: z.string().min(1, "please enter gst number"),
+  gstNo: z.string().optional().default(""),
   unitOpeningDate: z.string().min(1, "please enter date"),
   companyTypeId: z.string().min(1, "please select company type"),
   gstTypeId: z.string().min(1, "please select gst type"),
@@ -496,51 +496,71 @@ export function CompanyAndUnitsForm({
       }),
     )
       .then((resp) => {
-        console.log("jdvfgdkdfjdf", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Compamy detail updated successfully in leads !.",
             color: "success",
           });
+          onClose();
           dispatch(
-            updateFullCompanyDetailsInAccounts({
-              companyId: company?.id,
-              updatedBy: userId,
-              data: resp?.payload,
+            getAllEstimateByUserId({
+              userId,
+              page: filteration?.page,
+              size: filteration?.size,
             }),
-          )
-            .then((res) => {
-              if (res.meta.requestStatus === "fulfilled") {
-                onClose();
-                addToast({
-                  title: "Compamy detail updated successfully !.",
-                  color: "success",
-                });
-                dispatch(
-                  getAllEstimateByUserId({
-                    userId,
-                    page: filteration?.page,
-                    size: filteration?.size,
-                  }),
-                );
-                dispatch(
-                  getTotalCountOfEstimate({
-                    userId,
-                    data: {
-                      search: filters.search || "",
-                      status: filters.status || "",
-                      fromDate: filters.fromDate || "",
-                      toDate: filters.toDate || "",
-                    },
-                  }),
-                );
-              } else {
-                addToast({ title: res.payload.data.message, color: "danger" });
-              }
-            })
-            .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" }),
-            );
+          );
+          dispatch(
+            getTotalCountOfEstimate({
+              userId,
+              data: {
+                search: filters.search || "",
+                status: filters.status || "",
+                fromDate: filters.fromDate || "",
+                toDate: filters.toDate || "",
+              },
+            }),
+          );
+
+          // dispatch(
+          //   updateFullCompanyDetailsInAccounts({
+          //     companyId: company?.id,
+          //     updatedBy: userId,
+          //     data: resp?.payload,
+          //   }),
+          // )
+          //   .then((res) => {
+          //     if (res.meta.requestStatus === "fulfilled") {
+          //       onClose();
+          //       addToast({
+          //         title: "Compamy detail updated successfully !.",
+          //         color: "success",
+          //       });
+
+          //       dispatch(
+          //         getAllEstimateByUserId({
+          //           userId,
+          //           page: filteration?.page,
+          //           size: filteration?.size,
+          //         }),
+          //       );
+          //       dispatch(
+          //         getTotalCountOfEstimate({
+          //           userId,
+          //           data: {
+          //             search: filters.search || "",
+          //             status: filters.status || "",
+          //             fromDate: filters.fromDate || "",
+          //             toDate: filters.toDate || "",
+          //           },
+          //         }),
+          //       );
+          //     } else {
+          //       addToast({ title: res.payload.data.message, color: "danger" });
+          //     }
+          //   })
+          //   .catch(() =>
+          //     addToast({ title: "Something went wrong !.", color: "danger" }),
+          //   );
         } else {
           addToast({ title: resp.payload.data.message, color: "danger" });
         }
@@ -1271,8 +1291,8 @@ export function CompanyAndUnitsForm({
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           label="GST No"
-                          isRequired
-                          value={field.value}
+                          // isRequired
+                          value={field.value || ""}
                           onChange={(e) => {
                             handleGstChange(e, `units.${index}.gstNo`);
                           }}

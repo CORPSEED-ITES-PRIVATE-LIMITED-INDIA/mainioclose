@@ -360,6 +360,21 @@ export const createBasicUnitByCompanyId = createAsyncThunk(
   },
 );
 
+export const updateBasicUnitByCompanyId = createAsyncThunk(
+  "updateBasicUnitByCompanyId",
+  async ({ companyId, unitId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/companies/${companyId}/units/${unitId}?updatedBy=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const createBasicUnitByCompanyIdInAccounts = createAsyncThunk(
   "createBasicUnitByCompanyIdInAccounts",
   async ({ companyId, updatedBy, data }, { rejectWithValue }) => {

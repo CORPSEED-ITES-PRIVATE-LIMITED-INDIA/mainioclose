@@ -9,6 +9,7 @@ import {
   getAllOrganizationBankAccounts,
   getAllOrganizations,
   getOrganizationByName,
+  updateOrganization,
 } from "../../toolkit/slices/organizationSlice";
 import {
   addToast,
@@ -36,7 +37,7 @@ import {
   TableRow,
   useDisclosure,
 } from "@heroui/react";
-import { EllipsisVertical, Plus } from "lucide-react";
+import { EllipsisVertical, Pencil, Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -47,37 +48,54 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import SingleFileUploader from "../../components/SingleFileUploader";
-import { getLocalTimeZone, parseDate, toCalendarDate, today } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  parseDate,
+  toCalendarDate,
+  today,
+} from "@internationalized/date";
+import {
+  allowOnlyNumbers,
+  formatCINInput,
+  formatEmail,
+  formatGSTInput,
+  formatPANInput,
+} from "../../common";
+import { useParams } from "react-router-dom";
 
-const orgFormSchema = z.object({
-  name: z.string().min(1, "Company name is required"),
-  addressLine1: z.string().min(1, "Address Line 1 is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  country: z.string().min(1, "Country is required"),
-  pinCode: z.string().min(4, "Invalid pincode"),
-  gstNo: z.string().min(),
-  panNo: z.string().optional(),
-  cinNumber: z.string().optional(),
-  establishedDate: z.string(),
-  bankAccountPresent: z.boolean(),
-  accountHolderName: z.string().optional(),
-  accountNo: z.string().optional(),
-  ifscCode: z.string().optional(),
-  swiftCode: z.string().optional(),
-  bankName: z.string().optional(),
-  branch: z.string().optional(),
-  upiId: z.string().optional(),
-  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
-  paymentPageLink: z
-    .string()
-    .url("Invalid payment link")
-    .optional()
-    .or(z.literal("")),
-  logoUrl: z.string().url("Invalid logo URL").optional().or(z.literal("")),
-  email: z.string().email("Invalid email"),
-  phone: z.string().min(8, "Invalid phone number"),
-});
+const orgFormSchema = (accountFlag) =>
+  z.object({
+    name: z.string().min(1, "Company name is required"),
+    addressLine1: z.string().min(1, "Address Line 1 is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    country: z.string().min(1, "Country is required"),
+    pinCode: z.string().min(4, "Invalid pincode"),
+    gstNo: z.string().min(1, "Please enter gst number"),
+    panNo: z.string().min(1, "please enter number"),
+    cinNumber: z.string().min(1, "please enter CIN number"),
+    establishedDate: z.string().min(1, "please enter established date"),
+    bankAccountPresent: z.boolean(),
+    ...(accountFlag?.bankAccountPresent
+      ? {
+          accountHolderName: z
+            .string()
+            .min(1, "please enter account holder name"),
+          accountNo: z.string().min(1, "please enter account holder number"),
+          ifscCode: z.string().min(1, "please enter IFSC code."),
+          swiftCode: z.string().min(1, "Please enter swift code."),
+          bankName: z.string().min(1, "please enter bank name."),
+          branch: z.string().min(1, "please enter branch name."),
+          upiId: z.string().min(1, "please enter UPI ID."),
+        }
+      : {}),
+    ownerName: z.string().min(1, "please enter owner name"),
+    website: z.string().min(1, "please enter website url"),
+    paymentPageLink: z.string().min(1, "please enter page libk"),
+    logoUrl: z.string().min(1, "please enter email"),
+    email: z.string().min(1, "please enter email"),
+    phone: z.string().min(8, "Invalid phone number"),
+  });
 
 const orgDefaultValues = {
   name: "",
@@ -169,17 +187,18 @@ const accountDefaultValues = {
 
 const OrganizationDetail = () => {
   const dispatch = useDispatch();
+  const { userId } = useParams();
   const statutoryModal = useDisclosure();
   const accountModal = useDisclosure();
   const organizationModal = useDisclosure();
   const organizationDetail = useSelector(
-    (state) => state.organization.organizationDetail
+    (state) => state.organization.organizationDetail,
   );
   const ledgerTypeList = useSelector(
-    (state) => state.organization.ledgerTypeList
+    (state) => state.organization.ledgerTypeList,
   );
   const allOrganizationBankDetail = useSelector(
-    (state) => state.organization.allOrganizationAccountList
+    (state) => state.organization.allOrganizationAccountList,
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -194,9 +213,10 @@ const OrganizationDetail = () => {
   const [accountFlag, setAccountFlag] = useState({
     bankAccountPresent: false,
   });
+  const [isEdit, setIsEdit] = useState(false);
 
   useEffect(() => {
-    dispatch(getOrganizationByName("corpseed"));
+    dispatch(getOrganizationByName());
   }, [dispatch]);
 
   useEffect(() => {
@@ -210,29 +230,11 @@ const OrganizationDetail = () => {
     organizationModal.onOpen();
   };
 
-  const onOrgSubmit = (values) => {
-    dispatch(createOrganization(values))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Organization created successfully !.",
-            color: "success",
-          });
-          dispatch(getAllOrganizations());
-          orgForm.reset();
-          organizationModal.onOpenChange(false);
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
-      );
-  };
-
   const orgForm = useForm({
-    resolver: zodResolver(orgFormSchema),
+    resolver: zodResolver(orgFormSchema(accountFlag)),
     defaultValues: orgDefaultValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const statForm = useForm({
@@ -248,6 +250,45 @@ const OrganizationDetail = () => {
   const handleOpenStatModal = () => {
     dispatch(getAllLedgerType());
     statutoryModal.onOpen();
+  };
+
+  const handleEditOrganization = () => {
+    setIsEdit(true);
+    dispatch(getAllCountries());
+    dispatch(getAllStatesByCountryName(organizationDetail?.country));
+    dispatch(getAllCitiesByStateName(organizationDetail?.state));
+    setAccountFlag((prev) => ({
+      ...prev,
+      bankAccountPresent: organizationDetail?.bankAccountPresent,
+    }));
+
+    orgForm.reset({
+      name: organizationDetail?.name,
+      gstNo: organizationDetail?.gstNo,
+      panNo: organizationDetail?.panNo,
+      cinNumber: organizationDetail?.cinNumber,
+      establishedDate: String(organizationDetail.establishedDate) || "",
+      addressLine1: organizationDetail?.addressLine1,
+      country: organizationDetail?.country,
+      state: organizationDetail?.state,
+      city: organizationDetail?.city,
+      pinCode: organizationDetail?.pinCode,
+      ownerName: organizationDetail?.ownerName,
+      website: organizationDetail?.website,
+      paymentPageLink: organizationDetail?.paymentPageLink,
+      logoUrl: organizationDetail?.logoUrl,
+      email: organizationDetail?.email,
+      phone: organizationDetail?.phone,
+      bankAccountPresent: organizationDetail?.bankAccountPresent,
+      bankName: organizationDetail?.bankName,
+      accountNo: organizationDetail?.accountNo,
+      ifscCode: organizationDetail?.ifscCode,
+      accountHolderName: organizationDetail?.accountHolderName,
+      swiftCode: organizationDetail?.swiftCode,
+      branch: organizationDetail?.branch,
+      upiId: organizationDetail?.upiId,
+    });
+    organizationModal.onOpen();
   };
 
   const bankAccountPresent = orgForm.watch("bankAccountPresent");
@@ -280,19 +321,70 @@ const OrganizationDetail = () => {
     }
   };
 
+  const gstNo = orgForm.watch("gstNo");
+  const state = orgForm.watch("state");
+
   const handleGstChange = (e) => {
     const rawValue = e.target.value;
     const formattedValue = formatGSTInput(rawValue);
     orgForm.setValue("gstNo", formattedValue);
-    const error = validateGST(formattedValue, state);
-    setGstError(error);
+    // const error = validateGST(formattedValue, state);
+    // setGstError(error);
   };
 
   const handleStateChange = (stateName) => {
     orgForm.setValue("state", stateName);
     dispatch(getAllCitiesByStateName(stateName));
-    const error = validateGST(gstNo, stateName);
-    setGstError(error);
+    // const error = validateGST(gstNo, stateName);
+    // setGstError(error);
+  };
+
+  const onOrgSubmit = (values) => {
+    if (isEdit) {
+      dispatch(
+        updateOrganization({
+          id: organizationDetail?.id,
+          userId,
+          data: values,
+        }),
+      )
+        .then((resp) => {
+          console.log("jufgkdjkfdgddjjk", resp);
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Organization updated successfully !.",
+              color: "success",
+            });
+            dispatch(getOrganizationByName());
+            orgForm.reset();
+            organizationModal.onOpenChange(false);
+            setIsEdit(false);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    } else {
+      dispatch(createOrganization({ userId, data: values }))
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Organization created successfully !.",
+              color: "success",
+            });
+            dispatch(getOrganizationByName());
+            orgForm.reset();
+            organizationModal.onOpenChange(false);
+          } else {
+            addToast({ title: "Something went wrong !.", color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    }
   };
 
   const onStatSubmit = (values) => {
@@ -304,7 +396,7 @@ const OrganizationDetail = () => {
             title: "Organization created successfully !.",
             color: "success",
           });
-          dispatch(getAllOrganizations());
+          dispatch(getOrganizationByName());
           statForm.reset(statDefaultValues);
           statutoryModal.onClose();
         } else {
@@ -312,7 +404,7 @@ const OrganizationDetail = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -321,7 +413,7 @@ const OrganizationDetail = () => {
       addOrganizationBankDetail({
         ...values,
         bankAccountId: organizationDetail?.id,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -337,7 +429,7 @@ const OrganizationDetail = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -371,7 +463,7 @@ const OrganizationDetail = () => {
               alt="company logo"
               height={40}
               radius="sm"
-              src={logo}
+              src={organizationDetail?.logoUrl}
               width={60}
             />
             <div className="flex flex-col">
@@ -380,47 +472,95 @@ const OrganizationDetail = () => {
               </p>
               <a
                 className="text-small text-default-500 "
-                href={"https://www.corpseed.com"}
+                href={organizationDetail?.website}
                 target="_blank"
               >
-                https://www.corpseed.com
+                {organizationDetail?.website}
               </a>
             </div>
           </div>
-          <Button
-            color="primary"
-            startContent={<Plus />}
-            onPress={() => accountModal.onOpen()}
-          >
-            Add Bank
-          </Button>
+          <div className="space-x-1">
+            {" "}
+            <Button
+              color="primary"
+              startContent={<Plus className="h-4 w-4" />}
+              onPress={() => accountModal.onOpen()}
+            >
+              Add Bank
+            </Button>
+            <Button
+              startContent={<Pencil className="h-4 w-4" />}
+              onPress={handleEditOrganization}
+            >
+              Edit Organization
+            </Button>
+          </div>
         </CardHeader>
         <Divider />
         <CardBody>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Address</span>
-              <span className="text-muted-foreground">:</span>
-              <span></span>
-              {organizationDetail?.address}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">CIN Number</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.cinNumber}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">State</span>
-              <span className="text-muted-foreground">:</span>
-              <span></span>
-              {organizationDetail?.state}
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">GST Number</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.gstNo}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Country</span>
-              <span className="text-muted-foreground">:</span>
-              <span></span>
-              {organizationDetail?.country}
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">PAN Number</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.panNo}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Zip/Pin code</span>
-              <span className="text-muted-foreground">:</span>
-              <span></span>
-              {organizationDetail?.pin}
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">
+                Established data{" "}
+              </span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">
+                {organizationDetail?.establishedDate}
+              </span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">Email</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.email}</span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">Phone</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.phone}</span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">Address</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm max-w-[70%]">
+                {organizationDetail?.addressLine1}
+              </span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">City</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.city}</span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">State</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.state}</span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">Country</span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.country}</span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-muted-foreground text-sm">
+                Zip/Pin code
+              </span>
+              <span className="text-muted-foreground text-sm">:</span>
+              <span className="text-sm">{organizationDetail?.pinCode}</span>
             </div>
           </div>
           <Table aria-label="Example static collection table" className="mt-3">
@@ -467,7 +607,7 @@ const OrganizationDetail = () => {
                     <Controller
                       name="name"
                       control={orgForm.control}
-                      render={({ field }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired
                           label="Organization name"
@@ -476,6 +616,8 @@ const OrganizationDetail = () => {
                           onChange={(e) => {
                             field.onChange(e.target.value);
                           }}
+                          errorMessage={error?.message}
+                          // isInvalid={!!error}
                         />
                       )}
                     />
@@ -489,7 +631,7 @@ const OrganizationDetail = () => {
                           label="GST number"
                           maxLength={15}
                           errorMessage={error?.message || gstError}
-                          isInvalid={!!error || !!gstError}
+                          // isInvalid={!!error || !!gstError}
                           {...field}
                           onChange={(e) => {
                             handleGstChange(e);
@@ -507,7 +649,7 @@ const OrganizationDetail = () => {
                           label="Pan number"
                           maxLength={10}
                           errorMessage={error?.message || panError}
-                          isInvalid={!!error || !!panError}
+                          // isInvalid={!!error || !!panError}
                           {...field}
                           onChange={(e) => {
                             handlePanChange(e);
@@ -520,13 +662,14 @@ const OrganizationDetail = () => {
                       control={orgForm.control}
                       render={({ field, fieldState: { error } }) => (
                         <Input
+                          isRequired
                           label="CIN number"
-                          maxLength={10}
+                          maxLength={21}
                           errorMessage={error?.message || panError}
-                          isInvalid={!!error || !!panError}
-                          {...field}
+                          // isInvalid={!!error || !!panError}
+                          value={field.value}
                           onChange={(e) => {
-                            handlePanChange(e);
+                            field.onChange(formatCINInput(e.target.value));
                           }}
                         />
                       )}
@@ -535,20 +678,22 @@ const OrganizationDetail = () => {
                     <Controller
                       name="establishedDate"
                       control={orgForm.control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          isRequired
-                          label="Company incorporate date"
-                          showMonthAndYearPickers
-                          maxValue={today(getLocalTimeZone())}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
-                          }
-                        />
-                      )}
+                      render={({ field, fieldState: { error } }) => {
+                        return (
+                          <DatePicker
+                            isRequired
+                            label="Company incorporate date"
+                            showMonthAndYearPickers
+                            maxValue={today(getLocalTimeZone())}
+                            errorMessage={error?.message}
+                            // isInvalid={!!error}
+                            value={field.value ? parseDate(field.value) : null}
+                            onChange={(e) =>
+                              field.onChange(toCalendarDate(e).toString())
+                            }
+                          />
+                        );
+                      }}
                     />
 
                     <Controller
@@ -560,7 +705,7 @@ const OrganizationDetail = () => {
                           label="Address"
                           value={field.value}
                           errorMessage={error?.message}
-                          isInvalid={!!error}
+                          // isInvalid={!!error}
                           name="addressLine1"
                           onChange={(e) => {
                             field.onChange(e.target.value);
@@ -573,9 +718,10 @@ const OrganizationDetail = () => {
                       control={orgForm.control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          isRequired
                           label="Country"
                           errorMessage={error?.message}
-                          isInvalid={!!error}
+                          // isInvalid={!!error}
                           data={countryList || []}
                           labelKey="name"
                           valueKey="name"
@@ -593,9 +739,10 @@ const OrganizationDetail = () => {
                       control={orgForm.control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          isRequired
                           label="State"
                           errorMessage={error?.message}
-                          isInvalid={!!error}
+                          // isInvalid={!!error}
                           data={statesList || []}
                           labelKey="name"
                           valueKey="name"
@@ -612,7 +759,9 @@ const OrganizationDetail = () => {
                       control={orgForm.control}
                       render={({ field, fieldState: { error } }) => (
                         <NewSelect
+                          isRequired
                           label="City"
+                          errorMessage={error?.message}
                           data={citiesList || []}
                           labelKey="name"
                           valueKey="name"
@@ -653,6 +802,84 @@ const OrganizationDetail = () => {
                     />
 
                     <Controller
+                      name="website"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Website"
+                          value={field.value}
+                          name="website"
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="paymentPageLink"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Payment page link"
+                          value={field.value}
+                          name="paymentPageLink"
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="logoUrl"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <SingleFileUploader
+                          isRequired
+                          label="Company logo"
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          errorMessage={error?.message}
+                          // isInvalid={!!error}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="email"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Email"
+                          value={field.value}
+                          name="email"
+                          onChange={(e) => {
+                            field.onChange(formatEmail(e.target.value));
+                          }}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="phone"
+                      control={orgForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input
+                          isRequired
+                          label="Phone"
+                          value={field.value}
+                          maxLength={10}
+                          name="phone"
+                          onChange={(e) => {
+                            field.onChange(allowOnlyNumbers(e.target.value));
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Controller
                       name="bankAccountPresent"
                       control={orgForm.control}
                       render={({ field, fieldState: { error } }) => (
@@ -674,7 +901,7 @@ const OrganizationDetail = () => {
                             }));
                           }}
                           errorMessage={error?.message}
-                          isInvalid={!!error}
+                          // isInvalid={!!error}
                         >
                           {[
                             { label: "True", value: true },
@@ -718,7 +945,9 @@ const OrganizationDetail = () => {
                               value={field.value}
                               name="accountNo"
                               onChange={(e) => {
-                                field.onChange(e.target.value);
+                                field.onChange(
+                                  allowOnlyNumbers(e.target.value, 35),
+                                );
                               }}
                             />
                           )}
@@ -792,82 +1021,6 @@ const OrganizationDetail = () => {
                               label="UPI ID"
                               value={field.value}
                               name="upiId"
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="website"
-                          control={orgForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Website"
-                              value={field.value}
-                              name="website"
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="paymentPageLink"
-                          control={orgForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Payment page link"
-                              value={field.value}
-                              name="paymentPageLink"
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="logoUrl"
-                          control={orgForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <SingleFileUploader
-                              label="Company logo"
-                              value={field.value}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              errorMessage={error?.message}
-                              isInvalid={!!error}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="email"
-                          control={orgForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Email"
-                              value={field.value}
-                              name="email"
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                              }}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="phone"
-                          control={orgForm.control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Input
-                              isRequired
-                              label="Phone"
-                              value={field.value}
-                              maxLength={10}
-                              name="phone"
                               onChange={(e) => {
                                 field.onChange(e.target.value);
                               }}
@@ -1265,7 +1418,7 @@ const OrganizationDetail = () => {
               <ModalBody>
                 <form
                   onSubmit={accountDetailForm.handleSubmit(
-                    onAccountDetailSubmit
+                    onAccountDetailSubmit,
                   )}
                 >
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">

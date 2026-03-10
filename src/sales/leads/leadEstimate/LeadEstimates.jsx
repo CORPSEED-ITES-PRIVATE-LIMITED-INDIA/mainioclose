@@ -60,6 +60,7 @@ import {
   getAllUnitListByCompanyId,
   getBasicCompanyDetailByCompanyId,
   getBasicCompanyDetails,
+  updateBasicUnitByCompanyId,
 } from "../../../toolkit/slices/companySlice";
 import {
   createContactViaEstimateInCompany,
@@ -139,6 +140,7 @@ export const LeadEstimates = () => {
   });
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
+  const [unitDetail, setUnitDetail] = useState(null);
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -242,6 +244,7 @@ export const LeadEstimates = () => {
   };
 
   const onOpenUnitModal = () => {
+    setUnitDetail(null);
     resetUnitForm((prev) => ({
       ...prev,
       createdById: Number(userId) || 0,
@@ -290,14 +293,22 @@ export const LeadEstimates = () => {
               solutionId: res?.payload?.id,
               userId,
             }),
-          );
+          ).then((res) => {
+            if (res.meta.requestStatus !== "fulfilled") {
+              addToast({ title: res?.payload?.data?.message, color: "danger" });
+            }
+          });
         } else {
           dispatch(
             getAllBusinessArrangementBySolutionId({
               solutionId: res?.payload?.id,
               userId,
             }),
-          );
+          ).then((res) => {
+            if (res.meta.requestStatus !== "fulfilled") {
+              addToast({ title: res?.payload?.data?.message, color: "danger" });
+            }
+          });
         }
       }
     });
@@ -365,6 +376,29 @@ export const LeadEstimates = () => {
     setShowForm(!hasEstimates);
   }, [hasEstimates]);
 
+  const handleUpdateCompanyUnit = () => {
+    if (!unitDetail) {
+      addToast({
+        title: "Please select unit first to update",
+        color: "warning",
+      });
+    } else {
+      dispatch(getAllCountries());
+      dispatch(getAllStatesByCountryName(unitDetail?.country));
+      dispatch(getAllCitiesByStateName(unitDetail?.state));
+      resetUnitForm({
+        unitName: unitDetail?.unitName,
+        gstNo: unitDetail?.gstNo,
+        address: unitDetail?.addressLine1,
+        country: unitDetail?.country,
+        state: unitDetail?.state,
+        city: unitDetail?.city,
+        pinCode: unitDetail?.pinCode,
+      });
+      onOpen();
+    }
+  };
+
   const onSubmit = (data) => {
     data.companyId = company?.id;
     data.solutionType = selectedSolutionDetail?.type;
@@ -420,30 +454,59 @@ export const LeadEstimates = () => {
     setShowForm(false);
   };
 
+  console.log("fdjkghskghjdfk", company, companyDetail);
+
   const onSaveUnitModal = (data) => {
     data.createdById = userId;
     data.updatedById = userId;
-    dispatch(
-      createBasicUnitByCompanyId({
-        companyId: company?.id,
-        updatedBy: userId,
-        data,
-      }),
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Unit details saved.", color: "success" });
-          dispatch(getAllUnitListByCompanyId(company?.id));
-          resetUnitForm();
-          onClose();
-          dispatch(getBasicCompanyDetails({ leadId, userId }));
-        } else {
-          addToast({ title: resp.payload?.message, color: "danger" });
-        }
-      })
-      .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
-      });
+
+    if (unitDetail) {
+      dispatch(
+        updateBasicUnitByCompanyId({
+          companyId: unitDetail?.companyId,
+          unitId: unitDetail?.id,
+          userId,
+          data,
+        }),
+      )
+        .then((resp) => {
+          console.log("dfkjghsdklfhkjlsdf", resp);
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({ title: "Unit details saved.", color: "success" });
+            dispatch(getAllUnitListByCompanyId(company?.id));
+            resetUnitForm();
+            onClose();
+            dispatch(getBasicCompanyDetails({ leadId, userId }));
+          } else {
+            addToast({ title: resp.payload?.data?.message, color: "danger" });
+          }
+        })
+        .catch(() => {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        });
+    } else {
+      dispatch(
+        createBasicUnitByCompanyId({
+          companyId: company?.id,
+          updatedBy: userId,
+          data,
+        }),
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({ title: "Unit details saved.", color: "success" });
+            dispatch(getAllUnitListByCompanyId(company?.id));
+            resetUnitForm();
+            onClose();
+            dispatch(getBasicCompanyDetails({ leadId, userId }));
+          } else {
+            addToast({ title: resp.payload?.message, color: "danger" });
+          }
+        })
+        .catch(() => {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        });
+    }
   };
 
   const handleSubmitContact = (data, e) => {
@@ -641,12 +704,32 @@ export const LeadEstimates = () => {
                   data={
                     unitList?.length > 0
                       ? unitList?.map((item) => ({
+                          ...item,
                           label: item?.unitName,
                           value: item?.id,
                         }))
                       : []
                   }
+                  onItemSelect={(detail) => {
+                    setUnitDetail(detail);
+                  }}
                   onChangeExtra={(e) => setContactValue("companyUnitId", e)}
+                  endContent={
+                    <span
+                      className="text-blue-600 cursor-pointer text-sm font-bold"
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleUpdateCompanyUnit();
+                      }}
+                    >
+                      Update
+                    </span>
+                  }
                 />
 
                 <FormSelect
@@ -816,7 +899,7 @@ export const LeadEstimates = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Add Unit Details
+                {unitDetail ? "Update Unit Details" : "Add Unit Details"}
                 <span className="text-xs text-slate-500 font-normal">
                   Only Unit Name is mandatory
                 </span>

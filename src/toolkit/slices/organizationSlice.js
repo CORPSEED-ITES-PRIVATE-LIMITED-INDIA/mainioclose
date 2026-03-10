@@ -6,7 +6,7 @@ export const getOrganizationByName = createAsyncThunk(
   async () => {
     const response = await api.get(`/accountService/api/v1`);
     return response.data;
-  }
+  },
 );
 
 export const createOrganization = createAsyncThunk(
@@ -14,16 +14,31 @@ export const createOrganization = createAsyncThunk(
   async ({ userId, data }) => {
     const response = await api.post(
       `/accountService/api/v1/createOrganization?userId=${userId}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
+);
+
+export const updateOrganization = createAsyncThunk(
+  "updateOrganization",
+  async ({ id, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/organizations/${id}?userId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
 );
 
 export const addStatutory = createAsyncThunk("addStatutory", async (data) => {
   const response = await api.post(
     `/accountService/api/v1/statutory/addStatutoryDetails`,
-    data
+    data,
   );
   return response.data;
 });
@@ -32,15 +47,15 @@ export const getAllOrganizations = createAsyncThunk(
   "getAllOrganizations",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/organization/getAllOrganization`
+      `/accountService/api/v1/organization/getAllOrganization`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllGroups = createAsyncThunk("getAllGroups", async () => {
   const response = await api.get(
-    `/accountService/api/v1/ledgerType/getAllLedgerType`
+    `/accountService/api/v1/ledgerType/getAllLedgerType`,
   );
   return response.data;
 });
@@ -49,56 +64,56 @@ export const getLedgerListByGroupId = createAsyncThunk(
   "getLedgerByGroupId",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/ledger/getAllLedgerByGroupId?id=${id}`
+      `/accountService/api/v1/ledger/getAllLedgerByGroupId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLedger = createAsyncThunk(
   "getAllLedger",
   async ({ page, size }) => {
     const response = await api.get(
-      `/accountService/api/v1/ledger/getAllLedger?page=${page}&size=${size}`
+      `/accountService/api/v1/ledger/getAllLedger?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLedgerCounts = createAsyncThunk(
   "getAllLedgerCounts",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/ledger/getAllLedgerCount`
+      `/accountService/api/v1/ledger/getAllLedgerCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVoucherByGroupLedgerId = createAsyncThunk(
   "getVoucherByLedgerId",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/voucher/getAllVoucherByLedgerId?ledgerId=${id}`
+      `/accountService/api/v1/voucher/getAllVoucherByLedgerId?ledgerId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLedgerType = createAsyncThunk(
   "getAllLedgerType",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/ledgerType/getAllLedgerType`
+      `/accountService/api/v1/ledgerType/getAllLedgerType`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createLedger = createAsyncThunk("createLedger", async (data) => {
   const response = await api.post(
     `/accountService/api/v1/ledger/createLedger`,
-    data
+    data,
   );
   return response.data;
 });
@@ -106,7 +121,7 @@ export const createLedger = createAsyncThunk("createLedger", async (data) => {
 export const updateLedger = createAsyncThunk("updateLedger", async (data) => {
   const response = await api.put(
     `/accountService/api/v1/ledger/updateLedger`,
-    data
+    data,
   );
   return response.data;
 });
@@ -115,22 +130,22 @@ export const getLedgerTypeById = createAsyncThunk(
   "getLedgerTypeById",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/ledgerType/getAllLedgerTypeById?id=${id}`
+      `/accountService/api/v1/ledgerType/getAllLedgerTypeById?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVoucher = createAsyncThunk("getAllVoucher", async () => {
   const response = await api.get(
-    `/accountService/api/v1/voucher/getAllVoucher`
+    `/accountService/api/v1/voucher/getAllVoucher`,
   );
   return response.data;
 });
 
 export const getLedgerById = createAsyncThunk("getLedgerById", async (id) => {
   const response = await api.get(
-    `/accountService/api/v1/ledger/getLedgerById?id=${id}`
+    `/accountService/api/v1/ledger/getLedgerById?id=${id}`,
   );
   return response.data;
 });
@@ -138,7 +153,7 @@ export const getLedgerById = createAsyncThunk("getLedgerById", async (id) => {
 export const createVoucher = createAsyncThunk("createVoucher", async (data) => {
   const response = await api.post(
     `/accountService/api/v1/voucher/createVoucher`,
-    data
+    data,
   );
   return response.data;
 });
@@ -147,60 +162,60 @@ export const getAllVoucherType = createAsyncThunk(
   "getAllVoucherType",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/voucherType/getAllVoucherType`
+      `/accountService/api/v1/voucherType/getAllVoucherType`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getEstimateByStatus = createAsyncThunk(
   "getEstimateByStatus",
   async ({ status, page, size, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateByStatus?status=${status}&page=${page}&size=${size}&userId=${userId}`
+      `/leadService/api/v1/leadEstimate/getEstimateByStatus?status=${status}&page=${page}&size=${size}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getTotalCountOfEstimate = createAsyncThunk(
   "getTotalCountOfEstimate",
   async ({ status, userId }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getEstimateByStatusCount?status=${status}&userId=${userId}`
+      `/leadService/api/v1/leadEstimate/getEstimateByStatusCount?status=${status}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllDailyBookRecord = createAsyncThunk(
   "getAllDailyBookRecord",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/voucher/getAllVoucherInBetweenDate?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/voucher/getAllVoucherInBetweenDate?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const estimateApprovedAndDisapprovedStatus = createAsyncThunk(
   "approvedAndDisapprovedStatus",
   async ({ status, estimateId, userId }) => {
     const response = await api.put(
-      `/leadService/api/v1/leadEstimate/approvedEstimate?status=${status}&estimateId=${estimateId}&userId=${userId}`
+      `/leadService/api/v1/leadEstimate/approvedEstimate?status=${status}&estimateId=${estimateId}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBankStatements = createAsyncThunk(
   "getAllBankStatements",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/bankStatements/getAllBankStatements`
+      `/accountService/api/v1/bankStatements/getAllBankStatements`,
     );
     return response.data;
-  }
+  },
 );
 
 export const addBankDetails = createAsyncThunk(
@@ -208,30 +223,30 @@ export const addBankDetails = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/bankStatements/createBankStatement`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllPaymentRegisterWithPagination = createAsyncThunk(
   "getAllPaymentRegisterWithPagination",
   async ({ page, size, status }) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithPage?page=${page}&size=${size}&status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithPage?page=${page}&size=${size}&status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllPaymentRegisterCount = createAsyncThunk(
   "getAllPaymentRegisterCount",
   async (status) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterCount?status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterCount?status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const paymentRegisterAction = createAsyncThunk(
@@ -239,50 +254,50 @@ export const paymentRegisterAction = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/paymentRegister/paymentApproveManual`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllInvoice = createAsyncThunk(
   "getAllInvoice",
   async ({ userId, page, size, status }) => {
     const response = await api.get(
-      `/accountService/api/v1/invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`
+      `/accountService/api/v1/invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllInvoiceCount = createAsyncThunk(
   "getAllInvoiceCount",
   async ({ userId, status }) => {
     const response = await api.get(
-      `/accountService/api/v1/invoices/count?status=${status}&createdById=${userId}`
+      `/accountService/api/v1/invoices/count?status=${status}&createdById=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllUnbillList = createAsyncThunk(
   "getAllUnbillList",
   async ({ page, size, status, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/unbilled-invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`
+      `/accountService/api/v1/unbilled-invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllUnbillCount = createAsyncThunk(
   "getAllUnbillCount",
   async ({ status, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/unbilled-invoices/count?status=${status}&userId=${userId}`
+      `/accountService/api/v1/unbilled-invoices/count?status=${status}&userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateStatusForUnbill = createAsyncThunk(
@@ -291,23 +306,23 @@ export const updateStatusForUnbill = createAsyncThunk(
     try {
       const response = await api.post(
         `/accountService/api/v1/unbilled-invoices/${unbilledId}/approve`,
-        data
+        data,
       );
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response);
     }
-  }
+  },
 );
 
 export const getAllInvoiceForSale = createAsyncThunk(
   "getAllInvoiceForSale",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllInvoiceForSales?userId=${id}`
+      `/accountService/api/v1/paymentRegister/getAllInvoiceForSales?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllTdsList = createAsyncThunk("getAllTdsList", async () => {
@@ -324,10 +339,10 @@ export const claimTDS = createAsyncThunk(
   "claimTDS",
   async ({ id, amount, document, tdsClaimBy }) => {
     const response = await api.post(
-      `/accountService/api/v1/tds/updateTdsClaimAmount?id=${id}&tdsClaimBy=${tdsClaimBy}&amount=${amount}&document=${document}`
+      `/accountService/api/v1/tds/updateTdsClaimAmount?id=${id}&tdsClaimBy=${tdsClaimBy}&amount=${amount}&document=${document}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getTdsAmounts = createAsyncThunk("getTdsAmounts", async () => {
@@ -339,20 +354,20 @@ export const updateVouchersType = createAsyncThunk(
   "updateVouchersType",
   async ({ name, id }) => {
     const response = await api.put(
-      `/accountService/api/v1/voucherType/updateVoucherType?name=${name}&id=${id}`
+      `/accountService/api/v1/voucherType/updateVoucherType?name=${name}&id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createVoucherType = createAsyncThunk(
   "createVoucherType",
   async ({ name }) => {
     const response = await api.post(
-      `/accountService/api/v1/voucherType/createVoucherType?name=${name}`
+      `/accountService/api/v1/voucherType/createVoucherType?name=${name}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateLedgerType = createAsyncThunk(
@@ -360,10 +375,10 @@ export const updateLedgerType = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/accountService/api/v1/ledgerType/updateLedgerType`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createLedgerType = createAsyncThunk(
@@ -371,130 +386,130 @@ export const createLedgerType = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/ledgerType/createLedgerType`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllTrailBalance = createAsyncThunk(
   "unbillItems",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/trialBalance/getAllTrialBalanceData?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/trialBalance/getAllTrialBalanceData?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllProfitList = createAsyncThunk(
   "getAllProfitList",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllProfit?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/cashFlow/getAllProfit?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllLossList = createAsyncThunk(
   "getAllLossList",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllLoss?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/cashFlow/getAllLoss?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getProfitLossDetail = createAsyncThunk(
   "getProfitLossDetail",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllProfitAndLoss?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/cashFlow/getAllProfitAndLoss?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllOutFlowList = createAsyncThunk(
   "getAllOutFlowList",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllOutFlow?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/cashFlow/getAllOutFlow?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllInFlowList = createAsyncThunk(
   "getAllInFlowList",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllInFlow?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/cashFlow/getAllInFlow?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllCashFlowDetail = createAsyncThunk(
   "getAllCashFlowDetail",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/cashFlow/getAllCashInAndOutFlow?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/cashFlow/getAllCashInAndOutFlow?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBalanceSheetLiabilities = createAsyncThunk(
   "getAllBalanceSheetLiabilities",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/balanceSheet/getAllBalanceSheetLiabilities?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/balanceSheet/getAllBalanceSheetLiabilities?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBalanceSheetAssets = createAsyncThunk(
   "getAllBalanceSheetAssets",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/balanceSheet/getAllBalanceSheetAssets?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/balanceSheet/getAllBalanceSheetAssets?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBalanceSheetDetail = createAsyncThunk(
   "getAllBalanceSheetDetail",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/balanceSheet/getAllAssetsAndLiabilities`
+      `/accountService/api/v1/balanceSheet/getAllAssetsAndLiabilities`,
     );
     return response.data;
-  }
+  },
 );
 
 export const deleteVoucherById = createAsyncThunk(
   "deleteVoucherById",
   async (id) => {
     const response = await api.delete(
-      `/accountService/api/v1/voucher/deleteVoucherById?id=${id}`
+      `/accountService/api/v1/voucher/deleteVoucherById?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllStatutoryList = createAsyncThunk(
   "getAllStatutoryList",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/statutory/getAllStatutoryDetails?currentUserId=${id}`
+      `/accountService/api/v1/statutory/getAllStatutoryDetails?currentUserId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateStatutory = createAsyncThunk(
@@ -502,10 +517,10 @@ export const updateStatutory = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/accountService/api/v1/statutory/updateStatutoryDetails`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createStatutory = createAsyncThunk(
@@ -513,60 +528,60 @@ export const createStatutory = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/statutory/addStatutoryDetails`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getGstList = createAsyncThunk(
   "getGstList",
   async ({ page, size, startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/gstData/getAllGstDataCrm?page=${page}&size=${size}&startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/gstData/getAllGstDataCrm?page=${page}&size=${size}&startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getGstListCount = createAsyncThunk(
   "getGstListCount",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/gstData/getAllGstDataCrmCount?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/gstData/getAllGstDataCrmCount?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getGstExportedData = createAsyncThunk(
   "getGstExportedData",
   async ({ startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/gstData/getAllGstDataCrmForExport?startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/gstData/getAllGstDataCrmForExport?startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const clainGSTAmount = createAsyncThunk(
   "clainGSTAmount",
   async ({ id, amount, documents }) => {
     const response = await api.put(
-      `/accountService/api/v1/gstData/updateGstClaimAmount?id=${id}&amount=${amount}&documents=${documents}`
+      `/accountService/api/v1/gstData/updateGstClaimAmount?id=${id}&amount=${amount}&documents=${documents}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllOrganizationBankAccounts = createAsyncThunk(
   "getAllOrganizationBankAccounts",
   async (organizationId) => {
     const response = await api.get(
-      `/accountService/api/v1/organization/getAllBankAccountByOrganization?organizationId=${organizationId}`
+      `/accountService/api/v1/organization/getAllBankAccountByOrganization?organizationId=${organizationId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const addOrganizationBankDetail = createAsyncThunk(
@@ -574,40 +589,40 @@ export const addOrganizationBankDetail = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/organization/addBankAccountInOrganization`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllSalesReport = createAsyncThunk(
   "getAllSalesReport",
   async ({ page, size, status, startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/salesReport/getAllSalesReport?page=${page}&size=${size}&status=${status}&startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/salesReport/getAllSalesReport?page=${page}&size=${size}&status=${status}&startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSalesReportCount = createAsyncThunk(
   "getSalesReportCount",
   async ({ status }) => {
     const response = await api.get(
-      `/accountService/api/v1/salesReport/getAllSalesReportCount?status=${status}&startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/salesReport/getAllSalesReportCount?status=${status}&startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSalesReportExportedData = createAsyncThunk(
   "getSalesReportExportedData",
   async ({ status, startDate, endDate }) => {
     const response = await api.get(
-      `/accountService/api/v1/salesReport/getAllSalesReportForExport?status=${status}&startDate=${startDate}&endDate=${endDate}`
+      `/accountService/api/v1/salesReport/getAllSalesReportForExport?status=${status}&startDate=${startDate}&endDate=${endDate}`,
     );
     return response.data;
-  }
+  },
 );
 
 const OrganizationSlice = createSlice({
@@ -833,7 +848,7 @@ const OrganizationSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.allPaymentRegisterList = action.payload;
-      }
+      },
     );
     builder.addCase(getAllPaymentRegisterWithPagination.rejected, (state) => {
       state.loading = "rejected";
@@ -1016,7 +1031,7 @@ const OrganizationSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.balanceSheetLiabilitiesList = action.payload;
-      }
+      },
     );
     builder.addCase(getAllBalanceSheetLiabilities.rejected, (state) => {
       state.loading = "rejected";
@@ -1115,7 +1130,7 @@ const OrganizationSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.allOrganizationAccountList = action.payload;
-      }
+      },
     );
     builder.addCase(getAllOrganizationBankAccounts.rejected, (state) => {
       state.loading = "rejected";

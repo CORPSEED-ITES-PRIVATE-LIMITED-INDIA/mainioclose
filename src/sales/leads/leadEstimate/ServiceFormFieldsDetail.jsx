@@ -12,68 +12,76 @@ const ServiceFormFieldsDetail = ({ control, isMedium }) => {
 
   return (
     <Section title="Service Details">
-      {fields.map((field, idx) => (
-        <div key={field.id} className="grid grid-cols-4 gap-3 my-2">
-          {/* Fee Name (Read-Only) */}
-          <Controller
-            name={`lineItems.${idx}.itemName`}
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                isReadOnly
-                label="Fee name"
-                size={isMedium ? "sm" : "md"}
-              />
-            )}
-          />
+      {fields?.length > 0 ? (
+        fields.map((field, idx) => (
+          <div key={field.id} className="grid grid-cols-4 gap-3 my-2">
+            {/* Fee Name (Read-Only) */}
+            <Controller
+              name={`lineItems.${idx}.itemName`}
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  isReadOnly
+                  label="Fee name"
+                  size={isMedium ? "sm" : "md"}
+                />
+              )}
+            />
 
-          {/* Amount */}
-          <Controller
-            name={`lineItems.${idx}.unitPriceExGst`}
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                type="number"
-                label="Amount"
-                isRequired
-                size={isMedium ? "sm" : "md"}
-                startContent={<IndianRupee className="h-4 w-4" />}
-              />
-            )}
-          />
+            {/* Amount */}
+            <Controller
+              name={`lineItems.${idx}.unitPriceExGst`}
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="number"
+                  label="Amount"
+                  isRequired
+                  size={isMedium ? "sm" : "md"}
+                  startContent={<IndianRupee className="h-4 w-4" />}
+                />
+              )}
+            />
 
-          {/* HSN */}
-          <Controller
-            name={`lineItems.${idx}.hsnSacCode`}
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                label="HSN number"
-                isRequired
-                size={isMedium ? "sm" : "md"}
-              />
-            )}
-          />
+            {/* HSN */}
+            <Controller
+              name={`lineItems.${idx}.hsnSacCode`}
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  label="HSN number"
+                  isRequired
+                  size={isMedium ? "sm" : "md"}
+                />
+              )}
+            />
 
-          {/* GST */}
-          <Controller
-            name={`lineItems.${idx}.gstRate`}
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                type="number"
-                label={"GST %"}
-                isRequired
-                size={isMedium ? "sm" : "md"}
-              />
-            )}
-          />
+            {/* GST */}
+            <Controller
+              name={`lineItems.${idx}.gstRate`}
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="number"
+                  label={"GST %"}
+                  isRequired
+                  size={isMedium ? "sm" : "md"}
+                />
+              )}
+            />
+          </div>
+        ))
+      ) : (
+        <div>
+          <h3 className="text-sm text-red-600">
+            Please select solution for the service detail
+          </h3>
         </div>
-      ))}
+      )}
     </Section>
   );
 };

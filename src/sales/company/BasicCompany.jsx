@@ -74,6 +74,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
   const citiesList = useSelector((state) => state.common.citiesList);
   const company = useSelector((state) => state.company.basicCompanyDetail);
   const [update, setUpdate] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
 
   const {
     control,
@@ -314,6 +315,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
               e.preventDefault();
               e.stopPropagation();
               setIsDropDownOpen((prev) => ({ ...prev, company: false }));
+              setIsUpdate(true);
               onOpen();
             }}
           >
@@ -380,7 +382,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {isEstimate ? "Update company" : "Add company"}
+                {isEstimate && isUpdate ? "Update company" : "Add company"}
               </ModalHeader>
               <ModalBody>
                 <form
@@ -413,7 +415,6 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           {...field}
                           label="Company name"
                           isRequired
-                          isInvalid={!!errors.name}
                           errorMessage={errors.name?.message}
                         />
                       )}
@@ -450,8 +451,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           onChange={(e) => {
                             handlePanChange(e);
                           }}
-                          isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          errorMessage={errors.panNo?.message}
                         />
                       )}
                     />
@@ -467,7 +467,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           label="Address"
                           // isRequired={isEstimate ? true : false}
                           // isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          errorMessage={errors.address?.message}
                         />
                       )}
                     />
@@ -488,8 +488,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                             dispatch(getAllStatesByCountryName(value));
                             field.onChange(value);
                           }}
-                          isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          errorMessage={errors.country?.message}
                         />
                       )}
                     />
@@ -506,8 +505,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           valueKey="name"
                           isRequired={isEstimate ? true : false}
                           value={field.value}
-                          isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          errorMessage={errors.state?.message}
                           onChange={(value) => {
                             dispatch(getAllCitiesByStateName(value));
                             field.onChange(value);
@@ -528,8 +526,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           valueKey="name"
                           isRequired={isEstimate ? true : false}
                           value={field.value}
-                          isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          errorMessage={errors.city?.message}
                           onChange={(value) => field.onChange(value)}
                         />
                       )}
@@ -544,8 +541,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
                           label="Pin Code"
                           maxLength={6}
                           isRequired={isEstimate ? true : false}
-                          isInvalid={!!errors.name}
-                          errorMessage={errors.name?.message}
+                          errorMessage={errors.pinCode?.message}
                           value={field.value}
                           onChange={(e) =>
                             field.onChange(allowOnlyNumbers(e.target.value, 6))

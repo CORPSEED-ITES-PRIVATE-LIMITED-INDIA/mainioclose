@@ -249,3 +249,26 @@ export const isValidEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
+
+export const formatCINInput = (value) => {
+  value = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let formatted = "";
+
+  for (let i = 0; i < value.length && i < 21; i++) {
+    if (i === 0) {
+      if (/[LU]/.test(value[i])) formatted += value[i];
+    } else if (i >= 1 && i <= 5) {
+      if (/[0-9]/.test(value[i])) formatted += value[i];
+    } else if (i >= 6 && i <= 7) {
+      if (/[A-Z]/.test(value[i])) formatted += value[i];
+    } else if (i >= 8 && i <= 11) {
+      if (/[0-9]/.test(value[i])) formatted += value[i];
+    } else if (i >= 12 && i <= 14) {
+      if (/[A-Z]/.test(value[i])) formatted += value[i];
+    } else if (i >= 15 && i <= 20) {
+      if (/[0-9]/.test(value[i])) formatted += value[i];
+    }
+  }
+
+  return formatted;
+};

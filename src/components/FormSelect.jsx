@@ -14,6 +14,7 @@ const FormSelect = ({
   endContent,
   isOpen,
   onOpenChange,
+  onItemSelect = () => {},
 }) => {
   return (
     <Controller
@@ -37,6 +38,7 @@ const FormSelect = ({
             onChangeExtra?.(value);
             field.onChange(value);
           }}
+          onItemSelect={onItemSelect}
         />
       )}
     />

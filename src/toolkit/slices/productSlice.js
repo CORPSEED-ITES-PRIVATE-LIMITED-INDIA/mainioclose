@@ -13,11 +13,15 @@ export const getAllProductCategoryById = createAsyncThunk(
 
 export const getAllBusinessArrangementBySolutionId = createAsyncThunk(
   "getAllBusinessArrangementBySolutionId",
-  async ({ solutionId, userId }) => {
-    const response = await api.get(
-      `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`,
-    );
-    return response.data;
+  async ({ solutionId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers?userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      rejectWithValue(err?.response);
+    }
   },
 );
 
