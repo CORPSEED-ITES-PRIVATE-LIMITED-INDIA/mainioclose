@@ -103,6 +103,7 @@ const Estimate = () => {
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [activeEstimateId, setActiveEstimateId] = useState(null);
+  const [estimateItem, setEstimateItem] = useState(null);
   const paymentTypes = useMemo(
     () => [
       { id: 1, name: "Advance" },
@@ -192,7 +193,6 @@ const Estimate = () => {
     dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          console.log("dsjkgjkgdkj", resp);
           let data = resp?.payload;
           setEstimateDetail(data);
           viewModal.onOpen();
@@ -403,6 +403,7 @@ const Estimate = () => {
                       });
                     } else {
                       setActiveEstimateId(rowData?.id);
+                      setEstimateItem(rowData);
                       paymentModal.onOpen();
                     }
                   } else if (item === "viewEstimate") {
@@ -758,6 +759,7 @@ const Estimate = () => {
           paymentModal.onClose();
           setActiveEstimateId(null);
         }}
+        estimateItem={estimateItem}
         estimateId={activeEstimateId}
         paymentTypes={paymentTypes}
         onSubmitPayment={(payload) => dispatch(createPaymentRegister(payload))}

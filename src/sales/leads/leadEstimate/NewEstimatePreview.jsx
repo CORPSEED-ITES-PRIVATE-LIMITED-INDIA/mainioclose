@@ -1,13 +1,23 @@
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import { memo, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import logo from "../../../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency, numberToWords } from "../../../common";
+import { useDispatch, useSelector } from "react-redux";
+import { getOrganizationByName } from "../../../toolkit/slices/organizationSlice";
 
 const NewEstimatePreview = ({ details, due }) => {
+  const dispatch = useDispatch();
   const contentRef = useRef();
+  const organizationDetail = useSelector(
+    (state) => state.organization.organizationDetail,
+  );
+
+  useEffect(() => {
+    dispatch(getOrganizationByName());
+  }, [dispatch]);
 
   const downloadPDF = async () => {
     const element = contentRef.current;
@@ -60,12 +70,18 @@ const NewEstimatePreview = ({ details, due }) => {
                 <img src={logo} alt="corpseed" className="w-28 md:w-36" />
                 <div className="mt-2 text-gray-700 text-xs leading-relaxed">
                   <p className="font-semibold text-sm">
-                    Corpseed Ites Private Limited
+                    {organizationDetail?.name}
                   </p>
-                  <p>CN U74999UP2018PTC101873</p>
-                  <p>GST : 09AAHCC4539J1ZC</p>
-                  <p>2nd floor, A-154A, Sector 63</p>
-                  <p>Noida, Uttar Pradesh - 201301</p>
+                  <p className="text-xs">
+                    CIN : {organizationDetail?.cinNumber}
+                  </p>
+                  <p className="text-xs">GST : {organizationDetail?.gstNo}</p>
+                  <p className="text-xs">{organizationDetail?.addressLine1}</p>
+                  <p className="text-xs">
+                    {organizationDetail?.city}, {organizationDetail?.state},{" "}
+                    {organizationDetail?.country} -{" "}
+                    {organizationDetail?.pinCode}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-4">

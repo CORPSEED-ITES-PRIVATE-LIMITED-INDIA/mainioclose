@@ -253,7 +253,6 @@ table td {
   word-break: break-word !important;
 }
 
-
 .ck-editor__editable {
   width: 100% !important;
   max-width: 100% !important;
@@ -263,12 +262,10 @@ table td {
   width: 100% !important;
 }
 
-
 .ck-content {
   width: 100% !important;
   max-width: 100% !important;
 }
-
 
 .ck-content table {
   width: 100% !important;

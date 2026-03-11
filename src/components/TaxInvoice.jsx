@@ -6,6 +6,8 @@ import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency } from "../common";
+import { useDispatch, useSelector } from "react-redux";
+import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
 
 /** -------------------------
  * PDF / Layout constants
@@ -107,23 +109,35 @@ const buildTaxSummaryRows = (lineItems = []) => {
  * Component
  * ------------------------- */
 const TaxInvoice = ({ invoiceData, heading }) => {
+  const dispatch = useDispatch();
   const printRef = useRef(null);
-
-  const seller = useMemo(
-    () => ({
-      name: "Corpseed Ites Private Limited",
-      addressLine1:
-        "3rd Floor, A-5, Grovy Optiva IT Park, Sector 68 Noida,Gautam budh Nagar,Uttar Pradesh , 201301",
-      gstin: "09AAHCC4539J1ZC",
-      stateName: "Uttar Pradesh",
-      stateCode: "09",
-      email: "info@corpseed.com",
-      bankName: "IDFC FIRST BANK",
-      accountNo: "10052624515",
-      branchIfsc: "Noida,Sector-63 Branch & IDFB0021331",
-    }),
-    [],
+  const organizationDetail = useSelector(
+    (state) => state.organization.organizationDetail,
   );
+
+  useEffect(() => {
+    dispatch(getOrganizationByName());
+  }, [dispatch]);
+
+  const seller = useMemo(() => {
+    if (!organizationDetail) return null;
+
+    return {
+      name: organizationDetail?.name || "",
+      addressLine1:
+        `${organizationDetail?.addressLine1}, ${organizationDetail?.city}, ${organizationDetail?.state}, ${organizationDetail?.country} - ${organizationDetail?.pinCode}` ||
+        "",
+      gstin: organizationDetail?.gstNo || "",
+      stateName: organizationDetail?.state || "",
+      stateCode: organizationDetail?.gstNo?.slice(0, 2) || "",
+      email: organizationDetail?.email || "",
+      bankName: organizationDetail?.bankName || "",
+      accountNo: organizationDetail?.accountNo || "",
+      branchIfsc: `${organizationDetail?.ifscCode || ""} & ${
+        organizationDetail?.ifscCode || ""
+      }`,
+    };
+  }, [organizationDetail]);
 
   // invoiceData can be object OR JSON string
   const inv = useMemo(() => {

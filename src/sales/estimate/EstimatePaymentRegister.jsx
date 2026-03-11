@@ -60,6 +60,7 @@ const EstimatePaymentRegister = ({
   estimateId,
   onSubmitPayment,
   paymentTypes = [],
+  estimateItem,
 }) => {
   const { userId } = useParams();
   const dispatch = useDispatch();
@@ -209,6 +210,7 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
+                        isDisabled={estimateItem?.paymentType}
                         label="Payment term"
                         errorMessage={error?.message}
                         isInvalid={!!error}

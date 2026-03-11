@@ -63,8 +63,9 @@ import {
 } from "../../common";
 import { useParams } from "react-router-dom";
 
-const orgFormSchema = (accountFlag) =>
-  z.object({
+const orgFormSchema = (accountFlag) => {
+  console.log("dfjhjhfkjgkjjg", accountFlag);
+  return z.object({
     name: z.string().min(1, "Company name is required"),
     addressLine1: z.string().min(1, "Address Line 1 is required"),
     city: z.string().min(1, "City is required"),
@@ -96,7 +97,7 @@ const orgFormSchema = (accountFlag) =>
     email: z.string().min(1, "please enter email"),
     phone: z.string().min(8, "Invalid phone number"),
   });
-
+};
 const orgDefaultValues = {
   name: "",
   address: "",
@@ -219,11 +220,11 @@ const OrganizationDetail = () => {
     dispatch(getOrganizationByName());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (organizationDetail?.id) {
-      dispatch(getAllOrganizationBankAccounts(organizationDetail?.id));
-    }
-  }, [organizationDetail]);
+  // useEffect(() => {
+  //   if (organizationDetail?.id) {
+  //     dispatch(getAllOrganizationBankAccounts(organizationDetail?.id));
+  //   }
+  // }, [organizationDetail]);
 
   const handleOpenOrgModal = () => {
     dispatch(getAllCountries());
@@ -570,17 +571,30 @@ const OrganizationDetail = () => {
               <TableColumn>BRANCH</TableColumn>
               <TableColumn>ACCOUNT HOLDER</TableColumn>
               <TableColumn>ACCOUNT NO.</TableColumn>
+              <TableColumn>UPI ID</TableColumn>
               <TableColumn>IFSC CODE</TableColumn>
               <TableColumn>SWIFT CODE</TableColumn>
             </TableHeader>
             <TableBody>
-              {allOrganizationBankDetail?.map((account) => (
+              {[
+                {
+                  id: 1,
+                  bankName: organizationDetail?.bankName,
+                  branch: organizationDetail?.branch,
+                  accountHolderName: organizationDetail?.accountHolderName,
+                  accountNo: organizationDetail?.accountNo,
+                  upiId: organizationDetail?.upiId,
+                  ifscCode: organizationDetail?.ifscCode,
+                  swiftCode: organizationDetail?.swiftCode,
+                },
+              ]?.map((account) => (
                 <TableRow key={account?.id}>
                   <TableCell>{account?.id}</TableCell>
                   <TableCell>{account?.bankName}</TableCell>
                   <TableCell>{account?.branch}</TableCell>
                   <TableCell>{account?.accountHolderName}</TableCell>
                   <TableCell>{account?.accountNo}</TableCell>
+                  <TableCell>{account?.upiId}</TableCell>
                   <TableCell>{account?.ifscCode}</TableCell>
                   <TableCell>{account?.swiftCode}</TableCell>
                 </TableRow>
