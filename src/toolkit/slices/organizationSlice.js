@@ -305,7 +305,7 @@ export const updateStatusForUnbill = createAsyncThunk(
   async ({ unbilledId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/accountService/api/v1/unbilled-invoices/${unbilledId}/approve`,
+        `/accountService/api/v1/unbilled-invoices/${unbilledId}/updateStatus`,
         data,
       );
       return response.data;
