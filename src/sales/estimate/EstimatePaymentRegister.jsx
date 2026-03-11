@@ -210,7 +210,7 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
-                        isDisabled={estimateItem?.paymentType}
+                        // isDisabled={estimateItem?.paymentType}
                         label="Payment term"
                         errorMessage={error?.message}
                         isInvalid={!!error}
