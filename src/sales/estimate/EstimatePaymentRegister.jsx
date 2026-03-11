@@ -94,7 +94,7 @@ const EstimatePaymentRegister = ({
 
   useEffect(() => {
     if (estimateItem?.paymentTypeId) {
-      setValue("paymentTypeId", estimateItem.paymentTypeId || "");
+      setValue("paymentTypeId", String(estimateItem.paymentTypeId) || "");
     }
   }, [estimateItem]);
 

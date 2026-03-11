@@ -225,6 +225,7 @@ const Estimate = () => {
             <span className="font-normal">{rowData?.company?.name}</span>
             <Chip
               size="sm"
+              className="text-xs"
               color={statusColorCode[rowData?.company?.onboardingStatus]}
             >
               {rowData?.company?.onboardingStatus}
