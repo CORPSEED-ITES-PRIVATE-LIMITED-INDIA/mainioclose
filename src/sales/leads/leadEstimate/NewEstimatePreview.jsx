@@ -321,6 +321,25 @@ const NewEstimatePreview = ({ details, due }) => {
                   color: "#374151",
                 }}
               >
+                {details?.internalRemarks && (
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: 16,
+                        fontWeight: 500,
+                        color: "#111827",
+                      }}
+                    >
+                      Remark
+                    </h4>
+
+                    <p style={{ margin: 0 }}>{details.internalRemarks}</p>
+                  </div>
+                )}
+
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 6 }}
                 >
@@ -362,40 +381,6 @@ const NewEstimatePreview = ({ details, due }) => {
                     </li>
                   </ul>
                 </div>
-
-                {/* <div
-                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                >
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: 16,
-                      fontWeight: 500,
-                      color: "#111827",
-                    }}
-                  >
-                    Notes
-                  </h4>
-
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 18,
-                      lineHeight: 1.45,
-                      listStyle: "outside",
-                    }}
-                  >
-                    <li>
-                      Government fee and corpseed professional fee may differ
-                      depending on any additional changes advised the client in
-                      the application or any changes in the government policies.
-                    </li>
-                    <li>
-                      This estimate is system-generated and does not require a
-                      physical signature.
-                    </li>
-                  </ul>
-                </div> */}
               </div>
             </div>
           </div>

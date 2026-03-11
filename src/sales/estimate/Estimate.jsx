@@ -223,9 +223,12 @@ const Estimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.company?.name}</span>
-            {/* <span className="text-sm text-gray-400">
-              Age:{rowData?.companyAge || "---"} yrs
-            </span> */}
+            <Chip
+              size="sm"
+              color={statusColorCode[rowData?.company?.onboardingStatus]}
+            >
+              {rowData?.company?.onboardingStatus}
+            </Chip>
           </div>
         );
       case "unitName":
@@ -260,7 +263,7 @@ const Estimate = () => {
       case "gstNo":
         return (
           <div className="flex flex-col gap-1">
-            <span className="font-semibold">{rowData?.unit?.gstNo || "-"}</span>
+            <span className="font-normal">{rowData?.unit?.gstNo || "-"}</span>
             {rowData?.panNo && (
               <span className="text-xs text-foreground-400">
                 Pan : {rowData?.panNo}
@@ -414,11 +417,22 @@ const Estimate = () => {
                         leadId: rowData?.leadId,
                         userId,
                       }),
-                    );
+                    ).then((resp) => {
+                      if (resp.meta.requestStatus === "fulfilled") {
+                        onOpen();
+                      } else {
+                        addToast({
+                          title:
+                            resp?.payload ||
+                            "There is some issue in fetching company details !.",
+                          color: "danger",
+                        });
+                      }
+                    });
                   }
                 }}
               >
-                <DropdownItem key="updateCompanyDetail" onPress={onOpen}>
+                <DropdownItem key="updateCompanyDetail">
                   Update company detail
                 </DropdownItem>
                 <DropdownItem key="paymentRegister">

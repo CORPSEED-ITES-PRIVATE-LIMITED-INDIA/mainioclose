@@ -322,11 +322,15 @@ export const addBasicCompanyDetail = createAsyncThunk(
 
 export const getBasicCompanyDetails = createAsyncThunk(
   "getBasicCompanyDetails",
-  async ({ leadId, userId }) => {
-    const response = await api.get(
-      `/leadService/api/companies/by-lead/${leadId}?userId=${userId}`,
-    );
-    return response.data;
+  async ({ leadId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/companies/by-lead/${leadId}?userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.data.message);
+    }
   },
 );
 

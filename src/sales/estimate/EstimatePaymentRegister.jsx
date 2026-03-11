@@ -75,6 +75,7 @@ const EstimatePaymentRegister = ({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(paymentRegisterSchema),
@@ -91,6 +92,12 @@ const EstimatePaymentRegister = ({
     },
   });
 
+  useEffect(() => {
+    if (estimateItem?.paymentTypeId) {
+      setValue("paymentTypeId", estimateItem.paymentTypeId || "");
+    }
+  }, [estimateItem]);
+
   const submitHandler = async (values) => {
     try {
       const payload = {
@@ -101,7 +108,6 @@ const EstimatePaymentRegister = ({
         paymentDate: values.paymentDate,
       };
       const res = await onSubmitPayment({ userId, data: payload });
-      console.log("sdgvshgs", res);
       if (res?.meta?.requestStatus === "fulfilled" || res?.ok === true) {
         addToast({
           title: "Payment registered successfully!",
@@ -210,7 +216,7 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
-                        // isDisabled={estimateItem?.paymentType}
+                        isDisabled={estimateItem?.paymentTypeId ? true : false}
                         label="Payment term"
                         errorMessage={error?.message}
                         isInvalid={!!error}
