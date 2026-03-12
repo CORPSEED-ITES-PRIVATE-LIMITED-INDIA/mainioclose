@@ -267,21 +267,21 @@ const Unbill = () => {
             title: "Status updated successfully !.",
             color: "success",
           });
-          // dispatch(
-          //   createProjectsForOperations({
-          //     ...resp?.payload,
-          //     unitId: resp?.payload?.companyUnitId,
-          //   }),
-          // ).then((pro) => {
-          //   if (pro.meta.requestStatus === "fulfilled") {
-          //     addToast({
-          //       title: "Project created successfully !.",
-          //       color: "success",
-          //     });
-          //   } else {
-          //     addToast({ title: "Something went wrong !.", color: "danger" });
-          //   }
-          // });
+          dispatch(
+            createProjectsForOperations({
+              ...resp?.payload,
+              unitId: resp?.payload?.companyUnitId,
+            }),
+          ).then((pro) => {
+            if (pro.meta.requestStatus === "fulfilled") {
+              addToast({
+                title: "Project created successfully !.",
+                color: "success",
+              });
+            } else {
+              addToast({ title: "Something went wrong !.", color: "danger" });
+            }
+          });
           setRowItem(null);
           setUpdatedStatusData({
             approverUserId: userId,
