@@ -68,7 +68,7 @@ const SolutionPrice = () => {
   }, [solutionId, userId]);
 
   const handleDeleteItem = (feeId) => {
-    dispatch(deletePriceServiceTypeSolution({ solutionId, feeId:itemId }))
+    dispatch(deletePriceServiceTypeSolution({ solutionId, feeId: itemId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           deleteModal.onClose();
@@ -79,7 +79,7 @@ const SolutionPrice = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -104,7 +104,7 @@ const SolutionPrice = () => {
           solutionId,
           userId,
           data: values,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -122,11 +122,11 @@ const SolutionPrice = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(
-        addPriceInServiceTypeSolution({ solutionId, userId, data: formData })
+        addPriceInServiceTypeSolution({ solutionId, userId, data: formData }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -144,7 +144,7 @@ const SolutionPrice = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -164,7 +164,7 @@ const SolutionPrice = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   }, [dispatch, fileUrl]);
 
@@ -182,15 +182,15 @@ const SolutionPrice = () => {
           </Button>
           <Button
             size="sm"
-            isIconOnly
-            variant="light"
-            className="w-6 h-6 rounded-full bg-none"
+            radius="sm"
+            startContent={<Plus className="h-4 w-4" />}
+            color="primary"
             onPress={() => {
               onOpen();
               setFormData(formValues);
             }}
           >
-            <Plus className="h-4 w-4" />
+            Add
           </Button>
         </div>
       </div>
@@ -291,7 +291,7 @@ const SolutionPrice = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleSubmit(data);
                   }}

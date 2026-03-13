@@ -238,7 +238,7 @@ const ProductDocument = () => {
         <div className="flex items-center gap-2">
           <div className="min-w-[200px]">
             <NewSelect
-              label={"Applicant type"}
+              // label={"Applicant type"}
               data={[{ id: "-1", name: "All" }, ...applicantTypeList]}
               labelKey="name"
               valueKey="id"
@@ -252,12 +252,11 @@ const ProductDocument = () => {
 
           <Button
             size="sm"
-            isIconOnly
-            variant="light"
-            className="w-6 h-6 rounded-full bg-none"
+            color="primary"
+            startContent={<Plus className="h-4 w-4" />}
             onPress={onOpen}
           >
-            <Plus className="h-4 w-4" />
+            Add
           </Button>
         </div>
       </div>

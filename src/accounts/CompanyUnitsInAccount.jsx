@@ -163,6 +163,7 @@ const CompanyUnitsInAccount = () => {
               if (res.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Company status updated successfully in accounts !.",
+                  color: "success",
                 });
                 onClose();
                 dispatch(getGstListByCompanyIdInAccounts(companyFilteration));

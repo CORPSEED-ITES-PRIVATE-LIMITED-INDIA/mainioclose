@@ -84,7 +84,7 @@ import BulkFileUploader from "../../components/BulkFileUploader";
 import dayjs from "dayjs";
 import StatusDisplay from "../../components/StatusDisplay";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { leadSource } from "../../common";
+import { allowOnlyNumbers, formatEmail, leadSource } from "../../common";
 import BasicCompany from "../company/BasicCompany";
 const iconClass = "h-4 w-4";
 
@@ -952,10 +952,10 @@ const LeadInfo = () => {
                       {toggleAssignee ? (
                         <div className="flex flex-col">
                           <span className="font-semibold text-sm">
-                            {leadData?.assigne?.fullName}
+                            {leadData?.assignee?.fullName}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {leadData?.assigne?.email}
+                            {leadData?.assignee?.email}
                           </span>
                         </div>
                       ) : (
@@ -1513,8 +1513,11 @@ const LeadInfo = () => {
                             render={({ field }) => (
                               <Input
                                 label="Email"
+                                type="email"
                                 value={field.value || ""}
-                                onChange={(e) => field.onChange(e.target.value)}
+                                onChange={(e) =>
+                                  field.onChange(formatEmail(e.target.value))
+                                }
                               />
                             )}
                           />
@@ -1528,7 +1531,11 @@ const LeadInfo = () => {
                                 errorMessage="please enter the contact number "
                                 label="Contact number"
                                 value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    allowOnlyNumbers(e.target.value),
+                                  )
+                                }
                               />
                             )}
                           />

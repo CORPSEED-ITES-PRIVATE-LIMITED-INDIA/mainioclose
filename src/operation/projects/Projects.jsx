@@ -28,7 +28,17 @@ import {
   Progress,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  Plus,
+  Search,
+  FilePlus,
+  FolderOpenDot,
+  RefreshCw,
+  CircleCheckBig,
+  Eye,
+  Filter,
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
   createProjectsForOperations,
@@ -67,6 +77,9 @@ export const columns = [
   { name: "DATE", uid: "date" },
   { name: "MILESTONE", uid: "mileStone" },
   { name: "AMOUNT", uid: "amount" },
+  { name: "DUE AMOUNT", uid: "dueAmount" },
+  { name: "STATUS", uid: "status" },
+  { name: "ACTION", uid: "actions" },
   { name: "ADDRESS", uid: "address" },
 ];
 
@@ -80,12 +93,11 @@ const INITIAL_VISIBLE_COLUMNS = [
   "projectNo",
   "unbilledNumber",
   "estimateNumber",
-  "salesPersonName",
-  "contactName",
   "date",
-  // "mileStone",
   "amount",
-  "address",
+  "dueAmount",
+  "status",
+  "actions",
 ];
 
 const formSchema = z.object({
@@ -143,6 +155,8 @@ const Projects = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [searchBy, setSearchBy] = useState("projectName");
+  const [dueOnlyFilter, setDueOnlyFilter] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(null); // null, "OPEN", "IN_PROGRESS", "COMPLETED"
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
@@ -175,6 +189,21 @@ const Projects = () => {
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
+
+    // Apply status filter
+    if (statusFilter) {
+      filteredUsers = filteredUsers.filter(
+        (item) => item?.statusName === statusFilter,
+      );
+    }
+
+    // Apply due only filter
+    if (dueOnlyFilter) {
+      filteredUsers = filteredUsers.filter(
+        (item) => item?.dueAmount && item?.dueAmount > 0,
+      );
+    }
+
     // if (hasSearchFilter) {
     //   filteredUsers = filteredUsers.filter((item) =>
     //     Object.values(item)?.some((val) =>
@@ -183,7 +212,7 @@ const Projects = () => {
     //   );
     // }
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, dueOnlyFilter, statusFilter]);
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
@@ -221,22 +250,9 @@ const Projects = () => {
             <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
               {rowData?.name}
             </Link>
-            <Chip
-              size="sm"
-              color={
-                rowData?.statusName === "COMPLETED"
-                  ? "success"
-                  : rowData?.statusName === "REJECTED"
-                    ? "danger"
-                    : rowData?.statusName === "ON_HOLD"
-                      ? "warning"
-                      : rowData?.statusName === "NEW"
-                        ? "primary"
-                        : ""
-              }
-            >
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {rowData?.statusName}
-            </Chip>
+            </p>
           </div>
         );
       case "projectNo":
@@ -245,8 +261,64 @@ const Projects = () => {
         return <p className="text-sm">{rowData?.unbilledNumber}</p>;
       case "estimateNumber":
         return <p className="text-sm">{rowData?.estimateNumber}</p>;
+      case "salesPersonName":
+        return <p className="text-sm">{rowData?.salesPersonName}</p>;
+      case "contactName":
+        return <p className="text-sm">{rowData?.contactName || "-"}</p>;
       case "date":
         return <p>{rowData?.date}</p>;
+      case "amount":
+        return (
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-bold">
+              {inrCurrency(rowData?.totalAmount)}
+            </p>
+            <p className="text-sm"> {inrCurrency(rowData?.dueAmount)}</p>
+          </div>
+        );
+      case "totalAmount":
+        return (
+          <p className="text-sm font-medium">
+            {inrCurrency(rowData?.totalAmount)}
+          </p>
+        );
+      case "dueAmount":
+        return (
+          <p className="text-sm font-bold">{inrCurrency(rowData?.dueAmount)}</p>
+        );
+      case "status":
+        return (
+          <Chip
+            size="sm"
+            color={
+              rowData?.statusName === "COMPLETED"
+                ? "success"
+                : rowData?.statusName === "REJECTED"
+                  ? "danger"
+                  : rowData?.statusName === "ON_HOLD"
+                    ? "warning"
+                    : rowData?.statusName === "OPEN"
+                      ? "primary"
+                      : rowData?.statusName === "IN_PROGRESS"
+                        ? "warning"
+                        : "default"
+            }
+          >
+            {rowData?.statusName}
+          </Chip>
+        );
+      case "actions":
+        return (
+          <div className="flex items-center gap-2">
+            <Link to={`${rowData?.id}/projectDetail`}>
+              <div className="bg-gray-200 dark:bg-gray-700 rounded px-3 py-1.5 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
+                  View
+                </p>
+              </div>
+            </Link>
+          </div>
+        );
       case "mileStone":
         let progess = Math.ceil((2 / 3) * 100);
         return (
@@ -259,15 +331,6 @@ const Projects = () => {
               size="sm"
               value={progess}
             />
-          </div>
-        );
-      case "amount":
-        return (
-          <div className="flex flex-col gap-0.5">
-            <p className="text-sm">
-              Total : {inrCurrency(rowData?.totalAmount)}
-            </p>
-            <p className="text-sm">Due : {inrCurrency(rowData?.dueAmount)}</p>
           </div>
         );
       case "address":
@@ -365,46 +428,140 @@ const Projects = () => {
       );
   };
 
+  // Calculate project status counts
+  const projectStatusCounts = React.useMemo(() => {
+    const counts = {
+      total: count || 0,
+      open: 0,
+      inProgress: 0,
+      completed: 0,
+    };
+
+    if (data && Array.isArray(data)) {
+      data.forEach((project) => {
+        if (project?.statusName === "OPEN") {
+          counts.open++;
+        } else if (project?.statusName === "IN_PROGRESS") {
+          counts.inProgress++;
+        } else if (project?.statusName === "COMPLETED") {
+          counts.completed++;
+        }
+      });
+    }
+
+    return counts;
+  }, [data, count]);
+
+  // Status card configurations
+  const statusCards = [
+    {
+      title: "Total Projects",
+      count: projectStatusCounts.total,
+      color: "blue",
+      icon: FilePlus,
+      borderColor: "border-blue-500",
+      textColor: "text-gray-800 dark:text-white",
+      iconBg: "bg-blue-100 dark:bg-blue-200",
+      iconColor: "text-blue-700 dark:text-blue-700",
+      statusValue: null, // No filter for total
+    },
+    {
+      title: "Open",
+      count: projectStatusCounts.open,
+      color: "blue",
+      icon: ChevronDown,
+      borderColor: "border-blue-400",
+      textColor: "text-blue-600",
+      iconBg: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
+      statusValue: "OPEN",
+    },
+    {
+      title: "In Progress",
+      count: projectStatusCounts.inProgress,
+      color: "yellow",
+      icon: FolderOpenDot,
+      borderColor: "border-yellow-400",
+      textColor: "text-yellow-600",
+      iconBg:
+        "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300",
+      iconColor: "text-yellow-700 dark:text-yellow-700",
+      statusValue: "IN_PROGRESS",
+    },
+    {
+      title: "Completed",
+      count: projectStatusCounts.completed,
+      color: "green",
+      icon: CircleCheckBig,
+      borderColor: "border-green-500",
+      textColor: "text-green-600",
+      iconBg:
+        "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
+      iconColor: "text-green-700 dark:text-green-700",
+      statusValue: "COMPLETED",
+    },
+  ];
+
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <div className="flex gap-0 items-center w-[35vw]">
-            <Select
-              className="max-w-[30%]"
-              selectionMode="single"
-              selectedKeys={[searchBy]}
-              onSelectionChange={(e) => {
-                let key = Array.from(e)[0];
-                setSearchBy(key);
-              }}
-            >
-              <SelectItem key={"projectName"}>Project name</SelectItem>
-              <SelectItem key={"projectNumber"}>Project number</SelectItem>
-              <SelectItem key={"company"}>Company</SelectItem>
-              <SelectItem key={"contactName"}>Contact name</SelectItem>
-            </Select>
-            <Input
-              isClearable
-              className="w-full sm:max-w-[70%]"
-              placeholder="Search ..."
-              startContent={<Search />}
-              value={filterValue}
-              onClear={() => onClear()}
-              onValueChange={onSearchChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleEnterPress(); // your function
-                }
-              }}
-            />
+      <div className="flex flex-col gap-3">
+        {/* Status Cards Row with Add/Columns buttons on the right */}
+        <div className="flex justify-between items-center gap-3">
+          {/* Status Cards on the left */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+            {statusCards.map((card, index) => {
+              const IconComponent = card.icon;
+              const isActive = statusFilter === card.statusValue;
+              return (
+                <div
+                  key={index}
+                  className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm p-2 relative cursor-pointer transition-all duration-200 ${
+                    isActive
+                      ? "ring-2 ring-blue-500 shadow-lg"
+                      : "hover:shadow-md"
+                  }`}
+                  onClick={() => setStatusFilter(card.statusValue)}
+                >
+                  <div className="flex items-center gap-6 ">
+                    <div
+                      className={`${card.iconBg} rounded-full p-1 flex items-center justify-center`}
+                    >
+                      <IconComponent
+                        size={20}
+                        className={card.iconColor || "text-blue-600"}
+                        strokeWidth={2}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {card.title}
+                      </p>
+                      <p
+                        className={`text-2xl font-bold mt-1 ${card.textColor}`}
+                      >
+                        {card.count}
+                      </p>
+                    </div>
+
+                    <div className="absolute bottom-2 right-2 bg-gray-200 dark:bg-gray-700 rounded-full p-1.5 flex items-center justify-center">
+                      <IconComponent
+                        size={14}
+                        className="text-gray-700 dark:text-gray-300"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="flex gap-3">
+          {/* Add and Columns buttons on the right */}
+          <div className="flex gap-2 items-center">
             <Button
               endContent={<Plus />}
               onPress={formModal.onOpen}
               color="primary"
+              size="sm"
             >
               Add
             </Button>
@@ -413,6 +570,7 @@ const Projects = () => {
                 <Button
                   endContent={<ChevronDown className="text-small" />}
                   variant="flat"
+                  size="sm"
                 >
                   Columns
                 </Button>
@@ -434,22 +592,74 @@ const Projects = () => {
             </Dropdown>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} projects
-          </span>
-          <label className="flex items-center text-default-400 text-small">
-            Rows per page:
-            <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
-              value={paginationData?.size}
-              onChange={onRowsPerPageChange}
-            >
-              <option value="15">15</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-          </label>
+
+        {/* Search Bar Row */}
+        <div className="flex p-4 bg-white gap-5 items-center w-full">
+          <Filter size={20} className="text-gray-400 flex-shrink-0" />
+          <Select
+            className="max-w-[150px]"
+            selectionMode="single"
+            selectedKeys={["thisMonth"]}
+            defaultSelectedKeys={["thisMonth"]}
+          >
+            <SelectItem key={"thisMonth"}>This Month</SelectItem>
+          </Select>
+          <Button
+            variant="light"
+            size="sm"
+            onClick={() => setDueOnlyFilter(!dueOnlyFilter)}
+            className={
+              dueOnlyFilter
+                ? "bg-gray-200 text-black p-3"
+                : "bg-gray-100 text-black p-3"
+            }
+          >
+            Due Only
+          </Button>
+          <Select
+            className="max-w-[120px]"
+            selectionMode="single"
+            selectedKeys={["sales"]}
+            defaultSelectedKeys={["sales"]}
+          >
+            <SelectItem key={"sales"}>Sales</SelectItem>
+          </Select>
+          <Select
+            className="max-w-[140px]"
+            selectionMode="single"
+            selectedKeys={["services"]}
+            defaultSelectedKeys={["services"]}
+          >
+            <SelectItem key={"services"}>Services</SelectItem>
+          </Select>
+          <Select
+            className="max-w-[15%]"
+            selectionMode="single"
+            selectedKeys={[searchBy]}
+            onSelectionChange={(e) => {
+              let key = Array.from(e)[0];
+              setSearchBy(key);
+            }}
+          >
+            <SelectItem key={"projectName"}>Project name</SelectItem>
+            <SelectItem key={"projectNumber"}>Project number</SelectItem>
+            <SelectItem key={"company"}>Company</SelectItem>
+            <SelectItem key={"contactName"}>Contact name</SelectItem>
+          </Select>
+          <Input
+            isClearable
+            className="max-w-[40%]"
+            placeholder="Search ..."
+            startContent={<Search />}
+            value={filterValue}
+            onClear={() => onClear()}
+            onValueChange={onSearchChange}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleEnterPress(); // your function
+              }
+            }}
+          />
         </div>
       </div>
     );
@@ -462,26 +672,21 @@ const Projects = () => {
     onSearchChange,
     hasSearchFilter,
     searchBy,
+    projectStatusCounts,
+    dueOnlyFilter,
+    statusFilter,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
+      <div className="py-2 px-2 flex  items-center">
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
-        <Pagination
-          isCompact
-          showControls
-          showShadow
-          color="primary"
-          page={paginationData?.page}
-          total={pages}
-          onChange={(e) => setPaginationData((prev) => ({ ...prev, page: e }))}
-        />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+
+        <div className="hidden sm:flex w-[30%]  gap-2">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -490,11 +695,23 @@ const Projects = () => {
           >
             Previous
           </Button>
+          <Pagination
+            isCompact
+            showControls
+            showShadow
+            color="primary"
+            page={paginationData?.page}
+            total={pages}
+            onChange={(e) =>
+              setPaginationData((prev) => ({ ...prev, page: e }))
+            }
+          />
           <Button
             isDisabled={pages === 1}
             size="sm"
             variant="flat"
             onPress={onNextPage}
+            className=""
           >
             Next
           </Button>

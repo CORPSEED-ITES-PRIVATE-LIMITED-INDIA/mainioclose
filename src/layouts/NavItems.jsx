@@ -324,6 +324,12 @@ export const navItems = [
         url: "settings/proposalTemplate",
         key: "proposalTemplate",
       },
+      {
+        title: "CKEditor Key",
+        icon: "",
+        url: "settings/ckEditorTokens",
+        key: "ckEditorTokens",
+      },
     ],
   },
 ];

@@ -1,5 +1,6 @@
 import {
   addToast,
+  Badge,
   Button,
   Chip,
   DateRangePicker,
@@ -40,7 +41,7 @@ import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
 import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
-import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
+import { getBasicCompanyDetailByCompanyId } from "../../toolkit/slices/companySlice";
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
@@ -212,10 +213,15 @@ const Estimate = () => {
     switch (columnKey) {
       case "solutionName":
         return (
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-col items-start">
             <span className="font-medium">{rowData?.solutionName}</span>
             {rowData?.solutionType && (
-              <Chip size="sm">{rowData?.solutionType}</Chip>
+              <Badge
+                size="sm"
+                placement="center-left"
+                shape="circle"
+                content={rowData?.solutionType}
+              />
             )}
           </div>
         );
@@ -223,25 +229,26 @@ const Estimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.company?.name}</span>
-            <Chip
+            <Badge
               size="sm"
-              className="text-xs"
+              placement="center-left"
+              shape="circle"
+              content={rowData?.company?.onboardingStatus}
               color={statusColorCode[rowData?.company?.onboardingStatus]}
-            >
-              {rowData?.company?.onboardingStatus}
-            </Chip>
+            />
           </div>
         );
       case "unitName":
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData?.unit?.unitName}</span>
-            <Chip
+            <Badge
               size="sm"
+              placement="center-left"
+              shape="circle"
+              content={rowData?.unit?.onboardingStatus}
               color={statusColorCode[rowData?.unit?.onboardingStatus]}
-            >
-              {rowData?.unit?.onboardingStatus}
-            </Chip>
+            />
           </div>
         );
       case "status":
@@ -414,10 +421,7 @@ const Estimate = () => {
                     handleViewEstimate(rowData);
                   } else if (item === "updateCompanyDetail") {
                     dispatch(
-                      getBasicCompanyDetails({
-                        leadId: rowData?.leadId,
-                        userId,
-                      }),
+                      getBasicCompanyDetailByCompanyId(rowData?.company?.id),
                     ).then((resp) => {
                       if (resp.meta.requestStatus === "fulfilled") {
                         onOpen();

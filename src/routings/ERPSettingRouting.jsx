@@ -20,6 +20,7 @@ import SolutionDetails from "../setting/products/SolutionDetails";
 import SolutionPrice from "../setting/products/SolutionPrice";
 import ProductDocument from "../setting/products/ProductDocument";
 import ProductMilestones from "../setting/products/ProductMilestones";
+import CkEditorToken from "../setting/ckEditorToken/CkEditorToken";
 
 const ERPSettingRouting = () => {
   return (
@@ -35,8 +36,8 @@ const ERPSettingRouting = () => {
         element={<SolutionDetails />}
       >
         <Route index path="solutionPrice" element={<SolutionPrice />} />
-        <Route  path="documents" element={<ProductDocument />} />
-        <Route  path="milestones" element={<ProductMilestones />} />
+        <Route path="documents" element={<ProductDocument />} />
+        <Route path="milestones" element={<ProductMilestones />} />
         <Route />
       </Route>
       <Route
@@ -70,6 +71,7 @@ const ERPSettingRouting = () => {
         path="settings/proposalTemplate"
         element={<TemplatesAndEmailBody />}
       />
+      <Route path="settings/ckEditorTokens" element={<CkEditorToken />} />
     </>
   );
 };

@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
+import exp from "constants";
 
 export const createCompanyInOperations = createAsyncThunk(
   "createCompanyInOperations",
@@ -373,7 +374,7 @@ export const updateApplicantTypeInProject = createAsyncThunk(
 
 export const uploadDocumentInProjects = createAsyncThunk(
   "uploadDocumentInProjects",
-  async ({ projectId, data },{rejectWithValue}) => {
+  async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
         `/api/projects/${projectId}/milestones/documents`,
@@ -391,10 +392,102 @@ export const updateDocumentStatus = createAsyncThunk(
   async ({ documentId, data }) => {
     const response = await api.put(
       `/api/projects/documents/${documentId}/status`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
+);
+
+export const addNoteInProject = createAsyncThunk(
+  "addNoteInProject",
+  async ({ projectId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/api/projects/${projectId}/activities/notes`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
+export const addCommentInProject = createAsyncThunk(
+  "addCommentInProject",
+  async ({ projectId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/api/projects/${projectId}/activities/comments`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
+export const addExpensesInProject = createAsyncThunk(
+  "addExpensesInProject",
+  async ({ projectId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/api/projects/${projectId}/activities/expenses`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
+export const getActivitiesByProjectId = createAsyncThunk(
+  "getActivitiesByProjectId",
+  async ({ projectId, page, size }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/api/projects/${projectId}/activities?page=${page}&size=${size}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
+export const getActivitiesByTypeAndProjectId = createAsyncThunk(
+  "getActivitiesByTypeAndProjectId",
+  async ({ projectId, type, page, size }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/api/projects/${projectId}/activities/type/${type}?page=${page}&size=${size}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
+export const getActivitiesByDateRangeAndProjectId = createAsyncThunk(
+  "getActivitiesByDateRangeAndProjectId",
+  async (
+    { projectId, page, size, startDate, endDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      let url = `/api/projects/${projectId}/activities/date-range?page=${page}&size=${size}`;
+      if (startDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
 );
 
 const OperationSlice = createSlice({
@@ -414,6 +507,7 @@ const OperationSlice = createSlice({
     clientLoginCredential: {},
     mileStoneEventHistory: {},
     projectCount: 0,
+    activitiesByProjectId: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -646,6 +740,48 @@ const OperationSlice = createSlice({
     builder.addCase(getHistoryByMileStoneIdAndProjectId.rejected, (state) => {
       state.loading = "rejected";
       state.mileStoneEventHistory = {};
+    });
+
+    builder.addCase(getActivitiesByProjectId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getActivitiesByProjectId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.activitiesByProjectId = action.payload;
+    });
+    builder.addCase(getActivitiesByProjectId.rejected, (state) => {
+      state.loading = "rejected";
+      state.activitiesByProjectId = {};
+    });
+
+    builder.addCase(getActivitiesByTypeAndProjectId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getActivitiesByTypeAndProjectId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.activitiesByProjectId = action.payload;
+      },
+    );
+    builder.addCase(getActivitiesByTypeAndProjectId.rejected, (state) => {
+      state.loading = "rejected";
+      state.activitiesByProjectId = {};
+    });
+
+    builder.addCase(getActivitiesByDateRangeAndProjectId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getActivitiesByDateRangeAndProjectId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.activitiesByProjectId = action.payload;
+      },
+    );
+    builder.addCase(getActivitiesByDateRangeAndProjectId.rejected, (state) => {
+      state.loading = "rejected";
+      state.activitiesByProjectId = {};
     });
   },
 });

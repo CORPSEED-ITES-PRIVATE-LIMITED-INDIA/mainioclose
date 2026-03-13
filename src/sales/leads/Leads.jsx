@@ -71,7 +71,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
-import { leadSource } from "../../common";
+import { allowOnlyNumbers, formatEmail, leadSource } from "../../common";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -103,9 +103,9 @@ export const columns = (admin) => [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-export function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
+// export function capitalize(s) {
+//   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+// }
 
 const INITIAL_VISIBLE_COLUMNS = (admin) => [
   "leadName",
@@ -438,13 +438,14 @@ const Leads = () => {
                     ? lead?.originalName
                     : lead?.leadName || "-"}
                 </Link>
-                <div className="flex gap-3">
+                <div className="flex items-center">
                   <Badge
                     color={lead?.auto ? "success" : "danger"}
                     content=""
                     placement="center-left"
                     shape="circle"
                     size="sm"
+                    className="relative top-1/2"
                   />
                   <span className="text-xs text-default-500">
                     {dayjs(lead?.createDate).format("DD-MM-YYYY")}
@@ -457,9 +458,7 @@ const Leads = () => {
           if (adminRole) {
             return (
               <div className="flex flex-col">
-                <span className="font-normal text-sm">
-                  {lead?.clients?.[0]?.name || "-"}
-                </span>
+                <span className="font-normal text-sm">{lead?.name || "-"}</span>
                 {lead?.email && (
                   <span className="text-default-500 text-sm">
                     {lead?.email || "-"}
@@ -475,9 +474,7 @@ const Leads = () => {
           } else
             return (
               <div className="flex flex-col">
-                <span className="font-normal text-sm">
-                  {lead?.clients?.[0]?.name || "-"}
-                </span>
+                <span className="font-normal text-sm">{lead?.name || "-"}</span>
               </div>
             );
 
@@ -505,8 +502,6 @@ const Leads = () => {
           );
         case "industry":
           return <p className="text-sm">{lead?.industries?.name}</p> || "-";
-        case "city":
-          return <p className="text-sm">{lead?.city}</p> || "-";
         case "source":
           return <p className="text-sm">{lead?.source}</p> || "-";
         case "updatedBy":
@@ -522,12 +517,14 @@ const Leads = () => {
               </span>
             </div>
           );
-        case "Address":
+        case "address":
           return (
             <div className="flex flex-col">
-              <span className="font-normal text-sm">{lead.address || "-"}</span>
+              <span className="font-normal text-sm">
+                {lead?.address || "-"}
+              </span>
               <span className="text-xs text-default-500">
-                {lead.city || ""},{lead?.state},{lead?.country}
+                {lead?.city || ""},{lead?.state},{lead?.country}
               </span>
             </div>
           );
@@ -1202,7 +1199,7 @@ const Leads = () => {
               >
                 {cols?.map((column) => (
                   <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
+                    {column.name}
                   </DropdownItem>
                 ))}
               </DropdownMenu>
@@ -1498,7 +1495,10 @@ const Leads = () => {
                           label="Email"
                           errorMessage={errors.email?.message}
                           type="email"
-                          {...field}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(formatEmail(e.target.value))
+                          }
                         />
                       )}
                     />
@@ -1511,8 +1511,10 @@ const Leads = () => {
                           label="Mobile number"
                           errorMessage={errors.mobileNo?.message}
                           type="text"
-                          maxLength={10}
-                          {...field}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(allowOnlyNumbers(e.target.value))
+                          }
                         />
                       )}
                     />

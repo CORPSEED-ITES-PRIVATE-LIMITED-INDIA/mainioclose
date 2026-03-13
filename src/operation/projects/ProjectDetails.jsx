@@ -9,15 +9,6 @@ import {
   Checkbox,
   Chip,
   DatePicker,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
   Form,
   Input,
   Modal,
@@ -36,6 +27,11 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addClientLogInCredentialForPortal,
+  addCommentInProject,
+  addExpensesInProject,
+  addNoteInProject,
+  getActivitiesByProjectId,
+  getActivitiesByTypeAndProjectId,
   getClientLogInCredentialDetailForPortal,
   getHistoryByMileStoneIdAndProjectId,
   getOperationProjectDetailById,
@@ -46,7 +42,7 @@ import {
   updateDocumentStatus,
   uploadDocumentInProjects,
 } from "../../toolkit/slices/operationSlice";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BookText,
   Building,
@@ -67,7 +63,12 @@ import {
   getAllMilestoneStatusesForOperations,
   getUsersListByDepartmentId,
 } from "../../toolkit/slices/commonSlice";
-import { statusColorCode, statusColors } from "../../common";
+import {
+  allowOnlyNumbers,
+  inrCurrency,
+  statusColorCode,
+  statusColors,
+} from "../../common";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -120,6 +121,133 @@ export const PdfIcon = (props) => {
   );
 };
 
+const CommentThread = ({ comment, level = 0, onReply }) => {
+  return (
+    <div className="mt-2" style={{ marginLeft: Math.min(level * 16, 64) }}>
+      <div className="group rounded-md p-2 bg-gradient-to-br from-blue-50 to-blue-100 border text-xs relative">
+        <div className="flex justify-between text-gray-500 text-[11px]">
+          <span className="font-medium text-gray-700">
+            {comment.createdByUserName}
+          </span>
+
+          <span>{dayjs(comment.createdDate).format("DD/MM/YYYY , HH:mm")}</span>
+        </div>
+
+        <div className="mt-1 text-gray-700">{comment.commentText}</div>
+
+        <button
+          onClick={() => onReply(comment.id)}
+          className="absolute right-2 bottom-2 text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+        >
+          Reply
+        </button>
+      </div>
+
+      {comment.children?.length > 0 && (
+        <div className="border-l pl-3 mt-2">
+          {comment.children.map((child) => (
+            <CommentThread
+              key={child.id}
+              comment={child}
+              level={level + 1}
+              onReply={onReply}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const ActivityItem = ({ activity, onReply }) => {
+  const renderContent = () => {
+    switch (activity.activityType) {
+      case "COMMENT":
+        return (
+          <>
+            <div className="group mt-1 rounded-md p-2 bg-gradient-to-br from-gray-50 to-gray-100 border text-xs relative">
+              {activity.details?.commentText}
+
+              {/* Reply button */}
+              <button
+                onClick={() => onReply(activity.details?.id)}
+                className="absolute right-2 bottom-2 text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+              >
+                Reply
+              </button>
+            </div>
+
+            {activity.details?.children?.length > 0 && (
+              <div className="mt-2 ml-2 border-l pl-3">
+                <span className="text-[11px] text-gray-400">Replies</span>
+
+                {activity.details.children.map((child) => (
+                  <CommentThread
+                    key={child.id}
+                    comment={child}
+                    onReply={onReply}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        );
+
+      case "NOTE":
+        return (
+          <div className="mt-1 rounded-md p-2 bg-gradient-to-br from-green-50 to-green-100 border text-xs">
+            {activity.details?.noteText}
+          </div>
+        );
+
+      case "EXPENSE":
+        return (
+          <div className="mt-1 rounded-md p-2 bg-gradient-to-br from-yellow-50 to-yellow-100 border text-xs">
+            <div>
+              {activity.details?.expenseType}{" "}
+              {inrCurrency(activity.details?.amount)}
+            </div>
+
+            {activity.details?.description && (
+              <div className="text-gray-500 text-[11px] mt-1">
+                {activity.details.description}
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex gap-2 text-xs">
+      {/* timeline dot */}
+      <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 shrink-0" />
+
+      <div className="flex flex-col w-full">
+        {/* header */}
+        <div className="flex gap-2 items-center text-gray-500">
+          <span className="font-medium text-gray-700">
+            {activity.createdByUserName}
+          </span>
+
+          <span>
+            {dayjs(activity.activityDate).format("DD/MM/YYYY , HH:mm")}
+          </span>
+
+          <span className="text-[10px] px-2 py-[1px] rounded bg-gray-100">
+            {activity.activityType}
+          </span>
+        </div>
+
+        {renderContent()}
+      </div>
+    </div>
+  );
+};
+
 const documentSchema = (isPermanentFlag) =>
   z.object({
     fileName: z.string().min(1, "File name is required"),
@@ -148,6 +276,9 @@ const ProjectDetails = () => {
   const clientModal = useDisclosure();
   const docModal = useDisclosure();
   const verifyModal = useDisclosure();
+  const expenseModal = useDisclosure();
+  const noteModal = useDisclosure();
+  const commentModal = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -170,7 +301,12 @@ const ProjectDetails = () => {
   const applicantTypeList = useSelector(
     (state) => state.setting.applicantTypeList,
   );
+  const activities = useSelector(
+    (state) => state.operation.activitiesByProjectId?.content || [],
+  );
 
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [activityType, setActivityType] = useState("ALL");
   const [assigneeObj, setAssigneeObj] = useState({
     assignmentId: null,
     newUserId: null,
@@ -196,6 +332,15 @@ const ProjectDetails = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyDocId, setVerifyDocId] = useState(null);
   const [isPermanent, setIsPermanent] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [replyParentId, setReplyParentId] = useState(null);
+  const [expenseData, setExpenseData] = useState({
+    amount: "",
+    expenseType: "",
+    description: "",
+    expenseDate: "",
+  });
 
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
@@ -203,6 +348,21 @@ const ProjectDetails = () => {
     dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
     dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   }, [projectId]);
+
+  useEffect(() => {
+    if (detailedData?.milestones?.length > 0) {
+      const first = detailedData.milestones[0];
+      setSelectedMilestone(first);
+
+      dispatch(
+        getHistoryByMileStoneIdAndProjectId({
+          milestoneId: first.milestoneId,
+          projectId: first.projectId,
+          userId,
+        }),
+      );
+    }
+  }, [detailedData]);
 
   const handleChangeAssignee = () => {
     dispatch(updateAssigneeForMileStone(assigneeObj))
@@ -312,12 +472,6 @@ const ProjectDetails = () => {
       );
     }
   }, [detailedData]);
-
-  const handleChangeAccordian = (milestoneId, projectId, userId) => {
-    dispatch(
-      getHistoryByMileStoneIdAndProjectId({ milestoneId, projectId, userId }),
-    );
-  };
 
   const handleUpdateApplicantType = (applicantTypeId) => {
     dispatch(updateApplicantTypeInProject({ applicantTypeId, projectId }))
@@ -474,6 +628,126 @@ const ProjectDetails = () => {
       );
   };
 
+  useEffect(() => {
+    dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
+  }, []);
+
+  const handleReply = (commentId) => {
+    setReplyParentId(commentId);
+    commentModal.onOpen();
+  };
+
+  const handleFilterChange = (value) => {
+    if (value === "ALL") {
+      dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+    } else {
+      dispatch(
+        getActivitiesByTypeAndProjectId({
+          projectId,
+          type: value,
+          page: 1,
+          size: 50,
+        }),
+      );
+    }
+    setActivityType(value);
+  };
+
+  const handleAddComment = () => {
+    dispatch(
+      addCommentInProject({
+        projectId,
+        data: {
+          commentText,
+          ...(replyParentId ? { parentCommentId: replyParentId } : {}),
+          createdByUserId: Number(userId),
+        },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Comment added successfully !.",
+            color: "success",
+          });
+          commentModal.onClose();
+          setCommentText("");
+          setReplyParentId(null);
+          setActivityType("ALL");
+          dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  };
+
+  const handleAddNote = () => {
+    dispatch(
+      addNoteInProject({
+        projectId,
+        data: { noteText, createdByUserId: Number(userId) },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Note added successfully !.",
+            color: "success",
+          });
+          noteModal.onClose();
+          setNoteText("");
+          setActivityType("ALL");
+          dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  };
+  const handleAddExpense = () => {
+    dispatch(
+      addExpensesInProject({
+        projectId,
+        data: { ...expenseData, createdByUserId: Number(userId) },
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Expense added successfully !.",
+          color: "success",
+        });
+        expenseModal.onClose();
+        setExpenseData({
+          amount: "",
+          expenseType: "",
+          description: "",
+          expenseDate: "",
+        });
+        setActivityType("ALL");
+        dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+      } else {
+        addToast({
+          title: resp?.payload?.status,
+          color: "danger",
+          description: resp?.payload?.message,
+        });
+      }
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -593,163 +867,228 @@ const ProjectDetails = () => {
       </div>
 
       <div className="max-h-[70vh] overflow-auto py-2.5">
-        <Accordion variant="splitted" defaultExpandedKeys={["0"]}>
-          {detailedData?.milestones?.length > 0 &&
-            detailedData?.milestones?.map((detail, idx) => {
-              return (
-                <AccordionItem
-                  onPress={(e) => {
-                    console.log("jkhghjfjdjg", e);
-                    handleChangeAccordian(
-                      detail?.milestoneId,
-                      detail?.projectId,
+        <div className="grid grid-cols-4 gap-4 h-[65vh]">
+          {/* LEFT SIDEBAR - MILESTONES */}
+          <div className="col-span-1 border rounded-xl p-3 overflow-auto">
+            <h3 className="font-semibold mb-3">Milestones</h3>
+
+            {detailedData?.milestones?.map((mile, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  setSelectedMilestone(mile);
+                  dispatch(
+                    getHistoryByMileStoneIdAndProjectId({
+                      milestoneId: mile.milestoneId,
+                      projectId: mile.projectId,
                       userId,
-                    );
-                  }}
-                  key={idx}
-                  aria-label="Accordion 1"
-                  title={
-                    <>
-                      {detail?.milestoneName}{" "}
-                      <Chip
-                        size="sm"
-                        color={statusColors[detail?.status]}
-                        className="ml-1"
+                    }),
+                  );
+                }}
+                className={`p-3 mb-2 rounded-lg cursor-pointer border 
+        ${
+          selectedMilestone?.milestoneId === mile.milestoneId
+            ? "bg-blue-50 border-blue-400"
+            : "hover:bg-gray-50"
+        }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">
+                    {mile.milestoneName}
+                  </span>
+
+                  <Chip size="sm" color={statusColors[mile?.status]}>
+                    {mile?.status}
+                  </Chip>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CENTER CONTENT */}
+          <div className="col-span-2 border rounded-xl p-4 overflow-auto">
+            {selectedMilestone && (
+              <>
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="font-semibold text-lg">
+                    {selectedMilestone.milestoneName}
+                  </h2>
+
+                  <Chip color={statusColors[selectedMilestone?.status]}>
+                    {selectedMilestone?.status}
+                  </Chip>
+                </div>
+
+                {/* Timeline / Tasks */}
+                <div className="space-y-3">
+                  {mileStoneHistoryDetail?.assignmentEvents?.map(
+                    (history, index) => (
+                      <div
+                        key={index}
+                        className="border rounded-lg p-3 flex flex-col gap-3"
                       >
-                        {detail?.status}
-                      </Chip>
-                    </>
-                  }
-                  classNames={{ title: "font-medium" }}
-                >
-                  <div className="grid grid-cols-4 border-t border-gray-300 max-h-[60vh] overflow-auto">
-                    <div className="col-span-1 border-r border-gray-300 p-4">
-                      <Card key={`contact${idx}`}>
-                        <CardHeader className="w-full flex justify-between">
-                          <User
-                            description={detail?.assignedUser?.email}
-                            name={detail?.assignedUser?.fullName}
-                            classNames={{ name: "font-medium font-sans" }}
-                          />
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            onPress={() => {
-                              assigneeModal.onOpen();
-                              dispatch(
-                                getUsersListByDepartmentId(
-                                  detail?.departmentId,
-                                ),
-                              );
-                              setAssigneeObj((prev) => ({
-                                ...prev,
-                                assignmentId: detail?.id,
-                                changedById: userId,
-                              }));
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </CardHeader>
-                        <CardBody>
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
-                            <p className="text-muted-foreground text-sm">
-                              {detail?.assignedUser?.contactNo}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <GitFork className="w-4 h-4" />
-                            <p className="text-muted-foreground text-sm">
-                              {detail?.departmentName}
-                            </p>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </div>
+                        <div className="p-3 flex gap-3">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2"></div>
 
-                    <div className="col-span-3 p-4">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <h2 className="font-medium">
-                            {detailedData?.projectDetails?.productName}
-                          </h2>
-                          <Chip size="sm" color={statusColors[detail?.status]}>
-                            {detail?.status}
-                          </Chip>
+                          <div>
+                            <p className="text-blue-600 text-sm font-medium">
+                              {history?.reason || "N/A"}
+                            </p>
+
+                            <p className="text-xs text-gray-500">
+                              Assigned to:{" "}
+                              {history?.assignedToName || "Unassigned"}
+                            </p>
+
+                            <p className="text-xs text-gray-400">
+                              Assigned by {history?.assignedByName} •{" "}
+                              {dayjs(history?.date).format(
+                                "DD MMM YYYY , HH:mm a",
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <Button radius="full" variant="flat" isIconOnly>
-                              <EllipsisVertical />
-                            </Button>
-                          </DropdownTrigger>
-                          <DropdownMenu
-                            aria-label="Static Actions"
-                            selectionMode="single"
-                          >
-                            <DropdownItem
-                              key="updateStatus"
-                              onPress={() => {
-                                statusModal.onOpen();
-                                setStatusObj((prev) => ({
-                                  ...prev,
-                                  newStatusName: detail?.status,
-                                  assignmentId: detail?.id,
-                                  changedById: userId,
-                                }));
-                              }}
-                            >
-                              Update status
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
-                      </div>
-                      <div className="max-h-[35vh] overflow-auto border rounded-lg mt-1.5">
-                        {mileStoneHistoryDetail?.assignmentEvents?.map(
-                          (history, index) => (
-                            <div
-                              key={index}
-                              className="flex gap-3 px-4 py-3 border-b last:border-b-0"
-                            >
-                              {/* Yellow Dot */}
-                              <div className="flex flex-col items-center pt-1">
-                                <span className="w-2.5 h-2.5 bg-yellow-400 rounded-full"></span>
+
+                        <div className="flex items-center justify-between w-full">
+                          <div className="group relative inline-flex items-center">
+                            {history?.assignedUser ? (
+                              <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
+                                <span className="font-medium text-gray-700">
+                                  {history?.assignedUser?.fullName}
+                                </span>
+
+                                <span className="text-gray-400 text-xs">
+                                  {history?.assignedUser?.email}
+                                </span>
+
+                                {/* Hover Edit Button */}
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                  className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
+                                  onPress={() => {
+                                    assigneeModal.onOpen();
+
+                                    dispatch(
+                                      getUsersListByDepartmentId(
+                                        history?.departmentId,
+                                      ),
+                                    );
+
+                                    setAssigneeObj((prev) => ({
+                                      ...prev,
+                                      assignmentId: history?.id,
+                                      changedById: userId,
+                                    }));
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
                               </div>
+                            ) : (
+                              <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
+                                Select Assignee
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                  className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
+                                  onPress={() => {
+                                    assigneeModal.onOpen();
 
-                              {/* Content */}
-                              <div className="flex flex-col">
-                                {/* Title */}
-                                <div className="text-sm font-medium text-slate-700">
-                                  <p className="text-blue-600 text-wrap">
-                                    {history?.reason || "N/A"}
-                                  </p>
-                                </div>
+                                    dispatch(
+                                      getUsersListByDepartmentId(
+                                        history?.departmentId,
+                                      ),
+                                    );
 
-                                {/* Role Line */}
-                                <div className="text-xs text-slate-500 mt-1">
-                                  Assigned to:{" "}
-                                  {history?.assignedToName || "Unassigned"}
-                                </div>
-
-                                {/* Admin Line */}
-                                <div className="text-xs text-slate-400 mt-0.5">
-                                  Assigned by : {history?.assignedByName}{" "}
-                                  (Administrator) ·{" "}
-                                  {dayjs(history?.date).format("MMM DD, YYYY")}
-                                </div>
+                                    setAssigneeObj((prev) => ({
+                                      ...prev,
+                                      assignmentId: history?.id,
+                                      changedById: userId,
+                                    }));
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
                               </div>
-                            </div>
-                          ),
-                        )}
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </AccordionItem>
-              );
-            })}
-        </Accordion>
+                    ),
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* RIGHT TIMELINE */}
+          <div className="col-span-1 border rounded-xl overflow-hidden relative flex flex-col h-full">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-10 bg-white border-b p-3">
+              <div className="flex gap-2 justify-between items-center w-full">
+                <h3 className="font-semibold text-sm text-nowrap">
+                  Activity Timeline
+                </h3>
+
+                <Select
+                  size="sm"
+                  selectedKeys={[activityType]}
+                  onSelectionChange={(keys) => {
+                    handleFilterChange(Array.from(keys)[0]);
+                  }}
+                >
+                  <SelectItem key="ALL">All</SelectItem>
+                  <SelectItem key="COMMENT">Comments</SelectItem>
+                  <SelectItem key="NOTE">Notes</SelectItem>
+                  <SelectItem key="EXPENSE">Expenses</SelectItem>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 mt-2 w-full">
+                <Button size="sm" onPress={() => commentModal.onOpen()}>
+                  Comment
+                </Button>
+
+                <Button size="sm" onPress={() => noteModal.onOpen()}>
+                  Note
+                </Button>
+
+                <Button size="sm" onPress={() => expenseModal.onOpen()}>
+                  Expense
+                </Button>
+              </div>
+            </div>
+
+            {/* Scrollable Activity Area */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {activities.map(
+                (activity) =>
+                  activity?.details && (
+                    <ActivityItem
+                      key={activity.activityId}
+                      activity={activity}
+                      onReply={handleReply}
+                    />
+                  ),
+              )}
+            </div>
+
+            {/* Sticky Footer */}
+            <div className="sticky bottom-0 bg-gradient-to-t from-white via-white/80 to-transparent p-2 text-center border-t">
+              <Link
+                className="text-xs"
+                variant="light"
+                // to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/activities`}
+                to={`activities`}
+              >
+                See All
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
@@ -1474,6 +1813,196 @@ const ProjectDetails = () => {
                 </form>
               </ModalBody>
             </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={commentModal.isOpen}
+        onOpenChange={commentModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form
+              onSubmit={(e) => {
+                e.preventDefault();
+
+                if (!commentText?.trim()) return;
+
+                handleAddComment();
+              }}
+            >
+              <ModalHeader>Add Comment</ModalHeader>
+
+              <ModalBody className="w-full">
+                <Textarea
+                  label="Comment"
+                  name="commentText"
+                  isRequired
+                  errorMessage="Please enter comment"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
+              </ModalBody>
+
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={noteModal.isOpen} onOpenChange={noteModal.onOpenChange}>
+        <ModalContent>
+          {(onClose) => (
+            <Form
+              onSubmit={(e) => {
+                e.preventDefault();
+
+                if (!noteText?.trim()) return;
+
+                handleAddNote();
+              }}
+            >
+              <ModalHeader>Add Note</ModalHeader>
+
+              <ModalBody className="w-full">
+                <Textarea
+                  label="Note"
+                  name="noteText"
+                  isRequired
+                  errorMessage="Please enter note"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                />
+              </ModalBody>
+
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isOpen={expenseModal.isOpen}
+        onOpenChange={expenseModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form
+              className="w-full"
+              onSubmit={(e) => {
+                e.preventDefault();
+                let data = Object.fromEntries(new FormData(e.currentTarget));
+                handleAddExpense(data);
+              }}
+            >
+              <ModalHeader>Add Expense</ModalHeader>
+              <ModalBody className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <Input
+                  label="Expense Type"
+                  name="expenseType"
+                  isRequired
+                  errorMessage="please enter expense type"
+                  value={expenseData.expenseType}
+                  onChange={(e) =>
+                    setExpenseData((prev) => ({
+                      ...prev,
+                      expenseType: e.target.value,
+                    }))
+                  }
+                />
+
+                <Input
+                  label="Amount"
+                  type="number"
+                  name="amount"
+                  isRequired
+                  errorMessage="please enter amount"
+                  value={expenseData.amount}
+                  onChange={(e) =>
+                    setExpenseData((prev) => ({
+                      ...prev,
+                      amount: allowOnlyNumbers(e.target.value),
+                    }))
+                  }
+                />
+
+                <Input
+                  label="Currency"
+                  name="currency"
+                  isRequired
+                  errorMessage="please enter currency"
+                  value={expenseData.currency}
+                  onChange={(e) =>
+                    setExpenseData((prev) => ({
+                      ...prev,
+                      currency: e.target.value,
+                    }))
+                  }
+                />
+
+                <DatePicker
+                  isRequired
+                  label="Expense date"
+                  showMonthAndYearPickers
+                  errorMessage="Please select the date."
+                  value={
+                    expenseData.expenseDate
+                      ? parseDate(
+                          dayjs(expenseData.expenseDate).format("YYYY-MM-DD"),
+                        )
+                      : null
+                  }
+                  onChange={(e) => {
+                    const dateStr = toCalendarDate(e).toString(); // 2026-03-13
+
+                    const isoDate = dayjs(dateStr)
+                      .hour(dayjs().hour())
+                      .minute(dayjs().minute())
+                      .second(dayjs().second())
+                      .millisecond(dayjs().millisecond())
+                      .toISOString();
+
+                    setExpenseData((prev) => ({
+                      ...prev,
+                      expenseDate: isoDate,
+                    }));
+                  }}
+                />
+
+                <Textarea
+                  label="Description"
+                  name="description"
+                  isRequired
+                  errorMessage="please enter description"
+                  value={expenseData.description}
+                  onChange={(e) =>
+                    setExpenseData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                />
+              </ModalBody>
+
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
           )}
         </ModalContent>
       </Modal>

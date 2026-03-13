@@ -619,6 +619,36 @@ export const getAllSolutionList = createAsyncThunk(
   },
 );
 
+export const addTokenInCkEditor = createAsyncThunk(
+  "addTokenInCkEditor",
+  async (data) => {
+    const response = await api.post(
+      `/leadService/api/v1/editor/addInCkEditor?key=${data.key}&value=${data.value}`,
+    );
+    return response.data;
+  },
+);
+
+export const getCkEditorTokenList = createAsyncThunk(
+  "getCkEditorTokenList",
+  async () => {
+    const response = await api.get(
+      `/leadService/api/v1/editor/getCkEditorData`,
+    );
+    return response.data;
+  },
+);
+
+export const updateTokenInCkEditor = createAsyncThunk(
+  "updateTokenInCkEditor",
+  async (data) => {
+    const response = await api.put(
+      `/leadService/api/v1/editor/editCkEditorData?id=${data.id}&key=${data.key}&value=${data.value}`,
+    );
+    return response.data;
+  },
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -646,6 +676,7 @@ export const SettingSlice = createSlice({
     solutionDetailById: {},
     paymentTypeList: [],
     allSolutionList: [],
+    ckEditorTokenData: {},
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -959,6 +990,18 @@ export const SettingSlice = createSlice({
     builder.addCase(getAllSolutionList.rejected, (state) => {
       state.loading = "rejected";
       state.allSolutionList = [];
+    });
+
+    builder.addCase(getCkEditorTokenList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getCkEditorTokenList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.ckEditorTokenData = action.payload;
+    });
+    builder.addCase(getCkEditorTokenList.rejected, (state) => {
+      state.loading = "rejected";
+      state.ckEditorTokenData = {};
     });
   },
 });

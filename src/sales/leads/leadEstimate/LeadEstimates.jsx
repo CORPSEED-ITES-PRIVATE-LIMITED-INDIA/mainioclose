@@ -137,6 +137,7 @@ export const LeadEstimates = () => {
   const [isDropDownOpen, setIsDropDownOpen] = useState({
     company: false,
     contact: false,
+    unit: false,
   });
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
@@ -454,8 +455,6 @@ export const LeadEstimates = () => {
     setShowForm(false);
   };
 
-  console.log("fdjkghskghjdfk", company, companyDetail);
-
   const onSaveUnitModal = (data) => {
     data.createdById = userId;
     data.updatedById = userId;
@@ -470,7 +469,6 @@ export const LeadEstimates = () => {
         }),
       )
         .then((resp) => {
-          console.log("dfkjghsdklfhkjlsdf", resp);
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({ title: "Unit details saved.", color: "success" });
             dispatch(getAllUnitListByCompanyId(company?.id));
@@ -701,6 +699,7 @@ export const LeadEstimates = () => {
                   name="unitId"
                   control={control}
                   error={errors.unitName}
+                  isOpen={isDropDownOpen?.unit}
                   data={
                     unitList?.length > 0
                       ? unitList?.map((item) => ({
@@ -713,6 +712,9 @@ export const LeadEstimates = () => {
                   onItemSelect={(detail) => {
                     setUnitDetail(detail);
                   }}
+                  onOpenChange={(e) =>
+                    setIsDropDownOpen((prev) => ({ ...prev, unit: e }))
+                  }
                   onChangeExtra={(e) => setContactValue("companyUnitId", e)}
                   endContent={
                     <span
@@ -724,6 +726,7 @@ export const LeadEstimates = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        setIsDropDownOpen((prev) => ({ ...prev, unit: false }));
                         handleUpdateCompanyUnit();
                       }}
                     >

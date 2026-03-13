@@ -6,6 +6,7 @@ import Milestone from "../operation/Settings/Milestone";
 import Projects from "../operation/projects/Projects";
 import Documents from "../operation/Settings/Documents";
 import Departments from "../operation/Settings/Departments";
+import ProjectActivities from "../operation/projects/ProjectActivities";
 
 const OperationModuleRouting = () => {
   return (
@@ -14,6 +15,10 @@ const OperationModuleRouting = () => {
       <Route
         path="operation/projects/:projectId/projectDetail"
         element={<ProjectDetails />}
+      />
+      <Route
+        path="operation/projects/:projectId/projectDetail/activities"
+        element={<ProjectActivities />}
       />
       <Route path="operation/settings" element={<OperationsSettings />}>
         <Route index element={<Navigate to="userMap" replace />} />

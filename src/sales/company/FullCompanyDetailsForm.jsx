@@ -293,6 +293,9 @@ export function CompanyAndUnitsForm({
     ndaPresent: false,
   });
 
+  const [gstTypeMap, setGstTypeMap] = useState({});
+  const [businessTypeMap, setBusinessTypeMap] = useState({});
+
   const {
     control,
     handleSubmit,
@@ -335,6 +338,9 @@ export function CompanyAndUnitsForm({
   const citiesList = useSelector(
     (state) => state.common.citiesByState[companyState] || [],
   );
+
+  const statesByCountry = useSelector((state) => state.common.statesByCountry);
+  const citiesByState = useSelector((state) => state.common.citiesByState);
 
   const validateGST = (gstNo, stateName) => {
     if (!gstNo) return "";
@@ -424,47 +430,79 @@ export function CompanyAndUnitsForm({
 
   useEffect(() => {
     if (!company) return;
+
     const countries = new Set();
     const states = new Set();
 
     if (company?.country) countries.add(company.country);
     if (company?.state) states.add(company.state);
-    // if (company?.country) {
-    //   dispatch(getAllStatesByCountryName(company?.country));
-    // }
-    // if (company?.state) {
-    //   dispatch(getAllCitiesByStateName(company?.state));
-    // }
 
-    company?.units?.forEach((unit) => {
+    company?.units?.forEach((unit, index) => {
       if (unit?.country) countries.add(unit.country);
       if (unit?.state) states.add(unit.state);
+
+      // Load GST types based on company structure
+      if (unit?.companyTypeId) {
+        dispatch(getAllGstTypeByCompanyTypeId(unit.companyTypeId)).then(
+          (res) => {
+            if (res.payload) {
+              setGstTypeMap((prev) => ({
+                ...prev,
+                [index]: res.payload?.gstBussinessType || [],
+              }));
+            }
+          },
+        );
+      }
+
+      // Load Business types based on GST type
+      if (unit?.gstTypeId) {
+        dispatch(getBusinessTypeByGstTypeId(unit.gstTypeId)).then((res) => {
+          if (res.payload) {
+            setBusinessTypeMap((prev) => ({
+              ...prev,
+              [index]: res.payload?.gstTypePrice || [],
+            }));
+          }
+        });
+      }
     });
 
-    // Fetch states for unique countries
+    // Fetch states for countries
     countries.forEach((country) => {
       dispatch(getAllStatesByCountryName(country));
     });
 
-    // Fetch cities for unique states
+    // Fetch cities for states
     states.forEach((stateName) => {
       dispatch(getAllCitiesByStateName(stateName));
     });
 
+    // Industry chain APIs
     if (company?.industryId) {
       dispatch(getSubIndustryByIndustryId(company?.industryId));
     }
+
     if (company?.subIndustryId) {
       dispatch(getSubSubIndustryBySubIndustryId(company?.subIndustryId));
     }
+
     if (company?.subsubIndustryId) {
       dispatch(getIndustryDataBySubSubIndustryId(company?.subsubIndustryId));
     }
+
+    // Reset form values
+
+    setFormCondition((prev) => ({
+      ...prev,
+      ndaPresent: company?.ndaPresent,
+      aggrementPresent: company?.aggrementPresent,
+    }));
+
     reset({
       ...getDefaultValues(),
       ...company,
       assigneeId: String(company?.assigneeId),
-      ndaPresent: String(company?.ndaPresent),
       industryId: String(company?.industryId),
       subIndustryId: String(company?.subIndustryId),
       subSubIndustryId: String(company?.subSubIndustryId),
@@ -478,13 +516,18 @@ export function CompanyAndUnitsForm({
           ...getEmptyUnit(),
           ...u,
           gstNo: u?.gstNo || "",
+          companyTypeId: u?.companyTypeId ? String(u.companyTypeId) : "",
+          gstTypeId: u?.gstTypeId ? String(u.gstTypeId) : "",
+          gstBusinessTypeId: u?.gstBusinessTypeId
+            ? String(u.gstBusinessTypeId)
+            : "",
           unitOpeningDate: u?.unitOpeningDate
             ? String(u.unitOpeningDate).slice(0, 10)
             : "",
         }),
       ),
     });
-  }, [company, reset]);
+  }, [company, reset, dispatch]);
 
   const onSubmit = (values) => {
     values.leadCompanyId = company?.id;
@@ -610,6 +653,7 @@ export function CompanyAndUnitsForm({
                   label="Company age"
                   isRequired
                   value={field?.value}
+                  maxLength={3}
                   onChange={(e) =>
                     field.onChange(allowOnlyNumbers(e.target.value))
                   }
@@ -894,26 +938,30 @@ export function CompanyAndUnitsForm({
             <Controller
               name="ndaPresent"
               control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Select
-                  label="NDA"
-                  isRequired
-                  errorMessage={error?.message}
-                  isInvalid={!!error}
-                  selectedKeys={[String(field.value)]}
-                  onSelectionChange={(keys) => {
-                    const v = Array.from(keys)[0];
-                    field.onChange(v === "true");
-                    setFormCondition((prev) => ({
-                      ...prev,
-                      ndaPresent: v === "true",
-                    }));
-                  }}
-                >
-                  <SelectItem key="true">Yes</SelectItem>
-                  <SelectItem key="false">No</SelectItem>
-                </Select>
-              )}
+              render={({ field, fieldState: { error } }) => {
+                console.log("Rendering NDA select with value:", field);
+
+                return (
+                  <Select
+                    label="NDA"
+                    isRequired
+                    errorMessage={error?.message}
+                    isInvalid={!!error}
+                    selectedKeys={[String(field.value)]}
+                    onSelectionChange={(keys) => {
+                      const v = Array.from(keys)[0];
+                      field.onChange(v === "true");
+                      setFormCondition((prev) => ({
+                        ...prev,
+                        ndaPresent: v === "true",
+                      }));
+                    }}
+                  >
+                    <SelectItem key="true">Yes</SelectItem>
+                    <SelectItem key="false">No</SelectItem>
+                  </Select>
+                );
+              }}
             />
 
             {formCondition?.ndaPresent && (
@@ -1170,13 +1218,10 @@ export function CompanyAndUnitsForm({
         <CardBody className="space-y-5">
           {fields.map((item, index) => {
             const unitCountry = watch(`units.${index}.country`);
-            const unitStatesList = useSelector(
-              (state) => state.common.statesByCountry[unitCountry] || [],
-            );
             const unitState = watch(`units.${index}.state`);
-            const unitCitiesList = useSelector(
-              (state) => state.common.citiesByState[unitState] || [],
-            );
+
+            const unitStatesList = statesByCountry?.[unitCountry] || [];
+            const unitCitiesList = citiesByState?.[unitState] || [];
             return (
               <div
                 key={item.id}
@@ -1229,7 +1274,16 @@ export function CompanyAndUnitsForm({
                           isInvalid={!!error}
                           errorMessage={error?.message}
                           onChange={(value) => {
-                            dispatch(getAllGstTypeByCompanyTypeId(value));
+                            dispatch(getAllGstTypeByCompanyTypeId(value)).then(
+                              (res) => {
+                                if (res.payload) {
+                                  setGstTypeMap((prev) => ({
+                                    ...prev,
+                                    [index]: res.payload.gstBussinessType || [],
+                                  }));
+                                }
+                              },
+                            );
                             field.onChange(value);
                           }}
                         />
@@ -1243,12 +1297,21 @@ export function CompanyAndUnitsForm({
                         <NewSelect
                           label="GST Type"
                           isRequired
-                          data={gstTypeList?.gstBussinessType || []}
+                          data={gstTypeMap[index] || []}
                           labelKey="name"
                           valueKey="id"
                           value={field.value}
                           onChange={(value) => {
-                            dispatch(getBusinessTypeByGstTypeId(value));
+                            dispatch(getBusinessTypeByGstTypeId(value)).then(
+                              (res) => {
+                                if (res.payload) {
+                                  setBusinessTypeMap((prev) => ({
+                                    ...prev,
+                                    [index]: res.payload.gstTypePrice || [],
+                                  }));
+                                }
+                              },
+                            );
                             field.onChange(value);
                           }}
                         />
@@ -1262,7 +1325,7 @@ export function CompanyAndUnitsForm({
                         <NewSelect
                           label="Business Type"
                           isRequired
-                          data={businessTypeList?.gstTypePrice || []}
+                          data={businessTypeMap[index] || []}
                           labelKey="name"
                           valueKey="id"
                           value={field.value}

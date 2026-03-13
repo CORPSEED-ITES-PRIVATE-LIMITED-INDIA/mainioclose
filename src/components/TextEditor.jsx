@@ -92,12 +92,14 @@ import {
 
 import "ckeditor5/ckeditor5.css";
 import "ckeditor5-premium-features/ckeditor5-premium-features.css";
+import { useDispatch, useSelector } from "react-redux";
+import { getCkEditorTokenList } from "../toolkit/slices/settingSlice";
 
-const LICENSE_KEY =
-  "eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NzMxODcxOTksImp0aSI6ImQ0ZTE1NDMyLTRjYzItNDdjMy04MjQ0LWJlYjkyMTI1MjU3ZiIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImJjODdlZTZmIn0.BQlUgldEflGSLyd9BzDCq5XCfrghbKxnqPozg6ywofn3GNT0ZaondOdpNw2i8ZEpTDcua-y6JatBx61oTk0ARA";
+// const LICENSE_KEY =
+//   "eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NzQ1Njk1OTksImp0aSI6IjNhZGE1ZTQxLWYzYTAtNDg5Mi05ZjhlLTcwMWQxNjQyODkxYyIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6ImE1ZDFjNTVlIn0.MJ8qmnpP0s_JBiny2CUrh3ziYT8dzlzH45nJUpD3gmH862L-yz-7q5YM4pJWqUXoDVaUrDZxzx_cm65WP8cHEA";
 
 const CLOUD_SERVICES_TOKEN_URL =
-  "https://6y516kjacm9e.cke-cs.com/token/dev/3f4dfdd9795973772138e2977d518e51964314e43d7e3499ba44d6651fb3?limit=10";
+  "https://d1j6582rjazf.cke-cs.com/token/dev/0442311e361ca4df074248ad2b8e2d5a5b2425392e37eb9670d5dd0092ef?limit=10";
 
 class UsersIntegration extends Plugin {
   static get requires() {
@@ -136,6 +138,10 @@ export default function TextEditor({
   onChange,
   initialData,
 }) {
+  const dispatch = useDispatch();
+  const LICENSE_KEY = useSelector(
+    (state) => state.setting.ckEditorTokenData?.item?.value,
+  );
   const editorContainerRef = useRef(null);
   const editorRef = useRef(null);
   const editorAnnotationsRef = useRef(null);
@@ -144,11 +150,17 @@ export default function TextEditor({
   const editorRevisionHistorySidebarRef = useRef(null);
   const [isLayoutReady, setIsLayoutReady] = useState(false);
 
+  console.log("LICENSE_KEY", LICENSE_KEY);
+
   useEffect(() => {
     setIsLayoutReady(true);
 
     return () => setIsLayoutReady(false);
   }, []);
+
+  useEffect(() => {
+    dispatch(getCkEditorTokenList());
+  }, [dispatch]);
 
   const { editorConfig } = useMemo(() => {
     if (!isLayoutReady) {
@@ -369,7 +381,7 @@ export default function TextEditor({
               "editor-container_include-annotations",
               "editor-container_include-style",
               "editor-container_include-fullscreen",
-              "main-container"
+              "main-container",
             ),
         },
         heading: {
@@ -630,7 +642,7 @@ function configUpdateAlert(config) {
   if (
     !isModifiedByUser(
       config.cloudServices?.tokenUrl,
-      "<YOUR_CLOUD_SERVICES_TOKEN_URL>"
+      "<YOUR_CLOUD_SERVICES_TOKEN_URL>",
     )
   ) {
     valuesToUpdate.push("CLOUD_SERVICES_TOKEN_URL");
@@ -643,7 +655,7 @@ function configUpdateAlert(config) {
         "to receive full access to Premium Features:",
         "",
         ...valuesToUpdate.map((value) => ` - ${value}`),
-      ].join("\n")
+      ].join("\n"),
     );
   }
 }
