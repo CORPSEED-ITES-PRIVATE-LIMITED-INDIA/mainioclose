@@ -27,6 +27,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   createMileStone,
   getAllMilestones,
+  importServiceCheckListDocument,
 } from "../../toolkit/slices/operationSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -44,6 +45,7 @@ import {
 } from "../../toolkit/slices/productSlice";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
+import FileUploader from "../../components/FileUploader";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -115,7 +117,8 @@ const Documents = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.product.allDocumentList);
+  const uploadModal = useDisclosure();
+  const data = useSelector((state) => state.product.allDocumentList) || [];
   const count = useSelector((state) => state.product.allDocumentList?.length);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
@@ -130,6 +133,7 @@ const Documents = () => {
     column: "id",
     direction: "ascending",
   });
+  const [fileUrl, setFileUrl] = React.useState("");
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
@@ -207,7 +211,9 @@ const Documents = () => {
               title: "Milestone created successfully !.",
               color: "success",
             });
-            dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
+            dispatch(
+              getAllDocumentsForProduct({ page, size: rowsPerPage, userId }),
+            );
             onClose();
             reset(defaultValues);
           } else {
@@ -224,6 +230,28 @@ const Documents = () => {
     },
     [dispatch, onClose, reset, userId],
   );
+
+  const handleSubmitUploadDoc = useCallback(() => {
+    dispatch(importServiceCheckListDocument({ fileUrl, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Document uploaded successfully !.",
+            color: "success",
+          });
+          setFileUrl("");
+          uploadModal.onOpenChange(false);
+          dispatch(
+            getAllDocumentsForProduct({ page, size: rowsPerPage, userId }),
+          );
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
+  }, [dispatch, fileUrl]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -292,6 +320,9 @@ const Documents = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            <Button variant="flat" onPress={uploadModal.onOpen}>
+              Import document List
+            </Button>
             <Button
               endContent={<Plus />}
               color="primary"
@@ -605,6 +636,45 @@ const Documents = () => {
                     </Button>
                   </ModalFooter>
                 </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={uploadModal.isOpen}
+        onOpenChange={uploadModal.onOpenChange}
+        size="xl"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Upload document</ModalHeader>
+              <ModalBody className="w-full">
+                <div className="flex flex-col gap-4">
+                  <FileUploader
+                    value={fileUrl}
+                    onChange={(e) => setFileUrl(e)}
+                  />
+                  <div>
+                    <a
+                      className="text-primary-500"
+                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1773809109318test_doc.xlsx"
+                    >
+                      Download the sample document
+                    </a>
+                  </div>
+                </div>
+                <ModalFooter className="flex justify-end gap-2 w-full">
+                  <Button onPress={onClose}>Cancel</Button>
+                  <Button
+                    color="primary"
+                    isDisabled={!fileUrl}
+                    onPress={handleSubmitUploadDoc}
+                  >
+                    Submit
+                  </Button>
+                </ModalFooter>
               </ModalBody>
             </>
           )}

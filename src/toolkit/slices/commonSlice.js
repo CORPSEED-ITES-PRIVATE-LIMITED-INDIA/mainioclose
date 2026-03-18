@@ -565,7 +565,9 @@ export const getUserHistoryById = createAsyncThunk(
 export const getUsersListByDepartmentId = createAsyncThunk(
   "getUsersListByDepartmentId",
   async (id) => {
-    const response = await api.get(`/api/departments/${id}/users`);
+    const response = await api.get(
+      `/operationService/api/departments/${id}/users`,
+    );
     return response.data;
   },
 );
@@ -573,7 +575,7 @@ export const getUsersListByDepartmentId = createAsyncThunk(
 export const getAllMilestoneStatusesForOperations = createAsyncThunk(
   "getAllMilestoneStatusesForOperations",
   async () => {
-    const response = await api.get("/api/milestone-statuses");
+    const response = await api.get("/operationService/api/milestone-statuses");
     return response.data;
   },
 );

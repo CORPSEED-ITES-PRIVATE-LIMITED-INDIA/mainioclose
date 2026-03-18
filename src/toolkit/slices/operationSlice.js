@@ -5,7 +5,7 @@ import exp from "constants";
 export const createCompanyInOperations = createAsyncThunk(
   "createCompanyInOperations",
   async (data) => {
-    const response = await api.post(`/api/companies`, data);
+    const response = await api.post(`/operationService/api/companies`, data);
     return response.data;
   },
 );
@@ -13,7 +13,10 @@ export const createCompanyInOperations = createAsyncThunk(
 export const updateCompanyInOperations = createAsyncThunk(
   "updateCompanyInOperations",
   async (data) => {
-    const response = await api.put(`/api/companies/${data?.companyId}`, data);
+    const response = await api.put(
+      `/operationService/api/companies/${data?.companyId}`,
+      data,
+    );
     return response.data;
   },
 );
@@ -22,7 +25,7 @@ export const getAllOperationsProject = createAsyncThunk(
   "getAllOperationsProject",
   async ({ userId, page, size }) => {
     const response = await api.get(
-      `/api/projects/my-projects?userId=${userId}&page=${page}&size=${size}`,
+      `/operationService/api/projects/my-projects?userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
   },
@@ -31,7 +34,9 @@ export const getAllOperationsProject = createAsyncThunk(
 export const getAllUserMappedWithProduct = createAsyncThunk(
   "getAllUserMappedWithProduct",
   async () => {
-    const response = await api.get(`/api/user-product-mappings/list`);
+    const response = await api.get(
+      `/operationService/api/user-product-mappings/list`,
+    );
     return response.data;
   },
 );
@@ -39,7 +44,10 @@ export const getAllUserMappedWithProduct = createAsyncThunk(
 export const mappedUserWithProductForOperation = createAsyncThunk(
   "mappedUserWithProductForOperation",
   async (data) => {
-    const response = await api.post(`/api/user-product-mappings`, data);
+    const response = await api.post(
+      `/operationService/api/user-product-mappings`,
+      data,
+    );
     return response.data;
   },
 );
@@ -47,7 +55,7 @@ export const mappedUserWithProductForOperation = createAsyncThunk(
 export const getAllMilestones = createAsyncThunk(
   "getAllMilestones",
   async () => {
-    const response = await api.get(`/api/milestones`);
+    const response = await api.get(`/operationService/api/milestones`);
     return response.data;
   },
 );
@@ -55,7 +63,7 @@ export const getAllMilestones = createAsyncThunk(
 export const createMileStone = createAsyncThunk(
   "createMileStone",
   async (data) => {
-    const response = await api.post(`/api/milestones`, data);
+    const response = await api.post(`/operationService/api/milestones`, data);
     return response.data;
   },
 );
@@ -63,7 +71,7 @@ export const createMileStone = createAsyncThunk(
 export const createUsersInOperations = createAsyncThunk(
   "createUsersInOperations",
   async (data) => {
-    const response = await api.post(`/api/users`, data);
+    const response = await api.post(`/operationService/api/users`, data);
     return response.data;
   },
 );
@@ -71,7 +79,7 @@ export const createUsersInOperations = createAsyncThunk(
 export const addProductsInOperations = createAsyncThunk(
   "addProductsInOperations",
   async (data) => {
-    const response = await api.post(`/api/products`, data);
+    const response = await api.post(`/operationService/api/products`, data);
     return response.data;
   },
 );
@@ -79,7 +87,10 @@ export const addProductsInOperations = createAsyncThunk(
 export const updateProductsInOperations = createAsyncThunk(
   "addProductsInOperations",
   async ({ id, data }) => {
-    const response = await api.put(`/api/products/${id}`, data);
+    const response = await api.put(
+      `/operationService/api/products/${id}`,
+      data,
+    );
     return response.data;
   },
 );
@@ -87,7 +98,10 @@ export const updateProductsInOperations = createAsyncThunk(
 export const addDocumentsInProductsForOperation = createAsyncThunk(
   "addDocumentsInProductsForOperation",
   async (data) => {
-    const response = await api.post(`/api/required-documents`, data);
+    const response = await api.post(
+      `/operationService/api/required-documents`,
+      data,
+    );
     return response.data;
   },
 );
@@ -96,7 +110,7 @@ export const getOperationProjectDetailById = createAsyncThunk(
   "getOperationProjectDetailById",
   async ({ projectId, userId }) => {
     const response = await api.get(
-      `/api/projects/${projectId}/milestones?userId=${userId}`,
+      `/operationService/api/projects/${projectId}/milestones?userId=${userId}`,
     );
     return response.data;
   },
@@ -106,7 +120,7 @@ export const getRequiredDocumentsByProductId = createAsyncThunk(
   "getRequiredDocumentsByProductId",
   async ({ userId, projectId }) => {
     const response = await api.get(
-      `/api/projects/${projectId}/document-checklist?userId=${userId}`,
+      `/operationService/api/projects/${projectId}/document-checklist?userId=${userId}`,
     );
     return response.data;
   },
@@ -116,7 +130,7 @@ export const updateMilestoneAssignment = createAsyncThunk(
   "updateMilestoneAssignment",
   async (assignmentId) => {
     const response = await api.put(
-      `/api/milestone-assignments/${assignmentId}/status`,
+      `/operationService/api/milestone-assignments/${assignmentId}/status`,
     );
     return response.data;
   },
@@ -126,7 +140,7 @@ export const updateMilestoneReAssignment = createAsyncThunk(
   "updateMilestoneReAssignment",
   async (assignmentId) => {
     const response = await api.put(
-      `/api/milestone-assignments/${assignmentId}/reassign`,
+      `/operationService/api/milestone-assignments/${assignmentId}/reassign`,
     );
     return response.data;
   },
@@ -135,7 +149,7 @@ export const updateMilestoneReAssignment = createAsyncThunk(
 export const createDepartmentInOPerations = createAsyncThunk(
   "createDepartmentInOPerations",
   async (data) => {
-    const response = await api.post(`/api/departments`, data);
+    const response = await api.post(`/operationService/api/departments`, data);
     return response.data;
   },
 );
@@ -144,7 +158,7 @@ export const getProductMileStonesListByProductId = createAsyncThunk(
   "productMileStonesListByProductId",
   async ({ userId, productId }) => {
     const response = await api.get(
-      `/api/product-milestone-maps/user/${userId}/product/${productId}`,
+      `/operationService/api/product-milestone-maps/user/${userId}/product/${productId}`,
     );
     return response.data;
   },
@@ -153,7 +167,10 @@ export const getProductMileStonesListByProductId = createAsyncThunk(
 export const addMileStoneInProduct = createAsyncThunk(
   "addMileStoneInProduct",
   async (data) => {
-    const response = await api.post(`/api/product-milestone-maps`, data);
+    const response = await api.post(
+      `/operationService/api/product-milestone-maps`,
+      data,
+    );
     return response.data;
   },
 );
@@ -161,7 +178,10 @@ export const addMileStoneInProduct = createAsyncThunk(
 export const updateMilestoneInProduct = createAsyncThunk(
   "updateMilestoneInProduct",
   async ({ id, data }) => {
-    const response = await api.put(`/api/product-milestone-maps/${id}`, data);
+    const response = await api.put(
+      `/operationService/api/product-milestone-maps/${id}`,
+      data,
+    );
     return response.data;
   },
 );
@@ -169,7 +189,9 @@ export const updateMilestoneInProduct = createAsyncThunk(
 export const deleteMileStoneInProduct = createAsyncThunk(
   "deleteMileStoneInProduct",
   async (id) => {
-    const response = await api.delete(`/api/product-milestone-maps/${id}`);
+    const response = await api.delete(
+      `/operationService/api/product-milestone-maps/${id}`,
+    );
     return response.data;
   },
 );
@@ -177,7 +199,7 @@ export const deleteMileStoneInProduct = createAsyncThunk(
 export const createProjectsForOperations = createAsyncThunk(
   "createProjectsForOperations",
   async (data) => {
-    const response = await api.post(`/api/projects`, data);
+    const response = await api.post(`/operationService/api/projects`, data);
     return response.data;
   },
 );
@@ -186,7 +208,7 @@ export const getAllProjectsForOperations = createAsyncThunk(
   "getAllProjectsForOperations",
   async ({ userId, page, size }) => {
     const response = await api.get(
-      `/api/projects?userId=${userId}&page=${page}&size=${size}`,
+      `/operationService/api/projects?userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
   },
@@ -195,7 +217,9 @@ export const getAllProjectsForOperations = createAsyncThunk(
 export const getTotalCountForOperationProjects = createAsyncThunk(
   "getTotalCountForOperationProjects",
   async (userId) => {
-    const response = await api.get(`/api/projects/count?userId=${userId}`);
+    const response = await api.get(
+      `/operationService/api/projects/count?userId=${userId}`,
+    );
     return response.data;
   },
 );
@@ -204,7 +228,7 @@ export const searchByCompany = createAsyncThunk(
   "searchByCompany",
   async ({ companyName, userId }) => {
     const response = await api.get(
-      `/api/projects/search/by-company?companyName=${companyName}&userId=${userId}`,
+      `/operationService/api/projects/search/by-company?companyName=${companyName}&userId=${userId}`,
     );
     return response.data;
   },
@@ -214,7 +238,7 @@ export const searchByProjectNumber = createAsyncThunk(
   "searchByProjectNumber",
   async ({ projectNumber, userId }) => {
     const response = await api.get(
-      `/api/projects/search/by-project-number?projectNumber=${projectNumber}&userId=${userId}`,
+      `/operationService/api/projects/search/by-project-number?projectNumber=${projectNumber}&userId=${userId}`,
     );
     return response.data;
   },
@@ -224,7 +248,7 @@ export const searchByProjectName = createAsyncThunk(
   "searchByProjectName",
   async ({ projectName, userId }) => {
     const response = await api.get(
-      `/api/projects/search/by-project-name?projectName=${projectName}&userId=${userId}`,
+      `/operationService/api/projects/search/by-project-name?projectName=${projectName}&userId=${userId}`,
     );
     return response.data;
   },
@@ -234,7 +258,7 @@ export const searchByContactName = createAsyncThunk(
   "searchByContactName",
   async ({ contactName, userId }) => {
     const response = await api.get(
-      `/api/projects/search/by-contact-name?contactName=${contactName}&userId=${userId}`,
+      `/operationService/api/projects/search/by-contact-name?contactName=${contactName}&userId=${userId}`,
     );
     return response.data;
   },
@@ -245,7 +269,7 @@ export const updateAssigneeForMileStone = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/api/milestone-assignments/${data?.assignmentId}/reassign`,
+        `/operationService/api/milestone-assignments/${data?.assignmentId}/reassign`,
         data,
       );
       return response.data;
@@ -260,7 +284,7 @@ export const updateAssignmentStatusForMileStone = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/api/milestone-assignments/${data?.assignmentId}/status`,
+        `/operationService/api/milestone-assignments/${data?.assignmentId}/status`,
         data,
       );
       return response.data;
@@ -274,7 +298,7 @@ export const getDepartments = createAsyncThunk(
   "getDepartments",
   async ({ page, size }) => {
     const response = await api.get(
-      `/api/departments?page=${page}&size=${size}`,
+      `/operationService/api/departments?page=${page}&size=${size}`,
     );
     return response.data;
   },
@@ -283,7 +307,9 @@ export const getDepartments = createAsyncThunk(
 export const getDepartmentAutoConfig = createAsyncThunk(
   "getDepartmentAutoConfig",
   async (id) => {
-    const response = await api.get(`/api/department-auto-config/${id}`);
+    const response = await api.get(
+      `/operationService/api/department-auto-config/${id}`,
+    );
     return response.data;
   },
 );
@@ -292,7 +318,10 @@ export const updateDepartmentAutoConfig = createAsyncThunk(
   "updateDepartmentAutoConfig",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/api/department-auto-config/${id}`, data);
+      const response = await api.put(
+        `/operationService/api/department-auto-config/${id}`,
+        data,
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -305,7 +334,7 @@ export const addClientLogInCredentialForPortal = createAsyncThunk(
   async ({ projectId, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/projects/${projectId}/portal-details?userId=${userId}`,
+        `/operationService/api/projects/${projectId}/portal-details?userId=${userId}`,
         data,
       );
       return response.data;
@@ -320,7 +349,7 @@ export const getClientLogInCredentialDetailForPortal = createAsyncThunk(
   async ({ projectId, userId }) => {
     try {
       const response = await api.get(
-        `/api/projects/${projectId}/portal-details?userId=${userId}`,
+        `/operationService/api/projects/${projectId}/portal-details?userId=${userId}`,
       );
       return response.data;
     } catch (error) {
@@ -334,7 +363,7 @@ export const getHistoryByMileStoneIdAndProjectId = createAsyncThunk(
   async ({ milestoneId, projectId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/projects/${projectId}/milestones/${milestoneId}/history?userId=${userId}`,
+        `/operationService/api/projects/${projectId}/milestones/${milestoneId}/history?userId=${userId}`,
       );
       return response.data;
     } catch (error) {
@@ -348,7 +377,7 @@ export const uploadProjectsDocument = createAsyncThunk(
   async ({ projectId, milestoneAssignmentId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/projects/${projectId}/milestones/${milestoneAssignmentId}/documents`,
+        `/operationService/api/projects/${projectId}/milestones/${milestoneAssignmentId}/documents`,
         data,
       );
       return response.data;
@@ -363,7 +392,7 @@ export const updateApplicantTypeInProject = createAsyncThunk(
   async ({ projectId, applicantTypeId }, { rejectWithValue }) => {
     try {
       const response = await api.patch(
-        `/api/projects/${projectId}/applicant-type?applicantTypeId=${applicantTypeId}`,
+        `/operationService/api/projects/${projectId}/applicant-type?applicantTypeId=${applicantTypeId}`,
       );
       return response.data;
     } catch (err) {
@@ -377,7 +406,7 @@ export const uploadDocumentInProjects = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/projects/${projectId}/milestones/documents`,
+        `/operationService/api/projects/${projectId}/milestones/documents`,
         data,
       );
       return response.data;
@@ -391,7 +420,7 @@ export const updateDocumentStatus = createAsyncThunk(
   "operation/updateDocumentStatus",
   async ({ documentId, data }) => {
     const response = await api.put(
-      `/api/projects/documents/${documentId}/status`,
+      `/operationService/api/projects/documents/${documentId}/status`,
       data,
     );
     return response.data;
@@ -403,7 +432,7 @@ export const addNoteInProject = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/projects/${projectId}/activities/notes`,
+        `/operationService/api/projects/${projectId}/activities/notes`,
         data,
       );
       return response.data;
@@ -418,7 +447,7 @@ export const addCommentInProject = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/projects/${projectId}/activities/comments`,
+        `/operationService/api/projects/${projectId}/activities/comments`,
         data,
       );
       return response.data;
@@ -433,7 +462,7 @@ export const addExpensesInProject = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/projects/${projectId}/activities/expenses`,
+        `/operationService/api/projects/${projectId}/activities/expenses`,
         data,
       );
       return response.data;
@@ -448,7 +477,7 @@ export const getActivitiesByProjectId = createAsyncThunk(
   async ({ projectId, page, size }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/projects/${projectId}/activities?page=${page}&size=${size}`,
+        `/operationService/api/projects/${projectId}/activities?page=${page}&size=${size}`,
       );
       return response.data;
     } catch (err) {
@@ -462,7 +491,7 @@ export const getActivitiesByTypeAndProjectId = createAsyncThunk(
   async ({ projectId, type, page, size }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/projects/${projectId}/activities/type/${type}?page=${page}&size=${size}`,
+        `/operationService/api/projects/${projectId}/activities/type/${type}?page=${page}&size=${size}`,
       );
       return response.data;
     } catch (err) {
@@ -478,7 +507,7 @@ export const getActivitiesByDateRangeAndProjectId = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      let url = `/api/projects/${projectId}/activities/date-range?page=${page}&size=${size}`;
+      let url = `/operationService/api/projects/${projectId}/activities/date-range?page=${page}&size=${size}`;
       if (startDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`;
       }
@@ -487,6 +516,16 @@ export const getActivitiesByDateRangeAndProjectId = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message);
     }
+  },
+);
+
+export const importServiceCheckListDocument = createAsyncThunk(
+  "importServiceCheckListDocument",
+  async ({ fileUrl, userId }) => {
+    const response = await api.post(
+      `/operationService/api/product-required-documents/import-required-document?s3Url=${fileUrl}&createdBy=${userId}`,
+    );
+    return response.data;
   },
 );
 

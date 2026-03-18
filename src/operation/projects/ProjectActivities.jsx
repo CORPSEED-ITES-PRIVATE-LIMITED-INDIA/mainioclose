@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Button,
   Modal,
@@ -14,6 +14,8 @@ import {
   Form,
   useDisclosure,
   addToast,
+  DateRangePicker,
+  Pagination,
 } from "@heroui/react";
 
 import { useDispatch, useSelector } from "react-redux";
@@ -26,42 +28,52 @@ import {
   addCommentInProject,
   addNoteInProject,
   addExpensesInProject,
+  getActivitiesByDateRangeAndProjectId,
 } from "../../toolkit/slices/operationSlice";
 
 import { ActivityItem } from "./ProjectDetails";
 
 import { allowOnlyNumbers } from "../../common";
-import { parseDate, toCalendarDate } from "@internationalized/date";
+import {
+  parseDate,
+  parseZonedDateTime,
+  toCalendarDate,
+} from "@internationalized/date";
 
 const ProjectActivities = () => {
   const dispatch = useDispatch();
   const { projectId, userId } = useParams();
-
-  const activities = useSelector(
-    (state) => state.operation.activitiesByProjectId?.content || [],
+  const activityPage = useSelector(
+    (state) => state.operation.activitiesByProjectId || {},
   );
+
+  const activities = activityPage.content || [];
+  const totalPages = activityPage.totalPages || 0;
+  const totalElements = activityPage.totalElements || 0;
 
   const commentModal = useDisclosure();
   const noteModal = useDisclosure();
   const expenseModal = useDisclosure();
-
   const [activityType, setActivityType] = useState("ALL");
-
   const [replyParentId, setReplyParentId] = useState(null);
-
   const [commentText, setCommentText] = useState("");
   const [noteText, setNoteText] = useState("");
-
   const [expenseData, setExpenseData] = useState({
     amount: "",
     expenseType: "",
     description: "",
     expenseDate: "",
   });
+  const [page, setPage] = useState(1); // HeroUI is 1-based
+  const size = 50;
+  const [dateFilter, setDateFilter] = useState({
+    toDate: null,
+    fromDate: null,
+  });
 
   useEffect(() => {
-    dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
-  }, []);
+    dispatch(getActivitiesByProjectId({ projectId, page, size }));
+  }, [page, projectId, size]);
 
   const handleReply = (commentId) => {
     setReplyParentId(commentId);
@@ -70,14 +82,14 @@ const ProjectActivities = () => {
 
   const handleFilterChange = (value) => {
     if (value === "ALL") {
-      dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
+      dispatch(getActivitiesByProjectId({ projectId, page, size }));
     } else {
       dispatch(
         getActivitiesByTypeAndProjectId({
           projectId,
           type: value,
-          page: 0,
-          size: 50,
+          page,
+          size,
         }),
       );
     }
@@ -103,7 +115,7 @@ const ProjectActivities = () => {
         setCommentText("");
         setReplyParentId(null);
 
-        dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
+        dispatch(getActivitiesByProjectId({ projectId, page, size }));
       }
     });
   };
@@ -124,7 +136,7 @@ const ProjectActivities = () => {
         noteModal.onClose();
         setNoteText("");
 
-        dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
+        dispatch(getActivitiesByProjectId({ projectId, page, size }));
       }
     });
   };
@@ -138,9 +150,7 @@ const ProjectActivities = () => {
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({ title: "Expense added", color: "success" });
-
         expenseModal.onClose();
-
         setExpenseData({
           amount: "",
           expenseType: "",
@@ -148,15 +158,35 @@ const ProjectActivities = () => {
           expenseDate: "",
         });
 
-        dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
+        dispatch(getActivitiesByProjectId({ projectId, page, size }));
       }
     });
   };
 
+  const handleApplyDateFilter = useCallback(() => {
+    dispatch(
+      getActivitiesByDateRangeAndProjectId({
+        page,
+        size,
+        startDate: dateFilter.fromDate,
+        endDate: dateFilter.toDate,
+        projectId,
+      }),
+    );
+  }, [page, activityType, dateFilter, projectId]);
+
+  const handleResetDateFilter = () => {
+    setDateFilter({
+      fromDate: null,
+      toDate: null,
+    });
+    dispatch(getActivitiesByProjectId({ projectId, page, size }));
+  };
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="flex flex-col">
       {/* STICKY HEADER */}
-      <div className="sticky top-0 z-20 bg-white border-b p-4">
+      <div className="sticky top-0 z-20 bg-white border-b p-4 space-y-2">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold text-lg">Project Activities</h2>
 
@@ -175,23 +205,63 @@ const ProjectActivities = () => {
           </Select>
         </div>
 
-        <div className="flex gap-2 mt-3">
-          <Button size="sm" onPress={commentModal.onOpen}>
-            Add Comment
-          </Button>
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" onPress={commentModal.onOpen}>
+              Add Comment
+            </Button>
 
-          <Button size="sm" onPress={noteModal.onOpen}>
-            Add Note
-          </Button>
+            <Button size="sm" onPress={noteModal.onOpen}>
+              Add Note
+            </Button>
 
-          <Button size="sm" onPress={expenseModal.onOpen}>
-            Add Expense
-          </Button>
+            <Button size="sm" onPress={expenseModal.onOpen}>
+              Add Expense
+            </Button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <DateRangePicker
+              showMonthAndYearPickers
+              hideTimeZone
+              size="sm"
+              value={{
+                start: dateFilter?.fromDate
+                  ? parseDate(dateFilter.fromDate)
+                  : null,
+                end: dateFilter?.toDate ? parseDate(dateFilter.toDate) : null,
+              }}
+              onChange={(value) => {
+                const formattedStart = value.start
+                  ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}`
+                  : null;
+
+                const formattedEnd = value.end
+                  ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}`
+                  : null;
+
+                setDateFilter({
+                  fromDate: formattedStart,
+                  toDate: formattedEnd,
+                });
+              }}
+            />
+            <Button
+              radius="sm"
+              size="sm"
+              color="primary"
+              onPress={handleApplyDateFilter}
+            >
+              Apply
+            </Button>
+            <Button radius="sm" size="sm" onPress={handleResetDateFilter}>
+              Reset
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* ACTIVITY LIST */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="max-h-[55vh] flex-1 overflow-y-auto p-4 space-y-4">
         {activities
           .filter((activity) => activity?.details)
           .map((activity) => (
@@ -201,6 +271,38 @@ const ProjectActivities = () => {
               onReply={handleReply}
             />
           ))}
+      </div>
+      <div className="flex justify-between items-center gap-3 py-4">
+        <p className="text-xs text-gray-500">
+          Showing {(page - 1) * size + 1} -{" "}
+          {Math.min(page * size, totalElements)} of {totalElements}
+        </p>
+        <Pagination
+          page={page}
+          total={totalPages}
+          onChange={(p) => setPage(p)}
+          color="secondary"
+        />
+
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => setPage((prev) => (prev > 1 ? prev - 1 : prev))}
+          >
+            Previous
+          </Button>
+
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() =>
+              setPage((prev) => (prev < totalPages ? prev + 1 : prev))
+            }
+          >
+            Next
+          </Button>
+        </div>
       </div>
 
       {/* COMMENT MODAL */}

@@ -584,3 +584,18 @@ export const hrItems = [
   },
   { title: "Services", icon: "FileText", url: "hr/services", key: "services" },
 ];
+
+export const operationNavItems = [
+  {
+    title: "Projects",
+    icon: "GitCommitHorizontal",
+    url: "operation/projects",
+    key: "projects",
+  },
+  {
+    title: "Settings",
+    icon: "Settings",
+    url: "operation/settings",
+    key: "settings",
+  },
+];

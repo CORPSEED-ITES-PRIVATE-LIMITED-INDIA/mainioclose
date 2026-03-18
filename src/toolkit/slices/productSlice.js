@@ -143,7 +143,10 @@ export const createDocumentsForProduct = createAsyncThunk(
   "createDocumentsForProduct",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/api/product-required-documents`, data);
+      const response = await api.post(
+        `/operationService/api/product-required-documents`,
+        data,
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error?.response?.data);
@@ -156,7 +159,7 @@ export const getAllDocumentsForProduct = createAsyncThunk(
   async ({ page, size, userId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/product-required-documents/active?page=${page}&size=${size}&userId=${userId}`,
+        `/operationService/api/product-required-documents/active/${userId}?page=${page}&size=${size}`,
       );
       return response.data;
     } catch (error) {
@@ -170,7 +173,7 @@ export const mapDocumentToProduct = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/api/products/${data?.productId}/documents/map`,
+        `/operationService/api/products/${data?.productId}/documents/map`,
         data,
       );
       return response.data;
@@ -185,7 +188,7 @@ export const getAllDocumentCheckListByProductId = createAsyncThunk(
   async ({ productId, applicantTypeId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/api/products/${productId}/documents?applicantTypeId=${applicantTypeId}`,
+        `/operationService/api/products/${productId}/documents?applicantTypeId=${applicantTypeId}`,
       );
       return response.data;
     } catch (error) {
