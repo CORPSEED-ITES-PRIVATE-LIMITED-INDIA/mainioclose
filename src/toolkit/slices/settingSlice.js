@@ -607,7 +607,7 @@ export const getSolutionDetailByName = createAsyncThunk(
 export const getAllPaymentType = createAsyncThunk(
   "getAllPaymentType",
   async () => {
-    const response = await api.get(`/api/payment-types`);
+    const response = await api.get(`/operationService/api/payment-types`);
     return response.data;
   },
 );

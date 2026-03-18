@@ -244,8 +244,8 @@ const LeadInfo = () => {
       message: selectedComment === "Other" ? customComment : selectedComment,
       file: files?.map((item) => item?.url),
     };
-    setRemarkLoading("pending");
     if (customComment || selectedComment) {
+      setRemarkLoading("pending");
       dispatch(createRemakWithFile(data))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
