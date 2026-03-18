@@ -58,7 +58,7 @@ const ChildLead = () => {
   const { onClose, onOpen, isOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.leads.singleLeadData?.childLead);
   const count = useSelector(
-    (state) => state.leads.singleLeadData?.childLead?.length
+    (state) => state.leads.singleLeadData?.childLead?.length,
   );
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
@@ -66,7 +66,7 @@ const ChildLead = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [selectedItem, setSelectedItem] = useState([]);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
@@ -93,7 +93,7 @@ const ChildLead = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -102,8 +102,8 @@ const ChildLead = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -133,7 +133,7 @@ const ChildLead = () => {
       addLeadChild({
         leadId: leadId,
         serviceName: selectedItem,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -149,7 +149,7 @@ const ChildLead = () => {
         }
       })
       .catch(() =>
-        addToast({ message: "Something went wrong !.", color: "danger" })
+        addToast({ message: "Something went wrong !.", color: "danger" }),
       );
   }, [leadId, selectedItem, dispatch]);
 
@@ -303,90 +303,93 @@ const ChildLead = () => {
 
   return (
     <>
-      {plantSetupData ? (
-        <>
-          <h1 className="font-sans text-2xl font-medium mb-1">
-            Child lead list
-          </h1>
-          <Table
-            isHeaderSticky
-            aria-label="Example table with custom cells, pagination and sorting"
-            bottomContent={bottomContent}
-            bottomContentPlacement="outside"
-            classNames={{
-              wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
-              table: "w-full",
-            }}
-            sortDescriptor={sortDescriptor}
-            topContent={topContent}
-            topContentPlacement="outside"
-            onSelectionChange={setSelectedKeys}
-            onSortChange={setSortDescriptor}
-          >
-            <TableHeader columns={headerColumns}>
-              {(column) => (
-                <TableColumn
-                  key={column.uid}
-                  align={column.uid === "actions" ? "center" : "start"}
-                  allowsSorting={column.sortable}
-                >
-                  {column.name}
-                </TableColumn>
-              )}
-            </TableHeader>
-            <TableBody emptyContent={"No data found"} items={sortedItems}>
-              {(item) => (
-                <TableRow key={item.childId}>
-                  {(columnKey) => (
-                    <TableCell>{renderCell(item, columnKey)}</TableCell>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          <Modal
-            isDismissable={false}
-            isKeyboardDismissDisabled={true}
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            placement="top-center"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="flex flex-col gap-1">
-                    Add child leads
-                  </ModalHeader>
-                  <ModalBody>
-                    <NewSelect
-                      data={slugList}
-                      labelKey={"name"}
-                      valueKey={"name"}
-                      label={"Select child lead"}
-                      selectionMode="multiple"
-                      value={selectedItem}
-                      onChange={(e) => {
-                        setSelectedItem(e);
-                      }}
-                    />
-                    <ModalFooter className="w-full flex justify-end">
-                      <Button onPress={onClose}>Cancel</Button>
-                      <Button color="primary" onPress={handleAddChildLead}>
-                        Submit
-                      </Button>
-                    </ModalFooter>
-                  </ModalBody>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
-        </>
-      ) : (
-        <StatusDisplay
-          type="notfound"
-          message="Sorry, this lead is not a parent lead."
-        />
-      )}
+      {
+        // plantSetupData
+        true ? (
+          <>
+            <h1 className="font-sans text-2xl font-medium mb-1">
+              Child lead list
+            </h1>
+            <Table
+              isHeaderSticky
+              aria-label="Example table with custom cells, pagination and sorting"
+              bottomContent={bottomContent}
+              bottomContentPlacement="outside"
+              classNames={{
+                wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
+                table: "w-full",
+              }}
+              sortDescriptor={sortDescriptor}
+              topContent={topContent}
+              topContentPlacement="outside"
+              onSelectionChange={setSelectedKeys}
+              onSortChange={setSortDescriptor}
+            >
+              <TableHeader columns={headerColumns}>
+                {(column) => (
+                  <TableColumn
+                    key={column.uid}
+                    align={column.uid === "actions" ? "center" : "start"}
+                    allowsSorting={column.sortable}
+                  >
+                    {column.name}
+                  </TableColumn>
+                )}
+              </TableHeader>
+              <TableBody emptyContent={"No data found"} items={sortedItems}>
+                {(item) => (
+                  <TableRow key={item.childId}>
+                    {(columnKey) => (
+                      <TableCell>{renderCell(item, columnKey)}</TableCell>
+                    )}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <Modal
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={isOpen}
+              onOpenChange={onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Add child leads
+                    </ModalHeader>
+                    <ModalBody>
+                      <NewSelect
+                        data={slugList}
+                        labelKey={"name"}
+                        valueKey={"name"}
+                        label={"Select child lead"}
+                        selectionMode="multiple"
+                        value={selectedItem}
+                        onChange={(e) => {
+                          setSelectedItem(e);
+                        }}
+                      />
+                      <ModalFooter className="w-full flex justify-end">
+                        <Button onPress={onClose}>Cancel</Button>
+                        <Button color="primary" onPress={handleAddChildLead}>
+                          Submit
+                        </Button>
+                      </ModalFooter>
+                    </ModalBody>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+          </>
+        ) : (
+          <StatusDisplay
+            type="notfound"
+            message="Sorry, this lead is not a parent lead."
+          />
+        )
+      }
     </>
   );
 };

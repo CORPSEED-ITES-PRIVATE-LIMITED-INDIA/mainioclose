@@ -293,7 +293,7 @@ const Unbill = () => {
           addToast({ title: resp?.payload?.data?.message, color: "danger" });
         }
       })
-      .catch((err) =>
+      .catch(() =>
         addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };

@@ -13,7 +13,7 @@ const LeadDetail = () => {
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
-    (state) => state.auth.getDepartmentDetail?.department
+    (state) => state.auth.getDepartmentDetail?.department,
   );
 
   const [selectedKey, setSelectedKey] = useState("leadEstimate");
@@ -35,7 +35,7 @@ const LeadDetail = () => {
         ]
       : [
           { id: "leadDetail", label: "Details" },
-          // { id: "childLead", label: "Child lead" },
+          { id: "childLead", label: "Child lead" },
           // { id: "companyForm", label: "Company" },
           // { id: "leadCompanyForm", label: "Lead company" },
           { id: "vendors", label: "Vendors" },

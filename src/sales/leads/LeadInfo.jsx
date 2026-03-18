@@ -765,11 +765,11 @@ const LeadInfo = () => {
                               <span className="font-medium text-xm">
                                 {item?.name || "-"}
                               </span>
-                              {item?.email && (
+                              {item?.emails && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="w-4 h-4" />
                                   <div className="flex flex-wrap text-sm text-default-500">
-                                    {item?.email || ""}
+                                    {item?.emails || ""}
                                   </div>
                                 </div>
                               )}

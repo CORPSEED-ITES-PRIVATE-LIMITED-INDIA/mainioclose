@@ -507,7 +507,10 @@ export const editProposalAndEmailTemplate = createAsyncThunk(
 export const addApplicantType = createAsyncThunk(
   "addApplicantType",
   async (data) => {
-    const response = await api.post(`/api/applicant-types`, data);
+    const response = await api.post(
+      `/operationService/api/applicant-types`,
+      data,
+    );
     return response.data;
   },
 );
@@ -516,7 +519,7 @@ export const getApplicantTypeList = createAsyncThunk(
   "getApplicantTypeList",
   async ({ page, size }) => {
     const response = await api.get(
-      `/api/applicant-types?page=${page}&size=${size}`,
+      `/operationService/api/applicant-types?page=${page}&size=${size}`,
     );
     return response.data;
   },

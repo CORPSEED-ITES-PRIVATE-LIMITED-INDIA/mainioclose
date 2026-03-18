@@ -56,9 +56,11 @@ const ProductDocument = () => {
   const applicantTypeList = useSelector(
     (state) => state.setting.applicantTypeList,
   );
-  const allDocumentList = useSelector((state) => state.product.allDocumentList);
+  const allDocumentList = useSelector(
+    (state) => state?.product?.allDocumentList || [],
+  );
   const data = useSelector(
-    (state) => state.product.allDocumentCheckListForProduct,
+    (state) => state?.product?.allDocumentCheckListForProduct || [],
   );
   const formValues = {
     productId: solutionId,

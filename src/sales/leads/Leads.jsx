@@ -219,7 +219,6 @@ const Leads = () => {
   const [itemId, setItemId] = useState(null);
   const [loading, setLoading] = useState("");
   const [leadsFileUploadingUrl, setLeadsFileUploadingUrl] = useState(null);
-  const [expandedRows, setExpandedRows] = useState(new Set());
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -246,18 +245,6 @@ const Leads = () => {
     dispatch(getAllUrlList());
   }, [dispatch, userId]);
 
-  const toggleRow = (id) => {
-    setExpandedRows((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
   const headerColumns = useMemo(() => {
     const cols = columns(adminRole) || [];
     if (visibleColumns === "all") return cols;
@@ -273,28 +260,15 @@ const Leads = () => {
 
   const pages = Math.ceil(count / allMultiFilterData?.size) || 1;
 
-  const flattenedItems = useMemo(() => {
-    const result = [];
+  const sortedItems = useMemo(() => {
+    return [...filteredItems];
+  }, [filteredItems]);
 
-    const process = (items, level = 0) => {
-      items.forEach((item) => {
-        result.push({ ...item, _level: level, _isChild: level > 0 });
-
-        if (expandedRows.has(item.id) && item.childLead?.length) {
-          process(item.childLead, level + 1);
-        }
-      });
-    };
-
-    process(filteredItems);
-    return result;
-  }, [filteredItems, expandedRows]);
-
-  const visibleCount = flattenedItems.length;
+  const visibleCount = sortedItems.length;
 
   const handleSelectionChange = (selection) => {
     if (selection === "all") {
-      const allKeys = new Set(flattenedItems.map((item) => item.id));
+      const allKeys = new Set(sortedItems.map((item) => item.id));
       setSelectedKeys(allKeys);
     } else {
       setSelectedKeys(selection);
@@ -443,19 +417,16 @@ const Leads = () => {
       switch (columnKey) {
         case "leadName":
           return (
-            <div className="flex items-center gap-2">
-              {/* Expand / Collapse button */}
-              {lead?.childLead?.length > 0 && (
-                <ChevronDown
-                  className={`w-4 h-4 cursor-pointer transition-transform ${
-                    expandedRows.has(lead.id) ? "rotate-180" : ""
-                  }`}
-                  onClick={() => toggleRow(lead.id)}
+            <div className="flex  gap-1">
+              {department?.department === "Quality Team" && (
+                <Flag
+                  className="h-4 w-4 cursor-pointer"
+                  color={lead?.reopenByQuality ? "red" : "black"}
+                  onClick={() => handleFlag(lead)}
                 />
               )}
 
-              {/* Indentation */}
-              <div style={{ marginLeft: `${lead._level * 20}px` }}>
+              <div className="flex flex-col">
                 <Link
                   to={`${lead?.id}/leadDetail`}
                   className="font-semibold"
@@ -1326,7 +1297,7 @@ const Leads = () => {
     allLeadUser,
     filterPopOver,
     actionPopOver,
-    filteredItems,
+    sortedItems,
     data,
     multiDeleteModal,
   ]);
@@ -1454,14 +1425,9 @@ const Leads = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={filteredItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow
-              key={item?.id}
-              className={`${getRowClassName(item)} ${
-                item._isChild ? "bg-gray-50" : ""
-              }`}
-            >
+            <TableRow key={item?.id} className={getRowClassName(item)}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}

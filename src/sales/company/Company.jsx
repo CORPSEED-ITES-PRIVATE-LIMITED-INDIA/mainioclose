@@ -139,8 +139,9 @@ const Company = () => {
   }, [sortDescriptor, data]);
 
   const handleSelectionChange = (selection) => {
+    console.log("selection", selection);
     if (selection === "all") {
-      const allKeys = new Set(sortedItems.map((item) => item.companyId));
+      const allKeys = new Set(sortedItems.map((item) => item?.id));
       setSelectedKeys(allKeys);
     } else {
       setSelectedKeys(selection);
@@ -209,7 +210,12 @@ const Company = () => {
           <div className="flex flex-col">
             <span className="font-normal">{company.address || "-"}</span>
             <span className="text-sm text-gray-400">
-              {[company?.city, company?.state, company?.country].join(",")}
+              {[
+                company?.city,
+                company?.state,
+                company?.country,
+                company?.primaryPinCode,
+              ].join(",")}
             </span>
           </div>
         );
@@ -243,7 +249,7 @@ const Company = () => {
                 >
                   History
                 </DropdownItem>
-                <DropdownItem
+                {/* <DropdownItem
                   key="edit"
                   onPress={() => {
                     onOpen();
@@ -251,11 +257,11 @@ const Company = () => {
                   }}
                 >
                   Edit
-                </DropdownItem>
+                </DropdownItem> */}
                 <DropdownItem
                   key="edit"
                   onPress={() => {
-                    handleUpdateAssignee(company?.companyId);
+                    handleUpdateAssignee(company?.id);
                   }}
                 >
                   Update assignee
@@ -654,7 +660,7 @@ const Company = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.companyId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
