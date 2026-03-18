@@ -480,7 +480,12 @@ const Documents = () => {
                       name="name"
                       control={control}
                       render={({ field }) => (
-                        <Input isRequired label="Name" {...field} />
+                        <Input
+                          isRequired
+                          label="Name"
+                          errorMessage={errors.name?.message}
+                          {...field}
+                        />
                       )}
                     />
 
@@ -489,7 +494,12 @@ const Documents = () => {
                       name="type"
                       control={control}
                       render={({ field }) => (
-                        <Input isRequired label="Type" {...field} />
+                        <Input
+                          isRequired
+                          label="Type"
+                          errorMessage={errors.type?.message}
+                          {...field}
+                        />
                       )}
                     />
 
@@ -499,6 +509,7 @@ const Documents = () => {
                       render={({ field }) => (
                         <NewSelect
                           data={countryList}
+                          isRequired
                           label="Country"
                           labelKey="name"
                           valueKey="name"
@@ -519,6 +530,7 @@ const Documents = () => {
                       render={({ field }) => (
                         <NewSelect
                           data={statesList}
+                          isRequired
                           label="State"
                           labelKey="name"
                           valueKey="name"
@@ -535,9 +547,15 @@ const Documents = () => {
                     {/* centralName */}
                     <Controller
                       name="centralName"
+                      isRequired
                       control={control}
                       render={({ field }) => (
-                        <Input isRequired label="Central Name" {...field} />
+                        <Input
+                          isRequired
+                          label="Central Name"
+                          errorMessage={errors.centralName?.message}
+                          {...field}
+                        />
                       )}
                     />
 
@@ -548,6 +566,8 @@ const Documents = () => {
                       render={({ field }) => (
                         <NewSelect
                           label="Expiry Type"
+                          isRequired
+                          errorMessage={errors.expiryType?.message}
                           data={[
                             { label: "FIXED", value: "FIXED" },
                             { label: "ROLLING", value: "ROLLING" },
@@ -566,9 +586,11 @@ const Documents = () => {
                       control={control}
                       render={({ field }) => (
                         <NewSelect
+                          isRequired
                           label="Is Mandatory?"
                           labelKey="label"
                           valueKey="value"
+                          errorMessage={errors.mandatory?.message}
                           data={[
                             { label: "Yes", value: true },
                             { label: "No", value: false },
@@ -587,6 +609,7 @@ const Documents = () => {
                         <Input
                           type="number"
                           isRequired
+                          errorMessage={errors.maxValidityYears?.message}
                           label="Max Validity (Years)"
                           {...field}
                         />
@@ -601,6 +624,7 @@ const Documents = () => {
                         <Input
                           type="number"
                           isRequired
+                          errorMessage={errors.minFileSizeKb?.message}
                           label="Min File Size (KB)"
                           {...field}
                         />
@@ -613,6 +637,7 @@ const Documents = () => {
                       render={({ field }) => (
                         <Input
                           isRequired
+                          errorMessage={errors.allowedFormats?.message}
                           label="Allowed Formats (e.g., pdf, jpg, docx)"
                           {...field}
                         />
@@ -624,7 +649,12 @@ const Documents = () => {
                       name="description"
                       control={control}
                       render={({ field }) => (
-                        <Textarea isRequired label="Description" {...field} />
+                        <Textarea
+                          isRequired
+                          label="Description"
+                          errorMessage={errors.description?.message}
+                          {...field}
+                        />
                       )}
                     />
                   </div>

@@ -61,6 +61,26 @@ const SalesModuleRouting = () => {
           </KeepAlive>
         }
       />
+      <Route
+        path="sales/leads/:parentLeadId/childLeads"
+        element={<ChildLead />}
+      />
+      <Route
+        path="sales/leads/:parentLeadId/childLeads/:leadId"
+        element={<LeadDetail />}
+      >
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="childLead" element={<ChildLead />} />
+        <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="proposal" element={<Proposal />} />
+        <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadEstimates" element={<LeadEstimates />} />
+        <Route path="leadTasks" element={<LeadTask />} />
+        <Route path="leadHistory" element={<LeadHistory />} />
+      </Route>
+
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
         <Route index path="leadDetail" element={<LeadInfo />} />
         <Route path="childLead" element={<ChildLead />} />

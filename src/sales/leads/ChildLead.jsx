@@ -24,10 +24,12 @@ import {
 } from "@heroui/react";
 import { ChevronDown, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   addLeadChild,
   checkPlantSetUpData,
+  createChildLead,
+  getChildLeadListByParentLeadId,
   getSingleLeadDataByLeadId,
 } from "../../toolkit/slices/leadSlice";
 import NewSelect from "../../components/NewSelect";
@@ -35,10 +37,10 @@ import StatusDisplay from "../../components/StatusDisplay";
 import { getAllSlugList } from "../../toolkit/slices/settingSlice";
 
 export const columns = [
-  { name: "ID", uid: "childId" },
-  { name: "LEAD NAME", uid: "childLeadName", sortable: true },
-  { name: "ASSIGNEE", uid: "childAssigneeName" },
-  { name: "ASSIGNEE EMAIL", uid: "childAssigneeEmail" },
+  { name: "ID", uid: "id" },
+  { name: "LEAD NAME", uid: "leadName", sortable: true },
+  { name: "ASSIGNEE", uid: "assigneeName" },
+  { name: "ASSIGNEE EMAIL", uid: "assigneeEmail" },
 ];
 
 export function capitalize(s) {
@@ -46,19 +48,19 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "childId",
-  "childLeadName",
-  "childAssigneeName",
-  "childAssigneeEmail",
+  "id",
+  "leadName",
+  "assigneeName",
+  "assigneeEmail",
 ];
 
 const ChildLead = () => {
   const dispatch = useDispatch();
-  const { leadId, userId } = useParams();
+  const { parentLeadId, userId } = useParams();
   const { onClose, onOpen, isOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.leads.singleLeadData?.childLead);
+  const data = useSelector((state) => state.leads.childLeadList?.children);
   const count = useSelector(
-    (state) => state.leads.singleLeadData?.childLead?.length,
+    (state) => state.leads.childLeadList?.children?.length,
   );
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
@@ -79,14 +81,17 @@ const ChildLead = () => {
 
   useEffect(() => {
     dispatch(getAllSlugList());
-    dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        const temp = resp.payload;
-        if (temp?.originalName) {
-          dispatch(checkPlantSetUpData(temp?.originalName));
+    dispatch(getSingleLeadDataByLeadId({ leadId: parentLeadId, userId })).then(
+      (resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          const temp = resp.payload;
+          if (temp?.originalName) {
+            dispatch(checkPlantSetUpData(temp?.originalName));
+          }
         }
-      }
-    });
+      },
+    );
+    dispatch(getChildLeadListByParentLeadId({ leadId: parentLeadId, userId }));
   }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
@@ -130,9 +135,10 @@ const ChildLead = () => {
 
   const handleAddChildLead = useCallback(() => {
     dispatch(
-      addLeadChild({
-        leadId: leadId,
-        serviceName: selectedItem,
+      createChildLead({
+        parentLeadId: parentLeadId,
+        solutionName: selectedItem,
+        assigneeId: userId,
       }),
     )
       .then((resp) => {
@@ -142,22 +148,29 @@ const ChildLead = () => {
             color: "success",
           });
           setSelectedItem([]);
-          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+          dispatch(getSingleLeadDataByLeadId({ leadId: parentLeadId, userId }));
+          dispatch(
+            getChildLeadListByParentLeadId({ leadId: parentLeadId, userId }),
+          );
           onClose();
         } else {
-          addToast({ message: "Something went wrong !.", color: "danger" });
+          addToast({ title: resp?.payload?.data?.message, color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ message: "Something went wrong !.", color: "danger" }),
-      );
-  }, [leadId, selectedItem, dispatch]);
+      .catch((err) => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
+  }, [parentLeadId, selectedItem, dispatch]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "childLeadName":
-        return <span className="font-medium">{rowData?.childLeadName}</span>;
+      case "leadName":
+        return (
+          <Link to={`${rowData?.id}/leadDetail`} className="font-medium">
+            {rowData?.leadName}
+          </Link>
+        );
       default:
         return cellValue;
     }

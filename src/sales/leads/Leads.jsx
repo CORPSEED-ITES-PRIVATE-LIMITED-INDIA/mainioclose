@@ -427,17 +427,32 @@ const Leads = () => {
               )}
 
               <div className="flex flex-col">
-                <Link
-                  to={`${lead?.id}/leadDetail`}
-                  className="font-semibold"
-                  onClick={() =>
-                    dispatch(handleViewHistory({ leadId: lead?.id, userId }))
-                  }
-                >
-                  {lead?.originalName
-                    ? lead?.originalName
-                    : lead?.leadName || "-"}
-                </Link>
+                {lead?.plantSetupFlag ? (
+                  <Link
+                    to={`${lead?.id}/childLeads`}
+                    className="font-semibold"
+                    onClick={() =>
+                      dispatch(handleViewHistory({ leadId: lead?.id, userId }))
+                    }
+                  >
+                    {lead?.originalName
+                      ? lead?.originalName
+                      : lead?.leadName || "-"}
+                  </Link>
+                ) : (
+                  <Link
+                    to={`${lead?.id}/leadDetail`}
+                    className="font-semibold"
+                    onClick={() =>
+                      dispatch(handleViewHistory({ leadId: lead?.id, userId }))
+                    }
+                  >
+                    {lead?.originalName
+                      ? lead?.originalName
+                      : lead?.leadName || "-"}
+                  </Link>
+                )}
+
                 <div className="flex items-center">
                   <Badge
                     color={lead?.auto ? "success" : "danger"}

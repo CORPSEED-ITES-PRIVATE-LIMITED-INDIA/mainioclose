@@ -644,11 +644,15 @@ export const getCkEditorTokenList = createAsyncThunk(
 
 export const updateTokenInCkEditor = createAsyncThunk(
   "updateTokenInCkEditor",
-  async (data) => {
-    const response = await api.put(
-      `/leadService/api/v1/editor/editCkEditorData?id=${data.id}&key=${data.key}&value=${data.value}`,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/editor/editCkEditorData?id=${data.id}&key=${data.key}&value=${data.value}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 
