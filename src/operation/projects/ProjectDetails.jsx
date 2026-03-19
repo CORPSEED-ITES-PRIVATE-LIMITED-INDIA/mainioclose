@@ -904,23 +904,101 @@ const ProjectDetails = () => {
               </div>
             ))}
           </div>
-
           {/* CENTER CONTENT */}
-          <div className="col-span-2 border rounded-xl p-4 overflow-auto">
+          <div className="col-span-2 border rounded-xl overflow-auto">
             {selectedMilestone && (
               <>
-                <div className="flex justify-between items-center mb-3">
-                  <h2 className="font-semibold text-lg">
-                    {selectedMilestone.milestoneName}
-                  </h2>
+                <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-100 via-blue-50 to-blue-100 rounded-t-xl mb-2.5">
+                  <div className="flex justify-between items-center p-4 border-b">
+                    <h2 className="font-semibold text-lg">
+                      {selectedMilestone.milestoneName}
+                    </h2>
+                    <div className="flex items-center gap-1.5">
+                      {true ? (
+                        <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-medium text-gray-700">
+                              {selectedMilestone?.assignedUser?.fullName} Hello
+                            </span>
 
-                  <Chip color={statusColors[selectedMilestone?.status]}>
-                    {selectedMilestone?.status}
-                  </Chip>
+                            <span className="text-gray-400 text-xs">
+                              {selectedMilestone?.assignedUser?.email}{" "}
+                              hello@email.com
+                            </span>
+                          </div>
+
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => {
+                              assigneeModal.onOpen();
+
+                              dispatch(
+                                getUsersListByDepartmentId(
+                                  selectedMilestone?.departmentId,
+                                ),
+                              );
+
+                              setAssigneeObj((prev) => ({
+                                ...prev,
+                                assignmentId: selectedMilestone?.id,
+                                changedById: userId,
+                              }));
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className=" flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
+                          Select Assignee
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => {
+                              assigneeModal.onOpen();
+
+                              dispatch(
+                                getUsersListByDepartmentId(
+                                  selectedMilestone?.departmentId,
+                                ),
+                              );
+
+                              setAssigneeObj((prev) => ({
+                                ...prev,
+                                assignmentId: selectedMilestone?.id,
+                                changedById: userId,
+                              }));
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      <Chip
+                        className="cursor-pointer"
+                        onClick={() => {
+                          statusModal.onOpen();
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            newStatusName: selectedMilestone?.status,
+                            assignmentId: selectedMilestone?.id,
+                            changedById: userId,
+                          }));
+                        }}
+                        color={statusColors[selectedMilestone?.status]}
+                      >
+                        {selectedMilestone?.status}
+                      </Chip>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Timeline / Tasks */}
-                <div className="space-y-3">
+                <div className="space-y-3 px-2.5">
                   {mileStoneHistoryDetail?.assignmentEvents?.map(
                     (history, index) => (
                       <div
@@ -946,128 +1024,6 @@ const ProjectDetails = () => {
                                 "DD MMM YYYY , HH:mm a",
                               )}
                             </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <div className="flex items-center justify-between w-full">
-                            <div className="group relative inline-flex items-center">
-                              {history?.assignedUser ? (
-                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
-                                  <span className="font-medium text-gray-700">
-                                    {history?.assignedUser?.fullName}
-                                  </span>
-
-                                  <span className="text-gray-400 text-xs">
-                                    {history?.assignedUser?.email}
-                                  </span>
-
-                                  {/* Hover Edit Button */}
-                                  <Button
-                                    isIconOnly
-                                    size="sm"
-                                    variant="light"
-                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
-                                    onPress={() => {
-                                      assigneeModal.onOpen();
-
-                                      dispatch(
-                                        getUsersListByDepartmentId(
-                                          history?.departmentId,
-                                        ),
-                                      );
-
-                                      setAssigneeObj((prev) => ({
-                                        ...prev,
-                                        assignmentId: history?.id,
-                                        changedById: userId,
-                                      }));
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
-                                  Select Assignee
-                                  <Button
-                                    isIconOnly
-                                    size="sm"
-                                    variant="light"
-                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
-                                    onPress={() => {
-                                      assigneeModal.onOpen();
-
-                                      dispatch(
-                                        getUsersListByDepartmentId(
-                                          history?.departmentId,
-                                        ),
-                                      );
-
-                                      setAssigneeObj((prev) => ({
-                                        ...prev,
-                                        assignmentId: history?.id,
-                                        changedById: userId,
-                                      }));
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between w-full">
-                            <div className="group relative inline-flex items-center">
-                              {history?.status ? (
-                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
-                                  <span className="font-medium text-gray-700">
-                                    {history?.status}
-                                  </span>
-
-                                  {/* Hover Edit Button */}
-                                  <Button
-                                    isIconOnly
-                                    size="sm"
-                                    variant="light"
-                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
-                                    onPress={() => {
-                                      statusModal.onOpen();
-                                      setStatusObj((prev) => ({
-                                        ...prev,
-                                        newStatusName: history?.status,
-                                        assignmentId: history?.id,
-                                        changedById: userId,
-                                      }));
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
-                                  Update status
-                                  <Button
-                                    isIconOnly
-                                    size="sm"
-                                    variant="light"
-                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
-                                    onPress={() => {
-                                      statusModal.onOpen();
-                                      setStatusObj((prev) => ({
-                                        ...prev,
-                                        newStatusName: history?.status,
-                                        assignmentId: history?.id,
-                                        changedById: userId,
-                                      }));
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -1335,6 +1291,7 @@ const ProjectDetails = () => {
               <ModalBody className="max-h-[90vh] overflow-auto">
                 <NewSelect
                   label={"Select assignee"}
+                  isRequired={true}
                   data={userListBydepartment || []}
                   labelKey={"fullName"}
                   valueKey={"id"}
@@ -1363,7 +1320,11 @@ const ProjectDetails = () => {
                 <Button variant="light" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button color="primary" onPress={handleChangeAssignee}>
+                <Button
+                  color="primary"
+                  isDisabled={!assigneeObj?.newUserId}
+                  onPress={handleChangeAssignee}
+                >
                   Submit
                 </Button>
               </ModalFooter>
