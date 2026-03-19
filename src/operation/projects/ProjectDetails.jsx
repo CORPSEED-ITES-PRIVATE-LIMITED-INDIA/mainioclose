@@ -124,7 +124,7 @@ export const PdfIcon = (props) => {
 const CommentThread = ({ comment, level = 0, onReply }) => {
   return (
     <div className="mt-2" style={{ marginLeft: Math.min(level * 16, 64) }}>
-      <div className="group rounded-md p-2 bg-gradient-to-br from-blue-50 to-blue-100 border text-xs relative">
+      <div className="group rounded-md p-2 bg-gradient-to-br from-blue-50 to-blue-100 border text-xs relative max-w-full overflow-hidden">
         <div className="flex justify-between text-gray-500 text-[11px]">
           <span className="font-medium text-gray-700">
             {comment.createdByUserName}
@@ -133,7 +133,9 @@ const CommentThread = ({ comment, level = 0, onReply }) => {
           <span>{dayjs(comment.createdDate).format("DD/MM/YYYY , HH:mm")}</span>
         </div>
 
-        <div className="mt-1 text-gray-700">{comment.commentText}</div>
+        <div className="mt-1 text-gray-700 break-words whitespace-pre-wrap">
+          {comment.commentText}
+        </div>
 
         <button
           onClick={() => onReply(comment.id)}
@@ -303,6 +305,11 @@ const ProjectDetails = () => {
   );
   const activities = useSelector(
     (state) => state.operation.activitiesByProjectId?.content || [],
+  );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole?.includes("ADMIN");
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
   );
 
   const [selectedMilestone, setSelectedMilestone] = useState(null);
@@ -796,6 +803,39 @@ const ProjectDetails = () => {
                 </p>
               </div>
             </div>
+
+            {(department === "CRT" || adminRole) &&
+              detailedData?.projectDetails?.contacts?.length > 0 &&
+              detailedData?.projectDetails?.contacts?.map((contact) => (
+                <>
+                  <div className="flex items-start gap-2 w-full">
+                    <User2 className="!w-4 !h-4" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm break-words">
+                        Client name :{" "}
+                        {`${contact.title} ${contact.name}, ${contact?.designation}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <Phone className="w-4 h-4" />{" "}
+                    <div className="flex flex-col ">
+                      <p className="text-sm">Phone : {contact.contactNo}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <Mail className="w-4 h-4" />{" "}
+                    <div className="flex flex-col ">
+                      <p className="text-sm">
+                        Email : {contact.emails || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ))}
+
             {/* <Progress
               label={"Completed"}
               aria-label="Downloading..."

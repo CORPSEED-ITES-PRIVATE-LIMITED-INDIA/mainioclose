@@ -96,6 +96,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "amount",
   "dueAmount",
+  "mileStone",
   "status",
   "actions",
 ];
@@ -155,8 +156,7 @@ const Projects = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [searchBy, setSearchBy] = useState("projectName");
-  const [dueOnlyFilter, setDueOnlyFilter] = useState(false);
-  const [statusFilter, setStatusFilter] = useState(null); // null, "OPEN", "IN_PROGRESS", "COMPLETED"
+  const [statusFilter, setStatusFilter] = useState(null);
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
@@ -198,11 +198,6 @@ const Projects = () => {
     }
 
     // Apply due only filter
-    if (dueOnlyFilter) {
-      filteredUsers = filteredUsers.filter(
-        (item) => item?.dueAmount && item?.dueAmount > 0,
-      );
-    }
 
     // if (hasSearchFilter) {
     //   filteredUsers = filteredUsers.filter((item) =>
@@ -212,7 +207,7 @@ const Projects = () => {
     //   );
     // }
     return filteredUsers;
-  }, [data, filterValue, dueOnlyFilter, statusFilter]);
+  }, [data, filterValue, statusFilter]);
 
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
@@ -250,9 +245,6 @@ const Projects = () => {
             <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
               {rowData?.name}
             </Link>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {rowData?.statusName}
-            </p>
           </div>
         );
       case "projectNo":
@@ -320,7 +312,6 @@ const Projects = () => {
           </div>
         );
       case "mileStone":
-        let progess = Math.ceil((2 / 3) * 100);
         return (
           <div>
             <Progress
@@ -329,7 +320,7 @@ const Projects = () => {
               color="success"
               showValueLabel={true}
               size="sm"
-              value={progess}
+              value={rowData?.milestoneCompletionPercentage}
             />
           </div>
         );
@@ -594,46 +585,9 @@ const Projects = () => {
         </div>
 
         {/* Search Bar Row */}
-        <div className="flex p-4 bg-white gap-5 items-center w-full">
-          <Filter size={20} className="text-gray-400 flex-shrink-0" />
+        <div className="flex p-4 bg-white items-center w-full">
           <Select
-            className="max-w-[150px]"
-            selectionMode="single"
-            selectedKeys={["thisMonth"]}
-            defaultSelectedKeys={["thisMonth"]}
-          >
-            <SelectItem key={"thisMonth"}>This Month</SelectItem>
-          </Select>
-          <Button
-            variant="light"
-            size="sm"
-            onClick={() => setDueOnlyFilter(!dueOnlyFilter)}
-            className={
-              dueOnlyFilter
-                ? "bg-gray-200 text-black p-3"
-                : "bg-gray-100 text-black p-3"
-            }
-          >
-            Due Only
-          </Button>
-          <Select
-            className="max-w-[120px]"
-            selectionMode="single"
-            selectedKeys={["sales"]}
-            defaultSelectedKeys={["sales"]}
-          >
-            <SelectItem key={"sales"}>Sales</SelectItem>
-          </Select>
-          <Select
-            className="max-w-[140px]"
-            selectionMode="single"
-            selectedKeys={["services"]}
-            defaultSelectedKeys={["services"]}
-          >
-            <SelectItem key={"services"}>Services</SelectItem>
-          </Select>
-          <Select
-            className="max-w-[15%]"
+            className="max-w-[12%]"
             selectionMode="single"
             selectedKeys={[searchBy]}
             onSelectionChange={(e) => {
@@ -648,7 +602,7 @@ const Projects = () => {
           </Select>
           <Input
             isClearable
-            className="max-w-[40%]"
+            className="max-w-[22%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
@@ -673,20 +627,29 @@ const Projects = () => {
     hasSearchFilter,
     searchBy,
     projectStatusCounts,
-    dueOnlyFilter,
     statusFilter,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex  items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-2 px-2 flex justify-between items-center">
+        <span className="text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
 
-        <div className="hidden sm:flex w-[30%]  gap-2">
+        <Pagination
+          isCompact
+          showControls
+          showShadow
+          color="primary"
+          page={paginationData?.page}
+          total={pages}
+          onChange={(e) => setPaginationData((prev) => ({ ...prev, page: e }))}
+        />
+
+        <div className="space-x-1.5">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -695,17 +658,6 @@ const Projects = () => {
           >
             Previous
           </Button>
-          <Pagination
-            isCompact
-            showControls
-            showShadow
-            color="primary"
-            page={paginationData?.page}
-            total={pages}
-            onChange={(e) =>
-              setPaginationData((prev) => ({ ...prev, page: e }))
-            }
-          />
           <Button
             isDisabled={pages === 1}
             size="sm"

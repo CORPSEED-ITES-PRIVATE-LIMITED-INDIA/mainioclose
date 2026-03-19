@@ -99,12 +99,12 @@ export const navItems = [
         url: "accounts/unbilled",
         key: "unbilled",
       },
-      {
-        title: "Estimate",
-        url: "accounts/orgEstimate",
-        key: "accounts/orgEstimate",
-        icon: "",
-      },
+      // {
+      //   title: "Estimate",
+      //   url: "accounts/orgEstimate",
+      //   key: "accounts/orgEstimate",
+      //   icon: "",
+      // },
       // {
       //   title: "Vendors payment",
       //   url: "accounts/vendorsPayment",
@@ -341,12 +341,12 @@ export const accountNavItems = [
     url: "accounts/dashboard",
     key: "dashboard",
   },
-  {
-    title: "Company form",
-    icon: "BookText",
-    url: "accounts/companyForm",
-    key: "companyForm",
-  },
+  // {
+  //   title: "Company form",
+  //   icon: "BookText",
+  //   url: "accounts/companyForm",
+  //   key: "companyForm",
+  // },
   {
     title: "Company approvals",
     icon: "BookCheck",
@@ -383,12 +383,12 @@ export const accountNavItems = [
     key: "unbilled",
     icon: "ReceiptText",
   },
-  {
-    title: "Estimate",
-    url: "accounts/orgEstimate",
-    key: "accounts/orgEstimate",
-    icon: "Book",
-  },
+  // {
+  //   title: "Estimate",
+  //   url: "accounts/orgEstimate",
+  //   key: "accounts/orgEstimate",
+  //   icon: "Book",
+  // },
   // {
   //   title: "Vendor's payments",
   //   url: "accounts/vendorsPayment",

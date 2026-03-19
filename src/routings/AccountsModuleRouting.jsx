@@ -33,7 +33,10 @@ export const AccountsModuleRouting = () => {
   return (
     <>
       <Route path="accounts/companyApprovals" element={<CompanyApprovals />} />
-      <Route path="accounts/companyApprovals/:companyId/units" element={<CompanyUnitsInAccount />} />
+      <Route
+        path="accounts/companyApprovals/:companyId/units"
+        element={<CompanyUnitsInAccount />}
+      />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
       <Route path="accounts/orgEstimate" element={<OrganizationEstimate />} />
@@ -127,10 +130,16 @@ export const accountLoginModuleRouting = () => {
         path="accounts/organizations/balanceSheet"
         element={<BalanceSheet />}
       />
-      <Route path="accounts/organizations/trailBalance" element={<TrailBalance />} />
+      <Route
+        path="accounts/organizations/trailBalance"
+        element={<TrailBalance />}
+      />
       <Route path="accounts/organizations/tds" element={<TDS />} />
       <Route path="accounts/organizations/gst" element={<GST />} />
-      <Route path="accounts/organizations/salesReport" element={<SalesReport />} />
+      <Route
+        path="accounts/organizations/salesReport"
+        element={<SalesReport />}
+      />
       <Route path="accounts/settings/ledgerType" element={<LedgerType />} />
       <Route path="accounts/settings/voucherType" element={<VoucherType />} />
       <Route path="accounts/settings/statutory" element={<Statutory />} />
