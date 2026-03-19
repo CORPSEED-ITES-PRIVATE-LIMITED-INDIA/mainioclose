@@ -27,7 +27,13 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  Select,
+  SelectItem,
 } from "@heroui/react";
+import * as XLSX from "xlsx";
 import { Award, ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -35,6 +41,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   getAllNewCompanies,
   getAllNewCompaniesCount,
+  getCompaniesListForCSVExportFile,
   getHistoryByCompanyId,
   searchCompanies,
   updateMultiCompanyAssignee,
@@ -69,6 +76,188 @@ const INITIAL_VISIBLE_COLUMNS = [
   "primaryAddres",
   "actions",
 ];
+
+const ExportCsvPopover = ({ allLeadUser, count }) => {
+  const dispatch = useDispatch();
+
+  const [csvFilter, setCsvFilter] = useState({
+    status: "ALL",
+    assigneeId: "",
+    page: 1,
+    size: 200,
+  });
+
+  const totalPages = Math.ceil(count / csvFilter.size) || 1;
+
+  const handleExport = async () => {
+    try {
+      const response = await dispatch(
+        getCompaniesListForCSVExportFile({
+          assigneeId: csvFilter.assigneeId,
+          onboardingStatus: csvFilter.status,
+          page: csvFilter.page,
+          size: csvFilter.size,
+        }),
+      );
+
+      const data = response?.payload || [];
+
+      if (!data.length) {
+        addToast({ title: "No data found", color: "warning" });
+        return;
+      }
+
+      const rows = [];
+
+      data.forEach((company) => {
+        // COMPANY ROW
+        rows.push({
+          Level: "Company",
+          CompanyName: company.name,
+          PAN: company.panNo,
+          Status: company.onboardingStatus,
+          Assignee: company.assigneeName,
+          City: company.city,
+          State: company.state,
+          UnitName: "",
+          ContactName: "",
+        });
+
+        if (company.units?.length) {
+          company.units.forEach((unit) => {
+            // UNIT ROW
+            rows.push({
+              Level: "  Unit",
+              CompanyName: "",
+              PAN: "",
+              Status: "",
+              Assignee: "",
+              City: "",
+              State: "",
+              UnitName: unit.unitName,
+              GST: unit.gstNo,
+              UnitCity: unit.city,
+              UnitState: unit.state,
+              ContactName: "",
+            });
+
+            if (unit.contacts?.length) {
+              unit.contacts.forEach((contact) => {
+                // CONTACT ROW
+                rows.push({
+                  Level: "    Contact",
+                  CompanyName: "",
+                  PAN: "",
+                  Status: "",
+                  Assignee: "",
+                  City: "",
+                  State: "",
+                  UnitName: "",
+                  GST: "",
+                  UnitCity: "",
+                  UnitState: "",
+                  ContactName: contact.name,
+                  Email: contact.emails,
+                  Phone: contact.contactNo,
+                });
+              });
+            }
+          });
+        }
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Companies");
+
+      XLSX.writeFile(workbook, "Nested_Companies.xlsx");
+    } catch (err) {
+      addToast({ title: "Export failed", color: "danger" });
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-3 w-full">
+      {/* STATUS */}
+      <Select
+        label="Status"
+        selectedKeys={[String(csvFilter.status)]}
+        onSelectionChange={(keys) => {
+          const value = Array.from(keys)[0];
+          setCsvFilter((prev) => ({ ...prev, status: value }));
+        }}
+      >
+        <SelectItem key="ALL">ALL</SelectItem>
+        <SelectItem key="INITIATED">INITIATED</SelectItem>
+        <SelectItem key="MINIMAL">MINIMAL</SelectItem>
+        <SelectItem key="APPROVED">APPROVED</SelectItem>
+        <SelectItem key="DISAPPROVED">DISAPPROVED</SelectItem>
+      </Select>
+
+      {/* ASSIGNEE */}
+      <Select
+        label="Assignee"
+        selectedKeys={csvFilter.assigneeId ? [csvFilter.assigneeId] : []}
+        onSelectionChange={(keys) => {
+          const value = Array.from(keys)[0];
+          setCsvFilter((prev) => ({ ...prev, assigneeId: value }));
+        }}
+      >
+        {allLeadUser?.map((u) => (
+          <SelectItem key={u.id}>{u.fullName}</SelectItem>
+        ))}
+      </Select>
+
+      <Select
+        label="Page"
+        items={
+          totalPages > 0 &&
+          Array.from({ length: totalPages }, (_, i) => ({
+            label: `Page ${i + 1}`,
+            value: String(i + 1),
+          }))
+        }
+        selectedKeys={
+          totalPages > 0 ? new Set([String(csvFilter.page)]) : new Set()
+        }
+        onSelectionChange={(keys) => {
+          const value = Number(Array.from(keys)[0]);
+          setCsvFilter((prev) => ({
+            ...prev,
+            page: value,
+          }));
+        }}
+      >
+        {(item) => <SelectItem key={item.value}>{item.label}</SelectItem>}
+      </Select>
+
+      {/* SIZE */}
+      <Select
+        label="Size"
+        selectedKeys={[String(csvFilter.size)]}
+        onSelectionChange={(keys) => {
+          const value = Number(Array.from(keys)[0]);
+          setCsvFilter((prev) => ({
+            ...prev,
+            size: value > 500 ? 500 : value,
+            page: 1, // reset page
+          }));
+        }}
+      >
+        <SelectItem key="50">50</SelectItem>
+        <SelectItem key="100">100</SelectItem>
+        <SelectItem key="200">200</SelectItem>
+        <SelectItem key="500">500</SelectItem>
+      </Select>
+
+      {/* EXPORT BUTTON */}
+      <Button color="primary" onPress={handleExport}>
+        Download CSV
+      </Button>
+    </div>
+  );
+};
 
 const Company = () => {
   const { userId } = useParams();
@@ -485,6 +674,16 @@ const Company = () => {
                 <DropdownItem key="DISAPPROVED">DISAPPROVED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
+
+            <Popover size="2xl">
+              <PopoverTrigger>
+                <Button color="success">Export CSV</Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="p-4 w-[460px]">
+                <ExportCsvPopover allLeadUser={allLeadUser} count={count} />
+              </PopoverContent>
+            </Popover>
             {/* 
             <Dropdown>
               <DropdownTrigger>

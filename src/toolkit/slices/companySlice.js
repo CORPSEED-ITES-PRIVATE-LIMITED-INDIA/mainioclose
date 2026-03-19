@@ -551,6 +551,21 @@ export const createCompanyAndUnitsForAccountsViaLeadEstimate = createAsyncThunk(
   },
 );
 
+export const getCompaniesListForCSVExportFile = createAsyncThunk(
+  "getCompaniesListForCSVExportFile",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/companies/full-data`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
