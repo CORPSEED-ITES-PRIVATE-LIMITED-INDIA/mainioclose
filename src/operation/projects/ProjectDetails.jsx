@@ -914,7 +914,7 @@ const ProjectDetails = () => {
                       {selectedMilestone.milestoneName}
                     </h2>
                     <div className="flex items-center gap-1.5">
-                      {true ? (
+                      {selectedMilestone?.assignedUser ? (
                         <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-medium text-gray-700">
