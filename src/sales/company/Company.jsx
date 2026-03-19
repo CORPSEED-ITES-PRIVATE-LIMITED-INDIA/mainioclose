@@ -675,15 +675,18 @@ const Company = () => {
               </DropdownMenu>
             </Dropdown>
 
-            <Popover size="2xl">
-              <PopoverTrigger>
-                <Button color="success">Export CSV</Button>
-              </PopoverTrigger>
+            {adminRole && (
+              <Popover size="2xl">
+                <PopoverTrigger>
+                  <Button color="success">Export CSV</Button>
+                </PopoverTrigger>
 
-              <PopoverContent className="p-4 w-[460px]">
-                <ExportCsvPopover allLeadUser={allLeadUser} count={count} />
-              </PopoverContent>
-            </Popover>
+                <PopoverContent className="p-4 w-[460px]">
+                  <ExportCsvPopover allLeadUser={allLeadUser} count={count} />
+                </PopoverContent>
+              </Popover>
+            )}
+
             {/* 
             <Dropdown>
               <DropdownTrigger>
