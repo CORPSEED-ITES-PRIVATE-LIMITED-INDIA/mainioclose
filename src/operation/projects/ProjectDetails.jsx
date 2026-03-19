@@ -918,12 +918,11 @@ const ProjectDetails = () => {
                         <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-medium text-gray-700">
-                              {selectedMilestone?.assignedUser?.fullName} Hello
+                              {selectedMilestone?.assignedUser?.fullName}
                             </span>
 
                             <span className="text-gray-400 text-xs">
                               {selectedMilestone?.assignedUser?.email}{" "}
-                              hello@email.com
                             </span>
                           </div>
 
