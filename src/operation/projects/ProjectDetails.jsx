@@ -949,71 +949,125 @@ const ProjectDetails = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between w-full">
-                          <div className="group relative inline-flex items-center">
-                            {history?.assignedUser ? (
-                              <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
-                                <span className="font-medium text-gray-700">
-                                  {history?.assignedUser?.fullName}
-                                </span>
+                        <div className="flex items-center">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="group relative inline-flex items-center">
+                              {history?.assignedUser ? (
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
+                                  <span className="font-medium text-gray-700">
+                                    {history?.assignedUser?.fullName}
+                                  </span>
 
-                                <span className="text-gray-400 text-xs">
-                                  {history?.assignedUser?.email}
-                                </span>
+                                  <span className="text-gray-400 text-xs">
+                                    {history?.assignedUser?.email}
+                                  </span>
 
-                                {/* Hover Edit Button */}
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="light"
-                                  className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
-                                  onPress={() => {
-                                    assigneeModal.onOpen();
+                                  {/* Hover Edit Button */}
+                                  <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="light"
+                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
+                                    onPress={() => {
+                                      assigneeModal.onOpen();
 
-                                    dispatch(
-                                      getUsersListByDepartmentId(
-                                        history?.departmentId,
-                                      ),
-                                    );
+                                      dispatch(
+                                        getUsersListByDepartmentId(
+                                          history?.departmentId,
+                                        ),
+                                      );
 
-                                    setAssigneeObj((prev) => ({
-                                      ...prev,
-                                      assignmentId: history?.id,
-                                      changedById: userId,
-                                    }));
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
-                                Select Assignee
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="light"
-                                  className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
-                                  onPress={() => {
-                                    assigneeModal.onOpen();
+                                      setAssigneeObj((prev) => ({
+                                        ...prev,
+                                        assignmentId: history?.id,
+                                        changedById: userId,
+                                      }));
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
+                                  Select Assignee
+                                  <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="light"
+                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
+                                    onPress={() => {
+                                      assigneeModal.onOpen();
 
-                                    dispatch(
-                                      getUsersListByDepartmentId(
-                                        history?.departmentId,
-                                      ),
-                                    );
+                                      dispatch(
+                                        getUsersListByDepartmentId(
+                                          history?.departmentId,
+                                        ),
+                                      );
 
-                                    setAssigneeObj((prev) => ({
-                                      ...prev,
-                                      assignmentId: history?.id,
-                                      changedById: userId,
-                                    }));
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
+                                      setAssigneeObj((prev) => ({
+                                        ...prev,
+                                        assignmentId: history?.id,
+                                        changedById: userId,
+                                      }));
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between w-full">
+                            <div className="group relative inline-flex items-center">
+                              {history?.status ? (
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
+                                  <span className="font-medium text-gray-700">
+                                    {history?.status}
+                                  </span>
+
+                                  {/* Hover Edit Button */}
+                                  <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="light"
+                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
+                                    onPress={() => {
+                                      statusModal.onOpen();
+                                      setStatusObj((prev) => ({
+                                        ...prev,
+                                        newStatusName: history?.status,
+                                        assignmentId: history?.id,
+                                        changedById: userId,
+                                      }));
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
+                                  Update status
+                                  <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="light"
+                                    className="absolute -right-8 opacity-0 group-hover:opacity-100 transition"
+                                    onPress={() => {
+                                      statusModal.onOpen();
+                                      setStatusObj((prev) => ({
+                                        ...prev,
+                                        newStatusName: history?.status,
+                                        assignmentId: history?.id,
+                                        changedById: userId,
+                                      }));
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

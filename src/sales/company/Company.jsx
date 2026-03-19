@@ -58,8 +58,8 @@ export const columns = [
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   // { name: "CLIENT", uid: "client" },
-  { name: "PRIMARY ADDRESS", uid: "primaryAddres" },
-  { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
+  { name: "ADDRESS", uid: "primaryAddres" },
+  // { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
