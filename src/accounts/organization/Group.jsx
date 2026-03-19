@@ -20,7 +20,7 @@ import { getAllGroups } from "../../toolkit/slices/organizationSlice";
 import { Link } from "react-router-dom";
 
 export const columns = [
-  { name: "ID", uid: "id",  },
+  { name: "ID", uid: "id" },
   { name: "NAME", uid: "name", sortable: true },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -38,7 +38,7 @@ const Group = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -56,7 +56,7 @@ const Group = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -66,8 +66,8 @@ const Group = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -93,13 +93,17 @@ const Group = () => {
     });
   }, [sortDescriptor, items]);
 
-
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
         return (
-          <Link to={`${rowData?.id}/groupLedger`} className="text-sm font-medium capitalize text-blue-500">{rowData?.name}</Link>
+          <Link
+            to={`${rowData?.id}/groupLedger`}
+            className="text-sm font-medium capitalize text-blue-500"
+          >
+            {rowData?.name}
+          </Link>
         );
       case "actions":
         return (
@@ -161,7 +165,7 @@ const Group = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -270,7 +274,7 @@ const Group = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

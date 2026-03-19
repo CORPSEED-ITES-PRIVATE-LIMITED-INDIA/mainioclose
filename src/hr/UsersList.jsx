@@ -855,7 +855,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.userName?.message}
-                            isInvalid={!!errors.userName}
+                            // isInvalid={!!errors.userName}
                           />
                         )}
                       />
@@ -869,7 +869,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.userName?.message}
-                            isInvalid={!!errors.userName}
+                            // isInvalid={!!errors.userName}
                           />
                         )}
                       />
@@ -892,7 +892,7 @@ const UsersList = () => {
                               field.onChange(formatEmail(e.target.value))
                             }
                             errorMessage={errors.email?.message}
-                            isInvalid={!!errors.email}
+                            // isInvalid={!!errors.email}
                           />
                         )}
                       />
@@ -929,7 +929,7 @@ const UsersList = () => {
                             }
                             maxLength={10}
                             errorMessage={errors.contactNo?.message}
-                            isInvalid={!!errors.contactNo}
+                            // isInvalid={!!errors.contactNo}
                           />
                         )}
                       />
@@ -960,7 +960,7 @@ const UsersList = () => {
                               field.onChange(Array.from(keys))
                             }
                             errorMessage={errors.role?.message}
-                            isInvalid={!!errors.role}
+                            // isInvalid={!!errors.role}
                           >
                             {allRoles?.length > 0 ? (
                               allRoles.map((ele) => (
@@ -995,7 +995,7 @@ const UsersList = () => {
                               }
                             }}
                             errorMessage={errors.departmentId?.message}
-                            isInvalid={!!errors.departmentId}
+                            // isInvalid={!!errors.departmentId}
                           >
                             {departmentList?.length > 0 ? (
                               departmentList.map((ele) => (
@@ -1029,7 +1029,7 @@ const UsersList = () => {
                               if (value) field.onChange(value);
                             }}
                             errorMessage={errors.designationId?.message}
-                            isInvalid={!!errors.designationId}
+                            // isInvalid={!!errors.designationId}
                           >
                             {allDesiginationListById?.length > 0 ? (
                               allDesiginationListById.map((ele) => (
@@ -1077,7 +1077,7 @@ const UsersList = () => {
                               )
                             }
                             errorMessage={errors.aadharCard?.message}
-                            isInvalid={!!errors.aadharCard}
+                            // isInvalid={!!errors.aadharCard}
                           />
                         )}
                       />
@@ -1095,7 +1095,7 @@ const UsersList = () => {
                               field.onChange(formatPANInput(e.target.value))
                             }
                             errorMessage={errors.panNumber?.message}
-                            isInvalid={!!errors.panNumber}
+                            // isInvalid={!!errors.panNumber}
                           />
                         )}
                       />
@@ -1149,7 +1149,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.expInYear?.message}
-                            isInvalid={!!errors.expInYear}
+                            // isInvalid={!!errors.expInYear}
                           />
                         )}
                       />
@@ -1161,10 +1161,14 @@ const UsersList = () => {
                           <Input
                             label="Experience (in months)"
                             isRequired
+                            type="number"
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              if (value > 12) value = 12; // 🔥 limit
+                              field.onChange(value);
+                            }}
                             errorMessage={errors.expInMonth?.message}
-                            isInvalid={!!errors.expInMonth}
                           />
                         )}
                       />
@@ -1178,14 +1182,17 @@ const UsersList = () => {
                               label="Date of joining"
                               isRequired
                               value={
-                                field.value ? parseDate(field.value) : null
+                                field.value &&
+                                /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                                  ? parseDate(field.value)
+                                  : null
                               }
                               onChange={(value) => {
-                                const date = `${value?.year}-${padZero(value?.month)}-${padZero(value?.day)}`;
-                                field.onChange(date);
+                                const iso = value ? value.toString() : "";
+                                field.onChange(iso);
                               }}
                               errorMessage={errors.dateOfJoining?.message}
-                              isInvalid={!!errors.dateOfJoining}
+                              // isInvalid={!!errors.dateOfJoining}
                             />
                           );
                         }}
@@ -1204,7 +1211,7 @@ const UsersList = () => {
                               if (value) field.onChange(value);
                             }}
                             errorMessage={errors.type?.message}
-                            isInvalid={!!errors.type}
+                            // isInvalid={!!errors.type}
                           >
                             {[
                               { label: "Male", value: "male" },
@@ -1238,7 +1245,7 @@ const UsersList = () => {
                               }
                             }}
                             errorMessage={errors.maritalStatus?.message}
-                            isInvalid={!!errors.maritalStatus}
+                            // isInvalid={!!errors.maritalStatus}
                           >
                             {[
                               { label: "Married", value: "Married" },
@@ -1264,7 +1271,7 @@ const UsersList = () => {
                                 value={field.value}
                                 onChange={(e) => field.onChange(e.target.value)}
                                 errorMessage={errors.spouseName?.message}
-                                isInvalid={!!errors.spouseName}
+                                // isInvalid={!!errors.spouseName}
                               />
                             )}
                           />
@@ -1298,7 +1305,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.fatherName?.message}
-                            isInvalid={!!errors.fatherName}
+                            // isInvalid={!!errors.fatherName}
                           />
                         )}
                       />
@@ -1340,7 +1347,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.motherName?.message}
-                            isInvalid={!!errors.motherName}
+                            // isInvalid={!!errors.motherName}
                           />
                         )}
                       />
@@ -1476,7 +1483,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.permanentAddress?.message}
-                            isInvalid={!!errors.permanentAddress}
+                            // isInvalid={!!errors.permanentAddress}
                           />
                         )}
                       />

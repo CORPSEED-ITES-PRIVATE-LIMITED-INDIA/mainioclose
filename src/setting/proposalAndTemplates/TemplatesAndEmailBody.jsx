@@ -69,7 +69,7 @@ const TemplatesAndEmailBody = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.setting.templateAndMailList);
   const count = useSelector(
-    (state) => state.setting.templateAndMailList?.length
+    (state) => state.setting.templateAndMailList?.length,
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const emailPreviewModal = useDisclosure();
@@ -77,7 +77,7 @@ const TemplatesAndEmailBody = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "name",
@@ -112,7 +112,7 @@ const TemplatesAndEmailBody = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -122,8 +122,8 @@ const TemplatesAndEmailBody = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -170,7 +170,7 @@ const TemplatesAndEmailBody = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(createProposalTemplate(values))
@@ -188,7 +188,7 @@ const TemplatesAndEmailBody = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -254,7 +254,7 @@ const TemplatesAndEmailBody = () => {
           return cellValue;
       }
     },
-    [emailPreviewModal, templatePreviewModal]
+    [emailPreviewModal, templatePreviewModal],
   );
 
   const onNextPage = React.useCallback(() => {
@@ -310,7 +310,7 @@ const TemplatesAndEmailBody = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

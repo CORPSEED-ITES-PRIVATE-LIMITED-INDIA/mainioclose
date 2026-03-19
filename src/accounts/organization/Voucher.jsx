@@ -74,19 +74,19 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const Voucher = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange,onClose } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const deleteModal = useDisclosure();
   const data = useSelector((state) => state.organization.voucherList);
   const count = useSelector((state) => state.organization.voucherList)?.length;
   const ledgerList = useSelector((state) => state.organization.ledgerList);
   const voucherTypeList = useSelector(
-    (state) => state.organization.voucherTypeList
+    (state) => state.organization.voucherTypeList,
   );
   const ledgerDetail = useSelector((state) => state.organization.ledgerDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -128,14 +128,14 @@ const Voucher = () => {
   const ledgerListOption = useMemo(() => ledgerList, [ledgerList]);
   const voucherTypeListOption = useMemo(
     () => voucherTypeList,
-    [voucherTypeList]
+    [voucherTypeList],
   );
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -145,8 +145,8 @@ const Voucher = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -387,7 +387,7 @@ const Voucher = () => {
               ? renderedGSTData?.[2]?.creditAmount -
                 renderedGSTData?.[2]?.debitAmount
               : 0,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -419,7 +419,7 @@ const Voucher = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   }, [dispatch, voucherData, renderedGSTData]);
 
@@ -560,7 +560,7 @@ const Voucher = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

@@ -62,15 +62,15 @@ const DailyBook = () => {
   const dispatch = useDispatch();
   const bookDetail = useSelector((state) => state.organization.dailybookDetail);
   const data = useSelector(
-    (state) => state.organization.dailybookDetail?.result
+    (state) => state.organization.dailybookDetail?.result,
   );
   const count = useSelector(
-    (state) => state.organization.dailybookDetail?.result?.length
+    (state) => state.organization.dailybookDetail?.result?.length,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -96,7 +96,7 @@ const DailyBook = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -106,8 +106,8 @@ const DailyBook = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -249,7 +249,7 @@ const DailyBook = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             size={isMedium ? "sm" : isLarge ? "md" : ""}
             startContent={<Search />}
             value={filterValue}
@@ -302,10 +302,10 @@ const DailyBook = () => {
                         }}
                         value={{
                           start: parseZonedDateTime(
-                            `${dateRange?.startDate}[Asia/kolkata]`
+                            `${dateRange?.startDate}[Asia/kolkata]`,
                           ),
                           end: parseZonedDateTime(
-                            `${dateRange?.endDate}[Asia/kolkata]`
+                            `${dateRange?.endDate}[Asia/kolkata]`,
                           ),
                         }}
                         onChange={(value) => {

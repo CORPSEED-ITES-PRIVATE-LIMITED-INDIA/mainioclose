@@ -88,7 +88,7 @@ const CompanyForm = () => {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.company.allLeadCompanyList);
   const count = useSelector(
-    (state) => state.company.allLeadCompanyList?.[0]?.totalLeadFor
+    (state) => state.company.allLeadCompanyList?.[0]?.totalLeadFor,
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const admin = userRole.includes("ADMIN");
@@ -96,7 +96,7 @@ const CompanyForm = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [status, setStatus] = useState("initiated");
   const [editData, setEditData] = useState(null);
@@ -115,7 +115,7 @@ const CompanyForm = () => {
         status: status,
         page: page,
         size: rowsPerPage,
-      })
+      }),
     );
   }, [dispatch, page, rowsPerPage, status]);
 
@@ -123,7 +123,7 @@ const CompanyForm = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -133,8 +133,8 @@ const CompanyForm = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -188,7 +188,7 @@ const CompanyForm = () => {
           status: values?.status,
           id: editData?.id,
           userid: userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -203,7 +203,7 @@ const CompanyForm = () => {
                 status: status,
                 page: page,
                 size: rowsPerPage,
-              })
+              }),
             );
           } else {
             addToast({
@@ -240,7 +240,7 @@ const CompanyForm = () => {
           });
         });
     },
-    [editData, userId, dispatch]
+    [editData, userId, dispatch],
   );
 
   const renderCell = React.useCallback(
@@ -422,7 +422,7 @@ const CompanyForm = () => {
           return cellValue;
       }
     },
-    [data]
+    [data],
   );
 
   const onNextPage = React.useCallback(() => {
@@ -453,7 +453,7 @@ const CompanyForm = () => {
             page: page,
             size: rowsPerPage,
             status: status,
-          })
+          }),
         );
         setPage(1);
       } else {
@@ -464,11 +464,11 @@ const CompanyForm = () => {
             status: status,
             page: page,
             size: rowsPerPage,
-          })
+          }),
         );
       }
     },
-    [page, rowsPerPage, status]
+    [page, rowsPerPage, status],
   );
 
   const onClear = React.useCallback(() => {
@@ -483,7 +483,7 @@ const CompanyForm = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

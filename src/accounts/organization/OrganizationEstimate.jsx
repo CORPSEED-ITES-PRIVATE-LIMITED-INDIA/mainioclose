@@ -77,7 +77,7 @@ const OrganizationEstimate = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [status, setStatus] = useState("All");
   const [estimateDetail, setEstimateDetail] = useState(null);
@@ -96,7 +96,7 @@ const OrganizationEstimate = () => {
         status: status,
         page: page,
         size: rowsPerPage,
-      })
+      }),
     );
     dispatch(getTotalCountOfEstimate({ userId, status }));
   }, [dispatch, page, rowsPerPage, status]);
@@ -105,7 +105,7 @@ const OrganizationEstimate = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -115,8 +115,8 @@ const OrganizationEstimate = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -150,7 +150,7 @@ const OrganizationEstimate = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" })
+        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
       );
   };
 
@@ -160,7 +160,7 @@ const OrganizationEstimate = () => {
         status: e,
         estimateId: id,
         userId: userId,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -174,14 +174,14 @@ const OrganizationEstimate = () => {
               status: status,
               page: page,
               size: rowsPerPage,
-            })
+            }),
           );
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -413,7 +413,7 @@ const OrganizationEstimate = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -595,7 +595,10 @@ const OrganizationEstimate = () => {
         <ModalContent>
           <ModalHeader>Estimate</ModalHeader>
           <ModalBody className="max-h-[90vh] overflow-auto">
-            <InvoiceView details={estimateDetail} documentTypeName={"Estimate"} />
+            <InvoiceView
+              details={estimateDetail}
+              documentTypeName={"Estimate"}
+            />
           </ModalBody>
         </ModalContent>
       </Modal>

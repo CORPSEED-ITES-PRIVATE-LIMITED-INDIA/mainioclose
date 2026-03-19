@@ -62,12 +62,12 @@ const Categories = () => {
   const data = useSelector((state) => state.common.allSubSubIndustryWithPage);
   const count = useSelector((state) => state.common.totalSubSubIndustryCount);
   const allIndustriesData = useSelector(
-    (state) => state.common.allIndustriesData
+    (state) => state.common.allIndustriesData,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -86,7 +86,7 @@ const Categories = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -96,8 +96,8 @@ const Categories = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -136,7 +136,7 @@ const Categories = () => {
               color: "success",
             });
             dispatch(
-              getAllSubSubIndustryWithPagination({ page, size: rowsPerPage })
+              getAllSubSubIndustryWithPagination({ page, size: rowsPerPage }),
             );
             onOpenChange(false);
             reset(defaultValues);
@@ -145,10 +145,10 @@ const Categories = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch,onOpenChange]
+    [dispatch, onOpenChange],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -217,7 +217,7 @@ const Categories = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -326,9 +326,7 @@ const Categories = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Category list
-      </h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Category list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -336,7 +334,7 @@ const Categories = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

@@ -22,17 +22,16 @@ import {
   ModalFooter,
   TimeInput,
 } from "@heroui/react";
-import {
-  ChevronDown,
-  Clock,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ChevronDown, Clock, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import { createIvr, getAllIvrWithPage, getTotalIvrCount } from "../toolkit/slices/commonSlice";
+import {
+  createIvr,
+  getAllIvrWithPage,
+  getTotalIvrCount,
+} from "../toolkit/slices/commonSlice";
 import dayjs from "dayjs";
 
 export const columns = [
@@ -85,7 +84,7 @@ const IVR = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [editData, setEditData] = useState(null);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
@@ -100,15 +99,15 @@ const IVR = () => {
     dispatch(getAllIvrWithPage({ page: page, size: rowsPerPage }));
   }, [dispatch, page, rowsPerPage]);
 
-  useEffect(()=>{
-    dispatch(getTotalIvrCount())
-  },[dispatch])
+  useEffect(() => {
+    dispatch(getTotalIvrCount());
+  }, [dispatch]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -118,8 +117,8 @@ const IVR = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
-        )
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase()),
+        ),
       );
     }
 
@@ -165,10 +164,10 @@ const IVR = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch, editData]
+    [dispatch, editData],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -237,7 +236,7 @@ const IVR = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -353,7 +352,7 @@ const IVR = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

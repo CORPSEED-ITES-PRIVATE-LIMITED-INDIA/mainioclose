@@ -71,23 +71,23 @@ const defaultValues = {
   id: "",
   subLeadger: false,
   isDebitCredit: false,
-  usedForCalculation:false,
+  usedForCalculation: false,
 };
 
 const LedgerType = () => {
   const dispatch = useDispatch();
-  const { isOpen, onOpen, onOpenChange,onClose } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const data = useSelector((state) => state.organization.ledgerTypeList);
   const ledgerTypeList = useSelector(
-    (state) => state.organization.ledgerTypeList
+    (state) => state.organization.ledgerTypeList,
   );
   const count = useSelector(
-    (state) => state.organization.ledgerTypeList?.length
+    (state) => state.organization.ledgerTypeList?.length,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [editData, setEditData] = useState(null);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
@@ -106,7 +106,7 @@ const LedgerType = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -116,8 +116,8 @@ const LedgerType = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -173,7 +173,7 @@ const LedgerType = () => {
             ...values,
             subLedgerId: editData?.id,
             id: editData?.id,
-          })
+          }),
         )
           .then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {
@@ -181,7 +181,7 @@ const LedgerType = () => {
                 title: "Group updated successfully !.",
                 color: "success",
               });
-              onClose()
+              onClose();
               dispatch(getAllLedgerType());
               reset(defaultValues);
               setEditData(null);
@@ -190,7 +190,7 @@ const LedgerType = () => {
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       } else {
         dispatch(createLedgerType(values))
@@ -201,18 +201,18 @@ const LedgerType = () => {
                 color: "success",
               });
               dispatch(getAllLedgerType());
-              onClose()
+              onClose();
               reset(defaultValues);
             } else {
               addToast({ title: "Something went wrong !.", color: "danger" });
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       }
     },
-    [dispatch, editData]
+    [dispatch, editData],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -303,7 +303,7 @@ const LedgerType = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

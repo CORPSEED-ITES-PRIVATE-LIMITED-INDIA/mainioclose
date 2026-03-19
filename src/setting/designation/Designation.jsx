@@ -46,7 +46,7 @@ const defaultValues = {
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "DESIGNATION NAME", uid: "name", sortable: true },
+  { name: "DESIGNATION NAME", uid: "name" },
   { name: "WEIGHT VALUE", uid: "weightValue" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -65,7 +65,7 @@ const Designation = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "name",
@@ -100,7 +100,7 @@ const Designation = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -110,8 +110,8 @@ const Designation = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -127,13 +127,7 @@ const Designation = () => {
   }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
 
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...items];
   }, [sortDescriptor, items]);
 
   const handleFinish = (values) => {
@@ -159,14 +153,14 @@ const Designation = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
+              addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -237,7 +231,7 @@ const Designation = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -388,7 +382,7 @@ const Designation = () => {
         </TableBody>
       </Table>
       <Modal
-        size="2xl"
+        size="xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}

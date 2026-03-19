@@ -85,7 +85,7 @@ const Urls = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -122,7 +122,7 @@ const Urls = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -157,7 +157,7 @@ const Urls = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(createUrl(values))
@@ -175,7 +175,7 @@ const Urls = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -184,7 +184,7 @@ const Urls = () => {
     dispatch(
       convertUrlsToProduct({
         urlsId: selectedKeys,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -240,7 +240,7 @@ const Urls = () => {
                     setValue("name", rowData?.urlsName);
                     setValue(
                       "urlSlug",
-                      rowData?.urlSlug?.map((item) => String(item?.id))
+                      rowData?.urlSlug?.map((item) => String(item?.id)),
                     );
                     setValue("quality", rowData?.quality);
                   }
@@ -307,7 +307,7 @@ const Urls = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

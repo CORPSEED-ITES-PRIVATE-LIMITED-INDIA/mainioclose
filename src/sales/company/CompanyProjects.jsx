@@ -18,7 +18,10 @@ import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getCompanyProjectAction, getLeadsByCompanyId } from "../../toolkit/slices/companySlice";
+import {
+  getCompanyProjectAction,
+  getLeadsByCompanyId,
+} from "../../toolkit/slices/companySlice";
 
 const columns = [
   { name: "ID", uid: "projectId" },
@@ -47,12 +50,14 @@ const INITIAL_VISIBLE_COLUMNS = [
 const CompanyProjects = () => {
   const { userId, companyUnitId } = useParams();
   const dispatch = useDispatch();
-  const count = useSelector((state) => state.company.companyProjectList?.length);
+  const count = useSelector(
+    (state) => state.company.companyProjectList?.length,
+  );
   const data = useSelector((state) => state.company.companyProjectList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -77,7 +82,7 @@ const CompanyProjects = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -85,10 +90,10 @@ const CompanyProjects = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-     filteredUsers = filteredUsers?.filter((item) =>
+      filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -127,7 +132,9 @@ const CompanyProjects = () => {
       case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{rowData?.client?.name || "-"}</span>
+            <span className="font-semibold">
+              {rowData?.client?.name || "-"}
+            </span>
             <span className="text-sm text-gray-400">
               {rowData?.client?.emails || ""},{rowData?.client?.contactNo || ""}
             </span>
@@ -214,7 +221,7 @@ const CompanyProjects = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -327,7 +334,7 @@ const CompanyProjects = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[65vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

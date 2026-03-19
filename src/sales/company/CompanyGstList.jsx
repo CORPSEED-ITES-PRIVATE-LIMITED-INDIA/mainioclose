@@ -57,7 +57,7 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id","name", "state", "gstNo"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "state", "gstNo"];
 
 const CompanyGstList = () => {
   const { userId, companyId } = useParams();
@@ -287,7 +287,7 @@ const CompanyGstList = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}

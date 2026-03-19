@@ -81,12 +81,12 @@ const IVRReport = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const initialValues = {
     userIds: [],
     toDate: formatedDateTime(
-      end.subtract({ months: 1 }).set({ day: 1, hour: 0, minute: 45 })
+      end.subtract({ months: 1 }).set({ day: 1, hour: 0, minute: 45 }),
     ),
     fromDate: formatedDateTime(now(tz)),
     currentUserId: userId,
@@ -113,7 +113,7 @@ const IVRReport = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -123,8 +123,8 @@ const IVRReport = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
-        )
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase()),
+        ),
       );
     }
 
@@ -252,7 +252,7 @@ const IVRReport = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -304,10 +304,10 @@ const IVRReport = () => {
                         label="Select date range"
                         defaultValue={{
                           start: parseZonedDateTime(
-                            `${dateFilter?.toDate}[Asia/Kolkata]`
+                            `${dateFilter?.toDate}[Asia/Kolkata]`,
                           ),
                           end: parseZonedDateTime(
-                            `${dateFilter?.fromDate}[Asia/Kolkata]`
+                            `${dateFilter?.fromDate}[Asia/Kolkata]`,
                           ),
                         }}
                         onChange={(range) => {
@@ -430,7 +430,7 @@ const IVRReport = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

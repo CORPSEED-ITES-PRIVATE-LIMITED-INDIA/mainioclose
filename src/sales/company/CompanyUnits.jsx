@@ -72,26 +72,26 @@ const CompanyUnits = () => {
   const data = useSelector((state) => state.company.companyUnitList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const contactListByCompanyId = useSelector(
-    (state) => state.common.contactListByCompanyId
+    (state) => state.common.contactListByCompanyId,
   );
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const subIndustryListById = useSelector(
-    (state) => state.common.subIndustryListByIndustryId
+    (state) => state.common.subIndustryListByIndustryId,
   );
   const subSubIndustryListById = useSelector(
-    (state) => state.common.subSubIndustryListBySubIndustryId
+    (state) => state.common.subSubIndustryListBySubIndustryId,
   );
   const industryDataListById = useSelector(
-    (state) => state.common.industryDataListBySubSubIndustryId
+    (state) => state.common.industryDataListBySubSubIndustryId,
   );
   const desiginationList = useSelector(
-    (state) => state.setting.clientDesiginationList
+    (state) => state.setting.clientDesiginationList,
   );
 
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -143,7 +143,7 @@ const CompanyUnits = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -151,10 +151,10 @@ const CompanyUnits = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-     filteredUsers = filteredUsers?.filter((item) =>
+      filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -185,7 +185,10 @@ const CompanyUnits = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link to={`${company?.companyId}/unitDetails`} className="font-semibold">
+              <Link
+                to={`${company?.companyId}/unitDetails`}
+                className="font-semibold"
+              >
                 {company?.companyName || "-"}
               </Link>
             </div>
@@ -273,7 +276,7 @@ const CompanyUnits = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -396,10 +399,10 @@ const CompanyUnits = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [companyId, formValues, formData, dispatch]
+    [companyId, formValues, formData, dispatch],
   );
 
   return (
@@ -412,7 +415,7 @@ const CompanyUnits = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -461,7 +464,7 @@ const CompanyUnits = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleFinish(data);
                   }}

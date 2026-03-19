@@ -425,7 +425,6 @@ const ProjectActivities = () => {
                 }
                 onChange={(e) => {
                   const dateStr = toCalendarDate(e).toString(); // 2026-03-13
-
                   const isoDate = dayjs(dateStr)
                     .hour(dayjs().hour())
                     .minute(dayjs().minute())

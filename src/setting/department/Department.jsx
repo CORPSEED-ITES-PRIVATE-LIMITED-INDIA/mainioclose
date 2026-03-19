@@ -69,7 +69,7 @@ const statusFormDefaultValues = {
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "DEPARTMENT", uid: "name", sortable: true },
+  { name: "DEPARTMENT", uid: "name" },
   { name: "DESIGNATIONS", uid: "designations" },
   { name: "STATUS", uid: "departmentStatus" },
   { name: "ACTIONS", uid: "actions" },
@@ -99,7 +99,7 @@ const Department = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "name",
@@ -144,7 +144,7 @@ const Department = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -154,8 +154,8 @@ const Department = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -171,13 +171,7 @@ const Department = () => {
   }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
 
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...items];
   }, [sortDescriptor, items]);
 
   const handleAddStatus = (values) => {
@@ -185,7 +179,7 @@ const Department = () => {
       addStatusInDepartment({
         departmentId: item?.id,
         ...values,
-      })
+      }),
     )
       .then((response) => {
         if (response.meta.requestStatus === "fulfilled") {
@@ -218,6 +212,9 @@ const Department = () => {
                   title: "Desigination added successfully !.",
                   color: "success",
                 });
+                dispatch(getAllDepartment());
+                designationModal.onClose();
+                designationForm.reset(designationFormDefaultValues);
               } else {
                 addToast({ title: "Something went wrong !.", color: "danger" });
               }
@@ -256,7 +253,7 @@ const Department = () => {
                     id: responseData?.id,
                     name: responseData?.name,
                     createdBy: userId,
-                  })
+                  }),
                 )
                   .then((resu) => {
                     if (resu.meta.requestStatus === "fulfilled") {
@@ -273,7 +270,7 @@ const Department = () => {
                         title: "Something went wrong in operations !.",
                         color: "danger",
                       });
-                    } 
+                    }
                   })
                   .catch(() => {
                     addToast({
@@ -286,14 +283,14 @@ const Department = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
+              addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -308,7 +305,7 @@ const Department = () => {
         return (
           <p>
             {rowData?.designations?.map((item) => (
-              <Chip size="sm" key={`${item?.name}desi`}>
+              <Chip size="sm" key={`${item?.name}desi`} className="m-0.5">
                 {item?.name}
               </Chip>
             ))}
@@ -319,7 +316,7 @@ const Department = () => {
         return (
           <p>
             {rowData?.departmentStatus?.map((item) => (
-              <Chip size="sm" key={`${item?.name}depart`}>
+              <Chip size="sm" key={`${item?.name}depart`} className="m-0.5">
                 {item?.name}
               </Chip>
             ))}
@@ -415,7 +412,7 @@ const Department = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -566,7 +563,7 @@ const Department = () => {
         </TableBody>
       </Table>
       <Modal
-        size="2xl"
+        size="xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}
@@ -577,7 +574,7 @@ const Department = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {item?.id ? "Update department" : "Create department"}
+                Create department
               </ModalHeader>
               <ModalBody>
                 <form
@@ -610,7 +607,7 @@ const Department = () => {
       </Modal>
 
       <Modal
-        size="2xl"
+        size="xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={designationModal.isOpen}
@@ -627,7 +624,7 @@ const Department = () => {
                 <form
                   className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
                   onSubmit={designationForm.handleSubmit(
-                    handleDesignationFinish
+                    handleDesignationFinish,
                   )}
                 >
                   <Controller
@@ -663,7 +660,7 @@ const Department = () => {
       </Modal>
 
       <Modal
-        size="2xl"
+        size="xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={statusModal.isOpen}

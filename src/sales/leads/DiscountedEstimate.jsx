@@ -63,13 +63,13 @@ const DiscountedEstimate = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.leads.estimateListByUserId?.length
+    (state) => state.leads.estimateListByUserId?.length,
   );
   const data = useSelector((state) => state.leads.estimateListByUserId);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -92,7 +92,7 @@ const DiscountedEstimate = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -102,8 +102,8 @@ const DiscountedEstimate = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -149,7 +149,7 @@ const DiscountedEstimate = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal">{rowData.gstNo || "-"}</span>
-            <Chip size="sm" className="text-tiny" >
+            <Chip size="sm" className="text-tiny">
               {rowData?.gstType}
             </Chip>
           </div>
@@ -334,7 +334,7 @@ const DiscountedEstimate = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -483,7 +483,7 @@ const DiscountedEstimate = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

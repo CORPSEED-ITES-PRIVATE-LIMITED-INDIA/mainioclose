@@ -230,13 +230,13 @@ const VendorEstimate = () => {
   const data = useSelector((state) => state.vendors.vendorEstimateList);
   const count = useSelector((state) => state.vendors.vendorEstimateCount);
   const productCategoryList = useSelector(
-    (state) => state.product.productCategoryList
+    (state) => state.product.productCategoryList,
   );
   const productSubcategoryList = useSelector(
-    (state) => state.product.productSubcategoryList
+    (state) => state.product.productSubcategoryList,
   );
   const businessArrangementList = useSelector(
-    (state) => state?.product?.businessArrangementList
+    (state) => state?.product?.businessArrangementList,
   );
   const urlList = useSelector((state) => state.common.urlList);
   const countryList = useSelector((state) => state.common.countriesList);
@@ -245,7 +245,7 @@ const VendorEstimate = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -273,7 +273,7 @@ const VendorEstimate = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -283,8 +283,8 @@ const VendorEstimate = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -378,7 +378,6 @@ const VendorEstimate = () => {
     setValue("serviceName", rowItem?.productName);
     dispatch(getAllBusinessArrangementBySolutionId(rowItem?.productId));
   };
-
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
@@ -640,7 +639,7 @@ const VendorEstimate = () => {
   console.log(
     "dfjghsdgsjhgjgs",
     paymentFormSchema(isGst),
-    paymentForm.getValues()
+    paymentForm.getValues(),
   );
 
   const topContent = React.useMemo(() => {
@@ -789,7 +788,7 @@ const VendorEstimate = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -810,7 +809,7 @@ const VendorEstimate = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -1086,7 +1085,7 @@ const VendorEstimate = () => {
                           value={String(field.value)}
                           onChange={(value) => {
                             dispatch(
-                              getAllProductSubCategoryListByCategoryId(value)
+                              getAllProductSubCategoryListByCategoryId(value),
                             );
                             field.onChange(value);
                           }}
@@ -1108,7 +1107,7 @@ const VendorEstimate = () => {
                           value={String(field.value)}
                           onChange={(value) => {
                             dispatch(
-                              getAllProductSubCategoryListByCategoryId(value)
+                              getAllProductSubCategoryListByCategoryId(value),
                             );
                             field.onChange(value);
                           }}
@@ -1295,10 +1294,16 @@ const VendorEstimate = () => {
                           maxValue={today(getLocalTimeZone())}
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
+                          value={
+                            field.value &&
+                            /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                              ? parseDate(field.value)
+                              : null
                           }
+                          onChange={(value) => {
+                            const iso = value ? value.toString() : "";
+                            field.onChange(iso);
+                          }}
                         />
                       )}
                     />
@@ -1750,10 +1755,16 @@ const VendorEstimate = () => {
                           maxValue={today(getLocalTimeZone())}
                           errorMessage={error?.message}
                           isInvalid={!!error}
-                          value={field.value ? parseDate(field.value) : null}
-                          onChange={(e) =>
-                            field.onChange(toCalendarDate(e).toString())
+                          value={
+                            field.value &&
+                            /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                              ? parseDate(field.value)
+                              : null
                           }
+                          onChange={(value) => {
+                            const iso = value ? value.toString() : "";
+                            field.onChange(iso);
+                          }}
                         />
                       )}
                     />

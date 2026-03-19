@@ -16,9 +16,7 @@ import {
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getLedgerListByGroupId,
-} from "../../toolkit/slices/organizationSlice";
+import { getLedgerListByGroupId } from "../../toolkit/slices/organizationSlice";
 import { Link, useParams } from "react-router-dom";
 
 export const columns = [
@@ -37,11 +35,13 @@ const GroupLedger = () => {
   const dispatch = useDispatch();
   const { groupId } = useParams();
   const data = useSelector((state) => state.organization.groupLedgerList);
-  const count = useSelector((state) => state.organization.groupLedgerList?.length);
+  const count = useSelector(
+    (state) => state.organization.groupLedgerList?.length,
+  );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -59,7 +59,7 @@ const GroupLedger = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -67,10 +67,10 @@ const GroupLedger = () => {
     let filteredUsers = [...data];
 
     if (hasSearchFilter) {
-     filteredUsers = filteredUsers?.filter((item) =>
+      filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -100,11 +100,7 @@ const GroupLedger = () => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
       case "name":
-        return (
-          <p className="text-sm capitalize">
-            {rowData?.name}
-          </p>
-        );
+        return <p className="text-sm capitalize">{rowData?.name}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -163,7 +159,7 @@ const GroupLedger = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -272,7 +268,7 @@ const GroupLedger = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full",
-          table:'w-fill'
+          table: "w-fill",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

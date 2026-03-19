@@ -701,10 +701,16 @@ const OrganizationDetail = () => {
                             maxValue={today(getLocalTimeZone())}
                             errorMessage={error?.message}
                             // isInvalid={!!error}
-                            value={field.value ? parseDate(field.value) : null}
-                            onChange={(e) =>
-                              field.onChange(toCalendarDate(e).toString())
+                            value={
+                              field.value &&
+                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                                ? parseDate(field.value)
+                                : null
                             }
+                            onChange={(value) => {
+                              const iso = value ? value.toString() : "";
+                              field.onChange(iso);
+                            }}
                           />
                         );
                       }}

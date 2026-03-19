@@ -1561,10 +1561,16 @@ const ProjectDetails = () => {
                             minValue={today(getLocalTimeZone())}
                             isInvalid={!!errors.expiryDate}
                             errorMessage={errors.expiryDate?.message}
-                            value={field.value ? parseDate(field.value) : null}
-                            onChange={(e) =>
-                              field.onChange(toCalendarDate(e).toString())
+                            value={
+                              field.value &&
+                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                                ? parseDate(field.value)
+                                : null
                             }
+                            onChange={(value) => {
+                              const iso = value ? value.toString() : "";
+                              field.onChange(iso);
+                            }}
                           />
                         )}
                       />

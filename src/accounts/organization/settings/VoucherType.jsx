@@ -42,11 +42,7 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
-  "id",
-  "name",
-  "actions",
-];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
 
 const formSchema = z.object({
   name: z.string().min(1, "Please enter voucher type name."),
@@ -61,12 +57,12 @@ const VoucherType = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector((state) => state.organization.voucherTypeList);
   const count = useSelector(
-    (state) => state.organization.voucherTypeList?.length
+    (state) => state.organization.voucherTypeList?.length,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [editData, setEditData] = useState(null);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
@@ -85,7 +81,7 @@ const VoucherType = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -95,8 +91,8 @@ const VoucherType = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -136,7 +132,7 @@ const VoucherType = () => {
     reset({
       name: value?.name,
     });
-    onOpen()
+    onOpen();
     setEditData(value);
   };
 
@@ -159,7 +155,7 @@ const VoucherType = () => {
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       } else {
         dispatch(createVoucherType(values))
@@ -177,11 +173,11 @@ const VoucherType = () => {
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       }
     },
-    [dispatch, editData]
+    [dispatch, editData],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -254,7 +250,7 @@ const VoucherType = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -282,17 +278,23 @@ const VoucherType = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button endContent={<Plus />} color="primary" onPress={()=>{
-              onOpen()
-              reset(defaultValues)
-              setEditData(null)
-            }}>
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={() => {
+                onOpen();
+                reset(defaultValues);
+                setEditData(null);
+              }}
+            >
               Add
             </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {count} voucher type</span>
+          <span className="text-default-400 text-small">
+            Total {count} voucher type
+          </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -366,7 +368,7 @@ const VoucherType = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

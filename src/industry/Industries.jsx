@@ -65,7 +65,7 @@ const Industries = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -84,7 +84,7 @@ const Industries = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -94,8 +94,8 @@ const Industries = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -134,7 +134,7 @@ const Industries = () => {
               color: "success",
             });
             dispatch(
-              getAllIndustriesWithPagination({ page, size: rowsPerPage })
+              getAllIndustriesWithPagination({ page, size: rowsPerPage }),
             );
             onOpenChange(false);
             reset(defaultValues);
@@ -143,10 +143,10 @@ const Industries = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch,onOpenChange]
+    [dispatch, onOpenChange],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -215,7 +215,7 @@ const Industries = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -243,10 +243,14 @@ const Industries = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button endContent={<Plus />} color="primary" onPress={()=>{
-                dispatch(getAllSubIndustry())
-                onOpen()
-            }}>
+            <Button
+              endContent={<Plus />}
+              color="primary"
+              onPress={() => {
+                dispatch(getAllSubIndustry());
+                onOpen();
+              }}
+            >
               Add
             </Button>
           </div>
@@ -320,9 +324,7 @@ const Industries = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Industries list
-      </h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Industries list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -330,7 +332,7 @@ const Industries = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

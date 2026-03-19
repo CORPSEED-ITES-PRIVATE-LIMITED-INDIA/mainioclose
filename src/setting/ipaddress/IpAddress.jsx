@@ -24,7 +24,7 @@ import {
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-    addIpAddress,
+  addIpAddress,
   createComments,
   getAllIpAddress,
 } from "../../toolkit/slices/settingSlice";
@@ -50,7 +50,7 @@ const IpAddress = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -72,7 +72,7 @@ const IpAddress = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -81,7 +81,7 @@ const IpAddress = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
+        user.name.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     return filteredUsers;
@@ -122,7 +122,7 @@ const IpAddress = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -132,7 +132,9 @@ const IpAddress = () => {
     switch (columnKey) {
       case "ipAddress":
         return (
-          <p className="text-bold text-small capitalize">{rowData?.ipAddress}</p>
+          <p className="text-bold text-small capitalize">
+            {rowData?.ipAddress}
+          </p>
         );
       case "actions":
         return (
@@ -189,7 +191,7 @@ const IpAddress = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -351,7 +353,7 @@ const IpAddress = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleSubmit(data);
                   }}

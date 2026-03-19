@@ -18,10 +18,7 @@ import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import {
-  getLeadsByCompanyId,
-} from "../../toolkit/slices/companySlice";
-
+import { getLeadsByCompanyId } from "../../toolkit/slices/companySlice";
 
 const columns = [
   { name: "ID", uid: "leadId" },
@@ -40,7 +37,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "leadName",
   "client",
   "assigneeName",
-  "description"
+  "description",
 ];
 
 const CompanyLeads = () => {
@@ -51,7 +48,7 @@ const CompanyLeads = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "leadName",
@@ -76,7 +73,7 @@ const CompanyLeads = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -86,8 +83,8 @@ const CompanyLeads = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -111,7 +108,12 @@ const CompanyLeads = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link className="font-medium" to={`${rowData?.leadId}/leadDetail`} >{rowData?.leadName || "-"}</Link>
+              <Link
+                className="font-medium"
+                to={`${rowData?.leadId}/leadDetail`}
+              >
+                {rowData?.leadName || "-"}
+              </Link>
             </div>
           </div>
         );
@@ -190,7 +192,6 @@ const CompanyLeads = () => {
     setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -198,7 +199,7 @@ const CompanyLeads = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -301,7 +302,6 @@ const CompanyLeads = () => {
     );
   }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
 
-
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Company leads</h1>
@@ -312,7 +312,7 @@ const CompanyLeads = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[60vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -343,7 +343,6 @@ const CompanyLeads = () => {
           )}
         </TableBody>
       </Table>
-    
     </>
   );
 };

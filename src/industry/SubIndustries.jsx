@@ -63,12 +63,12 @@ const SubIndustries = () => {
   const data = useSelector((state) => state.common.allSubIndustryWithPage);
   const count = useSelector((state) => state.common.allSubIndustryCount);
   const allSubsubIndustry = useSelector(
-    (state) => state.common.allSubsubIndustry
+    (state) => state.common.allSubsubIndustry,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -87,7 +87,7 @@ const SubIndustries = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -97,8 +97,8 @@ const SubIndustries = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -137,7 +137,7 @@ const SubIndustries = () => {
               color: "success",
             });
             dispatch(
-              getAllSubIndustryWithPagination({ page, size: rowsPerPage })
+              getAllSubIndustryWithPagination({ page, size: rowsPerPage }),
             );
             onOpenChange(false);
             reset(defaultValues);
@@ -146,10 +146,10 @@ const SubIndustries = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch,onOpenChange]
+    [dispatch, onOpenChange],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -218,7 +218,7 @@ const SubIndustries = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
@@ -337,7 +337,7 @@ const SubIndustries = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[68vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
