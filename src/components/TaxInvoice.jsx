@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useRef } from "react";
+import React, { memo, useEffect, useMemo, useRef } from "react";
 import logo from "../assets/CORPSEED.webp";
 import signature from "../assets/signature.png";
 import html2canvas from "html2canvas-pro";

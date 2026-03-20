@@ -70,9 +70,25 @@ export const createMileStone = createAsyncThunk(
 
 export const createUsersInOperations = createAsyncThunk(
   "createUsersInOperations",
-  async (data) => {
-    const response = await api.post(`/operationService/api/users`, data);
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/operationService/api/users`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
+
+export const updateUsersInOperations = createAsyncThunk(
+  "updateUsersInOperations",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/operationService/api/users/${id}`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
   },
 );
 

@@ -171,23 +171,31 @@ export const getAllRoles = createAsyncThunk("allRoles", async () => {
 
 export const createUserByHr = createAsyncThunk(
   "createUserByHr",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/users/createUserByHr`,
-      data,
-    );
-    return response;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/users/createUserByHr`,
+        data,
+      );
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.response.data.message);
+    }
   },
 );
 
 export const updateLeadByHr = createAsyncThunk(
   "upDateLeadByHr",
-  async (data) => {
-    const response = await api.put(
-      `/leadService/api/v1/users/editUserByHr`,
-      data,
-    );
-    return response;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/users/editUserByHr`,
+        data,
+      );
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.response.data.message);
+    }
   },
 );
 

@@ -337,7 +337,7 @@ const Unbill = () => {
                   PENDING_APPROVAL
                 </DropdownItem>
                 <DropdownItem key="APPROVED">APPROVED</DropdownItem>
-                <DropdownItem key="DISAPPROVED">DISAPPROVED</DropdownItem>
+                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
             <Dropdown>

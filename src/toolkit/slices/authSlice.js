@@ -10,20 +10,20 @@ export const changePasswordAuthentication = createAsyncThunk(
   "changePassAuth",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/users/isManagerApproved?userId=${id}`
+      `/leadService/api/v1/users/isManagerApproved?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const forgetPasswordApi = createAsyncThunk(
   "forgetPassword",
   async (data) => {
     const passData = await api.post(
-      `/securityService/api/auth/forgetOtp?email=${data}`
+      `/securityService/api/auth/forgetOtp?email=${data}`,
     );
     return passData?.data;
-  }
+  },
 );
 
 export const updatePassword = createAsyncThunk(
@@ -31,40 +31,40 @@ export const updatePassword = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/securityService/api/auth/updateUser`,
-      data
+      data,
     );
     return response?.data;
-  }
+  },
 );
 
 export const getDepartmentOfUser = createAsyncThunk(
   "getDepartment",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/users/getSingleUserById?userId=${id}`
+      `/leadService/api/v1/users/getSingleUserById?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createAuthDepartment = createAsyncThunk(
   "createDepartment",
   async (data) => {
     const response = await api.post(
-      `/securityService/api/department/createDepartment?name=${data?.name}`
+      `/securityService/api/department/createDepartment?name=${data?.name}`,
     );
     return response;
-  }
+  },
 );
 
 export const createAuthDesigination = createAsyncThunk(
   "createAuthDesignibnation",
   async (data) => {
     const response = await api.post(
-      `/securityService/api/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`
+      `/securityService/api/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`,
     );
     return response;
-  }
+  },
 );
 
 export const createDesiginationByDepartment = createAsyncThunk(
@@ -72,30 +72,30 @@ export const createDesiginationByDepartment = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/securityService/api/department/createDepartmentInDesignation`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const toggleAutoOnFeature = createAsyncThunk(
   "toggleAutoOnOffFeature",
   async ({ userId, flag }) => {
     const response = await api.put(
-      `/leadService/api/v1/users/autoPresentOn?userId=${userId}&flag=${flag}`
+      `/leadService/api/v1/users/autoPresentOn?userId=${userId}&flag=${flag}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const toggleAutoOffFeature = createAsyncThunk(
   "toggleAutoOnOffFeature",
   async ({ userId, flag }) => {
     const response = await api.put(
-      `/leadService/api/v1/users/autoPresentOff?userId=${userId}&flag=${flag}`
+      `/leadService/api/v1/users/autoPresentOff?userId=${userId}&flag=${flag}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const handleToggleAutomation = createAsyncThunk(
@@ -103,7 +103,7 @@ export const handleToggleAutomation = createAsyncThunk(
   async () => {
     const response = await api.put(`/leadService/api/v1/auto/autoOnOff`);
     return response.data;
-  }
+  },
 );
 
 export const getAutomationStatus = createAsyncThunk(
@@ -111,46 +111,57 @@ export const getAutomationStatus = createAsyncThunk(
   async () => {
     const response = await api.get(`/leadService/api/v1/auto/getAutoOnOff`);
     return response.data;
-  }
+  },
 );
 
 export const createNewUserInAuth = createAsyncThunk(
   "createNewUserInAuth",
-  async (data) => {
-    const response = await api.post(
-      `/securityService/api/auth/createNewUserByEmail`,
-      data
-    );
-    return response;
-  }
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/securityService/api/auth/createNewUserByEmail`,
+        data,
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
 );
 
-export const updateUserData = createAsyncThunk("updateUser", async (data) => {
-  const response = await api.put(
-    `/securityService/api/auth/updateUserData`,
-    data
-  );
-  return response;
-});
+export const updateUserData = createAsyncThunk(
+  "updateUser",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/securityService/api/auth/updateUserData`,
+        data,
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
 
 export const deleteUserInAuth = createAsyncThunk(
   "deleteUserInAuth",
   async (id) => {
     const response = await api.delete(
-      `/securityService/api/auth/deleteUser?userId=${id}`
+      `/securityService/api/auth/deleteUser?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const activateUserByAdminInAuth = createAsyncThunk(
   "activateUserByAdminInAuth",
   async (id) => {
     const response = await api.put(
-      `/securityService/api/auth/activateUser?userId=${id}`
+      `/securityService/api/auth/activateUser?userId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const AuthSlice = createSlice({

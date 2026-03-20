@@ -1,24 +1,54 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
 
+export const createUserInAccounts = createAsyncThunk(
+  "createUserInAccounts",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/users/createUser`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const updateUserInAccounts = createAsyncThunk(
+  "updateUserInAccounts",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/users/updateUser`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 export const getAllCompaniesForApprovals = createAsyncThunk(
   "getAllCompaniesForApprovals",
   async ({ userId, page, size, status }) => {
     const response = await api.get(
-      `/leadService/api/companies/accounts/pending-review?assigneeId=${userId}&onboardingStatus=${status}&page=${page}&size=${size}`
+      `/leadService/api/companies/accounts/pending-review?assigneeId=${userId}&onboardingStatus=${status}&page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllPaymentApprovals = createAsyncThunk(
   "getAllPaymentApprovals",
   async ({ userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithCompany?userId=${userId}`
+      `/accountService/api/v1/paymentRegister/getAllPaymentRegisterWithCompany?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createPurchaseOrder = createAsyncThunk(
@@ -26,10 +56,10 @@ export const createPurchaseOrder = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/paymentRegister/createPurchaseOrder`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createPaymentRegister = createAsyncThunk(
@@ -37,40 +67,40 @@ export const createPaymentRegister = createAsyncThunk(
   async ({ userId, data }) => {
     const response = await api.post(
       `/accountService/api/v1/payments/register?userId=${userId}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getPaymentDetailListByEstimateId = createAsyncThunk(
   "getPaymentDetailListByEstimateId",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getPaymentRegisterByEstimateId?id=${id}`
+      `/accountService/api/v1/paymentRegister/getPaymentRegisterByEstimateId?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsPaymentList = createAsyncThunk(
   "getAllVendorsPaymentList",
   async ({ page, size }) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegister?page=${page}&size=${size}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegister?page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsPaymentCount = createAsyncThunk(
   "getAllVendorsPaymentCount",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCount`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCount`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createVendorsPayment = createAsyncThunk(
@@ -78,10 +108,10 @@ export const createVendorsPayment = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/paymentRegister/createVendorPaymentRegister`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const createExternalVendorsPayment = createAsyncThunk(
@@ -89,90 +119,90 @@ export const createExternalVendorsPayment = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/accountService/api/v1/paymentRegister/createVendorPaymentRegisterManual`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateVendorPaymentStatus = createAsyncThunk(
   "updateVendorPaymentStatus",
   async ({ currentUserId, status, id }) => {
     const response = await api.put(
-      `/accountService/api/v1/paymentRegister/approveVendorPayment?currentUserId=${currentUserId}&Status=${status}&id=${id}`
+      `/accountService/api/v1/paymentRegister/approveVendorPayment?currentUserId=${currentUserId}&Status=${status}&id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllTdsReportInAccounts = createAsyncThunk(
   "getAllTdsReportInAccounts",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/tds/getAllTdsReport`
+      `/accountService/api/v1/tds/getAllTdsReport`,
     );
     return response.data;
-  }
+  },
 );
 
 export const paymentRegisterRemainingAmount = createAsyncThunk(
   "paymentRegisterRemainingAmount",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getRemainingAmount?id=${id}`
+      `/accountService/api/v1/paymentRegister/getRemainingAmount?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getInvoiceDetailById = createAsyncThunk(
   "getInvoiceDetailById",
   async ({ id, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/invoices/${id}?userId=${userId}`
+      `/accountService/api/v1/invoices/${id}?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsPaymentListForAccounts = createAsyncThunk(
   "getAllVendorsPaymentListForAccounts",
   async ({ page, size, status }) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterForAccount?page=${page}&size=${size}&status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterForAccount?page=${page}&size=${size}&status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsPaymentCountForAccounts = createAsyncThunk(
   "getAllVendorsPaymentCountForAccounts",
   async (status) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAccount?status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAccount?status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllBankAccounts = createAsyncThunk(
   "getAllBankAccounts",
   async () => {
     const response = await api.get(
-      `/accountService/api/v1/bankStatements/getAllBankAccounts`
+      `/accountService/api/v1/bankStatements/getAllBankAccounts`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getUnBilledDetailById = createAsyncThunk(
   "getUnBilledDetailById",
   async ({ id, userId }) => {
     const response = await api.get(
-      `/accountService/api/v1/unbilled-invoices/${id}?userId=${userId}`
+      `/accountService/api/v1/unbilled-invoices/${id}?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 const AccountSlice = createSlice({
@@ -224,7 +254,7 @@ const AccountSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.estimatePaymentList = action.payload;
-      }
+      },
     );
     builder.addCase(getPaymentDetailListByEstimateId.rejected, (state) => {
       state.loading = "rejected";
@@ -263,7 +293,7 @@ const AccountSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.remainingAmountDetail = action.payload;
-      }
+      },
     );
     builder.addCase(paymentRegisterRemainingAmount.rejected, (state) => {
       state.loading = "rejected";
@@ -290,7 +320,7 @@ const AccountSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.vendorsPaymentListForAccount = action.payload;
-      }
+      },
     );
     builder.addCase(getAllVendorsPaymentListForAccounts.rejected, (state) => {
       state.loading = "rejected";
@@ -305,7 +335,7 @@ const AccountSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.vendorsPaymentCountForAccount = action.payload;
-      }
+      },
     );
     builder.addCase(getAllVendorsPaymentCountForAccounts.rejected, (state) => {
       state.loading = "rejected";

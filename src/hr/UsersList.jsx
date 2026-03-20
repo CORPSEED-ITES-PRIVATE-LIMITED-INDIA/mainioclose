@@ -51,7 +51,10 @@ import {
   createNewUserInAuth,
   updateUserData,
 } from "../toolkit/slices/authSlice";
-import { createUsersInOperations } from "../toolkit/slices/operationSlice";
+import {
+  createUsersInOperations,
+  updateUsersInOperations,
+} from "../toolkit/slices/operationSlice";
 import { getAllDepartment } from "../toolkit/slices/settingSlice";
 import {
   allowOnlyNumbers,
@@ -66,6 +69,10 @@ import {
   toCalendarDateTime,
 } from "@internationalized/date";
 import dayjs from "dayjs";
+import {
+  createUserInAccounts,
+  updateUserInAccounts,
+} from "../toolkit/slices/accountSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -241,12 +248,7 @@ const UsersList = () => {
   const pages = Math.ceil(count / filteration?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...filteredItems];
   }, [sortDescriptor, filteredItems]);
 
   const {
@@ -340,18 +342,74 @@ const UsersList = () => {
       };
       dispatch(updateUserData(tempObj))
         .then((response) => {
+          console.log("Response in auth1", response);
           if (response.meta.requestStatus === "fulfilled") {
             dispatch(updateLeadByHr(values))
               .then((res) => {
+                console.log("Response in Lead1", res);
                 if (res.meta.requestStatus === "fulfilled") {
                   addToast({
-                    title: "User updated successfully !.",
+                    title: "User updated successfully in Leads !.",
                     color: "success",
                   });
-                  setRowItem(null);
-                  onClose();
-                  reset(defaultValues);
-                  dispatch(getAllUsers());
+
+                  dispatch(
+                    updateUserInAccounts({
+                      id: rowItem?.id,
+                      fullName: values?.userName,
+                      email: values?.email,
+                      designation: res?.payload?.data?.userDesignation?.name,
+                      department: res?.payload?.data?.userDepartment?.name,
+                      role: userInfo?.role,
+                    }),
+                  ).then((acco) => {
+                    console.log("Response   account1", oper);
+                    if (acco.meta.requestStatus === "fulfilled") {
+                      addToast({
+                        title: "User updated in Accounts",
+                        color: "success",
+                      });
+                      dispatch(
+                        updateUsersInOperations({
+                          id: rowItem?.id,
+                          data: {
+                            id: rowItem?.id,
+                            fullName: values?.userName,
+                            email: values?.email,
+                            contactNo: values?.contactNo,
+                            designationId: values?.designationId,
+                            departmentIds: [values?.departmentId],
+                            roleIds: temp?.role?.map((role) => role?.id),
+                            managerId: values?.managerId
+                              ? values?.managerId
+                              : userId,
+                          },
+                        }),
+                      ).then((oper) => {
+                        console.log("Response   operation1", oper);
+                        if ((oper.meta, requestStatus === "fulfilled")) {
+                          addToast({
+                            title: "User updated in operation",
+                            color: "success",
+                          });
+                          setRowItem(null);
+                          onClose();
+                          reset(defaultValues);
+                          dispatch(getAllUsers());
+                        } else {
+                          addToast({
+                            title: "Something went wrong in Operations",
+                            color: "danger",
+                          });
+                        }
+                      });
+                    } else {
+                      addToast({
+                        title: "Something went wrong in Accounts",
+                        color: "danger",
+                      });
+                    }
+                  });
                 } else {
                   addToast({
                     title: "Something went wrong !.",
@@ -399,42 +457,70 @@ const UsersList = () => {
             dispatch(createUserByHr(obj))
               .then((info) => {
                 if (info.meta.requestStatus === "fulfilled") {
-                  const userInfo = info?.payload;
+                  const userInfo = info?.payload?.data;
                   addToast({
                     title: "User created successfully !.",
                     color: "success",
                   });
                   dispatch(
-                    createUsersInOperations({
+                    createUserInAccounts({
                       id: userInfo?.id,
-                      fullName: userInfo?.fullName,
+                      username: userInfo?.fullName,
                       email: userInfo?.email,
-                      contactNo: userInfo?.contactNo,
-                      designationId: userInfo?.userDesignation?.id,
-                      departmentIds: [userInfo?.userDepartment?.id],
-                      roleIds: userInfo?.role,
-                      managerId: String(userInfo?.managerId),
-                      managerFlag: true,
+                      designation: userInfo?.userDesignation?.name,
+                      department: userInfo?.userDepartment?.name,
+                      role: userInfo?.role,
                     }),
-                  ).then((oper) => {
-                    if ((oper.meta, requestStatus === "fulfilled")) {
+                  ).then((acc) => {
+                    if (acc.meta.requestStatus === "fulfilled") {
                       addToast({
-                        title: "User created in operation",
+                        title: "User created in Accounts",
                         color: "success",
+                      });
+                      dispatch(
+                        createUsersInOperations({
+                          id: userInfo?.id,
+                          fullName: userInfo?.fullName,
+                          email: userInfo?.email,
+                          contactNo: userInfo?.contactNo,
+                          designationId: values?.designationId,
+                          departmentIds: [values?.departmentId],
+                          roleIds: temp?.role?.map((role) => role?.id),
+                          managerId: userInfo?.managers?.id
+                            ? userInfo?.managers?.id
+                            : userId,
+                          managerFlag: true,
+                        }),
+                      ).then((oper) => {
+                        if ((oper.meta, requestStatus === "fulfilled")) {
+                          addToast({
+                            title: "User created in operation",
+                            color: "success",
+                          });
+                          onClose();
+                          reset(defaultValues);
+                          dispatch(getAllUsers());
+                        } else {
+                          addToast({
+                            title:
+                              oper?.payload?.message ||
+                              "Something went wrong in Operations",
+                            color: "danger",
+                          });
+                        }
                       });
                     } else {
                       addToast({
-                        title: "Something went wrong in Operations",
+                        title:
+                          acc?.payload?.message ||
+                          "Something went wrong in Accounts",
                         color: "danger",
                       });
                     }
                   });
-                  onClose();
-                  reset(defaultValues);
-                  dispatch(getAllUsers());
                 } else {
                   addToast({
-                    title: "Something went wrong !.",
+                    title: info?.payload,
                     color: "danger",
                   });
                 }
@@ -447,7 +533,7 @@ const UsersList = () => {
               });
           } else {
             addToast({
-              title: "Something went wrong !.",
+              title: resp?.payload || "Something went wrong !.",
               color: "danger",
             });
           }
@@ -1147,7 +1233,9 @@ const UsersList = () => {
                             label="Experience (in years)"
                             isRequired
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) =>
+                              field.onChange(allowOnlyNumbers(e.target.value))
+                            }
                             errorMessage={errors.expInYear?.message}
                             // isInvalid={!!errors.expInYear}
                           />
@@ -1164,7 +1252,7 @@ const UsersList = () => {
                             type="number"
                             value={field.value}
                             onChange={(e) => {
-                              let value = e.target.value;
+                              let value = allowOnlyNumbers(e.target.value);
                               if (value > 12) value = String(12);
                               field.onChange(value);
                             }}
