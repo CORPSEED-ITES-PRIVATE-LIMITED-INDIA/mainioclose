@@ -413,7 +413,7 @@ const UsersList = () => {
                       designationId: userInfo?.userDesignation?.id,
                       departmentIds: [userInfo?.userDepartment?.id],
                       roleIds: userInfo?.role,
-                      managerId: managers?.id,
+                      managerId: String(userInfo?.managerId),
                       managerFlag: true,
                     }),
                   ).then((oper) => {
@@ -1165,7 +1165,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => {
                               let value = e.target.value;
-                              if (value > 12) value = 12; // 🔥 limit
+                              if (value > 12) value = String(12);
                               field.onChange(value);
                             }}
                             errorMessage={errors.expInMonth?.message}

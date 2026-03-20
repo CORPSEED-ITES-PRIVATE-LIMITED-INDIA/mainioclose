@@ -363,10 +363,12 @@ const LeadInfo = () => {
     resolver: zodResolver(addressFormSchema),
     defaultValues: addressFormDefault,
   });
+
   const industryForm = useForm({
     resolver: zodResolver(industryFormSchema),
     defaultValues: industryFormDefault,
   });
+
   const contactForm = useForm({
     resolver: zodResolver(contactFormSchema),
     defaultValues: contactFormDefault,
@@ -1266,9 +1268,13 @@ const LeadInfo = () => {
                             name="address"
                             control={addressForm.control}
                             render={({ field }) => (
-                              <Textarea
+                              <Input
+                                isRequired
                                 label="Address"
                                 name="address"
+                                errorMessage={
+                                  addressForm.formState.errors?.address?.message
+                                }
                                 {...field}
                               />
                             )}
@@ -1278,11 +1284,14 @@ const LeadInfo = () => {
                             control={addressForm.control}
                             render={({ field }) => (
                               <NewSelect
+                                isRequired
                                 data={countryList}
                                 label="Country"
                                 labelKey="name"
                                 valueKey="name"
-                                // errorMessage={addressForm.errors.country?.message}
+                                errorMessage={
+                                  addressForm.formState.errors?.country?.message
+                                }
                                 {...field}
                                 onChange={(value) => {
                                   field.onChange(value);
@@ -1297,11 +1306,14 @@ const LeadInfo = () => {
                             control={addressForm.control}
                             render={({ field }) => (
                               <NewSelect
+                                isRequired
                                 data={statesList}
                                 label="State"
                                 labelKey="name"
                                 valueKey="name"
-                                // errorMessage={addressForm.errors.state?.message}
+                                errorMessage={
+                                  addressForm.formState.errors?.state?.message
+                                }
                                 {...field}
                                 onChange={(value) => {
                                   field.onChange(value);
@@ -1316,11 +1328,14 @@ const LeadInfo = () => {
                             control={addressForm.control}
                             render={({ field }) => (
                               <NewSelect
+                                isRequired
                                 data={citiesList}
                                 label="City"
                                 labelKey="name"
                                 valueKey="name"
-                                // errorMessage={addressForm.errors.city?.message}
+                                errorMessage={
+                                  addressForm.formState.errors?.city?.message
+                                }
                                 {...field}
                               />
                             )}
@@ -1330,7 +1345,16 @@ const LeadInfo = () => {
                             name="pinCode"
                             control={addressForm.control}
                             render={({ field }) => (
-                              <Input label="Pin code" isRequired {...field} />
+                              <Input
+                                label="Pin code"
+                                isRequired
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    allowOnlyNumbers(e.target.value, 6),
+                                  )
+                                }
+                              />
                             )}
                           />
                         </div>
@@ -1386,7 +1410,10 @@ const LeadInfo = () => {
                                   );
                                   field.onChange(selectedValue);
                                 }}
-                                // errorMessage={industryForm.errors.industriesId?.message}
+                                errorMessage={
+                                  industryForm.formState.errors?.industriesId
+                                    ?.message
+                                }
                               />
                             )}
                           />
@@ -1411,7 +1438,10 @@ const LeadInfo = () => {
                                   );
                                   field.onChange(selectedValue);
                                 }}
-                                // errorMessage={industryForm.errors.subIndustryId?.message}
+                                errorMessage={
+                                  industryForm.formState.errors?.subIndustryId
+                                    ?.message
+                                }
                               />
                             )}
                           />
@@ -1435,7 +1465,10 @@ const LeadInfo = () => {
                                   );
                                   field.onChange(selectedValue);
                                 }}
-                                // errorMessage={industryForm.errors.subsubIndustryId?.message}
+                                errorMessage={
+                                  industryForm.formState.errors
+                                    ?.subsubIndustryId?.message
+                                }
                               />
                             )}
                           />
@@ -1455,7 +1488,10 @@ const LeadInfo = () => {
                                 onChange={(selectedValue) => {
                                   field.onChange(selectedValue);
                                 }}
-                                // errorMessage={industryForm.errors.industriesDataId?.message}
+                                errorMessage={
+                                  industryForm.formState.errors
+                                    ?.industriesDataId?.message
+                                }
                               />
                             )}
                           />
