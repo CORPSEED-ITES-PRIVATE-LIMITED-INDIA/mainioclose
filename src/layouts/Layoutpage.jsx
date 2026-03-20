@@ -36,9 +36,10 @@ const getNavItemsByDepartment = (department, admin) => {
     Procurement: procurementItems,
     "Human Resource": hrItems,
     Operations: operationNavItems,
+    CRT: operationNavItems,
     // NA: navItems,
   };
-  return items[trimmed] || navItems;
+  return items[trimmed];
 };
 
 const Layoutpage = () => {

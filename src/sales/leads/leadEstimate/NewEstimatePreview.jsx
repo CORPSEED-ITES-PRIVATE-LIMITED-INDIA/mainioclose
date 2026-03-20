@@ -165,7 +165,7 @@ const NewEstimatePreview = ({ details, due }) => {
                   <tr>
                     <th className="border p-1">#</th>
                     <th className="border p-1">Item & Description</th>
-                    <th className="border p-1">HSN</th>
+                    <th className="border p-1">HSN/SAC</th>
                     <th className="border p-1">Qty</th>
                     <th className="border p-1">Rate</th>
                     <th className="border p-1">GST %</th>
@@ -285,7 +285,7 @@ const NewEstimatePreview = ({ details, due }) => {
               <table className="w-full border text-xs shadow-sm rounded-lg overflow-hidden">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border p-1 text-left">HSN</th>
+                    <th className="border p-1 text-left">HSN/SAC</th>
                     <th className="border p-1 text-center">SGST %</th>
                     <th className="border p-1 text-center">CGST %</th>
                     <th className="border p-1 text-center">IGST %</th>

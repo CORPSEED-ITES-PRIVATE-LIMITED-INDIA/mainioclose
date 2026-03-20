@@ -552,7 +552,7 @@ const Projects = () => {
               endContent={<Plus />}
               onPress={formModal.onOpen}
               color="primary"
-              size="sm"
+              radius="sm"
             >
               Add
             </Button>
@@ -561,7 +561,7 @@ const Projects = () => {
                 <Button
                   endContent={<ChevronDown className="text-small" />}
                   variant="flat"
-                  size="sm"
+                  radius="sm"
                 >
                   Columns
                 </Button>
@@ -585,7 +585,7 @@ const Projects = () => {
         </div>
 
         {/* Search Bar Row */}
-        <div className="flex p-4 bg-white items-center w-full">
+        <div className="flex items-center w-full pb-0.5">
           <Select
             className="max-w-[12%]"
             selectionMode="single"

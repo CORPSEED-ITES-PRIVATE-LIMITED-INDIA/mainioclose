@@ -64,12 +64,16 @@ export const createPurchaseOrder = createAsyncThunk(
 
 export const createPaymentRegister = createAsyncThunk(
   "createPaymentRegister",
-  async ({ userId, data }) => {
-    const response = await api.post(
-      `/accountService/api/v1/payments/register?userId=${userId}`,
-      data,
-    );
-    return response.data;
+  async ({ userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/payments/register?userId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   },
 );
 

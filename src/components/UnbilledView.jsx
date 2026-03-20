@@ -464,7 +464,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                     Total
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(grandTotal))}
+                    {inrCurrency(grandTotal)}
                   </TableTd>
                 </tr>
               </tbody>

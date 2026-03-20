@@ -266,7 +266,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
           <div className="border border-gray-300">
             <div className="border-b border-gray-300 py-2 text-center">
               <div className="text-[16px] font-extrabold tracking-wide">
-                {heading ? heading : "INVOICE"}
+                {heading ? heading : "TAX INVOICE"}
               </div>
             </div>
 
@@ -626,7 +626,14 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                 color: "#374151",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  padding: "0 10px",
+                }}
+              >
                 <h4
                   style={{
                     margin: 0,

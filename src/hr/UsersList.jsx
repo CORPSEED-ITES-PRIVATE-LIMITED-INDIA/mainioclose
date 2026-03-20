@@ -360,10 +360,10 @@ const UsersList = () => {
                       email: values?.email,
                       designation: res?.payload?.data?.userDesignation?.name,
                       department: res?.payload?.data?.userDepartment?.name,
-                      role: userInfo?.role,
+                      role: res?.payload?.data?.role,
                     }),
                   ).then((acco) => {
-                    console.log("Response   account1", oper);
+                    console.log("Response   account1", acco);
                     if (acco.meta.requestStatus === "fulfilled") {
                       addToast({
                         title: "User updated in Accounts",
@@ -379,7 +379,9 @@ const UsersList = () => {
                             contactNo: values?.contactNo,
                             designationId: values?.designationId,
                             departmentIds: [values?.departmentId],
-                            roleIds: temp?.role?.map((role) => role?.id),
+                            roleIds: acco?.payload?.userRole?.map(
+                              (role) => role?.id,
+                            ),
                             managerId: values?.managerId
                               ? values?.managerId
                               : userId,

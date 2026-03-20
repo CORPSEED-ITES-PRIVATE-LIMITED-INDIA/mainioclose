@@ -116,7 +116,7 @@ const EstimatePaymentRegister = ({
         onClose?.();
       } else {
         addToast({
-          title: res?.payload?.data?.message || "Failed to register payment",
+          title: res?.payload?.message || "Failed to register payment",
           color: "danger",
         });
       }
