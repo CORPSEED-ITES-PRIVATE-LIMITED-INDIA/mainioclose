@@ -62,7 +62,7 @@ const NewEstimatePreview = ({ details, due }) => {
       <div className="w-full md:w-full lg:w-full mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-6 shadow-md bg-white">
         <div ref={contentRef} className="relative">
           <div className="absolute -left-6 -top-4 bg-green-600 text-white font-medium px-4 py-1.5 rounded-r-md text-sm shadow-md">
-            {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
+            {details?.performanceInvoiceFlag ? "Proforma Invoice" : "Estimate"}
           </div>
           <div className="bg-white rounded-xl p-4 md:p-8 space-y-6">
             <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -87,16 +87,24 @@ const NewEstimatePreview = ({ details, due }) => {
               <div className="flex flex-col items-end gap-4">
                 <div>
                   <h4 className="text-green-600 text-base font-semibold">
-                    {details?.performaInvoice ? "Proforma Invoice" : "Estimate"}
+                    {details?.performanceInvoiceFlag
+                      ? "Proforma Invoice"
+                      : "Estimate"}
                   </h4>
-                  <p className="font-medium text-gray-700 text-sm">
-                    {details?.estimateNumber}
+                  <p className="font-medium text-gray-700 text-sm text-end">
+                    {details?.performanceInvoiceFlag
+                      ? details?.performanceInvoiceNumber
+                      : details?.estimateNumber}
                   </p>
                 </div>
 
-                <div className="text-xs space-y-1 mt-2.5">
+                <div className="text-xs space-y-1 mt-2.5 text-end">
                   <p className="whitespace-nowrap">
-                    <span className="font-semibold">Estimate date:</span>{" "}
+                    <span className="font-semibold">
+                      {details?.performanceInvoiceFlag
+                        ? "Proforma Invoice Date:"
+                        : "Estimate Date:"}
+                    </span>{" "}
                     {dayjs(details?.estimateDate).format("DD-MM-YYYY")}
                   </p>
                   <p className="whitespace-nowrap">
@@ -339,6 +347,24 @@ const NewEstimatePreview = ({ details, due }) => {
                     <p style={{ margin: 0 }}>{details.internalRemarks}</p>
                   </div>
                 )}
+                {details?.customerNotes && (
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: 16,
+                        fontWeight: 500,
+                        color: "#111827",
+                      }}
+                    >
+                      Note
+                    </h4>
+
+                    <p style={{ margin: 0 }}>{details.customerNotes}</p>
+                  </div>
+                )}
 
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 6 }}
@@ -363,9 +389,12 @@ const NewEstimatePreview = ({ details, due }) => {
                     }}
                   >
                     <li>
-                      This estimate is valid for the period mentioned and
-                      subject to revision upon change in scope or statutory
-                      requirements.
+                      This{" "}
+                      {details?.performanceInvoiceFlag
+                        ? "Proforma Invoice"
+                        : "Estimate"}{" "}
+                      is valid for the period mentioned and subject to revision
+                      upon change in scope or statutory requirements.
                     </li>
                     <li>
                       Payments shall be made as per agreed timelines; delays may

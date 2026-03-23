@@ -20,27 +20,29 @@ const FormSelect = ({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <NewSelect
-          label={label}
-          size={size}
-          data={data}
-          isOpen={isOpen}
-          onOpenChange={onOpenChange}
-          isRequired={isRequired}
-          labelKey={labelKey}
-          valueKey={valueKey}
-          value={field.value}
-          isInvalid={!!error}
-          errorMessage={error?.message}
-          endContent={endContent}
-          onChange={(value) => {
-            onChangeExtra?.(value);
-            field.onChange(value);
-          }}
-          onItemSelect={onItemSelect}
-        />
-      )}
+      render={({ field, fieldState: { error } }) => {
+        return (
+          <NewSelect
+            label={label}
+            size={size}
+            data={data}
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            isRequired={isRequired}
+            labelKey={labelKey}
+            valueKey={valueKey}
+            value={field.value}
+            isInvalid={!!error}
+            errorMessage={error?.message}
+            endContent={endContent}
+            onChange={(value) => {
+              onChangeExtra?.(value);
+              field.onChange(value);
+            }}
+            onItemSelect={onItemSelect}
+          />
+        );
+      }}
     />
   );
 };

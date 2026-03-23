@@ -65,21 +65,35 @@ import { IndianRupee } from "lucide-react";
  * Zod Schemas
  * ---------------------------- */
 // NOTE: I added the new fields you showed (companyType, gstType, businessType, files, contact fields etc.)
-const unitSchema = z.object({
-  id: z.coerce.number().optional().default(0),
-  unitName: z.string().min(1, "Unit name is required"),
-  addressLine1: z.string().min(1, "Address Line 1 is required"),
-  // addressLine2: z.string().optional().default(""),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  country: z.string().min(1, "Country is required"),
-  pinCode: z.string().min(1, "Pin code is required"),
-  gstNo: z.string().optional().default(""),
-  unitOpeningDate: z.string().min(1, "please enter date"),
-  companyTypeId: z.string().min(1, "please select company type"),
-  gstTypeId: z.string().min(1, "please select gst type"),
-  gstBusinessTypeId: z.string().min(1, "please select business type"),
-});
+const unitSchema = z
+  .object({
+    id: z.coerce.number().optional().default(0),
+    unitName: z.string().min(1, "Unit name is required"),
+    addressLine1: z.string().min(1, "Address Line 1 is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    country: z.string().min(1, "Country is required"),
+    pinCode: z.string().min(1, "Pin code is required"),
+
+    gstNo: z.string().optional(), // 👈 make optional
+
+    unitOpeningDate: z.string().min(1, "please enter date"),
+    companyTypeId: z.string().min(1, "please select company type"),
+    gstTypeId: z.string().min(1, "please select gst type"),
+    gstBusinessTypeId: z.string().min(1, "please select business type"),
+  })
+  .superRefine((data, ctx) => {
+    // 👇 your condition
+    const requiresGST = data?.gstRequired; // you must pass this flag
+
+    if (requiresGST && !data.gstNo) {
+      ctx.addIssue({
+        path: ["gstNo"],
+        message: "GST number is required",
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  });
 
 const companySchema = (obj) =>
   z.object({
@@ -110,20 +124,8 @@ const companySchema = (obj) =>
           ndaFileUrl: z.string().min(1, "please upload attachement"),
         }
       : {}),
-
-    // payment/flags
-    // paymentTerm: z.string().min(1, "Please select payment term"),
     aggrementPresent: z.boolean(),
     ndaPresent: z.boolean(),
-
-    // contact fields
-    // primaryTitle: z.string().min(1, "please select salutation"),
-    // contactName: z.string().min(1, "please enter contact name."),
-    // primaryDesignation: z.string.min(1, "please select Designation."),
-    // contactEmails: z.string().min(1, "please enter email."),
-    // contactNo: z.string().min(1, "please enter contact."),
-    // contactWhatsappNo: z.string().min(1, "please eneter whatsapp number."),
-
     // address (company)
     address: z.string().min(1, "please enter address."),
     country: z.string().min(1, "please select country."),
@@ -408,7 +410,10 @@ export function CompanyAndUnitsForm({
 
       const formatted = date.toISOString().split("T")[0];
 
-      setValue("establishDate", formatted);
+      setValue("establishDate", formatted, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   }, [companyAge]);
 
@@ -424,7 +429,10 @@ export function CompanyAndUnitsForm({
         age--;
       }
 
-      setValue("companyAge", age.toString());
+      setValue("companyAge", age.toString(), {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   }, [establishDate]);
 
@@ -512,19 +520,26 @@ export function CompanyAndUnitsForm({
         ? String(company.establishDate).slice(0, 10)
         : "",
       units: (company?.units?.length ? company.units : [getEmptyUnit()]).map(
-        (u) => ({
-          ...getEmptyUnit(),
-          ...u,
-          gstNo: u?.gstNo || "",
-          companyTypeId: u?.companyTypeId ? String(u.companyTypeId) : "",
-          gstTypeId: u?.gstTypeId ? String(u.gstTypeId) : "",
-          gstBusinessTypeId: u?.gstBusinessTypeId
-            ? String(u.gstBusinessTypeId)
-            : "",
-          unitOpeningDate: u?.unitOpeningDate
-            ? String(u.unitOpeningDate).slice(0, 10)
-            : "",
-        }),
+        (u, idx) => {
+          setGstAndPanData((prev) => ({
+            ...prev,
+            [idx]: { gstNo: u.gstNo || "", panNo: u.panNo || "" },
+          }));
+
+          return {
+            ...getEmptyUnit(),
+            ...u,
+            gstNo: u?.gstNo || "",
+            companyTypeId: u?.companyTypeId ? String(u.companyTypeId) : "",
+            gstTypeId: u?.gstTypeId ? String(u.gstTypeId) : "",
+            gstBusinessTypeId: u?.gstBusinessTypeId
+              ? String(u.gstBusinessTypeId)
+              : "",
+            unitOpeningDate: u?.unitOpeningDate
+              ? String(u.unitOpeningDate).slice(0, 10)
+              : "",
+          };
+        },
       ),
     });
   }, [company, reset, dispatch]);
@@ -613,6 +628,8 @@ export function CompanyAndUnitsForm({
       );
   };
 
+  console.log("jdhsgfjkhgkjgkjdg", gstAndPanData);
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -646,22 +663,6 @@ export function CompanyAndUnitsForm({
             />
 
             <Controller
-              name="companyAge"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  label="Company age"
-                  isRequired
-                  value={field?.value}
-                  maxLength={3}
-                  onChange={(e) =>
-                    field.onChange(allowOnlyNumbers(e.target.value))
-                  }
-                />
-              )}
-            />
-
-            <Controller
               name="establishDate"
               control={control}
               render={({ field, fieldState: { error } }) => (
@@ -681,6 +682,22 @@ export function CompanyAndUnitsForm({
                     const iso = value ? value.toString() : "";
                     field.onChange(iso);
                   }}
+                />
+              )}
+            />
+
+            <Controller
+              name="companyAge"
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <Input
+                  label="Company age"
+                  isRequired
+                  value={field?.value}
+                  maxLength={3}
+                  onChange={(e) =>
+                    field.onChange(allowOnlyNumbers(e.target.value))
+                  }
                 />
               )}
             />
@@ -1336,41 +1353,40 @@ export function CompanyAndUnitsForm({
                           labelKey="name"
                           valueKey="id"
                           value={field.value}
-                          onChange={(value) => {
-                            field.onChange(value);
-
-                            const found = businessTypeList?.gstTypePrice?.find(
-                              (x) => x.id === value,
-                            );
-
+                          onItemSelect={(itm) => {
                             setGstAndPanData((prev) => ({
                               ...prev,
                               [index]: {
-                                gst: found?.gstPresent || false,
-                                pan: found?.panPresent || false,
+                                gst: itm?.gstPresent,
+                                pan: itm?.panPresent,
                               },
                             }));
+                          }}
+                          onChange={(value) => {
+                            field.onChange(value);
                           }}
                         />
                       )}
                     />
 
-                    <Controller
-                      control={control}
-                      name={`units.${index}.gstNo`}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          label="GST No"
-                          // isRequired
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            handleGstChange(e, `units.${index}.gstNo`);
-                          }}
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                        />
-                      )}
-                    />
+                    {gstAndPanData[index]?.gst && (
+                      <Controller
+                        control={control}
+                        name={`units.${index}.gstNo`}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            label="GST No"
+                            isRequired
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              handleGstChange(e, `units.${index}.gstNo`);
+                            }}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+                    )}
 
                     <Controller
                       control={control}

@@ -526,7 +526,7 @@ const Solutions = () => {
                     handleSubmit(data);
                   }}
                 >
-                  <div className="w-full grid grid-cols-2 gap-5 max-h-[65vh] overflow-auto p-4">
+                  <div className="w-full grid grid-cols-2 gap-2 max-h-[65vh] overflow-auto p-4">
                     <Input
                       isRequired
                       errorMessage="Please enter product name"
@@ -611,43 +611,47 @@ const Solutions = () => {
                       ))}
                     </Select>
 
-                    <Input
-                      label="Portal name"
-                      name="expectedPortalName"
-                      value={formData?.expectedPortalName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          expectedPortalName: e.target.value,
-                        }))
-                      }
-                    />
+                    {formData?.requiresClientPortal && (
+                      <>
+                        <Input
+                          label="Portal name"
+                          name="expectedPortalName"
+                          value={formData?.expectedPortalName}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              expectedPortalName: e.target.value,
+                            }))
+                          }
+                        />
 
-                    <Input
-                      errorMessage="Please enter product name"
-                      label="Default portal name"
-                      name="defaultPortalUrl"
-                      value={formData?.defaultPortalUrl}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          defaultPortalUrl: e.target.value,
-                        }))
-                      }
-                    />
+                        <Input
+                          errorMessage="Please enter product name"
+                          label="Default portal name"
+                          name="defaultPortalUrl"
+                          value={formData?.defaultPortalUrl}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              defaultPortalUrl: e.target.value,
+                            }))
+                          }
+                        />
 
-                    <Textarea
-                      className="max-w-xs"
-                      label="Description"
-                      name="description"
-                      value={formData?.description}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                    />
+                        <Textarea
+                          className="max-w-xs"
+                          label="Description"
+                          name="description"
+                          value={formData?.description}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                        />
+                      </>
+                    )}
                   </div>
 
                   <ModalFooter className="w-full flex justify-end">

@@ -232,7 +232,7 @@ export function numberToWords(value) {
     words += " and " + numWords(paise) + " paise";
   }
 
-  return words.replace(/^\w/, (c) => c.toUpperCase()) + " only";
+  return words.replace(/^\w/, (c) => c.toUpperCase()) + " rupees only";
 }
 
 export const allowOnlyNumbers = (value, maxLength = 10) => {

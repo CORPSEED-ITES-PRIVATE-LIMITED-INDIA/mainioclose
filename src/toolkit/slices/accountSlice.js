@@ -209,6 +209,20 @@ export const getUnBilledDetailById = createAsyncThunk(
   },
 );
 
+export const convertEstimateToPI = createAsyncThunk(
+  "convertEstimateToPI",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `accountService/api/v1/estimates/convertIntoPI/${data.estimateId}?requestingUserId=${data.userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

@@ -78,6 +78,7 @@ import {
   isValidEmail,
 } from "../../../common";
 import BasicCompany from "../../company/BasicCompany";
+import { convertEstimateToPI } from "../../../toolkit/slices/accountSlice";
 
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
@@ -142,6 +143,7 @@ export const LeadEstimates = () => {
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
   const [unitDetail, setUnitDetail] = useState(null);
+  const [activeTab, setActiveTab] = useState("ESTIMATE"); // default
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -536,100 +538,171 @@ export const LeadEstimates = () => {
       );
   };
 
+  const handleConvertToPI = (estimate) => {
+    dispatch(
+      convertEstimateToPI({
+        estimateId: estimate?.id,
+        userId,
+      }),
+    )
+      .then((res) => {
+        if (res.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Converted to PI successfully",
+            color: "success",
+          });
+
+          // refresh list
+          dispatch(getNewEstimateByLeadId({ leadId, userId }));
+        } else {
+          addToast({
+            title: res?.payload?.data?.message || "Failed to convert",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong", color: "danger" }),
+      );
+  };
+
+  console.log("dsjkgdsjgkdjsg", errors);
+
   return (
     <>
       {/* ===================== TOP ACTION BAR (ALWAYS VISIBLE) ===================== */}
-      <div className="w-full flex items-center justify-end mb-3 gap-2">
-        <Button
-          type="button"
-          color="secondary"
-          variant="flat"
-          size="sm"
-          className="cursor-pointer"
-          onPress={onOpenUnitModal}
-        >
-          Add Unit Details
-        </Button>
-
-        {!showForm && (
-          <Button
-            type="button"
-            color="primary"
-            size="sm"
-            className="cursor-pointer"
-            onPress={() => setShowForm(true)}
-          >
-            Create Estimate
-          </Button>
+      <div className="w-full flex items-center justify-between mb-3 gap-2">
+        {!showForm && hasEstimates && (
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800">
+              Estimates / Proforma Invoice
+            </h3>
+            <p className="text-sm text-slate-500">
+              {sortedEstimates.length} total
+            </p>
+          </div>
         )}
 
-        {showForm && hasEstimates && (
+        {showForm && (
+          <div className="text-xl font-semibold flex items-center justify-between">
+            <span>Create Estimate</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
           <Button
             type="button"
-            color="default"
+            color="secondary"
             variant="flat"
             size="sm"
-            className="cursor-pointer"
-            onPress={onCancelForm}
+            radius="sm"
+            onPress={onOpenUnitModal}
           >
-            Cancel
+            Add Unit Details
           </Button>
-        )}
+
+          {!showForm && (
+            <Button
+              type="button"
+              color="primary"
+              size="sm"
+              radius="sm"
+              onPress={() => setShowForm(true)}
+            >
+              Create Estimate
+            </Button>
+          )}
+
+          {showForm && hasEstimates && (
+            <Button
+              type="button"
+              color="default"
+              variant="flat"
+              size="sm"
+              className="cursor-pointer"
+              onPress={onCancelForm}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* ===================== LIST MODE ===================== */}
       {!showForm && hasEstimates && (
         <div className="w-full">
-          <div className="flex items-center justify-between mb-3">
+          {/* <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-lg font-semibold text-slate-800">
-                Estimates
+                Estimates / Proforma Invoice
               </h3>
               <p className="text-sm text-slate-500">
                 {sortedEstimates.length} total
               </p>
             </div>
-          </div>
+          </div> */}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {sortedEstimates.map((est) => (
-              <button
-                key={est?.id}
-                type="button"
-                onClick={() => openEstimatePreview(est)}
-                className="text-left cursor-pointer"
-              >
-                <Card className="hover:shadow-lg transition-shadow">
-                  <CardBody className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-slate-900">
-                        {est?.estimateNumber || `Estimate #${est?.id}`}
-                      </p>
-                      <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
-                        {est?.performaInvoice ? "Proforma" : "Estimate"}
-                      </span>
-                    </div>
-                    {/* 
+              <Card key={est?.id} className="hover:shadow-lg transition-shadow">
+                <CardBody className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-slate-900">
+                      {est?.performanceInvoiceFlag
+                        ? est?.performanceInvoiceNumber ||
+                          "Performa Invoice #" + est?.id
+                        : est?.estimateNumber}
+                    </p>
+                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                      {est?.performanceInvoiceFlag
+                        ? "Proforma Invoice"
+                        : "Estimate"}
+                    </span>
+                  </div>
+                  {/* 
                     <p className="text-sm text-slate-600">
                       Order: {est?.orderNumber || "NA"}
                     </p> */}
 
-                    <p className="text-xs text-slate-500">
-                      Date:{" "}
-                      {est?.estimateDate
-                        ? dayjs(est.estimateDate).format("DD MMM YYYY")
-                        : "NA"}
-                    </p>
+                  <p className="text-xs text-slate-500">
+                    Date:{" "}
+                    {est?.estimateDate
+                      ? dayjs(est.estimateDate).format("DD MMM YYYY")
+                      : "NA"}
+                  </p>
 
-                    <p className="text-xs text-slate-500">
-                      Valid Till:{" "}
-                      {est?.validUntil
-                        ? dayjs(est.validUntil).format("DD MMM YYYY")
-                        : "NA"}
-                    </p>
-                  </CardBody>
-                </Card>
-              </button>
+                  <p className="text-xs text-slate-500">
+                    Valid Till:{" "}
+                    {est?.validUntil
+                      ? dayjs(est.validUntil).format("DD MMM YYYY")
+                      : "NA"}
+                  </p>
+                  <div className="flex gap-1 items-center">
+                    <Button
+                      size="sm"
+                      radius="sm"
+                      color="primary"
+                      variant="light"
+                      onPress={() => openEstimatePreview(est)}
+                    >
+                      Preview
+                    </Button>
+                    {!est?.performanceInvoiceFlag && (
+                      <Button
+                        size="sm"
+                        radius="sm"
+                        color="success"
+                        variant="flat"
+                        onPress={() => {
+                          handleConvertToPI(est);
+                        }}
+                      >
+                        Convert to PI
+                      </Button>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
             ))}
           </div>
         </div>
@@ -642,62 +715,61 @@ export const LeadEstimates = () => {
           className="w-full max-h-[70vh] overflow-auto space-y-4"
         >
           <Card className="shadow-xl">
-            <CardHeader className="text-xl font-semibold flex items-center justify-between">
-              <span>Create Estimate</span>
-            </CardHeader>
-
             <CardBody className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Controller
                   name="companyName"
                   control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      label="Select company"
-                      size={isMedium ? "sm" : "md"}
-                      data={companyList || []}
-                      labelKey="name"
-                      valueKey="name"
-                      isOpen={isDropDownOpen?.company}
-                      value={field.value}
-                      onOpenChange={(e) =>
-                        setIsDropDownOpen((prev) => ({ ...prev, company: e }))
-                      }
-                      onItemSelect={(item) => {
-                        dispatch(
-                          getBasicCompanyDetailByCompanyId(item?.id),
-                        ).then((resp) => {
-                          if (resp.meta.requestStatus === "fulfilled") {
-                            setValue("companyName", resp?.payload?.name);
-                            setCompanyDetail(resp?.payload);
-                            dispatch(
-                              getContactDetailListByCompanyId({
-                                companyId: resp?.payload?.id,
-                                userId,
-                              }),
-                            );
-                          }
-                        });
-                        getAllUnitListByCompanyId(item?.id);
-                      }}
-                      onChange={(value) => {
-                        field.onChange(value);
-                      }}
-                      endContent={
-                        <BasicCompany
-                          setIsDropDownOpen={setIsDropDownOpen}
-                          isEstimate={true}
-                          companyDetail={companyDetail}
-                        />
-                      }
-                    />
-                  )}
+                  render={({ field, fieldState: { error } }) => {
+                    return (
+                      <NewSelect
+                        label="Select company"
+                        isRequired={true}
+                        size={isMedium ? "sm" : "md"}
+                        data={companyList || []}
+                        labelKey="name"
+                        valueKey="name"
+                        isOpen={isDropDownOpen?.company}
+                        value={field.value}
+                        onOpenChange={(e) =>
+                          setIsDropDownOpen((prev) => ({ ...prev, company: e }))
+                        }
+                        onItemSelect={(item) => {
+                          dispatch(
+                            getBasicCompanyDetailByCompanyId(item?.id),
+                          ).then((resp) => {
+                            if (resp.meta.requestStatus === "fulfilled") {
+                              setCompanyDetail(resp?.payload);
+                              dispatch(
+                                getContactDetailListByCompanyId({
+                                  companyId: resp?.payload?.id,
+                                  userId,
+                                }),
+                              );
+                            }
+                          });
+                          getAllUnitListByCompanyId(item?.id);
+                        }}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        endContent={
+                          <BasicCompany
+                            setIsDropDownOpen={setIsDropDownOpen}
+                            isEstimate={true}
+                            companyDetail={companyDetail}
+                          />
+                        }
+                      />
+                    );
+                  }}
                 />
 
                 <FormSelect
                   label="Unit Name"
                   name="unitId"
                   control={control}
+                  isRequired={true}
                   error={errors.unitName}
                   isOpen={isDropDownOpen?.unit}
                   data={
@@ -739,6 +811,7 @@ export const LeadEstimates = () => {
                   label="Contact"
                   name="contactId"
                   control={control}
+                  isRequired={true}
                   isOpen={isDropDownOpen?.contact}
                   onOpenChange={(e) =>
                     setIsDropDownOpen((prev) => ({ ...prev, contact: e }))
@@ -775,6 +848,7 @@ export const LeadEstimates = () => {
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
                       label="Select solutions"
+                      isRequired={true}
                       size={isMedium ? "sm" : "md"}
                       data={solutionList || []}
                       labelKey="name"
@@ -827,7 +901,6 @@ export const LeadEstimates = () => {
                       showMonthAndYearPickers
                       maxValue={today(getLocalTimeZone())}
                       errorMessage={error?.message}
-                      isInvalid={!!error}
                       value={
                         field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
                           ? parseDate(field.value)
@@ -852,7 +925,6 @@ export const LeadEstimates = () => {
                       showMonthAndYearPickers
                       minValue={today(getLocalTimeZone())}
                       errorMessage={error?.message}
-                      isInvalid={!!error}
                       value={
                         field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
                           ? parseDate(field.value)
@@ -1088,11 +1160,12 @@ export const LeadEstimates = () => {
             <div className="h-12 px-4 flex items-center justify-between border-b bg-white">
               <div className="flex items-center gap-3">
                 <p className="font-semibold text-slate-900">
-                  {selectedEstimate?.estimateNumber ||
-                    `Estimate #${selectedEstimate?.id}`}
+                  {selectedEstimate?.performanceInvoiceFlag
+                    ? selectedEstimate?.performanceInvoiceNumber
+                    : selectedEstimate?.estimateNumber}
                 </p>
                 <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
-                  {selectedEstimate?.performaInvoice
+                  {selectedEstimate?.performanceInvoiceFlag
                     ? "Proforma Invoice"
                     : "Estimate"}
                 </span>
@@ -1242,14 +1315,14 @@ export const LeadEstimates = () => {
                       )}
                     />
                     <Controller
-                      name="contactWhatsappNo"
+                      name="whatsappNo"
                       control={contactControl}
                       render={({ field, fieldState: { error } }) => (
                         <Input
                           isRequired={true}
                           size={isMedium ? "sm" : "md"}
                           label="Whatsapp number"
-                          error={contactErrors.contactWhatsappNo}
+                          error={contactErrors.whatsappNo}
                           value={field?.value}
                           onChange={(e) =>
                             field.onChange(allowOnlyNumbers(e.target.value))

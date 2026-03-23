@@ -570,7 +570,8 @@ const Documents = () => {
                           errorMessage={errors.expiryType?.message}
                           data={[
                             { label: "FIXED", value: "FIXED" },
-                            { label: "ROLLING", value: "ROLLING" },
+                            { label: "EXPIRING", value: "EXPIRING" },
+                            { label: "UNKNOWN", value: "UNKNOWN" },
                           ]}
                           labelKey="label"
                           valueKey="value"

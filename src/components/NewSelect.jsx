@@ -71,14 +71,43 @@ const NewSelect = ({
   const handleSearchQuery = useCallback(
     (e) => {
       setSearchQuery(e);
+
+      let result = [];
+
       if (!e) {
-        setFilteredData(data);
+        result = [...data];
       } else {
-        const filter = data?.filter((user) =>
-          user?.[labelKey]?.toLowerCase()?.includes(e?.toLowerCase()),
+        result = data?.filter((item) =>
+          item?.[labelKey]?.toLowerCase()?.includes(e?.toLowerCase()),
         );
-        setFilteredData(filter || []);
       }
+
+      // ✅ REMOVE invalid values
+      result = result.filter(
+        (item) => item?.[labelKey] && item[labelKey].trim() !== "",
+      );
+
+      // ✅ REMOVE DUPLICATES (IMPORTANT)
+      const uniqueMap = new Map();
+
+      result.forEach((item) => {
+        const key = item[labelKey].toLowerCase().trim();
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, item);
+        }
+      });
+
+      result = Array.from(uniqueMap.values());
+
+      // ✅ SORT
+      result.sort((a, b) =>
+        a[labelKey].localeCompare(b[labelKey], undefined, {
+          sensitivity: "base",
+          numeric: true,
+        }),
+      );
+
+      setFilteredData(result);
     },
     [data, labelKey],
   );

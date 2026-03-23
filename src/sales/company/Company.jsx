@@ -380,7 +380,7 @@ const Company = () => {
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{company.assignee || "-"}</span>
+            <span className="font-normal">{company.assigneeName || "-"}</span>
           </div>
         );
       case "client":
