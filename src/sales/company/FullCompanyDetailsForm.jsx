@@ -826,7 +826,7 @@ export function CompanyAndUnitsForm({
             />
 
             <Controller
-              name="subsubIndustryId"
+              name="subSubIndustryId"
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
