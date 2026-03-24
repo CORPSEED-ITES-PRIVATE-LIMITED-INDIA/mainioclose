@@ -694,7 +694,7 @@ export function CompanyAndUnitsForm({
                   label="Company age"
                   isRequired
                   value={field?.value}
-                  maxLength={3}
+                  maxLength={4}
                   onChange={(e) =>
                     field.onChange(allowOnlyNumbers(e.target.value))
                   }

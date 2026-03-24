@@ -51,6 +51,7 @@ export const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "NAME", uid: "name" },
   { name: "TYPE", uid: "type" },
+  { name: "APPLICABILITY", uid: "applicability" },
   { name: "STATE", uid: "stateName" },
   { name: "CENTRAL NAME", uid: "centralName" },
   { name: "COUNTRY", uid: "country" },
@@ -58,6 +59,7 @@ export const columns = [
   { name: "EXPIRY TYPE", uid: "expiryType" },
   { name: "VALIDITY", uid: "maxValidityYears" },
   { name: "DESCRIPTION", uid: "description" },
+  { name: "REMARKS", uid: "remarks" },
   { name: "CREATED DATE", uid: "createdDate" },
 ];
 
@@ -69,6 +71,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "name",
   "type",
+  "applicability",
   "stateName",
   "centralName",
   "country",
@@ -76,12 +79,13 @@ const INITIAL_VISIBLE_COLUMNS = [
   "expiryType",
   "maxValidityYears",
   "description",
+  "remarks",
   "createdDate",
 ];
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
+  description: z.string().optional().default(""),
   type: z.string().min(1, "Type is required"),
   country: z.string().min(1, "Country is required"),
   centralName: z.string().min(1, "Central name is required"),
@@ -89,8 +93,10 @@ const formSchema = z.object({
   expiryType: z.enum(["FIXED", "ROLLING"]),
   mandatory: z.boolean(),
   maxValidityYears: z.coerce.number().min(0),
+  applicability: z.string().min(1, "Applicability is required"),
   minFileSizeKb: z.coerce.number().min(0),
   allowedFormats: z.string().min(1, "Allowed formats are required"),
+  remarks: z.string().optional().default(""),
   createdBy: z.number().default(0),
   updatedBy: z.number().default(0),
   productIds: z.array(z.number()).optional().default([]),
@@ -106,11 +112,13 @@ const defaultValues = {
   expiryType: "FIXED",
   mandatory: false,
   maxValidityYears: 0,
+  applicability: "",
   minFileSizeKb: 0,
   allowedFormats: "",
   createdBy: 0,
   updatedBy: 0,
   productIds: [],
+  remarks: "",
 };
 
 const Documents = () => {
@@ -617,6 +625,19 @@ const Documents = () => {
                       )}
                     />
 
+                    <Controller
+                      name="applicability"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          isRequired
+                          errorMessage={errors.applicability?.message}
+                          label="Applicability"
+                          {...field}
+                        />
+                      )}
+                    />
+
                     {/* minFileSizeKb */}
                     <Controller
                       name="minFileSizeKb"
@@ -651,9 +672,20 @@ const Documents = () => {
                       control={control}
                       render={({ field }) => (
                         <Textarea
-                          isRequired
                           label="Description"
                           errorMessage={errors.description?.message}
+                          {...field}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="remarks"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          label="Remarks"
+                          errorMessage={errors.remarks?.message}
                           {...field}
                         />
                       )}
@@ -690,7 +722,7 @@ const Documents = () => {
                   <div>
                     <a
                       className="text-primary-500"
-                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1773809109318test_doc.xlsx"
+                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1774332098832test_doc_(1).xlsx"
                     >
                       Download the sample document
                     </a>
