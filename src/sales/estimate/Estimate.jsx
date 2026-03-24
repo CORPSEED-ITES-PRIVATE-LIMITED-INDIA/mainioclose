@@ -48,7 +48,7 @@ import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
 
 const columns = [
   { name: "ID", uid: "id", sortable: true },
-  { name: "ESTIMATE NO.", uid: "estimateNumber" },
+  { name: "ESTIMATE NO./ PI NO.", uid: "estimateNumber" },
   { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "COMPANY", uid: "companyName" },
   { name: "UNIT NAME", uid: "unitName" },
@@ -127,6 +127,7 @@ const Estimate = () => {
     fromDate: "",
     toDate: "",
   });
+  const [viewType, setViewType] = useState("ESTIMATE");
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -190,7 +191,8 @@ const Estimate = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const handleViewEstimate = (rowData) => {
+  const handleViewEstimate = (rowData, type) => {
+    setViewType(type);
     dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -211,6 +213,15 @@ const Estimate = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
+      case "estimateNumber":
+        return (
+          <div className="flex flex-col items-start">
+            <span>{rowData?.estimateNumber}</span>
+            {rowData?.performanceInvoiceFlag && (
+              <span>/ {rowData?.performanceInvoiceNumber}</span>
+            )}
+          </div>
+        );
       case "solutionName":
         return (
           <div className="flex flex-col items-start">
@@ -418,7 +429,9 @@ const Estimate = () => {
                       paymentModal.onOpen();
                     }
                   } else if (item === "viewEstimate") {
-                    handleViewEstimate(rowData);
+                    handleViewEstimate(rowData, "ESTIMATE");
+                  } else if (item === "viewPI") {
+                    handleViewEstimate(rowData, "PI");
                   } else if (item === "updateCompanyDetail") {
                     dispatch(
                       getBasicCompanyDetailByCompanyId(rowData?.company?.id),
@@ -444,6 +457,7 @@ const Estimate = () => {
                   Add payment register
                 </DropdownItem>
                 <DropdownItem key="viewEstimate">View estimate</DropdownItem>
+                <DropdownItem key="viewPI">View PI</DropdownItem>
                 {/* <DropdownItem key="edit">Edit</DropdownItem>
                 <DropdownItem key="delete" color="danger">
                   Delete
@@ -759,9 +773,14 @@ const Estimate = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Estimate</ModalHeader>
+              <ModalHeader>
+                {viewType === "Estimate" ? "Estimate" : "Proforma Invoice"}
+              </ModalHeader>
               <ModalBody className="max-h-[70vh] overflow-auto">
-                <NewEstimatePreview details={estimateDetail} />
+                <NewEstimatePreview
+                  details={estimateDetail}
+                  viewType={viewType}
+                />
               </ModalBody>
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>

@@ -7,8 +7,9 @@ import numWords from "num-words";
 import { inrCurrency, numberToWords } from "../../../common";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrganizationByName } from "../../../toolkit/slices/organizationSlice";
+import { vi } from "zod/v4/locales";
 
-const NewEstimatePreview = ({ details, due }) => {
+const NewEstimatePreview = ({ details, due, viewType }) => {
   const dispatch = useDispatch();
   const contentRef = useRef();
   const organizationDetail = useSelector(
@@ -62,7 +63,7 @@ const NewEstimatePreview = ({ details, due }) => {
       <div className="w-full md:w-full lg:w-full mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-6 shadow-md bg-white">
         <div ref={contentRef} className="relative">
           <div className="absolute -left-6 -top-4 bg-green-600 text-white font-medium px-4 py-1.5 rounded-r-md text-sm shadow-md">
-            {details?.performanceInvoiceFlag ? "Proforma Invoice" : "Estimate"}
+            {viewType === "PI" ? "Proforma Invoice" : "Estimate"}
           </div>
           <div className="bg-white rounded-xl p-4 md:p-8 space-y-6">
             <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -87,12 +88,10 @@ const NewEstimatePreview = ({ details, due }) => {
               <div className="flex flex-col items-end gap-4">
                 <div>
                   <h4 className="text-green-600 text-base font-semibold">
-                    {details?.performanceInvoiceFlag
-                      ? "Proforma Invoice"
-                      : "Estimate"}
+                    {viewType === "PI" ? "Proforma Invoice" : "Estimate"}
                   </h4>
                   <p className="font-medium text-gray-700 text-sm text-end">
-                    {details?.performanceInvoiceFlag
+                    {viewType === "PI"
                       ? details?.performanceInvoiceNumber
                       : details?.estimateNumber}
                   </p>
@@ -101,7 +100,7 @@ const NewEstimatePreview = ({ details, due }) => {
                 <div className="text-xs space-y-1 mt-2.5 text-end">
                   <p className="whitespace-nowrap">
                     <span className="font-semibold">
-                      {details?.performanceInvoiceFlag
+                      {viewType === "PI"
                         ? "Proforma Invoice Date:"
                         : "Estimate Date:"}
                     </span>{" "}

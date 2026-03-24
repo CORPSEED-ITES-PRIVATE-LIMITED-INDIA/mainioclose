@@ -76,8 +76,8 @@ export const columns = [
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "DATE", uid: "date" },
   { name: "MILESTONE", uid: "mileStone" },
-  { name: "AMOUNT", uid: "amount" },
-  { name: "DUE AMOUNT", uid: "dueAmount" },
+  // { name: "AMOUNT", uid: "amount" },
+  // { name: "DUE AMOUNT", uid: "dueAmount" },
   { name: "STATUS", uid: "status" },
   { name: "ACTION", uid: "actions" },
   { name: "ADDRESS", uid: "address" },
@@ -94,8 +94,8 @@ const INITIAL_VISIBLE_COLUMNS = [
   "unbilledNumber",
   "estimateNumber",
   "date",
-  "amount",
-  "dueAmount",
+  // "amount",
+  // "dueAmount",
   "mileStone",
   "status",
   "actions",
@@ -587,7 +587,7 @@ const Projects = () => {
         {/* Search Bar Row */}
         <div className="flex items-center w-full pb-0.5">
           <Select
-            className="max-w-[12%]"
+            className="max-w-[15%]"
             selectionMode="single"
             selectedKeys={[searchBy]}
             onSelectionChange={(e) => {

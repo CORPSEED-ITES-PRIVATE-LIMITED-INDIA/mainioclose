@@ -143,7 +143,7 @@ export const LeadEstimates = () => {
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
   const [unitDetail, setUnitDetail] = useState(null);
-  const [activeTab, setActiveTab] = useState("ESTIMATE"); // default
+  const [viewType, setViewType] = useState("ESTIMATE"); // or "PI"
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -156,9 +156,10 @@ export const LeadEstimates = () => {
 
   const hasEstimates = sortedEstimates.length > 0;
 
-  const openEstimatePreview = (estimate) => {
+  const openEstimatePreview = (estimate, type) => {
     setSelectedEstimate(estimate);
     setOpenPreview(true);
+    setViewType(type);
   };
 
   const closeEstimatePreview = () => {
@@ -642,20 +643,19 @@ export const LeadEstimates = () => {
             </div>
           </div> */}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {sortedEstimates.map((est) => (
               <Card key={est?.id} className="hover:shadow-lg transition-shadow">
                 <CardBody className="space-y-1">
                   <div className="flex items-center justify-between">
                     <p className="font-semibold text-slate-900">
                       {est?.performanceInvoiceFlag
-                        ? est?.performanceInvoiceNumber ||
-                          "Performa Invoice #" + est?.id
+                        ? `${est?.performanceInvoiceNumber}/ ${est?.estimateNumber}`
                         : est?.estimateNumber}
                     </p>
                     <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
                       {est?.performanceInvoiceFlag
-                        ? "Proforma Invoice"
+                        ? "Proforma Invoice / Estimate"
                         : "Estimate"}
                     </span>
                   </div>
@@ -683,10 +683,22 @@ export const LeadEstimates = () => {
                       radius="sm"
                       color="primary"
                       variant="light"
-                      onPress={() => openEstimatePreview(est)}
+                      onPress={() => openEstimatePreview(est, "ESTIMATE")}
                     >
-                      Preview
+                      Preview Estimate
                     </Button>
+                    {est?.performanceInvoiceFlag && (
+                      <Button
+                        size="sm"
+                        radius="sm"
+                        color="primary"
+                        variant="light"
+                        onPress={() => openEstimatePreview(est, "PI")}
+                      >
+                        Preview PI
+                      </Button>
+                    )}
+
                     {!est?.performanceInvoiceFlag && (
                       <Button
                         size="sm"
@@ -1160,14 +1172,12 @@ export const LeadEstimates = () => {
             <div className="h-12 px-4 flex items-center justify-between border-b bg-white">
               <div className="flex items-center gap-3">
                 <p className="font-semibold text-slate-900">
-                  {selectedEstimate?.performanceInvoiceFlag
+                  {viewType === "PI"
                     ? selectedEstimate?.performanceInvoiceNumber
                     : selectedEstimate?.estimateNumber}
                 </p>
                 <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
-                  {selectedEstimate?.performanceInvoiceFlag
-                    ? "Proforma Invoice"
-                    : "Estimate"}
+                  {viewType === "PI" ? "Proforma Invoice" : "Estimate"}
                 </span>
               </div>
 
@@ -1181,7 +1191,10 @@ export const LeadEstimates = () => {
             </div>
 
             <div className="h-[calc(92vh-3rem)] overflow-auto">
-              <NewEstimatePreview details={selectedEstimate} />
+              <NewEstimatePreview
+                details={selectedEstimate}
+                viewType={viewType}
+              />
             </div>
           </div>
         </div>
