@@ -223,6 +223,20 @@ export const convertEstimateToPI = createAsyncThunk(
   },
 );
 
+export const cancelUnBilledInvoice = createAsyncThunk(
+  "cancelUnBilledInvoice",
+  async ({ id, reason }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/unbilled-invoices/cancel/${id}?reason=${reason}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

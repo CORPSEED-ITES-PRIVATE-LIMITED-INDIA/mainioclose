@@ -537,11 +537,29 @@ export const getActivitiesByDateRangeAndProjectId = createAsyncThunk(
 
 export const importServiceCheckListDocument = createAsyncThunk(
   "importServiceCheckListDocument",
-  async ({ fileUrl, userId }) => {
-    const response = await api.post(
-      `/operationService/api/product-required-documents/import-required-document?s3Url=${fileUrl}&createdBy=${userId}`,
-    );
-    return response.data;
+  async ({ fileUrl, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/product-required-documents/import-required-document?s3Url=${fileUrl}&createdBy=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
+
+export const cancelProjectByUnbilledNumberInOperations = createAsyncThunk(
+  "cancelProjectByUnbilledNumberInOperations",
+  async (unbilledNumber, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/cancel/${unbilledNumber}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
   },
 );
 

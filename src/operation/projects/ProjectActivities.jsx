@@ -311,42 +311,70 @@ const ProjectActivities = () => {
         onOpenChange={commentModal.onOpenChange}
       >
         <ModalContent>
-          <ModalHeader>Add Comment</ModalHeader>
+          {(onClose) => (
+            <Form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!commentText?.trim()) return;
+                handleAddComment();
+              }}
+            >
+              <ModalHeader>Add Comment</ModalHeader>
 
-          <ModalBody>
-            <Textarea
-              label="Comment"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-            />
-          </ModalBody>
+              <ModalBody className="w-full">
+                <Textarea
+                  label="Comment"
+                  name="commentText"
+                  isRequired
+                  errorMessage="Please enter comment"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
+              </ModalBody>
 
-          <ModalFooter>
-            <Button color="primary" onPress={handleAddComment}>
-              Submit
-            </Button>
-          </ModalFooter>
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
         </ModalContent>
       </Modal>
 
       {/* NOTE MODAL */}
       <Modal isOpen={noteModal.isOpen} onOpenChange={noteModal.onOpenChange}>
         <ModalContent>
-          <ModalHeader>Add Note</ModalHeader>
+          {(onClose) => (
+            <Form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!noteText?.trim()) return;
+                handleAddNote();
+              }}
+            >
+              <ModalHeader>Add Note</ModalHeader>
 
-          <ModalBody>
-            <Textarea
-              label="Note"
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-            />
-          </ModalBody>
+              <ModalBody className="w-full">
+                <Textarea
+                  label="Note"
+                  name="noteText"
+                  isRequired
+                  errorMessage="Please enter note"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                />
+              </ModalBody>
 
-          <ModalFooter>
-            <Button color="primary" onPress={handleAddNote}>
-              Submit
-            </Button>
-          </ModalFooter>
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
         </ModalContent>
       </Modal>
 

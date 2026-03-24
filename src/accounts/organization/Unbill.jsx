@@ -34,12 +34,18 @@ import {
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import { getUnBilledDetailById } from "../../toolkit/slices/accountSlice";
+import {
+  cancelUnBilledInvoice,
+  getUnBilledDetailById,
+} from "../../toolkit/slices/accountSlice";
 import EstimateView from "../../components/EstimateView";
 import { useParams } from "react-router-dom";
 import TaxInvoice from "../../components/TaxInvoice";
 import UnbilledView from "../../components/UnbilledView";
-import { createProjectsForOperations } from "../../toolkit/slices/operationSlice";
+import {
+  cancelProjectByUnbilledNumberInOperations,
+  createProjectsForOperations,
+} from "../../toolkit/slices/operationSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -255,47 +261,96 @@ const Unbill = () => {
   }, []);
 
   const handleUpdateStatus = () => {
-    dispatch(
-      updateStatusForUnbill({
-        unbilledId: rowItem?.id,
-        data: updatedStatusData,
-      }),
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Status updated successfully !.",
-            color: "success",
-          });
-          // dispatch(
-          //   createProjectsForOperations({
-          //     ...resp?.payload,
-          //     unitId: resp?.payload?.companyUnitId,
-          //   }),
-          // ).then((pro) => {
-          //   if (pro.meta.requestStatus === "fulfilled") {
-          //     addToast({
-          //       title: "Project created successfully !.",
-          //       color: "success",
-          //     });
-          //   } else {
-          //     addToast({ title: "Something went wrong !.", color: "danger" });
-          //   }
-          // });
-          setRowItem(null);
-          setUpdatedStatusData({
-            approverUserId: userId,
-            approvalRemarks: "",
-            rejectionReason: "",
-          });
-          statusModal.onClose();
-        } else {
-          addToast({ title: resp?.payload?.data?.message, color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
-      );
+    if (updatedStatusData?.approvalRemarks === "CANCELLED") {
+      dispatch(
+        cancelUnBilledInvoice({
+          id: rowItem?.id,
+          reason: updatedStatusData?.rejectionReason,
+        }),
+      )
+        .then((re) => {
+          if (re.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Unbill canceled successfully !.",
+              color: "success",
+            });
+            dispatch(cancelProjectByUnbilledNumberInOperations(rowItem?.id))
+              .then((respData) => {
+                if (respData.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "Unbill canceled successfully in Operation !.",
+                    color: "success",
+                  });
+                  setRowItem(null);
+                  setUpdatedStatusData({
+                    approverUserId: userId,
+                    approvalRemarks: "",
+                    rejectionReason: "",
+                  });
+                  statusModal.onClose();
+                } else {
+                  addToast({
+                    title: respData?.payload?.data?.message,
+                    color: "danger",
+                  });
+                }
+              })
+              .catch(() =>
+                addToast({
+                  title: "Something went wrong in Operation !.",
+                  color: "danger",
+                }),
+              );
+          } else {
+            addToast({ title: re?.payload?.data?.message, color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    } else {
+      dispatch(
+        updateStatusForUnbill({
+          unbilledId: rowItem?.id,
+          data: updatedStatusData,
+        }),
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Status updated successfully !.",
+              color: "success",
+            });
+            // dispatch(
+            //   createProjectsForOperations({
+            //     ...resp?.payload,
+            //     unitId: resp?.payload?.companyUnitId,
+            //   }),
+            // ).then((pro) => {
+            //   if (pro.meta.requestStatus === "fulfilled") {
+            //     addToast({
+            //       title: "Project created successfully !.",
+            //       color: "success",
+            //     });
+            //   } else {
+            //     addToast({ title: "Something went wrong !.", color: "danger" });
+            //   }
+            // });
+            setRowItem(null);
+            setUpdatedStatusData({
+              approverUserId: userId,
+              approvalRemarks: "",
+              rejectionReason: "",
+            });
+            statusModal.onClose();
+          } else {
+            addToast({ title: resp?.payload?.data?.message, color: "danger" });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong !.", color: "danger" }),
+        );
+    }
   };
 
   const topContent = React.useMemo(() => {
@@ -528,8 +583,8 @@ const Unbill = () => {
                     { key: "APPROVED", label: "APPROVED" },
                     // { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
                     // { key: "FULLY_PAID", label: "FULLY_PAID" },
-                    // { key: "CANCELLED", label: "CANCELLED" },
                     { key: "REJECTED", label: "REJECTED" },
+                    { key: "CANCELLED", label: "CANCELLED" },
                   ].map((item) => (
                     <SelectItem key={item.key}>{item.label}</SelectItem>
                   ))}
