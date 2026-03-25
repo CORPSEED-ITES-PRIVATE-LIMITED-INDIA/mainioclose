@@ -265,6 +265,7 @@ const Unbill = () => {
       dispatch(
         cancelUnBilledInvoice({
           id: rowItem?.id,
+          userId,
           reason: updatedStatusData?.rejectionReason,
         }),
       )

@@ -49,32 +49,44 @@ export const getDepartmentOfUser = createAsyncThunk(
 
 export const createAuthDepartment = createAsyncThunk(
   "createDepartment",
-  async (data) => {
-    const response = await api.post(
-      `/securityService/api/department/createDepartment?name=${data?.name}`,
-    );
-    return response;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/securityService/api/department/createDepartment?name=${data?.name}`,
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   },
 );
 
 export const createAuthDesigination = createAsyncThunk(
   "createAuthDesignibnation",
-  async (data) => {
-    const response = await api.post(
-      `/securityService/api/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`,
-    );
-    return response;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/securityService/api/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`,
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   },
 );
 
 export const createDesiginationByDepartment = createAsyncThunk(
   "createDesiginationByDepartment",
-  async (data) => {
-    const response = await api.post(
-      `/securityService/api/department/createDepartmentInDesignation`,
-      data,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/securityService/api/department/createDepartmentInDesignation`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   },
 );
 

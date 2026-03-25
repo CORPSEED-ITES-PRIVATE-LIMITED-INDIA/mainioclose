@@ -164,9 +164,16 @@ export const updateMilestoneReAssignment = createAsyncThunk(
 
 export const createDepartmentInOPerations = createAsyncThunk(
   "createDepartmentInOPerations",
-  async (data) => {
-    const response = await api.post(`/operationService/api/departments`, data);
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/departments`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
   },
 );
 

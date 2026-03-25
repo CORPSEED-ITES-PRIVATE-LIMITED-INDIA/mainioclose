@@ -200,7 +200,7 @@ const CompanyApprovals = () => {
                 Age : {rowData?.age || "-"}
               </p>
               <p className="font-normal text-xs text-gray-400">
-                Pending units : {rowData?.pendingUnitsCount || "-"}
+                Pending units : {rowData?.pendingUnitsCount}
               </p>
             </div>
           </div>

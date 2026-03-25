@@ -422,11 +422,15 @@ export const getAllDepartment = createAsyncThunk(
 
 export const createDepartment = createAsyncThunk(
   "createDepartment",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/designation/createDepartment?name=${data?.name}`,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/designation/createDepartment?name=${data?.name}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 
@@ -442,12 +446,16 @@ export const getAllDesiginations = createAsyncThunk(
 
 export const createDesiginationByDepartmentId = createAsyncThunk(
   "createDesiginationByDepartmentId",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/designation/createDepartmentInDesignation`,
-      data,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/designation/createDepartmentInDesignation`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 

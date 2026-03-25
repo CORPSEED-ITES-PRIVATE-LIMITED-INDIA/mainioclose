@@ -75,11 +75,8 @@ export const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-export function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
-
 const INITIAL_VISIBLE_COLUMNS = [
+  "id",
   "name",
   "designations",
   "departmentStatus",
@@ -166,7 +163,6 @@ const Department = () => {
   const items = React.useMemo(() => {
     const start = (initialFilteration?.page - 1) * initialFilteration?.size;
     const end = start + initialFilteration?.size;
-
     return filteredItems.slice(start, end);
   }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
 
@@ -204,9 +200,11 @@ const Department = () => {
     values.id = item?.id;
     dispatch(createDesiginationByDepartment(values))
       .then((resp) => {
+        console.log("sdjkfssssss   11", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(createDesiginationByDepartmentId(values))
             .then((response) => {
+              console.log("sdjkfssssss   22", response);
               if (response.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Desigination added successfully !.",
@@ -216,7 +214,11 @@ const Department = () => {
                 designationModal.onClose();
                 designationForm.reset(designationFormDefaultValues);
               } else {
-                addToast({ title: "Something went wrong !.", color: "danger" });
+                addToast({
+                  title: `${response?.payload?.status} ${response?.payload?.statusText}`,
+                  description: response?.payload?.data?.message,
+                  color: "danger",
+                });
               }
             })
             .catch(() => {
@@ -235,12 +237,14 @@ const Department = () => {
     dispatch(createAuthDepartment(values))
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
+          console.log("sdjkfssssss   11", res);
           addToast({
             title: "Department created successfully in Auth !.",
             color: "success",
           });
           dispatch(createDepartment(values))
             .then((resp) => {
+              console.log("sdjkfssssss   22", resp);
               if (resp.meta.requestStatus === "fulfilled") {
                 const responseData = resp?.payload;
                 addToast({
@@ -256,6 +260,7 @@ const Department = () => {
                   }),
                 )
                   .then((resu) => {
+                    console.log("sdjkfssssss   33", resu);
                     if (resu.meta.requestStatus === "fulfilled") {
                       addToast({
                         title:
@@ -267,7 +272,8 @@ const Department = () => {
                       reset(defaultValues);
                     } else {
                       addToast({
-                        title: "Something went wrong in operations !.",
+                        description: `${resu?.payload?.message} in Operations`,
+                        title: resu?.payload?.status,
                         color: "danger",
                       });
                     }
@@ -279,14 +285,22 @@ const Department = () => {
                     });
                   });
               } else {
-                addToast({ title: "Something went wrong !.", color: "danger" });
+                addToast({
+                  description: `${resp?.payload?.message} in Leads`,
+                  title: resp?.payload?.status,
+                  color: "danger",
+                });
               }
             })
             .catch(() =>
               addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            description: `${res?.payload?.message} in Security`,
+            title: res?.payload?.status,
+            color: "danger",
+          });
         }
       })
       .catch(() =>
@@ -438,7 +452,7 @@ const Department = () => {
               >
                 {columns.map((column) => (
                   <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
+                    {column.name}
                   </DropdownItem>
                 ))}
               </DropdownMenu>
@@ -530,15 +544,15 @@ const Department = () => {
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={(e) => {
-          let rowKeys = Array.from(e);
-          setSelectedKeys(rowKeys);
-        }}
+        // onSelectionChange={(e) => {
+        //   let rowKeys = Array.from(e);
+        //   setSelectedKeys(rowKeys);
+        // }}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>

@@ -108,7 +108,7 @@ const companySchema = (obj) =>
     // industry chain
     industryId: z.string().min(1, "Please select industry."),
     subIndustryId: z.string().min(1, "Please select sub industry."),
-    subsubIndustryId: z.string().min(1, "Please select category."),
+    subSubIndustryId: z.string().min(1, "Please select category."),
     industrydataId: z
       .array(z.string())
       .min(1, "Please select business activity."),
@@ -170,7 +170,7 @@ const getDefaultValues = () => ({
 
   industryId: "",
   subIndustryId: "",
-  subsubIndustryId: "",
+  subSubIndustryId: "",
   industrydataId: [],
 
   companyFileUrl: "",
@@ -495,8 +495,8 @@ export function CompanyAndUnitsForm({
       dispatch(getSubSubIndustryBySubIndustryId(company?.subIndustryId));
     }
 
-    if (company?.subsubIndustryId) {
-      dispatch(getIndustryDataBySubSubIndustryId(company?.subsubIndustryId));
+    if (company?.subSubIndustryId) {
+      dispatch(getIndustryDataBySubSubIndustryId(company?.subSubIndustryId));
     }
 
     // Reset form values

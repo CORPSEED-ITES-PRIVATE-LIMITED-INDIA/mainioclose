@@ -773,9 +773,6 @@ const Estimate = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>
-                {viewType === "Estimate" ? "Estimate" : "Proforma Invoice"}
-              </ModalHeader>
               <ModalBody className="max-h-[70vh] overflow-auto">
                 <NewEstimatePreview
                   details={estimateDetail}

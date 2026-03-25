@@ -225,10 +225,10 @@ export const convertEstimateToPI = createAsyncThunk(
 
 export const cancelUnBilledInvoice = createAsyncThunk(
   "cancelUnBilledInvoice",
-  async ({ id, reason }, { rejectWithValue }) => {
+  async ({ id, userId, reason }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/accountService/api/v1/unbilled-invoices/cancel/${id}?reason=${reason}`,
+        `/accountService/api/v1/unbilled-invoices/cancel/${userId}/${id}?reason=${reason}`,
       );
       return response.data;
     } catch (error) {

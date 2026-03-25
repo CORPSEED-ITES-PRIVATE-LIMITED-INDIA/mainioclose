@@ -7,7 +7,6 @@ import numWords from "num-words";
 import { inrCurrency, numberToWords } from "../../../common";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrganizationByName } from "../../../toolkit/slices/organizationSlice";
-import { vi } from "zod/v4/locales";
 
 const NewEstimatePreview = ({ details, due, viewType }) => {
   const dispatch = useDispatch();
@@ -60,15 +59,15 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
 
   return (
     <div className="2xl:max-h-[68vh] md:max-h-[65vh] overflow-auto mt-4 px-2 md:px-4 lg:px-6">
-      <div className="w-full md:w-full lg:w-full mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-6 shadow-md bg-white">
+      <div className="w-full md:w-full lg:w-full mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-4 shadow-md bg-white">
         <div ref={contentRef} className="relative">
-          <div className="absolute -left-6 -top-4 bg-green-600 text-white font-medium px-4 py-1.5 rounded-r-md text-sm shadow-md">
+          {/* <div className="absolute left-4 top-4 bg-green-600 text-white font-medium px-4 py-1.5 rounded-md text-sm shadow-md">
             {viewType === "PI" ? "Proforma Invoice" : "Estimate"}
-          </div>
-          <div className="bg-white rounded-xl p-4 md:p-8 space-y-6">
+          </div> */}
+          <div className="bg-white rounded-xl p-4 md:p-4 space-y-6">
             <div className="flex flex-col md:flex-row justify-between gap-4">
               <div>
-                <img src={logo} alt="corpseed" className="w-28 md:w-36" />
+                <img src={logo} alt="corpseed" className="w-22 md:w-28" />
                 <div className="mt-2 text-gray-700 text-xs leading-relaxed">
                   <p className="font-semibold text-sm">
                     {organizationDetail?.name}
@@ -87,7 +86,7 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
               </div>
               <div className="flex flex-col items-end gap-4">
                 <div>
-                  <h4 className="text-green-600 text-base font-semibold">
+                  <h4 className="text-green-600 text-base font-semibold text-end">
                     {viewType === "PI" ? "Proforma Invoice" : "Estimate"}
                   </h4>
                   <p className="font-medium text-gray-700 text-sm text-end">
@@ -328,32 +327,12 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
                   color: "#374151",
                 }}
               >
-                {details?.internalRemarks && (
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
-                    <h4
-                      style={{
-                        margin: 0,
-                        fontSize: 16,
-                        fontWeight: 500,
-                        color: "#111827",
-                      }}
-                    >
-                      Remark
-                    </h4>
-
-                    <p style={{ margin: 0 }}>{details.internalRemarks}</p>
-                  </div>
-                )}
                 {details?.customerNotes && (
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column" }}>
                     <h4
                       style={{
                         margin: 0,
-                        fontSize: 16,
+                        fontSize: 12,
                         fontWeight: 500,
                         color: "#111827",
                       }}
@@ -361,17 +340,17 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
                       Note
                     </h4>
 
-                    <p style={{ margin: 0 }}>{details.customerNotes}</p>
+                    <p className="text-sm" style={{ margin: 0 }}>
+                      {details.customerNotes}
+                    </p>
                   </div>
                 )}
 
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                >
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   <h4
                     style={{
                       margin: 0,
-                      fontSize: 16,
+                      fontSize: 12,
                       fontWeight: 500,
                       color: "#111827",
                     }}
@@ -387,7 +366,7 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
                       listStyle: "outside",
                     }}
                   >
-                    <li>
+                    <li className="text-tiny italic">
                       This{" "}
                       {details?.performanceInvoiceFlag
                         ? "Proforma Invoice"
@@ -395,15 +374,15 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
                       is valid for the period mentioned and subject to revision
                       upon change in scope or statutory requirements.
                     </li>
-                    <li>
+                    <li className="text-tiny italic">
                       Payments shall be made as per agreed timelines; delays may
                       attract applicable charges.
                     </li>
-                    <li>
+                    <li className="text-tiny italic">
                       Taxes, government fees, and statutory charges shall be
                       payable as applicable at the time of invoicing.
                     </li>
-                    <li>
+                    <li className="text-tiny italic">
                       Services once initiated are non-refundable, except in case
                       of material default attributable to the service provider.
                     </li>
