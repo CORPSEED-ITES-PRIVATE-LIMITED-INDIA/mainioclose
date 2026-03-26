@@ -263,6 +263,8 @@ const UsersList = () => {
     defaultValues,
   });
 
+  console.log("jgdskjfgsdajgjk", formSchema(formFlags), formFlags);
+
   useEffect(() => {
     console.log("Current form values:", watch());
     console.log("Form errors:", errors);
@@ -389,7 +391,7 @@ const UsersList = () => {
                         }),
                       ).then((oper) => {
                         console.log("Response   operation1", oper);
-                        if ((oper.meta, requestStatus === "fulfilled")) {
+                        if (oper.meta.requestStatus === "fulfilled") {
                           addToast({
                             title: "User updated in operation",
                             color: "success",
@@ -494,7 +496,7 @@ const UsersList = () => {
                           managerFlag: true,
                         }),
                       ).then((oper) => {
-                        if ((oper.meta, requestStatus === "fulfilled")) {
+                        if (oper.meta.requestStatus === "fulfilled") {
                           addToast({
                             title: "User created in operation",
                             color: "success",

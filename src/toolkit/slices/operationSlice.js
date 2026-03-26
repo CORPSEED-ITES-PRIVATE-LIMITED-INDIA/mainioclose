@@ -177,6 +177,21 @@ export const createDepartmentInOPerations = createAsyncThunk(
   },
 );
 
+export const createDesignationInOPerations = createAsyncThunk(
+  "createDesignationInOPerations",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/designations`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
+
 export const getProductMileStonesListByProductId = createAsyncThunk(
   "productMileStonesListByProductId",
   async ({ userId, productId }) => {

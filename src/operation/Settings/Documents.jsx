@@ -94,7 +94,7 @@ const formSchema = z.object({
   mandatory: z.boolean(),
   maxValidityYears: z.coerce.number().min(0),
   applicability: z.string().min(1, "Applicability is required"),
-  minFileSizeKb: z.coerce.number().min(0),
+  maxFileSizeKb: z.coerce.number().min(0),
   allowedFormats: z.string().min(1, "Allowed formats are required"),
   remarks: z.string().optional().default(""),
   createdBy: z.number().default(0),
@@ -113,7 +113,7 @@ const defaultValues = {
   mandatory: false,
   maxValidityYears: 0,
   applicability: "",
-  minFileSizeKb: 0,
+  maxFileSizeKb: 0,
   allowedFormats: "",
   createdBy: 0,
   updatedBy: 0,
@@ -638,15 +638,15 @@ const Documents = () => {
                       )}
                     />
 
-                    {/* minFileSizeKb */}
+                    {/* maxFileSizeKb */}
                     <Controller
-                      name="minFileSizeKb"
+                      name="maxFileSizeKb"
                       control={control}
                       render={({ field }) => (
                         <Input
                           type="number"
                           isRequired
-                          errorMessage={errors.minFileSizeKb?.message}
+                          errorMessage={errors.maxFileSizeKb?.message}
                           label="Min File Size (KB)"
                           {...field}
                         />
@@ -722,7 +722,7 @@ const Documents = () => {
                   <div>
                     <a
                       className="text-primary-500"
-                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1774332098832test_doc_(1).xlsx"
+                      href="https://erp-corpseed.s3.ap-south-1.amazonaws.com/1774522458689test_doc_(1).xlsx"
                     >
                       Download the sample document
                     </a>

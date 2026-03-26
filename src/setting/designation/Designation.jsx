@@ -33,6 +33,7 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAuthDesigination } from "../../toolkit/slices/authSlice";
+import { createDesignationInOPerations } from "../../toolkit/slices/operationSlice";
 
 const formSchema = z.object({
   name: z.string().min(1, "please enter the name."),
@@ -145,6 +146,7 @@ const Designation = () => {
                   title: "Designation created successfully !.",
                   color: "success",
                 });
+
                 onOpenChange(false);
                 dispatch(getAllDesiginations());
                 reset(defaultValues);

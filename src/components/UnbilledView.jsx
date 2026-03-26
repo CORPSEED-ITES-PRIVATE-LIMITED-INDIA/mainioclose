@@ -157,6 +157,8 @@ const UnbilledView = ({ invoiceData, heading }) => {
 
   const halfRatesLabel = useMemo(() => getHalfGstRatesLabel(items), [items]);
 
+  console.log("sdjkfskjdg", taxSummaryRows);
+
   /** ✅ Single-page PDF + Real margins + smoother text */
   const downloadPDF = async () => {
     const node = printRef.current;
@@ -418,13 +420,13 @@ const UnbilledView = ({ invoiceData, heading }) => {
                         {toNumber(it?.quantity)}
                       </TableTd>
                       <TableTd className="text-right">
-                        {inrCurrency(formatINR(it?.unitPriceExGst))}
+                        {inrCurrency(it?.unitPriceExGst)}
                       </TableTd>
                       <TableTd className="text-center">
                         {it?.unit || "NOS"}
                       </TableTd>
                       <TableTd className="text-right">
-                        {inrCurrency(formatINR(it?.lineTotalExGst))}
+                        {inrCurrency(it?.lineTotalExGst)}
                       </TableTd>
                     </tr>
                   ))
@@ -440,7 +442,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   </TableTd>
                   <TableTd className="text-center">%</TableTd>
                   <TableTd className="text-right">
-                    {inrCurrency(formatINR(cgstAmount))}
+                    {inrCurrency(cgstAmount)}
                   </TableTd>
                 </tr>
 
@@ -454,7 +456,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   </TableTd>
                   <TableTd className="text-center">%</TableTd>
                   <TableTd className="text-right">
-                    {inrCurrency(formatINR(sgstAmount))}
+                    {inrCurrency(sgstAmount)}
                   </TableTd>
                 </tr>
 
@@ -513,22 +515,22 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   <tr key={i}>
                     <TableTd className="text-center">{r.hsn}</TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.taxableValue)}
+                      {inrCurrency(r.taxableValue)}
                     </TableTd>
                     <TableTd className="text-center">
-                      {toNumber(r.cgstRate).toFixed(2)}
+                      {inrCurrency(r.cgstRate)}
                     </TableTd>
                     <TableTd className="text-right">
-                      {formatINR(r.cgstAmount)}
+                      {inrCurrency(r.cgstAmount)}
                     </TableTd>
                     <TableTd className="text-center">
-                      {toNumber(r.sgstRate).toFixed(2)}
+                      {toNumber(r.sgstRate)}
                     </TableTd>
                     <TableTd className="text-right">
-                      {inrCurrency(formatINR(r.sgstAmount))}
+                      {inrCurrency(r.sgstAmount)}
                     </TableTd>
                     <TableTd className="text-right">
-                      {inrCurrency(formatINR(r.totalTax))}
+                      {inrCurrency(r.totalTax)}
                     </TableTd>
                   </tr>
                 ))}
@@ -536,18 +538,18 @@ const UnbilledView = ({ invoiceData, heading }) => {
                 <tr>
                   <TableTd className="font-bold">Total</TableTd>
                   <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(subTotalExGst))}
+                    {inrCurrency(subTotalExGst)}
                   </TableTd>
                   <TableTd className="text-center">-</TableTd>
                   <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(cgstAmount))}
+                    {inrCurrency(cgstAmount)}
                   </TableTd>
                   <TableTd className="text-center">-</TableTd>
                   <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(sgstAmount))}
+                    {inrCurrency(sgstAmount)}
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(totalGstAmount))}
+                    {inrCurrency(totalGstAmount)}
                   </TableTd>
                 </tr>
               </tbody>

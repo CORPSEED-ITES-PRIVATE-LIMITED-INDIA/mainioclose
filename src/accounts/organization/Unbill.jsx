@@ -609,7 +609,7 @@ const Unbill = () => {
                   Close
                 </Button>
                 <Button color="primary" onPress={handleUpdateStatus}>
-                  Action
+                  Submit
                 </Button>
               </ModalFooter>
             </>

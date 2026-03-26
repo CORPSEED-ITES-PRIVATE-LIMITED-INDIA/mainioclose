@@ -740,18 +740,26 @@ export const LeadEstimates = () => {
                         size={isMedium ? "sm" : "md"}
                         data={companyList || []}
                         labelKey="name"
-                        valueKey="name"
+                        valueKey="name" // ✅ IMPORTANT FIX
+                        isInvalid={!!error}
+                        errorMessage={error?.message}
                         isOpen={isDropDownOpen?.company}
                         value={field.value}
                         onOpenChange={(e) =>
                           setIsDropDownOpen((prev) => ({ ...prev, company: e }))
                         }
+                        // ✅ MAIN FIX
                         onItemSelect={(item) => {
+                          field.onChange(item?.name); // 🔥 MUST
+
+                          setValue("companyName", item?.name); // extra safety
+
                           dispatch(
                             getBasicCompanyDetailByCompanyId(item?.id),
                           ).then((resp) => {
                             if (resp.meta.requestStatus === "fulfilled") {
                               setCompanyDetail(resp?.payload);
+
                               dispatch(
                                 getContactDetailListByCompanyId({
                                   companyId: resp?.payload?.id,
@@ -760,10 +768,11 @@ export const LeadEstimates = () => {
                               );
                             }
                           });
-                          getAllUnitListByCompanyId(item?.id);
+
+                          dispatch(getAllUnitListByCompanyId(item?.id)); // ✅ FIXED
                         }}
                         onChange={(value) => {
-                          field.onChange(value);
+                          field.onChange(value); // fallback
                         }}
                         endContent={
                           <BasicCompany
