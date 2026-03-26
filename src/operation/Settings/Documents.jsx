@@ -266,6 +266,15 @@ const Documents = () => {
     switch (columnKey) {
       case "name":
         return <p>{rowData?.name} </p>;
+      case "type":
+        return (
+          <div>
+            <p>{rowData?.type} </p>
+            <span className="text-tiny text-gray-400">
+              Max size : {rowData?.maxFileSizeKb} kb
+            </span>
+          </div>
+        );
       case "description":
         return (
           <div className="flex flex-wrap text-tiny">{rowData?.description}</div>
