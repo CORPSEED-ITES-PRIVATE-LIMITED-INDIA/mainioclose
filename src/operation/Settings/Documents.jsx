@@ -266,6 +266,7 @@ const Documents = () => {
     switch (columnKey) {
       case "name":
         return <p>{rowData?.name} </p>;
+
       case "type":
         return (
           <div>
