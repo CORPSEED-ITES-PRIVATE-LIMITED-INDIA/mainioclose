@@ -270,9 +270,11 @@ const Documents = () => {
         return (
           <div>
             <p>{rowData?.type} </p>
-            <span className="text-tiny text-gray-400">
-              Max size : {rowData?.maxFileSizeKb} kb
-            </span>
+            {rowData?.maxFileSizeKb && (
+              <span className="text-tiny text-gray-400">
+                Max size : {rowData?.maxFileSizeKb} kb
+              </span>
+            )}
           </div>
         );
       case "description":
