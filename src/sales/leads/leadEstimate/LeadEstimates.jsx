@@ -188,10 +188,13 @@ export const LeadEstimates = () => {
     setValue,
   } = useForm({
     resolver: zodResolver(estimateFormSchema),
+    mode: "onChange", // or "onBlur"
     defaultValues: {
       billingAddress: {},
       shippingAddress: {},
       lineItems: [],
+      companyName: "", // ← Give explicit default string (helps with required fields)
+      // ... other fields
     },
   });
 
@@ -355,20 +358,22 @@ export const LeadEstimates = () => {
   useEffect(() => {
     dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        setValue("companyName", resp?.payload?.name);
-        setCompanyDetail(resp?.payload);
-        dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-        dispatch(
-          getContactDetailListByCompanyId({
-            companyId: resp?.payload?.id,
-            userId,
-          }),
-        );
+        if (resp?.payload?.name) {
+          setValue("companyName", resp?.payload?.name);
+          setCompanyDetail(resp?.payload);
+          dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
+          dispatch(
+            getContactDetailListByCompanyId({
+              companyId: resp?.payload?.id,
+              userId,
+            }),
+          );
+        }
       }
     });
     dispatch(getAllCountries());
     dispatch(getAllSolutionList(userId));
-  }, [dispatch, leadId, userId, setValue]);
+  }, [dispatch, leadId, userId]);
 
   // estimates list
   useEffect(() => {
@@ -732,58 +737,52 @@ export const LeadEstimates = () => {
                 <Controller
                   name="companyName"
                   control={control}
-                  render={({ field, fieldState: { error } }) => {
-                    return (
-                      <NewSelect
-                        label="Select company"
-                        isRequired={true}
-                        size={isMedium ? "sm" : "md"}
-                        data={companyList || []}
-                        labelKey="name"
-                        valueKey="name" // ✅ IMPORTANT FIX
-                        isInvalid={!!error}
-                        errorMessage={error?.message}
-                        isOpen={isDropDownOpen?.company}
-                        value={field.value}
-                        onOpenChange={(e) =>
-                          setIsDropDownOpen((prev) => ({ ...prev, company: e }))
-                        }
-                        // ✅ MAIN FIX
-                        onItemSelect={(item) => {
-                          field.onChange(item?.name); // 🔥 MUST
+                  rules={{ required: "Company name is required" }} // Optional: extra safety (Zod already has it)
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      label="Select company"
+                      // isRequired={true}
+                      size={isMedium ? "sm" : "md"}
+                      data={companyList || []}
+                      labelKey="name"
+                      valueKey="name"
+                      value={field.value || ""} // ← Important: ensure controlled
+                      isOpen={isDropDownOpen?.company}
+                      onOpenChange={(e) =>
+                        setIsDropDownOpen((prev) => ({ ...prev, company: e }))
+                      }
+                      onItemSelect={(item) => {
+                        // Your existing logic
+                        dispatch(
+                          getBasicCompanyDetailByCompanyId(item?.id),
+                        ).then((resp) => {
+                          if (resp.meta.requestStatus === "fulfilled") {
+                            setCompanyDetail(resp?.payload);
+                            dispatch(
+                              getContactDetailListByCompanyId({
+                                companyId: resp?.payload?.id,
+                                userId,
+                              }),
+                            );
+                          }
+                        });
+                        dispatch(getAllUnitListByCompanyId(item?.id));
 
-                          setValue("companyName", item?.name); // extra safety
-
-                          dispatch(
-                            getBasicCompanyDetailByCompanyId(item?.id),
-                          ).then((resp) => {
-                            if (resp.meta.requestStatus === "fulfilled") {
-                              setCompanyDetail(resp?.payload);
-
-                              dispatch(
-                                getContactDetailListByCompanyId({
-                                  companyId: resp?.payload?.id,
-                                  userId,
-                                }),
-                              );
-                            }
-                          });
-
-                          dispatch(getAllUnitListByCompanyId(item?.id)); // ✅ FIXED
-                        }}
-                        onChange={(value) => {
-                          field.onChange(value); // fallback
-                        }}
-                        endContent={
-                          <BasicCompany
-                            setIsDropDownOpen={setIsDropDownOpen}
-                            isEstimate={true}
-                            companyDetail={companyDetail}
-                          />
-                        }
-                      />
-                    );
-                  }}
+                        // 🔥 CRITICAL: Always call field.onChange with the actual value
+                        field.onChange(item?.name || "");
+                      }}
+                      onChange={(value) => {
+                        field.onChange(value); // ← This must exist and call field.onChange
+                      }}
+                      endContent={
+                        <BasicCompany
+                          setIsDropDownOpen={setIsDropDownOpen}
+                          isEstimate={true}
+                          companyDetail={companyDetail}
+                        />
+                      }
+                    />
+                  )}
                 />
 
                 <FormSelect
