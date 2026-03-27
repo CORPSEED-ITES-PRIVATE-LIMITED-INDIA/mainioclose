@@ -143,8 +143,7 @@ export const LeadEstimates = () => {
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
   const [unitDetail, setUnitDetail] = useState(null);
-  const [viewType, setViewType] = useState("ESTIMATE");
-  const [companyNameError, setCompanyNameError] = useState("");
+  const [viewType, setViewType] = useState("ESTIMATE"); // or "PI"
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -189,13 +188,10 @@ export const LeadEstimates = () => {
     setValue,
   } = useForm({
     resolver: zodResolver(estimateFormSchema),
-    mode: "onChange", // or "onBlur"
     defaultValues: {
       billingAddress: {},
       shippingAddress: {},
       lineItems: [],
-      companyName: "", // ← Give explicit default string (helps with required fields)
-      // ... other fields
     },
   });
 
@@ -261,25 +257,6 @@ export const LeadEstimates = () => {
     onOpen();
   };
 
-  useEffect(() => {
-    if (sortedEstimates?.length > 0) {
-      const tempComp = sortedEstimates?.[0]?.company;
-      setValue("companyName", tempComp?.name);
-      dispatch(getBasicCompanyDetailByCompanyId(tempComp?.id)).then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          setCompanyDetail(resp?.payload);
-          dispatch(
-            getContactDetailListByCompanyId({
-              companyId: resp?.payload?.id,
-              userId,
-            }),
-          );
-        }
-      });
-      dispatch(getAllUnitListByCompanyId(tempComp?.id));
-    }
-  }, [sortedEstimates]);
-
   // service line items auto-fill
   useEffect(() => {
     const values = getValues();
@@ -289,9 +266,12 @@ export const LeadEstimates = () => {
         ...values,
         lineItems: serviceFeeList.map((item) => ({
           itemName: item.name,
-          unitPriceExGst: item?.baseAmount,
-          hsnSacCode: item?.hsnSacCode,
-          gstRate: item?.gstPercentage,
+
+          unitPriceExGst: item.baseAmount,
+          originalAmount: item.baseAmount, // 🔥 ADD THIS
+          hsnSacCode: item.hsnSacCode,
+          gstRate: item.gstPercentage,
+          originalGst: item.gstPercentage, // 🔥 ADD THIS
         })),
       });
     } else {
@@ -378,22 +358,20 @@ export const LeadEstimates = () => {
   useEffect(() => {
     dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        if (resp?.payload?.name) {
-          setValue("companyName", resp?.payload?.name);
-          setCompanyDetail(resp?.payload);
-          dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-          dispatch(
-            getContactDetailListByCompanyId({
-              companyId: resp?.payload?.id,
-              userId,
-            }),
-          );
-        }
+        setValue("companyName", resp?.payload?.name);
+        setCompanyDetail(resp?.payload);
+        dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
+        dispatch(
+          getContactDetailListByCompanyId({
+            companyId: resp?.payload?.id,
+            userId,
+          }),
+        );
       }
     });
     dispatch(getAllCountries());
     dispatch(getAllSolutionList(userId));
-  }, [dispatch, leadId, userId]);
+  }, [dispatch, leadId, userId, setValue]);
 
   // estimates list
   useEffect(() => {
@@ -429,7 +407,7 @@ export const LeadEstimates = () => {
   };
 
   const onSubmit = (data) => {
-    data.companyId = company?.id || companyDetail?.id;
+    data.companyId = company?.id;
     data.solutionType = selectedSolutionDetail?.type;
     data.solutionId = selectedSolutionDetail?.id;
     data.createdByUserId = userId;
@@ -437,8 +415,8 @@ export const LeadEstimates = () => {
 
     dispatch(
       createCompanyAndUnitsForAccountsViaLeadEstimate({
-        ...(Object.keys(company)?.length > 0 ? company : companyDetail),
-        companyId: company?.id || companyDetail?.id,
+        ...company,
+        companyId: company?.id,
         createdById: userId,
       }),
     )
@@ -749,7 +727,6 @@ export const LeadEstimates = () => {
       {showForm && (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          onChange={(e) => console.log("dsjgjjdgjgjgjg", e)}
           className="w-full max-h-[70vh] overflow-auto space-y-4"
         >
           <Card className="shadow-xl">
@@ -758,61 +735,49 @@ export const LeadEstimates = () => {
                 <Controller
                   name="companyName"
                   control={control}
-                  rules={{ required: "Company name is required" }} // Optional: extra safety (Zod already has it)
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      label={
-                        <p>
-                          Select company{" "}
-                          <span className="text-sm text-red-500">*</span>
-                        </p>
-                      }
-                      isDisabled={sortedEstimates?.length > 0}
-                      size={isMedium ? "sm" : "md"}
-                      data={companyList || []}
-                      labelKey="name"
-                      valueKey="name"
-                      value={field.value || ""} // ← Important: ensure controlled
-                      isOpen={isDropDownOpen?.company}
-                      onOpenChange={(e) =>
-                        setIsDropDownOpen((prev) => ({ ...prev, company: e }))
-                      }
-                      onItemSelect={(item) => {
-                        // Your existing logic
-                        dispatch(
-                          getBasicCompanyDetailByCompanyId(item?.id),
-                        ).then((resp) => {
-                          if (resp.meta.requestStatus === "fulfilled") {
-                            setCompanyDetail(resp?.payload);
-                            dispatch(
-                              getContactDetailListByCompanyId({
-                                companyId: resp?.payload?.id,
-                                userId,
-                              }),
-                            );
-                          }
-                        });
-                        dispatch(getAllUnitListByCompanyId(item?.id));
-
-                        if (item?.name) {
-                          setCompanyNameError("success");
-                        } else {
-                          setCompanyNameError("error");
+                  render={({ field, fieldState: { error } }) => {
+                    return (
+                      <NewSelect
+                        label="Select company"
+                        isRequired={true}
+                        size={isMedium ? "sm" : "md"}
+                        data={companyList || []}
+                        labelKey="name"
+                        valueKey="name"
+                        isOpen={isDropDownOpen?.company}
+                        value={field.value}
+                        onOpenChange={(e) =>
+                          setIsDropDownOpen((prev) => ({ ...prev, company: e }))
                         }
-                        field.onChange(item?.name || "");
-                      }}
-                      onChange={(value) => {
-                        field.onChange(value); // ← This must exist and call field.onChange
-                      }}
-                      endContent={
-                        <BasicCompany
-                          setIsDropDownOpen={setIsDropDownOpen}
-                          isEstimate={true}
-                          companyDetail={companyDetail}
-                        />
-                      }
-                    />
-                  )}
+                        onItemSelect={(item) => {
+                          dispatch(
+                            getBasicCompanyDetailByCompanyId(item?.id),
+                          ).then((resp) => {
+                            if (resp.meta.requestStatus === "fulfilled") {
+                              setCompanyDetail(resp?.payload);
+                              dispatch(
+                                getContactDetailListByCompanyId({
+                                  companyId: resp?.payload?.id,
+                                  userId,
+                                }),
+                              );
+                            }
+                          });
+                          getAllUnitListByCompanyId(item?.id);
+                        }}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        endContent={
+                          <BasicCompany
+                            setIsDropDownOpen={setIsDropDownOpen}
+                            isEstimate={true}
+                            companyDetail={companyDetail}
+                          />
+                        }
+                      />
+                    );
+                  }}
                 />
 
                 <FormSelect
