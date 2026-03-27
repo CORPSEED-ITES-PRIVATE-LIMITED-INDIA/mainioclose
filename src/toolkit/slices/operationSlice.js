@@ -500,7 +500,7 @@ export const addExpensesInProject = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/operationService/api/projects/${projectId}/activities/expenses`,
+        `/operationService/api/projects/expenses?projectId=${projectId}`,
         data,
       );
       return response.data;
@@ -585,6 +585,35 @@ export const cancelProjectByUnbilledNumberInOperations = createAsyncThunk(
   },
 );
 
+export const getExpenseListByUserId = createAsyncThunk(
+  "getExpenseListByUserId",
+  async ({ userId, status }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/expenses/getExpensesList?userId=${userId}&approvalStatus=${status}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response);
+    }
+  },
+);
+
+export const approvedAndDisapprovedExpense = createAsyncThunk(
+  "approvedAndDisapprovedExpense",
+  async ({ projectId, userId, expenseId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/expenses/approve?projectId=${projectId}&userId=${userId}&expenseId=${expenseId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -603,6 +632,7 @@ const OperationSlice = createSlice({
     mileStoneEventHistory: {},
     projectCount: 0,
     activitiesByProjectId: {},
+    expenseList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -877,6 +907,18 @@ const OperationSlice = createSlice({
     builder.addCase(getActivitiesByDateRangeAndProjectId.rejected, (state) => {
       state.loading = "rejected";
       state.activitiesByProjectId = {};
+    });
+
+    builder.addCase(getExpenseListByUserId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getExpenseListByUserId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.expenseList = action.payload;
+    });
+    builder.addCase(getExpenseListByUserId.rejected, (state) => {
+      state.loading = "rejected";
+      state.expenseList = [];
     });
   },
 });

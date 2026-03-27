@@ -90,14 +90,19 @@ export const navItems = [
       //   key: "paymentRegister",
       // },
       {
-        title: "All invoice",
-        url: "accounts/allInvoice",
+        title: "Expenses",
+        url: "accounts/expensesApprovals",
         key: "allInvoice",
       },
       {
         title: "Unbilled",
         url: "accounts/unbilled",
         key: "unbilled",
+      },
+      {
+        title: "All invoice",
+        url: "accounts/allInvoice",
+        key: "allInvoice",
       },
       // {
       //   title: "Estimate",
@@ -372,17 +377,24 @@ export const accountNavItems = [
     icon: "BanknoteArrowDown",
   },
   {
-    title: "All invoice",
-    url: "accounts/allInvoice",
-    key: "allInvoice",
-    icon: "FileText",
-  },
-  {
     title: "Unbilled",
     url: "accounts/unbilled",
     key: "unbilled",
     icon: "ReceiptText",
   },
+  {
+    title: "Expenses",
+    url: "accounts/expensesApprovals",
+    key: "expensesApprovals",
+    icon: "FileText",
+  },
+  {
+    title: "All invoice",
+    url: "accounts/allInvoice",
+    key: "allInvoice",
+    icon: "FileText",
+  },
+
   // {
   //   title: "Estimate",
   //   url: "accounts/orgEstimate",
@@ -597,5 +609,14 @@ export const operationNavItems = [
     icon: "Settings",
     url: "operation/settings",
     key: "settings",
+  },
+];
+
+export const operationEmpItems = [
+  {
+    title: "Projects",
+    icon: "GitCommitHorizontal",
+    url: "operation/projects",
+    key: "projects",
   },
 ];

@@ -28,11 +28,13 @@ import GST from "../accounts/organization/GST";
 import TrailBalance from "../accounts/organization/TrailBalance";
 import SalesReport from "../accounts/organization/SalesReport";
 import CompanyUnitsInAccount from "../accounts/CompanyUnitsInAccount";
+import Expense from "../accounts/Expense";
 
 export const AccountsModuleRouting = () => {
   return (
     <>
       <Route path="accounts/companyApprovals" element={<CompanyApprovals />} />
+      <Route path="accounts/expensesApprovals" element={<Expense />} />
       <Route
         path="accounts/companyApprovals/:companyId/units"
         element={<CompanyUnitsInAccount />}

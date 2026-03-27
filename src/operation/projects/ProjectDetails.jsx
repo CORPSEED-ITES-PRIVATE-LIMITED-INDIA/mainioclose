@@ -49,6 +49,7 @@ import {
   Calendar,
   EllipsisVertical,
   GitFork,
+  IndianRupee,
   Mail,
   MapPin,
   Pencil,
@@ -345,8 +346,9 @@ const ProjectDetails = () => {
   const [expenseData, setExpenseData] = useState({
     amount: "",
     expenseType: "",
-    description: "",
+    remark: "",
     expenseDate: "",
+    paymentMedium: "",
   });
 
   useEffect(() => {
@@ -731,6 +733,7 @@ const ProjectDetails = () => {
         data: { ...expenseData, createdByUserId: Number(userId) },
       }),
     ).then((resp) => {
+      console.log("dsjkhksgjgkjgj", resp);
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "Expense added successfully !.",
@@ -1820,13 +1823,11 @@ const ProjectDetails = () => {
           {(onClose) => (
             <>
               <ModalHeader>Verify Document</ModalHeader>
-
               <ModalBody>
                 <form
                   onSubmit={handleVerifySubmit(handleVerifyDocument)}
                   className="flex flex-col gap-4"
                 >
-                  {/* Status Select */}
                   <Controller
                     name="newStatus"
                     control={verifyControl}
@@ -1847,7 +1848,6 @@ const ProjectDetails = () => {
                     )}
                   />
 
-                  {/* Remarks */}
                   <Controller
                     name="remarks"
                     control={verifyControl}
@@ -1886,14 +1886,11 @@ const ProjectDetails = () => {
             <Form
               onSubmit={(e) => {
                 e.preventDefault();
-
                 if (!commentText?.trim()) return;
-
                 handleAddComment();
               }}
             >
               <ModalHeader>Add Comment</ModalHeader>
-
               <ModalBody className="w-full">
                 <Textarea
                   label="Comment"
@@ -1969,19 +1966,30 @@ const ProjectDetails = () => {
             >
               <ModalHeader>Add Expense</ModalHeader>
               <ModalBody className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                <Input
+                <Select
                   label="Expense Type"
                   name="expenseType"
                   isRequired
-                  errorMessage="please enter expense type"
-                  value={expenseData.expenseType}
-                  onChange={(e) =>
-                    setExpenseData((prev) => ({
-                      ...prev,
-                      expenseType: e.target.value,
-                    }))
-                  }
-                />
+                  selectedKeys={[expenseData?.expenseType]}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0];
+                    setExpenseData({
+                      ...expenseData,
+                      expenseType: value,
+                    });
+                  }}
+                  errorMessage={"please select status"}
+                >
+                  {[
+                    { label: "Government Fee", value: "Government Fee" },
+                    { label: "Travel Fee", value: "Travel Fee" },
+                    { label: "Filing Fee", value: "Filing Fee" },
+                  ].map((item) => (
+                    <SelectItem key={item.value.toString()} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </Select>
 
                 <Input
                   label="Amount"
@@ -1990,6 +1998,7 @@ const ProjectDetails = () => {
                   isRequired
                   errorMessage="please enter amount"
                   value={expenseData.amount}
+                  startContent={<IndianRupee className="h-4 w-4" />}
                   onChange={(e) =>
                     setExpenseData((prev) => ({
                       ...prev,
@@ -1998,19 +2007,30 @@ const ProjectDetails = () => {
                   }
                 />
 
-                <Input
-                  label="Currency"
-                  name="currency"
-                  isRequired
-                  errorMessage="please enter currency"
-                  value={expenseData.currency}
-                  onChange={(e) =>
-                    setExpenseData((prev) => ({
-                      ...prev,
-                      currency: e.target.value,
-                    }))
+                <Select
+                  name="paymentMedium"
+                  selectedKeys={
+                    expenseData?.paymentMedium
+                      ? new Set([expenseData?.paymentMedium])
+                      : new Set([])
                   }
-                />
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0];
+                    setExpenseData({
+                      ...expenseData,
+                      paymentMedium: value,
+                    });
+                  }}
+                  label="Payment Mode"
+                  isRequired
+                  errorMessage="please select payment mode"
+                >
+                  <SelectItem key="CASH">Cash</SelectItem>
+                  <SelectItem key="UPI">UPI</SelectItem>
+                  <SelectItem key="CARD">Card</SelectItem>
+                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem key="CHEQUE">Cheque</SelectItem>
+                </Select>
 
                 <DatePicker
                   isRequired
@@ -2042,15 +2062,15 @@ const ProjectDetails = () => {
                 />
 
                 <Textarea
-                  label="Description"
-                  name="description"
+                  label="Remark"
+                  name="remark"
                   isRequired
                   errorMessage="please enter description"
-                  value={expenseData.description}
+                  value={expenseData.remark}
                   onChange={(e) =>
                     setExpenseData((prev) => ({
                       ...prev,
-                      description: e.target.value,
+                      remark: e.target.value,
                     }))
                   }
                 />

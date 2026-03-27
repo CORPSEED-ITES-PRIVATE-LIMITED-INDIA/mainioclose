@@ -15,6 +15,7 @@ import {
   accountNavItems,
   hrItems,
   navItems,
+  operationEmpItems,
   operationNavItems,
   procurementItems,
   qualityNavItems,
@@ -35,8 +36,11 @@ const getNavItemsByDepartment = (department, admin) => {
     Accounts: accountNavItems,
     Procurement: procurementItems,
     "Human Resource": hrItems,
-    Operations: operationNavItems,
     CRT: operationNavItems,
+    Legal: operationNavItems,
+    Technical: operationNavItems,
+    Liaisoning: operationNavItems,
+    Operations: operationEmpItems,
     // NA: navItems,
   };
   return items[trimmed];

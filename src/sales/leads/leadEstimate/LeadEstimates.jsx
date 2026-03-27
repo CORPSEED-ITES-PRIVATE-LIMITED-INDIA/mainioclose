@@ -143,7 +143,8 @@ export const LeadEstimates = () => {
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
   const contactModal = useDisclosure();
   const [unitDetail, setUnitDetail] = useState(null);
-  const [viewType, setViewType] = useState("ESTIMATE"); // or "PI"
+  const [viewType, setViewType] = useState("ESTIMATE");
+  const [companyNameError, setCompanyNameError] = useState("");
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -259,6 +260,25 @@ export const LeadEstimates = () => {
     }));
     onOpen();
   };
+
+  useEffect(() => {
+    if (sortedEstimates?.length > 0) {
+      const tempComp = sortedEstimates?.[0]?.company;
+      setValue("companyName", tempComp?.name);
+      dispatch(getBasicCompanyDetailByCompanyId(tempComp?.id)).then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          setCompanyDetail(resp?.payload);
+          dispatch(
+            getContactDetailListByCompanyId({
+              companyId: resp?.payload?.id,
+              userId,
+            }),
+          );
+        }
+      });
+      dispatch(getAllUnitListByCompanyId(tempComp?.id));
+    }
+  }, [sortedEstimates]);
 
   // service line items auto-fill
   useEffect(() => {
@@ -409,7 +429,7 @@ export const LeadEstimates = () => {
   };
 
   const onSubmit = (data) => {
-    data.companyId = company?.id;
+    data.companyId = company?.id || companyDetail?.id;
     data.solutionType = selectedSolutionDetail?.type;
     data.solutionId = selectedSolutionDetail?.id;
     data.createdByUserId = userId;
@@ -417,8 +437,8 @@ export const LeadEstimates = () => {
 
     dispatch(
       createCompanyAndUnitsForAccountsViaLeadEstimate({
-        ...company,
-        companyId: company?.id,
+        ...(Object.keys(company)?.length > 0 ? company : companyDetail),
+        companyId: company?.id || companyDetail?.id,
         createdById: userId,
       }),
     )
@@ -729,6 +749,7 @@ export const LeadEstimates = () => {
       {showForm && (
         <form
           onSubmit={handleSubmit(onSubmit)}
+          onChange={(e) => console.log("dsjgjjdgjgjgjg", e)}
           className="w-full max-h-[70vh] overflow-auto space-y-4"
         >
           <Card className="shadow-xl">
@@ -740,8 +761,13 @@ export const LeadEstimates = () => {
                   rules={{ required: "Company name is required" }} // Optional: extra safety (Zod already has it)
                   render={({ field, fieldState: { error } }) => (
                     <NewSelect
-                      label="Select company"
-                      // isRequired={true}
+                      label={
+                        <p>
+                          Select company{" "}
+                          <span className="text-sm text-red-500">*</span>
+                        </p>
+                      }
+                      isDisabled={sortedEstimates?.length > 0}
                       size={isMedium ? "sm" : "md"}
                       data={companyList || []}
                       labelKey="name"
@@ -768,7 +794,11 @@ export const LeadEstimates = () => {
                         });
                         dispatch(getAllUnitListByCompanyId(item?.id));
 
-                        // 🔥 CRITICAL: Always call field.onChange with the actual value
+                        if (item?.name) {
+                          setCompanyNameError("success");
+                        } else {
+                          setCompanyNameError("error");
+                        }
                         field.onChange(item?.name || "");
                       }}
                       onChange={(value) => {

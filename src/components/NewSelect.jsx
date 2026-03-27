@@ -149,21 +149,27 @@ const NewSelect = ({
       setSelectedKeys(selectedValue);
       setSearchQuery("");
 
-      // 🔥 Remove focus from Select trigger
-      if (triggerRef.current) {
-        triggerRef.current.blur();
-      }
+      // 🔥 FIND FULL OBJECT
+      const selectedItem = data.find(
+        (item) => String(item[valueKey]) === selectedValue,
+      );
 
-      // Extra safety (HeroUI wraps button internally)
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
+      // 🔥 CALL HERE (SAFE)
+      if (selectedItem) {
+        onItemSelect(selectedItem);
       }
 
       if (onChange) {
         onChange(selectedValue);
       }
+
+      // blur logic
+      if (triggerRef.current) triggerRef.current.blur();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     },
-    [onChange, selectionMode, data, valueKey],
+    [onChange, selectionMode, data, valueKey, onItemSelect],
   );
 
   const selectKeys =
@@ -231,6 +237,9 @@ const NewSelect = ({
             key={String(item[valueKey])}
             textValue={item?.[labelKey]}
             onPress={() => onItemSelect(item)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
           >
             <div className="flex flex-col w-full text-small my-0.5 py-1.5 whitespace-normal break-words leading-normal">
               {item?.[labelKey] || "Unknown"}

@@ -39,6 +39,7 @@ import {
   parseZonedDateTime,
   toCalendarDate,
 } from "@internationalized/date";
+import { IndianRupee } from "lucide-react";
 
 const ProjectActivities = () => {
   const dispatch = useDispatch();
@@ -61,8 +62,9 @@ const ProjectActivities = () => {
   const [expenseData, setExpenseData] = useState({
     amount: "",
     expenseType: "",
-    description: "",
+    remark: "",
     expenseDate: "",
+    paymentMedium: "",
   });
   const [page, setPage] = useState(1); // HeroUI is 1-based
   const size = 50;
@@ -396,19 +398,30 @@ const ProjectActivities = () => {
             }}
           >
             <ModalBody className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-              <Input
+              <Select
                 label="Expense Type"
                 name="expenseType"
                 isRequired
-                errorMessage="please enter expense type"
-                value={expenseData.expenseType}
-                onChange={(e) =>
+                selectedKeys={[expenseData?.expenseType]}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0];
                   setExpenseData({
                     ...expenseData,
-                    expenseType: e.target.value,
-                  })
-                }
-              />
+                    expenseType: value,
+                  });
+                }}
+                errorMessage={"please select status"}
+              >
+                {[
+                  { label: "Government Fee", value: "Government Fee" },
+                  { label: "Travel Fee", value: "Travel Fee" },
+                  { label: "Filing Fee", value: "Filing Fee" },
+                ].map((item) => (
+                  <SelectItem key={item.value.toString()} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </Select>
 
               <Input
                 label="Amount"
@@ -417,6 +430,7 @@ const ProjectActivities = () => {
                 isRequired
                 errorMessage="please enter amount"
                 value={expenseData.amount}
+                startContent={<IndianRupee className="h-3 w-3" />}
                 onChange={(e) =>
                   setExpenseData({
                     ...expenseData,
@@ -425,19 +439,30 @@ const ProjectActivities = () => {
                 }
               />
 
-              <Input
-                label="Currency"
-                name="currency"
-                isRequired
-                errorMessage="please enter currency"
-                value={expenseData.currency}
-                onChange={(e) =>
+              <Select
+                name="paymentMedium"
+                selectedKeys={
+                  expenseData?.paymentMedium
+                    ? new Set([expenseData?.paymentMedium])
+                    : new Set([])
+                }
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0];
                   setExpenseData({
                     ...expenseData,
-                    currency: e.target.value,
-                  })
-                }
-              />
+                    paymentMedium: value,
+                  });
+                }}
+                label="Payment Mode"
+                isRequired
+                errorMessage="please select payment mode"
+              >
+                <SelectItem key="CASH">Cash</SelectItem>
+                <SelectItem key="UPI">UPI</SelectItem>
+                <SelectItem key="CARD">Card</SelectItem>
+                <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                <SelectItem key="CHEQUE">Cheque</SelectItem>
+              </Select>
 
               <DatePicker
                 isRequired
@@ -468,15 +493,15 @@ const ProjectActivities = () => {
               />
 
               <Textarea
-                label="Description"
-                name="description"
+                label="Remark"
+                name="remark"
                 isRequired
-                errorMessage="please enter description"
-                value={expenseData.description}
+                errorMessage="please enter remark"
+                value={expenseData.remark}
                 onChange={(e) =>
                   setExpenseData({
                     ...expenseData,
-                    description: e.target.value,
+                    remark: e.target.value,
                   })
                 }
               />

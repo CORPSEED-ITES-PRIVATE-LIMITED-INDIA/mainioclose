@@ -29,17 +29,22 @@ const Login = () => {
                     toggleAutoOnFeature({
                       userId: resp?.payload?.id,
                       flag: true,
-                    })
+                    }),
                   );
                   console.log("dsjkhgkjsgkjdghj", response);
                   if (resp?.payload?.roles?.includes("ADMIN")) {
                     console.log("dsjkhgkjsgkjdghj 1111", response);
                     navigate(`/erp/${resp?.payload?.id}/dashboard`);
                   } else {
+                    if (response.payload?.department === "Sales") {
+                      console.log("dsjkhgkjsgkjdghj 2222", response);
+                      navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
+                      return;
+                    }
                     if (response.payload?.department === "Procurement") {
                       console.log("dsjkhgkjsgkjdghj 2222", response);
                       navigate(
-                        `/erp/${resp?.payload?.id}/procurement/vendors-requests`
+                        `/erp/${resp?.payload?.id}/procurement/vendors-requests`,
                       );
                       return;
                     }
@@ -53,9 +58,19 @@ const Login = () => {
                       navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
                       return;
                     }
-                    navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
+                    if (
+                      response.payload?.department === "CRT" ||
+                      response.payload?.department === "Legal" ||
+                      response.payload?.department === "Technical" ||
+                      response.payload?.department === "Liaisoning" ||
+                      response.payload?.department === "Operations"
+                    ) {
+                      console.log("dsjkhgkjsgkjdghj 44444", response);
+                      navigate(`/erp/${resp?.payload?.id}/"operation/projects`);
+                      return;
+                    }
                   }
-                }
+                },
               );
               addToast({
                 title: "User logged in successfully !.",
@@ -85,7 +100,7 @@ const Login = () => {
           });
         });
     },
-    [dispatch, navigate]
+    [dispatch, navigate],
   );
 
   return (
