@@ -9,6 +9,11 @@ import {
   Checkbox,
   Chip,
   DatePicker,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
   Form,
   Input,
   Modal,
@@ -81,6 +86,55 @@ import {
   toCalendarDate,
   today,
 } from "@internationalized/date";
+
+const companyDocsList = [
+  {
+    id: 1,
+    documentId: 1,
+    fileName: "PAN Card - Corpseed Pvt Ltd.pdf",
+    fileUrl: "https://example-bucket.s3.amazonaws.com/pan-card.pdf",
+    fileSizeKb: 245,
+    fileFormat: "pdf",
+    uploadedAt: "2026-03-20",
+    documentType: "PAN",
+  },
+  {
+    id: 2,
+    fileName: "GST Certificate.pdf",
+    fileUrl: "https://example-bucket.s3.amazonaws.com/gst-certificate.pdf",
+    fileSizeKb: 320,
+    fileFormat: "pdf",
+    uploadedAt: "2026-03-18",
+    documentType: "GST",
+  },
+  {
+    id: 3,
+    fileName: "Incorporation Certificate.pdf",
+    fileUrl: "https://example-bucket.s3.amazonaws.com/incorporation.pdf",
+    fileSizeKb: 410,
+    fileFormat: "pdf",
+    uploadedAt: "2026-03-15",
+    documentType: "INCORPORATION",
+  },
+  {
+    id: 4,
+    fileName: "Bank Statement March.pdf",
+    fileUrl: "https://example-bucket.s3.amazonaws.com/bank-statement.pdf",
+    fileSizeKb: 512,
+    fileFormat: "pdf",
+    uploadedAt: "2026-03-10",
+    documentType: "BANK",
+  },
+  {
+    id: 5,
+    fileName: "Director Aadhaar.png",
+    fileUrl: "https://example-bucket.s3.amazonaws.com/aadhaar.png",
+    fileSizeKb: 180,
+    fileFormat: "png",
+    uploadedAt: "2026-03-12",
+    documentType: "AADHAAR",
+  },
+];
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -758,6 +812,8 @@ const ProjectDetails = () => {
     });
   };
 
+  const [draggedDoc, setDraggedDoc] = useState(null);
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -912,41 +968,43 @@ const ProjectDetails = () => {
       <div className="max-h-[70vh] overflow-auto py-2.5">
         <div className="grid grid-cols-4 gap-4 h-[65vh]">
           {/* LEFT SIDEBAR - MILESTONES */}
-          <div className="col-span-1 border rounded-xl p-3 overflow-auto">
-            <h3 className="font-semibold mb-3">Milestones</h3>
+          {adminRole && (
+            <div className="col-span-1 border rounded-xl p-3 overflow-auto">
+              <h3 className="font-semibold mb-3">Milestones</h3>
 
-            {detailedData?.milestones?.map((mile, i) => (
-              <div
-                key={i}
-                onClick={() => {
-                  setSelectedMilestone(mile);
-                  dispatch(
-                    getHistoryByMileStoneIdAndProjectId({
-                      milestoneId: mile.milestoneId,
-                      projectId: mile.projectId,
-                      userId,
-                    }),
-                  );
-                }}
-                className={`p-3 mb-2 rounded-lg cursor-pointer border 
+              {detailedData?.milestones?.map((mile, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    setSelectedMilestone(mile);
+                    dispatch(
+                      getHistoryByMileStoneIdAndProjectId({
+                        milestoneId: mile.milestoneId,
+                        projectId: mile.projectId,
+                        userId,
+                      }),
+                    );
+                  }}
+                  className={`p-3 mb-2 rounded-lg cursor-pointer border 
         ${
           selectedMilestone?.milestoneId === mile.milestoneId
             ? "bg-blue-50 border-blue-400"
             : "hover:bg-gray-50"
         }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-sm">
-                    {mile.milestoneName}
-                  </span>
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-sm">
+                      {mile.milestoneName}
+                    </span>
 
-                  <Chip size="sm" color={statusColors[mile?.status]}>
-                    {mile?.status}
-                  </Chip>
+                    <Chip size="sm" color={statusColors[mile?.status]}>
+                      {mile?.status}
+                    </Chip>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           {/* CENTER CONTENT */}
           <div className="col-span-2 border rounded-xl overflow-auto">
             {selectedMilestone && (
@@ -1077,7 +1135,9 @@ const ProjectDetails = () => {
           </div>
 
           {/* RIGHT TIMELINE */}
-          <div className="col-span-1 border rounded-xl overflow-hidden relative flex flex-col h-full">
+          <div
+            className={`${adminRole ? "col-span-1" : "col-span-2"} border rounded-xl overflow-hidden relative flex flex-col h-full`}
+          >
             {/* Sticky Header */}
             <div className="sticky top-0 z-10 bg-white border-b p-3">
               <div className="flex gap-2 justify-between items-center w-full">
@@ -1091,6 +1151,7 @@ const ProjectDetails = () => {
                   onSelectionChange={(keys) => {
                     handleFilterChange(Array.from(keys)[0]);
                   }}
+                  className="max-w-[250px]"
                 >
                   <SelectItem key="ALL">All</SelectItem>
                   <SelectItem key="COMMENT">Comments</SelectItem>
@@ -1143,7 +1204,7 @@ const ProjectDetails = () => {
         </div>
       </div>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
+      {/* <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
         <ModalContent>
           {(onClose) => (
             <>
@@ -1186,7 +1247,6 @@ const ProjectDetails = () => {
                         className="rounded-2xl shadow-sm border border-gray-200 bg-white my-1.5"
                       >
                         <CardBody className="p-4 flex flex-col gap-4">
-                          {/* HEADER */}
                           <div className="flex justify-between items-start">
                             <div>
                               <h4 className="text-[14px] font-semibold text-gray-800">
@@ -1214,7 +1274,6 @@ const ProjectDetails = () => {
                               </div>
                             </div>
 
-                            {/* STATUS BADGE */}
                             <span
                               className={`text-xs font-semibold px-3 py-1 rounded-full ${
                                 doc?.status === "VERIFIED"
@@ -1228,7 +1287,7 @@ const ProjectDetails = () => {
                             </span>
                           </div>
 
-                          {/* FILE SECTION */}
+
                           <div>
                             <p className="text-sm text-gray-500 mb-2">
                               Uploaded File
@@ -1237,7 +1296,6 @@ const ProjectDetails = () => {
                             {hasFile ? (
                               <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
                                 <div className="flex items-center gap-3">
-                                  {/* PDF ICON */}
                                   <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                                     <PdfIcon className="text-red-500 w-5 h-5" />
                                   </div>
@@ -1269,7 +1327,6 @@ const ProjectDetails = () => {
                             )}
                           </div>
 
-                          {/* EXPIRY */}
                           <div className="text-sm text-gray-500">
                             {doc?.expiryDate
                               ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
@@ -1278,7 +1335,7 @@ const ProjectDetails = () => {
                                 : "No expiry date"}
                           </div>
 
-                          {/* VERIFY BUTTON ONLY IF NEEDED */}
+
                           {doc?.status !== "VERIFIED" && hasFile && (
                             <div className="pt-2">
                               <Button
@@ -1311,14 +1368,293 @@ const ProjectDetails = () => {
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
-                {/* <Button color="primary" onPress={onClose}>
-                  Action
-                </Button> */}
               </ModalFooter>
             </>
           )}
         </ModalContent>
-      </Modal>
+      </Modal> */}
+
+      <Drawer isOpen={isOpen} onOpenChange={onOpenChange} size="5xl">
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1">
+                Documents
+              </DrawerHeader>
+
+              <DrawerBody>
+                {/* SAME SELECT */}
+                <NewSelect
+                  label={"Select applicant type"}
+                  labelKey={"name"}
+                  valueKey={"id"}
+                  data={applicantTypeList?.length > 0 ? applicantTypeList : []}
+                  onChange={(e) => handleUpdateApplicantType(e)}
+                />
+
+                {/* 🔥 MAIN GRID */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* ================= LEFT SIDE ================= */}
+                  {/* COMPANY DOCS */}
+                  <div className="border rounded-2xl p-3 bg-gray-50 max-h-[70vh] overflow-auto">
+                    <h3 className="text-sm font-semibold mb-3">
+                      Company Documents
+                    </h3>
+
+                    {companyDocsList.map((doc, idx) => (
+                      <Card
+                        key={idx}
+                        draggable
+                        onDragStart={() => setDraggedDoc(doc)}
+                        className="rounded-xl shadow-sm border border-gray-200 bg-white my-1.5 cursor-grab"
+                      >
+                        <CardBody className="p-3 flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            📄
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-800">
+                              {doc.fileName}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {doc.fileSizeKb} KB
+                            </span>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* ================= RIGHT SIDE ================= */}
+                  {/* 🔥 YOUR ORIGINAL UI (UNCHANGED) */}
+                  <div className="grid grid-cols-1 gap-2 max-h-[70vh] overflow-auto">
+                    {requiredDocsList?.map((doc, idx) => {
+                      const hasFile = !!doc?.fileUrl;
+
+                      const openPreview = () => {
+                        const raw = String(doc?.fileUrl || "").trim();
+                        const fixed =
+                          raw.includes("amazonaws.com") &&
+                          !raw.includes("amazonaws.com/")
+                            ? raw.replace("amazonaws.com", "amazonaws.com/")
+                            : raw;
+
+                        const href =
+                          fixed.startsWith("http://") ||
+                          fixed.startsWith("https://")
+                            ? fixed
+                            : `https://${fixed}`;
+
+                        window.open(href, "_blank", "noopener,noreferrer");
+                      };
+
+                      return (
+                        <Card
+                          key={`doc${idx}`}
+                          className="rounded-2xl shadow-sm border border-gray-200 bg-white my-1.5"
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={async () => {
+                            if (!draggedDoc) return;
+                            try {
+                              // 🔥 find first doc without file
+                              // const targetDoc = requiredDocsList?.find(
+                              //   (d) => !d.fileUrl,
+                              // );
+
+                              // if (!targetDoc) {
+                              //   addToast({
+                              //     title: "All documents already uploaded",
+                              //     color: "warning",
+                              //   });
+                              //   return;
+                              // }
+
+                              console.log("API HITTTTINGGGGGG");
+
+                              const payload = {
+                                fileName: draggedDoc.fileUrl,
+                                fileSizeKb: draggedDoc.fileSizeKb,
+                                fileFormat: draggedDoc.fileFormat || "pdf",
+                                fileUrl: draggedDoc.fileUrl,
+                                companyDocSourceId: draggedDoc.id,
+                                isPermanent: false,
+                                expiryDate: null,
+                                remarks: draggedDoc?.remarks,
+                                isFromCompanyDoc: true,
+                                requiredDocumentId: doc?.documentId,
+                                projectId: Number(projectId),
+                                uploadedById: Number(userId),
+                                createdById: Number(userId),
+                              };
+
+                              const resp = await dispatch(
+                                uploadDocumentInProjects({
+                                  projectId,
+                                  data: payload,
+                                }),
+                              );
+                              console.log("dsjkfsdjkgdsj", resp);
+                              if (resp.meta.requestStatus === "fulfilled") {
+                                addToast({
+                                  title: "Document added successfully",
+                                  color: "success",
+                                });
+
+                                dispatch(
+                                  getRequiredDocumentsByProductId({
+                                    userId,
+                                    projectId,
+                                  }),
+                                );
+                              } else {
+                                addToast({
+                                  title: resp?.error?.message,
+                                  color: "danger",
+                                  description: resp?.payload || "Upload failed",
+                                });
+                              }
+                            } catch (err) {
+                              console.error("Drop failed", err);
+                            } finally {
+                              setDraggedDoc(null);
+                            }
+                          }}
+                        >
+                          <CardBody className="p-4 flex flex-col gap-4">
+                            {/* HEADER */}
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="text-[14px] font-semibold text-gray-800">
+                                  {doc?.documentName}
+                                </h4>
+
+                                <div className="flex gap-2 mt-2 flex-wrap">
+                                  {doc?.mandatory && (
+                                    <span className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md font-medium">
+                                      Mandatory
+                                    </span>
+                                  )}
+
+                                  {doc?.permanent && (
+                                    <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-md font-medium">
+                                      Permanent
+                                    </span>
+                                  )}
+
+                                  {doc?.expired && (
+                                    <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-medium">
+                                      Expired
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <span
+                                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                                  doc?.status === "VERIFIED"
+                                    ? "bg-green-100 text-green-700"
+                                    : doc?.status === "PENDING"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {doc?.status}
+                              </span>
+                            </div>
+
+                            {/* FILE */}
+                            <div>
+                              <p className="text-sm text-gray-500 mb-2">
+                                Uploaded File
+                              </p>
+
+                              {hasFile ? (
+                                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                      📄
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-medium text-gray-800 truncate max-w-[180px]">
+                                        {doc?.fileName || "Document.pdf"}
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        {doc?.fileSizeKb
+                                          ? `${doc.fileSizeKb} KB`
+                                          : ""}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
+                                    onPress={openPreview}
+                                  >
+                                    Download
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="text-sm italic text-gray-400">
+                                  No file uploaded
+                                </div>
+                              )}
+                            </div>
+
+                            {/* EXPIRY */}
+                            <div className="text-sm text-gray-500">
+                              {doc?.expiryDate
+                                ? `Expiry: ${dayjs(doc.expiryDate).format(
+                                    "DD MMM YYYY",
+                                  )}`
+                                : doc?.permanent
+                                  ? "No expiry date"
+                                  : "No expiry date"}
+                            </div>
+
+                            {/* VERIFY */}
+                            {doc?.status !== "VERIFIED" && hasFile && (
+                              <div className="pt-2">
+                                <Button
+                                  size="sm"
+                                  color="primary"
+                                  className="rounded-full px-6"
+                                  onPress={() => openVerify(doc)}
+                                >
+                                  Verify
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* UPLOAD */}
+                            {doc?.status !== "UPLOADED" && (
+                              <Button
+                                size="sm"
+                                color="secondary"
+                                onPress={() => openUploadForDoc(doc)}
+                              >
+                                Upload
+                              </Button>
+                            )}
+                          </CardBody>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </DrawerBody>
+
+              <DrawerFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
 
       <Modal
         isOpen={assigneeModal.isOpen}
