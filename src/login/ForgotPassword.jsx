@@ -36,7 +36,6 @@ const ForgotPassword = () => {
         </span>
         <Form
           className="w-full max-w-lg flex flex-col gap-8"
-          onReset={() => setAction("reset")}
           onSubmit={(e) => {
             e.preventDefault();
             let data = Object.fromEntries(new FormData(e.currentTarget));

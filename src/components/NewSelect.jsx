@@ -149,21 +149,23 @@ const NewSelect = ({
       setSelectedKeys(selectedValue);
       setSearchQuery("");
 
-      // 🔥 FIND FULL OBJECT
+      // 🔥 HANDLE CLEAR CASE
+      if (!selectedValue || selectedValue.length === 0) {
+        onItemSelect(null); // ✅ IMPORTANT
+        onChange?.("");
+        return;
+      }
+
       const selectedItem = data.find(
         (item) => String(item[valueKey]) === selectedValue,
       );
 
-      // 🔥 CALL HERE (SAFE)
       if (selectedItem) {
         onItemSelect(selectedItem);
       }
 
-      if (onChange) {
-        onChange(selectedValue);
-      }
+      onChange?.(selectedValue);
 
-      // blur logic
       if (triggerRef.current) triggerRef.current.blur();
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
@@ -171,7 +173,6 @@ const NewSelect = ({
     },
     [onChange, selectionMode, data, valueKey, onItemSelect],
   );
-
   const selectKeys =
     selectionMode === "multiple"
       ? new Set(selectedKeys.map(String))

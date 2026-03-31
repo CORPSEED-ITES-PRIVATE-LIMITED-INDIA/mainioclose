@@ -166,7 +166,7 @@ const Unbill = () => {
           </p>
         );
       case "service":
-        return <p className="text-sm capitalize">{rowData?.productName}</p>;
+        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
       case "company":
         return <p className="text-sm capitalize">{rowData?.company}</p>;
       case "client":

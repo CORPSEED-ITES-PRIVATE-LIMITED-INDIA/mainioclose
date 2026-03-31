@@ -521,7 +521,7 @@ export const LeadEstimates = () => {
     dispatch(createContactViaEstimateInCompany(data))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Unit details saved.", color: "success" });
+          addToast({ title: "Contact details saved.", color: "success" });
           contactModal.onClose();
           resetContactValue();
           dispatch(

@@ -31,6 +31,7 @@ import {
   Listbox,
   ListboxItem,
   Badge,
+  Form,
 } from "@heroui/react";
 import {
   ArrowDownNarrowWide,
@@ -64,9 +65,7 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import { Link, useParams } from "react-router-dom";
 import {
-  getAllCitiesByStateName,
   getAllCountries,
-  getAllStatesByCountryName,
   getAllUrlList,
 } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
@@ -117,43 +116,6 @@ const INITIAL_VISIBLE_COLUMNS = (admin) => [
   "address",
   "actions",
 ];
-const formSchema = z.object({
-  leadName: z.string().min(1, "Please enter lead name"),
-  name: z.string().min(1, "Please enter a valid client name"),
-  email: z
-    .string()
-    .email("Please enter a valid email")
-    .optional()
-    .or(z.literal("")),
-  mobileNo: z.string().optional().or(z.literal("")),
-  // urls: z.string().min(1, "Please enter company name"),
-  // country: z.string().optional().or(z.literal("")),
-  // state: z.string().optional().or(z.literal("")),
-  // city: z.string().optional().or(z.literal("")),
-  // ipAddress: z.string().optional().or(z.literal("")),
-  assigneeId: z.string().optional().or(z.literal("")),
-  auto: z.string().optional().or(z.literal("")),
-  source: z.string().min(1, "Please select the lead source"),
-  // primaryAddress: z.string().min(1, "Please enter address"),
-  leadDescription: z.string().min(1, "Please enter lead description"),
-});
-
-const defaultValues = {
-  leadName: "",
-  name: "",
-  email: "",
-  mobileNo: "",
-  urls: "",
-  country: "",
-  state: "",
-  city: "",
-  ipAddress: "",
-  assigneeId: "",
-  auto: "",
-  source: "",
-  primaryAddress: "",
-  leadDescription: "",
-};
 
 const Leads = () => {
   const { userId } = useParams();
@@ -170,9 +132,6 @@ const Leads = () => {
   const solutionList = useSelector(
     (state) => state.product.solutionListByUserId,
   );
-  const countryList = useSelector((state) => state.common.countriesList);
-  const statesList = useSelector((state) => state.common.statesList);
-  const citiesList = useSelector((state) => state.common.citiesList);
   const urlList = useSelector((state) => state.common.urlList);
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const department = useSelector((state) => state.auth.getDepartmentDetail);
@@ -219,18 +178,18 @@ const Leads = () => {
   const [itemId, setItemId] = useState(null);
   const [loading, setLoading] = useState("");
   const [leadsFileUploadingUrl, setLeadsFileUploadingUrl] = useState(null);
+  const leadFormValues = {
+    leadName: "",
+    name: "",
+    email: "",
+    mobileNo: "",
+    assigneeId: "",
+    source: "",
+    leadDescription: "",
+  };
+  const [leadFormData, setLeadFormData] = useState(leadFormValues);
 
   const hasSearchFilter = Boolean(filterValue);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-  });
 
   useEffect(() => {
     dispatch(getAllLeadsByFilter(allMultiFilterData));
@@ -1395,6 +1354,7 @@ const Leads = () => {
           onOpenChange(false);
           reset(defaultValues);
           setLoading("success");
+          setLeadFormData(leadFormValues);
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
           setLoading("rejected");
@@ -1465,244 +1425,127 @@ const Leads = () => {
                 Create lead
               </ModalHeader>
               <ModalBody>
-                <form
+                <Form
                   className="w-full flex flex-col gap-4 "
-                  onSubmit={handleSubmit(handleFinish)}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    let data = Object.fromEntries(
+                      new FormData(e.currentTarget),
+                    );
+                    handleFinish(data);
+                  }}
                 >
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto px-2 py-1">
-                    <Controller
-                      name="leadName"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          isRequired
-                          data={solutionList || []}
-                          label="Select service"
-                          labelKey="name"
-                          valueKey="name"
-                          // errorMessage={errors?.leadName?.message}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                        />
-                      )}
+                    <NewSelect
+                      isRequired
+                      name={"leadName"}
+                      data={solutionList || []}
+                      label="Select service"
+                      labelKey="name"
+                      valueKey="name"
+                      value={leadFormData?.leadName}
+                      errorMessage={"please select service"}
+                      onChange={(value) => {
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          leadName: value,
+                        }));
+                      }}
                     />
 
-                    <Controller
+                    <Input
+                      isRequired
                       name="name"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          errorMessage={errors.name?.message}
-                          label="Client name"
-                          type="text"
-                          {...field}
-                        />
-                      )}
+                      errorMessage={"please enter client name"}
+                      label="Client name"
+                      type="text"
+                      value={leadFormData?.name}
+                      onChange={(e) => {
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }));
+                      }}
                     />
 
-                    <Controller
+                    <Input
+                      label="Email"
                       name="email"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          label="Email"
-                          errorMessage={errors.email?.message}
-                          type="email"
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(formatEmail(e.target.value))
-                          }
-                        />
-                      )}
+                      errorMessage={"please enter valid email"}
+                      type="email"
+                      value={leadFormData?.email}
+                      onChange={(e) =>
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          email: formatEmail(e.target.value),
+                        }))
+                      }
                     />
 
-                    <Controller
+                    <Input
+                      label="Mobile number"
                       name="mobileNo"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          label="Mobile number"
-                          errorMessage={errors.mobileNo?.message}
-                          type="text"
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(allowOnlyNumbers(e.target.value))
-                          }
-                        />
-                      )}
+                      errorMessage={"please enter valid mobile number"}
+                      type="text"
+                      value={leadFormData?.mobileNo}
+                      onChange={(e) =>
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          mobileNo: allowOnlyNumbers(e.target.value),
+                        }))
+                      }
                     />
 
-                    {/* <Controller
-                      name="urls"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          errorMessage={errors.urls?.message}
-                          label="Company url"
-                          type="text"
-                          {...field}
-                        />
-                      )}
-                    /> */}
-
-                    {/* These fields commented by Kausal  ----------------------- start--------------- */}
-
-                    {/* 
-                    <Controller
-                      name="country"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          data={countryList}
-                          label="Country"
-                          labelKey="name"
-                          valueKey="name"
-                          errorMessage={errors.country?.message}
-                          {...field}
-                          onChange={(value) => {
-                            field.onChange(value);
-                            dispatch(getAllStatesByCountryName(value));
-                          }}
-                        />
-                      )}
-                    /> */}
-
-                    {/* <Controller
-                      name="state"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          data={statesList}
-                          label="State"
-                          labelKey="name"
-                          valueKey="name"
-                          errorMessage={errors.state?.message}
-                          {...field}
-                          onChange={(value) => {
-                            field.onChange(value);
-                            dispatch(getAllCitiesByStateName(value));
-                          }}
-                        />
-                      )}
-                    /> */}
-
-                    {/* <Controller
-                      name="city"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          data={citiesList}
-                          label="City"
-                          labelKey="name"
-                          valueKey="name"
-                          errorMessage={errors.city?.message}
-                          {...field}
-                        />
-                      )}
-                    /> */}
-
-                    {/* These fields commented by Kausal  ----------------------- end--------------- */}
-
-                    {/* <Controller
-                      name="ipAddress"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          label="Ip address"
-                          errorMessage={errors.ipAddress?.message}
-                          type="text"
-                          {...field}
-                        />
-                      )}
-                    /> */}
-
-                    <Controller
+                    <NewSelect
+                      isRequired={true}
+                      data={allLeadUser || []}
+                      label="Select assignee"
                       name="assigneeId"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          isRequired={true}
-                          data={allLeadUser || []}
-                          label="Select users"
-                          name="assigneeId"
-                          labelKey="fullName"
-                          valueKey="id"
-                          value={field.value}
-                          onChange={(selectedValue) => {
-                            field.onChange(selectedValue);
-                          }}
-                          errorMessage={errors.assigneeId?.message}
-                        />
-                      )}
+                      labelKey="fullName"
+                      valueKey="id"
+                      value={leadFormData?.assigneeId}
+                      onChange={(selectedValue) => {
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          assigneeId: selectedValue,
+                        }));
+                      }}
+                      errorMessage={"please select assignee"}
                     />
 
-                    {/* <Controller
-                      name="auto"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          label="Automation"
-                          errorMessage={errors.auto?.message}
-                          {...field}
-                        >
-                          {[
-                            { name: "True", id: true },
-                            { name: "False", id: false },
-                          ].map((option) => (
-                            <SelectItem key={option.id} value={option.id}>
-                              {option.name}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    /> */}
-
-                    <Controller
+                    <Select
+                      isRequired
+                      errorMessage={"please select source"}
+                      label="Source"
                       name="source"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          isRequired
-                          errorMessage={errors.source?.message}
-                          label="Source"
-                          {...field}
-                        >
-                          {leadSource.map((item) => (
-                            <SelectItem key={item} value={item}>
-                              {item}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
+                      selectedKeys={[leadFormData?.source]}
+                      onSelectionChange={(e) => {
+                        const selectedValue = Array.from(e)[0];
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          source: selectedValue,
+                        }));
+                      }}
+                    >
+                      {leadSource.map((item) => (
+                        <SelectItem key={item} value={item}>
+                          {item}
+                        </SelectItem>
+                      ))}
+                    </Select>
 
-                    {/* <Controller
-                      name="primaryAddress"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          isRequired
-                          errorMessage={errors.primaryAddress?.message}
-                          label="Primary address"
-                          {...field}
-                        />
-                      )}
-                    /> */}
-
-                    <Controller
+                    <Textarea
+                      isRequired
                       name="leadDescription"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          isRequired
-                          errorMessage={errors.leadDescription?.message}
-                          label="Lead description"
-                          {...field}
-                        />
-                      )}
+                      errorMessage={"please enter lead description"}
+                      label="Lead description"
+                      value={leadFormData?.leadDescription}
+                      onChange={(e) =>
+                        setLeadFormData((prev) => ({
+                          ...prev,
+                          leadDescription: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                   <ModalFooter className="w-full flex justify-end">
@@ -1715,7 +1558,7 @@ const Leads = () => {
                       Submit
                     </Button>
                   </ModalFooter>
-                </form>
+                </Form>
               </ModalBody>
             </>
           )}

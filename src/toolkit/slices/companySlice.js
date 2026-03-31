@@ -595,6 +595,7 @@ const CompanySlice = createSlice({
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {
+      console.log("resetting existing company in slice", action);
       state.basicCompanyDetail = {};
     },
   },
