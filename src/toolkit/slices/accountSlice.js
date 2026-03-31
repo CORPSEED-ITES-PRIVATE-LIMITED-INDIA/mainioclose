@@ -237,6 +237,20 @@ export const cancelUnBilledInvoice = createAsyncThunk(
   },
 );
 
+export const convertUnbillToAdvanceInvoice = createAsyncThunk(
+  "convertUnbillToAdvanceInvoice",
+  async ({ unbilledId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/unbilled-invoices/convertIntoADI/${unbilledId}?requestingUserId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

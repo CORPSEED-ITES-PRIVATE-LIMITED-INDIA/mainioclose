@@ -36,21 +36,18 @@ import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
 import {
   cancelUnBilledInvoice,
+  convertUnbillToAdvanceInvoice,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
-import EstimateView from "../../components/EstimateView";
 import { useParams } from "react-router-dom";
-import TaxInvoice from "../../components/TaxInvoice";
 import UnbilledView from "../../components/UnbilledView";
-import {
-  cancelProjectByUnbilledNumberInOperations,
-  createProjectsForOperations,
-} from "../../toolkit/slices/operationSlice";
+import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
+import { set } from "zod";
 
 export const columns = [
   { name: "DATE", uid: "date" },
   { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
-  { name: "UNBILL NO.", uid: "unbillNo" },
+  { name: "UNBILL NO. / ADVANCE INVOICE", uid: "unbillNo" },
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
   { name: "COMPANY", uid: "companyName" },
@@ -106,6 +103,7 @@ const Unbill = () => {
     approvalRemarks: "",
     rejectionReason: "",
   });
+  const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -159,7 +157,14 @@ const Unbill = () => {
           </div>
         );
       case "unbillNo":
-        return <p className="text-sm capitalize">{`UN000${rowData?.id}`}</p>;
+        return (
+          <p className="text-sm capitalize">
+            {`${rowData?.unbilledNumber}`}
+            {rowData?.advanceInvoiceFlag
+              ? ` / ${rowData?.advanceInvoiceNumber}`
+              : ``}{" "}
+          </p>
+        );
       case "service":
         return <p className="text-sm capitalize">{rowData?.productName}</p>;
       case "company":
@@ -200,16 +205,76 @@ const Unbill = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
+                {!rowData?.advanceInvoiceFlag && (
+                  <DropdownItem
+                    key="view"
+                    onPress={() => {
+                      dispatch(
+                        convertUnbillToAdvanceInvoice({
+                          unbilledId: rowData?.id,
+                          userId,
+                        }),
+                      )
+                        .then((resp) => {
+                          if (resp.meta.requestStatus === "fulfilled") {
+                            addToast({
+                              title:
+                                "Unbill converted to advance invoice successfully !.",
+                              color: "success",
+                            });
+                            dispatch(
+                              getAllUnbillList({
+                                page,
+                                size: rowsPerPage,
+                                userId,
+                                status,
+                              }),
+                            );
+                            dispatch(getAllUnbillCount({ userId, status }));
+                          } else {
+                            addToast({
+                              title:
+                                resp?.payload?.data?.message ||
+                                "Something went wrong !.",
+                              color: "danger",
+                            });
+                          }
+                        })
+                        .catch(() => {
+                          addToast({
+                            title: "Something went wrong !.",
+                            color: "danger",
+                          });
+                        });
+                    }}
+                  >
+                    Convert To AdvanceInvoice
+                  </DropdownItem>
+                )}
+
                 <DropdownItem
-                  key="view"
+                  key="unbilledview"
                   onPress={() => {
+                    setIsAdvanceInvoice(false);
                     onOpen();
                     dispatch(
                       getUnBilledDetailById({ id: rowData?.id, userId }),
                     );
                   }}
                 >
-                  View
+                  Unbilled View
+                </DropdownItem>
+                <DropdownItem
+                  key="advanceinvoiceview"
+                  onPress={() => {
+                    setIsAdvanceInvoice(true);
+                    onOpen();
+                    dispatch(
+                      getUnBilledDetailById({ id: rowData?.id, userId }),
+                    );
+                  }}
+                >
+                  Advance Invoice View
                 </DropdownItem>
                 <DropdownItem
                   key="status"
@@ -531,23 +596,32 @@ const Unbill = () => {
       <Modal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        size="5xl"
+        size="4xl"
         placement="top-center"
         backdrop="blur"
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Unbill</ModalHeader>
-              <ModalBody className="max-h-[85vh] overflow-auto">
-                <UnbilledView invoiceData={invoiceDetail} heading={"Unbill"} />
+              <ModalHeader className="flex flex-col gap-1">
+                {isAdvanceInvoice ? "Advance Invoice" : "Unbill"}
+              </ModalHeader>
+              <ModalBody className="max-h-[75vh] overflow-auto">
+                <UnbilledView
+                  invoiceData={invoiceDetail}
+                  heading={isAdvanceInvoice ? "Advance Invoice" : "Unbill"}
+                />
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
+                <Button
+                  color="danger"
+                  variant="light"
+                  onPress={() => {
+                    onClose();
+                    setIsAdvanceInvoice(false);
+                  }}
+                >
                   Close
-                </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
                 </Button>
               </ModalFooter>
             </>

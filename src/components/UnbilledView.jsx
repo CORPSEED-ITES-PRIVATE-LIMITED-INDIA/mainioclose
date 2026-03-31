@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useRef } from "react";
+import React, { memo, useEffect, useMemo, useRef } from "react";
 import logo from "../assets/CORPSEED.webp";
 import signature from "../assets/signature.png";
 import html2canvas from "html2canvas-pro";
@@ -6,6 +6,8 @@ import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency } from "../common";
+import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 /** -------------------------
  * PDF / Layout constants
@@ -107,23 +109,35 @@ const buildTaxSummaryRows = (lineItems = []) => {
  * Component
  * ------------------------- */
 const UnbilledView = ({ invoiceData, heading }) => {
+  const dispatch = useDispatch();
   const printRef = useRef(null);
-
-  const seller = useMemo(
-    () => ({
-      name: "Corpseed Ites Private Limited",
-      addressLine1:
-        "3rd Floor, A-5, Grovy Optiva IT Park, Sector 68 Noida,Gautam budh Nagar,Uttar Pradesh , 201301",
-      gstin: "09AAHCC4539J1ZC",
-      stateName: "Uttar Pradesh",
-      stateCode: "09",
-      email: "info@corpseed.com",
-      bankName: "IDFC FIRST BANK",
-      accountNo: "10052624515",
-      branchIfsc: "Noida,Sector-63 Branch & IDFB0021331",
-    }),
-    [],
+  const organizationDetail = useSelector(
+    (state) => state.organization.organizationDetail,
   );
+
+  useEffect(() => {
+    dispatch(getOrganizationByName());
+  }, [dispatch]);
+
+  const seller = useMemo(() => {
+    if (!organizationDetail) return null;
+
+    return {
+      name: organizationDetail?.name || "",
+      addressLine1:
+        `${organizationDetail?.addressLine1}, ${organizationDetail?.city}, ${organizationDetail?.state}, ${organizationDetail?.country} - ${organizationDetail?.pinCode}` ||
+        "",
+      gstin: organizationDetail?.gstNo || "",
+      stateName: organizationDetail?.state || "",
+      stateCode: organizationDetail?.gstNo?.slice(0, 2) || "",
+      email: organizationDetail?.email || "",
+      bankName: organizationDetail?.bankName || "",
+      accountNo: organizationDetail?.accountNo || "",
+      branchIfsc: `${organizationDetail?.ifscCode || ""} & ${
+        organizationDetail?.ifscCode || ""
+      }`,
+    };
+  }, [organizationDetail]);
 
   // invoiceData can be object OR JSON string
   const inv = useMemo(() => {
@@ -156,8 +170,6 @@ const UnbilledView = ({ invoiceData, heading }) => {
   const grandTotal = toNumber(inv?.grandTotal);
 
   const halfRatesLabel = useMemo(() => getHalfGstRatesLabel(items), [items]);
-
-  console.log("sdjkfskjdg", taxSummaryRows);
 
   /** ✅ Single-page PDF + Real margins + smoother text */
   const downloadPDF = async () => {
@@ -200,7 +212,11 @@ const UnbilledView = ({ invoiceData, heading }) => {
     const y = (pageH - imgH) / 2; // centered vertically
     pdf.addImage(imgData, "PNG", x, y, imgW, imgH, undefined, "FAST");
 
-    pdf.save(`${inv?.unbilledNumber || "unbill"}.pdf`);
+    pdf.save(
+      inv?.advanceInvoiceFlag
+        ? `${inv?.advanceInvoiceNumber || "advance-invoice"}.pdf`
+        : `${inv?.unbilledNumber || "unbill"}.pdf`,
+    );
   };
 
   // Forward props so colSpan/rowSpan works
@@ -229,18 +245,9 @@ const UnbilledView = ({ invoiceData, heading }) => {
   );
 
   return (
-    <div className="p-4">
-      <div className="mb-3 flex justify-end">
-        <button
-          onClick={downloadPDF}
-          className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900"
-        >
-          Download PDF
-        </button>
-      </div>
-
+    <div className="">
       {/* Screen preview A4 */}
-      <div className="mx-auto w-[210mm] bg-gray-50 p-3">
+      <div className="w-[210mm] bg-gray-50 p-3">
         {/* ✅ IMPORTANT: remove min-h-[297mm] to avoid 2 pages */}
         <div
           ref={printRef}
@@ -283,9 +290,15 @@ const UnbilledView = ({ invoiceData, heading }) => {
               <div className="grid auto-rows-min">
                 <div className="grid grid-cols-2 border-b border-gray-300">
                   <div className="border-r border-gray-300 p-2.5">
-                    <div className="text-[10px] text-gray-500">Invoice no.</div>
+                    <div className="text-[10px] text-gray-500">
+                      {inv?.advanceInvoiceFlag
+                        ? "Advance Invoice No."
+                        : "Unbilled No."}
+                    </div>
                     <div className="text-[11px] font-bold">
-                      {inv?.invoiceNumber || "NA"}
+                      {inv?.advanceInvoiceFlag
+                        ? inv?.advanceInvoiceNumber
+                        : inv?.unbilledNumber || "NA"}
                     </div>
                   </div>
                   <div className="p-2.5">
@@ -593,6 +606,14 @@ const UnbilledView = ({ invoiceData, heading }) => {
             </div>
           </div>
         </div>
+      </div>
+      <div className="mb-3 flex justify-center">
+        <button
+          onClick={downloadPDF}
+          className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900"
+        >
+          Download PDF
+        </button>
       </div>
     </div>
   );
