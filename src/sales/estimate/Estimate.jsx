@@ -298,7 +298,7 @@ const Estimate = () => {
             </span>
             {rowData?.totalGstAmount && (
               <span className="text-tiny text-gray-400">
-                GST : {rowData?.totalGstAmount || "-"}%
+                GST : {inrCurrency(rowData?.totalGstAmount) || "-"}
               </span>
             )}
             {rowData?.quantity && (
@@ -316,7 +316,7 @@ const Estimate = () => {
               {inrCurrency(rowData?.professionalFees || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
-              GST : {rowData?.profesionalGst || "-"}%
+              GST : {inrCurrency(rowData?.profesionalGst) || "-"}
             </span>
           </div>
         );
@@ -327,7 +327,7 @@ const Estimate = () => {
               {inrCurrency(rowData?.govermentfees || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
-              GST : {rowData?.govermentGst || "-"}%
+              GST : {inrCurrency(rowData?.govermentGst) || "-"}
             </span>
           </div>
         );
@@ -349,7 +349,7 @@ const Estimate = () => {
               {inrCurrency(rowData?.otherFees || 0) || "-"}
             </span>
             <span className="text-tiny text-gray-400">
-              GST : {rowData?.otherGst || "-"}%
+              GST : {inrCurrency(rowData?.otherGst) || "-"}
             </span>
           </div>
         );
@@ -537,17 +537,6 @@ const Estimate = () => {
                     showMonthAndYearPickers
                     hideTimeZone
                     label="Date range"
-                    // value={{
-                    //   start: filters?.fromDate
-                    //     ? parseZonedDateTime(
-                    //         `${filters?.fromDate}[Asia/kolkata]`,
-                    //       )
-                    //     : null,
-                    //   end: filters?.toDate
-                    //     ? parseZonedDateTime(`${filters?.toDate}[Asia/kolkata]`)
-                    //     : null,
-                    // }}
-
                     value={{
                       start: filters?.fromDate
                         ? parseDate(filters.fromDate)
