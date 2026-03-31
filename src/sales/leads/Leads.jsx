@@ -1480,7 +1480,7 @@ const Leads = () => {
                           label="Select service"
                           labelKey="name"
                           valueKey="name"
-                          errorMessage={errors?.leadName?.message}
+                          // errorMessage={errors?.leadName?.message}
                           onChange={(value) => {
                             field.onChange(value);
                           }}

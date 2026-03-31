@@ -60,6 +60,7 @@ import {
   getAllUnitListByCompanyId,
   getBasicCompanyDetailByCompanyId,
   getBasicCompanyDetails,
+  handleResetExistingCompany,
   updateBasicUnitByCompanyId,
 } from "../../../toolkit/slices/companySlice";
 import {
@@ -738,8 +739,13 @@ export const LeadEstimates = () => {
                   render={({ field, fieldState: { error } }) => {
                     return (
                       <NewSelect
-                        label="Select company"
-                        isRequired={true}
+                        label={
+                          <div className="flex">
+                            <p>Select company</p>
+                            <span className="text-red-500">*</span>
+                          </div>
+                        }
+                        // isRequired={true}
                         size={isMedium ? "sm" : "md"}
                         data={companyList || []}
                         labelKey="name"
@@ -750,20 +756,28 @@ export const LeadEstimates = () => {
                           setIsDropDownOpen((prev) => ({ ...prev, company: e }))
                         }
                         onItemSelect={(item) => {
-                          dispatch(
-                            getBasicCompanyDetailByCompanyId(item?.id),
-                          ).then((resp) => {
-                            if (resp.meta.requestStatus === "fulfilled") {
-                              setCompanyDetail(resp?.payload);
-                              dispatch(
-                                getContactDetailListByCompanyId({
-                                  companyId: resp?.payload?.id,
-                                  userId,
-                                }),
-                              );
-                            }
-                          });
-                          getAllUnitListByCompanyId(item?.id);
+                          console.log("selected company", item);
+                          if (
+                            companyDetail &&
+                            Object.keys(companyDetail).length > 0
+                          ) {
+                            dispatch(handleResetExistingCompany());
+                          } else {
+                            dispatch(
+                              getBasicCompanyDetailByCompanyId(item?.id),
+                            ).then((resp) => {
+                              if (resp.meta.requestStatus === "fulfilled") {
+                                setCompanyDetail(resp?.payload);
+                                dispatch(
+                                  getContactDetailListByCompanyId({
+                                    companyId: resp?.payload?.id,
+                                    userId,
+                                  }),
+                                );
+                              }
+                            });
+                            getAllUnitListByCompanyId(item?.id);
+                          }
                         }}
                         onChange={(value) => {
                           field.onChange(value);
