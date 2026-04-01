@@ -297,3 +297,28 @@ table td {
 .ck-content li {
   margin-bottom: 6px;
 }
+
+.preview-container img {
+  max-width: 100%;
+  height: auto;
+}
+
+.preview-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-container td,
+.preview-container th {
+  border: 1px solid #ccc;
+  padding: 6px;
+}
+
+.preview-container p {
+  margin: 8px 0;
+}
+
+.preview-container ul,
+.preview-container ol {
+  padding-left: 20px;
+}

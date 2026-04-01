@@ -233,7 +233,7 @@ const Proposal = () => {
         brochureBook: proposalDataDetail?.brochureBook || [],
         mailBody: proposalDataDetail?.mailBody,
         template: proposalDataDetail?.template,
-        solutionId: proposalDataDetail?.solutionId,
+        solutionId: String(proposalDataDetail?.solutionId),
       });
     } else {
       reset(defaultValues);

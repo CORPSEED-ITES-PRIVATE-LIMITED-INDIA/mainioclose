@@ -37,7 +37,8 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 
 const columns = [
   { name: "ID", uid: "id" },
-  { name: "PRODUCT", uid: "productName", sortable: true },
+  { name: "DATE", uid: "date" },
+  { name: "SOLUTION NAME", uid: "solutionName", sortable: true },
   { name: "EMAIL", uid: "createdByEmail" },
   { name: "STATUS", uid: "status" },
   { name: "ACTIONS", uid: "actions" },
@@ -49,7 +50,8 @@ function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
-  "productName",
+  "date",
+  "solutionName",
   "createdByEmail",
   "status",
   "actions",
@@ -73,7 +75,7 @@ const AllProposal = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -114,7 +116,7 @@ const AllProposal = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -124,8 +126,8 @@ const AllProposal = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -163,22 +165,28 @@ const AllProposal = () => {
       proposalModal.onOpen();
     }
   };
-  
 
   const handleChangeStatus = (values) => {
     setLoading("pending");
-    dispatch(proposalApprovalByManager({...updateStatusData,comment:values?.comment}))
+    dispatch(
+      proposalApprovalByManager({
+        ...updateStatusData,
+        comment: values?.comment,
+      }),
+    )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(getAllProposalByUserIdForManager(filteration));
           if (updateStatusData.status === "approved") {
             addToast({
-              title: `Proposal approved successfully and sent to client.`,
+              title: `Success`,
+              description: "Proposal approved successfully and sent to client.",
               color: "success",
             });
           } else {
             addToast({
               title: `Proposal disapproved successfully.`,
+              description: "Proposal disapproved successfully.",
               color: "success",
             });
           }
@@ -204,16 +212,18 @@ const AllProposal = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "productName":
+      case "solutionName":
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link className="font-normal">{rowData?.productName || "-"}</Link>
+              <Link className="font-normal">
+                {rowData?.solutionName || "-"}
+              </Link>
             </div>
           </div>
         );
 
-      case "createDate":
+      case "date":
         return (
           <p className="font-normal text-xs capitalize">
             {dayjs(rowData?.createDate).format("YYYY-MM-DD") || "-"}
@@ -485,7 +495,6 @@ const AllProposal = () => {
         </TableBody>
       </Table>
       <Modal
-        size="3xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}
@@ -547,19 +556,7 @@ const AllProposal = () => {
 
               <ModalBody>
                 <div
-                  className="max-h-screen overflow-auto p-6 bg-white rounded-xl shadow-lg mx-auto w-full max-w-4xl prose prose-sm lg:prose-base prose-headings:font-semibold prose-h1:text-2xl 
-              prose-h2:text-xl 
-              prose-h3:text-lg 
-              prose-p:leading-relaxed 
-              prose-p:my-3 
-              prose-ul:list-disc 
-              prose-ul:pl-6 
-              prose-ol:list-decimal 
-              prose-ol:pl-6 
-              prose-table:border 
-              prose-table:border-collapse 
-              prose-img:rounded-lg
-            "
+                  className="preview-container max-h-screen overflow-auto p-6 bg-white rounded-xl shadow-lg mx-auto w-full max-w-4xl"
                   dangerouslySetInnerHTML={{ __html: proposalData }}
                 />
               </ModalBody>
