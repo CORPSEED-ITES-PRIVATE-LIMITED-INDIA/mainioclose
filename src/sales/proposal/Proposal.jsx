@@ -180,23 +180,23 @@ const Proposal = () => {
   const [editProposal, setEditProposal] = useState(false);
   const [mailBody, setMailBody] = useState("<h2>Your email body</h2>");
 
-  useEffect(() => {
-    dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        dispatch(checkPlantSetUpData(resp?.payload?.originalName)).then(
-          (res) => {
-            if (res.meta.requestStatus === "fulfilled") {
-              if (res.payload) {
-                dispatch(getAllChildLeads(resp?.payload?.leadId));
-              } else {
-                dispatch(getProductListByLeadName(resp?.payload?.originalName));
-              }
-            }
-          },
-        );
-      }
-    });
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
+  //     if (resp.meta.requestStatus === "fulfilled") {
+  //       dispatch(checkPlantSetUpData(resp?.payload?.originalName)).then(
+  //         (res) => {
+  //           if (res.meta.requestStatus === "fulfilled") {
+  //             if (res.payload) {
+  //               dispatch(getAllChildLeads(resp?.payload?.leadId));
+  //             } else {
+  //               dispatch(getProductListByLeadName(resp?.payload?.originalName));
+  //             }
+  //           }
+  //         },
+  //       );
+  //     }
+  //   });
+  // }, [dispatch]);
 
   const {
     control,
@@ -233,6 +233,7 @@ const Proposal = () => {
         brochureBook: proposalDataDetail?.brochureBook || [],
         mailBody: proposalDataDetail?.mailBody,
         template: proposalDataDetail?.template,
+        solutionId: proposalDataDetail?.solutionId,
       });
     } else {
       reset(defaultValues);

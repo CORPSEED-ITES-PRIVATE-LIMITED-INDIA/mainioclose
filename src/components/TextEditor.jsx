@@ -139,8 +139,8 @@ export default function TextEditor({
   initialData,
 }) {
   const dispatch = useDispatch();
-  const LICENSE_KEY = useSelector(
-    (state) => state.setting.ckEditorTokenData?.item?.value,
+  const LICENSE_KEY = useSelector((state) =>
+    state.setting.ckEditorTokenData?.item?.value?.trim(),
   );
   const editorContainerRef = useRef(null);
   const editorRef = useRef(null);
@@ -149,8 +149,6 @@ export default function TextEditor({
   const editorRevisionHistoryEditorRef = useRef(null);
   const editorRevisionHistorySidebarRef = useRef(null);
   const [isLayoutReady, setIsLayoutReady] = useState(false);
-
-  console.log("LICENSE_KEY", LICENSE_KEY);
 
   useEffect(() => {
     setIsLayoutReady(true);
