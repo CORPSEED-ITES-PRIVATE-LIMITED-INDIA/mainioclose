@@ -3,6 +3,7 @@ import { Select, SelectItem, Input } from "@heroui/react";
 import { ChevronDownIcon } from "lucide-react";
 
 const NewSelect = ({
+  className,
   data = [],
   selectionMode = "single",
   labelPlacement,
@@ -23,6 +24,7 @@ const NewSelect = ({
   endContent = null,
   isOpen = null,
   onOpenChange = () => {},
+  variant,
 }) => {
   const isControlled = isOpen !== null && isOpen !== undefined;
 
@@ -194,11 +196,13 @@ const NewSelect = ({
         selectionMode={selectionMode}
         items={filteredData}
         label={label}
+        variant={variant}
         labelPlacement={labelPlacement}
         selectedKeys={selectKeys}
         onSelectionChange={handleSelectionChange}
         disallowEmptySelection={false}
         aria-label="Searchable select"
+        className={className}
         classNames={{
           trigger: "max-h-[150px] overflow-y-auto",
         }}

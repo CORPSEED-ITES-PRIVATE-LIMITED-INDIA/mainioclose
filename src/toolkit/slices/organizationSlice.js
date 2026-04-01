@@ -625,6 +625,21 @@ export const getSalesReportExportedData = createAsyncThunk(
   },
 );
 
+export const searchUnbilledByCompanyNameAndUnbilled = createAsyncThunk(
+  "searchUnbilledByCompanyNameAndUnbilled",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/unbilled-invoices/search`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -1172,6 +1187,25 @@ const OrganizationSlice = createSlice({
       state.loading = "rejected";
       state.salesReportExportedData = [];
     });
+
+    builder.addCase(searchUnbilledByCompanyNameAndUnbilled.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      searchUnbilledByCompanyNameAndUnbilled.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.unBillList = action.payload;
+        state.unBillCount = action.payload?.[0]?.searchCount;
+      },
+    );
+    builder.addCase(
+      searchUnbilledByCompanyNameAndUnbilled.rejected,
+      (state) => {
+        state.loading = "rejected";
+        state.unBillList = [];
+      },
+    );
   },
 });
 

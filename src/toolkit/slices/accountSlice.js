@@ -251,21 +251,6 @@ export const convertUnbillToAdvanceInvoice = createAsyncThunk(
   },
 );
 
-export const searchUnbilledByCompanyNameAndUnbilled = createAsyncThunk(
-  "searchUnbilledByCompanyNameAndUnbilled",
-  async (data, { rejectWithValue }) => {
-    try {
-      const response = await api.get(
-        `/accountService/api/v1/unbilled-invoices/search`,
-        data,
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  },
-);
-
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

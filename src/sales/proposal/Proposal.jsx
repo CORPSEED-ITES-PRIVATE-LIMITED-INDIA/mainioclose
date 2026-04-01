@@ -30,6 +30,7 @@ import {
 import TextEditor from "../../components/TextEditor";
 import { getProductListByLeadName } from "../../toolkit/slices/productSlice";
 import NewSelect from "../../components/NewSelect";
+import { getAllSolutionList } from "../../toolkit/slices/settingSlice";
 
 const formSchema = (flag) =>
   z.object({
@@ -44,6 +45,7 @@ const formSchema = (flag) =>
     mailCc: z.array(z.string().email("Invalid email")).optional(),
     mailBcc: z.array(z.string().email("Invalid email")).optional(),
     mailSubject: z.string().min(1, "Please give subject"),
+    solutionId: z.string().min(1, "Please give solution"),
     brochureBook: z.array(z.number()).optional(),
     mailBody: z.string().min(1, "Please give mail body"),
     template: z.string().min(1, "Please give proposal"),
@@ -168,6 +170,7 @@ const Proposal = () => {
   const userDetail = useSelector((state) => state.auth.currentUser);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
   const childLeads = useSelector((state) => state.leads.allChildLeadList);
+  const solutionList = useSelector((state) => state.setting.allSolutionList);
   const [templates, setTemplates] = useState([]);
   const [data, setData] = useState("<h2>Your proposal </h2>");
   const templateModal = useDisclosure();
@@ -210,6 +213,7 @@ const Proposal = () => {
     dispatch(getProposalDataByLeadId(leadId));
     dispatch(getAllProposalTemplateList());
     dispatch(getAllBrochureList());
+    dispatch(getAllSolutionList(userId));
   }, [dispatch]);
 
   useEffect(() => {
@@ -469,6 +473,39 @@ const Proposal = () => {
             ))}
           </div>
 
+          <Controller
+            name="solutionId"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Select service *
+                </label>
+                <NewSelect
+                  className="bg-white"
+                  isRequired={true}
+                  data={solutionList || []}
+                  labelKey="name"
+                  valueKey="id"
+                  variant="bordered"
+                  value={field?.value}
+                  errorMessage={"please select solution"}
+                  onItemSelect={(item) => {
+                    setValue("mailSubject", `Proposal for ${item.name}`, {
+                      shouldDirty: true,
+                    });
+                  }}
+                  onChange={(value) => {
+                    field.onChange(value);
+                  }}
+                />
+                {error && (
+                  <span className="text-xs text-red-500">{error.message}</span>
+                )}
+              </div>
+            )}
+          />
+
           {/* Subject */}
           <Controller
             name="mailSubject"
@@ -481,7 +518,7 @@ const Proposal = () => {
                 <Input
                   {...field}
                   variant="bordered"
-                  className="cursor-pointer"
+                  className="cursor-pointer bg-white"
                 />
                 {error && (
                   <span className="text-xs text-red-500">{error.message}</span>

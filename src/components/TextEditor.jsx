@@ -163,7 +163,7 @@ export default function TextEditor({
   }, [dispatch]);
 
   const { editorConfig } = useMemo(() => {
-    if (!isLayoutReady) {
+    if (!isLayoutReady || !LICENSE_KEY) {
       return {};
     }
 
@@ -565,7 +565,7 @@ export default function TextEditor({
         },
       },
     };
-  }, [isLayoutReady, menu]);
+  }, [isLayoutReady, menu, LICENSE_KEY]);
 
   useEffect(() => {
     if (editorConfig) {

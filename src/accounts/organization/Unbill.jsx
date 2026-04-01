@@ -30,6 +30,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getAllUnbillCount,
   getAllUnbillList,
+  searchUnbilledByCompanyNameAndUnbilled,
   updateStatusForUnbill,
 } from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
@@ -53,6 +54,7 @@ export const columns = [
   { name: "COMPANY", uid: "companyName" },
   { name: "TOTAL AMOUNT", uid: "totalAmount" },
   { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
+  { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
   { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
   { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
@@ -71,6 +73,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "companyName",
   "totalAmount",
   "receivedAmount",
+  "currentReceivedAmount",
   "outstandingAmount",
   "addedBy",
   "actions",
@@ -104,6 +107,7 @@ const Unbill = () => {
     rejectionReason: "",
   });
   const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
+  const [searchBy, setSearchBy] = useState("companyName");
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -135,14 +139,8 @@ const Unbill = () => {
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, filteredItems]);
+    return [...filteredItems];
+  }, [filteredItems]);
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
@@ -185,6 +183,12 @@ const Unbill = () => {
         return (
           <p className="text-sm capitalize">
             {inrCurrency(rowData?.receivedAmount)}
+          </p>
+        );
+      case "currentReceivedAmount":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.currentReceivedAmount)}
           </p>
         );
       case "outstandingAmount":
@@ -311,19 +315,41 @@ const Unbill = () => {
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
-  }, []);
+  const onSearchChange = React.useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        if (searchBy === "companyName") {
+          dispatch(
+            searchUnbilledByCompanyNameAndUnbilled({
+              page,
+              size: rowsPerPage,
+              companyName: value,
+            }),
+          );
+        } else if (searchBy === "unbilledNumber") {
+          dispatch(
+            searchUnbilledByCompanyNameAndUnbilled({
+              page,
+              size: rowsPerPage,
+              unbilledNumber: value,
+            }),
+          );
+        }
+        setPage(1);
+      } else {
+        setFilterValue("");
+        dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
+        dispatch(getAllUnbillCount({ userId, status }));
+      }
+    },
+    [searchBy, rowsPerPage, page, status, userId],
+  );
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
     setPage(1);
-  }, []);
+  }, [searchBy]);
 
   const handleUpdateStatus = () => {
     if (updatedStatusData?.approvalRemarks === "CANCELLED") {
@@ -423,15 +449,29 @@ const Unbill = () => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
+          <div className="flex items-center gap-0.5 w-[70%]">
+            <Select
+              className="max-w-[20%]"
+              selectionMode="single"
+              selectedKeys={[searchBy]}
+              onSelectionChange={(e) => {
+                let key = Array.from(e)[0];
+                setSearchBy(key);
+              }}
+            >
+              <SelectItem key={"companyName"}>Company name</SelectItem>
+              <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
+            </Select>
+            <Input
+              isClearable
+              className="w-full sm:max-w-[45%]"
+              placeholder="Search ..."
+              startContent={<Search />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+            />
+          </div>
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
@@ -513,6 +553,7 @@ const Unbill = () => {
     onSearchChange,
     hasSearchFilter,
     status,
+    searchBy,
   ]);
 
   const bottomContent = React.useMemo(() => {

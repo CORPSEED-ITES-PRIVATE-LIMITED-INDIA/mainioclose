@@ -49,10 +49,10 @@ const INITIAL_VISIBLE_COLUMNS = ["id", "value", "actions"];
 
 const CkEditorToken = () => {
   const dispatch = useDispatch();
-  const data = useSelector((state) => state.setting.ckEditorTokenData);
-  const count = useSelector((state) => state.setting.ckEditorTokenData?.length);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
+  const data = useSelector((state) => state.setting.ckEditorTokenData);
+  const count = useSelector((state) => state.setting.ckEditorTokenData?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
