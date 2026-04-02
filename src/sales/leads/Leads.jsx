@@ -439,7 +439,7 @@ const Leads = () => {
                     <Link
                       key={`${idx}${child?.id}`}
                       to={`${child?.id}/leadDetail`}
-                      className="font-semibold"
+                      className="font-semibold text-xs"
                       onClick={() =>
                         dispatch(
                           handleViewHistory({ leadId: child?.id, userId }),
@@ -451,9 +451,9 @@ const Leads = () => {
                   ))}
                   <Link
                     to={`${lead?.id}/childLeads`}
-                    className="text-xs text-blue-500"
+                    className="text-tiny text-blue-500"
                   >
-                    View All
+                    View all
                   </Link>
                 </div>
               ) : (

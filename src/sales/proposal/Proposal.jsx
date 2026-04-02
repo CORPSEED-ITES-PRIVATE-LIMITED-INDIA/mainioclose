@@ -46,7 +46,7 @@ const formSchema = (flag) =>
     mailCc: z.array(z.string().email("Invalid email")).optional(),
     mailBcc: z.array(z.string().email("Invalid email")).optional(),
     mailSubject: z.string().min(1, "Please give subject"),
-    solutionId: z.string().min(1, "Please give solution"),
+    // solutionId: z.string().min(1, "Please give solution"),
     brochureBook: z.array(z.number()).optional(),
     mailBody: z.string().min(1, "Please give mail body"),
     template: z.string().min(1, "Please give proposal"),
@@ -234,7 +234,7 @@ const Proposal = () => {
         brochureBook: proposalDataDetail?.brochureBook || [],
         mailBody: proposalDataDetail?.mailBody,
         template: proposalDataDetail?.template,
-        solutionId: String(proposalDataDetail?.solutionId),
+        // solutionId: String(proposalDataDetail?.solutionId),
       });
     } else {
       reset(defaultValues);
@@ -527,7 +527,7 @@ const Proposal = () => {
             ))}
           </div>
 
-          <Controller
+          {/* <Controller
             name="solutionId"
             control={control}
             render={({ field, fieldState: { error } }) => (
@@ -558,7 +558,7 @@ const Proposal = () => {
                 )}
               </div>
             )}
-          />
+          /> */}
 
           {/* Subject */}
           <Controller
