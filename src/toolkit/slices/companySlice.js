@@ -566,6 +566,16 @@ export const getCompaniesListForCSVExportFile = createAsyncThunk(
   },
 );
 
+export const getCompanyDetailByCompanyIdAndUnitId = createAsyncThunk(
+  "getCompanyDetailByCompanyIdAndUnitId",
+  async ({ companyId, unitId }) => {
+    const response = await api.get(
+      `leadService/api/companies/getCompanyAndUnit?companyId=${companyId}&companyUnitId=${unitId}`,
+    );
+    return response.data;
+  },
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -592,6 +602,7 @@ const CompanySlice = createSlice({
     companyUnitListForAccounts: [],
     basicCompanyList: [],
     basicUnitList: [],
+    companyDetailByCompanyIdAndUnitId: {},
   },
   reducers: {
     handleResetExistingCompany: (state, action) => {
@@ -904,6 +915,21 @@ const CompanySlice = createSlice({
     builder.addCase(getBasicCompanyDetailByCompanyId.rejected, (state) => {
       state.loading = "rejected";
       state.basicCompanyDetail = {};
+    });
+
+    builder.addCase(getCompanyDetailByCompanyIdAndUnitId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getCompanyDetailByCompanyIdAndUnitId.fulfilled,
+      (state, action) => {
+        state.companyDetailByCompanyIdAndUnitId = action.payload;
+        state.loading = "success";
+      },
+    );
+    builder.addCase(getCompanyDetailByCompanyIdAndUnitId.rejected, (state) => {
+      state.loading = "rejected";
+      state.companyDetailByCompanyIdAndUnitId = {};
     });
   },
 });

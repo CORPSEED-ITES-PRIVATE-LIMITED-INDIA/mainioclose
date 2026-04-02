@@ -41,7 +41,10 @@ import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
 import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
-import { getBasicCompanyDetailByCompanyId } from "../../toolkit/slices/companySlice";
+import {
+  getBasicCompanyDetailByCompanyId,
+  getCompanyDetailByCompanyIdAndUnitId,
+} from "../../toolkit/slices/companySlice";
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
@@ -434,7 +437,10 @@ const Estimate = () => {
                     handleViewEstimate(rowData, "PI");
                   } else if (item === "updateCompanyDetail") {
                     dispatch(
-                      getBasicCompanyDetailByCompanyId(rowData?.company?.id),
+                      getCompanyDetailByCompanyIdAndUnitId({
+                        companyId: rowData?.company?.id,
+                        unitId: rowData?.unit?.id,
+                      }),
                     ).then((resp) => {
                       if (resp.meta.requestStatus === "fulfilled") {
                         onOpen();

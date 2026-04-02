@@ -57,14 +57,6 @@ import {
 import { useParams } from "react-router-dom";
 import { IndianRupee } from "lucide-react";
 
-// ✅ your custom components
-// import NewSelect from ".../NewSelect";
-// import SingleFileUploader from ".../SingleFileUploader";
-
-/* -----------------------------
- * Zod Schemas
- * ---------------------------- */
-// NOTE: I added the new fields you showed (companyType, gstType, businessType, files, contact fields etc.)
 const unitSchema = z
   .object({
     id: z.coerce.number().optional().default(0),
@@ -285,7 +277,9 @@ export function CompanyAndUnitsForm({
   const desiginationList = useSelector(
     (state) => state.setting.clientDesiginationList,
   );
-  const company = useSelector((state) => state.company.basicCompanyDetail);
+  const company = useSelector(
+    (state) => state.company.companyDetailByCompanyIdAndUnitId,
+  );
 
   const [gstAndPanData, setGstAndPanData] = useState({});
 
