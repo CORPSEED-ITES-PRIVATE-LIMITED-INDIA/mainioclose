@@ -72,6 +72,7 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
                 render={({ field }) => (
                   <Input
                     {...field}
+                    isReadOnly
                     label="HSN number"
                     isRequired
                     size={isMedium ? "sm" : "md"}
