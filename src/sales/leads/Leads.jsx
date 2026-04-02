@@ -434,7 +434,7 @@ const Leads = () => {
           return (
             <div className="flex flex-col">
               {lead?.childLeads?.length > 0 ? (
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-0.5">
                   {lead?.childLeads?.slice(0, 2)?.map((child, idx) => (
                     <Link
                       key={`${idx}${child?.id}`}
@@ -1437,7 +1437,9 @@ const Leads = () => {
           {(item) => (
             <TableRow key={item?.id} className={getRowClassName(item)}>
               {(columnKey) => (
-                <TableCell>{renderCell(item, columnKey)}</TableCell>
+                <TableCell width={columnKey === "childLeads" ? "25%" : "auto"}>
+                  {renderCell(item, columnKey)}
+                </TableCell>
               )}
             </TableRow>
           )}
