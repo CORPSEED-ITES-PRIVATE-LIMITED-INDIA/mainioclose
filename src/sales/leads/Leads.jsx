@@ -92,6 +92,7 @@ const getRowClassName = (item) => {
 export const columns = (admin) => [
   { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadName" },
+  { name: "CHILD LEADS", uid: "childLeads" },
   { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
@@ -108,6 +109,7 @@ export const columns = (admin) => [
 
 const INITIAL_VISIBLE_COLUMNS = (admin) => [
   "leadName",
+  "childLeads",
   "contact",
   "assignee",
   "source",
@@ -426,6 +428,37 @@ const Leads = () => {
                   </span>
                 </div>
               </div>
+            </div>
+          );
+        case "childLeads":
+          return (
+            <div className="flex flex-col">
+              {lead?.childLeads?.length > 0 ? (
+                <div className="flex flex-col">
+                  {lead?.childLeads?.slice(0, 2)?.map((child, idx) => (
+                    <Link
+                      key={`${idx}${child?.id}`}
+                      to={`${child?.id}/leadDetail`}
+                      className="font-semibold"
+                      onClick={() =>
+                        dispatch(
+                          handleViewHistory({ leadId: child?.id, userId }),
+                        )
+                      }
+                    >
+                      {`${idx + 1}. ${child?.name || "-"}`}
+                    </Link>
+                  ))}
+                  <Link
+                    to={`${lead?.id}/childLeads`}
+                    className="text-xs text-blue-500"
+                  >
+                    View All
+                  </Link>
+                </div>
+              ) : (
+                "--"
+              )}
             </div>
           );
         case "contact":
