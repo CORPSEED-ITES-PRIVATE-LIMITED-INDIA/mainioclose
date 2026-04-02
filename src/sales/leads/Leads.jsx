@@ -1437,9 +1437,7 @@ const Leads = () => {
           {(item) => (
             <TableRow key={item?.id} className={getRowClassName(item)}>
               {(columnKey) => (
-                <TableCell width={columnKey === "childLeads" ? "25%" : "auto"}>
-                  {renderCell(item, columnKey)}
-                </TableCell>
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
             </TableRow>
           )}
