@@ -434,24 +434,34 @@ const Leads = () => {
           return (
             <div className="flex flex-col">
               {lead?.childLeads?.length > 0 ? (
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-1">
                   {lead?.childLeads?.slice(0, 2)?.map((child, idx) => (
                     <Link
                       key={`${idx}${child?.id}`}
                       to={`${child?.id}/leadDetail`}
-                      className="font-semibold text-xs"
                       onClick={() =>
                         dispatch(
                           handleViewHistory({ leadId: child?.id, userId }),
                         )
                       }
+                      className="
+            text-xs font-medium 
+            bg-gray-100 
+            rounded-md 
+            px-2 py-1 
+            line-clamp-2 
+            overflow-hidden 
+            text-ellipsis 
+            hover:bg-gray-200
+          "
                     >
                       {`${idx + 1}. ${child?.name || "-"}`}
                     </Link>
                   ))}
+
                   <Link
                     to={`${lead?.id}/childLeads`}
-                    className="text-tiny text-blue-500"
+                    className="text-[11px] text-blue-500 hover:underline mt-1"
                   >
                     View all
                   </Link>

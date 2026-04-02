@@ -364,3 +364,18 @@ table td {
   color: #2563eb;
   text-decoration: underline;
 }
+
+.line-clamp-2-box {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  background: #f9fafb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+
+  font-size: 13px;
+  line-height: 1.4;
+}

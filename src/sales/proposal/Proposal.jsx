@@ -168,6 +168,7 @@ const Proposal = () => {
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail,
   );
+  const leadData = useSelector((state) => state.leads.singleLeadData);
   const userDetail = useSelector((state) => state.auth.currentUser);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
   const childLeads = useSelector((state) => state.leads.allChildLeadList);
@@ -180,24 +181,6 @@ const Proposal = () => {
   const [templateName, setTemplateName] = useState("");
   const [editProposal, setEditProposal] = useState(false);
   const [mailBody, setMailBody] = useState("<h2>Your email body</h2>");
-
-  // useEffect(() => {
-  //   dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
-  //     if (resp.meta.requestStatus === "fulfilled") {
-  //       dispatch(checkPlantSetUpData(resp?.payload?.originalName)).then(
-  //         (res) => {
-  //           if (res.meta.requestStatus === "fulfilled") {
-  //             if (res.payload) {
-  //               dispatch(getAllChildLeads(resp?.payload?.leadId));
-  //             } else {
-  //               dispatch(getProductListByLeadName(resp?.payload?.originalName));
-  //             }
-  //           }
-  //         },
-  //       );
-  //     }
-  //   });
-  // }, [dispatch]);
 
   const {
     control,
@@ -220,6 +203,17 @@ const Proposal = () => {
   useEffect(() => {
     setTemplates(templateList);
   }, [templateList]);
+
+  useEffect(() => {
+    dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        setValue(
+          "mailTo",
+          resp?.payload?.clients?.map((client) => client.emails) || [],
+        );
+      }
+    });
+  }, [dispatch]);
 
   useEffect(() => {
     if (Object.keys(proposalDataDetail)?.length > 0) {
@@ -366,6 +360,31 @@ const Proposal = () => {
   };
 
   const onSubmit = (values) => {
+    if (!brochureUrl || brochureUrl.length === 0) {
+      addToast({
+        title: "Please select at least one brochure",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!templateName || values.template === "<h2>Your proposal </h2>") {
+      addToast({
+        title: "Please select a proposal template",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (values.mailBody?.replace(/<[^>]*>/g, "").trim().length < 1000) {
+      addToast({
+        title: "ERROR",
+        description: "Please enter at least 1000 characters in the mail body",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!plantSetupData) {
       values.leadId = leadId;
     }
@@ -391,14 +410,24 @@ const Proposal = () => {
       });
     } else {
       dispatch(sendProposal(values)).then((resp) => {
+        console.log("send proposal resp", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Your proposal has been sent to the manager for review !.",
             color: "success",
           });
           reset(defaultValues);
+          setBrochureUrl([]);
+          setTemplateName("");
+          setData("<h2>Your proposal </h2>");
+          setMailBody("<h2>Your email body</h2>");
+          dispatch(getProposalDataByLeadId(leadId));
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: resp?.payload?.data?.errorCode,
+            description: resp?.payload?.data?.message,
+            color: "danger",
+          });
         }
       });
     }
@@ -613,6 +642,12 @@ const Proposal = () => {
                 render={({ field }) => (
                   <TextEditor
                     data={mailBody}
+                    // onChange={(prev, editor) => {
+                    //   const data = editor.getData();
+                    //   field.onChange(data);
+                    //   setMailBody(data);
+                    // }}
+
                     onChange={(prev, editor) => {
                       const data = editor.getData();
                       field.onChange(data);
@@ -621,6 +656,12 @@ const Proposal = () => {
                   />
                 )}
               />
+              <p className="text-sm text-gray-400 italic px-2 py-1">
+                Min characters required: 1000 <br />
+                your characters:{" "}
+                {mailBody?.replace(/<[^>]*>/g, "").trim().length || 0} out of
+                1000
+              </p>
             </div>
           </div>
 

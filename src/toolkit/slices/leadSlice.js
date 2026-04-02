@@ -285,13 +285,20 @@ export const getAllBrochureList = createAsyncThunk(
   },
 );
 
-export const sendProposal = createAsyncThunk("sendProposal", async (data) => {
-  const response = await api.post(
-    `/leadService/api/v1/proposal/createProposal`,
-    data,
-  );
-  return response.data;
-});
+export const sendProposal = createAsyncThunk(
+  "sendProposal",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/proposal/createProposal`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 
 export const editLeadPropposal = createAsyncThunk(
   "editPropposal",
