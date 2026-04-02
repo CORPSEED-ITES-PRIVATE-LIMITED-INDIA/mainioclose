@@ -322,3 +322,45 @@ table td {
 .preview-container ol {
   padding-left: 20px;
 }
+
+.proposal-content h1,
+.proposal-content h2,
+.proposal-content h3 {
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  color: #1e3a8a;
+}
+
+.proposal-content p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.proposal-content table {
+  width: 100% !important;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.proposal-content td,
+.proposal-content th {
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+}
+
+.proposal-content ul,
+.proposal-content ol {
+  padding-left: 18px;
+  margin-bottom: 12px;
+}
+
+.proposal-content strong {
+  font-weight: 600;
+}
+
+.proposal-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}

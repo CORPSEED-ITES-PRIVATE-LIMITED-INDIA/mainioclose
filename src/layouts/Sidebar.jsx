@@ -95,12 +95,12 @@ const Sidebar = ({ items, collapsed }) => {
 
   return (
     <aside
-      className={`relative h-screen ${
+      className={`h-screen ${
         collapsed ? "w-[4%]" : "lg:w-[15%] 2xl:w-[13%]"
-      } bg-white dark:bg-black dark:text-white flex flex-col transition-all duration-300 `}
+      } bg-white dark:bg-black dark:text-white flex flex-col`}
     >
       {/* Collapse Toggle */}
-      <div className="p-2 flex justify-between">
+      <div className="p-2 flex">
         <div className="flex items-center space-x-2">
           <span className="text-xl font-bold text-neutral-800 dark:text-white">
             <img
@@ -112,7 +112,7 @@ const Sidebar = ({ items, collapsed }) => {
         </div>
       </div>
 
-      <nav className="p-3 space-y-1 font-medium text-neutral-700 dark:text-white max-h-[85vh] overflow-auto">
+      <nav className="p-3 space-y-1 font-medium text-neutral-700 dark:text-white flex-1 overflow-y-auto">
         {items?.map((item) => {
           const Icon = item.icon ? icons[item.icon] : null;
           const isOpen = openMenu[item.key];
@@ -163,10 +163,10 @@ const Sidebar = ({ items, collapsed }) => {
           );
         })}
       </nav>
-      <div className="absolute bottom-1">
+      <div className="p-2 border-t bg-white dark:bg-black">
         <Dropdown placement="right-end">
           <DropdownTrigger>
-            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-400 z-50 hover:bg-gray-300 cursor-pointer px-1 py-1 rounded-md">
+            <div className="flex items-center justify-between gap-3 bg-gray-100 dark:bg-gray-400 z-50 hover:bg-gray-300 cursor-pointer px-1 py-1 rounded-md">
               <User
                 className="font-medium"
                 classNames={{ name: "dark:text-gray-300" }}

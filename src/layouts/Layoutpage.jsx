@@ -63,9 +63,9 @@ const Layoutpage = () => {
 
   console.log("users ----->    ", userRole, department);
 
-  useEffect(() => {
-    dispatch(getAutomationStatus());
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(getAutomationStatus());
+  // }, [dispatch]);
 
   const handleChangeAutoOnOff = (checked) => {
     dispatch(handleToggleAutomation())
@@ -120,13 +120,13 @@ const Layoutpage = () => {
                   <BellRing className="text-gray-500 " />
                 </Button>
               </Badge> */}
-              {adminRole && (
+              {/* {adminRole && (
                 <Switch
                   size="sm"
                   isSelected={automationStatus?.status}
                   onValueChange={handleChangeAutoOnOff}
                 />
-              )}
+              )} */}
 
               <ThemeSwitch />
             </div>

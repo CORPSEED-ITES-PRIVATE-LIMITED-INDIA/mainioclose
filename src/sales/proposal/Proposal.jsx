@@ -31,6 +31,7 @@ import TextEditor from "../../components/TextEditor";
 import { getProductListByLeadName } from "../../toolkit/slices/productSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllSolutionList } from "../../toolkit/slices/settingSlice";
+import dayjs from "dayjs";
 
 const formSchema = (flag) =>
   z.object({
@@ -405,42 +406,94 @@ const Proposal = () => {
 
   return (
     <div className="flex flex-col gap-5 h-[75vh] overflow-auto p-3 w-full">
-      {Object.keys(proposalDataDetail)?.length > 0 && (
-        <div className="flex justify-between">
-          {!editProposal ? (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-medium">
-                  Product name :
-                </span>
-                <span className="font-medium">
-                  {proposalDataDetail?.productName}
-                </span>
+      {Object.keys(proposalDataDetail)?.length > 0 && !editProposal ? (
+        <div className="flex justify-center bg-gray-100 py-6 px-2">
+          <div className="w-full max-w-5xl space-y-4">
+            {/* 🔷 HEADER CARD */}
+            <div className="bg-white rounded-xl shadow border p-4 md:p-6 flex flex-col gap-4 relative">
+              {/* 🔷 ACTION BAR */}
+              <div className="flex justify-between items-center border-b pb-3">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Proposal Overview
+                </h2>
+
+                <Button
+                  size="sm"
+                  color={editProposal ? "danger" : "primary"}
+                  variant="flat"
+                  className="flex items-center gap-2 shadow-sm"
+                  onPress={() => setEditProposal((prev) => !prev)}
+                >
+                  {editProposal ? "Cancel" : "Edit"}
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-medium">
-                  Created person email :
-                </span>
-                <span className="font-medium">
-                  {proposalDataDetail?.createdByEmail}
-                </span>
+
+              {/* 🔷 META INFO */}
+              <div className="flex flex-wrap justify-between gap-4 pt-2">
+                <div>
+                  <p className="text-xs text-gray-500">Service</p>
+                  <p className="font-semibold text-gray-800">
+                    {proposalDataDetail?.solutionName || "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Created By</p>
+                  <p className="font-medium text-gray-800">
+                    {proposalDataDetail?.createdByEmail || "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Created Date</p>
+                  <p className="font-medium text-gray-800">
+                    {proposalDataDetail?.createDate
+                      ? dayjs(proposalDataDetail.createDate).format(
+                          "DD-MM-YYYY",
+                        )
+                      : "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Status</p>
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
+                    {proposalDataDetail?.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* 🔷 MAIL TO */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Mail To</p>
+                <div className="flex flex-wrap gap-2">
+                  {proposalDataDetail?.mailTo?.length > 0 ? (
+                    proposalDataDetail.mailTo.map((email, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                      >
+                        {email}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">No recipients</span>
+                  )}
+                </div>
               </div>
             </div>
-          ) : null}
-          <Button
-            onPress={() => {
-              setEditProposal((prev) => !prev);
-            }}
-          >
-            {editProposal ? "Cancel" : "Edit proposal"}
-          </Button>
-        </div>
-      )}
 
-      {Object.keys(proposalDataDetail)?.length > 0 && !editProposal ? (
-        <div
-          dangerouslySetInnerHTML={{ __html: proposalDataDetail?.template }}
-        />
+            {/* 📄 PROPOSAL DOCUMENT */}
+            <div className="bg-white rounded-xl shadow border p-6 md:p-10">
+              <div
+                className="proposal-content"
+                dangerouslySetInnerHTML={{
+                  __html: proposalDataDetail?.template,
+                }}
+              />
+            </div>
+          </div>
+        </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Email Fields */}
