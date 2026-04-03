@@ -385,6 +385,28 @@ const Proposal = () => {
       return;
     }
 
+    const plainProposal = values.template?.replace(/<[^>]*>/g, "").trim();
+    const proposalLength = plainProposal.length;
+
+    // ❌ If template not selected AND default
+    if (!templateName && values.template === "<h2>Your proposal </h2>") {
+      addToast({
+        title: "Please select a proposal template or write proposal",
+        color: "danger",
+      });
+      return;
+    }
+
+    // ❌ If user manually typed → validate length
+    if (proposalLength < 5000) {
+      addToast({
+        title: "ERROR",
+        description: "Proposal must be at least 5000 characters",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!plantSetupData) {
       values.leadId = leadId;
     }

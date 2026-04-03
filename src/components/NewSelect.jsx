@@ -241,7 +241,7 @@ const NewSelect = ({
           <SelectItem
             key={String(item[valueKey])}
             textValue={item?.[labelKey]}
-            onPress={() => onItemSelect(item)}
+            // onPress={() => onItemSelect(item)}
             onMouseDown={(e) => {
               e.preventDefault();
             }}

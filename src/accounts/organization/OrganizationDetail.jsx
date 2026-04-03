@@ -441,13 +441,13 @@ const OrganizationDetail = () => {
           Organization details
         </h1>
         <div className="flex gap-3">
-          <Button
+          {/* <Button
             onPress={handleOpenStatModal}
             color="primary"
             endContent={<Plus />}
           >
             Add statutory
-          </Button>
+          </Button> */}
           <Button
             onPress={handleOpenOrgModal}
             color="primary"
@@ -482,13 +482,13 @@ const OrganizationDetail = () => {
           </div>
           <div className="space-x-1">
             {" "}
-            <Button
+            {/* <Button
               color="primary"
               startContent={<Plus className="h-4 w-4" />}
               onPress={() => accountModal.onOpen()}
             >
               Add Bank
-            </Button>
+            </Button> */}
             <Button
               startContent={<Pencil className="h-4 w-4" />}
               onPress={handleEditOrganization}

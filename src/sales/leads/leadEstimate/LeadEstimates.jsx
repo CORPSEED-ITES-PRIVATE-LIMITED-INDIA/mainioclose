@@ -739,13 +739,8 @@ export const LeadEstimates = () => {
                   render={({ field, fieldState: { error } }) => {
                     return (
                       <NewSelect
-                        label={
-                          <div className="flex">
-                            <p>Select company</p>
-                            <span className="text-red-500">*</span>
-                          </div>
-                        }
-                        // isRequired={true}
+                        label={"Select company"}
+                        isRequired={true}
                         size={isMedium ? "sm" : "md"}
                         data={companyList || []}
                         labelKey="name"
@@ -757,12 +752,13 @@ export const LeadEstimates = () => {
                         }
                         onItemSelect={(item) => {
                           console.log("selected company", item);
-                          if (
-                            companyDetail &&
-                            Object.keys(companyDetail).length > 0
-                          ) {
+                          if (!item) {
+                            console.log("selected company 1111", item);
                             dispatch(handleResetExistingCompany());
-                          } else {
+                            setCompanyDetail(null);
+                            return;
+                          } else if (item) {
+                            console.log("selected company 2222", item);
                             dispatch(
                               getBasicCompanyDetailByCompanyId(item?.id),
                             ).then((resp) => {

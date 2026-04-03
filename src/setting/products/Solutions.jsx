@@ -582,6 +582,8 @@ const Solutions = () => {
                     </Select>
 
                     <Select
+                      isRequired
+                      errorMessage="please select whether client portal is required or not"
                       label="Require client portal"
                       name="requiresClientPortal"
                       selectedKeys={
@@ -614,6 +616,8 @@ const Solutions = () => {
                     {formData?.requiresClientPortal && (
                       <>
                         <Input
+                          isRequired
+                          errorMessage="Please enter portal name"
                           label="Portal name"
                           name="expectedPortalName"
                           value={formData?.expectedPortalName}
@@ -626,6 +630,7 @@ const Solutions = () => {
                         />
 
                         <Input
+                          isRequired
                           errorMessage="Please enter product name"
                           label="Default portal name"
                           name="defaultPortalUrl"
@@ -639,6 +644,8 @@ const Solutions = () => {
                         />
 
                         <Textarea
+                          isRequired
+                          errorMessage="Please enter description"
                           className="max-w-xs"
                           label="Description"
                           name="description"

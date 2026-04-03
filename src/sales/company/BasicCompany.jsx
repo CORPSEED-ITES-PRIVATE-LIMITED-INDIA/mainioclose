@@ -104,18 +104,37 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
   }, [dispatch]);
 
   useEffect(() => {
+    // 🔥 CASE 1: NO COMPANY SELECTED → RESET FORM
+    if (isEstimate && !companyDetail?.id) {
+      reset({
+        name: "",
+        address: "",
+        city: "",
+        state: "",
+        country: "",
+        pinCode: "",
+        gstNo: "",
+        panNo: "",
+      });
+      return; // ❗ STOP HERE
+    }
+
+    // 🔥 CASE 2: COMPANY SELECTED
     if (isEstimate && companyDetail?.id) {
       dispatch(getBasicCompanyDetailByCompanyId(companyDetail?.id)).then(
         (resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
             const data = resp.payload;
+
+            dispatch(getAllUnitListByCompanyId(data?.id));
+
             if (data?.country) {
               dispatch(getAllStatesByCountryName(data?.country));
             }
             if (data?.state) {
               dispatch(getAllCitiesByStateName(data?.state));
             }
+
             reset({
               name: data?.name,
               address: data?.address,
@@ -129,30 +148,35 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
           }
         },
       );
-    } else {
-      dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
-          const data = resp.payload;
-          if (data?.country) {
-            dispatch(getAllStatesByCountryName(data?.country));
-          }
-          if (data?.state) {
-            dispatch(getAllCitiesByStateName(data?.state));
-          }
-          reset({
-            name: data?.name,
-            address: data?.address,
-            city: data?.city,
-            state: data?.state,
-            country: data?.country,
-            pinCode: data?.primaryPinCode,
-            gstNo: data?.gstNo,
-            panNo: data?.panNo,
-          });
-        }
-      });
+      return;
     }
+
+    // 🔥 CASE 3: NON-ESTIMATE FLOW
+    dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        const data = resp.payload;
+
+        dispatch(getAllUnitListByCompanyId(data?.id));
+
+        if (data?.country) {
+          dispatch(getAllStatesByCountryName(data?.country));
+        }
+        if (data?.state) {
+          dispatch(getAllCitiesByStateName(data?.state));
+        }
+
+        reset({
+          name: data?.name,
+          address: data?.address,
+          city: data?.city,
+          state: data?.state,
+          country: data?.country,
+          pinCode: data?.primaryPinCode,
+          gstNo: data?.gstNo,
+          panNo: data?.panNo,
+        });
+      }
+    });
   }, [dispatch, leadId, userId, companyDetail, isEstimate, update]);
 
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
