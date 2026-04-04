@@ -472,11 +472,15 @@ export const addStatusInDepartment = createAsyncThunk(
 
 export const createDesigination = createAsyncThunk(
   "createDesination",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/designation/createDesignation?name=${data?.name}&weight=${data?.weight}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 

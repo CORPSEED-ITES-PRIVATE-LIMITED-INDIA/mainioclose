@@ -30,7 +30,10 @@ import {
 import TextEditor from "../../components/TextEditor";
 import { getProductListByLeadName } from "../../toolkit/slices/productSlice";
 import NewSelect from "../../components/NewSelect";
-import { getAllSolutionList } from "../../toolkit/slices/settingSlice";
+import {
+  getAllSolutionList,
+  getSolutionDetailByName,
+} from "../../toolkit/slices/settingSlice";
 import dayjs from "dayjs";
 
 const formSchema = (flag) =>
@@ -171,8 +174,9 @@ const Proposal = () => {
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const userDetail = useSelector((state) => state.auth.currentUser);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
-  const childLeads = useSelector((state) => state.leads.allChildLeadList);
-  const solutionList = useSelector((state) => state.setting.allSolutionList);
+  const solutionDetail = useSelector(
+    (state) => state.setting.solutionDetailById,
+  );
   const [templates, setTemplates] = useState([]);
   const [data, setData] = useState("<h2>Your proposal </h2>");
   const templateModal = useDisclosure();
@@ -207,13 +211,34 @@ const Proposal = () => {
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        setValue(
-          "mailTo",
-          resp?.payload?.clients?.map((client) => client.emails) || [],
-        );
+        if (resp?.payload?.clients?.length > 0) {
+          setValue(
+            "mailTo",
+            resp?.payload?.clients?.map((client) => client.emails) || [],
+          );
+        }
+
+        if (resp?.payload?.originalName) {
+          dispatch(
+            getSolutionDetailByName({
+              name: resp?.payload?.originalName,
+              userId,
+            }),
+          ).then((res) => {
+            if (res.meta.requestStatus === "fulfilled") {
+              setValue(
+                "mailSubject",
+                `Corpseed Proposal for - ${res?.payload?.name}`,
+                {
+                  shouldValidate: true,
+                },
+              );
+            }
+          });
+        }
       }
     });
-  }, [dispatch]);
+  }, [dispatch, leadId, userId]);
 
   useEffect(() => {
     if (Object.keys(proposalDataDetail)?.length > 0) {
@@ -406,11 +431,8 @@ const Proposal = () => {
       });
       return;
     }
-
-    if (!plantSetupData) {
-      values.leadId = leadId;
-    }
-    values.productId = productData?.id;
+    values.leadId = leadId;
+    values.solutionId = solutionDetail?.id;
     values.createdById = userId;
     values.templateName = templateName;
     values.brochureBook = brochureUrl;

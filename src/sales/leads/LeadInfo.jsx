@@ -825,6 +825,17 @@ const LeadInfo = () => {
                   <BasicCompany />
                   <Card className="my-2">
                     <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Link className={iconClass} />{" "}
+                        <p className="text-sm font-medium">Link</p>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <p className="text-sm font-medium">{leadData?.urls}</p>
+                    </CardBody>
+                  </Card>
+                  {/* <Card className="my-2">
+                    <CardHeader>
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Factory className={iconClass} />{" "}
@@ -916,7 +927,7 @@ const LeadInfo = () => {
                         </div>
                       </div>
                     </CardBody>
-                  </Card>
+                  </Card> */}
                 </div>
                 <div className="w-full">
                   <Card className="my-2">

@@ -65,7 +65,12 @@ export const unitSchema = (isEstimate) => {
   }
 };
 
-const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
+const BasicCompany = ({
+  isEstimate,
+  companyDetail,
+  setIsDropDownOpen,
+  setIsCompanyUpdated,
+}) => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
@@ -232,6 +237,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
         }),
       )
         .then((resp) => {
+          console.log("update resp", resp);
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Company details updated successfully !.",
@@ -241,11 +247,21 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
             onClose();
             setUpdate((prev) => !prev);
             dispatch(getAllCompanyByUserId(userId));
-            dispatch(getBasicCompanyDetails({ leadId, userId }));
+            dispatch(getBasicCompanyDetails({ leadId, userId })).then(
+              (companyResp) => {
+                console.log("companyResp    00000", companyResp);
+                if (companyResp.meta.requestStatus === "fulfilled") {
+                  console.log("companyResp    11111", companyResp);
+                  const compData = companyResp?.payload;
+                  setIsCompanyUpdated(true);
+                }
+              },
+            );
             dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
           } else {
             addToast({
-              title: resp?.payload,
+              title: resp?.payload?.data?.errorCode,
+              description: resp?.payload?.data?.message,
               color: "danger",
             });
           }
@@ -256,6 +272,7 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
     } else {
       dispatch(addBasicCompanyDetail(values))
         .then((resp) => {
+          console.log("dsfsfsfsfsfsfsfdjj", resp);
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Company details added successfully !.",
@@ -265,37 +282,16 @@ const BasicCompany = ({ isEstimate, companyDetail, setIsDropDownOpen }) => {
             onClose();
             setUpdate((prev) => !prev);
             dispatch(getAllCompanyByUserId(userId));
-            dispatch(getBasicCompanyDetails({ leadId, userId }));
-
-            // dispatch(
-            //   createCompanyInAccounts({
-            //     leadCompanyId: resp?.payload?.id,
-            //     companyUnitId: resp?.payload?.units?.[0]?.id,
-            //     ...values,
-            //   }),
-            // )
-            //   .then((companyRes) => {
-            //     if (companyRes.meta.requestStatus === "fulfilled") {
-            //       addToast({
-            //         title: "Company created in account service is done.",
-            //         color: "success",
-            //       });
-            //       reset();
-            //       onClose();
-            //       dispatch(getBasicCompanyDetails({ leadId, userId }));
-            //     } else {
-            //       addToast({
-            //         title: `${companyRes?.payload?.data?.message} with status ${companyRes?.payload?.data?.status}`,
-            //         color: "danger",
-            //       });
-            //     }
-            //   })
-            //   .catch((err) =>
-            //     addToast({
-            //       title: "Something went wrong in account service !.",
-            //       color: "danger",
-            //     }),
-            //   );
+            dispatch(getBasicCompanyDetails({ leadId, userId })).then(
+              (companyResp) => {
+                console.log("companyResp", companyResp);
+                if (companyResp.meta.requestStatus === "fulfilled") {
+                  console.log("companyResp    11111", companyResp);
+                  const compData = companyResp?.payload;
+                  setIsCompanyUpdated((prev) => !prev);
+                }
+              },
+            );
           } else {
             addToast({
               title: resp?.payload,

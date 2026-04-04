@@ -534,7 +534,7 @@ export const updateBasicCompanyDetail = createAsyncThunk(
       );
       return response.data;
     } catch (err) {
-      return rejectWithValue(err.response.payload);
+      return rejectWithValue(err.response);
     }
   },
 );

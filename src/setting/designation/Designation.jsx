@@ -141,15 +141,27 @@ const Designation = () => {
           });
           dispatch(createDesigination(values))
             .then((resp) => {
+              console.log("respfhfghfg", resp);
               if (resp.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Designation created successfully !.",
                   color: "success",
                 });
-
-                onOpenChange(false);
-                dispatch(getAllDesiginations());
-                reset(defaultValues);
+                dispatch(createDesignationInOPerations(resp?.payload)).then(
+                  (oprRes) => {
+                    if (oprRes.meta.requestStatus === "fulfilled") {
+                      addToast({
+                        title: "Success",
+                        description:
+                          "Designation created successfully in operations !.",
+                        color: "success",
+                      });
+                      onOpenChange(false);
+                      dispatch(getAllDesiginations());
+                      reset(defaultValues);
+                    }
+                  },
+                );
               } else {
                 addToast({ title: "Something went wrong !.", color: "danger" });
               }

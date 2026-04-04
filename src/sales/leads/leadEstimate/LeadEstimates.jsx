@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   CardBody,
-  CardHeader,
   DatePicker,
   addToast,
   Modal,
@@ -34,7 +33,6 @@ import dayjs from "dayjs";
 import { z } from "zod";
 
 import { estimateFormSchema } from "./EstimateFormSchema";
-import FormInput from "../../../components/FormInput";
 import FormSelect from "../../../components/FormSelect";
 import ProductFormFieldsDetails from "./ProductFormFieldsDetails";
 import ServiceFormFieldsDetail from "./ServiceFormFieldsDetail";
@@ -86,7 +84,7 @@ import { convertEstimateToPI } from "../../../toolkit/slices/accountSlice";
 =========================== */
 const unitModalSchema = z.object({
   unitName: z.string().min(1, "Unit name is required"),
-  gstNo: z.string().optional().or(z.literal("")),
+  gstNo: z.string().optional(),
   // panNo: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
   city: z.string().optional().or(z.literal("")),
@@ -105,7 +103,7 @@ const contactModalSchema = z.object({
   companyUnitId: z.string().optional().or(z.literal("")),
 });
 
-export const LeadEstimates = () => {
+const LeadEstimates = () => {
   const { userId, leadId } = useParams();
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const dispatch = useDispatch();
@@ -131,6 +129,7 @@ export const LeadEstimates = () => {
   const desiginationList = useSelector(
     (state) => state.setting.clientDesiginationList,
   );
+
   const [showForm, setShowForm] = useState(false);
   const [companyDetail, setCompanyDetail] = useState(null);
   const [openPreview, setOpenPreview] = useState(false);
@@ -145,6 +144,7 @@ export const LeadEstimates = () => {
   const contactModal = useDisclosure();
   const [unitDetail, setUnitDetail] = useState(null);
   const [viewType, setViewType] = useState("ESTIMATE"); // or "PI"
+  const [isCompanyUpdated, setIsCompanyUpdated] = useState(false);
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -223,7 +223,6 @@ export const LeadEstimates = () => {
     control: contactControl,
     handleSubmit: handleContactSubmit,
     formState: { errors: contactErrors },
-    getValues: getContactValue,
     reset: resetContactValue,
     setValue: setContactValue,
   } = useForm({
@@ -372,7 +371,7 @@ export const LeadEstimates = () => {
     });
     dispatch(getAllCountries());
     dispatch(getAllSolutionList(userId));
-  }, [dispatch, leadId, userId, setValue]);
+  }, [dispatch, leadId, userId, setValue, isCompanyUpdated]);
 
   // estimates list
   useEffect(() => {
@@ -409,8 +408,9 @@ export const LeadEstimates = () => {
 
   const onSubmit = (data) => {
     data.companyId = company?.id;
-    data.solutionType = selectedSolutionDetail?.type;
-    data.solutionId = selectedSolutionDetail?.id;
+    data.solutionType = solutionDetail?.type;
+    data.solutionId = solutionDetail?.id;
+    data.solutionName = solutionDetail?.name;
     data.createdByUserId = userId;
     data.leadId = leadId;
 
@@ -570,8 +570,6 @@ export const LeadEstimates = () => {
         addToast({ title: "Something went wrong", color: "danger" }),
       );
   };
-
-  console.log("dsjkgdsjgkdjsg", errors);
 
   return (
     <>
@@ -737,28 +735,32 @@ export const LeadEstimates = () => {
                   name="companyName"
                   control={control}
                   render={({ field, fieldState: { error } }) => {
+                    console.log("djgkjsgkjgkjd", error);
                     return (
                       <NewSelect
-                        label={"Select company"}
-                        isRequired={true}
+                        label={
+                          <div>
+                            Select company{" "}
+                            <span className="text-red-500">*</span>
+                          </div>
+                        }
+                        // isRequired={true}
                         size={isMedium ? "sm" : "md"}
                         data={companyList || []}
                         labelKey="name"
                         valueKey="name"
+                        // errorMessage={"please select company"}
                         isOpen={isDropDownOpen?.company}
                         value={field.value}
                         onOpenChange={(e) =>
                           setIsDropDownOpen((prev) => ({ ...prev, company: e }))
                         }
                         onItemSelect={(item) => {
-                          console.log("selected company", item);
                           if (!item) {
-                            console.log("selected company 1111", item);
                             dispatch(handleResetExistingCompany());
                             setCompanyDetail(null);
                             return;
                           } else if (item) {
-                            console.log("selected company 2222", item);
                             dispatch(
                               getBasicCompanyDetailByCompanyId(item?.id),
                             ).then((resp) => {
@@ -783,6 +785,7 @@ export const LeadEstimates = () => {
                             setIsDropDownOpen={setIsDropDownOpen}
                             isEstimate={true}
                             companyDetail={companyDetail}
+                            setIsCompanyUpdated={setIsCompanyUpdated}
                           />
                         }
                       />
@@ -867,7 +870,7 @@ export const LeadEstimates = () => {
                   }
                 />
 
-                <Controller
+                {/* <Controller
                   name="solutionName"
                   control={control}
                   render={({ field, fieldState: { error } }) => (
@@ -886,7 +889,7 @@ export const LeadEstimates = () => {
                       }}
                     />
                   )}
-                />
+                /> */}
               </div>
 
               {solutionDetail?.type === "PRODUCT" ? (
@@ -1150,14 +1153,6 @@ export const LeadEstimates = () => {
                       type="submit"
                       color="primary"
                       className="cursor-pointer"
-                      onPress={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
                     >
                       Save
                     </Button>

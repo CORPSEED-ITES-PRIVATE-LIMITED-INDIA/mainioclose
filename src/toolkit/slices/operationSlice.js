@@ -182,7 +182,21 @@ export const createDesignationInOPerations = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/operationService/api/designations`,
+        `/operationService/api/designations/createDesignationName?id=${data.id}&name=${data.name}&weightValue=${data.weightValue}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
+
+export const updateDesignationInOPerations = createAsyncThunk(
+  "updateDesignationInOPerations",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/designations/${id}`,
         data,
       );
       return response.data;

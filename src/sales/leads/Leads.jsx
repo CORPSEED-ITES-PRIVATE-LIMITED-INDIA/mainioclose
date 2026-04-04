@@ -71,9 +71,6 @@ import {
 import NewSelect from "../../components/NewSelect";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 import { allowOnlyNumbers, formatEmail, leadSource } from "../../common";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { CSVLink } from "react-csv";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
@@ -89,7 +86,7 @@ const getRowClassName = (item) => {
   return "";
 };
 
-export const columns = (admin) => [
+export const columns = [
   { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadName" },
   { name: "CHILD LEADS", uid: "childLeads" },
@@ -107,7 +104,7 @@ export const columns = (admin) => [
 //   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 // }
 
-const INITIAL_VISIBLE_COLUMNS = (admin) => [
+const INITIAL_VISIBLE_COLUMNS = [
   "leadName",
   "childLeads",
   "contact",
@@ -141,7 +138,7 @@ const Leads = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS(adminRole)),
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "id",
@@ -207,7 +204,7 @@ const Leads = () => {
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
-    const cols = columns(adminRole) || [];
+    const cols = columns || [];
     if (visibleColumns === "all") return cols;
 
     return cols.filter((column) =>
@@ -792,7 +789,7 @@ const Leads = () => {
   };
 
   const topContent = useMemo(() => {
-    const cols = columns(adminRole) || [];
+    const cols = columns || [];
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -1383,10 +1380,10 @@ const Leads = () => {
       return;
     }
     setLoading("pending");
-    values.categoryId = "1";
     values.createdById = userId;
-    values.serviceId = "1";
-    values.industryId = "1";
+    // values.categoryId = "1";
+    // values.serviceId = "1";
+    // values.industryId = "1";
     values.assigneeId = roles?.includes("ADMIN") ? values.assigneeId : userId;
     dispatch(createLeads(values))
       .then((resp) => {
@@ -1395,7 +1392,6 @@ const Leads = () => {
           dispatch(getAllLeadsByFilter(allMultiFilterData));
           dispatch(getAllLeadCount(allMultiFilterData));
           onOpenChange(false);
-          reset(defaultValues);
           setLoading("success");
           setLeadFormData(leadFormValues);
         } else {
@@ -1480,14 +1476,18 @@ const Leads = () => {
                 >
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto px-2 py-1">
                     <NewSelect
-                      isRequired
+                      // isRequired
                       name={"leadName"}
                       data={solutionList || []}
-                      label="Select service"
+                      label={
+                        <div>
+                          Select service<span className="text-red-500">*</span>
+                        </div>
+                      }
                       labelKey="name"
                       valueKey="name"
                       value={leadFormData?.leadName}
-                      errorMessage={"please select service"}
+                      // errorMessage={"please select service"}
                       onChange={(value) => {
                         setLeadFormData((prev) => ({
                           ...prev,
