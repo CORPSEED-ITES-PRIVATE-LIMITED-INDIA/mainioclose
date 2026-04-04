@@ -1111,7 +1111,7 @@ const LeadInfo = () => {
                       <p className="text-sm">{leadData?.description}</p>
                     </CardBody>
                   </Card>
-                  <Card className="my-2">
+                  {/* <Card className="my-2">
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Link className={iconClass} />{" "}
@@ -1121,7 +1121,7 @@ const LeadInfo = () => {
                     <CardBody>
                       <p className="text-sm font-medium">{leadData?.urls}</p>
                     </CardBody>
-                  </Card>
+                  </Card> */}
 
                   {/* {(department === "Quality Team" || adminRole) && (
                     <Card className="my-2">
