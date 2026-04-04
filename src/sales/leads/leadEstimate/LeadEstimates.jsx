@@ -738,9 +738,10 @@ const LeadEstimates = () => {
                     console.log("djgkjsgkjgkjd", error);
                     return (
                       <NewSelect
+                        // label={"Select company"}
                         label={
                           <div>
-                            Select company{" "}
+                            Select company
                             <span className="text-red-500">*</span>
                           </div>
                         }
