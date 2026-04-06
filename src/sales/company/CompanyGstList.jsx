@@ -184,7 +184,7 @@ const CompanyGstList = () => {
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
               <Link
-                to={`${company?.state}/companyUnits`}
+                // to={`${company?.state}/companyUnits`}
                 className="font-semibold"
               >
                 {company?.unitName || "-"}
@@ -315,14 +315,14 @@ const CompanyGstList = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
+            {/* <Button color="primary" onPress={onOpen} endContent={<Plus />}>
               Add GST
-            </Button>
+            </Button> */}
           </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} GST units
+            Total {count} units
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -419,7 +419,7 @@ const CompanyGstList = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">GST list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Unit list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -430,7 +430,7 @@ const CompanyGstList = () => {
           table: "w-full",
         }}
         selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"

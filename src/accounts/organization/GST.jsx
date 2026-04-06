@@ -97,13 +97,13 @@ const GST = () => {
   const data = useSelector((state) => state.organization.gstList);
   const count = useSelector((state) => state.organization.gstListCount);
   const exportedData = useSelector(
-    (state) => state.organization.gstExportedDataList
+    (state) => state.organization.gstExportedDataList,
   );
   const loading = useSelector((state) => state.organization.loading);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -131,7 +131,7 @@ const GST = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -141,8 +141,8 @@ const GST = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -200,10 +200,10 @@ const GST = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch, gstModal, gstForm, rowItem]
+    [dispatch, gstModal, gstForm, rowItem],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -357,12 +357,12 @@ const GST = () => {
                           value={{
                             start: dateFilter?.startDate
                               ? parseZonedDateTime(
-                                  `${dateFilter?.startDate}[Asia/kolkata]`
+                                  `${dateFilter?.startDate}[Asia/kolkata]`,
                                 )
                               : null,
                             end: dateFilter?.endDate
                               ? parseZonedDateTime(
-                                  `${dateFilter?.endDate}[Asia/kolkata]`
+                                  `${dateFilter?.endDate}[Asia/kolkata]`,
                                 )
                               : null,
                           }}
