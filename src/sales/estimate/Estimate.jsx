@@ -161,7 +161,7 @@ const Estimate = () => {
         },
       }),
     );
-  }, [dispatch, userId, filters]);
+  }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -169,20 +169,6 @@ const Estimate = () => {
       Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
-
-  const filteredItems = useMemo(() => {
-    let filteredData = [...data];
-
-    // if (hasSearchFilter) {
-    //   filteredData = filteredData.filter((item) =>
-    //     Object.values(item)?.some((val) =>
-    //       String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-    //     ),
-    //   );
-    // }
-
-    return filteredData;
-  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
@@ -195,6 +181,34 @@ const Estimate = () => {
     //   return sortDescriptor.direction === "descending" ? -cmp : cmp;
     // });
   }, [sortDescriptor, data]);
+
+  const handleApplyFilter = () => {
+    dispatch(
+      getAllEstimateByUserId({
+        userId,
+        page: filteration.page,
+        size: filteration.size,
+        data: {
+          search: filters.search || "",
+          status: filters.status || "",
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+        },
+      }),
+    );
+
+    dispatch(
+      getTotalCountOfEstimate({
+        userId,
+        data: {
+          search: filters.search || "",
+          status: filters.status || "",
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+        },
+      }),
+    );
+  };
 
   const handleViewEstimate = (rowData, type) => {
     setViewType(type);
@@ -643,14 +657,9 @@ const Estimate = () => {
                     Reset
                   </Button>
 
-                  {/* <Button
-                    color="primary"
-                    onPress={() =>
-                      setFilteration((prev) => ({ ...prev, page: 1 }))
-                    }
-                  >
+                  <Button color="primary" onPress={handleApplyFilter}>
                     Apply
-                  </Button> */}
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
