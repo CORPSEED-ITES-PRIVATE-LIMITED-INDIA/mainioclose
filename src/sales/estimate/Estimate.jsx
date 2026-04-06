@@ -161,7 +161,7 @@ const Estimate = () => {
         },
       }),
     );
-  }, [dispatch, userId, filteration, filters]);
+  }, [dispatch, userId, filters]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -187,14 +187,14 @@ const Estimate = () => {
   const pages = Math.ceil(count / filteration?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems];
+    return [...data];
     // .sort((a, b) => {
     //   const first = a[sortDescriptor.column];
     //   const second = b[sortDescriptor.column];
     //   const cmp = first < second ? -1 : first > second ? 1 : 0;
     //   return sortDescriptor.direction === "descending" ? -cmp : cmp;
     // });
-  }, [sortDescriptor, filteredItems]);
+  }, [sortDescriptor, data]);
 
   const handleViewEstimate = (rowData, type) => {
     setViewType(type);
