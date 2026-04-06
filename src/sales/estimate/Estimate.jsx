@@ -645,14 +645,39 @@ const Estimate = () => {
                 <div className="w-full flex justify-end gap-2 mt-4">
                   <Button
                     variant="flat"
-                    onPress={() =>
+                    onPress={() => {
                       setFilters({
                         search: "",
                         status: "",
                         fromDate: "",
                         toDate: "",
-                      })
-                    }
+                      });
+                      dispatch(
+                        getAllEstimateByUserId({
+                          userId,
+                          page: filteration.page,
+                          size: filteration.size,
+                          data: {
+                            search: filters.search || "",
+                            status: filters.status || "",
+                            fromDate: filters.fromDate || "",
+                            toDate: filters.toDate || "",
+                          },
+                        }),
+                      );
+
+                      dispatch(
+                        getTotalCountOfEstimate({
+                          userId,
+                          data: {
+                            search: filters.search || "",
+                            status: filters.status || "",
+                            fromDate: filters.fromDate || "",
+                            toDate: filters.toDate || "",
+                          },
+                        }),
+                      );
+                    }}
                   >
                     Reset
                   </Button>
