@@ -29,6 +29,7 @@ import CompanyProjects from "../sales/company/CompanyProjects";
 import CompanyLeads from "../sales/company/CompanyLeads";
 import ChildLead from "../sales/leads/ChildLead";
 import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
+import AllInvoice from "../accounts/organization/AllInvoice";
 
 const SalesModuleRouting = () => {
   return (
@@ -129,6 +130,7 @@ const SalesModuleRouting = () => {
       </Route>
       <Route path="sales/leadForm" element={<CompanyForm />} />
       <Route path="sales/estimate" element={<Estimate />} />
+      <Route path="sales/allInvoice" element={<AllInvoice />} />
       <Route path="sales/proposal" element={<AllProposal />} />
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />
       <Route path="sales/autoHistory" element={<AutoHistory />} />

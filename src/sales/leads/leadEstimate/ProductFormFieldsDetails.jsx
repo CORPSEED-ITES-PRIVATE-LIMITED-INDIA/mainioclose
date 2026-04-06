@@ -80,7 +80,7 @@ const ProductFormFieldsDetails = ({
   };
 
   return (
-    <Section title="Product Details">
+    <Section title="Product  Pricing Details">
       {/* Product Selectors */}
       <div className="grid grid-cols-3 gap-2 mt-2">
         <Controller
@@ -168,7 +168,7 @@ const ProductFormFieldsDetails = ({
       </div>
 
       {/* Product Pricing (lineItems[0]) */}
-      {productPrices && (
+      {productPrices ? (
         <div className="grid grid-cols-5 gap-2 mt-2">
           {/* Item Name */}
           <Controller
@@ -266,6 +266,13 @@ const ProductFormFieldsDetails = ({
               />
             )}
           />
+        </div>
+      ) : (
+        <div>
+          <h3 className="text-sm text-red-600">
+            Pricing for this service has not been added yet. Please contact the
+            administrator to update it.
+          </h3>
         </div>
       )}
     </Section>

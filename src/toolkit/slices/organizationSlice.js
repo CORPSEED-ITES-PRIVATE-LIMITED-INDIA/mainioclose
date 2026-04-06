@@ -280,6 +280,48 @@ export const getAllInvoiceCount = createAsyncThunk(
   },
 );
 
+export const searchInvoiceByCompanyNameAndInvoice = createAsyncThunk(
+  "searchInvoiceByCompanyNameAndInvoice",
+  async (data, { rejectWithValue }) => {
+    try {
+      if (data?.type === "invoiceNumber") {
+        const response = await api.get(
+          `/accountService/api/v1/invoices/search?invoiceNumber=${data?.searchText}&page=${data?.page}&size=${data?.size}`,
+        );
+        return response.data;
+      } else {
+        const response = await api.get(
+          `/accountService/api/v1/invoices/search?companyName=${data?.searchText}&page=${data?.page}&size=${data?.size}`,
+        );
+        return response.data;
+      }
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const searchInvoiceCountByCompanyNameAndInvoice = createAsyncThunk(
+  "searchInvoiceCountByCompanyNameAndInvoice",
+  async (data, { rejectWithValue }) => {
+    try {
+      if (data?.type === "invoiceNumber") {
+        const response = await api.get(
+          `/accountService/api/v1/invoices/search/count?invoiceNumber=${data?.searchText}`,
+        );
+        return response.data;
+      } else {
+        const response = await api.get(
+          `/accountService/api/v1/invoices/search/count?companyName=${data?.searchText}`,
+        );
+        return response.data;
+      }
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 export const getAllUnbillList = createAsyncThunk(
   "getAllUnbillList",
   async ({ page, size, status, userId }) => {
@@ -894,6 +936,21 @@ const OrganizationSlice = createSlice({
       state.allInvoiceList = [];
     });
 
+    builder.addCase(searchInvoiceByCompanyNameAndInvoice.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      searchInvoiceByCompanyNameAndInvoice.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.allInvoiceList = action.payload;
+      },
+    );
+    builder.addCase(searchInvoiceByCompanyNameAndInvoice.rejected, (state) => {
+      state.loading = "rejected";
+      state.allInvoiceList = [];
+    });
+
     builder.addCase(getAllInvoiceCount.pending, (state) => {
       state.loading = "pending";
     });
@@ -905,6 +962,27 @@ const OrganizationSlice = createSlice({
       state.loading = "rejected";
       state.allInvoiceCount = 0;
     });
+
+    builder.addCase(
+      searchInvoiceCountByCompanyNameAndInvoice.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      searchInvoiceCountByCompanyNameAndInvoice.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.allInvoiceCount = action.payload;
+      },
+    );
+    builder.addCase(
+      searchInvoiceCountByCompanyNameAndInvoice.rejected,
+      (state) => {
+        state.loading = "rejected";
+        state.allInvoiceCount = 0;
+      },
+    );
 
     builder.addCase(getAllUnbillList.pending, (state) => {
       state.loading = "pending";

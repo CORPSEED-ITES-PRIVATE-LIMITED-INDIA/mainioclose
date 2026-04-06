@@ -36,6 +36,7 @@ import {
   getAllEstimateByUserId,
   getEstimateByEstimateId,
   getTotalCountOfEstimate,
+  searchEstimate,
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
@@ -172,13 +173,13 @@ const Estimate = () => {
   const filteredItems = useMemo(() => {
     let filteredData = [...data];
 
-    if (hasSearchFilter) {
-      filteredData = filteredData.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-        ),
-      );
-    }
+    // if (hasSearchFilter) {
+    //   filteredData = filteredData.filter((item) =>
+    //     Object.values(item)?.some((val) =>
+    //       String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+    //     ),
+    //   );
+    // }
 
     return filteredData;
   }, [data, filterValue, hasSearchFilter]);
@@ -186,12 +187,13 @@ const Estimate = () => {
   const pages = Math.ceil(count / filteration?.size) || 1;
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...filteredItems];
+    // .sort((a, b) => {
+    //   const first = a[sortDescriptor.column];
+    //   const second = b[sortDescriptor.column];
+    //   const cmp = first < second ? -1 : first > second ? 1 : 0;
+    //   return sortDescriptor.direction === "descending" ? -cmp : cmp;
+    // });
   }, [sortDescriptor, filteredItems]);
 
   const handleViewEstimate = (rowData, type) => {
@@ -497,19 +499,60 @@ const Estimate = () => {
     }));
   }, []);
 
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setFilteration((prev) => ({ ...prev, page: 1 }));
-    } else {
-      setFilterValue("");
-    }
-  }, []);
+  const onSearchChange = useCallback(
+    (value) => {
+      if (value) {
+        console.log("search value", value);
+        setFilterValue(value);
+        setFilteration((prev) => ({ ...prev, page: 1 }));
+        dispatch(searchEstimate({ userId, data: { query: value } })).then(
+          (resp) => {
+            if (resp.meta.requestStatus === "fulfilled") {
+            } else {
+              addToast({
+                title: "There is some issue in searching estimate !.",
+                color: "danger",
+              });
+            }
+          },
+        );
+      } else {
+        setFilterValue("");
+        dispatch(
+          getAllEstimateByUserId({
+            userId,
+            page: filteration.page,
+            size: filteration.size,
+          }),
+        );
+
+        dispatch(
+          getTotalCountOfEstimate({
+            userId,
+          }),
+        );
+      }
+    },
+    [filteration],
+  );
 
   const onClear = useCallback(() => {
     setFilterValue("");
     setFilteration((prev) => ({ ...prev, page: 1 }));
-  }, []);
+    dispatch(
+      getAllEstimateByUserId({
+        userId,
+        page: filteration.page,
+        size: filteration.size,
+      }),
+    );
+
+    dispatch(
+      getTotalCountOfEstimate({
+        userId,
+      }),
+    );
+  }, [filteration]);
 
   const topContent = useMemo(() => {
     return (
@@ -519,11 +562,9 @@ const Estimate = () => {
             className="w-full sm:max-w-[35%]"
             placeholder="Search..."
             startContent={<Search size={16} />}
-            value={filters.search}
+            value={filterValue}
             onClear={onClear}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, search: e.target.value }))
-            }
+            onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 setFilteration((prev) => ({ ...prev, page: 1 }));

@@ -19,12 +19,16 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllInvoice,
   getAllInvoiceCount,
+  searchInvoiceByCompanyNameAndInvoice,
+  searchInvoiceCountByCompanyNameAndInvoice,
 } from "../../toolkit/slices/organizationSlice";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
@@ -66,6 +70,9 @@ const AllInvoice = () => {
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
   );
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
+  );
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -80,6 +87,10 @@ const AllInvoice = () => {
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
   const [status, setStatus] = useState("GENERATED");
+  const [searchFilters, setSearchFilters] = useState({
+    searchText: "",
+    type: "invoiceNumber",
+  });
 
   useEffect(() => {
     dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
@@ -177,9 +188,7 @@ const AllInvoice = () => {
           </div>
         );
       case "addedBy":
-        return (
-          <p className="text-sm capitalize">{rowData?.createdByName}</p>
-        );
+        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -225,33 +234,68 @@ const AllInvoice = () => {
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
-  }, []);
+  const onSearchChange = React.useCallback(
+    (value) => {
+      if (value) {
+        setFilterValue(value);
+        setPage(1);
+        dispatch(
+          searchInvoiceByCompanyNameAndInvoice({
+            ...searchFilters,
+            searchText: value,
+            page,
+            size: rowsPerPage,
+          }),
+        );
+        dispatch(
+          searchInvoiceCountByCompanyNameAndInvoice({
+            ...searchFilters,
+            searchText: value,
+          }),
+        );
+      } else {
+        setFilterValue("");
+        dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+        dispatch(getAllInvoiceCount({ userId, status }));
+      }
+    },
+    [searchFilters, page, rowsPerPage],
+  );
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
     setPage(1);
+    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+    dispatch(getAllInvoiceCount({ userId, status }));
   }, []);
 
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
+          <div className="flex items-center w-full pb-0.5">
+            <Select
+              className="max-w-[15%]"
+              selectionMode="single"
+              selectedKeys={[searchFilters?.type]}
+              onSelectionChange={(e) => {
+                let key = Array.from(e)[0];
+                setSearchFilters((preview) => ({ ...preview, type: key }));
+              }}
+            >
+              <SelectItem key={"invoiceNumber"}>Invoice number</SelectItem>
+              <SelectItem key={"companyName"}>Company name</SelectItem>
+            </Select>
+            <Input
+              isClearable
+              className="w-full sm:max-w-[35%]"
+              placeholder="Search ..."
+              startContent={<Search />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+            />
+          </div>
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
@@ -333,6 +377,7 @@ const AllInvoice = () => {
     onSearchChange,
     hasSearchFilter,
     status,
+    searchFilters,
   ]);
 
   const bottomContent = React.useMemo(() => {

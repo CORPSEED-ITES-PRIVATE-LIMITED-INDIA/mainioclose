@@ -20,7 +20,7 @@ import {
   SelectItem,
 } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useMediaQuery } from "react-responsive";
 import {
@@ -46,6 +46,7 @@ import {
   getSolutionPriceListById,
 } from "../../../toolkit/slices/settingSlice";
 import {
+  cancelEstimate,
   createNewEstimate,
   getNewEstimateByLeadId,
   getSingleLeadDataByLeadId,
@@ -141,10 +142,16 @@ const LeadEstimates = () => {
     unit: false,
   });
   const { isOpen, onClose, onOpenChange, onOpen } = useDisclosure();
+  const modal = useDisclosure();
   const contactModal = useDisclosure();
   const [unitDetail, setUnitDetail] = useState(null);
   const [viewType, setViewType] = useState("ESTIMATE"); // or "PI"
   const [isCompanyUpdated, setIsCompanyUpdated] = useState(false);
+  const [estimateId, setEstimateId] = useState(false);
+  const [statusData, setStatusData] = useState({
+    rejectionReason: "",
+    rejectedByUserId: userId,
+  });
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -406,6 +413,28 @@ const LeadEstimates = () => {
     }
   };
 
+  const handleCancelEstimate = () => {
+    dispatch(cancelEstimate({ estimateId, data: statusData })).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Estimate cancelled successfully",
+          color: "success",
+        });
+        setStatusData({
+          rejectionReason: "",
+        });
+        setEstimateId(null);
+        dispatch(getNewEstimateByLeadId({ leadId, userId }));
+        modal.onClose();
+      } else {
+        addToast({
+          title: resp?.payload?.data?.message || "Failed to cancel estimate",
+          color: "danger",
+        });
+      }
+    });
+  };
+
   const onSubmit = (data) => {
     data.companyId = company?.id;
     data.solutionType = solutionDetail?.type;
@@ -655,11 +684,18 @@ const LeadEstimates = () => {
                         ? `${est?.performanceInvoiceNumber}/ ${est?.estimateNumber}`
                         : est?.estimateNumber}
                     </p>
-                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
-                      {est?.performanceInvoiceFlag
-                        ? "Proforma Invoice / Estimate"
-                        : "Estimate"}
-                    </span>
+                    <div>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" ? "bg-red-600 text-white" : "bg-slate-100"} text-slate-600`}
+                      >
+                        {est?.status}
+                      </span>
+                      <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                        {est?.performanceInvoiceFlag
+                          ? "Proforma Invoice / Estimate"
+                          : "Estimate"}
+                      </span>
+                    </div>
                   </div>
                   {/* 
                     <p className="text-sm text-slate-600">
@@ -701,18 +737,43 @@ const LeadEstimates = () => {
                       </Button>
                     )}
 
-                    {!est?.performanceInvoiceFlag && (
+                    {!est?.performanceInvoiceFlag &&
+                      est?.status !== "REJECTED" && (
+                        <Button
+                          size="sm"
+                          radius="sm"
+                          color="success"
+                          variant="flat"
+                          onPress={() => {
+                            handleConvertToPI(est);
+                          }}
+                        >
+                          Convert to PI
+                        </Button>
+                      )}
+
+                    {est?.status !== "REJECTED" && (
                       <Button
                         size="sm"
                         radius="sm"
-                        color="success"
+                        color="danger"
                         variant="flat"
                         onPress={() => {
-                          handleConvertToPI(est);
+                          modal.onOpen();
+                          setEstimateId(est?.id);
                         }}
                       >
-                        Convert to PI
+                        Cancel estimate
                       </Button>
+                    )}
+
+                    {est?.status !== "REJECTED" && (
+                      <Link
+                        to={`/erp/${userId}/sales/estimate`}
+                        className="text-xs border border-gray-200 rounded-lg py-1 px-1.5 bg-blue-200"
+                      >
+                        Add Payment Register
+                      </Link>
                     )}
                   </div>
                 </CardBody>
@@ -1380,6 +1441,42 @@ const LeadEstimates = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal isOpen={modal.isOpen} onOpenChange={modal.onOpenChange}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Cancel Estimate
+              </ModalHeader>
+              <ModalBody>
+                <Textarea
+                  label="Remark"
+                  isRequired
+                  value={statusData.remark}
+                  onChange={(e) =>
+                    setStatusData((prev) => ({
+                      ...prev,
+                      rejectionReason: e.target.value,
+                    }))
+                  }
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button
+                  color="primary"
+                  isDisabled={statusData.rejectionReason === ""}
+                  onPress={handleCancelEstimate}
+                >
+                  Submit
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

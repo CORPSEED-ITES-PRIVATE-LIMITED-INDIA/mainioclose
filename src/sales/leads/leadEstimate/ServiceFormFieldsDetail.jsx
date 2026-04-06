@@ -11,7 +11,7 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
   });
 
   return (
-    <Section title="Service Details">
+    <Section title="Service Pricing Details">
       {fields?.length > 0 ? (
         fields.map((field, idx) => {
           // 🔥 Get original API values
@@ -117,7 +117,8 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
       ) : (
         <div>
           <h3 className="text-sm text-red-600">
-            Please select solution for the service detail
+            Pricing for this service has not been added yet. Please contact the
+            administrator to update it.
           </h3>
         </div>
       )}

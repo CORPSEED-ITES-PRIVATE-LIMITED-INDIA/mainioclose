@@ -784,6 +784,36 @@ export const getNewEstimateByLeadId = createAsyncThunk(
   },
 );
 
+export const searchEstimate = createAsyncThunk(
+  "searchEstimate",
+  async ({ userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/estimates/search/${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const cancelEstimate = createAsyncThunk(
+  "cancelEstimate",
+  async ({ estimateId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/accountService/api/v1/estimates/${estimateId}/reject`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -1315,6 +1345,20 @@ export const LeadSlice = createSlice({
     builder.addCase(getChildLeadListByParentLeadId.rejected, (state) => {
       state.loading = "rejected";
       state.childLeadList = [];
+    });
+
+    builder.addCase(searchEstimate.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(searchEstimate.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateList = action?.payload?.content;
+      state.totalEstimateCount = action?.payload?.totalElements;
+    });
+    builder.addCase(searchEstimate.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimateList = [];
+      state.totalEstimateCount = 0;
     });
   },
 });

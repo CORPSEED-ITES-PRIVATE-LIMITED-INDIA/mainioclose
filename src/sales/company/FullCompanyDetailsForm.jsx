@@ -386,7 +386,7 @@ export function CompanyAndUnitsForm({
     dispatch(getAllUsers());
     dispatch(getAllMainIndustry());
     dispatch(getClientDesiginationList());
-    dispatch(getAllContactDetails());
+    // dispatch(getAllContactDetails());
     dispatch(getAllCountries());
   }, [dispatch]);
 

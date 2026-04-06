@@ -18,6 +18,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
@@ -38,8 +39,9 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 const columns = [
   { name: "ID", uid: "id" },
   { name: "DATE", uid: "date" },
-  { name: "SOLUTION NAME", uid: "solutionName", sortable: true },
+  { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "EMAIL", uid: "createdByEmail" },
+  { name: "BROCHURES", uid: "brochures" },
   { name: "STATUS", uid: "status" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -53,6 +55,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "solutionName",
   "createdByEmail",
+  "brochures",
   "status",
   "actions",
 ];
@@ -241,6 +244,21 @@ const AllProposal = () => {
             <span className="font-normal capitalize">
               {rowData?.status || "-"}
             </span>
+          </div>
+        );
+      case "brochures":
+        return (
+          <div className="flex gap-0.5">
+            {rowData?.brochureBook?.map((item) => (
+              <Tooltip key={item?.id} content={item?.name}>
+                <Link
+                  to={item?.brochureBook}
+                  className="inline-block max-w-[120px] bg-blue-300 rounded-lg py-0.5 px-2 truncate whitespace-nowrap overflow-hidden"
+                >
+                  {item?.name}
+                </Link>
+              </Tooltip>
+            ))}
           </div>
         );
       case "actions":
@@ -466,7 +484,7 @@ const AllProposal = () => {
           table: "w-full",
         }}
         selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"

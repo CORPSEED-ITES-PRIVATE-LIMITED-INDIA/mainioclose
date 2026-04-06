@@ -44,6 +44,7 @@ import { useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
 import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
 import { set } from "zod";
+import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -84,6 +85,7 @@ const Unbill = () => {
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
+  const viewModal = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
@@ -108,6 +110,8 @@ const Unbill = () => {
   });
   const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
   const [searchBy, setSearchBy] = useState("companyName");
+  const [estimateDetail, setEstimateDetail] = useState(null);
+  const [viewType, setViewType] = useState("ESTIMATE");
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -142,6 +146,26 @@ const Unbill = () => {
     return [...filteredItems];
   }, [filteredItems]);
 
+  const handleViewEstimate = (rowData, type) => {
+    setViewType(type);
+    dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setEstimateDetail(data);
+          viewModal.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
+      );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -152,6 +176,17 @@ const Unbill = () => {
               {dayjs(rowData?.date).format("DD-MM-YYYY")}
             </p>
             <Chip size="sm">{rowData?.status}</Chip>
+          </div>
+        );
+      case "estimateNumber":
+        return (
+          <div>
+            <p
+              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+              onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+            >
+              {rowData?.estimateNumber || "NA"}
+            </p>
           </div>
         );
       case "unbillNo":
@@ -726,6 +761,31 @@ const Unbill = () => {
                 <Button color="primary" onPress={handleUpdateStatus}>
                   Submit
                 </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <NewEstimatePreview
+                  details={estimateDetail}
+                  viewType={viewType}
+                />
+              </ModalBody>
+              <ModalFooter className="flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
               </ModalFooter>
             </>
           )}

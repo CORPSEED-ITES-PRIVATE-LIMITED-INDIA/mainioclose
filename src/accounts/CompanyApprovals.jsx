@@ -32,6 +32,7 @@ import {
   approvedCompanyInAccount,
   approvedCompanyInLeads,
 } from "../toolkit/slices/companySlice";
+import { inrCurrency } from "../common";
 
 const columns = [
   { name: "ID", uid: "companyId" },
@@ -213,7 +214,7 @@ const CompanyApprovals = () => {
               <p className="font-normal">{rowData?.establishDate || "-"}</p>
               {rowData?.revenue && (
                 <p className="font-normal">
-                  Revenue : {rowData?.revenue || "-"}
+                  Revenue : {inrCurrency(rowData?.revenue) || "-"}
                 </p>
               )}
             </div>

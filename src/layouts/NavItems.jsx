@@ -16,6 +16,11 @@ export const navItems = [
       // { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
       { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
       { title: "Proposal", icon: "", url: "sales/proposal", key: "proposal" },
+      {
+        title: "All invoice",
+        url: "sales/allInvoice",
+        key: "allInvoice",
+      },
       // {
       //   title: "Discounted Estimate",
       //   icon: "",
@@ -516,6 +521,11 @@ export const salesNavItems = [
     icon: "BookOpenText",
     url: "sales/proposal",
     key: "proposal",
+  },
+  {
+    title: "All invoice",
+    url: "sales/allInvoice",
+    key: "allInvoice",
   },
   // {
   //   title: "Discounted Estimate",

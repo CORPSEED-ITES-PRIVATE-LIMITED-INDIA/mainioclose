@@ -9,11 +9,12 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { Check, ChevronDown, Plus, Search } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -38,11 +39,6 @@ import dayjs from "dayjs";
 
 const formSchema = (flag) =>
   z.object({
-    ...(flag
-      ? {
-          leadId: z.string().min("please select the service"),
-        }
-      : {}),
     mailTo: z
       .array(z.string().email("Invalid email"))
       .min(1, "Please enter at least one valid email"),
@@ -192,6 +188,7 @@ const Proposal = () => {
     formState: { errors },
     reset,
     setValue,
+    getValues,
   } = useForm({
     resolver: zodResolver(formSchema(plantSetupData)),
     defaultValues,
@@ -423,10 +420,10 @@ const Proposal = () => {
     }
 
     // ❌ If user manually typed → validate length
-    if (proposalLength < 5000) {
+    if (proposalLength < 1000) {
       addToast({
         title: "ERROR",
-        description: "Proposal must be at least 5000 characters",
+        description: "Proposal must be at least 1000 characters",
         color: "danger",
       });
       return;
@@ -476,6 +473,8 @@ const Proposal = () => {
       });
     }
   };
+
+  console.log("proposalDataDetail", getValues(), formSchema(plantSetupData));
 
   return (
     <div className="flex flex-col gap-5 h-[75vh] overflow-auto p-3 w-full">
@@ -536,22 +535,61 @@ const Proposal = () => {
                 </div>
               </div>
 
-              {/* 🔷 MAIL TO */}
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Mail To</p>
-                <div className="flex flex-wrap gap-2">
-                  {proposalDataDetail?.mailTo?.length > 0 ? (
-                    proposalDataDetail.mailTo.map((email, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
-                      >
-                        {email}
+              <div className="flex flex-wrap justify-between gap-4 pt-2">
+                {/* 🔷 MAIL TO */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Mail To</p>
+                  <div className="flex flex-wrap gap-2">
+                    {proposalDataDetail?.mailTo?.length > 0 ? (
+                      proposalDataDetail.mailTo.map((email, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                        >
+                          {email}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-500">
+                        No recipients
                       </span>
-                    ))
-                  ) : (
-                    <span className="text-sm text-gray-500">No recipients</span>
-                  )}
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Mail Cc</p>
+                  <div className="flex flex-wrap gap-2">
+                    {proposalDataDetail?.mailCc?.length > 0 ? (
+                      proposalDataDetail.mailCc.map((email, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                        >
+                          {email}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-500">
+                        No recipients
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Brochure Books</p>
+                  <div className="flex gap-0.5">
+                    {proposalDataDetail?.brochureBook?.map((item) => (
+                      <Tooltip key={item?.id} content={item?.name}>
+                        <Link
+                          to={item?.brochureBook}
+                          className="inline-block max-w-[120px] bg-blue-300 rounded-lg py-0.5 px-2 text-xs truncate whitespace-nowrap overflow-hidden"
+                        >
+                          {item?.name}
+                        </Link>
+                      </Tooltip>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -703,8 +741,7 @@ const Proposal = () => {
               <p className="text-sm text-gray-400 italic px-2 py-1">
                 Min characters required: 1000 <br />
                 your characters:{" "}
-                {mailBody?.replace(/<[^>]*>/g, "").trim().length || 0} out of
-                1000
+                {mailBody?.replace(/<[^>]*>/g, "").trim().length || 0}
               </p>
             </div>
           </div>
@@ -729,6 +766,11 @@ const Proposal = () => {
                   />
                 )}
               />
+              <p className="text-sm text-gray-400 italic px-2 py-1">
+                Min characters required: 1000 <br />
+                your characters:{" "}
+                {data?.replace(/<[^>]*>/g, "").trim().length || 0}
+              </p>
             </div>
           </div>
 
