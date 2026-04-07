@@ -534,6 +534,7 @@ const Company = () => {
       }),
     )
       .then((resp) => {
+        console.log("updateMultiCompanyAssignee resp", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Companies assigned to user successfully",

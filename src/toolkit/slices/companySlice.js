@@ -296,12 +296,16 @@ export const getCompanyDetailsById = createAsyncThunk(
 
 export const updateMultiCompanyAssignee = createAsyncThunk(
   "updateMultiAssignee",
-  async (data) => {
-    const response = api.put(
-      `/leadService/api/v1/company/updateMultiCompanyAssignee`,
-      data,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = api.put(
+        `/leadService/api/v1/company/updateMultiCompanyAssignee`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.data.message);
+    }
   },
 );
 

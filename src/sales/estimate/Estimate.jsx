@@ -472,12 +472,18 @@ const Estimate = () => {
                   }
                 }}
               >
-                <DropdownItem key="updateCompanyDetail">
-                  Update company detail
-                </DropdownItem>
-                <DropdownItem key="paymentRegister">
-                  Add payment register
-                </DropdownItem>
+                {rowData?.company?.onboardingStatus !== "APPROVED" &&
+                  rowData?.unit?.onboardingStatus !== "APPROVED" && (
+                    <DropdownItem key="updateCompanyDetail">
+                      Update company detail
+                    </DropdownItem>
+                  )}
+
+                {rowData?.status !== "REJECTED" && (
+                  <DropdownItem key="paymentRegister">
+                    Add payment register
+                  </DropdownItem>
+                )}
                 <DropdownItem key="viewEstimate">View estimate</DropdownItem>
                 <DropdownItem key="viewPI">View PI</DropdownItem>
                 {/* <DropdownItem key="edit">Edit</DropdownItem>
