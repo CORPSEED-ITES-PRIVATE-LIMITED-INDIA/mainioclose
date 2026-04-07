@@ -842,7 +842,7 @@ const UsersList = () => {
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
-        <Pagination
+        {/* <Pagination
           isCompact
           showControls
           showShadow
@@ -853,8 +853,8 @@ const UsersList = () => {
             setFilteration((prev) => ({ ...prev, page: e }));
             dispatch(getAllUsers({ ...filteration, page: e }));
           }}
-        />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+        /> */}
+        {/* <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -871,7 +871,7 @@ const UsersList = () => {
           >
             Next
           </Button>
-        </div>
+        </div> */}
       </div>
     );
   }, [

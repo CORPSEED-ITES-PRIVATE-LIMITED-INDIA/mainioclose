@@ -792,8 +792,22 @@ export function CompanyAndUnitsForm({
                   valueKey="id"
                   value={String(field.value)}
                   onChange={(value) => {
-                    dispatch(getSubIndustryByIndustryId(value));
                     field.onChange(value);
+
+                    setValue("subIndustryId", "", {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    setValue("subSubIndustryId", "", {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    setValue("industryDataId", [], {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    dispatch(getSubIndustryByIndustryId(value));
                   }}
                 />
               )}
@@ -813,8 +827,18 @@ export function CompanyAndUnitsForm({
                   valueKey="id"
                   value={field.value}
                   onChange={(value) => {
-                    dispatch(getSubSubIndustryBySubIndustryId(value));
                     field.onChange(value);
+
+                    setValue("subSubIndustryId", "", {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    setValue("industryDataId", [], {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    dispatch(getSubSubIndustryBySubIndustryId(value));
                   }}
                 />
               )}
@@ -834,8 +858,14 @@ export function CompanyAndUnitsForm({
                   valueKey="id"
                   value={field.value}
                   onChange={(value) => {
-                    dispatch(getIndustryDataBySubSubIndustryId(value));
                     field.onChange(value);
+
+                    setValue("industryDataId", [], {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    dispatch(getIndustryDataBySubSubIndustryId(value));
                   }}
                 />
               )}
@@ -1292,7 +1322,54 @@ export function CompanyAndUnitsForm({
                           value={field.value}
                           isInvalid={!!error}
                           errorMessage={error?.message}
+                          // onChange={(value) => {
+                          //   dispatch(getAllGstTypeByCompanyTypeId(value)).then(
+                          //     (res) => {
+                          //       if (res.payload) {
+                          //         setGstTypeMap((prev) => ({
+                          //           ...prev,
+                          //           [index]: res.payload.gstBussinessType || [],
+                          //         }));
+                          //       }
+                          //     },
+                          //   );
+                          //   field.onChange(value);
+                          // }}
+
                           onChange={(value) => {
+                            field.onChange(value);
+
+                            // clear dependent fields
+                            setValue(`units.${index}.gstTypeId`, "", {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                            setValue(`units.${index}.gstBusinessTypeId`, "", {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                            setValue(`units.${index}.gstNo`, "", {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+
+                            // clear dependent options/state
+                            setGstTypeMap((prev) => ({
+                              ...prev,
+                              [index]: [],
+                            }));
+                            setBusinessTypeMap((prev) => ({
+                              ...prev,
+                              [index]: [],
+                            }));
+                            setGstAndPanData((prev) => ({
+                              ...prev,
+                              [index]: {
+                                gst: false,
+                                pan: false,
+                              },
+                            }));
+
                             dispatch(getAllGstTypeByCompanyTypeId(value)).then(
                               (res) => {
                                 if (res.payload) {
@@ -1303,7 +1380,6 @@ export function CompanyAndUnitsForm({
                                 }
                               },
                             );
-                            field.onChange(value);
                           }}
                         />
                       )}
@@ -1320,7 +1396,45 @@ export function CompanyAndUnitsForm({
                           labelKey="name"
                           valueKey="id"
                           value={field.value}
+                          // onChange={(value) => {
+                          //   dispatch(getBusinessTypeByGstTypeId(value)).then(
+                          //     (res) => {
+                          //       if (res.payload) {
+                          //         setBusinessTypeMap((prev) => ({
+                          //           ...prev,
+                          //           [index]: res.payload.gstTypePrice || [],
+                          //         }));
+                          //       }
+                          //     },
+                          //   );
+                          //   field.onChange(value);
+                          // }}
                           onChange={(value) => {
+                            field.onChange(value);
+
+                            // clear dependent field
+                            setValue(`units.${index}.gstBusinessTypeId`, "", {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                            setValue(`units.${index}.gstNo`, "", {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+
+                            // clear dependent options/state
+                            setBusinessTypeMap((prev) => ({
+                              ...prev,
+                              [index]: [],
+                            }));
+                            setGstAndPanData((prev) => ({
+                              ...prev,
+                              [index]: {
+                                gst: false,
+                                pan: false,
+                              },
+                            }));
+
                             dispatch(getBusinessTypeByGstTypeId(value)).then(
                               (res) => {
                                 if (res.payload) {
@@ -1331,7 +1445,6 @@ export function CompanyAndUnitsForm({
                                 }
                               },
                             );
-                            field.onChange(value);
                           }}
                         />
                       )}
@@ -1348,14 +1461,31 @@ export function CompanyAndUnitsForm({
                           labelKey="name"
                           valueKey="id"
                           value={field.value}
+                          // onItemSelect={(itm) => {
+                          //   setGstAndPanData((prev) => ({
+                          //     ...prev,
+                          //     [index]: {
+                          //       gst: itm?.gstPresent,
+                          //       pan: itm?.panPresent,
+                          //     },
+                          //   }));
+                          // }}
                           onItemSelect={(itm) => {
                             setGstAndPanData((prev) => ({
                               ...prev,
                               [index]: {
-                                gst: itm?.gstPresent,
-                                pan: itm?.panPresent,
+                                gst: !!itm?.gstPresent,
+                                pan: !!itm?.panPresent,
                               },
                             }));
+
+                            // if selected business type does not require GST, clear GST no
+                            if (!itm?.gstPresent) {
+                              setValue(`units.${index}.gstNo`, "", {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                            }
                           }}
                           onChange={(value) => {
                             field.onChange(value);

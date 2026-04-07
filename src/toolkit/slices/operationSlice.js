@@ -628,6 +628,21 @@ export const approvedAndDisapprovedExpense = createAsyncThunk(
   },
 );
 
+export const mapDesignationWithDepartmentInOperations = createAsyncThunk(
+  "mapDesignationWithDepartmentInOperations",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/designations/map-to-department?departmentId=${departmentId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
 const OperationSlice = createSlice({
   name: "operation",
   initialState: {

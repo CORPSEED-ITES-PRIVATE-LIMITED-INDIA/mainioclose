@@ -40,7 +40,10 @@ import {
   createAuthDepartment,
   createDesiginationByDepartment,
 } from "../../toolkit/slices/authSlice";
-import { createDepartmentInOPerations } from "../../toolkit/slices/operationSlice";
+import {
+  createDepartmentInOPerations,
+  mapDesignationWithDepartmentInOperations,
+} from "../../toolkit/slices/operationSlice";
 import { useParams } from "react-router-dom";
 
 const formSchema = z.object({
@@ -210,9 +213,29 @@ const Department = () => {
                   title: "Desigination added successfully !.",
                   color: "success",
                 });
-                dispatch(getAllDepartment());
-                designationModal.onClose();
-                designationForm.reset(designationFormDefaultValues);
+                dispatch(
+                  mapDesignationWithDepartmentInOperations({
+                    departmentId: item?.id,
+                    designationIds: values?.designation,
+                  }),
+                ).then((respo) => {
+                  console.log("sdjkfssssss   33", respo);
+                  if (respo.meta.requestStatus === "fulfilled") {
+                    addToast({
+                      title: "Desigination added successfully in Operations !.",
+                      color: "success",
+                    });
+                    dispatch(getAllDepartment());
+                    designationModal.onClose();
+                    designationForm.reset(designationFormDefaultValues);
+                  } else {
+                    addToast({
+                      title: `${respo?.payload?.status} ${respo?.payload?.statusText}`,
+                      description: respo?.payload?.data?.message,
+                      color: "danger",
+                    });
+                  }
+                });
               } else {
                 addToast({
                   title: `${response?.payload?.status} ${response?.payload?.statusText}`,
@@ -225,7 +248,11 @@ const Department = () => {
               addToast({ title: "Something went wrong !.", color: "danger" });
             });
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: resp?.payload,
+            color: "danger",
+          });
         }
       })
       .catch(() => {

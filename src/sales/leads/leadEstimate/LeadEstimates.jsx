@@ -18,6 +18,10 @@ import {
   useDisclosure,
   Select,
   SelectItem,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -79,6 +83,7 @@ import {
 } from "../../../common";
 import BasicCompany from "../../company/BasicCompany";
 import { convertEstimateToPI } from "../../../toolkit/slices/accountSlice";
+import { EllipsisVertical } from "lucide-react";
 
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
@@ -684,7 +689,7 @@ const LeadEstimates = () => {
                         ? `${est?.performanceInvoiceNumber}/ ${est?.estimateNumber}`
                         : est?.estimateNumber}
                     </p>
-                    <div>
+                    <div className="flex items-center gap-0.5">
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" ? "bg-red-600 text-white" : "bg-slate-100"} text-slate-600`}
                       >
@@ -695,6 +700,72 @@ const LeadEstimates = () => {
                           ? "Proforma Invoice / Estimate"
                           : "Estimate"}
                       </span>
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            radius="full"
+                            variant="flat"
+                          >
+                            <EllipsisVertical />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                          selectionMode="single"
+                          onSelectionChange={(e) => {}}
+                        >
+                          <DropdownItem
+                            key="previewEstimate"
+                            onPress={() => openEstimatePreview(est, "ESTIMATE")}
+                          >
+                            Preview Estimate
+                          </DropdownItem>
+
+                          {est?.performanceInvoiceFlag && (
+                            <DropdownItem
+                              key="previewPI"
+                              onPress={() => openEstimatePreview(est, "PI")}
+                            >
+                              Preview PI
+                            </DropdownItem>
+                          )}
+
+                          {!est?.performanceInvoiceFlag &&
+                            est?.status !== "REJECTED" && (
+                              <DropdownItem
+                                key="convertToPI"
+                                onPress={() => {
+                                  handleConvertToPI(est);
+                                }}
+                              >
+                                Convert to PI
+                              </DropdownItem>
+                            )}
+
+                          {est?.status !== "REJECTED" && (
+                            <DropdownItem
+                              key="cancelEstimate"
+                              color="danger"
+                              onPress={() => {
+                                modal.onOpen();
+                                setEstimateId(est?.id);
+                              }}
+                            >
+                              Cancel estimate
+                            </DropdownItem>
+                          )}
+
+                          {est?.status !== "REJECTED" && (
+                            <DropdownItem
+                              key="addPaymentRegister"
+                              href={`/erp/${userId}/sales/estimate`}
+                            >
+                              Add Payment Register
+                            </DropdownItem>
+                          )}
+                        </DropdownMenu>
+                      </Dropdown>
                     </div>
                   </div>
                   {/* 
@@ -715,7 +786,7 @@ const LeadEstimates = () => {
                       ? dayjs(est.validUntil).format("DD MMM YYYY")
                       : "NA"}
                   </p>
-                  <div className="flex gap-1 items-center">
+                  {/* <div className="flex gap-1 items-center">
                     <Button
                       size="sm"
                       radius="sm"
@@ -775,7 +846,7 @@ const LeadEstimates = () => {
                         Add Payment Register
                       </Link>
                     )}
-                  </div>
+                  </div> */}
                 </CardBody>
               </Card>
             ))}

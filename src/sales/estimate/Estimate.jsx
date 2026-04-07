@@ -56,7 +56,7 @@ const columns = [
   { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "COMPANY", uid: "companyName" },
   { name: "UNIT NAME", uid: "unitName" },
-  { name: "STATUS", uid: "status" },
+  { name: "EST. STATUS", uid: "status" },
   { name: "CREATED DATE", uid: "createDate" },
   { name: "GST NUMBER", uid: "gstNo" },
   { name: "PRIMARY CONTACT", uid: "primaryContact" },
@@ -284,7 +284,13 @@ const Estimate = () => {
       case "status":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.status}</span>
+            <Badge
+              size="sm"
+              placement="center-left"
+              shape="circle"
+              content={rowData?.status}
+              color={statusColorCode[rowData?.status]}
+            />
           </div>
         );
       case "createDate":
