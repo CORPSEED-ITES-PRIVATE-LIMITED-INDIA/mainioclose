@@ -101,7 +101,7 @@ const companySchema = (obj) =>
     industryId: z.string().min(1, "Please select industry."),
     subIndustryId: z.string().min(1, "Please select sub industry."),
     subSubIndustryId: z.string().min(1, "Please select category."),
-    industrydataId: z
+    industryDataId: z
       .array(z.string())
       .min(1, "Please select business activity."),
 
@@ -163,7 +163,7 @@ const getDefaultValues = () => ({
   industryId: "",
   subIndustryId: "",
   subSubIndustryId: "",
-  industrydataId: [],
+  industryDataId: [],
 
   companyFileUrl: "",
   paymentTerm: "",
@@ -508,6 +508,7 @@ export function CompanyAndUnitsForm({
       industryId: String(company?.industryId),
       subIndustryId: String(company?.subIndustryId),
       subSubIndustryId: String(company?.subSubIndustryId),
+      industryDataId: company?.industryDataId?.map((id) => String(id)) || [],
       panNo: company?.panNo || "",
       gstNo: company?.gstNo || "",
       establishDate: company?.establishDate
@@ -841,7 +842,7 @@ export function CompanyAndUnitsForm({
             />
 
             <Controller
-              name="industrydataId"
+              name="industryDataId"
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <NewSelect
