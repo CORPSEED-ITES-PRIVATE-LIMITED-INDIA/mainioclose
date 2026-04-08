@@ -43,6 +43,7 @@ import { inrCurrency, statusColorCode } from "../../common";
 import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
 import {
+  estimateSentToClient,
   getBasicCompanyDetailByCompanyId,
   getCompanyDetailByCompanyIdAndUnitId,
 } from "../../toolkit/slices/companySlice";
@@ -56,7 +57,7 @@ const columns = [
   { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "COMPANY", uid: "companyName" },
   { name: "UNIT NAME", uid: "unitName" },
-  { name: "EST. STATUS", uid: "status" },
+  { name: "ESTIMATE STATUS", uid: "status" },
   { name: "CREATED DATE", uid: "createDate" },
   { name: "GST NUMBER", uid: "gstNo" },
   { name: "PRIMARY CONTACT", uid: "primaryContact" },
@@ -73,6 +74,7 @@ const ESTIMATE_STATUS = [
   "VIEWED",
   "APPROVED",
   "REJECTED",
+  "CANCELLED",
   "EXPIRED",
 ];
 
@@ -227,6 +229,28 @@ const Estimate = () => {
       })
       .catch(() =>
         addToast({ title: "There is Some Issue in estimate", color: "danger" }),
+      );
+  };
+
+  const handleSentToClient = (rowData) => {
+    dispatch(estimateSentToClient({ estimateId: rowData?.id, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Eestimate sent to client successfully !.",
+            color: "success",
+          });
+        } else {
+          addToast({
+            title: `ERROR ${resp?.payload?.data?.status}`,
+            description: `${resp?.payload?.data?.message}`,
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something Went wrong !.", color: "danger" }),
       );
   };
 
@@ -457,6 +481,8 @@ const Estimate = () => {
                     handleViewEstimate(rowData, "ESTIMATE");
                   } else if (item === "viewPI") {
                     handleViewEstimate(rowData, "PI");
+                  } else if (item === "SENT_TO_CLIENT") {
+                    handleSentToClient(rowData);
                   } else if (item === "updateCompanyDetail") {
                     dispatch(
                       getCompanyDetailByCompanyIdAndUnitId({
@@ -485,17 +511,17 @@ const Estimate = () => {
                     </DropdownItem>
                   )}
 
-                {rowData?.status !== "REJECTED" && (
+                {rowData?.status !== "CANCELLED" && (
                   <DropdownItem key="paymentRegister">
                     Add payment register
                   </DropdownItem>
                 )}
                 <DropdownItem key="viewEstimate">View estimate</DropdownItem>
                 <DropdownItem key="viewPI">View PI</DropdownItem>
-                {/* <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="delete" color="danger">
+                <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
+                {/* <DropdownItem key="delete" color="danger">
                   Delete
-                </DropdownItem> */}
+                </DropdownItem>  */}
               </DropdownMenu>
             </Dropdown>
           </div>

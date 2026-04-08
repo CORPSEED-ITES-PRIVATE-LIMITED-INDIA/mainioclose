@@ -53,6 +53,7 @@ import {
   cancelEstimate,
   createNewEstimate,
   getNewEstimateByLeadId,
+  getProposalDataByLeadId,
   getSingleLeadDataByLeadId,
 } from "../../../toolkit/slices/leadSlice";
 import {
@@ -116,7 +117,10 @@ const LeadEstimates = () => {
   const company = useSelector((state) => state.company.basicCompanyDetail);
   const companyList = useSelector((state) => state.company.basicCompanyList);
   const unitList = useSelector((state) => state.company.basicUnitList);
-  const solutionList = useSelector((state) => state.setting.allSolutionList);
+  const proposalDataDetail = useSelector(
+    (state) => state.leads.proposalDataDetail,
+  );
+  const leadData = useSelector((state) => state.leads.singleLeadData);
   const solutionDetail = useSelector(
     (state) => state.setting.solutionDetailById,
   );
@@ -245,6 +249,7 @@ const LeadEstimates = () => {
   useEffect(() => {
     dispatch(getClientDesiginationList());
     dispatch(getAllCompanyByUserId(userId));
+    dispatch(getProposalDataByLeadId(leadId));
   }, [dispatch]);
 
   const handleGstChange = (e) => {
@@ -441,6 +446,18 @@ const LeadEstimates = () => {
   };
 
   const onSubmit = (data) => {
+    if (
+      !leadData?.praposalApproved &&
+      proposalDataDetail?.status !== "approved"
+    ) {
+      addToast({
+        title: "RESTRICTED !.",
+        description: "The proposal has neither been sent nor approved yet.",
+        color: "danger",
+      });
+      return;
+    }
+
     data.companyId = company?.id;
     data.solutionType = solutionDetail?.type;
     data.solutionId = solutionDetail?.id;
@@ -644,7 +661,21 @@ const LeadEstimates = () => {
               color="primary"
               size="sm"
               radius="sm"
-              onPress={() => setShowForm(true)}
+              onPress={() => {
+                const hasAnyNonRejected = sortedEstimates?.some(
+                  (item) => item?.status !== "REJECTED",
+                );
+                if (hasAnyNonRejected) {
+                  addToast({
+                    title: "RESTRICTED !.",
+                    description:
+                      "You have to reject all the remaining estimate.",
+                    color: "danger",
+                  });
+                  return;
+                }
+                setShowForm(true);
+              }}
             >
               Create Estimate
             </Button>
@@ -691,7 +722,7 @@ const LeadEstimates = () => {
                     </p>
                     <div className="flex items-center gap-0.5">
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" ? "bg-red-600 text-white" : "bg-slate-100"} text-slate-600`}
+                        className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" ? "bg-red-600 text-white" : est?.status === "APPROVED" ? "bg-green-600 text-white" : est?.status === "SENT_TO_CLIENT" ? "bg-blue-600 text-white" : "bg-slate-100"} text-slate-600`}
                       >
                         {est?.status}
                       </span>
@@ -745,6 +776,14 @@ const LeadEstimates = () => {
 
                           {est?.status !== "REJECTED" && (
                             <DropdownItem
+                              key="addPaymentRegister"
+                              href={`/erp/${userId}/sales/estimate`}
+                            >
+                              Add Payment Register
+                            </DropdownItem>
+                          )}
+                          {est?.status !== "REJECTED" && (
+                            <DropdownItem
                               key="cancelEstimate"
                               color="danger"
                               onPress={() => {
@@ -753,15 +792,6 @@ const LeadEstimates = () => {
                               }}
                             >
                               Cancel estimate
-                            </DropdownItem>
-                          )}
-
-                          {est?.status !== "REJECTED" && (
-                            <DropdownItem
-                              key="addPaymentRegister"
-                              href={`/erp/${userId}/sales/estimate`}
-                            >
-                              Add Payment Register
                             </DropdownItem>
                           )}
                         </DropdownMenu>

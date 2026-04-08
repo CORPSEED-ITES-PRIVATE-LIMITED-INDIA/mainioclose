@@ -74,7 +74,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "client",
   "companyName",
   "totalAmount",
-  "receivedAmount",
   "currentReceivedAmount",
   "outstandingAmount",
   "addedBy",
@@ -741,7 +740,8 @@ const Unbill = () => {
                     <SelectItem key={item.key}>{item.label}</SelectItem>
                   ))}
                 </Select>
-                {updatedStatusData?.approvalRemarks === "REJECTED" && (
+                {(updatedStatusData?.approvalRemarks === "REJECTED" ||
+                  updatedStatusData?.approvalRemarks === "CANCELLED") && (
                   <Textarea
                     label="Remark"
                     isRequired

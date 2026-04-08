@@ -202,12 +202,14 @@ export const statusColors = {
   ON_HOLD: "warning",
   QUEUED: "default",
   REJECTED: "danger",
+  SENT_TO_CLIENT: "success",
 };
 
 export const statusColorCode = {
   APPROVED: "success",
   PENDING: "warning",
   REJECTED: "danger",
+  SENT_TO_CLIENT: "success",
 };
 
 export function numberToWords(value) {

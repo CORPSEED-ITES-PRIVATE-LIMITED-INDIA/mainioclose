@@ -580,6 +580,20 @@ export const getCompanyDetailByCompanyIdAndUnitId = createAsyncThunk(
   },
 );
 
+export const estimateSentToClient = createAsyncThunk(
+  "estimateSentToClient",
+  async ({ estimateId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/estimates/${estimateId}/send?userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {

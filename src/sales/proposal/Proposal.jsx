@@ -161,9 +161,6 @@ const Proposal = () => {
   const { userId, leadId } = useParams();
   const templateList = useSelector((state) => state.leads.templateList);
   const brochureList = useSelector((state) => state.leads.brochureList);
-  const productData = useSelector(
-    (state) => state.product.productDataByLeadName,
-  );
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail,
   );
@@ -382,6 +379,15 @@ const Proposal = () => {
   };
 
   const onSubmit = (values) => {
+    if (!leadData?.originalName) {
+      addToast({
+        title: "RESTRICTED !.",
+        description: "No slug has been selected for this lead service. !.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!brochureUrl || brochureUrl.length === 0) {
       addToast({
         title: "Please select at least one brochure",
@@ -439,7 +445,9 @@ const Proposal = () => {
       ).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Your proposal has been sent to the manager for review !.",
+            title: "SUCCESS",
+            description:
+              "Your proposal has been sent to the manager for review !.",
             color: "success",
           });
           reset(defaultValues);
@@ -454,7 +462,9 @@ const Proposal = () => {
         console.log("send proposal resp", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Your proposal has been sent to the manager for review !.",
+            title: "SUCCESS",
+            description:
+              "Your proposal has been sent to the manager for review !.",
             color: "success",
           });
           reset(defaultValues);
@@ -473,8 +483,6 @@ const Proposal = () => {
       });
     }
   };
-
-  console.log("proposalDataDetail", getValues(), formSchema(plantSetupData));
 
   return (
     <div className="flex flex-col gap-5 h-[75vh] overflow-auto p-3 w-full">
