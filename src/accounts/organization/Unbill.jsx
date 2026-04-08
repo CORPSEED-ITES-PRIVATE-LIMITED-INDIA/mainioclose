@@ -45,6 +45,7 @@ import UnbilledView from "../../components/UnbilledView";
 import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
 import { set } from "zod";
 import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
+import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
   { name: "DATE", uid: "date" },
