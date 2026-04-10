@@ -55,11 +55,13 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
                     isInvalid={!!fieldState.error}
                     errorMessage={fieldState.error?.message}
                     onChange={(e) => {
-                      const value = Number(e.target.value || 0);
-
-                      if (value < Number(original?.originalAmount)) return;
-
-                      field.onChange(value);
+                        field.onChange(e.target.value);
+                    }}
+                    onBlur={(e)=>{
+                      const min = Number(original?.originalAmount);
+                      if(Number(e.target.value) == 0)return ;
+                      if(Number(e.target.value) < Number(original?.originalAmount))
+                          field.onChange(min);
                     }}
                   />
                 )}

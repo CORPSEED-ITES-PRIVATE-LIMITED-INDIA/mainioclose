@@ -85,7 +85,7 @@ import {
 import BasicCompany from "../../company/BasicCompany";
 import { convertEstimateToPI } from "../../../toolkit/slices/accountSlice";
 import { EllipsisVertical } from "lucide-react";
-
+import { DatePicker as DtPicker } from "antd";
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
 =========================== */
@@ -1085,23 +1085,44 @@ const LeadEstimates = () => {
                   name="estimateDate"
                   control={control}
                   render={({ field, fieldState: { error } }) => (
-                    <DatePicker
-                      size={isMedium ? "sm" : "md"}
-                      isRequired
-                      label="Order date"
-                      showMonthAndYearPickers
-                      maxValue={today(getLocalTimeZone())}
-                      errorMessage={error?.message}
-                      value={
-                        field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                          ? parseDate(field.value)
-                          : null
-                      }
-                      onChange={(value) => {
-                        const iso = value ? value.toString() : "";
-                        field.onChange(iso);
-                      }}
-                    />
+                    // <DatePicker
+                    //   size={isMedium ? "sm" : "md"}
+                    //   isRequired
+                    //   label="Order date"
+                    //   showMonthAndYearPickers
+                    //   maxValue={today(getLocalTimeZone())}
+                    //   errorMessage={error?.message}
+                    //   value={
+                    //     field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                    //       ? parseDate(field.value)
+                    //       : null
+                    //   }
+                    //   onChange={(value) => {
+                    //     const iso = value ? value.toString() : "";
+                    //     field.onChange(iso);
+                    //   }}
+                    // />
+
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium mb-1">Order Date <span className="text-red-500">:</span></label>
+                        <DtPicker
+                          className="w-full p-1"
+                         
+                          disabledDate={(current) =>
+                            current && current > dayjs().endOf("day")
+                          }
+                          value={
+                            field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                              ? dayjs(field.value)
+                              : null
+                          }
+                          onChange={(date) => {
+                            const iso = date ? date.format("YYYY-MM-DD") : "";
+                            field.onChange(iso);
+                          }}
+                        />
+                    </div>
+// Updated Input - I
                   )}
                 />
 
@@ -1109,23 +1130,43 @@ const LeadEstimates = () => {
                   name="validUntil"
                   control={control}
                   render={({ field, fieldState: { error } }) => (
-                    <DatePicker
-                      size={isMedium ? "sm" : "md"}
-                      isRequired
-                      label="Valid till date"
-                      showMonthAndYearPickers
-                      minValue={today(getLocalTimeZone())}
-                      errorMessage={error?.message}
-                      value={
-                        field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                          ? parseDate(field.value)
-                          : null
-                      }
-                      onChange={(value) => {
-                        const iso = value ? value.toString() : "";
-                        field.onChange(iso);
-                      }}
-                    />
+                    // <DatePicker
+                    //   size={isMedium ? "sm" : "md"}
+                    //   isRequired
+                    //   label="Valid till date"
+                    //   showMonthAndYearPickers
+                    //   minValue={today(getLocalTimeZone())}
+                    //   errorMessage={error?.message}
+                    //   value={
+                    //     field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                    //       ? parseDate(field.value)
+                    //       : null
+                    //   }
+                    //   onChange={(value) => {
+                    //     const iso = value ? value.toString() : "";
+                    //     field.onChange(iso);
+                    //   }}
+                    // />
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium mb-1">Valid Till Date <span className="text-red-500">:</span></label>
+                        <DtPicker
+                          className="w-full p-1"
+                         
+                          disabledDate={(current) =>
+                            current && current < dayjs().startOf("day")
+                          }
+                          value={
+                            field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                              ? dayjs(field.value)
+                              : null
+                          }
+                          onChange={(date) => {
+                            const iso = date ? date.format("YYYY-MM-DD") : "";
+                            field.onChange(iso);
+                          }}
+                        />
+                    </div>
+ // Updated Input 
                   )}
                 />
               </div>
