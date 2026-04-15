@@ -6,10 +6,14 @@ const ImageGroup = ({ images = [] }) => {
   const [currentIndex, setCurrentIndex] = useState(null);
 
   const closeModal = () => setCurrentIndex(null);
-  const nextImage = () =>
+
+  const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
-  const prevImage = () =>
+  };
+
+  const prevImage = () => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <>
@@ -25,51 +29,64 @@ const ImageGroup = ({ images = [] }) => {
         ))}
       </div>
 
-
       <AnimatePresence>
         {currentIndex !== null && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/70"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeModal}
           >
-            <motion.div
-              className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
+            {/* Close button - screen top right */}
+            <button
+              className="absolute top-4 right-4 z-50 text-white bg-black/50 p-2 rounded-full hover:bg-black transition cursor-pointer"
+              onClick={closeModal}
             >
-              <button
-                className="absolute top-2 right-2 text-white bg-black/50 p-2 rounded-full hover:bg-black"
-                onClick={closeModal}
-              >
-                <X size={20} />
-              </button>
+              <X size={20} />
+            </button>
 
+            {/* Prev button - full left side */}
+            {images.length > 1 && (
               <button
-                onClick={prevImage}
-                className="absolute left-2 text-white bg-black/50 hover:bg-black p-2 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white bg-black/50 hover:bg-black p-3 rounded-full transition cursor-pointer"
               >
                 <ChevronLeft size={28} />
               </button>
+            )}
 
+            {/* Next button - full right side */}
+            {images.length > 1 && (
               <button
-                onClick={nextImage}
-                className="absolute right-2 text-white bg-black/50 hover:bg-black p-2 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white bg-black/50 hover:bg-black p-3 rounded-full transition cursor-pointer"
               >
                 <ChevronRight size={28} />
               </button>
+            )}
 
-              <img
+            {/* Centered image */}
+            <div
+              className="w-full h-full flex items-center justify-center p-12"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.img
                 src={images[currentIndex]}
                 alt={`full-${currentIndex}`}
-                className="max-w-full max-h-screen rounded shadow-lg"
+                className="max-w-[90vw] max-h-[85vh] object-contain rounded shadow-lg"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
               />
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

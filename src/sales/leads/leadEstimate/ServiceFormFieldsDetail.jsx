@@ -4,7 +4,7 @@ import { Input } from "@heroui/react";
 import { IndianRupee, Percent } from "lucide-react";
 import Section from "../../../components/Section";
 
-const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
+const ServiceFormFieldsDetail = ({ control, isMedium }) => {
   const { fields } = useFieldArray({
     control,
     name: "lineItems",
@@ -13,12 +13,11 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
   return (
     <Section title="Service Pricing Details">
       {fields?.length > 0 ? (
-        fields.map((field, idx) => {
-          // 🔥 Get original API values
-          const original = field;
+        fields.map((item, idx) => {
+          const original = item;
 
           return (
-            <div key={field.id} className="grid grid-cols-4 gap-3 my-2">
+            <div key={item.id} className="grid grid-cols-4 gap-3 my-2">
               {/* Fee Name */}
               <Controller
                 name={`lineItems.${idx}.itemName`}
@@ -38,28 +37,30 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
                 name={`lineItems.${idx}.unitPriceExGst`}
                 control={control}
                 rules={{
-                  validate: (value) =>
-                    Number(value) >= Number(original?.originalAmount)
+                  required: "Amount is required",
+                  validate: (value) => {
+                    if (value === "" || value === null || value === undefined) {
+                      return "Amount is required";
+                    }
+
+                    return Number(value) >= Number(original?.originalAmount)
                       ? true
-                      : `Amount cannot be less than ₹${original?.originalAmount}`,
+                      : `Amount cannot be less than ₹${original?.originalAmount}`;
+                  },
                 }}
                 render={({ field, fieldState }) => (
                   <Input
                     {...field}
+                    value={field.value ?? ""}
                     type="number"
                     label="Amount"
                     isRequired
                     size={isMedium ? "sm" : "md"}
                     startContent={<IndianRupee className="h-4 w-4" />}
-                    min={original?.originalAmount}
                     isInvalid={!!fieldState.error}
                     errorMessage={fieldState.error?.message}
                     onChange={(e) => {
-                      const value = Number(e.target.value || 0);
-
-                      if (value < Number(original?.originalAmount)) return;
-
-                      field.onChange(value);
+                      field.onChange(e.target.value);
                     }}
                   />
                 )}
@@ -85,28 +86,29 @@ const ServiceFormFieldsDetail = ({ control, isMedium, getValues }) => {
                 name={`lineItems.${idx}.gstRate`}
                 control={control}
                 rules={{
-                  validate: (value) =>
-                    Number(value) >= Number(original?.originalGst)
+                  required: "GST is required",
+                  validate: (value) => {
+                    if (value === "" || value === null || value === undefined) {
+                      return "GST is required";
+                    }
+
+                    return Number(value) >= Number(original?.originalGst)
                       ? true
-                      : ` GST cannot be less than ${original?.originalGst}%`,
+                      : `GST cannot be less than ${original?.originalGst}%`;
+                  },
                 }}
                 render={({ field, fieldState }) => (
                   <Input
-                    {...field}
+                    value={field.value ?? ""}
                     type="number"
                     label="GST %"
                     isRequired
                     size={isMedium ? "sm" : "md"}
                     endContent={<Percent className="h-4 w-4" />}
-                    min={original?.originalGst}
                     isInvalid={!!fieldState.error}
                     errorMessage={fieldState.error?.message}
                     onChange={(e) => {
-                      const value = Number(e.target.value || 0);
-
-                      if (value < Number(original?.originalGst)) return;
-
-                      field.onChange(value);
+                      field.onChange(e.target.value);
                     }}
                   />
                 )}

@@ -204,6 +204,8 @@ const LeadEstimates = () => {
     reset,
     setValue,
   } = useForm({
+    mode: "onChange",
+    reValidateMode: "onChange",
     resolver: zodResolver(estimateFormSchema),
     defaultValues: {
       billingAddress: {},
