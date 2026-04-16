@@ -14,6 +14,9 @@ import {
   ModalFooter,
   CardHeader,
 } from "@heroui/react";
+
+import { Button as AntButton } from "antd";
+
 import { z } from "zod";
 import {
   getAllCitiesByStateName,
@@ -69,7 +72,7 @@ const BasicCompany = ({
   isEstimate,
   companyDetail,
   setIsDropDownOpen,
-  setIsCompanyUpdated,
+  setIsCompanyUpdated = () => {},
 }) => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
@@ -309,8 +312,9 @@ const BasicCompany = ({
     <>
       {isEstimate ? (
         !company?.name ? (
-          <span
-            className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
+          <AntButton
+            type="primary"
+            // className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -323,10 +327,11 @@ const BasicCompany = ({
             }}
           >
             + Add
-          </span>
+          </AntButton>
         ) : (
-          <span
-            className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
+          <AntButton
+            type="primary"
+            // className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -340,7 +345,7 @@ const BasicCompany = ({
             }}
           >
             Update
-          </span>
+          </AntButton>
         )
       ) : (
         <Card className="my-2">

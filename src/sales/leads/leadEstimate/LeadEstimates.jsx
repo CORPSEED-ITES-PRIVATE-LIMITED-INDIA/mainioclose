@@ -85,7 +85,14 @@ import {
 import BasicCompany from "../../company/BasicCompany";
 import { convertEstimateToPI } from "../../../toolkit/slices/accountSlice";
 import { EllipsisVertical } from "lucide-react";
-
+import {
+  DatePicker as DtPicker,
+  Form,
+  Select as AntSelect,
+  Space,
+  Button as AntButton,
+  Input as AntInput,
+} from "antd";
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
 =========================== */
@@ -196,23 +203,26 @@ const LeadEstimates = () => {
   /* ===========================
      Estimate form (existing)
   =========================== */
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    getValues,
-    reset,
-    setValue,
-  } = useForm({
-    mode: "onChange",
-    reValidateMode: "onChange",
-    resolver: zodResolver(estimateFormSchema),
-    defaultValues: {
-      billingAddress: {},
-      shippingAddress: {},
-      lineItems: [],
-    },
-  });
+
+  const [form] = Form.useForm();
+
+  // const {
+  //   control,
+  //   handleSubmit,
+  //   formState: { errors },
+  //   getValues,
+  //   reset,
+  //   setValue,
+  // } = useForm({
+  //   mode: "onChange",
+  //   reValidateMode: "onChange",
+  //   resolver: zodResolver(estimateFormSchema),
+  //   defaultValues: {
+  //     billingAddress: {},
+  //     shippingAddress: {},
+  //     lineItems: [],
+  //   },
+  // });
 
   /* ===========================
      ✅ Unit modal form
@@ -276,70 +286,6 @@ const LeadEstimates = () => {
     onOpen();
   };
 
-  // service line items auto-fill
-  useEffect(() => {
-    const values = getValues();
-
-    if (solutionDetail?.type === "SERVICE" && serviceFeeList?.length) {
-      reset({
-        ...values,
-        lineItems: serviceFeeList.map((item) => ({
-          itemName: item.name,
-
-          unitPriceExGst: item.baseAmount,
-          originalAmount: item.baseAmount, // 🔥 ADD THIS
-          hsnSacCode: item.hsnSacCode,
-          gstRate: item.gstPercentage,
-          originalGst: item.gstPercentage, // 🔥 ADD THIS
-        })),
-      });
-    } else {
-      // 🔥 CLEAR lineItems when:
-      // - no serviceFeeList
-      // - switching to PRODUCT
-      // - API returns empty
-      reset({
-        ...values,
-        lineItems: [],
-      });
-    }
-  }, [solutionDetail?.type, serviceFeeList, reset, getValues]);
-
-  const handleSelectSolution = (e) => {
-    dispatch(
-      getSolutionDetailByName({
-        name: e,
-        userId,
-      }),
-    ).then((res) => {
-      if (res.meta.requestStatus === "fulfilled") {
-        if (res.payload?.type === "SERVICE") {
-          dispatch(
-            getSolutionPriceListById({
-              solutionId: res?.payload?.id,
-              userId,
-            }),
-          ).then((res) => {
-            if (res.meta.requestStatus !== "fulfilled") {
-              addToast({ title: res?.payload?.data?.message, color: "danger" });
-            }
-          });
-        } else {
-          dispatch(
-            getAllBusinessArrangementBySolutionId({
-              solutionId: res?.payload?.id,
-              userId,
-            }),
-          ).then((res) => {
-            if (res.meta.requestStatus !== "fulfilled") {
-              addToast({ title: res?.payload?.data?.message, color: "danger" });
-            }
-          });
-        }
-      }
-    });
-  };
-
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
@@ -377,7 +323,11 @@ const LeadEstimates = () => {
   useEffect(() => {
     dispatch(getBasicCompanyDetails({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        setValue("companyName", resp?.payload?.name);
+        // setValue("companyName", resp?.payload?.name);
+        form.setFieldsValue({
+          companyName: resp?.payload?.name,
+        });
+
         setCompanyDetail(resp?.payload);
         dispatch(getAllUnitListByCompanyId(resp?.payload?.id));
         dispatch(
@@ -388,9 +338,10 @@ const LeadEstimates = () => {
         );
       }
     });
+
     dispatch(getAllCountries());
     dispatch(getAllSolutionList(userId));
-  }, [dispatch, leadId, userId, setValue, isCompanyUpdated]);
+  }, [dispatch, leadId, userId, isCompanyUpdated, form]);
 
   // estimates list
   useEffect(() => {
@@ -447,7 +398,79 @@ const LeadEstimates = () => {
     });
   };
 
-  const onSubmit = (data) => {
+  // const onSubmit = (data) => {
+  //   if (
+  //     !leadData?.praposalApproved &&
+  //     proposalDataDetail?.status !== "approved"
+  //   ) {
+  //     addToast({
+  //       title: "RESTRICTED !.",
+  //       description: "The proposal has neither been sent nor approved yet.",
+  //       color: "danger",
+  //     });
+  //     return;
+  //   }
+
+  //   data.companyId = company?.id;
+  //   data.solutionType = solutionDetail?.type;
+  //   data.solutionId = solutionDetail?.id;
+  //   data.solutionName = solutionDetail?.name;
+  //   data.createdByUserId = userId;
+  //   data.leadId = leadId;
+
+  //   dispatch(
+  //     createCompanyAndUnitsForAccountsViaLeadEstimate({
+  //       ...company,
+  //       companyId: company?.id,
+  //       createdById: userId,
+  //     }),
+  //   )
+  //     .then((compRes) => {
+  //       if (compRes.meta.requestStatus === "fulfilled") {
+  //         addToast({
+  //           title: "Company and Its units added suuccessfully in Accounts",
+  //           color: "success",
+  //         });
+
+  //         dispatch(createNewEstimate(data))
+  //           .then((res) => {
+  //             if (res.meta.requestStatus === "fulfilled") {
+  //               addToast({
+  //                 title: "Estimate created successfully !.",
+  //                 color: "success",
+  //               });
+  //               dispatch(getNewEstimateByLeadId({ leadId, userId }));
+  //               setShowForm(false);
+  //             } else {
+  //               addToast({
+  //                 title: res?.payload?.data?.message,
+  //                 color: "danger",
+  //               });
+  //             }
+  //           })
+  //           .catch(() =>
+  //             addToast({ title: "Something went wrong !.", color: "danger" }),
+  //           );
+  //       } else {
+  //         addToast({ title: compRes?.payload?.data?.message, color: "danger" });
+  //       }
+  //     })
+  //     .catch(() =>
+  //       addToast({ title: "Something went wrong !.", color: "danger" }),
+  //     );
+  // };
+
+  const onEstimateFinish = (values) => {
+    const formattedValues = {
+      ...values,
+      estimateDate: values?.estimateDate
+        ? dayjs(values.estimateDate).format("YYYY-MM-DD")
+        : "",
+      validUntil: values?.validUntil
+        ? dayjs(values.validUntil).format("YYYY-MM-DD")
+        : "",
+    };
+
     if (
       !leadData?.praposalApproved &&
       proposalDataDetail?.status !== "approved"
@@ -460,12 +483,15 @@ const LeadEstimates = () => {
       return;
     }
 
-    data.companyId = company?.id;
-    data.solutionType = solutionDetail?.type;
-    data.solutionId = solutionDetail?.id;
-    data.solutionName = solutionDetail?.name;
-    data.createdByUserId = userId;
-    data.leadId = leadId;
+    const data = {
+      ...formattedValues,
+      companyId: company?.id,
+      solutionType: solutionDetail?.type,
+      solutionId: solutionDetail?.id,
+      solutionName: solutionDetail?.name,
+      createdByUserId: userId,
+      leadId,
+    };
 
     dispatch(
       createCompanyAndUnitsForAccountsViaLeadEstimate({
@@ -509,10 +535,23 @@ const LeadEstimates = () => {
       );
   };
 
+  const getMappedLineItems = () =>
+    Array.isArray(serviceFeeList)
+      ? serviceFeeList.map((item) => ({
+          itemName: item.name,
+          unitPriceExGst: item.baseAmount,
+          originalAmount: item.baseAmount,
+          hsnSacCode: item.hsnSacCode,
+          gstRate: item.gstPercentage,
+          originalGst: item.gstPercentage,
+        }))
+      : [];
+
   const onCancelForm = () => {
-    const values = getValues();
-    reset({ ...values, lineItems: [] });
-    setShowForm(false);
+    form.resetFields();
+    form.setFieldsValue({
+      lineItems: getMappedLineItems(),
+    });
   };
 
   const onSaveUnitModal = (data) => {
@@ -701,17 +740,6 @@ const LeadEstimates = () => {
       {/* ===================== LIST MODE ===================== */}
       {!showForm && hasEstimates && (
         <div className="w-full">
-          {/* <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">
-                Estimates / Proforma Invoice
-              </h3>
-              <p className="text-sm text-slate-500">
-                {sortedEstimates.length} total
-              </p>
-            </div>
-          </div> */}
-
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {sortedEstimates.map((est) => (
               <Card key={est?.id} className="hover:shadow-lg transition-shadow">
@@ -818,67 +846,6 @@ const LeadEstimates = () => {
                       ? dayjs(est.validUntil).format("DD MMM YYYY")
                       : "NA"}
                   </p>
-                  {/* <div className="flex gap-1 items-center">
-                    <Button
-                      size="sm"
-                      radius="sm"
-                      color="primary"
-                      variant="light"
-                      onPress={() => openEstimatePreview(est, "ESTIMATE")}
-                    >
-                      Preview Estimate
-                    </Button>
-                    {est?.performanceInvoiceFlag && (
-                      <Button
-                        size="sm"
-                        radius="sm"
-                        color="primary"
-                        variant="light"
-                        onPress={() => openEstimatePreview(est, "PI")}
-                      >
-                        Preview PI
-                      </Button>
-                    )}
-
-                    {!est?.performanceInvoiceFlag &&
-                      est?.status !== "REJECTED" && (
-                        <Button
-                          size="sm"
-                          radius="sm"
-                          color="success"
-                          variant="flat"
-                          onPress={() => {
-                            handleConvertToPI(est);
-                          }}
-                        >
-                          Convert to PI
-                        </Button>
-                      )}
-
-                    {est?.status !== "REJECTED" && (
-                      <Button
-                        size="sm"
-                        radius="sm"
-                        color="danger"
-                        variant="flat"
-                        onPress={() => {
-                          modal.onOpen();
-                          setEstimateId(est?.id);
-                        }}
-                      >
-                        Cancel estimate
-                      </Button>
-                    )}
-
-                    {est?.status !== "REJECTED" && (
-                      <Link
-                        to={`/erp/${userId}/sales/estimate`}
-                        className="text-xs border border-gray-200 rounded-lg py-1 px-1.5 bg-blue-200"
-                      >
-                        Add Payment Register
-                      </Link>
-                    )}
-                  </div> */}
                 </CardBody>
               </Card>
             ))}
@@ -888,102 +855,113 @@ const LeadEstimates = () => {
 
       {/* ===================== FORM MODE ===================== */}
       {showForm && (
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="w-full max-h-[70vh] overflow-auto space-y-4"
+        <Form
+          form={form}
+          layout="vertical"
+          className="w-full "
+          onFinish={onEstimateFinish}
+          initialValues={{
+            lineItems: [],
+            customerNotes: "",
+            internalRemarks: "",
+          }}
         >
-          <Card className="shadow-xl">
+          <Card className="shadow-xl max-h-[68vh] overflow-auto">
             <CardBody className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Controller
-                  name="companyName"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => {
-                    console.log("djgkjsgkjgkjd", error);
-                    return (
-                      <NewSelect
-                        // label={"Select company"}
-                        label={
-                          <div>
-                            Select company
-                            <span className="text-red-500">*</span>
-                          </div>
-                        }
-                        // isRequired={true}
-                        size={isMedium ? "sm" : "md"}
-                        data={companyList || []}
-                        labelKey="name"
-                        valueKey="name"
-                        // errorMessage={"please select company"}
-                        isOpen={isDropDownOpen?.company}
-                        value={field.value}
-                        onOpenChange={(e) =>
-                          setIsDropDownOpen((prev) => ({ ...prev, company: e }))
-                        }
-                        onItemSelect={(item) => {
+                <div className="flex flex-col">
+                  <label className="mb-1.5 text-sm  text-[rgba(0,0,0,0.88)]">
+                    <span className="text-red-500">*</span> Select company
+                  </label>
+
+                  <Space.Compact className="w-full flex items-start">
+                    <Form.Item
+                      name="companyName"
+                      rules={[
+                        { required: true, message: "Please select company" },
+                      ]}
+                      className="mb-0 flex-1"
+                      style={{ width: "100%" }}
+                    >
+                      <AntSelect
+                        showSearch
+                        allowClear
+                        options={companyList}
+                        fieldNames={{ label: "name", value: "name" }}
+                        className="w-full"
+                        onChange={(value, item) => {
+                          form.setFieldsValue({
+                            companyName: value,
+                            unitId: undefined,
+                            contactId: undefined,
+                          });
+
                           if (!item) {
                             dispatch(handleResetExistingCompany());
                             setCompanyDetail(null);
                             return;
-                          } else if (item) {
-                            dispatch(
-                              getBasicCompanyDetailByCompanyId(item?.id),
-                            ).then((resp) => {
-                              if (resp.meta.requestStatus === "fulfilled") {
-                                setCompanyDetail(resp?.payload);
-                                dispatch(
-                                  getContactDetailListByCompanyId({
-                                    companyId: resp?.payload?.id,
-                                    userId,
-                                  }),
-                                );
-                              }
-                            });
-                            getAllUnitListByCompanyId(item?.id);
                           }
-                        }}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        endContent={
-                          <BasicCompany
-                            setIsDropDownOpen={setIsDropDownOpen}
-                            isEstimate={true}
-                            companyDetail={companyDetail}
-                            setIsCompanyUpdated={setIsCompanyUpdated}
-                          />
-                        }
-                      />
-                    );
-                  }}
-                />
 
-                <FormSelect
-                  label="Unit Name"
-                  name="unitId"
-                  control={control}
-                  isRequired={true}
-                  error={errors.unitName}
-                  isOpen={isDropDownOpen?.unit}
-                  data={
-                    unitList?.length > 0
-                      ? unitList?.map((item) => ({
-                          ...item,
-                          label: item?.unitName,
-                          value: item?.id,
-                        }))
-                      : []
-                  }
-                  onItemSelect={(detail) => {
-                    setUnitDetail(detail);
-                  }}
-                  onOpenChange={(e) =>
-                    setIsDropDownOpen((prev) => ({ ...prev, unit: e }))
-                  }
-                  onChangeExtra={(e) => setContactValue("companyUnitId", e)}
-                  endContent={
-                    <span
-                      className="text-blue-600 cursor-pointer text-sm font-bold"
+                          dispatch(
+                            getBasicCompanyDetailByCompanyId(item?.id),
+                          ).then((resp) => {
+                            if (resp.meta.requestStatus === "fulfilled") {
+                              setCompanyDetail(resp?.payload);
+                              dispatch(
+                                getContactDetailListByCompanyId({
+                                  companyId: resp?.payload?.id,
+                                  userId,
+                                }),
+                              );
+                            }
+                          });
+
+                          dispatch(getAllUnitListByCompanyId(item?.id));
+                        }}
+                      />
+                    </Form.Item>
+
+                    <BasicCompany
+                      setIsDropDownOpen={setIsDropDownOpen}
+                      isEstimate={true}
+                      companyDetail={companyDetail}
+                      setIsCompanyUpdated={setIsCompanyUpdated}
+                    />
+                  </Space.Compact>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1.5 text-sm text-[rgba(0,0,0,0.88)]">
+                    <span className="text-red-500">*</span> Select company
+                    unit{" "}
+                  </label>
+
+                  <Space.Compact className="w-full flex items-start">
+                    <Form.Item
+                      name="unitId"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select company unit",
+                        },
+                      ]}
+                      className="mb-0 flex-1"
+                      style={{ width: "100%" }}
+                    >
+                      <AntSelect
+                        showSearch
+                        options={unitList}
+                        fieldNames={{ label: "unitName", value: "id" }}
+                        className="w-full"
+                        onSelect={(value, option) => {
+                          setUnitDetail(option);
+                          setContactValue("companyUnitId", String(value));
+                        }}
+                      />
+                    </Form.Item>
+
+                    <AntButton
+                      type="primary"
                       onPointerDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -991,31 +969,41 @@ const LeadEstimates = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setIsDropDownOpen((prev) => ({ ...prev, unit: false }));
                         handleUpdateCompanyUnit();
                       }}
                     >
                       Update
-                    </span>
-                  }
-                />
+                    </AntButton>
+                  </Space.Compact>
+                </div>
 
-                <FormSelect
-                  label="Contact"
-                  name="contactId"
-                  control={control}
-                  isRequired={true}
-                  isOpen={isDropDownOpen?.contact}
-                  onOpenChange={(e) =>
-                    setIsDropDownOpen((prev) => ({ ...prev, contact: e }))
-                  }
-                  error={errors.contactId}
-                  data={allContactList}
-                  labelKey="name"
-                  valueKey="id"
-                  endContent={
-                    <span
-                      className="text-blue-700 cursor-pointer font-medium text-nowrap text-sm"
+                <div className="flex flex-col">
+                  <label className="mb-1.5 text-sm text-[rgba(0,0,0,0.88)]">
+                    <span className="text-red-500">*</span> Select contact
+                  </label>
+
+                  <Space.Compact className="w-full flex items-start">
+                    <Form.Item
+                      name="contactId"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select company contact",
+                        },
+                      ]}
+                      className="mb-0 flex-1"
+                      style={{ width: "100%" }}
+                    >
+                      <AntSelect
+                        showSearch
+                        options={allContactList}
+                        fieldNames={{ label: "name", value: "id" }}
+                        className="w-full"
+                      />
+                    </Form.Item>
+
+                    <AntButton
+                      type="primary"
                       onPointerDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1024,145 +1012,92 @@ const LeadEstimates = () => {
                         e.preventDefault();
                         e.stopPropagation();
                         contactModal.onOpen();
-                        setIsDropDownOpen((prev) => ({
-                          ...prev,
-                          contact: false,
-                        }));
                       }}
                     >
                       + Add
-                    </span>
-                  }
-                />
-
-                {/* <Controller
-                  name="solutionName"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <NewSelect
-                      label="Select solutions"
-                      isRequired={true}
-                      size={isMedium ? "sm" : "md"}
-                      data={solutionList || []}
-                      labelKey="name"
-                      valueKey="name"
-                      value={field.value}
-                      onItemSelect={(item) => setSelectedSolutionDetail(item)}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        handleSelectSolution(value);
-                      }}
-                    />
-                  )}
-                /> */}
+                    </AntButton>
+                  </Space.Compact>
+                </div>
               </div>
 
-              {solutionDetail?.type === "PRODUCT" ? (
-                <ProductFormFieldsDetails
-                  control={control}
-                  getValues={getValues}
-                  reset={reset}
-                  setValue={setValue}
-                  isMedium={isMedium}
-                />
-              ) : (
-                <ServiceFormFieldsDetail
-                  control={control}
-                  isMedium={isMedium}
-                  getValues={getValues}
-                  reset={reset}
-                  setValue={setValue}
-                />
-              )}
+              {/* {solutionDetail?.type === "PRODUCT" ? (
+                  <ProductFormFieldsDetails
+                    control={control}
+                    getValues={getValues}
+                    reset={reset}
+                    setValue={setValue}
+                    isMedium={isMedium}
+                  />
+                ) : ( */}
+              <ServiceFormFieldsDetail
+                form={form}
+                serviceFeeList={serviceFeeList}
+              />
+              {/* )} */}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* <FormInput
-                  label="Order Number"
-                  name="orderNumber"
-                  control={control}
-                  error={errors.orderNumber}
-                /> */}
-
-                <Controller
+                <Form.Item
+                  label="Order Date"
                   name="estimateDate"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <DatePicker
-                      size={isMedium ? "sm" : "md"}
-                      isRequired
-                      label="Order date"
-                      showMonthAndYearPickers
-                      maxValue={today(getLocalTimeZone())}
-                      errorMessage={error?.message}
-                      value={
-                        field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                          ? parseDate(field.value)
-                          : null
-                      }
-                      onChange={(value) => {
-                        const iso = value ? value.toString() : "";
-                        field.onChange(iso);
-                      }}
-                    />
-                  )}
-                />
+                  rules={[
+                    { required: true, message: "Please select order date" },
+                  ]}
+                  className="mb-0"
+                >
+                  <DtPicker
+                    className="w-full"
+                    disabledDate={(current) =>
+                      current && current > dayjs().endOf("day")
+                    }
+                    format="YYYY-MM-DD"
+                  />
+                </Form.Item>
 
-                <Controller
+                <Form.Item
+                  label="Valid till date"
                   name="validUntil"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <DatePicker
-                      size={isMedium ? "sm" : "md"}
-                      isRequired
-                      label="Valid till date"
-                      showMonthAndYearPickers
-                      minValue={today(getLocalTimeZone())}
-                      errorMessage={error?.message}
-                      value={
-                        field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                          ? parseDate(field.value)
-                          : null
-                      }
-                      onChange={(value) => {
-                        const iso = value ? value.toString() : "";
-                        field.onChange(iso);
-                      }}
-                    />
-                  )}
-                />
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please select valid till date",
+                    },
+                  ]}
+                  className="mb-0"
+                >
+                  <DtPicker
+                    className="w-full"
+                    disabledDate={(current) =>
+                      current && current < dayjs().startOf("day")
+                    }
+                    format="YYYY-MM-DD"
+                  />
+                </Form.Item>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Controller
-                  name="customerNotes"
-                  control={control}
-                  render={({ field }) => (
-                    <Textarea label="Notes" {...field} minRows={3} />
-                  )}
-                />
+                <Form.Item label="Notes" name="customerNotes" className="mb-0">
+                  <AntInput.TextArea rows={3} placeholder="Notes" />
+                </Form.Item>
 
-                <Controller
+                <Form.Item
+                  label="Remarks"
                   name="internalRemarks"
-                  control={control}
-                  render={({ field }) => (
-                    <Textarea label="Remarks" {...field} minRows={3} />
-                  )}
-                />
+                  className="mb-0"
+                >
+                  <AntInput.TextArea rows={3} placeholder="Remarks" />
+                </Form.Item>
               </div>
             </CardBody>
           </Card>
 
           <div className="flex justify-end mt-4 gap-2">
-            <Button
-              type="submit"
-              color="primary"
-              size="lg"
-              className="cursor-pointer"
-            >
+            <AntButton onClick={onCancelForm}>Cancel</AntButton>
+
+            <AntButton htmlType="submit" type="primary">
               Submit
-            </Button>
+            </AntButton>
           </div>
-        </form>
+        </Form>
       )}
 
       {/* ===================== ✅ UNIT DETAILS MODAL ===================== */}

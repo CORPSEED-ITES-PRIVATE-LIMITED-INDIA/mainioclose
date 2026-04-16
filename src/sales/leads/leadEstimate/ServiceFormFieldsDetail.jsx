@@ -1,118 +1,135 @@
-import React, { memo } from "react";
-import { Controller, useFieldArray } from "react-hook-form";
-import { Input } from "@heroui/react";
+import React, { memo, useEffect } from "react";
+import { Form, Input } from "antd";
 import { IndianRupee, Percent } from "lucide-react";
 import Section from "../../../components/Section";
 
-const ServiceFormFieldsDetail = ({ control, isMedium }) => {
-  const { fields } = useFieldArray({
-    control,
-    name: "lineItems",
-  });
+const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
+  useEffect(() => {
+    if (!form) return;
+
+    if (Array.isArray(serviceFeeList) && serviceFeeList.length > 0) {
+      form.setFieldsValue({
+        lineItems: serviceFeeList.map((item) => ({
+          itemName: item.name,
+          unitPriceExGst: item.baseAmount,
+          originalAmount: item.baseAmount,
+          hsnSacCode: item.hsnSacCode,
+          gstRate: item.gstPercentage,
+          originalGst: item.gstPercentage,
+        })),
+      });
+    } else {
+      form.setFieldsValue({
+        lineItems: [],
+      });
+    }
+  }, [form, serviceFeeList]);
 
   return (
     <Section title="Service Pricing Details">
-      {fields?.length > 0 ? (
-        fields.map((item, idx) => {
-          const original = item;
+      {Array.isArray(serviceFeeList) && serviceFeeList.length > 0 ? (
+        serviceFeeList?.map((item, idx) => {
+          const original = form.getFieldValue(["lineItems", idx]) || {};
 
           return (
-            <div key={item.id} className="grid grid-cols-4 gap-3 my-2">
-              {/* Fee Name */}
-              <Controller
-                name={`lineItems.${idx}.itemName`}
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    isReadOnly
-                    label="Fee name"
-                    size={isMedium ? "sm" : "md"}
-                  />
-                )}
-              />
+            <div key={item?.id || idx} className="grid grid-cols-4 gap-3 my-2">
+              <Form.Item
+                label="Fee name"
+                name={["lineItems", idx, "itemName"]}
+                className="mb-0"
+              >
+                <Input readOnly placeholder="Fee name" />
+              </Form.Item>
 
-              {/* Amount */}
-              <Controller
-                name={`lineItems.${idx}.unitPriceExGst`}
-                control={control}
-                rules={{
-                  required: "Amount is required",
-                  validate: (value) => {
-                    if (value === "" || value === null || value === undefined) {
-                      return "Amount is required";
-                    }
+              <Form.Item
+                label="Amount"
+                name={["lineItems", idx, "unitPriceExGst"]}
+                className="mb-0"
+                validateFirst
+                rules={[
+                  { required: true, message: "Amount is required" },
+                  {
+                    validator: (_, value) => {
+                      if (
+                        value === "" ||
+                        value === null ||
+                        value === undefined
+                      ) {
+                        return Promise.resolve();
+                      }
 
-                    return Number(value) >= Number(original?.originalAmount)
-                      ? true
-                      : `Amount cannot be less than ₹${original?.originalAmount}`;
+                      if (Number(value) < Number(original?.originalAmount)) {
+                        return Promise.reject(
+                          new Error(
+                            `Amount cannot be less than ₹${original?.originalAmount}`,
+                          ),
+                        );
+                      }
+
+                      return Promise.resolve();
+                    },
                   },
-                }}
-                render={({ field, fieldState }) => (
-                  <Input
-                    {...field}
-                    value={field.value ?? ""}
-                    type="number"
-                    label="Amount"
-                    isRequired
-                    size={isMedium ? "sm" : "md"}
-                    startContent={<IndianRupee className="h-4 w-4" />}
-                    isInvalid={!!fieldState.error}
-                    errorMessage={fieldState.error?.message}
-                    onChange={(e) => {
-                      field.onChange(e.target.value);
-                    }}
-                  />
-                )}
-              />
+                ]}
+              >
+                <Input
+                  type="number"
+                  placeholder="Amount"
+                  prefix={<IndianRupee className="h-4 w-4" />}
+                />
+              </Form.Item>
 
-              {/* HSN */}
-              <Controller
-                name={`lineItems.${idx}.hsnSacCode`}
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    isReadOnly
-                    label="HSN number"
-                    isRequired
-                    size={isMedium ? "sm" : "md"}
-                  />
-                )}
-              />
+              <Form.Item
+                label="HSN number"
+                name={["lineItems", idx, "hsnSacCode"]}
+                className="mb-0"
+              >
+                <Input readOnly placeholder="HSN number" />
+              </Form.Item>
 
-              {/* GST */}
-              <Controller
-                name={`lineItems.${idx}.gstRate`}
-                control={control}
-                rules={{
-                  required: "GST is required",
-                  validate: (value) => {
-                    if (value === "" || value === null || value === undefined) {
-                      return "GST is required";
-                    }
+              <Form.Item
+                label="GST %"
+                name={["lineItems", idx, "gstRate"]}
+                className="mb-0"
+                validateFirst
+                rules={[
+                  { required: true, message: "GST is required" },
+                  {
+                    validator: (_, value) => {
+                      if (
+                        value === "" ||
+                        value === null ||
+                        value === undefined
+                      ) {
+                        return Promise.resolve();
+                      }
 
-                    return Number(value) >= Number(original?.originalGst)
-                      ? true
-                      : `GST cannot be less than ${original?.originalGst}%`;
+                      if (Number(value) < Number(original?.originalGst)) {
+                        return Promise.reject(
+                          new Error(
+                            `GST cannot be less than ${original?.originalGst}%`,
+                          ),
+                        );
+                      }
+
+                      return Promise.resolve();
+                    },
                   },
-                }}
-                render={({ field, fieldState }) => (
-                  <Input
-                    value={field.value ?? ""}
-                    type="number"
-                    label="GST %"
-                    isRequired
-                    size={isMedium ? "sm" : "md"}
-                    endContent={<Percent className="h-4 w-4" />}
-                    isInvalid={!!fieldState.error}
-                    errorMessage={fieldState.error?.message}
-                    onChange={(e) => {
-                      field.onChange(e.target.value);
-                    }}
-                  />
-                )}
-              />
+                ]}
+              >
+                <Input
+                  type="number"
+                  placeholder="GST %"
+                  suffix={<Percent className="h-4 w-4" />}
+                />
+              </Form.Item>
+
+              {/* <Form.Item name={["lineItems", idx, "originalAmount"]} hidden>
+                <Input />
+              </Form.Item>
+
+              <Form.Item name={["lineItems", idx, "originalGst"]} hidden>
+                <Input />
+              </Form.Item> */}
             </div>
           );
         })

@@ -38,6 +38,7 @@ import {
 } from "../../toolkit/slices/commonSlice";
 import {
   getAllCompanyType,
+  getAllGstType,
   getAllGstTypeByCompanyTypeId,
   getBusinessTypeByGstTypeId,
   updateFullCompanyDetailsInAccounts,
@@ -57,56 +58,54 @@ import {
 import { useParams } from "react-router-dom";
 import { IndianRupee } from "lucide-react";
 
-const unitSchema = z
-  .object({
-    id: z.coerce.number().optional().default(0),
-    unitName: z.string().min(1, "Unit name is required"),
-    addressLine1: z.string().min(1, "Address Line 1 is required"),
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-    country: z.string().min(1, "Country is required"),
-    pinCode: z.string().min(1, "Pin code is required"),
+const unitSchema = (gstTypeList = []) =>
+  z
+    .object({
+      id: z.coerce.number().optional().default(0),
+      unitName: z.string().min(1, "Unit name is required"),
+      addressLine1: z.string().min(1, "Address Line 1 is required"),
+      city: z.string().min(1, "City is required"),
+      state: z.string().min(1, "State is required"),
+      country: z.string().min(1, "Country is required"),
+      pinCode: z.string().min(1, "Pin code is required"),
 
-    gstNo: z.string().optional(), // 👈 make optional
+      gstNo: z.string().optional(),
+      unitOpeningDate: z.string().min(1, "please enter date"),
+      companyTypeId: z.string().min(1, "please select company type"),
+      gstTypeId: z.string().min(1, "please select gst type"),
+    })
+    .superRefine((data, ctx) => {
+      const selectedGstType = gstTypeList?.find(
+        (item) => String(item.id) === String(data.gstTypeId),
+      );
 
-    unitOpeningDate: z.string().min(1, "please enter date"),
-    companyTypeId: z.string().min(1, "please select company type"),
-    gstTypeId: z.string().min(1, "please select gst type"),
-    gstBusinessTypeId: z.string().min(1, "please select business type"),
-  })
-  .superRefine((data, ctx) => {
-    // 👇 your condition
-    const requiresGST = data?.gstRequired; // you must pass this flag
+      const isRegistered =
+        selectedGstType?.name?.trim()?.toLowerCase() === "registered";
 
-    if (requiresGST && !data.gstNo) {
-      ctx.addIssue({
-        path: ["gstNo"],
-        message: "GST number is required",
-        code: z.ZodIssueCode.custom,
-      });
-    }
-  });
+      if (isRegistered && !data.gstNo?.trim()) {
+        ctx.addIssue({
+          path: ["gstNo"],
+          message: "GST number is required",
+          code: z.ZodIssueCode.custom,
+        });
+      }
+    });
 
-const companySchema = (obj) =>
+const companySchema = (obj, gstTypeList = []) =>
   z.object({
-    // company basics
     name: z.string().min(1, "Company name is required."),
     panNo: z.string().min(1, "please give pan number."),
-    ...(obj?.adminRole
-      ? {
-          assigneeId: z.string().min(1, "Please select assignee."),
-        }
-      : {}),
-    // industry chain
+    // ...(obj?.adminRole
+    //   ? {
+    //       assigneeId: z.string().min(1, "Please select assignee."),
+    //     }
+    //   : {}),
     industryId: z.string().min(1, "Please select industry."),
     subIndustryId: z.string().min(1, "Please select sub industry."),
     subSubIndustryId: z.string().min(1, "Please select category."),
     industryDataId: z
       .array(z.string())
       .min(1, "Please select business activity."),
-
-    // uploads
-    // companyFileUrl: z.string().min(1, "please upload attachement"),
     companyFileUrl: z.string().optional(),
     ...(obj?.aggrementPresent
       ? { agreementFileUrl: z.string().min(1, "please upload attachement") }
@@ -118,19 +117,18 @@ const companySchema = (obj) =>
       : {}),
     aggrementPresent: z.boolean(),
     ndaPresent: z.boolean(),
-    // address (company)
     address: z.string().min(1, "please enter address."),
     country: z.string().min(1, "please select country."),
     state: z.string().min(1, "please select state."),
     city: z.string().min(1, "please select city."),
     primaryPinCode: z.string().min(1, "please select pin code"),
-
-    // existing fields (keep if you need)
     rating: z.string().min(1, "please select rating"),
     companyAge: z.string().min(1, "please enter company age."),
     establishDate: z.string().min(1, "please enter established date"),
     revenue: z.string().min(1, "please enter revenue"),
-    units: z.array(unitSchema).min(1, "At least one unit is required"),
+    units: z
+      .array(unitSchema(gstTypeList))
+      .min(1, "At least one unit is required"),
   });
 
 const getEmptyUnit = () => ({
@@ -158,7 +156,7 @@ const getDefaultValues = () => ({
   companyType: "",
   gstType: "",
   businessType: "",
-  assigneeId: "",
+  // assigneeId: "",
 
   industryId: "",
   subIndustryId: "",
@@ -300,7 +298,7 @@ export function CompanyAndUnitsForm({
     formState: { errors, isSubmitting },
     setValue,
   } = useForm({
-    resolver: zodResolver(companySchema(formCondition)),
+    resolver: zodResolver(companySchema(formCondition, gstTypeList)),
     mode: "onChange",
     defaultValues,
   });
@@ -383,6 +381,7 @@ export function CompanyAndUnitsForm({
 
   useEffect(() => {
     dispatch(getAllCompanyType());
+    dispatch(getAllGstType());
     dispatch(getAllUsers());
     dispatch(getAllMainIndustry());
     dispatch(getClientDesiginationList());
@@ -504,7 +503,7 @@ export function CompanyAndUnitsForm({
     reset({
       ...getDefaultValues(),
       ...company,
-      assigneeId: String(company?.assigneeId),
+      // assigneeId: String(company?.assigneeId),
       industryId: String(company?.industryId),
       subIndustryId: String(company?.subIndustryId),
       subSubIndustryId: String(company?.subSubIndustryId),
@@ -622,8 +621,6 @@ export function CompanyAndUnitsForm({
         addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
-
-  console.log("jdhsgfjkhgkjgkjdg", gstAndPanData);
 
   return (
     <form
@@ -756,7 +753,7 @@ export function CompanyAndUnitsForm({
             />
 
             {/* Assignee (Admin only) */}
-            {adminRole && (
+            {/* {adminRole && (
               <Controller
                 name="assigneeId"
                 control={control}
@@ -774,7 +771,7 @@ export function CompanyAndUnitsForm({
                   />
                 )}
               />
-            )}
+            )} */}
 
             {/* Industry chain */}
 
@@ -1268,6 +1265,14 @@ export function CompanyAndUnitsForm({
           {fields.map((item, index) => {
             const unitCountry = watch(`units.${index}.country`);
             const unitState = watch(`units.${index}.state`);
+            const selectedGstTypeId = watch(`units.${index}.gstTypeId`);
+
+            const selectedGstType = gstTypeList?.find(
+              (gst) => String(gst.id) === String(selectedGstTypeId),
+            );
+
+            const isRegisteredGstType =
+              selectedGstType?.name?.trim()?.toLowerCase() === "registered";
 
             const unitStatesList = statesByCountry?.[unitCountry] || [];
             const unitCitiesList = citiesByState?.[unitState] || [];
@@ -1322,20 +1327,6 @@ export function CompanyAndUnitsForm({
                           value={field.value}
                           isInvalid={!!error}
                           errorMessage={error?.message}
-                          // onChange={(value) => {
-                          //   dispatch(getAllGstTypeByCompanyTypeId(value)).then(
-                          //     (res) => {
-                          //       if (res.payload) {
-                          //         setGstTypeMap((prev) => ({
-                          //           ...prev,
-                          //           [index]: res.payload.gstBussinessType || [],
-                          //         }));
-                          //       }
-                          //     },
-                          //   );
-                          //   field.onChange(value);
-                          // }}
-
                           onChange={(value) => {
                             field.onChange(value);
 
@@ -1369,17 +1360,6 @@ export function CompanyAndUnitsForm({
                                 pan: false,
                               },
                             }));
-
-                            dispatch(getAllGstTypeByCompanyTypeId(value)).then(
-                              (res) => {
-                                if (res.payload) {
-                                  setGstTypeMap((prev) => ({
-                                    ...prev,
-                                    [index]: res.payload.gstBussinessType || [],
-                                  }));
-                                }
-                              },
-                            );
                           }}
                         />
                       )}
@@ -1388,113 +1368,39 @@ export function CompanyAndUnitsForm({
                     <Controller
                       name={`units.${index}.gstTypeId`}
                       control={control}
-                      render={({ field }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <NewSelect
                           label="GST Type"
                           isRequired
-                          data={gstTypeMap[index] || []}
+                          data={gstTypeList || []}
                           labelKey="name"
                           valueKey="id"
                           value={field.value}
-                          // onChange={(value) => {
-                          //   dispatch(getBusinessTypeByGstTypeId(value)).then(
-                          //     (res) => {
-                          //       if (res.payload) {
-                          //         setBusinessTypeMap((prev) => ({
-                          //           ...prev,
-                          //           [index]: res.payload.gstTypePrice || [],
-                          //         }));
-                          //       }
-                          //     },
-                          //   );
-                          //   field.onChange(value);
-                          // }}
+                          isInvalid={!!error}
+                          errorMessage={error?.message}
                           onChange={(value) => {
                             field.onChange(value);
 
-                            // clear dependent field
-                            setValue(`units.${index}.gstBusinessTypeId`, "", {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-                            setValue(`units.${index}.gstNo`, "", {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-
-                            // clear dependent options/state
-                            setBusinessTypeMap((prev) => ({
-                              ...prev,
-                              [index]: [],
-                            }));
-                            setGstAndPanData((prev) => ({
-                              ...prev,
-                              [index]: {
-                                gst: false,
-                                pan: false,
-                              },
-                            }));
-
-                            dispatch(getBusinessTypeByGstTypeId(value)).then(
-                              (res) => {
-                                if (res.payload) {
-                                  setBusinessTypeMap((prev) => ({
-                                    ...prev,
-                                    [index]: res.payload.gstTypePrice || [],
-                                  }));
-                                }
-                              },
+                            const selected = gstTypeList?.find(
+                              (gst) => String(gst.id) === String(value),
                             );
-                          }}
-                        />
-                      )}
-                    />
 
-                    <Controller
-                      name={`units.${index}.gstBusinessTypeId`}
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          label="Business Type"
-                          isRequired
-                          data={businessTypeMap[index] || []}
-                          labelKey="name"
-                          valueKey="id"
-                          value={field.value}
-                          // onItemSelect={(itm) => {
-                          //   setGstAndPanData((prev) => ({
-                          //     ...prev,
-                          //     [index]: {
-                          //       gst: itm?.gstPresent,
-                          //       pan: itm?.panPresent,
-                          //     },
-                          //   }));
-                          // }}
-                          onItemSelect={(itm) => {
-                            setGstAndPanData((prev) => ({
-                              ...prev,
-                              [index]: {
-                                gst: !!itm?.gstPresent,
-                                pan: !!itm?.panPresent,
-                              },
-                            }));
+                            const isRegistered =
+                              selected?.name?.trim()?.toLowerCase() ===
+                              "registered";
 
-                            // if selected business type does not require GST, clear GST no
-                            if (!itm?.gstPresent) {
+                            if (!isRegistered) {
                               setValue(`units.${index}.gstNo`, "", {
                                 shouldValidate: true,
                                 shouldDirty: true,
                               });
                             }
                           }}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
                         />
                       )}
                     />
 
-                    {gstAndPanData[index]?.gst && (
+                    {isRegisteredGstType && (
                       <Controller
                         control={control}
                         name={`units.${index}.gstNo`}

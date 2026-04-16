@@ -41,6 +41,11 @@ export const getAllGstTypeByCompanyTypeId = createAsyncThunk(
   },
 );
 
+export const getAllGstType = createAsyncThunk("getAllGstType", async (id) => {
+  const response = await api.get(`/leadService/api/gst-registration-types`);
+  return response.data;
+});
+
 export const getBusinessTypeByGstTypeId = createAsyncThunk(
   "getBusinessTypeByGstTypeId",
   async (id) => {
@@ -54,9 +59,7 @@ export const getBusinessTypeByGstTypeId = createAsyncThunk(
 export const getAllCompanyType = createAsyncThunk(
   "getAllCompanyType",
   async (data) => {
-    const response = await api.get(
-      `/leadService/api/v1/state/getAllCompanyType`,
-    );
+    const response = await api.get(`/leadService/api/company-types`);
     return response.data;
   },
 );
@@ -600,7 +603,7 @@ const CompanySlice = createSlice({
     newCompaniesList: [],
     newCompaniesTotalCount: 0,
     loading: "",
-    gstTypeList: {},
+    gstTypeList: [],
     businessTypeList: {},
     companyTypeList: [],
     companyGstList: [],
@@ -665,6 +668,18 @@ const CompanySlice = createSlice({
       state.gstTypeList = {};
     });
 
+    builder.addCase(getAllGstType.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllGstType.fulfilled, (state, action) => {
+      state.gstTypeList = action.payload?.data;
+      state.loading = "success";
+    });
+    builder.addCase(getAllGstType.rejected, (state) => {
+      state.loading = "rejected";
+      state.gstTypeList = [];
+    });
+
     builder.addCase(getBusinessTypeByGstTypeId.pending, (state) => {
       state.loading = "pending";
     });
@@ -681,7 +696,7 @@ const CompanySlice = createSlice({
       state.loading = "pending";
     });
     builder.addCase(getAllCompanyType.fulfilled, (state, action) => {
-      state.companyTypeList = action.payload;
+      state.companyTypeList = action.payload?.data;
       state.loading = "success";
     });
     builder.addCase(getAllCompanyType.rejected, (state) => {
