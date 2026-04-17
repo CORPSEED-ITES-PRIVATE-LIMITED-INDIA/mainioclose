@@ -61,6 +61,8 @@ import {
   createBasicUnitByCompanyIdInAccounts,
   createCompanyAndUnitsForAccountsViaLeadEstimate,
   getAllCompanyByUserId,
+  getAllCompanyType,
+  getAllGstType,
   getAllUnitListByCompanyId,
   getBasicCompanyDetailByCompanyId,
   getBasicCompanyDetails,
@@ -96,16 +98,23 @@ import {
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
 =========================== */
-const unitModalSchema = z.object({
-  unitName: z.string().min(1, "Unit name is required"),
-  gstNo: z.string().optional(),
-  // panNo: z.string().optional().or(z.literal("")),
-  address: z.string().optional().or(z.literal("")),
-  city: z.string().optional().or(z.literal("")),
-  state: z.string().optional().or(z.literal("")),
-  pinCode: z.string().optional().or(z.literal("")),
-  country: z.string().optional().or(z.literal("")),
-});
+const unitModalSchema = (isGstMandatory) =>
+  z.object({
+    unitName: z.string().min(1, "Unit name is required"),
+    companyTypeId: z.string().min(1, "Company type is required"),
+    gstTypeId: z.string().min(1, "GST type is required"),
+    ...(isGstMandatory
+      ? {
+          gstNo: z.string().min(1, "GST number is required"),
+        }
+      : {}),
+    // panNo: z.string().optional().or(z.literal("")),
+    address: z.string().optional().or(z.literal("")),
+    city: z.string().optional().or(z.literal("")),
+    state: z.string().optional().or(z.literal("")),
+    pinCode: z.string().optional().or(z.literal("")),
+    country: z.string().optional().or(z.literal("")),
+  });
 
 const contactModalSchema = z.object({
   title: z.string().optional().or(z.literal("")),
@@ -127,6 +136,8 @@ const LeadEstimates = () => {
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail,
   );
+  const companyTypeList = useSelector((state) => state.company.companyTypeList);
+  const gstTypeList = useSelector((state) => state.company.gstTypeList);
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const solutionDetail = useSelector(
     (state) => state.setting.solutionDetailById,
@@ -168,6 +179,7 @@ const LeadEstimates = () => {
     rejectionReason: "",
     rejectedByUserId: userId,
   });
+  const [isGstMandatory, setIsGstMandatory] = useState(false);
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -234,7 +246,7 @@ const LeadEstimates = () => {
     formState: { errors: unitErrors },
     setValue: setUnitValue,
   } = useForm({
-    resolver: zodResolver(unitModalSchema),
+    resolver: zodResolver(unitModalSchema(isGstMandatory)),
     defaultValues: {
       unitName: "",
       gstNo: "",
@@ -262,6 +274,8 @@ const LeadEstimates = () => {
     dispatch(getClientDesiginationList());
     dispatch(getAllCompanyByUserId(userId));
     dispatch(getProposalDataByLeadId(leadId));
+    dispatch(getAllCompanyType());
+    dispatch(getAllGstType());
   }, [dispatch]);
 
   const handleGstChange = (e) => {
@@ -461,6 +475,15 @@ const LeadEstimates = () => {
   // };
 
   const onEstimateFinish = (values) => {
+    if (unitDetail?.companyTypeId) {
+      addToast({
+        title: "ERROR !.",
+        description: "GST Number is not is saved in Unit details !.",
+        color: "danger",
+      });
+      return;
+    }
+
     const formattedValues = {
       ...values,
       estimateDate: values?.estimateDate
@@ -679,8 +702,8 @@ const LeadEstimates = () => {
         )}
 
         {showForm && (
-          <div className="text-xl font-semibold flex items-center justify-between">
-            <span>Create Estimate</span>
+          <div className="text-2xl font-bold  flex items-center justify-between">
+            <span className="">Create Estimate</span>
           </div>
         )}
 
@@ -871,7 +894,7 @@ const LeadEstimates = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex flex-col">
                   <label className="mb-1.5 text-sm  text-[rgba(0,0,0,0.88)]">
-                    <span className="text-red-500">*</span> Select company
+                    <span className="text-red-500">*</span> Select Company
                   </label>
 
                   <Space.Compact className="w-full flex items-start">
@@ -936,7 +959,7 @@ const LeadEstimates = () => {
                     unit{" "}
                   </label>
 
-                  <Space.Compact className="w-full flex items-start">
+                  <Space.Compact className="w-full overflow-hidden flex items-start">
                     <Form.Item
                       name="unitId"
                       rules={[
@@ -945,7 +968,7 @@ const LeadEstimates = () => {
                           message: "Please select company unit",
                         },
                       ]}
-                      className="mb-0 flex-1"
+                      className="mb-0 flex-1  overflow-hidden"
                       style={{ width: "100%" }}
                     >
                       <AntSelect
@@ -1136,18 +1159,68 @@ const LeadEstimates = () => {
                     />
 
                     <Controller
-                      name="gstNo"
+                      name={`companyTypeId`}
                       control={unitControl}
-                      render={({ field }) => (
-                        <Input
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="Company Structure"
+                          data={companyTypeList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          isRequired
                           value={field.value}
-                          onChange={(e) => {
-                            handleGstChange(e);
+                          isInvalid={!!error}
+                          errorMessage={error?.message}
+                          onChange={(value) => {
+                            field.onChange(value);
                           }}
-                          label="GST No"
                         />
                       )}
                     />
+
+                    <Controller
+                      name={`gstTypeId`}
+                      control={unitControl}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          label="GST Type"
+                          isRequired
+                          data={gstTypeList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          value={field.value}
+                          isInvalid={!!error}
+                          errorMessage={error?.message}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          onItemSelect={(item) => {
+                            if (item?.name === "Registered") {
+                              setIsGstMandatory(true);
+                            } else {
+                              setIsGstMandatory(false);
+                            }
+                          }}
+                        />
+                      )}
+                    />
+
+                    {isGstMandatory && (
+                      <Controller
+                        name="gstNo"
+                        control={unitControl}
+                        render={({ field }) => (
+                          <Input
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => {
+                              handleGstChange(e);
+                            }}
+                            label="GST No"
+                          />
+                        )}
+                      />
+                    )}
 
                     <Controller
                       name="address"
