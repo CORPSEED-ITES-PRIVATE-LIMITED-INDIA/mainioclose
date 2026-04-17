@@ -516,7 +516,28 @@ export const editProposalAndEmailTemplate = createAsyncThunk(
   },
 );
 
-export const addApplicantType = createAsyncThunk(
+export const editApplicantType = createAsyncThunk(
+  "editApplicantType",
+  async ({id, ...data}) => {
+    const response = await api.put(
+      `/operationService/api/applicant-types/${id}`,
+      data,
+    );
+    return response.data;
+  },
+);
+export const deleteApplicantType = createAsyncThunk(
+  "deleteApplicantType",
+  async (id) => {
+    console.log("API")
+    const response = await api.delete(
+      `/operationService/api/applicant-types/${id}`
+    );
+    console.log(response)
+    return response.data;
+  },
+);
+export const  addApplicantType= createAsyncThunk(
   "addApplicantType",
   async (data) => {
     const response = await api.post(
@@ -526,6 +547,7 @@ export const addApplicantType = createAsyncThunk(
     return response.data;
   },
 );
+
 
 export const getApplicantTypeList = createAsyncThunk(
   "getApplicantTypeList",
