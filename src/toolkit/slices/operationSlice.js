@@ -643,7 +643,119 @@ export const mapDesignationWithDepartmentInOperations = createAsyncThunk(
   },
 );
 
-const OperationSlice = createSlice({
+export const createLegalSuportRequest = createAsyncThunk(
+  "createLegalSuportRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/legal-request/create`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
+export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
+  "getAllLegalSupportRequestsForFilter",
+  async (
+    {
+      page,
+      size,
+      status,
+      projectId,
+      assignedTo,
+      createdBy,
+      projectName,
+      milestoneName,
+      startDate,
+      endDate,
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        page,
+        size,
+      };
+
+      if (
+        status !== undefined &&
+        status !== null &&
+        status !== "" &&
+        status !== "ALL"
+      ) {
+        params.status = status;
+      }
+
+      if (projectId !== undefined && projectId !== null && projectId !== "") {
+        params.projectId = projectId;
+      }
+
+      if (
+        assignedTo !== undefined &&
+        assignedTo !== null &&
+        assignedTo !== ""
+      ) {
+        params.assignedTo = assignedTo;
+      }
+
+      if (createdBy !== undefined && createdBy !== null && createdBy !== "") {
+        params.createdBy = createdBy;
+      }
+
+      if (projectName?.trim()) {
+        params.projectName = projectName.trim();
+      }
+
+      if (milestoneName?.trim()) {
+        params.milestoneName = milestoneName.trim();
+      }
+
+      if (startDate) {
+        params.startDate = startDate;
+      }
+
+      if (endDate) {
+        params.endDate = endDate;
+      }
+
+      const response = await api.get(
+        "/operationService/api/legal-request/AllFilter",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          "Failed to fetch legal support requests",
+      );
+    }
+  },
+);
+
+export const updateLegalRequestStatus = createAsyncThunk(
+  "updateLegalRequestStatus",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/operationService/api/legal-request/${id}/status`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          "Failed to update legal request status",
+      );
+    }
+  },
+);
+
+export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
     loading: "",
@@ -662,6 +774,8 @@ const OperationSlice = createSlice({
     projectCount: 0,
     activitiesByProjectId: {},
     expenseList: [],
+    legalRequestList: [],
+    legalRequestCount: 0,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -948,6 +1062,22 @@ const OperationSlice = createSlice({
     builder.addCase(getExpenseListByUserId.rejected, (state) => {
       state.loading = "rejected";
       state.expenseList = [];
+    });
+
+    builder.addCase(getAllLegalSupportRequestsForFilter.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllLegalSupportRequestsForFilter.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.legalRequestList = action.payload?.content;
+        state.legalRequestCount = action.payload?.totalElements;
+      },
+    );
+    builder.addCase(getAllLegalSupportRequestsForFilter.rejected, (state) => {
+      state.loading = "rejected";
+      state.legalRequestList = [];
     });
   },
 });

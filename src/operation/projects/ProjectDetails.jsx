@@ -336,6 +336,7 @@ const ProjectDetails = () => {
   const expenseModal = useDisclosure();
   const noteModal = useDisclosure();
   const commentModal = useDisclosure();
+  const legalSupportModal = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -403,6 +404,11 @@ const ProjectDetails = () => {
     remark: "",
     expenseDate: "",
     paymentMedium: "",
+  });
+
+  const [legalRequestData, setLegalRequestData] = useState({
+    legalRequestTitle: "",
+    notes: "",
   });
 
   useEffect(() => {
@@ -814,6 +820,8 @@ const ProjectDetails = () => {
 
   const [draggedDoc, setDraggedDoc] = useState(null);
 
+  const handleAddLegalRequest = () => {};
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -1078,7 +1086,24 @@ const ProjectDetails = () => {
                         </div>
                       )}
 
+                      <Button
+                        size="sm"
+                        color="primary"
+                        onPress={() => {
+                          legalSupportModal.onOpen();
+                          dispatch(
+                            getRequiredDocumentsByProductId({
+                              userId,
+                              projectId,
+                            }),
+                          );
+                        }}
+                      >
+                        Legal Request
+                      </Button>
+
                       <Chip
+                        size="sm"
                         className="cursor-pointer"
                         onClick={() => {
                           statusModal.onOpen();
@@ -2407,6 +2432,77 @@ const ProjectDetails = () => {
                     setExpenseData((prev) => ({
                       ...prev,
                       remark: e.target.value,
+                    }))
+                  }
+                />
+              </ModalBody>
+
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isOpen={legalSupportModal.isOpen}
+        onOpenChange={legalSupportModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form
+              className="w-full"
+              onSubmit={(e) => {
+                e.preventDefault();
+                let data = Object.fromEntries(new FormData(e.currentTarget));
+                handleAddLegalRequest(data);
+              }}
+            >
+              <ModalHeader>Legal request</ModalHeader>
+              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
+                <Input
+                  label="Request title"
+                  name="legalRequestTitle"
+                  isRequired
+                  errorMessage="please enter request title"
+                  value={legalRequestData.legalRequestTitle}
+                  onChange={(e) =>
+                    setLegalRequestData((prev) => ({
+                      ...prev,
+                      legalRequestTitle: e.target.value,
+                    }))
+                  }
+                />
+                <NewSelect
+                  data={requiredDocsList}
+                  label={"Select document"}
+                  name={""}
+                  labelKey={"documentName"}
+                  valueKey={"documentId"}
+                  value={legalRequestData?.legalRequestTitle}
+                  onChange={(e) =>
+                    setLegalRequestData((prev) => ({
+                      ...prev,
+                      legalRequestTitle: e.target.value,
+                    }))
+                  }
+                />
+
+                <Textarea
+                  label="Request description"
+                  name="notes"
+                  isRequired
+                  errorMessage="please enter description"
+                  value={legalRequestData.notes}
+                  onChange={(e) =>
+                    setLegalRequestData((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
                     }))
                   }
                 />

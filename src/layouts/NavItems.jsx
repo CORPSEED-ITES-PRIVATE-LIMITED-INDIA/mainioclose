@@ -109,6 +109,12 @@ export const navItems = [
         url: "accounts/allInvoice",
         key: "allInvoice",
       },
+      {
+        title: "Taxation",
+        url: "accounts/taxation",
+        key: "taxation",
+      },
+
       // {
       //   title: "Estimate",
       //   url: "accounts/orgEstimate",
@@ -217,6 +223,12 @@ export const navItems = [
         icon: "",
         url: "operation/projects",
         key: "projects",
+      },
+      {
+        title: "Legal requests",
+        icon: "",
+        url: "operation/legalRequests",
+        key: "legalRequests",
       },
       {
         title: "Settings",
@@ -397,6 +409,12 @@ export const accountNavItems = [
     title: "All invoice",
     url: "accounts/allInvoice",
     key: "allInvoice",
+    icon: "FileText",
+  },
+  {
+    title: "Taxation",
+    url: "sales/taxation",
+    key: "taxation",
     icon: "FileText",
   },
 
@@ -628,5 +646,11 @@ export const operationEmpItems = [
     icon: "GitCommitHorizontal",
     url: "operation/projects",
     key: "projects",
+  },
+  {
+    title: "Legal request",
+    icon: "Scale",
+    url: "operation/legalRequests",
+    key: "legalRequests",
   },
 ];

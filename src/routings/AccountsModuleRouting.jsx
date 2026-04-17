@@ -29,6 +29,7 @@ import TrailBalance from "../accounts/organization/TrailBalance";
 import SalesReport from "../accounts/organization/SalesReport";
 import CompanyUnitsInAccount from "../accounts/CompanyUnitsInAccount";
 import Expense from "../accounts/Expense";
+import Taxation from "../accounts/organization/Taxation";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -46,6 +47,7 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
+      <Route path="accounts/taxation" element={<Taxation />} />
       <Route path="accounts/vendorsPayment" element={<VendorPayments />} />
       <Route
         path="accounts/vendorsPayment/:paymentId/paymentHistory"

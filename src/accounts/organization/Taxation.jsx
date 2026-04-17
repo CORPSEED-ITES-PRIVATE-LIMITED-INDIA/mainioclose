@@ -38,28 +38,28 @@ import dayjs from "dayjs";
 import {
   cancelUnBilledInvoice,
   convertUnbillToAdvanceInvoice,
+  getAllInvoiceReport,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
 import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
-import { set } from "zod";
 import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
-  { name: "UNBILL NO. / ADVANCE INVOICE", uid: "unbillNo" },
-  { name: "SERVICE", uid: "service" },
-  { name: "CLIENT", uid: "client" },
-  { name: "COMPANY", uid: "companyName" },
-  { name: "TOTAL AMOUNT", uid: "totalAmount" },
-  { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
-  { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
-  { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
-  { name: "ADDED BY", uid: "addedBy" },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "TOTAL INVOICE", uid: "totalInvoices" },
+  { name: "TOTAL REVENUE", uid: "totalRevenue" },
+  { name: "NET REVENUE", uid: "totalNetRevenue" },
+  { name: "GST COLLECTED", uid: "totalGstCollected" },
+  { name: "AVG. INVOICE VALUE", uid: "averageInvoiceValue" },
+  { name: "TOTAL UNBILL AMOUNT", uid: "totalUnbilledAmount" },
+  { name: "TOTAL RECEIVED AMOUNT", uid: "totalReceivedAmount" },
+  { name: "TOTAL OUTSTANDING AMOUNT", uid: "totalOutstandingAmount" },
+  { name: "TOTAL IGST COLL. AMOUNT", uid: "totalIgstCollectedAmount" },
+  { name: "TOTAL IGST COLL. AMOUNT", uid: "totalSgstCollectedAmount" },
+  { name: "TOTAL CGST COLL. AMOUNT", uid: "totalCgstCollectedAmount" },
 ];
 
 export function capitalize(s) {
@@ -67,27 +67,28 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "date",
-  "unbillNo",
-  "estimateNumber",
-  "service",
-  "client",
-  "companyName",
-  "totalAmount",
-  "currentReceivedAmount",
-  "outstandingAmount",
-  "addedBy",
-  "actions",
+  //   "date",
+  "totalInvoices",
+  "totalRevenue",
+  "totalNetRevenue",
+  "totalGstCollected",
+  "averageInvoiceValue",
+  "totalUnbilledAmount",
+  "totalReceivedAmount",
+  "totalOutstandingAmount",
+  "totalIgstCollectedAmount",
+  "totalSgstCollectedAmount",
+  "totalCgstCollectedAmount",
 ];
 
-const Unbill = () => {
+const Taxation = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
   const viewModal = useDisclosure();
-  const data = useSelector((state) => state.organization.unBillList);
-  const count = useSelector((state) => state.organization.unBillCount);
+  const data = useSelector((state) => state.account.invoiceReport);
+  const count = useSelector((state) => state.account.invoiceReport)?.length;
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -114,8 +115,7 @@ const Unbill = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
 
   useEffect(() => {
-    dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
-    dispatch(getAllUnbillCount({ userId, status }));
+    dispatch(getAllInvoiceReport({}));
   }, [dispatch, page, rowsPerPage, status]);
 
   const headerColumns = React.useMemo(() => {
@@ -178,46 +178,53 @@ const Unbill = () => {
             <Chip size="sm">{rowData?.status}</Chip>
           </div>
         );
-      case "estimateNumber":
+      case "totalInvoices":
         return (
           <div>
             <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
-              onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+              className="capitalize text-xs font-medium"
+              //   onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
             >
-              {rowData?.estimateNumber || "NA"}
+              {rowData?.totalInvoices || "NA"}
             </p>
           </div>
         );
-      case "unbillNo":
+      case "totalRevenue":
         return (
           <p className="text-sm capitalize">
-            {`${rowData?.unbilledNumber}`}
-            {rowData?.advanceInvoiceFlag
-              ? ` / ${rowData?.advanceInvoiceNumber}`
-              : ``}{" "}
+            {`${inrCurrency(rowData?.totalRevenue)}`}
           </p>
         );
-      case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-      case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
-      case "client":
+      case "totalNetRevenue":
+        return (
+          <p className="text-sm capitalize">
+            {`${inrCurrency(rowData?.totalNetRevenue)}`}
+          </p>
+        );
+      case "totalGstCollected":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.totalGstCollected)}
+          </p>
+        );
+      case "averageInvoiceValue":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.contactName}</p>
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.averageInvoiceValue)}
+            </p>
           </div>
         );
-      case "totalAmount":
+      case "totalUnbilledAmount":
         return (
           <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalAmount)}
+            {inrCurrency(rowData?.totalUnbilledAmount)}
           </p>
         );
-      case "receivedAmount":
+      case "totalReceivedAmount":
         return (
           <p className="text-sm capitalize">
-            {inrCurrency(rowData?.receivedAmount)}
+            {inrCurrency(rowData?.totalReceivedAmount)}
           </p>
         );
       case "currentReceivedAmount":
@@ -226,14 +233,30 @@ const Unbill = () => {
             {inrCurrency(rowData?.currentReceivedAmount)}
           </p>
         );
-      case "outstandingAmount":
+      case "totalOutstandingAmount":
         return (
           <p className="text-sm capitalize">
-            {inrCurrency(rowData?.outstandingAmount)}
+            {inrCurrency(rowData?.totalOutstandingAmount)}
           </p>
         );
-      case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+      case "totalIgstCollectedAmount":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.totalIgstCollectedAmount)}
+          </p>
+        );
+      case "totalSgstCollectedAmount":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.totalSgstCollectedAmount)}
+          </p>
+        );
+      case "totalCgstCollectedAmount":
+        return (
+          <p className="text-sm capitalize">
+            {inrCurrency(rowData?.totalCgstCollectedAmount)}
+          </p>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -485,7 +508,7 @@ const Unbill = () => {
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <div className="flex items-center gap-0.5 w-[70%]">
-            <Select
+            {/* <Select
               className="max-w-[20%]"
               selectionMode="single"
               selectedKeys={[searchBy]}
@@ -496,7 +519,7 @@ const Unbill = () => {
             >
               <SelectItem key={"companyName"}>Company name</SelectItem>
               <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
-            </Select>
+            </Select> */}
             <Input
               isClearable
               className="w-full sm:max-w-[45%]"
@@ -508,7 +531,7 @@ const Unbill = () => {
             />
           </div>
           <div className="flex gap-3">
-            <Dropdown>
+            {/* <Dropdown>
               <DropdownTrigger>
                 <Button
                   className="capitalize"
@@ -536,7 +559,7 @@ const Unbill = () => {
                 <DropdownItem key="REJECTED">REJECTED</DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
               </DropdownMenu>
-            </Dropdown>
+            </Dropdown> */}
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -562,7 +585,7 @@ const Unbill = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} unbilled items
+            Total {count} taxation items
           </span>
           <div className="flex gap-4">
             <label className="flex items-center text-default-400 text-small">
@@ -633,7 +656,7 @@ const Unbill = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Unbilled list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Taxation list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -797,4 +820,4 @@ const Unbill = () => {
   );
 };
 
-export default Unbill;
+export default Taxation;

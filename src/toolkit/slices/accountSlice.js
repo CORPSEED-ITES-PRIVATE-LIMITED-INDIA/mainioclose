@@ -251,6 +251,17 @@ export const convertUnbillToAdvanceInvoice = createAsyncThunk(
   },
 );
 
+export const getAllInvoiceReport = createAsyncThunk(
+  "getAllInvoiceReport",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/v1/invoices/invoiceReport`,
+      data,
+    );
+    return response.data;
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -266,6 +277,7 @@ const AccountSlice = createSlice({
     invoiceDetail: {},
     allBankAccountsList: [],
     unbilledDetail: {},
+    invoiceReport: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -410,6 +422,18 @@ const AccountSlice = createSlice({
     builder.addCase(getUnBilledDetailById.rejected, (state) => {
       state.loading = "rejected";
       state.unbilledDetail = {};
+    });
+
+    builder.addCase(getAllInvoiceReport.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllInvoiceReport.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.invoiceReport = [action.payload];
+    });
+    builder.addCase(getAllInvoiceReport.rejected, (state) => {
+      state.loading = "rejected";
+      state.invoiceReport = [];
     });
   },
 });

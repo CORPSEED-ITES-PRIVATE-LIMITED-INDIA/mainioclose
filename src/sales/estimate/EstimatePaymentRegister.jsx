@@ -16,12 +16,7 @@ import {
   DatePicker,
 } from "@heroui/react";
 import { addToast } from "@heroui/react";
-import {
-  getLocalTimeZone,
-  toCalendarDate,
-  today,
-  parseDate,
-} from "@internationalized/date";
+import { getLocalTimeZone, today, parseDate } from "@internationalized/date";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { useParams } from "react-router-dom";
 import NewSelect from "../../components/NewSelect";
@@ -34,24 +29,105 @@ const numberLike = (label) =>
     .transform((v) => (typeof v === "string" ? Number(v) : v))
     .refine((v) => !Number.isNaN(v), `${label} must be a valid number`);
 
-const paymentRegisterSchema = z.object({
-  amount: numberLike("Amount").refine(
-    (v) => v > 0,
-    "Amount must be greater than 0",
-  ),
-  paymentDate: z.string().min(1, "Payment date is required"),
-  paymentMode: z.string().min(1, "Payment mode is required"),
-  transactionReference: z.string().optional(),
-  remarks: z.string().optional(),
+const paymentRegisterSchema = z
+  .object({
+    amount: numberLike("Amount").refine(
+      (v) => v > 0,
+      "Amount must be greater than 0",
+    ),
+    paymentDate: z.string().min(1, "Payment date is required"),
+    paymentMode: z.string().min(1, "Payment mode is required"),
+    transactionReference: z.string().optional(),
+    remarks: z.string().optional(),
 
-  paymentTypeId: numberLike("Payment type").refine(
-    (v) => v > 0,
-    "Payment type is required",
-  ),
-  eprFinancialYear: z.string().optional(),
-  eprPortalRegistrationNumber: z.string().optional(),
-  eprCertificateOrInvoiceNumber: z.string().optional(),
-});
+    paymentTypeId: numberLike("Payment type").refine(
+      (v) => v > 0,
+      "Payment type is required",
+    ),
+    eprFinancialYear: z.string().optional(),
+    eprPortalRegistrationNumber: z.string().optional(),
+    eprCertificateOrInvoiceNumber: z.string().optional(),
+
+    governmentFeeActive: z.boolean(),
+
+    governmentFee: z
+      .object({
+        totalAmount: z.union([z.number(), z.string()]).optional(),
+        // receivedAmount: z.union([z.number(), z.string()]).optional(),
+        paymentDate: z.string().optional(),
+        feeReferenceNumber: z.string().optional(),
+        departmentName: z.string().optional(),
+        remarks: z.string().optional(),
+      })
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.governmentFeeActive) {
+      const gf = data.governmentFee || {};
+
+      if (
+        gf.totalAmount === undefined ||
+        gf.totalAmount === null ||
+        gf.totalAmount === ""
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["governmentFee", "totalAmount"],
+          message: "Total amount is required",
+        });
+      } else if (Number(gf.totalAmount) < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["governmentFee", "totalAmount"],
+          message: "Total amount must be 0 or greater",
+        });
+      }
+
+      // if (
+      //   gf.receivedAmount === undefined ||
+      //   gf.receivedAmount === null ||
+      //   gf.receivedAmount === ""
+      // ) {
+      //   ctx.addIssue({
+      //     code: z.ZodIssueCode.custom,
+      //     path: ["governmentFee", "receivedAmount"],
+      //     message: "Received amount is required",
+      //   });
+      // }
+
+      // else if (Number(gf.receivedAmount) < 0) {
+      //   ctx.addIssue({
+      //     code: z.ZodIssueCode.custom,
+      //     path: ["governmentFee", "receivedAmount"],
+      //     message: "Received amount must be 0 or greater",
+      //   });
+      // }
+
+      if (!gf.paymentDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["governmentFee", "paymentDate"],
+          message: "Payment date is required",
+        });
+      }
+
+      if (!gf.feeReferenceNumber?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["governmentFee", "feeReferenceNumber"],
+          message: "Fee reference number is required",
+        });
+      }
+
+      if (!gf.departmentName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["governmentFee", "departmentName"],
+          message: "Department name is required",
+        });
+      }
+    }
+  });
 
 const EstimatePaymentRegister = ({
   isOpen,
@@ -89,14 +165,58 @@ const EstimatePaymentRegister = ({
       eprFinancialYear: "",
       eprPortalRegistrationNumber: "",
       eprCertificateOrInvoiceNumber: "",
+      governmentFeeActive: false,
+      governmentFee: {
+        totalAmount: "",
+        // receivedAmount: "",
+        paymentDate: "",
+        feeReferenceNumber: "",
+        departmentName: "",
+        remarks: "",
+      },
     },
   });
 
+  const governmentFeeActive = watch("governmentFeeActive");
+
   useEffect(() => {
-    if (estimateItem?.paymentTypeId) {
-      setValue("paymentTypeId", String(estimateItem.paymentTypeId) || "");
+    if (
+      estimateItem?.governmentFeeActive !== undefined &&
+      estimateItem?.governmentFeeActive !== null
+    ) {
+      setValue(
+        "governmentFeeActive",
+        Boolean(estimateItem.governmentFeeActive),
+      );
+
+      if (estimateItem?.governmentFee) {
+        setValue(
+          "governmentFee.totalAmount",
+          estimateItem.governmentFee.totalAmount ?? "",
+        );
+        // setValue(
+        //   "governmentFee.receivedAmount",
+        //   estimateItem.governmentFee.receivedAmount ?? "",
+        // );
+        setValue(
+          "governmentFee.paymentDate",
+          estimateItem.governmentFee.paymentDate ?? "",
+        );
+        setValue(
+          "governmentFee.feeReferenceNumber",
+          estimateItem.governmentFee.feeReferenceNumber ?? "",
+        );
+        setValue(
+          "governmentFee.departmentName",
+          estimateItem.governmentFee.departmentName ?? "",
+        );
+        setValue(
+          "governmentFee.remarks",
+          estimateItem.governmentFee.remarks ?? "",
+        );
+      }
     }
-  }, [estimateItem]);
+  }, [estimateItem, setValue]);
 
   const submitHandler = async (values) => {
     try {
@@ -106,8 +226,23 @@ const EstimatePaymentRegister = ({
         amount: Number(values.amount),
         paymentTypeId: Number(values.paymentTypeId),
         paymentDate: values.paymentDate,
+        governmentFeeActive: values.governmentFeeActive,
+        governmentFee: values.governmentFeeActive
+          ? {
+              totalAmount: Number(values.governmentFee?.totalAmount || 0),
+              receivedAmount: Number(values.governmentFee?.totalAmount || 0),
+              paymentDate: values.governmentFee?.paymentDate || "",
+              feeReferenceNumber:
+                values.governmentFee?.feeReferenceNumber || "",
+              departmentName: values.governmentFee?.departmentName || "",
+              feeType: values.paymentMode || "",
+              remarks: values.governmentFee?.remarks || "",
+            }
+          : null,
       };
+
       const res = await onSubmitPayment({ userId, data: payload });
+
       if (res?.meta?.requestStatus === "fulfilled" || res?.ok === true) {
         addToast({
           title: "Payment registered successfully!",
@@ -147,7 +282,6 @@ const EstimatePaymentRegister = ({
                 onSubmit={handleSubmit(submitHandler)}
                 className="space-y-4"
               >
-                {/* Row 1 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Controller
                     name="amount"
@@ -188,6 +322,7 @@ const EstimatePaymentRegister = ({
                       />
                     )}
                   />
+
                   <Controller
                     name="paymentMode"
                     control={control}
@@ -251,6 +386,7 @@ const EstimatePaymentRegister = ({
                       />
                     )}
                   />
+
                   <Controller
                     name="eprFinancialYear"
                     control={control}
@@ -274,6 +410,7 @@ const EstimatePaymentRegister = ({
                       />
                     )}
                   />
+
                   <Controller
                     name="eprCertificateOrInvoiceNumber"
                     control={control}
@@ -283,6 +420,28 @@ const EstimatePaymentRegister = ({
                         label="EPR Certificate/Invoice No."
                         placeholder="Enter number"
                       />
+                    )}
+                  />
+
+                  <Controller
+                    name="governmentFeeActive"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        label="Government Fee Active"
+                        isDisabled={
+                          estimateItem?.governmentFeeActive === false ||
+                          estimateItem?.governmentFeeActive === true
+                        }
+                        selectedKeys={new Set([field.value ? "true" : "false"])}
+                        onSelectionChange={(keys) => {
+                          const selectedValue = Array.from(keys)?.[0];
+                          field.onChange(selectedValue === "true");
+                        }}
+                      >
+                        <SelectItem key="true">Yes</SelectItem>
+                        <SelectItem key="false">No</SelectItem>
+                      </Select>
                     )}
                   />
 
@@ -299,6 +458,126 @@ const EstimatePaymentRegister = ({
                     )}
                   />
                 </div>
+
+                {governmentFeeActive && (
+                  <div className="mt-4 border rounded-xl p-4 space-y-4">
+                    <h3 className="text-sm font-semibold">
+                      Government Fee Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Controller
+                        name="governmentFee.totalAmount"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            {...field}
+                            type="number"
+                            label="Total Amount"
+                            placeholder="Enter total amount"
+                            isRequired
+                            isInvalid={!!errors.governmentFee?.totalAmount}
+                            errorMessage={
+                              errors.governmentFee?.totalAmount?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      {/* <Controller
+                        name="governmentFee.receivedAmount"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            {...field}
+                            type="number"
+                            label="Received Amount"
+                            placeholder="Enter received amount"
+                            isRequired
+                            isInvalid={!!errors.governmentFee?.receivedAmount}
+                            errorMessage={
+                              errors.governmentFee?.receivedAmount?.message
+                            }
+                          />
+                        )}
+                      /> */}
+
+                      <Controller
+                        name="governmentFee.paymentDate"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <DatePicker
+                            isRequired
+                            label="Government Fee Payment Date"
+                            showMonthAndYearPickers
+                            maxValue={today(getLocalTimeZone())}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                            value={
+                              field.value &&
+                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                                ? parseDate(field.value)
+                                : null
+                            }
+                            onChange={(value) => {
+                              const iso = value ? value.toString() : "";
+                              field.onChange(iso);
+                            }}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="governmentFee.feeReferenceNumber"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            {...field}
+                            label="Fee Reference Number"
+                            placeholder="Enter fee reference number"
+                            isRequired
+                            isInvalid={
+                              !!errors.governmentFee?.feeReferenceNumber
+                            }
+                            errorMessage={
+                              errors.governmentFee?.feeReferenceNumber?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="governmentFee.departmentName"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            {...field}
+                            label="Department Name"
+                            placeholder="Enter department name"
+                            isRequired
+                            isInvalid={!!errors.governmentFee?.departmentName}
+                            errorMessage={
+                              errors.governmentFee?.departmentName?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="governmentFee.remarks"
+                        control={control}
+                        render={({ field }) => (
+                          <Textarea
+                            {...field}
+                            label="Government Fee Remarks"
+                            placeholder="Enter remarks"
+                            minRows={3}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
               </form>
             </ModalBody>
 
