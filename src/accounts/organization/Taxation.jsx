@@ -13,83 +13,73 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  addToast,
   useDisclosure,
   Modal,
-  ModalBody,
-  ModalFooter,
   ModalContent,
   ModalHeader,
-  Textarea,
+  ModalBody,
   Select,
   SelectItem,
-  addToast,
-  Chip,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  getAllUnbillCount,
-  getAllUnbillList,
-  searchUnbilledByCompanyNameAndUnbilled,
-  updateStatusForUnbill,
+  getAllInvoice,
+  getAllInvoiceCount,
+  searchInvoiceByCompanyNameAndInvoice,
+  searchInvoiceCountByCompanyNameAndInvoice,
 } from "../../toolkit/slices/organizationSlice";
-import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import {
-  cancelUnBilledInvoice,
-  convertUnbillToAdvanceInvoice,
-  getAllInvoiceReport,
-  getUnBilledDetailById,
-} from "../../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
-import UnbilledView from "../../components/UnbilledView";
-import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
-import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
-import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
+import { inrCurrency } from "../../common";
+import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import TaxInvoice from "../../components/TaxInvoice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "TOTAL INVOICE", uid: "totalInvoices" },
-  { name: "TOTAL REVENUE", uid: "totalRevenue" },
-  { name: "NET REVENUE", uid: "totalNetRevenue" },
-  { name: "GST COLLECTED", uid: "totalGstCollected" },
-  { name: "AVG. INVOICE VALUE", uid: "averageInvoiceValue" },
-  { name: "TOTAL UNBILL AMOUNT", uid: "totalUnbilledAmount" },
-  { name: "TOTAL RECEIVED AMOUNT", uid: "totalReceivedAmount" },
-  { name: "TOTAL OUTSTANDING AMOUNT", uid: "totalOutstandingAmount" },
-  { name: "TOTAL IGST COLL. AMOUNT", uid: "totalIgstCollectedAmount" },
-  { name: "TOTAL IGST COLL. AMOUNT", uid: "totalSgstCollectedAmount" },
-  { name: "TOTAL CGST COLL. AMOUNT", uid: "totalCgstCollectedAmount" },
+  { name: "INVOICE NO.", uid: "invoiceNo" },
+  { name: "SERVICE", uid: "service" },
+  { name: "CLIENT", uid: "clientName" },
+  { name: "COMPANY", uid: "companyName" },
+  { name: "TXN. AMOUNT", uid: "txnAmount" },
+  { name: "CGST. AMOUNT", uid: "cgstAmount" },
+  { name: "SGST. AMOUNT", uid: "sgstAmount" },
+  { name: "IGST. AMOUNT", uid: "igstAmount" },
+  { name: "ADDED BY", uid: "addedBy" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+  return s ? s.charAt(0)?.toUpperCase() + s.slice(1)?.toLowerCase() : "";
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  //   "date",
-  "totalInvoices",
-  "totalRevenue",
-  "totalNetRevenue",
-  "totalGstCollected",
-  "averageInvoiceValue",
-  "totalUnbilledAmount",
-  "totalReceivedAmount",
-  "totalOutstandingAmount",
-  "totalIgstCollectedAmount",
-  "totalSgstCollectedAmount",
-  "totalCgstCollectedAmount",
+  "date",
+  "invoiceNo",
+  "service",
+  //   "clientName",
+  "companyName",
+  "txnAmount",
+  "cgstAmount",
+  "sgstAmount",
+  "igstAmount",
+  "addedBy",
+  "actions",
 ];
 
 const Taxation = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const statusModal = useDisclosure();
-  const viewModal = useDisclosure();
-  const data = useSelector((state) => state.account.invoiceReport);
-  const count = useSelector((state) => state.account.invoiceReport)?.length;
-  const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
+  const data = useSelector((state) => state.organization.allInvoiceList);
+  const count = useSelector(
+    (state) => state.organization.allInvoiceList?.length,
+  );
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
+  );
+  const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -102,21 +92,16 @@ const Taxation = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
-  const [rowItem, setRowItem] = useState(null);
-  const [status, setStatus] = useState("PENDING_APPROVAL");
-  const [updatedStatusData, setUpdatedStatusData] = useState({
-    approverUserId: userId,
-    approvalRemarks: "",
-    rejectionReason: "",
+  const [status, setStatus] = useState("GENERATED");
+  const [searchFilters, setSearchFilters] = useState({
+    searchText: "",
+    type: "invoiceNumber",
   });
-  const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
-  const [searchBy, setSearchBy] = useState("companyName");
-  const [estimateDetail, setEstimateDetail] = useState(null);
-  const [viewType, setViewType] = useState("ESTIMATE");
 
   useEffect(() => {
-    dispatch(getAllInvoiceReport({}));
-  }, [dispatch, page, rowsPerPage, status]);
+    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+    dispatch(getAllInvoiceCount({ userId, status }));
+  }, [dispatch, userId, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -143,26 +128,32 @@ const Taxation = () => {
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems];
-  }, [filteredItems]);
+    return [...filteredItems].sort((a, b) => {
+      const first = a[sortDescriptor.column];
+      const second = b[sortDescriptor.column];
+      const cmp = first < second ? -1 : first > second ? 1 : 0;
 
-  const handleViewEstimate = (rowData, type) => {
-    setViewType(type);
-    dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
+      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+    });
+  }, [sortDescriptor, filteredItems]);
+
+  const handleViewEstimate = (value) => {
+    dispatch(getInvoiceDetailById({ id: value?.id, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          let data = resp?.payload;
-          setEstimateDetail(data);
-          viewModal.onOpen();
+          let tempData = resp?.payload;
+          setInvoiceDetail(tempData);
+          onOpen();
         } else {
           addToast({
-            title: "There is Some Issue in estimate",
+            title: "There is Some Issue in Invoice",
             color: "danger",
           });
+          onOpen();
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
+        addToast({ title: "There is Some Issue in Invoice", color: "danger" }),
       );
   };
 
@@ -171,92 +162,63 @@ const Taxation = () => {
     switch (columnKey) {
       case "date":
         return (
-          <div>
+          <p className="text-sm capitalize">
+            {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
+          </p>
+        );
+      case "invoiceNo":
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm capitalize">{rowData?.invoiceNumber}</p>
+          </div>
+        );
+      case "service":
+        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
+      case "clientName":
+        return <p className="text-sm capitalize">{rowData?.clientName}</p>;
+      case "companyName":
+        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
+      case "txnAmount":
+        return (
+          <div className="flex flex-col gap-1">
             <p className="text-sm capitalize">
-              {dayjs(rowData?.date).format("DD-MM-YYYY")}
+              {inrCurrency(rowData?.grandTotal)}
             </p>
-            <Chip size="sm">{rowData?.status}</Chip>
+            <div className="flex gap-1.5">
+              <span className="text-gray-500 text-tiny">GST</span>
+              <span className="text-gray-500 text-tiny">:</span>
+              <span className="text-gray-500 text-tiny">
+                {inrCurrency(rowData?.totalGstAmount)}
+              </span>
+            </div>
           </div>
         );
-      case "totalInvoices":
+      case "cgstAmount":
         return (
-          <div>
-            <p
-              className="capitalize text-xs font-medium"
-              //   onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
-            >
-              {rowData?.totalInvoices || "NA"}
-            </p>
-          </div>
-        );
-      case "totalRevenue":
-        return (
-          <p className="text-sm capitalize">
-            {`${inrCurrency(rowData?.totalRevenue)}`}
-          </p>
-        );
-      case "totalNetRevenue":
-        return (
-          <p className="text-sm capitalize">
-            {`${inrCurrency(rowData?.totalNetRevenue)}`}
-          </p>
-        );
-      case "totalGstCollected":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalGstCollected)}
-          </p>
-        );
-      case "averageInvoiceValue":
-        return (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
             <p className="text-sm capitalize">
-              {inrCurrency(rowData?.averageInvoiceValue)}
+              {inrCurrency(rowData?.cgstAmount)}
             </p>
           </div>
         );
-      case "totalUnbilledAmount":
+      case "sgstAmount":
         return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalUnbilledAmount)}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.sgstAmount)}
+            </p>
+          </div>
         );
-      case "totalReceivedAmount":
+      case "igstAmount":
         return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalReceivedAmount)}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.igstAmount)}
+            </p>
+          </div>
         );
-      case "currentReceivedAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.currentReceivedAmount)}
-          </p>
-        );
-      case "totalOutstandingAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalOutstandingAmount)}
-          </p>
-        );
-      case "totalIgstCollectedAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalIgstCollectedAmount)}
-          </p>
-        );
-      case "totalSgstCollectedAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalSgstCollectedAmount)}
-          </p>
-        );
-      case "totalCgstCollectedAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalCgstCollectedAmount)}
-          </p>
-        );
+      case "addedBy":
+        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -266,87 +228,16 @@ const Taxation = () => {
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
-                {!rowData?.advanceInvoiceFlag && (
-                  <DropdownItem
-                    key="view"
-                    onPress={() => {
-                      dispatch(
-                        convertUnbillToAdvanceInvoice({
-                          unbilledId: rowData?.id,
-                          userId,
-                        }),
-                      )
-                        .then((resp) => {
-                          if (resp.meta.requestStatus === "fulfilled") {
-                            addToast({
-                              title:
-                                "Unbill converted to advance invoice successfully !.",
-                              color: "success",
-                            });
-                            dispatch(
-                              getAllUnbillList({
-                                page,
-                                size: rowsPerPage,
-                                userId,
-                                status,
-                              }),
-                            );
-                            dispatch(getAllUnbillCount({ userId, status }));
-                          } else {
-                            addToast({
-                              title:
-                                resp?.payload?.data?.message ||
-                                "Something went wrong !.",
-                              color: "danger",
-                            });
-                          }
-                        })
-                        .catch(() => {
-                          addToast({
-                            title: "Something went wrong !.",
-                            color: "danger",
-                          });
-                        });
-                    }}
-                  >
-                    Convert To AdvanceInvoice
-                  </DropdownItem>
-                )}
-
-                <DropdownItem
-                  key="unbilledview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(false);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Unbilled View
-                </DropdownItem>
-                <DropdownItem
-                  key="advanceinvoiceview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(true);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Advance Invoice View
-                </DropdownItem>
-                <DropdownItem
-                  key="status"
-                  onPress={() => {
-                    statusModal.onOpen();
-                    setRowItem(rowData);
-                  }}
-                >
-                  Update status
-                </DropdownItem>
+              <DropdownMenu
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  if (key == "viewEstimate") {
+                    handleViewEstimate(rowData);
+                  }
+                }}
+              >
+                <DropdownItem key="viewEstimate">Tax invoice</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -377,152 +268,57 @@ const Taxation = () => {
     (value) => {
       if (value) {
         setFilterValue(value);
-        if (searchBy === "companyName") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              companyName: value,
-            }),
-          );
-        } else if (searchBy === "unbilledNumber") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              unbilledNumber: value,
-            }),
-          );
-        }
         setPage(1);
+        dispatch(
+          searchInvoiceByCompanyNameAndInvoice({
+            ...searchFilters,
+            searchText: value,
+            page,
+            size: rowsPerPage,
+          }),
+        );
+        dispatch(
+          searchInvoiceCountByCompanyNameAndInvoice({
+            ...searchFilters,
+            searchText: value,
+          }),
+        );
       } else {
         setFilterValue("");
-        dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
-        dispatch(getAllUnbillCount({ userId, status }));
+        dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+        dispatch(getAllInvoiceCount({ userId, status }));
       }
     },
-    [searchBy, rowsPerPage, page, status, userId],
+    [searchFilters, page, rowsPerPage],
   );
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
     setPage(1);
-  }, [searchBy]);
-
-  const handleUpdateStatus = () => {
-    if (updatedStatusData?.approvalRemarks === "CANCELLED") {
-      dispatch(
-        cancelUnBilledInvoice({
-          id: rowItem?.id,
-          userId,
-          reason: updatedStatusData?.rejectionReason,
-        }),
-      )
-        .then((re) => {
-          if (re.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Unbill canceled successfully !.",
-              color: "success",
-            });
-            dispatch(cancelProjectByUnbilledNumberInOperations(rowItem?.id))
-              .then((respData) => {
-                if (respData.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "Unbill canceled successfully in Operation !.",
-                    color: "success",
-                  });
-                  setRowItem(null);
-                  setUpdatedStatusData({
-                    approverUserId: userId,
-                    approvalRemarks: "",
-                    rejectionReason: "",
-                  });
-                  statusModal.onClose();
-                } else {
-                  addToast({
-                    title: respData?.payload?.data?.message,
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() =>
-                addToast({
-                  title: "Something went wrong in Operation !.",
-                  color: "danger",
-                }),
-              );
-          } else {
-            addToast({ title: re?.payload?.data?.message, color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
-        );
-    } else {
-      dispatch(
-        updateStatusForUnbill({
-          unbilledId: rowItem?.id,
-          data: updatedStatusData,
-        }),
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Status updated successfully !.",
-              color: "success",
-            });
-            // dispatch(
-            //   createProjectsForOperations({
-            //     ...resp?.payload,
-            //     unitId: resp?.payload?.companyUnitId,
-            //   }),
-            // ).then((pro) => {
-            //   if (pro.meta.requestStatus === "fulfilled") {
-            //     addToast({
-            //       title: "Project created successfully !.",
-            //       color: "success",
-            //     });
-            //   } else {
-            //     addToast({ title: "Something went wrong !.", color: "danger" });
-            //   }
-            // });
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              rejectionReason: "",
-            });
-            statusModal.onClose();
-          } else {
-            addToast({ title: resp?.payload?.data?.message, color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
-        );
-    }
-  };
+    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+    dispatch(getAllInvoiceCount({ userId, status }));
+  }, []);
 
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center gap-0.5 w-[70%]">
-            {/* <Select
-              className="max-w-[20%]"
+          <div className="flex items-center w-full pb-0.5">
+            <Select
+              className="max-w-[15%]"
               selectionMode="single"
-              selectedKeys={[searchBy]}
+              selectedKeys={[searchFilters?.type]}
               onSelectionChange={(e) => {
                 let key = Array.from(e)[0];
-                setSearchBy(key);
+                setSearchFilters((preview) => ({ ...preview, type: key }));
               }}
             >
+              <SelectItem key={"invoiceNumber"}>Invoice number</SelectItem>
               <SelectItem key={"companyName"}>Company name</SelectItem>
-              <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
-            </Select> */}
+            </Select>
             <Input
               isClearable
-              className="w-full sm:max-w-[45%]"
+              className="w-full sm:max-w-[35%]"
               placeholder="Search ..."
               startContent={<Search />}
               value={filterValue}
@@ -531,7 +327,7 @@ const Taxation = () => {
             />
           </div>
           <div className="flex gap-3">
-            {/* <Dropdown>
+            <Dropdown>
               <DropdownTrigger>
                 <Button
                   className="capitalize"
@@ -552,14 +348,15 @@ const Taxation = () => {
                   setStatus(key);
                 }}
               >
-                <DropdownItem key="PENDING_APPROVAL">
-                  PENDING_APPROVAL
-                </DropdownItem>
-                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
-                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+                <DropdownItem key="GENERATED">GENERATED</DropdownItem>
+                <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
+                <DropdownItem key="VIEWED">VIEWED</DropdownItem>
+                <DropdownItem key="PAID">PAID</DropdownItem>
+                <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
+                <DropdownItem key="CREDIT_NOTED">CREDIT_NOTED</DropdownItem>
               </DropdownMenu>
-            </Dropdown> */}
+            </Dropdown>
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -585,22 +382,20 @@ const Taxation = () => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} taxation items
+            Total {count} taxation
           </span>
-          <div className="flex gap-4">
-            <label className="flex items-center text-default-400 text-small">
-              Rows per page:
-              <select
-                className="bg-transparent outline-hidden text-default-400 text-small"
-                onChange={onRowsPerPageChange}
-                value={rowsPerPage}
-              >
-                <option value="15">15</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </label>
-          </div>
+          <label className="flex items-center text-default-400 text-small">
+            Rows per page:
+            <select
+              className="bg-transparent outline-hidden text-default-400 text-small"
+              onChange={onRowsPerPageChange}
+              value={rowsPerPage}
+            >
+              <option value="15">15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </label>
         </div>
       </div>
     );
@@ -612,7 +407,7 @@ const Taxation = () => {
     onSearchChange,
     hasSearchFilter,
     status,
-    searchBy,
+    searchFilters,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -663,7 +458,7 @@ const Taxation = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] overflow-scroll w-full",
+          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
@@ -685,7 +480,7 @@ const Taxation = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={`${item?.id}unbill`}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -694,126 +489,18 @@ const Taxation = () => {
         </TableBody>
       </Table>
       <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size="4xl"
-        placement="top-center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                {isAdvanceInvoice ? "Advance Invoice" : "Unbill"}
-              </ModalHeader>
-              <ModalBody className="max-h-[75vh] overflow-auto">
-                <UnbilledView
-                  invoiceData={invoiceDetail}
-                  heading={isAdvanceInvoice ? "Advance Invoice" : "Unbill"}
-                />
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  color="danger"
-                  variant="light"
-                  onPress={() => {
-                    onClose();
-                    setIsAdvanceInvoice(false);
-                  }}
-                >
-                  Close
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      <Modal
-        isOpen={statusModal.isOpen}
-        onOpenChange={statusModal.onOpenChange}
-        placement="top-center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Update Status
-              </ModalHeader>
-              <ModalBody className="max-h-[85vh] overflow-auto">
-                <Select
-                  label="Select status"
-                  isRequired
-                  selectedKeys={[updatedStatusData?.approvalRemarks]}
-                  onSelectionChange={(e) => {
-                    let key = Array.from(e)[0];
-                    setUpdatedStatusData((prev) => ({
-                      ...prev,
-                      approvalRemarks: key,
-                    }));
-                  }}
-                >
-                  {[
-                    // { key: "PENDING_APPROVAL", label: "PENDING_APPROVAL" },
-                    { key: "APPROVED", label: "APPROVED" },
-                    // { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
-                    // { key: "FULLY_PAID", label: "FULLY_PAID" },
-                    { key: "REJECTED", label: "REJECTED" },
-                    { key: "CANCELLED", label: "CANCELLED" },
-                  ].map((item) => (
-                    <SelectItem key={item.key}>{item.label}</SelectItem>
-                  ))}
-                </Select>
-                {(updatedStatusData?.approvalRemarks === "REJECTED" ||
-                  updatedStatusData?.approvalRemarks === "CANCELLED") && (
-                  <Textarea
-                    label="Remark"
-                    isRequired
-                    value={updatedStatusData?.rejectionReason}
-                    onChange={(e) =>
-                      setUpdatedStatusData((prev) => ({
-                        ...prev,
-                        rejectionReason: e.target.value,
-                      }))
-                    }
-                  />
-                )}
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-                <Button color="primary" onPress={handleUpdateStatus}>
-                  Submit
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        size="4xl"
+        size="full"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
-        isOpen={viewModal.isOpen}
-        onOpenChange={viewModal.onOpenChange}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
         placement="top-center"
       >
         <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalBody className="max-h-[70vh] overflow-auto">
-                <NewEstimatePreview
-                  details={estimateDetail}
-                  viewType={viewType}
-                />
-              </ModalBody>
-              <ModalFooter className="flex justify-end">
-                <Button onPress={onClose}>Cancel</Button>
-              </ModalFooter>
-            </>
-          )}
+          <ModalHeader>Tax Invoice</ModalHeader>
+          <ModalBody className="max-h-[90vh] overflow-auto">
+            <TaxInvoice invoiceData={invoiceDetail} />
+          </ModalBody>
         </ModalContent>
       </Modal>
     </>
