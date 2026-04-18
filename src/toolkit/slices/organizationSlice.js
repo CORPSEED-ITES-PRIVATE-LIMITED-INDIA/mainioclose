@@ -331,6 +331,16 @@ export const getAllUnbillList = createAsyncThunk(
     return response.data;
   },
 );
+export const getAllUnbillGovtFeeList = createAsyncThunk(
+  "getAllUnbillGovtFeeList",
+  async (unbilledId) => {
+    const response = await api.get(
+      `/accountService/api/v1/unbilled-invoices/government-fee?unbilledId=${unbilledId}`,
+    );
+    console.log("Govt Fee API Res:",response)
+    return response.data;
+  },
+);
 
 export const getAllUnbillCount = createAsyncThunk(
   "getAllUnbillCount",

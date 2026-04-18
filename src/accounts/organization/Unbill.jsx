@@ -29,6 +29,7 @@ import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllUnbillCount,
+  getAllUnbillGovtFeeList,
   getAllUnbillList,
   searchUnbilledByCompanyNameAndUnbilled,
   updateStatusForUnbill,
@@ -51,6 +52,7 @@ export const columns = [
   { name: "DATE", uid: "date" },
   { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
   { name: "UNBILL NO. / ADVANCE INVOICE", uid: "unbillNo" },
+  { name: "GOVERNMENT FEE", uid: "governmentFee" },
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
   { name: "COMPANY", uid: "companyName" },
@@ -70,6 +72,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "unbillNo",
   "estimateNumber",
+  "governmentFee",
   "service",
   "client",
   "companyName",
@@ -86,6 +89,7 @@ const Unbill = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
   const viewModal = useDisclosure();
+  const govtFeeModal = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
@@ -112,6 +116,7 @@ const Unbill = () => {
   const [searchBy, setSearchBy] = useState("companyName");
   const [estimateDetail, setEstimateDetail] = useState(null);
   const [viewType, setViewType] = useState("ESTIMATE");
+  const [govtFeeDetail, setGovtFeeDetail] = useState();
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -166,6 +171,28 @@ const Unbill = () => {
       );
   };
 
+  const handleGovtFeePreview = async (unbilledId) => {
+    dispatch(getAllUnbillGovtFeeList(unbilledId))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setGovtFeeDetail(data);
+          govtFeeDetail.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in Govt Fee Estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({
+          title: "There is Some Issue in Govt Fee Estimate",
+          color: "danger",
+        }),
+      );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -186,6 +213,21 @@ const Unbill = () => {
               onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
             >
               {rowData?.estimateNumber || "NA"}
+            </p>
+          </div>
+        );
+      case "governmentFee":
+        return (
+          <div>
+            <p
+              disabled
+              className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
+              onClick={() => {
+                if (rowData?.governmentFeeActiveFlag == true)
+                  handleGovtFeePreview(rowData.id);
+              }}
+            >
+              {rowData?.governmentFeeActiveFlag == false ? "False" : "True"}
             </p>
           </div>
         );
@@ -788,6 +830,159 @@ const Unbill = () => {
               </ModalBody>
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={govtFeeModal.isOpen}
+        onOpenChange={govtFeeModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Government Fee Details
+              </ModalHeader>
+
+              <ModalBody className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Estimate Number</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.estimateNumber || "NA"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Unbilled Number</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.unbilledNumber || "NA"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Company</p>
+                  <p className="font-medium">{govtFeeDetail?.companyName}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Unit</p>
+                  <p className="font-medium">{govtFeeDetail?.unitName}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Contact</p>
+                  <p className="font-medium">{govtFeeDetail?.contactName}</p>
+                </div>
+
+                {/* Fee Info */}
+                <div>
+                  <p className="text-xs text-gray-500">Fee Ref No.</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.feeReferenceNumber}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Department</p>
+                  <p className="font-medium">{govtFeeDetail?.departmentName}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Fee Type</p>
+                  <p className="font-medium">{govtFeeDetail?.feeType}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Total Amount</p>
+                  <p className="font-medium">
+                    {inrCurrency(govtFeeDetail?.totalAmount)}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Received Amount</p>
+                  <p className="font-medium">
+                    {inrCurrency(govtFeeDetail?.receivedAmount)}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Outstanding</p>
+                  <p className="font-medium text-red-600">
+                    {inrCurrency(govtFeeDetail?.outstandingAmount)}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Payment Date</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.paymentDate
+                      ? dayjs(govtFeeDetail.paymentDate).format("DD-MM-YYYY")
+                      : "NA"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Due Date</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.dueDate
+                      ? dayjs(govtFeeDetail.dueDate).format("DD-MM-YYYY")
+                      : "NA"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Status</p>
+                  <Chip color="primary" size="sm">
+                    {govtFeeDetail?.status}
+                  </Chip>
+                </div>
+
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Remarks</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.remarks || "NA"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Created By</p>
+                  <p className="font-medium">{govtFeeDetail?.createdByName}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Created At</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.createdAt
+                      ? dayjs(govtFeeDetail.createdAt).format(
+                          "DD-MM-YYYY HH:mm",
+                        )
+                      : "NA"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">Updated At</p>
+                  <p className="font-medium">
+                    {govtFeeDetail?.updatedAt
+                      ? dayjs(govtFeeDetail.updatedAt).format(
+                          "DD-MM-YYYY HH:mm",
+                        )
+                      : "NA"}
+                  </p>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="light" onPress={onClose}>
+                  Close
+                </Button>
               </ModalFooter>
             </>
           )}
