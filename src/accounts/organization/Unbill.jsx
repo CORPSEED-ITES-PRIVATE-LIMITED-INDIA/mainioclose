@@ -224,7 +224,7 @@ const Unbill = () => {
               className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
               onClick={() => { handleGovtFeePreview(rowData.id); }}
             >
-              {rowData?.governmentFeeActiveFlag == false ? "False" : "True"}
+              {rowData?.governmentFeeActiveFlag === true ?  "True" : "False" }
             </button>
           </div>
         );
