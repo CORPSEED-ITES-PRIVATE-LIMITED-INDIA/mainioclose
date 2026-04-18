@@ -180,43 +180,46 @@ const EstimatePaymentRegister = ({
   const governmentFeeActive = watch("governmentFeeActive");
 
   useEffect(() => {
-    if (
-      estimateItem?.governmentFeeActive !== undefined &&
-      estimateItem?.governmentFeeActive !== null
-    ) {
-      setValue(
-        "governmentFeeActive",
-        Boolean(estimateItem.governmentFeeActive),
-      );
+  if (
+    estimateItem?.paymentTypeId !== undefined &&
+    estimateItem?.paymentTypeId !== null
+  ) {
+    setValue("paymentTypeId", String(estimateItem.paymentTypeId));
+  }
 
-      if (estimateItem?.governmentFee) {
-        setValue(
-          "governmentFee.totalAmount",
-          estimateItem.governmentFee.totalAmount ?? "",
-        );
-        // setValue(
-        //   "governmentFee.receivedAmount",
-        //   estimateItem.governmentFee.receivedAmount ?? "",
-        // );
-        setValue(
-          "governmentFee.paymentDate",
-          estimateItem.governmentFee.paymentDate ?? "",
-        );
-        setValue(
-          "governmentFee.feeReferenceNumber",
-          estimateItem.governmentFee.feeReferenceNumber ?? "",
-        );
-        setValue(
-          "governmentFee.departmentName",
-          estimateItem.governmentFee.departmentName ?? "",
-        );
-        setValue(
-          "governmentFee.remarks",
-          estimateItem.governmentFee.remarks ?? "",
-        );
-      }
+  if (
+    estimateItem?.governmentFeeActive !== undefined &&
+    estimateItem?.governmentFeeActive !== null
+  ) {
+    setValue(
+      "governmentFeeActive",
+      Boolean(estimateItem.governmentFeeActive),
+    );
+
+    if (estimateItem?.governmentFee) {
+      setValue(
+        "governmentFee.totalAmount",
+        estimateItem.governmentFee.totalAmount ?? "",
+      );
+      setValue(
+        "governmentFee.paymentDate",
+        estimateItem.governmentFee.paymentDate ?? "",
+      );
+      setValue(
+        "governmentFee.feeReferenceNumber",
+        estimateItem.governmentFee.feeReferenceNumber ?? "",
+      );
+      setValue(
+        "governmentFee.departmentName",
+        estimateItem.governmentFee.departmentName ?? "",
+      );
+      setValue(
+        "governmentFee.remarks",
+        estimateItem.governmentFee.remarks ?? "",
+      );
     }
-  }, [estimateItem, setValue]);
+  }
+}, [estimateItem, setValue]);
 
   const submitHandler = async (values) => {
     try {
@@ -229,15 +232,15 @@ const EstimatePaymentRegister = ({
         governmentFeeActive: values.governmentFeeActive,
         governmentFee: values.governmentFeeActive
           ? {
-              totalAmount: Number(values.governmentFee?.totalAmount || 0),
-              receivedAmount: Number(values.governmentFee?.totalAmount || 0),
-              paymentDate: values.governmentFee?.paymentDate || "",
-              feeReferenceNumber:
-                values.governmentFee?.feeReferenceNumber || "",
-              departmentName: values.governmentFee?.departmentName || "",
-              feeType: values.paymentMode || "",
-              remarks: values.governmentFee?.remarks || "",
-            }
+            totalAmount: Number(values.governmentFee?.totalAmount || 0),
+            receivedAmount: Number(values.governmentFee?.totalAmount || 0),
+            paymentDate: values.governmentFee?.paymentDate || "",
+            feeReferenceNumber:
+              values.governmentFee?.feeReferenceNumber || "",
+            departmentName: values.governmentFee?.departmentName || "",
+            feeType: values.paymentMode || "",
+            remarks: values.governmentFee?.remarks || "",
+          }
           : null,
       };
 
@@ -363,8 +366,7 @@ const EstimatePaymentRegister = ({
                         data={paymentTypeList || []}
                         labelKey="name"
                         valueKey="id"
-                        value={field.value}
-                        onChange={(value) => {
+value={field.value ?? ""}                        onChange={(value) => {
                           field.onChange(value);
                         }}
                       />
@@ -515,7 +517,7 @@ const EstimatePaymentRegister = ({
                             isInvalid={!!error}
                             value={
                               field.value &&
-                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                                /^\d{4}-\d{2}-\d{2}$/.test(field.value)
                                 ? parseDate(field.value)
                                 : null
                             }
