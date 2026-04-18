@@ -177,7 +177,7 @@ const Unbill = () => {
         if (resp.meta.requestStatus === "fulfilled") {
           let data = resp?.payload;
           setGovtFeeDetail(data);
-          govtFeeDetail.onOpen();
+          govtFeeModal.onOpen();
         } else {
           addToast({
             title: "There is Some Issue in Govt Fee Estimate",
@@ -185,9 +185,9 @@ const Unbill = () => {
           });
         }
       })
-      .catch(() =>
+      .catch((e) =>
         addToast({
-          title: "There is Some Issue in Govt Fee Estimate",
+          title: e.message,
           color: "danger",
         }),
       );
@@ -219,16 +219,13 @@ const Unbill = () => {
       case "governmentFee":
         return (
           <div>
-            <p
-              disabled
+            <button
+              disabled={!rowData?.governmentFeeActiveFlag}
               className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
-              onClick={() => {
-                if (rowData?.governmentFeeActiveFlag == true)
-                  handleGovtFeePreview(rowData.id);
-              }}
+              onClick={() => { handleGovtFeePreview(rowData.id); }}
             >
               {rowData?.governmentFeeActiveFlag == false ? "False" : "True"}
-            </p>
+            </button>
           </div>
         );
       case "unbillNo":
@@ -785,18 +782,18 @@ const Unbill = () => {
                 </Select>
                 {(updatedStatusData?.approvalRemarks === "REJECTED" ||
                   updatedStatusData?.approvalRemarks === "CANCELLED") && (
-                  <Textarea
-                    label="Remark"
-                    isRequired
-                    value={updatedStatusData?.rejectionReason}
-                    onChange={(e) =>
-                      setUpdatedStatusData((prev) => ({
-                        ...prev,
-                        rejectionReason: e.target.value,
-                      }))
-                    }
-                  />
-                )}
+                    <Textarea
+                      label="Remark"
+                      isRequired
+                      value={updatedStatusData?.rejectionReason}
+                      onChange={(e) =>
+                        setUpdatedStatusData((prev) => ({
+                          ...prev,
+                          rejectionReason: e.target.value,
+                        }))
+                      }
+                    />
+                  )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
@@ -846,141 +843,223 @@ const Unbill = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Government Fee Details
+              <ModalHeader className="border-b border-default-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-6 py-4">
+                <div className="flex w-full items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-default-900">
+                      Government Fee Details
+                    </h2>
+                    <p className="mt-1 text-sm text-default-500">
+                      Complete fee summary, payment details, and audit information
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <Chip
+                      color="primary"
+                      variant="flat"
+                      size="sm"
+                      className="font-medium capitalize"
+                    >
+                      {govtFeeDetail?.status || "NA"}
+                    </Chip>
+                    <span className="rounded-full bg-default-100 px-3 py-1 text-xs font-medium text-default-600">
+                      Ref: {govtFeeDetail?.feeReferenceNumber || "NA"}
+                    </span>
+                  </div>
+                </div>
               </ModalHeader>
 
-              <ModalBody className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500">Estimate Number</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.estimateNumber || "NA"}
+              <ModalBody className="max-h-[75vh] space-y-6 overflow-y-auto bg-gradient-to-br from-white via-default-50/40 to-blue-50/30 px-6 py-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600">
+                      Total Amount
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-default-900">
+                      {inrCurrency(govtFeeDetail?.totalAmount)}
+                    </p>
+                  </div>
+
+
+                </div>
+
+                <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-default-600">
+                    Estimate Information
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Estimate Number
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.estimateNumber || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Unbilled Number
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.unbilledNumber || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Company
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.companyName || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Unit
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.unitName || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4 md:col-span-2">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Contact
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.contactName || "NA"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-default-600">
+                    Fee Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Fee Ref No.
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.feeReferenceNumber || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Department
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.departmentName || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Fee Type
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.feeType || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Payment Date
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.paymentDate
+                          ? dayjs(govtFeeDetail.paymentDate).format("DD-MM-YYYY")
+                          : "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Due Date
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.dueDate
+                          ? dayjs(govtFeeDetail.dueDate).format("DD-MM-YYYY")
+                          : "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Status
+                      </p>
+                      <div className="mt-2">
+                        <Chip color="primary" variant="flat" size="sm" className="capitalize">
+                          {govtFeeDetail?.status || "NA"}
+                        </Chip>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-5 shadow-sm">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+                    Remarks
                   </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Unbilled Number</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.unbilledNumber || "NA"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Company</p>
-                  <p className="font-medium">{govtFeeDetail?.companyName}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Unit</p>
-                  <p className="font-medium">{govtFeeDetail?.unitName}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Contact</p>
-                  <p className="font-medium">{govtFeeDetail?.contactName}</p>
-                </div>
-
-                {/* Fee Info */}
-                <div>
-                  <p className="text-xs text-gray-500">Fee Ref No.</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.feeReferenceNumber}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Department</p>
-                  <p className="font-medium">{govtFeeDetail?.departmentName}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Fee Type</p>
-                  <p className="font-medium">{govtFeeDetail?.feeType}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Total Amount</p>
-                  <p className="font-medium">
-                    {inrCurrency(govtFeeDetail?.totalAmount)}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Received Amount</p>
-                  <p className="font-medium">
-                    {inrCurrency(govtFeeDetail?.receivedAmount)}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Outstanding</p>
-                  <p className="font-medium text-red-600">
-                    {inrCurrency(govtFeeDetail?.outstandingAmount)}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Payment Date</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.paymentDate
-                      ? dayjs(govtFeeDetail.paymentDate).format("DD-MM-YYYY")
-                      : "NA"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Due Date</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.dueDate
-                      ? dayjs(govtFeeDetail.dueDate).format("DD-MM-YYYY")
-                      : "NA"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Status</p>
-                  <Chip color="primary" size="sm">
-                    {govtFeeDetail?.status}
-                  </Chip>
-                </div>
-
-                <div className="col-span-2">
-                  <p className="text-xs text-gray-500">Remarks</p>
-                  <p className="font-medium">
+                  <p className="mt-2 text-sm font-medium leading-6 text-default-800">
                     {govtFeeDetail?.remarks || "NA"}
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-xs text-gray-500">Created By</p>
-                  <p className="font-medium">{govtFeeDetail?.createdByName}</p>
-                </div>
+                <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-default-600">
+                    Audit Information
+                  </h3>
 
-                <div>
-                  <p className="text-xs text-gray-500">Created At</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.createdAt
-                      ? dayjs(govtFeeDetail.createdAt).format(
-                          "DD-MM-YYYY HH:mm",
-                        )
-                      : "NA"}
-                  </p>
-                </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Created By
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.createdByName || "NA"}
+                      </p>
+                    </div>
 
-                <div>
-                  <p className="text-xs text-gray-500">Updated At</p>
-                  <p className="font-medium">
-                    {govtFeeDetail?.updatedAt
-                      ? dayjs(govtFeeDetail.updatedAt).format(
-                          "DD-MM-YYYY HH:mm",
-                        )
-                      : "NA"}
-                  </p>
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Created At
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.createdAt
+                          ? dayjs(govtFeeDetail.createdAt).format("DD-MM-YYYY HH:mm")
+                          : "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Updated At
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {govtFeeDetail?.updatedAt
+                          ? dayjs(govtFeeDetail.updatedAt).format("DD-MM-YYYY HH:mm")
+                          : "NA"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </ModalBody>
 
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
+              <ModalFooter className="border-t border-default-200 bg-white px-6 py-4">
+                <Button
+                  variant="light"
+                  onPress={onClose}
+                  className="rounded-xl px-6 font-medium"
+                >
                   Close
                 </Button>
               </ModalFooter>
