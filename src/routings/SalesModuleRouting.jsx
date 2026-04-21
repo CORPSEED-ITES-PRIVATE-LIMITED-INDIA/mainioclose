@@ -121,6 +121,23 @@ const SalesModuleRouting = () => {
         <Route path="companyProjects" element={<CompanyProjects />} />
         <Route path="companyLeads" element={<CompanyLeads />} />
       </Route>
+
+      <Route
+        path="sales/company/:companyId/gstDetails/leads/:leadId"
+        element={<LeadDetail />}
+      >
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="childLead" element={<ChildLead />} />
+        <Route path="companyForm" element={<CreateCompanyForm />} />
+        <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="proposal" element={<Proposal />} />
+        <Route path="leadEstimate" element={<LeadEstimate />} />
+        <Route path="leadEstimates" element={<LeadEstimates />} />
+        <Route path="leadTasks" element={<LeadTask />} />
+        <Route path="leadHistory" element={<LeadHistory />} />
+      </Route>
+
       <Route
         path="sales/company/:companyId/gstDetails/:stateName/companyUnits/:companyUnitId/companyLeads/:leadId"
         element={<LeadDetail />}

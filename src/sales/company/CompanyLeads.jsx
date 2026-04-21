@@ -18,14 +18,19 @@ import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getAllCompanyLeads, getLeadsByCompanyId } from "../../toolkit/slices/companySlice";
+import {
+  getAllCompanyLeads,
+  getLeadsByCompanyId,
+} from "../../toolkit/slices/companySlice";
+import dayjs from "dayjs";
 
 const columns = [
   { name: "ID", uid: "leadId" },
-  { name: "LEAD NAME", uid: "leadName", sortable: true },
+  { name: "LEAD NAME", uid: "leadName" },
+  { name: "STATUS", uid: "status" },
   { name: "CLIENT", uid: "client" },
   { name: "ASSIGNEE", uid: "assigneeName" },
-  { name: "DESCRIPTION", uid: "description" },
+  { name: "SOURCE", uid: "source" },
 ];
 
 function capitalize(s) {
@@ -35,14 +40,15 @@ function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "leadId",
   "leadName",
+  "status",
   "client",
   "assigneeName",
-  "description",
+  "source",
 ];
 
 const CompanyLeads = () => {
-  const { userId, companyUnitId ,companyId} = useParams();
-    console.log("CompanyId",companyId);
+  const { userId, companyUnitId, companyId } = useParams();
+  console.log("CompanyId", companyId);
 
   const dispatch = useDispatch();
   const count = useSelector((state) => state.company.comapanyLeadsList?.length);
@@ -112,10 +118,13 @@ const CompanyLeads = () => {
             <div className="flex flex-col">
               <Link
                 className="font-medium"
-                // to={`${rowData?.leadId}/leadDetail`}
+                to={`${rowData?.leadId}/leadDetail`}
               >
                 {rowData?.leadName || "-"}
               </Link>
+              <span className="text-tiny text-gray-400">
+                {dayjs(rowData?.createDate).format("DD-MM-YYYY")}
+              </span>
             </div>
           </div>
         );
@@ -123,14 +132,14 @@ const CompanyLeads = () => {
       case "status":
         return (
           <Chip className="capitalize" color="primary" size="sm" variant="flat">
-            {rowData?.statusName || "Unknown"}
+            {rowData?.status || "Unknown"}
           </Chip>
         );
 
       case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{rowData?.client || "-"}</span>
+            <span className="font-semibold">{rowData?.clientName || "-"}</span>
             <span className="text-sm text-gray-400">
               {rowData?.email || ""}
             </span>
@@ -148,11 +157,11 @@ const CompanyLeads = () => {
             </span>
           </div>
         );
-      case "description":
+      case "source":
         return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.description || "-"}</span>
-          </div>
+          <Chip className="capitalize" color="primary" size="sm" variant="flat">
+            {rowData?.source || "Unknown"}
+          </Chip>
         );
 
       default:

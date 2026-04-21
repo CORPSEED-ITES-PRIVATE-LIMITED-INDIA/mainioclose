@@ -73,7 +73,7 @@ const CompanyProjects = () => {
     type: "all",
     rating: "all",
   });
-console.log("dskjhgsdkjhgsdkj",data)
+  console.log("dskjhgsdkjhgsdkj", data);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -331,7 +331,7 @@ console.log("dskjhgsdkjhgsdkj",data)
     );
   }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
 
-  console.log("hgfdhgfhgf",items)
+  console.log("hgfdhgfhgf", items);
 
   return (
     <>
@@ -364,7 +364,7 @@ console.log("dskjhgsdkjhgsdkj",data)
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems||[]}>
+        <TableBody emptyContent={"No data found"} items={sortedItems || []}>
           {(item) => (
             <TableRow key={item.projectId}>
               {(columnKey) => (
