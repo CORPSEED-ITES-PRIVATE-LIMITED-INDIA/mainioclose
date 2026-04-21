@@ -25,7 +25,7 @@ import {
   Textarea,
   useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
@@ -51,19 +51,20 @@ const columns = [
   { name: "UNIT NAME", uid: "name" },
   { name: "STATE NAME", uid: "state" },
   { name: "GST NUMBER", uid: "gstNo" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "state", "gstNo"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "state", "gstNo","actions"];
 
 const CompanyGstList = () => {
   const { userId, companyId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector((state) => state.company.companyGstList?.length);
-  const data = useSelector((state) => state.company.companyGstList);
+  const data = useSelector((state) => state.company.companyGstList)||[];
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -206,6 +207,33 @@ const CompanyGstList = () => {
             <span className="font-normal">{company.gstNo || "-"}</span>
           </div>
         );
+
+       case "actions":
+              return (
+                <div className="relative flex justify-center items-center gap-2">
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <Button isIconOnly size="sm" variant="light">
+                        <EllipsisVertical />
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu>
+                      <DropdownItem
+                        key="leads"
+                        href={`erp/${userId}/sales/company/${companyId}/gstDetails/leads`}
+                      >
+                        View Leads
+                      </DropdownItem>
+                      <DropdownItem
+                        key="projects"
+                        href={`erp/${userId}/sales/company/${companyId}/gstDetails/${company?.id}/projects`}
+                      >
+                        View Projects
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
+              );
 
       default:
         return company[columnKey] || "-";

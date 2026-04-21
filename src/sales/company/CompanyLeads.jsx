@@ -18,7 +18,7 @@ import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getLeadsByCompanyId } from "../../toolkit/slices/companySlice";
+import { getAllCompanyLeads, getLeadsByCompanyId } from "../../toolkit/slices/companySlice";
 
 const columns = [
   { name: "ID", uid: "leadId" },
@@ -41,7 +41,9 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const CompanyLeads = () => {
-  const { userId, companyUnitId } = useParams();
+  const { userId, companyUnitId ,companyId} = useParams();
+    console.log("CompanyId",companyId);
+
   const dispatch = useDispatch();
   const count = useSelector((state) => state.company.comapanyLeadsList?.length);
   const data = useSelector((state) => state.company.comapanyLeadsList);
@@ -66,8 +68,8 @@ const CompanyLeads = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getLeadsByCompanyId(companyUnitId));
-  }, [dispatch, companyUnitId]);
+    dispatch(getAllCompanyLeads(companyId));
+  }, [dispatch, companyId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -110,7 +112,7 @@ const CompanyLeads = () => {
             <div className="flex flex-col">
               <Link
                 className="font-medium"
-                to={`${rowData?.leadId}/leadDetail`}
+                // to={`${rowData?.leadId}/leadDetail`}
               >
                 {rowData?.leadName || "-"}
               </Link>

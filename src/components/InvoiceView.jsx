@@ -318,7 +318,7 @@ const InvoiceView = ({ details, documentTypeName }) => {
                         >
                           {inrCurrency(
                             Number(details?.actualPrice) *
-                              Number(details?.quantity)
+                            Number(details?.quantity)
                           )}
                         </td>
                         <td
@@ -341,7 +341,7 @@ const InvoiceView = ({ details, documentTypeName }) => {
                             (details?.actualPrice *
                               details?.quantity *
                               details?.gst) /
-                              100
+                            100
                           )}
                         </td>
                         <td
@@ -553,7 +553,7 @@ const InvoiceView = ({ details, documentTypeName }) => {
                       >
                         {inrCurrency(
                           Number(details?.govermentFees) *
-                            (Number(details?.govermentGst) / 100)
+                          (Number(details?.govermentGst) / 100)
                         )}
                       </td>
                       <td
@@ -565,8 +565,8 @@ const InvoiceView = ({ details, documentTypeName }) => {
                       >
                         {inrCurrency(
                           Number(details?.govermentFees) *
-                            (Number(details?.govermentGst) / 100) +
-                            Number(details?.govermentFees)
+                          (Number(details?.govermentGst) / 100) +
+                          Number(details?.govermentFees)
                         )}
                       </td>
                     </tr>
@@ -616,7 +616,7 @@ const InvoiceView = ({ details, documentTypeName }) => {
                         {inrCurrency(
                           (Number(details?.professionalFees) *
                             Number(details?.profesionalGst)) /
-                            100
+                          100
                         )}
                       </td>
                       <td
@@ -629,8 +629,8 @@ const InvoiceView = ({ details, documentTypeName }) => {
                         {inrCurrency(
                           (Number(details?.professionalFees) *
                             Number(details?.profesionalGst)) /
-                            100 +
-                            Number(details?.professionalFees)
+                          100 +
+                          Number(details?.professionalFees)
                         )}
                       </td>
                     </tr>
@@ -679,7 +679,7 @@ const InvoiceView = ({ details, documentTypeName }) => {
                       >
                         {inrCurrency(
                           Number(details?.serviceCharge) *
-                            (Number(details?.serviceGst) / 100)
+                          (Number(details?.serviceGst) / 100)
                         )}
                       </td>
                       <td
@@ -691,8 +691,8 @@ const InvoiceView = ({ details, documentTypeName }) => {
                       >
                         {inrCurrency(
                           Number(details?.serviceCharge) *
-                            (Number(details?.serviceGst) / 100) +
-                            Number(details?.serviceCharge)
+                          (Number(details?.serviceGst) / 100) +
+                          Number(details?.serviceCharge)
                         )}
                       </td>
                     </tr>
@@ -742,7 +742,7 @@ const InvoiceView = ({ details, documentTypeName }) => {
                         {inrCurrency(
                           (Number(details?.otherFees) *
                             Number(details?.otherGst)) /
-                            100
+                          100
                         )}
                       </td>
                       <td
@@ -755,8 +755,8 @@ const InvoiceView = ({ details, documentTypeName }) => {
                         {inrCurrency(
                           (Number(details?.otherFees) *
                             Number(details?.otherGst)) /
-                            100 +
-                            Number(details?.otherFees)
+                          100 +
+                          Number(details?.otherFees)
                         )}
                       </td>
                     </tr>

@@ -39,6 +39,7 @@ import TaxInvoice from "../../components/TaxInvoice";
 export const columns = [
   { name: "DATE", uid: "date" },
   { name: "INVOICE NO.", uid: "invoiceNo" },
+  { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "clientName" },
   { name: "COMPANY", uid: "companyName" },
@@ -54,6 +55,7 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "invoiceNo",
+  "estimateNumber",
   "service",
   "clientName",
   "companyName",
@@ -164,6 +166,17 @@ const AllInvoice = () => {
         return (
           <div className="flex flex-col gap-1">
             <p className="text-sm capitalize">{rowData?.invoiceNumber}</p>
+          </div>
+        );
+      case "estimateNumber":
+        return (
+          <div>
+            <p
+              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+              onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+            >
+              {rowData?.estimateNumber || "NA"}
+            </p>
           </div>
         );
       case "service":

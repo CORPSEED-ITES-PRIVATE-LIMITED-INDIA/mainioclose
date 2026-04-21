@@ -266,6 +266,7 @@ export const getAllInvoice = createAsyncThunk(
     const response = await api.get(
       `/accountService/api/v1/invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`,
     );
+    console.log("Invoice API Res:",response)
     return response.data;
   },
 );

@@ -36,7 +36,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/postcss": "4.1.11",
     "@tailwindcss/vite": "4.1.11",
-    "antd": "^6.3.5",
+    "antd": "^6.3.6",
     "axios": "^1.11.0",
     "ckeditor5-premium-features": "^46.0.1",
     "class-variance-authority": "^0.7.1",

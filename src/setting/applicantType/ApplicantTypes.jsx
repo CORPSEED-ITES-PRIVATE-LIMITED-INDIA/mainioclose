@@ -154,6 +154,7 @@ const ApplicantTypes = () => {
   const handleDelete = () => {
     dispatch(deleteApplicantType(deleteId))
       .then((resp) => {
+        console.log("FrontEnd Check", resp)
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Applicant deleted successfully !.",
@@ -163,7 +164,7 @@ const ApplicantTypes = () => {
           setDeleteId(null);
           dispatch(getApplicantTypeList({ page, size: rowsPerPage }));
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({ title: resp.payload.data.errorCode, description: resp.payload.data.message, color: "danger" });
         }
       })
       .catch(() =>

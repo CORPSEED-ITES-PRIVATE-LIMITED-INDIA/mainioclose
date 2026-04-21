@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import {
+  getAllCompanyProjects,
   getCompanyProjectAction,
   getLeadsByCompanyId,
 } from "../../toolkit/slices/companySlice";
@@ -48,12 +49,13 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const CompanyProjects = () => {
-  const { userId, companyUnitId } = useParams();
+  const { userId, companyId, unitId } = useParams();
+  console.log("unitId", unitId);
   const dispatch = useDispatch();
   const count = useSelector(
     (state) => state.company.companyProjectList?.length,
   );
-  const data = useSelector((state) => state.company.companyProjectList);
+  const data = useSelector((state) => state.company.companyProjectList) || [];
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -71,12 +73,13 @@ const CompanyProjects = () => {
     type: "all",
     rating: "all",
   });
-
+console.log("dskjhgsdkjhgsdkj",data)
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getCompanyProjectAction(companyUnitId));
-  }, [dispatch, companyUnitId]);
+    console.log("Unit Id", unitId);
+    dispatch(getAllCompanyProjects({ companyId, unitId }));
+  }, [dispatch, companyId, unitId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -87,16 +90,18 @@ const CompanyProjects = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
+    if (data?.length) {
+      let filteredUsers = [...(data || [])];
 
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-        ),
-      );
+      if (hasSearchFilter) {
+        filteredUsers = filteredUsers?.filter((item) =>
+          Object.values(item)?.some((val) =>
+            String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+          ),
+        );
+      }
+      return filteredUsers;
     }
-    return filteredUsers;
   }, [data, filterValue]);
 
   const pages = Math.ceil(count / companyFilteration?.size) || 1;
@@ -105,17 +110,19 @@ const CompanyProjects = () => {
     const start = (companyFilteration?.page - 1) * companyFilteration?.size;
     const end = start + companyFilteration?.size;
 
-    return filteredItems.slice(start, end);
+    return filteredItems?.slice(start, end);
   }, [companyFilteration, filteredItems]);
 
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+    if (items?.length) {
+      return [...items]?.sort((a, b) => {
+        const first = a[sortDescriptor.column];
+        const second = b[sortDescriptor.column];
+        const cmp = first < second ? -1 : first > second ? 1 : 0;
 
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+        return sortDescriptor.direction === "descending" ? -cmp : cmp;
+      });
+    }
   }, [sortDescriptor, items]);
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -324,6 +331,8 @@ const CompanyProjects = () => {
     );
   }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
 
+  console.log("hgfdhgfhgf",items)
+
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Company projects</h1>
@@ -355,7 +364,7 @@ const CompanyProjects = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+        <TableBody emptyContent={"No data found"} items={sortedItems||[]}>
           {(item) => (
             <TableRow key={item.projectId}>
               {(columnKey) => (

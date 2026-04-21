@@ -597,6 +597,40 @@ export const estimateSentToClient = createAsyncThunk(
   },
 );
 
+export const getAllCompanyLeads =createAsyncThunk(
+  "getAllCompanyLeads",
+  async (companyId,{rejectWithValue})=>{
+    try {
+      const response = await api.get(
+        `/leadService/api/companies/companies/${companyId}/leads`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+)
+export const getAllCompanyProjects =createAsyncThunk(
+  "getAllCompanyProjects",
+  async ({companyId,unitId},{rejectWithValue})=>{
+    try {
+      console.log("Inside")
+      const response = await api.post(
+        `/accountService/api/v1/estimates/company-unit/getFullDetails`,
+        {
+          companyId:companyId,
+          companyUnitId:unitId
+        }
+      );
+      console.log("API RES:",response.data)
+      return response.data;
+    } catch (err) {
+      console.log(err)
+      return rejectWithValue(err.response);
+    }
+  }
+)
+
 const CompanySlice = createSlice({
   name: "company",
   initialState: {
@@ -963,6 +997,35 @@ const CompanySlice = createSlice({
     builder.addCase(getCompanyDetailByCompanyIdAndUnitId.rejected, (state) => {
       state.loading = "rejected";
       state.companyDetailByCompanyIdAndUnitId = {};
+    });
+
+    builder.addCase(getAllCompanyLeads.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllCompanyLeads.fulfilled,
+      (state, action) => {
+        state.comapanyLeadsList = action.payload;
+        state.loading = "success";
+      },
+    );
+    builder.addCase(getAllCompanyLeads.rejected, (state) => {
+      state.loading = "rejected";
+      state.comapanyLeadsList = {};
+    });
+    builder.addCase(getAllCompanyProjects.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllCompanyProjects.fulfilled,
+      (state, action) => {
+        state.companyProjectList = action.payload;
+        state.loading = "success";
+      },
+    );
+    builder.addCase(getAllCompanyProjects.rejected, (state) => {
+      state.loading = "rejected";
+      state.companyProjectList = [];
     });
   },
 });

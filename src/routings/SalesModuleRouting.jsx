@@ -102,6 +102,14 @@ const SalesModuleRouting = () => {
         element={<CompanyGstList />}
       />
       <Route
+        path="sales/company/:companyId/gstDetails/:unitId/projects"
+        element={<CompanyProjects />}
+      />
+      <Route
+        path="sales/company/:companyId/gstDetails/leads"
+        element={<CompanyLeads />}
+      />
+      <Route
         path="sales/company/:companyId/gstDetails/:stateName/companyUnits"
         element={<CompanyUnits />}
       />

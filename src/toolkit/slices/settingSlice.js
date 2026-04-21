@@ -518,7 +518,7 @@ export const editProposalAndEmailTemplate = createAsyncThunk(
 
 export const editApplicantType = createAsyncThunk(
   "editApplicantType",
-  async ({id, ...data}) => {
+  async ({ id, ...data }) => {
     const response = await api.put(
       `/operationService/api/applicant-types/${id}`,
       data,
@@ -528,16 +528,20 @@ export const editApplicantType = createAsyncThunk(
 );
 export const deleteApplicantType = createAsyncThunk(
   "deleteApplicantType",
-  async (id) => {
-    console.log("API")
-    const response = await api.delete(
-      `/operationService/api/applicant-types/${id}`
-    );
-    console.log(response)
-    return response.data;
+  async (id, { rejectWithValue }) => {
+    try {
+      console.log("API Delete")
+      const response = await api.delete(
+        `/operationService/api/applicant-types/${id}`
+      );
+      console.log(response)
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response);
+    }
   },
 );
-export const  addApplicantType= createAsyncThunk(
+export const addApplicantType = createAsyncThunk(
   "addApplicantType",
   async (data) => {
     const response = await api.post(
