@@ -139,8 +139,8 @@ const CompanyLeads = () => {
       case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">{rowData?.clientName || "-"}</span>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm">{rowData?.clientName || "-"}</span>
+            <span className="text-tiny text-gray-400">
               {rowData?.email || ""}
             </span>
           </div>
@@ -149,10 +149,8 @@ const CompanyLeads = () => {
       case "assigneeName":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">
-              {rowData?.assigneeName || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm">{rowData?.assigneeName || "-"}</span>
+            <span className="text-tiny text-gray-400">
               {rowData?.assigneeEmail || ""}
             </span>
           </div>
