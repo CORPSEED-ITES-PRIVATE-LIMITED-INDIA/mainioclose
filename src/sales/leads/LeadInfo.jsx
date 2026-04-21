@@ -463,7 +463,7 @@ const LeadInfo = () => {
     contactModal.onOpen();
     contactForm.reset({
       name: value?.name,
-      email: value?.email || "",
+      email: value?.emails || "",
       contactNo: value?.contactNo,
     });
     setEditContact(value);
@@ -697,7 +697,18 @@ const LeadInfo = () => {
                           {leadData?.lead?.name}
                         </h6>
                         <Button
-                          onPress={() => setToggleSlug(false)}
+                          onPress={() => {
+                            if (leadData?.proposalApproved) {
+                              addToast({
+                                title: "RESTRICTED",
+                                color: "danger",
+                                description:
+                                  "Service name cannot be changed as proposal is already approved.",
+                              });
+                              return;
+                            }
+                            setToggleSlug(false);
+                          }}
                           size="sm"
                           isIconOnly
                           variant="light"

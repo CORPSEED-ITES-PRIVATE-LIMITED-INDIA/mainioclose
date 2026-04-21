@@ -63,10 +63,6 @@ export const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-export function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
-
 const INITIAL_VISIBLE_COLUMNS = [
   "companyName",
   "status",
@@ -498,10 +494,8 @@ const Company = () => {
 
   const onSearchChange = useCallback(
     (value) => {
-      setFilterValue(value || ""); // Always update the input value for immediate UI feedback
-
+      setFilterValue(value || "");
       if (value?.length >= 3) {
-        // Search only when length >= 3
         setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
         dispatch(
           searchCompanies({
@@ -511,12 +505,11 @@ const Company = () => {
           }),
         );
       } else {
-        // Reset to full list when length < 3 (including empty)
         setCompanyFilteration((prev) => ({ ...prev, page: 1 }));
-        dispatch(getAllNewCompanies({ ...companyFilteration, page: 1 })); // Pass updated pagination; adjust filters as needed if getAllNewCompanies expects specific params
+        dispatch(getAllNewCompanies({ ...companyFilteration, page: 1 }));
       }
     },
-    [searchFilterType, dispatch, companyFilteration, userId], // Added userId to deps if it's stable/defined in scope
+    [searchFilterType, dispatch, companyFilteration, userId],
   );
 
   const onClear = useCallback(() => {
@@ -581,7 +574,7 @@ const Company = () => {
                 selectedKeys={[searchFilterType]}
                 selectionMode="single"
                 onSelectionChange={(e) => {
-                  let key = Array.from(e);
+                  let key = Array.from(e)[0];
                   setSearchFilterType(key);
                 }}
               >
@@ -739,7 +732,7 @@ const Company = () => {
               >
                 {columns.map((column) => (
                   <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
+                    {column.name}
                   </DropdownItem>
                 ))}
               </DropdownMenu>
