@@ -1,4 +1,8 @@
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { Routes, Route } from "react-router-dom";
+import { AliveScope } from "react-activation";
+
 import HomePage from "./home/HomePage";
 import Login from "./login/Login";
 import ForgotPassword from "./login/ForgotPassword";
@@ -16,7 +20,6 @@ import {
   accountLoginModuleRouting,
   AccountsModuleRouting,
 } from "./routings/AccountsModuleRouting";
-import { AliveScope } from "react-activation";
 import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
 import UserHistory from "./users/UserHistory";
@@ -25,8 +28,15 @@ import DeactiveUserList from "./users/DeactiveUserList";
 import EstimatePreview from "./components/EstimatePreview";
 import VendorPaymentApproval from "./admin/VendorPaymentApproval";
 import DiscountedEstimateApproval from "./admin/DiscountedEstimateApproval";
+import { restoreSession } from "./toolkit/slices/authSlice";
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(restoreSession());
+  }, [dispatch]);
+
   return (
     <AliveScope>
       <Routes>
@@ -38,32 +48,18 @@ function App() {
           path="/:leadId/:uuid/estimate-preview"
           element={<EstimatePreview />}
         />
+
         <Route path="/erp" element={<ProtectedRoute />}>
           <Route path=":userId" element={<Layoutpage />}>
-            {/*Dashboard */}
             {DashboardRouting()}
-
-            {/* Sales */}
             {SalesModuleRouting()}
-
-            {/* Industry */}
             {IndustryModuleRouting()}
-
-            {/* Accounts */}
             {AccountsModuleRouting()}
-
             {accountLoginModuleRouting()}
-
-            {/* IVR */}
             {QualityRouting()}
-
-            {/* HR */}
             {HRModuleRouting()}
-
-            {/*Operations */}
             {OperationModuleRouting()}
 
-            {/* Others */}
             <Route path="users/usersList" element={<Users />} />
             <Route
               path="users/deactiveUsersList"
@@ -77,7 +73,6 @@ function App() {
               path="users/usersList/:currentUserId/userHistory"
               element={<UserHistory />}
             />
-
             <Route
               path="admin/vendorPaymentApproval"
               element={<VendorPaymentApproval />}
@@ -86,9 +81,8 @@ function App() {
               path="admin/discountedEstimate"
               element={<DiscountedEstimateApproval />}
             />
-            {ProcurementRouting()}
 
-            {/* Settings */}
+            {ProcurementRouting()}
             {ERPSettingRouting()}
           </Route>
         </Route>

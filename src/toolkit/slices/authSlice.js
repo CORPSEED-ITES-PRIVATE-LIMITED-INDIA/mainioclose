@@ -191,56 +191,75 @@ export const AuthSlice = createSlice({
     automationStatus: false,
   },
   reducers: {
-    logoutFun: (state, action) => {
+    logoutFun: (state) => {
       state.isAuth = false;
       state.currentUser = {};
-      localStorage.removeItem("persist:root");
-      localStorage.removeItem("userDetail");
-      localStorage.removeItem("vendorDetail");
+      state.roles = [];
+      state.jwt = "";
+
+      sessionStorage.removeItem("userDetail");
+      sessionStorage.removeItem("vendorDetail");
+
+      localStorage.removeItem("persist:root"); // only keep if redux-persist still uses localStorage
     },
     handleLoadingState: (state, action) => {
       state.userLoading = action.payload;
     },
+    restoreSession: (state) => {
+      const userDetail = sessionStorage.getItem("userDetail");
+      if (userDetail) {
+        const parsed = JSON.parse(userDetail);
+        state.currentUser = parsed;
+        state.jwt = parsed?.jwt || "";
+        state.roles = parsed?.roles || [];
+        state.isAuth = !!parsed?.id;
+      }
+    },
   },
   extraReducers: (builder) => {
-    builder.addCase(getCurrentUser.pending, (state, action) => {
+    builder.addCase(getCurrentUser.pending, (state) => {
       state.loginLoading = true;
       state.loginError = false;
       state.userLoading = "pending";
     });
+
     builder.addCase(getCurrentUser.fulfilled, (state, action) => {
       state.currentUser = action.payload;
-      localStorage.setItem("userDetail", JSON.stringify(action.payload));
       state.jwt = action.payload.jwt;
       state.roles = action.payload.roles;
       state.loginLoading = false;
       state.isAuth = true;
+
+      sessionStorage.setItem("userDetail", JSON.stringify(action.payload));
     });
+
     builder.addCase(changePasswordAuthentication.fulfilled, (state, action) => {
       state.isManagerApproved = action.payload;
     });
-    builder.addCase(changePasswordAuthentication.rejected, (state, action) => {
+
+    builder.addCase(changePasswordAuthentication.rejected, (state) => {
       state.loginError = true;
     });
 
-    builder.addCase(getDepartmentOfUser.pending, (state, action) => {
+    builder.addCase(getDepartmentOfUser.pending, (state) => {
       state.loginLoading = true;
       state.loginError = false;
     });
+
     builder.addCase(getDepartmentOfUser.fulfilled, (state, action) => {
       state.getDepartmentDetail = action.payload;
     });
-    builder.addCase(getDepartmentOfUser.rejected, (state, action) => {
+
+    builder.addCase(getDepartmentOfUser.rejected, (state) => {
       state.loginError = true;
     });
 
-    builder.addCase(getAutomationStatus.pending, (state, action) => {});
     builder.addCase(getAutomationStatus.fulfilled, (state, action) => {
       state.automationStatus = action.payload;
     });
-    builder.addCase(getAutomationStatus.rejected, (state, action) => {});
   },
 });
 
-export const { logoutFun, handleLoadingState } = AuthSlice.actions;
+export const { logoutFun, handleLoadingState, restoreSession } =
+  AuthSlice.actions;
 export default AuthSlice.reducer;

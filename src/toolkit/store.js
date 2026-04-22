@@ -2,6 +2,8 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import persistReducer from "redux-persist/es/persistReducer";
 import persistStore from "redux-persist/es/persistStore";
 import storage from "redux-persist/lib/storage";
+import storageSession from "redux-persist/lib/storage/session";
+
 import authReducer from "./slices/authSlice";
 import leadReducer from "./slices/leadSlice";
 import commonReducer from "./slices/commonSlice";
@@ -14,8 +16,19 @@ import organizationReducer from "./slices/organizationSlice";
 import productReducer from "./slices/productSlice";
 import operationReducer from "./slices/operationSlice";
 
+const authPersistConfig = {
+  key: "auth",
+  storage: storageSession,
+};
+
+const rootPersistConfig = {
+  key: "root",
+  storage,
+  blacklist: ["auth"],
+};
+
 const appReducer = combineReducers({
-  auth: authReducer,
+  auth: persistReducer(authPersistConfig, authReducer),
   leads: leadReducer,
   common: commonReducer,
   setting: settingReducer,
@@ -28,26 +41,24 @@ const appReducer = combineReducers({
   operation: operationReducer,
 });
 
-const persistConfig = {
-  key: "root",
-  storage,
-  whitelist: ["auth"],
-};
-
-const persistedReducer = persistReducer(persistConfig, appReducer);
+const persistedReducer = persistReducer(rootPersistConfig, appReducer);
 
 const rootReducer = (state, action) => {
   if (action.type === "auth/logoutFun") {
     storage.removeItem("persist:root");
-    return persistedReducer(undefined, action);
+    storageSession.removeItem("persist:auth");
+    return appReducer(undefined, action);
   }
+
   return persistedReducer(state, action);
 };
 
 export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ serializableCheck: false }),
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
 
 export const persistor = persistStore(store);

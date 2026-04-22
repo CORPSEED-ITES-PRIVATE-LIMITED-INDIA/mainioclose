@@ -21,7 +21,11 @@ const Login = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             if (resp?.payload?.id !== undefined) {
-              localStorage.setItem("userDetail", JSON.stringify(resp?.payload));
+              // localStorage.setItem("userDetail", JSON.stringify(resp?.payload));
+              sessionStorage.setItem(
+                "userDetail",
+                JSON.stringify(resp?.payload),
+              );
               setLoading("fulfilled");
               dispatch(getDepartmentOfUser(resp?.payload?.id)).then(
                 (response) => {
