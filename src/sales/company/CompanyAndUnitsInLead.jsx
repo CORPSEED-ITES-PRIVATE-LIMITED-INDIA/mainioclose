@@ -1,6 +1,25 @@
-import { addToast, Button, Card, CardBody, CardHeader } from "@heroui/react";
-import { Form, Input, Modal, notification, Select, Space, Switch } from "antd";
-import { Building, Pencil, Plus } from "lucide-react";
+import {
+  addToast,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@heroui/react";
+import {
+  Form,
+  Input,
+  Modal,
+  Button as AntButton,
+  notification,
+  Select,
+  Space,
+  Switch,
+} from "antd";
+import { Building, EllipsisVertical, Pencil, Plus } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -793,25 +812,24 @@ const CompanyAndUnitsInLead = () => {
               <p className="text-sm font-medium">Company unit detail</p>
             </div>
 
-            <div className="flex gap-1.5 items-center">
-              <Button
-                size="sm"
-                variant="flat"
-                color="default"
-                onClick={openAddContactModal}
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" radius="full" variant="flat">
+                  <EllipsisVertical />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                selectionMode="single"
+                onSelectionChange={(e) => {}}
               >
-                Add Contact
-              </Button>
-
-              <Button
-                size="sm"
-                variant="flat"
-                color="primary"
-                onClick={openAddUnitModal}
-              >
-                Add Unit
-              </Button>
-            </div>
+                <DropdownItem key="addContact" onPress={openAddContactModal}>
+                  Add contact in unit
+                </DropdownItem>
+                <DropdownItem key="addUnit" onPress={openAddUnitModal}>
+                  Add company unit
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </CardHeader>
 
