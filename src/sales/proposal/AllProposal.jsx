@@ -156,7 +156,7 @@ const AllProposal = () => {
   }, [sortDescriptor, items]);
 
   const handleActionsClick = (e, rowData) => {
-    if (e === "approved" || e === "disapproved") {
+    if (e === "approved" || e === "REJECTED") {
       setUpdateStatusData((prev) => ({
         ...prev,
         proposalId: rowData?.id,
