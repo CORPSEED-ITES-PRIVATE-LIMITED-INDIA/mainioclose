@@ -86,6 +86,7 @@ import StatusDisplay from "../../components/StatusDisplay";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { allowOnlyNumbers, formatEmail, leadSource } from "../../common";
 import BasicCompany from "../company/BasicCompany";
+import CompanyAndUnitsInLead from "../company/CompanyAndUnitsInLead";
 const iconClass = "h-4 w-4";
 
 const addressFormSchema = z.object({
@@ -742,6 +743,7 @@ const LeadInfo = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="w-full">
+                  <CompanyAndUnitsInLead />
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">
@@ -833,7 +835,8 @@ const LeadInfo = () => {
                       })}
                     </CardBody>
                   </Card>
-                  <BasicCompany />
+                  {/* <BasicCompany /> */}
+
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex items-center gap-2">

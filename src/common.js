@@ -23,6 +23,20 @@ export const formatPANInput = (value) => {
   return formatted;
 };
 
+export const validatePAN = (_, value) => {
+  if (!value) {
+    return Promise.reject(new Error("Please enter PAN number"));
+  }
+
+  const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+  if (!panRegex.test(value)) {
+    return Promise.reject(new Error("PAN must be in format: ABCDE1234F"));
+  }
+
+  return Promise.resolve();
+};
+
 export const formatGSTInput = (value) => {
   value = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
   let formatted = "";
@@ -46,6 +60,22 @@ export const formatGSTInput = (value) => {
   }
 
   return formatted;
+};
+
+export const validateGST = (_, value) => {
+  if (!value) {
+    return Promise.reject(new Error("Please enter GST number"));
+  }
+
+  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
+  if (!gstRegex.test(value)) {
+    return Promise.reject(
+      new Error("GST number must be in format: 22ABCDE1234F1Z5"),
+    );
+  }
+
+  return Promise.resolve();
 };
 
 export function dateFormat(isoDate) {
