@@ -190,7 +190,7 @@ const Proposal = () => {
   const isCancelled = (status) =>
     String(status || "")
       .toLowerCase()
-      .includes("cancel");
+      .includes("REJECTED");
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
