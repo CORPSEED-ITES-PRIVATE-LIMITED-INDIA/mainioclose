@@ -287,6 +287,19 @@ const Proposal = () => {
       return;
     }
 
+    const hasNonCancelled = allProposal?.some(
+      (item) => item?.status !== "CANCELLED",
+    );
+
+    if (hasNonCancelled) {
+      addToast({
+        title: "RESTRICTED",
+        description: "Please cancel the existing proposals !.",
+        color: "danger",
+      });
+      return;
+    }
+
     setIsCreatingProposal(true);
     setEditProposal(false);
     setSelectedProposal(null);
@@ -546,6 +559,7 @@ const Proposal = () => {
             setEditProposal(false);
             setSelectedProposal(null);
             dispatch(getAllProposalByLeadId(leadId));
+            proposalFormModal.onClose();
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
@@ -974,7 +988,18 @@ const Proposal = () => {
                     variant="flat"
                     className="flex-1"
                     isDisabled={isCancelled(proposal?.status)}
-                    onPress={() => handleOpenCancelModal(proposal)}
+                    onPress={() => {
+                      if (leadData?.proposalApproved) {
+                        addToast({
+                          title: "RESTRICTED",
+                          description:
+                            "You are not required to cancel approved proposal.",
+                          color: "danger",
+                        });
+                        return;
+                      }
+                      handleOpenCancelModal(proposal);
+                    }}
                   >
                     Cancel
                   </Button>

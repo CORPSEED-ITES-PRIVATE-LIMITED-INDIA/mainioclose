@@ -53,6 +53,7 @@ const CompanyAndUnitsInLead = () => {
     (state) => state.company.companyTypeList || [],
   );
   const gstTypeList = useSelector((state) => state.company.gstTypeList || []);
+  const leadData = useSelector((state) => state.leads.singleLeadData);
 
   const [companyModal, setCompanyModal] = useState(false);
   const [unitModal, setUnitModal] = useState(false);
@@ -241,6 +242,16 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openCompanyModal = () => {
+    if (leadData?.proposalApproved) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action after approval of proposal.",
+        color: "danger",
+      });
+      return;
+    }
+
     setUseExistingSelection(false);
 
     companyForm.setFieldsValue({
@@ -276,6 +287,16 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openAddUnitModal = () => {
+    if (leadData?.proposalApproved) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action after approval of proposal.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!effectiveCompany?.id) {
       addToast({
         title: "Please select or create company first",
@@ -300,6 +321,16 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openEditUnitModal = (unit) => {
+    if (leadData?.proposalApproved) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action after approval of proposal.",
+        color: "danger",
+      });
+      return;
+    }
+
     setEditingUnit(unit);
 
     dispatch(getAllCountries());
@@ -331,6 +362,16 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openAddContactModal = () => {
+    if (leadData?.proposalApproved) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action after approval of proposal.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!effectiveCompany?.id) {
       addToast({
         title: "Please select or create company first",
@@ -752,7 +793,7 @@ const CompanyAndUnitsInLead = () => {
               <p className="text-sm font-medium">Company unit detail</p>
             </div>
 
-            <Space.Compact>
+            <div className="flex gap-1.5 items-center">
               <Button
                 size="sm"
                 variant="flat"
@@ -770,7 +811,7 @@ const CompanyAndUnitsInLead = () => {
               >
                 Add Unit
               </Button>
-            </Space.Compact>
+            </div>
           </div>
         </CardHeader>
 

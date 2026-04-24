@@ -829,7 +829,7 @@ export const cancelProposal = createAsyncThunk(
   async ({ userId, reason, proposalId }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/proposals/${proposalId}/cancel?userId=${userId}&reason=${reason}`,
+        `/leadService/api/v1/proposals/${proposalId}/cancel?userId=${userId}&reason=${reason}`,
       );
       return response.data;
     } catch (err) {
