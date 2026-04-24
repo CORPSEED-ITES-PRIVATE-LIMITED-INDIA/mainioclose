@@ -280,7 +280,7 @@ const AllProposal = () => {
               >
                 <DropdownItem key="view">View</DropdownItem>
                 <DropdownItem key="approved">Approved</DropdownItem>
-                <DropdownItem key="disapproved">Disapproved</DropdownItem>
+                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
