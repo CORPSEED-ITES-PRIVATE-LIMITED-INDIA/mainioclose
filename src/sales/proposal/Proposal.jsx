@@ -278,7 +278,7 @@ const Proposal = () => {
   };
 
   const prepareCreateProposal = () => {
-    if (!company && !company?.id) {
+    if (!company?.id) {
       addToast({
         title: "RESTRICTED",
         description: "Please add company first !.",
@@ -288,7 +288,7 @@ const Proposal = () => {
     }
 
     const hasNonCancelled = allProposal?.some(
-      (item) => item?.status !== "CANCELLED",
+      (item) => item?.status !== "REJECTED",
     );
 
     if (hasNonCancelled) {
