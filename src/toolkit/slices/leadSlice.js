@@ -814,6 +814,30 @@ export const cancelEstimate = createAsyncThunk(
   },
 );
 
+export const getAllProposalByLeadId = createAsyncThunk(
+  "getAllProposalByLeadId",
+  async (leadId) => {
+    const response = await api.get(
+      `/leadService/api/v1/proposal/get-all-proposals-by-lead-id?leadId=${leadId}`,
+    );
+    return response.data;
+  },
+);
+
+export const cancelProposal = createAsyncThunk(
+  "cancelProposal",
+  async ({ userId, reason, proposalId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/proposals/${proposalId}/cancel?userId=${userId}&reason=${reason}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {
@@ -859,6 +883,7 @@ export const LeadSlice = createSlice({
     childLeadFlag: {},
     newEstimateByLeadId: {},
     childLeadList: [],
+    proposalListByLeadId: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1359,6 +1384,18 @@ export const LeadSlice = createSlice({
       state.loading = "rejected";
       state.estimateList = [];
       state.totalEstimateCount = 0;
+    });
+
+    builder.addCase(getAllProposalByLeadId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllProposalByLeadId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.proposalListByLeadId = action?.payload;
+    });
+    builder.addCase(getAllProposalByLeadId.rejected, (state) => {
+      state.loading = "rejected";
+      state.proposalListByLeadId = [];
     });
   },
 });

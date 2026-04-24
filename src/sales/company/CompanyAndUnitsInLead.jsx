@@ -200,7 +200,23 @@ const CompanyAndUnitsInLead = () => {
     });
   };
 
-  const handleSelectUnit = (unitId) => {
+  const handleSelectUnit = async (unitId) => {
+    const resp = await dispatch(
+      linkCompanyAndUnitsWithLead({
+        companyId: company?.id,
+        leadId,
+        unitId: unitId,
+        userId,
+      }),
+    );
+
+    if (resp?.meta?.requestStatus === "fulfilled") {
+      addToast({
+        title: "Company and unit linked successfully.",
+        color: "success",
+      });
+    }
+
     setSelectedUnitId(unitId);
     setSelectedContactId(null);
     setSelectedContactDetail(null);
@@ -432,6 +448,28 @@ const CompanyAndUnitsInLead = () => {
             });
             handleCloseCompanyModal();
             refreshLeadCompanyAndUnits();
+            dispatch(
+              linkCompanyAndUnitsWithLead({
+                companyId: resp?.payload?.id,
+                leadId,
+                unitId: resp?.payload?.units?.[0]?.id,
+                userId,
+              }),
+            ).then((linkRes) => {
+              console.log("werfgkqweguiyg", linkRes);
+              if (linkRes?.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Company and unit linked successfully.",
+                  color: "success",
+                });
+              } else {
+                addToast({
+                  title: "Something went wrong !.",
+                  description: "Company and Units not linked to Lead !.",
+                  color: "danger",
+                });
+              }
+            });
           } else {
             api.error({
               message: "ERROR",
@@ -520,6 +558,28 @@ const CompanyAndUnitsInLead = () => {
             });
             setUnitModal(false);
             resetUnitModalState();
+
+            dispatch(
+              linkCompanyAndUnitsWithLead({
+                companyId: resp?.payload?.companyId,
+                leadId,
+                unitId: resp?.payload?.id,
+                userId,
+              }),
+            ).then((linkRes) => {
+              console.log("werfgkqweguiyg", linkRes);
+              if (linkRes?.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Company and unit linked successfully.",
+                  color: "success",
+                });
+              } else {
+                addToast({
+                  title: "Something went wrong !.",
+                  color: "danger",
+                });
+              }
+            });
 
             if (selectedCompanyId) {
               refreshSelectedCompanyRelatedData(selectedCompanyId);
@@ -741,7 +801,7 @@ const CompanyAndUnitsInLead = () => {
                       </p>
 
                       <div className="flex gap-2">
-                        <Button
+                        {/* <Button
                           size="sm"
                           variant="flat"
                           color="default"
@@ -760,7 +820,7 @@ const CompanyAndUnitsInLead = () => {
                           }}
                         >
                           Select
-                        </Button>
+                        </Button> */}
 
                         <Button
                           size="sm"

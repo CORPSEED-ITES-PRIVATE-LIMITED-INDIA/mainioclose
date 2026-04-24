@@ -509,6 +509,8 @@ const LeadEstimates = () => {
     const data = {
       ...formattedValues,
       companyId: company?.id,
+      unitId: company?.units?.[0]?.id,
+      contactId: company?.units?.[0]?.unitContacts?.id,
       solutionType: solutionDetail?.type,
       solutionId: solutionDetail?.id,
       solutionName: solutionDetail?.name,
@@ -708,7 +710,7 @@ const LeadEstimates = () => {
         )}
 
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             type="button"
             color="secondary"
             variant="flat"
@@ -717,7 +719,7 @@ const LeadEstimates = () => {
             onPress={onOpenUnitModal}
           >
             Add Unit Details
-          </Button>
+          </Button> */}
 
           {!showForm && (
             <Button
@@ -891,7 +893,7 @@ const LeadEstimates = () => {
         >
           <Card className="shadow-xl max-h-[68vh] overflow-auto">
             <CardBody className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex flex-col">
                   <label className="mb-1.5 text-sm  text-[rgba(0,0,0,0.88)]">
                     <span className="text-red-500">*</span> Select Company
@@ -1041,7 +1043,7 @@ const LeadEstimates = () => {
                     </AntButton>
                   </Space.Compact>
                 </div>
-              </div>
+              </div> */}
 
               {/* {solutionDetail?.type === "PRODUCT" ? (
                   <ProductFormFieldsDetails
@@ -1075,7 +1077,6 @@ const LeadEstimates = () => {
                     format="YYYY-MM-DD"
                   />
                 </Form.Item>
-
 
                 <Form.Item
                   label="Valid till date"

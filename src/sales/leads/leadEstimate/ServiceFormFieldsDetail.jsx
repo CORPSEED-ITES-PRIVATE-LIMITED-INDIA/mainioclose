@@ -10,12 +10,19 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
     if (Array.isArray(serviceFeeList) && serviceFeeList.length > 0) {
       form.setFieldsValue({
         lineItems: serviceFeeList.map((item) => ({
-          itemName: item.name,
-          unitPriceExGst: item.baseAmount,
-          originalAmount: item.baseAmount,
-          hsnSacCode: item.hsnSacCode,
-          gstRate: item.gstPercentage,
-          originalGst: item.gstPercentage,
+          sourceItemId: item.id || 0,
+          itemName: item.name || "",
+          description: item.description || "",
+          hsnSacCode: item.hsnSacCode || "",
+          quantity: 1,
+          unit: "Nos",
+          unitPriceExGst: item.baseAmount || 0,
+          originalAmount: item.baseAmount || 0,
+          gstRate: item.gstPercentage || 0,
+          originalGst: item.gstPercentage || 0,
+          igstFlag: true,
+          categoryCode: item.categoryCode || "",
+          feeType: item.feeType || "PROFESSIONAL_FEE",
         })),
       });
     } else {
@@ -28,8 +35,9 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
   return (
     <Section title="Service Pricing Details">
       {Array.isArray(serviceFeeList) && serviceFeeList.length > 0 ? (
-        serviceFeeList?.map((item, idx) => {
-          const original = form.getFieldValue(["lineItems", idx]) || {};
+        serviceFeeList.map((item, idx) => {
+          const originalAmount = Number(item?.baseAmount || 0);
+          const originalGst = Number(item?.gstPercentage || 0);
 
           return (
             <div key={item?.id || idx} className="grid grid-cols-4 gap-3 my-2">
@@ -45,7 +53,7 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                 label="Amount"
                 name={["lineItems", idx, "unitPriceExGst"]}
                 className="mb-0"
-                validateFirst
+                validateTrigger={["onChange", "onBlur"]}
                 rules={[
                   { required: true, message: "Amount is required" },
                   {
@@ -58,10 +66,10 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                         return Promise.resolve();
                       }
 
-                      if (Number(value) < Number(original?.originalAmount)) {
+                      if (Number(value) < originalAmount) {
                         return Promise.reject(
                           new Error(
-                            `Amount cannot be less than ₹${original?.originalAmount}`,
+                            `Amount cannot be less than ₹${originalAmount}`,
                           ),
                         );
                       }
@@ -90,7 +98,7 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                 label="GST %"
                 name={["lineItems", idx, "gstRate"]}
                 className="mb-0"
-                validateFirst
+                validateTrigger={["onChange", "onBlur"]}
                 rules={[
                   { required: true, message: "GST is required" },
                   {
@@ -103,11 +111,9 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                         return Promise.resolve();
                       }
 
-                      if (Number(value) < Number(original?.originalGst)) {
+                      if (Number(value) < originalGst) {
                         return Promise.reject(
-                          new Error(
-                            `GST cannot be less than ${original?.originalGst}%`,
-                          ),
+                          new Error(`GST cannot be less than ${originalGst}%`),
                         );
                       }
 
@@ -123,13 +129,33 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                 />
               </Form.Item>
 
-              {/* <Form.Item name={["lineItems", idx, "originalAmount"]} hidden>
+              <Form.Item name={["lineItems", idx, "sourceItemId"]} hidden>
                 <Input />
               </Form.Item>
 
-              <Form.Item name={["lineItems", idx, "originalGst"]} hidden>
+              <Form.Item name={["lineItems", idx, "description"]} hidden>
                 <Input />
-              </Form.Item> */}
+              </Form.Item>
+
+              <Form.Item name={["lineItems", idx, "quantity"]} hidden>
+                <Input />
+              </Form.Item>
+
+              <Form.Item name={["lineItems", idx, "unit"]} hidden>
+                <Input />
+              </Form.Item>
+
+              <Form.Item name={["lineItems", idx, "igstFlag"]} hidden>
+                <Input />
+              </Form.Item>
+
+              <Form.Item name={["lineItems", idx, "categoryCode"]} hidden>
+                <Input />
+              </Form.Item>
+
+              <Form.Item name={["lineItems", idx, "feeType"]} hidden>
+                <Input />
+              </Form.Item>
             </div>
           );
         })
