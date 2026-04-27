@@ -990,22 +990,22 @@ const Proposal = () => {
                     className="flex-1"
                     isDisabled={isCancelled(proposal?.status)}
                     onPress={() => {
-                      if (
-                        leadData?.proposalApproved ||
-                        leadData?.proposalStatus === "INITIATED"
-                      ) {
-                        addToast({
-                          title: "RESTRICTED",
-                          description:
-                            "You are not required to cancel initiated or approved proposal.",
-                          color: "danger",
-                        });
-                        return;
-                      }
+                      // if (
+                      //   leadData?.proposalApproved ||
+                      //   leadData?.proposalStatus === "INITIATED"
+                      // ) {
+                      //   addToast({
+                      //     title: "RESTRICTED",
+                      //     description:
+                      //       "You are not required to cancel initiated or approved proposal.",
+                      //     color: "danger",
+                      //   });
+                      //   return;
+                      // }
                       handleOpenCancelModal(proposal);
                     }}
                   >
-                    Cancel
+                    Reject
                   </Button>
                 </div>
               </div>
