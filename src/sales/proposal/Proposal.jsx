@@ -190,7 +190,10 @@ const Proposal = () => {
   const isCancelled = (status) =>
     String(status || "")
       .toLowerCase()
-      .includes("REJECTED");
+      .includes("REJECTED") ||
+    String(status || "")
+      .toLowerCase()
+      .includes("CANCELLED");
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
@@ -288,7 +291,7 @@ const Proposal = () => {
     }
 
     const hasNonCancelled = allProposal?.some(
-      (item) => item?.status !== "REJECTED",
+      (item) => item?.status !== "REJECTED" || item?.status !== "CANCELLED",
     );
 
     if (hasNonCancelled) {
@@ -1005,7 +1008,7 @@ const Proposal = () => {
                       handleOpenCancelModal(proposal);
                     }}
                   >
-                    Reject
+                    Reject / Cancel
                   </Button>
                 </div>
               </div>
