@@ -581,6 +581,7 @@ const Proposal = () => {
           setMailBody("<h2>Your email body</h2>");
           setIsCreatingProposal(false);
           dispatch(getAllProposalByLeadId(leadId));
+          proposalFormModal.onClose();
         } else {
           addToast({
             title: resp?.payload?.data?.errorCode || "ERROR",
@@ -989,11 +990,14 @@ const Proposal = () => {
                     className="flex-1"
                     isDisabled={isCancelled(proposal?.status)}
                     onPress={() => {
-                      if (leadData?.proposalApproved) {
+                      if (
+                        leadData?.proposalApproved ||
+                        leadData?.proposalStatus === "INITIATED"
+                      ) {
                         addToast({
                           title: "RESTRICTED",
                           description:
-                            "You are not required to cancel approved proposal.",
+                            "You are not required to cancel initiated or approved proposal.",
                           color: "danger",
                         });
                         return;

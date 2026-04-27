@@ -261,11 +261,14 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openCompanyModal = () => {
-    if (leadData?.proposalApproved) {
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval of proposal.",
+          "You are not required perform any action after approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -306,11 +309,14 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openAddUnitModal = () => {
-    if (leadData?.proposalApproved) {
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval of proposal.",
+          "You are not required perform any action after approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -340,11 +346,14 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openEditUnitModal = (unit) => {
-    if (leadData?.proposalApproved) {
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval of proposal.",
+          "You are not required perform any action after approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -381,11 +390,14 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openAddContactModal = () => {
-    if (leadData?.proposalApproved) {
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval of proposal.",
+          "You are not required perform any action after approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -1137,10 +1149,10 @@ const CompanyAndUnitsInLead = () => {
                 label="PAN Number"
                 name="panNo"
                 getValueFromEvent={(e) => formatPANInput(e.target.value)}
-                rules={[
-                  { required: true, message: "Please enter PAN number" },
-                  { validator: validatePAN },
-                ]}
+                // rules={[
+                //   { required: true, message: "Please enter PAN number" },
+                //   { validator: validatePAN },
+                // ]}
               >
                 <Input placeholder="PAN Number" maxLength={10} />
               </Form.Item>
@@ -1148,7 +1160,7 @@ const CompanyAndUnitsInLead = () => {
               <Form.Item
                 label="Address"
                 name="address"
-                rules={[{ required: true, message: "Please enter address" }]}
+                // rules={[{ required: true, message: "Please enter address" }]}
               >
                 <Input placeholder="Address" />
               </Form.Item>
@@ -1156,7 +1168,7 @@ const CompanyAndUnitsInLead = () => {
               <Form.Item
                 label="Country"
                 name="country"
-                rules={[{ required: true, message: "Please select country" }]}
+                // rules={[{ required: true, message: "Please select country" }]}
               >
                 <Select
                   showSearch
@@ -1176,7 +1188,7 @@ const CompanyAndUnitsInLead = () => {
               <Form.Item
                 label="State"
                 name="state"
-                rules={[{ required: true, message: "Please select state" }]}
+                // rules={[{ required: true, message: "Please select state" }]}
               >
                 <Select
                   showSearch
@@ -1193,7 +1205,7 @@ const CompanyAndUnitsInLead = () => {
               <Form.Item
                 label="City"
                 name="city"
-                rules={[{ required: true, message: "Please select city" }]}
+                // rules={[{ required: true, message: "Please select city" }]}
               >
                 <Select
                   showSearch
@@ -1207,7 +1219,7 @@ const CompanyAndUnitsInLead = () => {
                 label="Pin Code"
                 name="pinCode"
                 getValueFromEvent={(e) => allowOnlyNumbers(e.target.value)}
-                rules={[{ required: true, message: "Please enter pin code" }]}
+                // rules={[{ required: true, message: "Please enter pin code" }]}
               >
                 <Input placeholder="Pin Code" maxLength={6} />
               </Form.Item>
@@ -1285,19 +1297,19 @@ const CompanyAndUnitsInLead = () => {
             label="GST Number"
             name="gstNo"
             getValueFromEvent={(e) => formatGSTInput(e.target.value)}
-            rules={[
-              {
-                required: isGstMandatory,
-                message: "Please enter GST number",
-              },
-              () => ({
-                validator(_, value) {
-                  if (!isGstMandatory && !value) return Promise.resolve();
-                  if (!value) return Promise.resolve();
-                  return validateGST(_, value);
-                },
-              }),
-            ]}
+            // rules={[
+            //   {
+            //     required: isGstMandatory,
+            //     message: "Please enter GST number",
+            //   },
+            //   () => ({
+            //     validator(_, value) {
+            //       if (!isGstMandatory && !value) return Promise.resolve();
+            //       if (!value) return Promise.resolve();
+            //       return validateGST(_, value);
+            //     },
+            //   }),
+            // ]}
           >
             <Input
               placeholder="GST Number"

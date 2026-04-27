@@ -699,12 +699,15 @@ const LeadInfo = () => {
                         </h6>
                         <Button
                           onPress={() => {
-                            if (leadData?.proposalApproved) {
+                            if (
+                              leadData?.proposalApproved ||
+                              leadData?.proposalStatus === "INITIATED"
+                            ) {
                               addToast({
                                 title: "RESTRICTED",
                                 color: "danger",
                                 description:
-                                  "Service name cannot be changed as proposal is already approved.",
+                                  "Service name cannot be changed as proposal is already approved or initiated.",
                               });
                               return;
                             }
@@ -744,6 +747,103 @@ const LeadInfo = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="w-full">
                   <CompanyAndUnitsInLead />
+
+                  {/* <Card className="my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <Factory className={iconClass} />{" "}
+                          <p className="text-sm font-medium">Industry Info</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="light"
+                          className="w-6 h-6 rounded-full bg-none"
+                          onPress={industryModalPress}
+                        >
+                          <Pencil className={iconClass} />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-xs text-gray-500">Industry</p>
+                          <p className="text-xs">
+                            {leadData?.industries?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Sub Industry</p>
+                          <p className="text-xs">
+                            {leadData?.subIndustry?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Category</p>
+                          <p className="text-xs">
+                            {leadData?.subSubIndustry?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Business activity
+                          </p>
+                          <p className="text-xs">
+                            {leadData?.industriesData
+                              ?.map((item) => item?.name)
+                              .join(",")}
+                          </p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                  <Card className=" my-2">
+                    <CardHeader>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-2">
+                          <MapPin className={iconClass} />{" "}
+                          <p className="text-sm font-medium">Address Info</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="light"
+                          className="w-6 h-6 rounded-full bg-none"
+                          onPress={addressModalPress}
+                        >
+                          <Pencil className={iconClass} />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-xs text-gray-500">Address</p>
+                          <p className="text-sm">{leadData?.address || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Country</p>
+                          <p className="text-xs">{leadData?.country || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">State</p>
+                          <p className="text-xs">{leadData?.state || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">City</p>
+                          <p className="text-xs">{leadData?.city}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Pin code</p>
+                          <p className="text-xs">{leadData?.pinCode}</p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card> */}
+                </div>
+                <div className="w-full">
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">
@@ -848,102 +948,6 @@ const LeadInfo = () => {
                       <p className="text-sm font-medium">{leadData?.urls}</p>
                     </CardBody>
                   </Card>
-                  {/* <Card className="my-2">
-                    <CardHeader>
-                      <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-2">
-                          <Factory className={iconClass} />{" "}
-                          <p className="text-sm font-medium">Industry Info</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          isIconOnly
-                          variant="light"
-                          className="w-6 h-6 rounded-full bg-none"
-                          onPress={industryModalPress}
-                        >
-                          <Pencil className={iconClass} />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardBody>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <p className="text-xs text-gray-500">Industry</p>
-                          <p className="text-xs">
-                            {leadData?.industries?.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Sub Industry</p>
-                          <p className="text-xs">
-                            {leadData?.subIndustry?.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Category</p>
-                          <p className="text-xs">
-                            {leadData?.subSubIndustry?.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">
-                            Business activity
-                          </p>
-                          <p className="text-xs">
-                            {leadData?.industriesData
-                              ?.map((item) => item?.name)
-                              .join(",")}
-                          </p>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                  <Card className=" my-2">
-                    <CardHeader>
-                      <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-2">
-                          <MapPin className={iconClass} />{" "}
-                          <p className="text-sm font-medium">Address Info</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          isIconOnly
-                          variant="light"
-                          className="w-6 h-6 rounded-full bg-none"
-                          onPress={addressModalPress}
-                        >
-                          <Pencil className={iconClass} />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardBody>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <p className="text-xs text-gray-500">Address</p>
-                          <p className="text-sm">{leadData?.address || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Country</p>
-                          <p className="text-xs">{leadData?.country || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">State</p>
-                          <p className="text-xs">{leadData?.state || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">City</p>
-                          <p className="text-xs">{leadData?.city}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Pin code</p>
-                          <p className="text-xs">{leadData?.pinCode}</p>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card> */}
-                </div>
-                <div className="w-full">
                   <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">
