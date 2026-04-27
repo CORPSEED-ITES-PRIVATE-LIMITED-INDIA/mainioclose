@@ -285,8 +285,8 @@ const Proposal = () => {
       return;
     }
 
-    const hasNonCancelled = allProposal?.some(
-      (item) => item?.status !== "REJECTED" || item?.status !== "CANCELLED",
+    const hasNonCancelled = (allProposal || []).some(
+      (item) => !["REJECTED", "CANCELLED"].includes(item?.status),
     );
 
     if (hasNonCancelled) {
