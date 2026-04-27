@@ -188,12 +188,7 @@ const Proposal = () => {
       .filter(Boolean);
 
   const isCancelled = (status) =>
-    String(status || "")
-      .toLowerCase()
-      .includes("REJECTED") ||
-    String(status || "")
-      .toLowerCase()
-      .includes("CANCELLED");
+    status === "REJECTED" || status === "CANCELLED";
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
