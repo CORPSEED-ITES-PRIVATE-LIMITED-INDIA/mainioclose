@@ -930,7 +930,8 @@ const Proposal = () => {
 
                   <span
                     className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium ${
-                      isCancelled(proposal?.status)
+                      proposal?.status === "CANCELLED" ||
+                      proposal?.status === "REJECTED"
                         ? "bg-red-100 text-red-700"
                         : "bg-green-100 text-green-700"
                     }`}
