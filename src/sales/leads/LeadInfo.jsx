@@ -849,7 +849,9 @@ const LeadInfo = () => {
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Phone className={iconClass} />{" "}
-                          <p className="text-sm font-medium">Contacts</p>
+                          <p className="text-sm font-medium">
+                            Company Representative
+                          </p>
                         </div>
                         <Button
                           size="sm"
@@ -883,9 +885,9 @@ const LeadInfo = () => {
                               {item?.emails && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="w-4 h-4" />
-                                  <div className="flex flex-wrap text-sm text-default-500">
+                                  <span className="block max-w-full break-all text-sm text-default-500">
                                     {item?.emails || ""}
-                                  </div>
+                                  </span>
                                 </div>
                               )}
                               {item?.contactNo && (
@@ -937,7 +939,7 @@ const LeadInfo = () => {
                   </Card>
                   {/* <BasicCompany /> */}
 
-                  <Card className="my-2">
+                  {/* <Card className="my-2">
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Link className={iconClass} />{" "}
@@ -947,8 +949,9 @@ const LeadInfo = () => {
                     <CardBody>
                       <p className="text-sm font-medium">{leadData?.urls}</p>
                     </CardBody>
-                  </Card>
-                  <Card className="my-2">
+                  </Card> */}
+
+                  {/* <Card className="my-2">
                     <CardHeader>
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
@@ -1128,7 +1131,203 @@ const LeadInfo = () => {
                     <CardBody>
                       <p className="text-sm">{leadData?.description}</p>
                     </CardBody>
+                  </Card> */}
+
+                  <Card className="my-3 overflow-hidden border border-default-200 shadow-sm">
+                    <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white">
+                      <div className="flex items-center gap-2">
+                        <FileText className={iconClass} />
+                        <p className="text-sm font-semibold">
+                          Lead Information
+                        </p>
+                      </div>
+                    </CardHeader>
+
+                    <CardBody className="p-0">
+                      <div className="divide-y divide-default-200">
+                        {/* Assignee */}
+                        <div className="p-4">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <User2 className={iconClass} />
+                              <p className="text-sm font-medium">Assignee</p>
+                            </div>
+
+                            {toggleAssignee ? (
+                              <Button
+                                variant="light"
+                                onPress={() => setToggleAssignee(false)}
+                                size="sm"
+                                isIconOnly
+                                className="h-7 w-7 rounded-full"
+                              >
+                                <Pencil className={iconClass} />
+                              </Button>
+                            ) : (
+                              <Button
+                                onPress={() => setToggleAssignee(true)}
+                                size="sm"
+                                variant="light"
+                                isIconOnly
+                                className="h-7 w-7 rounded-full"
+                              >
+                                <X className={iconClass} />
+                              </Button>
+                            )}
+                          </div>
+
+                          {toggleAssignee ? (
+                            <div className="rounded-xl bg-default-50 px-3 py-2">
+                              <span className="block text-sm font-semibold">
+                                {leadData?.assignee?.fullName}
+                              </span>
+                              <span className="block break-all text-xs text-default-500">
+                                {leadData?.assignee?.email}
+                              </span>
+                            </div>
+                          ) : (
+                            <NewSelect
+                              data={allUsers || []}
+                              labelKey="fullName"
+                              valueKey="id"
+                              label="Select assignee"
+                              value={String(leadData?.assigne?.id)}
+                              onChange={(e) => changeLeadAssignee(e)}
+                            />
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="p-4">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <ChartBarDecreasing className={iconClass} />
+                              <p className="text-sm font-medium">Status</p>
+                            </div>
+
+                            {toggleStatus ? (
+                              <Button
+                                variant="light"
+                                onPress={() => {
+                                  setToggleStatus(false);
+                                  dispatch(getAllStatusData());
+                                }}
+                                size="sm"
+                                isIconOnly
+                                className="h-7 w-7 rounded-full"
+                              >
+                                <Pencil className={iconClass} />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="light"
+                                onPress={() => setToggleStatus(true)}
+                                size="sm"
+                                isIconOnly
+                                className="h-7 w-7 rounded-full"
+                              >
+                                <X className={iconClass} />
+                              </Button>
+                            )}
+                          </div>
+
+                          {toggleStatus ? (
+                            <div className="rounded-xl bg-default-50 px-3 py-2">
+                              <span className="text-sm">
+                                {leadData?.status?.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <NewSelect
+                              data={statusList || []}
+                              labelKey="name"
+                              valueKey="id"
+                              label="Select status"
+                              value={String(leadData?.status?.id)}
+                              onChange={(e) => changeLeadStatus(e)}
+                            />
+                          )}
+                        </div>
+
+                        {/* Source */}
+                        <div className="p-4">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <Podcast className={iconClass} />
+                              <p className="text-sm font-medium">Source</p>
+                            </div>
+
+                            {adminRole && (
+                              <>
+                                {toggleSource ? (
+                                  <Button
+                                    variant="light"
+                                    onPress={() => setToggleSource(false)}
+                                    size="sm"
+                                    isIconOnly
+                                    className="h-7 w-7 rounded-full"
+                                  >
+                                    <Pencil className={iconClass} />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="light"
+                                    onPress={() => setToggleSource(true)}
+                                    size="sm"
+                                    isIconOnly
+                                    className="h-7 w-7 rounded-full"
+                                  >
+                                    <X className={iconClass} />
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          {toggleSource ? (
+                            <div className="rounded-xl bg-default-50 px-3 py-2">
+                              <span className="text-sm">
+                                {leadData?.source}
+                              </span>
+                            </div>
+                          ) : (
+                            <Select
+                              label="Source"
+                              selectedKeys={[leadData?.source]}
+                              onSelectionChange={(e) => {
+                                let key = Array.from(e)[0];
+                                handleUpdateSource(key);
+                              }}
+                            >
+                              {leadSource.map((item) => (
+                                <SelectItem key={item} value={item}>
+                                  {item}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                          )}
+                        </div>
+
+                        {/* Lead Description */}
+                        <div className="p-4">
+                          <div className="mb-3 flex items-center gap-2">
+                            <FileText className={iconClass} />
+                            <p className="text-sm font-medium">
+                              Lead Description
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-default-50 px-3 py-3">
+                            <p className="whitespace-pre-wrap break-words text-sm text-default-700">
+                              {leadData?.description ||
+                                "No description available"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardBody>
                   </Card>
+
                   {/* <Card className="my-2">
                     <CardHeader>
                       <div className="flex items-center gap-2">
