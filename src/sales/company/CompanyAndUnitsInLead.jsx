@@ -309,6 +309,8 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openAddUnitModal = () => {
+    if (!validateCompanySelected()) return;
+
     if (
       leadData?.proposalApproved ||
       leadData?.proposalStatus === "INITIATED"
@@ -322,15 +324,16 @@ const CompanyAndUnitsInLead = () => {
       return;
     }
 
-    if (!effectiveCompany?.id) {
+    if (!effectiveCompany?.id && !selectedCompanyId) {
       addToast({
-        title: "Please select or create company first",
+        title: "Please select company first",
         color: "warning",
       });
       return;
     }
 
     resetUnitModalState();
+
     unitForm.setFieldsValue({
       unitName: "",
       companyTypeId: undefined,
@@ -342,6 +345,7 @@ const CompanyAndUnitsInLead = () => {
       city: "",
       pinCode: "",
     });
+
     setUnitModal(true);
   };
 
@@ -390,6 +394,8 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openAddContactModal = () => {
+    if (!validateCompanySelected()) return;
+
     if (
       leadData?.proposalApproved ||
       leadData?.proposalStatus === "INITIATED"
@@ -403,15 +409,24 @@ const CompanyAndUnitsInLead = () => {
       return;
     }
 
-    if (!effectiveCompany?.id) {
+    if (!effectiveCompany?.id && !selectedCompanyId) {
       addToast({
-        title: "Please select or create company first",
+        title: "Please select company first",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!selectedUnitId) {
+      addToast({
+        title: "Please select unit first",
         color: "warning",
       });
       return;
     }
 
     resetContactModalState();
+
     contactForm.setFieldsValue({
       title: "",
       name: "",
@@ -419,8 +434,9 @@ const CompanyAndUnitsInLead = () => {
       contactNo: "",
       whatsappNo: "",
       clientDesignationId: "",
-      companyUnitId: selectedUnitId || undefined,
+      companyUnitId: selectedUnitId,
     });
+
     setContactModal(true);
   };
 
@@ -628,19 +644,34 @@ const CompanyAndUnitsInLead = () => {
               title: "Unit details saved.",
               color: "success",
             });
+
+            const newUnit = resp?.payload;
+
             setUnitModal(false);
             resetUnitModalState();
 
+            setSelectedUnitId(newUnit?.id || null);
+            setSelectedUnitDetail(newUnit || null);
+            setSelectedContactId(null);
+            setSelectedContactDetail(null);
+
+            companyForm.setFieldsValue({
+              existingUnitId: newUnit?.id,
+              existingContactId: undefined,
+            });
+
             dispatch(
               linkCompanyAndUnitsWithLead({
-                companyId: resp?.payload?.companyId,
+                companyId:
+                  newUnit?.companyId ||
+                  selectedCompanyId ||
+                  effectiveCompany?.id,
                 leadId,
-                unitId: resp?.payload?.id,
+                unitId: newUnit?.id,
                 userId,
               }),
             ).then((linkRes) => {
-              console.log("werfgkqweguiyg", linkRes);
-              if (linkRes?.meta.requestStatus === "fulfilled") {
+              if (linkRes?.meta?.requestStatus === "fulfilled") {
                 addToast({
                   title: "Company and unit linked successfully.",
                   color: "success",
@@ -700,46 +731,22 @@ const CompanyAndUnitsInLead = () => {
             color: "success",
           });
 
+          const newContact = resp?.payload;
+
           setContactModal(false);
           resetContactModalState();
 
+          setSelectedContactId(newContact?.id || null);
+          setSelectedContactDetail(newContact || null);
+
+          companyForm.setFieldsValue({
+            existingContactId: newContact?.id,
+          });
+
           if (selectedCompanyId) {
             refreshSelectedCompanyRelatedData(selectedCompanyId);
-          } else if (effectiveCompany?.id) {
+          } else {
             refreshLeadCompanyAndUnits();
-            dispatch(
-              getBasicCompanyDetails({
-                leadId,
-                userId,
-              }),
-            ).then((companyResp) => {
-              if (
-                companyResp?.meta?.requestStatus === "fulfilled" &&
-                companyResp?.payload?.id
-              ) {
-                const currentUnits = Array.isArray(companyResp?.payload?.units)
-                  ? companyResp.payload.units
-                  : [];
-
-                const currentUnit = currentUnits.find(
-                  (item) =>
-                    String(item?.id) ===
-                    String(values?.companyUnitId || selectedUnitId),
-                );
-
-                setSelectedUnitDetail(currentUnit || null);
-
-                const currentContacts = Array.isArray(currentUnit?.unitContacts)
-                  ? currentUnit.unitContacts
-                  : [];
-
-                const latestContact =
-                  currentContacts[currentContacts.length - 1] || null;
-
-                setSelectedContactId(latestContact?.id || null);
-                setSelectedContactDetail(latestContact || null);
-              }
-            });
           }
         } else {
           addToast({
@@ -755,6 +762,18 @@ const CompanyAndUnitsInLead = () => {
         addToast({ title: "Something went wrong !.", color: "danger" }),
       )
       .finally(() => setContactLoading(false));
+  };
+
+  const validateCompanySelected = () => {
+    if (!effectiveCompany?.id && !selectedCompanyId) {
+      addToast({
+        title: "Company not selected",
+        description: "Please select or create a company first.",
+        color: "warning",
+      });
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -1043,11 +1062,26 @@ const CompanyAndUnitsInLead = () => {
               setUseExistingSelection(checked);
 
               if (checked) {
+                const companyId =
+                  selectedCompanyId || effectiveCompany?.id || undefined;
+
+                setSelectedCompanyId(companyId);
+
                 companyForm.setFieldsValue({
-                  existingCompanyId: selectedCompanyId || undefined,
+                  existingCompanyId: companyId,
                   existingUnitId: selectedUnitId || undefined,
                   existingContactId: selectedContactId || undefined,
                 });
+
+                if (companyId) {
+                  dispatch(getBasicCompanyDetailByCompanyId(companyId)).then(
+                    (resp) => {
+                      if (resp?.meta?.requestStatus === "fulfilled") {
+                        setSelectedCompanyDetail(resp?.payload);
+                      }
+                    },
+                  );
+                }
               }
             }}
           />
@@ -1070,7 +1104,6 @@ const CompanyAndUnitsInLead = () => {
                 <Select
                   showSearch
                   allowClear
-                  value={selectedCompanyId}
                   options={companyList}
                   fieldNames={{ label: "name", value: "id" }}
                   placeholder="Choose company"
@@ -1079,36 +1112,60 @@ const CompanyAndUnitsInLead = () => {
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Select Unit"
-                name="existingUnitId"
-                rules={[{ required: true, message: "Please select unit" }]}
-              >
-                <Select
-                  showSearch
-                  allowClear
-                  value={selectedUnitId}
-                  options={units}
-                  fieldNames={{ label: "unitName", value: "id" }}
-                  placeholder="Choose unit"
-                  disabled={!effectiveCompany?.id}
-                  onChange={handleSelectUnit}
-                  className="w-full"
-                />
+              <Form.Item label="Select Unit" required className="mb-0">
+                <Space.Compact className="w-full">
+                  <Form.Item
+                    name="existingUnitId"
+                    noStyle
+                    rules={[{ required: true, message: "Please select unit" }]}
+                  >
+                    <Select
+                      showSearch
+                      allowClear
+                      options={units}
+                      fieldNames={{ label: "unitName", value: "id" }}
+                      placeholder="Choose unit"
+                      disabled={!effectiveCompany?.id && !selectedCompanyId}
+                      onChange={handleSelectUnit}
+                      className="w-full"
+                    />
+                  </Form.Item>
+
+                  <AntButton
+                    type="primary"
+                    icon={<Plus size={15} />}
+                    disabled={!effectiveCompany?.id && !selectedCompanyId}
+                    onClick={openAddUnitModal}
+                  >
+                    Unit
+                  </AntButton>
+                </Space.Compact>
               </Form.Item>
 
-              <Form.Item label="Select Contact" name="existingContactId">
-                <Select
-                  showSearch
-                  allowClear
-                  value={selectedContactId}
-                  options={contacts}
-                  fieldNames={{ label: "name", value: "id" }}
-                  placeholder="Choose contact"
-                  disabled={!selectedUnitDetail?.id}
-                  onChange={handleSelectContact}
-                  className="w-full"
-                />
+              <Form.Item label="Select Contact" className="mb-0">
+                <Space.Compact className="w-full">
+                  <Form.Item name="existingContactId" noStyle>
+                    <Select
+                      showSearch
+                      allowClear
+                      options={contacts}
+                      fieldNames={{ label: "name", value: "id" }}
+                      placeholder="Choose contact"
+                      disabled={!selectedUnitDetail?.id}
+                      onChange={handleSelectContact}
+                      className="w-full"
+                    />
+                  </Form.Item>
+
+                  <AntButton
+                    type="primary"
+                    icon={<Plus size={15} />}
+                    disabled={!selectedUnitId}
+                    onClick={openAddContactModal}
+                  >
+                    Contact
+                  </AntButton>
+                </Space.Compact>
               </Form.Item>
 
               {(selectedCompanyId || selectedUnitId || selectedContactId) && (

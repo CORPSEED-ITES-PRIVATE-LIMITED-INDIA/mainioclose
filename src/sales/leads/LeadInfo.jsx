@@ -687,7 +687,7 @@ const LeadInfo = () => {
       ) : Object.keys(leadData)?.length > 0 &&
         (leadData?.assignee?.id == userId || adminRole) ? (
         <>
-          <div className="grid grid-cols-2 gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
+          <div className="grid grid-cols-[minmax(0,60%)_minmax(0,40%)] gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
             <div>
               <div className="w-full">
                 <Card className="my-2">
@@ -1133,8 +1133,8 @@ const LeadInfo = () => {
                     </CardBody>
                   </Card> */}
 
-                  <Card className="my-3 overflow-hidden border border-default-200 shadow-sm">
-                    <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white">
+                  <Card className="my-2 overflow-hidden border border-default-200 shadow-sm">
+                    <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
                       <div className="flex items-center gap-2">
                         <FileText className={iconClass} />
                         <p className="text-sm font-semibold">
@@ -1143,42 +1143,36 @@ const LeadInfo = () => {
                       </div>
                     </CardHeader>
 
-                    <CardBody className="p-0">
-                      <div className="divide-y divide-default-200">
+                    <CardBody className="p-3">
+                      <div className="grid gap-2">
                         {/* Assignee */}
-                        <div className="p-4">
-                          <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="rounded-xl border border-default-200 bg-default-50/60 p-2.5">
+                          <div className="mb-1.5 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <User2 className={iconClass} />
-                              <p className="text-sm font-medium">Assignee</p>
+                              <p className="text-xs font-semibold text-default-600">
+                                Assignee
+                              </p>
                             </div>
 
-                            {toggleAssignee ? (
-                              <Button
-                                variant="light"
-                                onPress={() => setToggleAssignee(false)}
-                                size="sm"
-                                isIconOnly
-                                className="h-7 w-7 rounded-full"
-                              >
+                            <Button
+                              variant="light"
+                              onPress={() => setToggleAssignee(!toggleAssignee)}
+                              size="sm"
+                              isIconOnly
+                              className="h-6 w-6 min-w-6 rounded-full"
+                            >
+                              {toggleAssignee ? (
                                 <Pencil className={iconClass} />
-                              </Button>
-                            ) : (
-                              <Button
-                                onPress={() => setToggleAssignee(true)}
-                                size="sm"
-                                variant="light"
-                                isIconOnly
-                                className="h-7 w-7 rounded-full"
-                              >
+                              ) : (
                                 <X className={iconClass} />
-                              </Button>
-                            )}
+                              )}
+                            </Button>
                           </div>
 
                           {toggleAssignee ? (
-                            <div className="rounded-xl bg-default-50 px-3 py-2">
-                              <span className="block text-sm font-semibold">
+                            <div className="rounded-lg bg-white px-2.5 py-2 shadow-sm">
+                              <span className="block text-sm font-semibold leading-4">
                                 {leadData?.assignee?.fullName}
                               </span>
                               <span className="block break-all text-xs text-default-500">
@@ -1197,128 +1191,117 @@ const LeadInfo = () => {
                           )}
                         </div>
 
-                        {/* Status */}
-                        <div className="p-4">
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <ChartBarDecreasing className={iconClass} />
-                              <p className="text-sm font-medium">Status</p>
-                            </div>
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                          {/* Status */}
+                          <div className="rounded-xl border border-default-200 bg-default-50/60 p-2.5">
+                            <div className="mb-1.5 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <ChartBarDecreasing className={iconClass} />
+                                <p className="text-xs font-semibold text-default-600">
+                                  Status
+                                </p>
+                              </div>
 
-                            {toggleStatus ? (
                               <Button
                                 variant="light"
                                 onPress={() => {
-                                  setToggleStatus(false);
-                                  dispatch(getAllStatusData());
+                                  if (toggleStatus)
+                                    dispatch(getAllStatusData());
+                                  setToggleStatus(!toggleStatus);
                                 }}
                                 size="sm"
                                 isIconOnly
-                                className="h-7 w-7 rounded-full"
+                                className="h-6 w-6 min-w-6 rounded-full"
                               >
-                                <Pencil className={iconClass} />
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="light"
-                                onPress={() => setToggleStatus(true)}
-                                size="sm"
-                                isIconOnly
-                                className="h-7 w-7 rounded-full"
-                              >
-                                <X className={iconClass} />
-                              </Button>
-                            )}
-                          </div>
-
-                          {toggleStatus ? (
-                            <div className="rounded-xl bg-default-50 px-3 py-2">
-                              <span className="text-sm">
-                                {leadData?.status?.name}
-                              </span>
-                            </div>
-                          ) : (
-                            <NewSelect
-                              data={statusList || []}
-                              labelKey="name"
-                              valueKey="id"
-                              label="Select status"
-                              value={String(leadData?.status?.id)}
-                              onChange={(e) => changeLeadStatus(e)}
-                            />
-                          )}
-                        </div>
-
-                        {/* Source */}
-                        <div className="p-4">
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <Podcast className={iconClass} />
-                              <p className="text-sm font-medium">Source</p>
-                            </div>
-
-                            {adminRole && (
-                              <>
-                                {toggleSource ? (
-                                  <Button
-                                    variant="light"
-                                    onPress={() => setToggleSource(false)}
-                                    size="sm"
-                                    isIconOnly
-                                    className="h-7 w-7 rounded-full"
-                                  >
-                                    <Pencil className={iconClass} />
-                                  </Button>
+                                {toggleStatus ? (
+                                  <Pencil className={iconClass} />
                                 ) : (
-                                  <Button
-                                    variant="light"
-                                    onPress={() => setToggleSource(true)}
-                                    size="sm"
-                                    isIconOnly
-                                    className="h-7 w-7 rounded-full"
-                                  >
-                                    <X className={iconClass} />
-                                  </Button>
+                                  <X className={iconClass} />
                                 )}
-                              </>
+                              </Button>
+                            </div>
+
+                            {toggleStatus ? (
+                              <div className="rounded-lg bg-white px-2.5 py-2 shadow-sm">
+                                <span className="text-sm">
+                                  {leadData?.status?.name}
+                                </span>
+                              </div>
+                            ) : (
+                              <NewSelect
+                                data={statusList || []}
+                                labelKey="name"
+                                valueKey="id"
+                                label="Select status"
+                                value={String(leadData?.status?.id)}
+                                onChange={(e) => changeLeadStatus(e)}
+                              />
                             )}
                           </div>
 
-                          {toggleSource ? (
-                            <div className="rounded-xl bg-default-50 px-3 py-2">
-                              <span className="text-sm">
-                                {leadData?.source}
-                              </span>
+                          {/* Source */}
+                          <div className="rounded-xl border border-default-200 bg-default-50/60 p-2.5">
+                            <div className="mb-1.5 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <Podcast className={iconClass} />
+                                <p className="text-xs font-semibold text-default-600">
+                                  Source
+                                </p>
+                              </div>
+
+                              {adminRole && (
+                                <Button
+                                  variant="light"
+                                  onPress={() => setToggleSource(!toggleSource)}
+                                  size="sm"
+                                  isIconOnly
+                                  className="h-6 w-6 min-w-6 rounded-full"
+                                >
+                                  {toggleSource ? (
+                                    <Pencil className={iconClass} />
+                                  ) : (
+                                    <X className={iconClass} />
+                                  )}
+                                </Button>
+                              )}
                             </div>
-                          ) : (
-                            <Select
-                              label="Source"
-                              selectedKeys={[leadData?.source]}
-                              onSelectionChange={(e) => {
-                                let key = Array.from(e)[0];
-                                handleUpdateSource(key);
-                              }}
-                            >
-                              {leadSource.map((item) => (
-                                <SelectItem key={item} value={item}>
-                                  {item}
-                                </SelectItem>
-                              ))}
-                            </Select>
-                          )}
+
+                            {toggleSource ? (
+                              <div className="rounded-lg bg-white px-2.5 py-2 shadow-sm">
+                                <span className="text-sm">
+                                  {leadData?.source}
+                                </span>
+                              </div>
+                            ) : (
+                              <Select
+                                label="Source"
+                                selectedKeys={[leadData?.source]}
+                                onSelectionChange={(e) => {
+                                  let key = Array.from(e)[0];
+                                  handleUpdateSource(key);
+                                }}
+                              >
+                                {leadSource.map((item) => (
+                                  <SelectItem key={item} value={item}>
+                                    {item}
+                                  </SelectItem>
+                                ))}
+                              </Select>
+                            )}
+                          </div>
                         </div>
 
                         {/* Lead Description */}
-                        <div className="p-4">
-                          <div className="mb-3 flex items-center gap-2">
+                        <div className="rounded-xl border border-default-200 bg-default-50/60 p-2.5">
+                          <div className="mb-1.5 flex items-center gap-2">
                             <FileText className={iconClass} />
-                            <p className="text-sm font-medium">
+                            <p className="text-xs font-semibold text-default-600">
                               Lead Description
                             </p>
                           </div>
 
-                          <div className="rounded-xl bg-default-50 px-3 py-3">
-                            <p className="whitespace-pre-wrap break-words text-sm text-default-700">
+                          <div className="rounded-lg bg-white px-2.5 py-2 shadow-sm">
+                            <p className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-default-700">
                               {leadData?.description ||
                                 "No description available"}
                             </p>
