@@ -1157,7 +1157,21 @@ const LeadInfo = () => {
 
                             <Button
                               variant="light"
-                              onPress={() => setToggleAssignee(!toggleAssignee)}
+                              onPress={() => {
+                                if (
+                                  leadData?.proposalApproved ||
+                                  leadData?.proposalStatus === "INITIATED"
+                                ) {
+                                  addToast({
+                                    title: "RESTRICTED",
+                                    color: "danger",
+                                    description:
+                                      "Service name cannot be changed as proposal is already approved or initiated.",
+                                  });
+                                  return;
+                                }
+                                setToggleAssignee(!toggleAssignee);
+                              }}
                               size="sm"
                               isIconOnly
                               className="h-6 w-6 min-w-6 rounded-full"
@@ -1205,6 +1219,18 @@ const LeadInfo = () => {
                               <Button
                                 variant="light"
                                 onPress={() => {
+                                  if (
+                                    leadData?.proposalApproved ||
+                                    leadData?.proposalStatus === "INITIATED"
+                                  ) {
+                                    addToast({
+                                      title: "RESTRICTED",
+                                      color: "danger",
+                                      description:
+                                        "Service name cannot be changed as proposal is already approved or initiated.",
+                                    });
+                                    return;
+                                  }
                                   if (toggleStatus)
                                     dispatch(getAllStatusData());
                                   setToggleStatus(!toggleStatus);
@@ -1252,7 +1278,21 @@ const LeadInfo = () => {
                               {adminRole && (
                                 <Button
                                   variant="light"
-                                  onPress={() => setToggleSource(!toggleSource)}
+                                  onPress={() => {
+                                    if (
+                                      leadData?.proposalApproved ||
+                                      leadData?.proposalStatus === "INITIATED"
+                                    ) {
+                                      addToast({
+                                        title: "RESTRICTED",
+                                        color: "danger",
+                                        description:
+                                          "Service name cannot be changed as proposal is already approved or initiated.",
+                                      });
+                                      return;
+                                    }
+                                    setToggleSource(!toggleSource);
+                                  }}
                                   size="sm"
                                   isIconOnly
                                   className="h-6 w-6 min-w-6 rounded-full"
@@ -1366,6 +1406,18 @@ const LeadInfo = () => {
                     isClearable
                     value={selectedComment}
                     onChange={(e) => {
+                      if (
+                        leadData?.proposalApproved ||
+                        leadData?.proposalStatus === "INITIATED"
+                      ) {
+                        addToast({
+                          title: "RESTRICTED",
+                          color: "danger",
+                          description:
+                            "Service name cannot be changed as proposal is already approved or initiated.",
+                        });
+                        return;
+                      }
                       setSelectedComment(e);
                       setCustomComment("");
                     }}
@@ -1375,10 +1427,28 @@ const LeadInfo = () => {
                       className="my-2"
                       value={customComment}
                       placeholder="Please write your remarks"
-                      onChange={(e) => setCustomComment(e.target.value)}
+                      onChange={(e) => {
+                        if (
+                          leadData?.proposalApproved ||
+                          leadData?.proposalStatus === "INITIATED"
+                        ) {
+                          addToast({
+                            title: "RESTRICTED",
+                            color: "danger",
+                            description:
+                              "Service name cannot be changed as proposal is already approved or initiated.",
+                          });
+                          return;
+                        }
+                        setCustomComment(e.target.value);
+                      }}
                     />
                   )}
-                  <BulkFileUploader files={files} setFiles={setFiles} />
+                  <BulkFileUploader
+                    files={files}
+                    setFiles={setFiles}
+                    leadData={leadData}
+                  />
                 </CardBody>
                 <CardFooter className="flex justify-end">
                   <div>

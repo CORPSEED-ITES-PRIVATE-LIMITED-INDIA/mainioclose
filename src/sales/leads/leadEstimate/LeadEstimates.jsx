@@ -475,6 +475,16 @@ const LeadEstimates = () => {
   // };
 
   const onEstimateFinish = (values) => {
+    if (serviceFeeList?.length === 0 || !serviceFeeList) {
+      addToast({
+        title: "RESTRICTED !.",
+        description:
+          "Service prices are not available. Please select a valid service.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (unitDetail?.companyTypeId) {
       addToast({
         title: "ERROR !.",

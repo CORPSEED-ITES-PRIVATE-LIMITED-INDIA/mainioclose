@@ -470,6 +470,16 @@ const Proposal = () => {
   };
 
   const onSubmit = (values) => {
+    if (serviceFeeList?.length === 0 || !serviceFeeList) {
+      addToast({
+        title: "RESTRICTED !.",
+        description:
+          "Service prices are not available. Please select a valid service.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!leadData?.originalName) {
       addToast({
         title: "RESTRICTED !.",

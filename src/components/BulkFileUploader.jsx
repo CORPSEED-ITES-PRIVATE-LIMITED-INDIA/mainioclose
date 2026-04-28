@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { api } from "../httpRequest";
 
-const BulkFileUploader = ({ setFiles, files }) => {
+const BulkFileUploader = ({ setFiles, files, leadData }) => {
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -33,7 +33,7 @@ const BulkFileUploader = ({ setFiles, files }) => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       const fileUrl = response?.data;
@@ -46,7 +46,7 @@ const BulkFileUploader = ({ setFiles, files }) => {
       } else {
         console.warn(
           "Upload succeeded but unexpected response:",
-          response?.data
+          response?.data,
         );
         updateFileStatus(fileObj.id, "error");
       }
@@ -58,13 +58,13 @@ const BulkFileUploader = ({ setFiles, files }) => {
 
   const updateFileStatus = (id, status, url = "") => {
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status, url } : f))
+      prev.map((f) => (f.id === id ? { ...f, status, url } : f)),
     );
   };
 
   const handleFiles = (selectedFiles) => {
     const validFiles = Array.from(selectedFiles).filter((file) =>
-      allowedTypes.includes(file.type)
+      allowedTypes.includes(file.type),
     );
 
     validFiles.forEach((file) => {
@@ -79,11 +79,35 @@ const BulkFileUploader = ({ setFiles, files }) => {
   };
 
   const handleFileInputChange = (e) => {
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        color: "danger",
+        description:
+          "Service name cannot be changed as proposal is already approved or initiated.",
+      });
+      return;
+    }
     handleFiles(e.target.files);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        color: "danger",
+        description:
+          "Service name cannot be changed as proposal is already approved or initiated.",
+      });
+      return;
+    }
     handleFiles(e.dataTransfer.files);
     dropRef.current.classList.remove("highlight");
   };
@@ -96,10 +120,34 @@ const BulkFileUploader = ({ setFiles, files }) => {
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        color: "danger",
+        description:
+          "Service name cannot be changed as proposal is already approved or initiated.",
+      });
+      return;
+    }
     dropRef.current.classList.add("highlight");
   };
 
   const handleDragLeave = () => {
+    if (
+      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        color: "danger",
+        description:
+          "Service name cannot be changed as proposal is already approved or initiated.",
+      });
+      return;
+    }
     dropRef.current.classList.remove("highlight");
   };
 
