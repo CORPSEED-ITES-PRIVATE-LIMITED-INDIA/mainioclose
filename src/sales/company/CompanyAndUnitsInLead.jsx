@@ -279,6 +279,7 @@ const CompanyAndUnitsInLead = () => {
     companyForm.setFieldsValue({
       name: effectiveCompany?.name || "",
       gstNo: effectiveCompany?.gstNo || "",
+      companyTypeId: effectiveCompany?.companyTypeId || "",
       panNo: effectiveCompany?.panNo || "",
       address: effectiveCompany?.address || "",
       country: effectiveCompany?.country || "",
@@ -610,7 +611,7 @@ const CompanyAndUnitsInLead = () => {
             });
             setUnitModal(false);
             resetUnitModalState();
-
+            refreshLeadCompanyAndUnits();
             if (selectedCompanyId) {
               refreshSelectedCompanyRelatedData(selectedCompanyId);
             } else {
@@ -646,7 +647,7 @@ const CompanyAndUnitsInLead = () => {
             });
 
             const newUnit = resp?.payload;
-
+            refreshLeadCompanyAndUnits();
             setUnitModal(false);
             resetUnitModalState();
 
@@ -812,12 +813,12 @@ const CompanyAndUnitsInLead = () => {
               </p>
             </div>
 
-            <p className="text-gray-500">
+            <p className="text-gray-500 col-span-2">
               <span className="text-gray-700 font-medium">PAN:</span>{" "}
               {effectiveCompany?.panNo || "NA"}
             </p>
 
-            <p className="text-gray-500">
+            <p className="text-gray-500 col-span-2">
               <span className="text-gray-700 font-medium">Company Type:</span>{" "}
               {effectiveCompany?.companyTypeName ||
                 effectiveCompany?.companyType ||
@@ -932,13 +933,13 @@ const CompanyAndUnitsInLead = () => {
 
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <p className="text-gray-500">
-                        <span className="text-gray-700 font-medium">
+                        <span className="text-gray-700 font-medium grid-cols-2">
                           GST No:
                         </span>{" "}
                         {unit?.gstNo || "NA"}
                       </p>
 
-                      <p className="text-gray-500">
+                      <p className="text-gray-500 md:col-span-2">
                         <span className="text-gray-700 font-medium">
                           GST Type:
                         </span>{" "}
@@ -948,7 +949,7 @@ const CompanyAndUnitsInLead = () => {
                           "NA"}
                       </p>
 
-                      <p className="text-gray-500">
+                      <p className="text-gray-500 ">
                         <span className="text-gray-700 font-medium">
                           Pin Code:
                         </span>{" "}
@@ -1109,6 +1110,11 @@ const CompanyAndUnitsInLead = () => {
                   allowClear
                   options={companyList}
                   fieldNames={{ label: "name", value: "id" }}
+                  filterOption={(input, option) =>
+                    String(option?.name || "")
+                      .toLowerCase()
+                      .includes(input.trim().toLowerCase())
+                  }
                   placeholder="Choose company"
                   onChange={handleSelectExistingCompany}
                   className="w-full"
@@ -1127,6 +1133,11 @@ const CompanyAndUnitsInLead = () => {
                       allowClear
                       options={units}
                       fieldNames={{ label: "unitName", value: "id" }}
+                      filterOption={(input, option) =>
+                        String(option?.unitName || "")
+                          .toLowerCase()
+                          .includes(input.trim().toLowerCase())
+                      }
                       placeholder="Choose unit"
                       disabled={!effectiveCompany?.id && !selectedCompanyId}
                       onChange={handleSelectUnit}
@@ -1154,6 +1165,11 @@ const CompanyAndUnitsInLead = () => {
                       options={contacts}
                       fieldNames={{ label: "name", value: "id" }}
                       placeholder="Choose contact"
+                      filterOption={(input, option) =>
+                        String(option?.name || "")
+                          .toLowerCase()
+                          .includes(input.trim().toLowerCase())
+                      }
                       disabled={!selectedUnitDetail?.id}
                       onChange={handleSelectContact}
                       className="w-full"
