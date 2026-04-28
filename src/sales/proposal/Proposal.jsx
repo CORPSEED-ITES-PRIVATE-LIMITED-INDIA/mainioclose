@@ -657,7 +657,10 @@ const Proposal = () => {
                     : "bg-green-100 text-green-700"
                 }`}
               >
-                {selectedProposal?.status || "-"}
+                {selectedProposal?.status === "REJECTED" ||
+                selectedProposal?.status === "REJECTED"
+                  ? "CANCELLED"
+                  : selectedProposal?.status}
               </span>
             </div>
           </div>
@@ -941,7 +944,10 @@ const Proposal = () => {
                         : "bg-green-100 text-green-700"
                     }`}
                   >
-                    {proposal?.status || "-"}
+                    {proposal?.status === "REJECTED" ||
+                    proposal?.status === "REJECTED"
+                      ? "CANCELLED"
+                      : proposal?.status}
                   </span>
                 </div>
 
