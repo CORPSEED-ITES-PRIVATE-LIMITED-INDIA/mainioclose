@@ -59,6 +59,12 @@ const CompanyAndUnitsInLead = () => {
   const [unitForm] = Form.useForm();
   const [contactForm] = Form.useForm();
 
+  const selectedCompanyCountry = Form.useWatch("country", companyForm);
+  const selectedCompanyState = Form.useWatch("state", companyForm);
+
+  const selectedUnitCountry = Form.useWatch("country", unitForm);
+  const selectedUnitState = Form.useWatch("state", unitForm);
+
   const countryList = useSelector((state) => state.common.countriesList || []);
   const statesList = useSelector((state) => state.common.statesList || []);
   const citiesList = useSelector((state) => state.common.citiesList || []);
@@ -262,7 +268,7 @@ const CompanyAndUnitsInLead = () => {
 
   const openCompanyModal = () => {
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
@@ -313,7 +319,7 @@ const CompanyAndUnitsInLead = () => {
     if (!validateCompanySelected()) return;
 
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
@@ -352,7 +358,7 @@ const CompanyAndUnitsInLead = () => {
 
   const openEditUnitModal = (unit) => {
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
@@ -398,7 +404,7 @@ const CompanyAndUnitsInLead = () => {
     if (!validateCompanySelected()) return;
 
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
@@ -1272,7 +1278,10 @@ const CompanyAndUnitsInLead = () => {
                       state: undefined,
                       city: undefined,
                     });
-                    dispatch(getAllStatesByCountryName(value));
+
+                    if (value) {
+                      dispatch(getAllStatesByCountryName(value));
+                    }
                   }}
                 />
               </Form.Item>

@@ -156,7 +156,7 @@ const AllProposal = () => {
   }, [sortDescriptor, items]);
 
   const handleActionsClick = (e, rowData) => {
-    if (e === "approved" || e === "REJECTED") {
+    if (e === "APPROVED" || e === "REJECTED") {
       setUpdateStatusData((prev) => ({
         ...prev,
         proposalId: rowData?.id,
@@ -279,7 +279,7 @@ const AllProposal = () => {
                 }}
               >
                 <DropdownItem key="view">View</DropdownItem>
-                <DropdownItem key="approved">Approved</DropdownItem>
+                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
                 <DropdownItem key="REJECTED">REJECTED</DropdownItem>
               </DropdownMenu>
             </Dropdown>

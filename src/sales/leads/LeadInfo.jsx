@@ -700,8 +700,8 @@ const LeadInfo = () => {
                         <Button
                           onPress={() => {
                             if (
-                              leadData?.proposalApproved ||
-                              leadData?.proposalStatus === "INITIATED"
+                              leadData?.proposalStatus === "INITIATED" ||
+                              leadData?.proposalStatus === "APPROVED"
                             ) {
                               addToast({
                                 title: "RESTRICTED",
@@ -1159,7 +1159,7 @@ const LeadInfo = () => {
                               variant="light"
                               onPress={() => {
                                 if (
-                                  leadData?.proposalApproved ||
+                                  leadData?.proposalStatus === "APPROVED" ||
                                   leadData?.proposalStatus === "INITIATED"
                                 ) {
                                   addToast({
@@ -1220,7 +1220,7 @@ const LeadInfo = () => {
                                 variant="light"
                                 onPress={() => {
                                   if (
-                                    leadData?.proposalApproved ||
+                                    leadData?.proposalStatus === "APPROVED" ||
                                     leadData?.proposalStatus === "INITIATED"
                                   ) {
                                     addToast({
@@ -1280,7 +1280,7 @@ const LeadInfo = () => {
                                   variant="light"
                                   onPress={() => {
                                     if (
-                                      leadData?.proposalApproved ||
+                                      leadData?.proposalStatus === "APPROVED" ||
                                       leadData?.proposalStatus === "INITIATED"
                                     ) {
                                       addToast({
@@ -1407,7 +1407,7 @@ const LeadInfo = () => {
                     value={selectedComment}
                     onChange={(e) => {
                       if (
-                        leadData?.proposalApproved ||
+                        leadData?.proposalStatus === "APPROVED" ||
                         leadData?.proposalStatus === "INITIATED"
                       ) {
                         addToast({
@@ -1429,7 +1429,7 @@ const LeadInfo = () => {
                       placeholder="Please write your remarks"
                       onChange={(e) => {
                         if (
-                          leadData?.proposalApproved ||
+                          leadData?.proposalStatus === "APPROVED" ||
                           leadData?.proposalStatus === "INITIATED"
                         ) {
                           addToast({
