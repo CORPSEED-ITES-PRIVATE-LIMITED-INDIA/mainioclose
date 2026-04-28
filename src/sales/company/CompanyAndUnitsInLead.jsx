@@ -817,6 +817,13 @@ const CompanyAndUnitsInLead = () => {
               {effectiveCompany?.panNo || "NA"}
             </p>
 
+            <p className="text-gray-500">
+              <span className="text-gray-700 font-medium">Company Type:</span>{" "}
+              {effectiveCompany?.companyTypeName ||
+                effectiveCompany?.companyType ||
+                "NA"}
+            </p>
+
             <p className="text-gray-500 col-span-2">
               <span className="text-gray-700 font-medium">Address:</span>{" "}
               {effectiveCompany?.address || "NA"}
@@ -929,13 +936,6 @@ const CompanyAndUnitsInLead = () => {
                           GST No:
                         </span>{" "}
                         {unit?.gstNo || "NA"}
-                      </p>
-
-                      <p className="text-gray-500">
-                        <span className="text-gray-700 font-medium">
-                          Company Type:
-                        </span>{" "}
-                        {unit?.companyTypeName || unit?.companyType || "NA"}
                       </p>
 
                       <p className="text-gray-500">
