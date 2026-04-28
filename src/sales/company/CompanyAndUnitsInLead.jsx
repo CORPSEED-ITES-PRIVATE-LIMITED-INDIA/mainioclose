@@ -417,13 +417,13 @@ const CompanyAndUnitsInLead = () => {
       return;
     }
 
-    if (!selectedUnitId) {
-      addToast({
-        title: "Please select unit first",
-        color: "warning",
-      });
-      return;
-    }
+    // if (!selectedUnitId) {
+    //   addToast({
+    //     title: "Please select unit first",
+    //     color: "warning",
+    //   });
+    //   return;
+    // }
 
     resetContactModalState();
 
@@ -1447,6 +1447,24 @@ const CompanyAndUnitsInLead = () => {
           onFinish={onSubmitContact}
           className="grid grid-cols-2 gap-2"
         >
+          <Form.Item
+            label="Unit"
+            name="companyUnitId"
+            rules={[
+              {
+                required: true,
+                message: "please select unit.",
+              },
+            ]}
+          >
+            <Select
+              showSearch
+              allowClear
+              options={units}
+              fieldNames={{ label: "unitName", value: "id" }}
+              placeholder="Select unit"
+            />
+          </Form.Item>
           <Form.Item label="Title" name="title">
             <Select
               allowClear
@@ -1493,16 +1511,6 @@ const CompanyAndUnitsInLead = () => {
                   whatsappNo: allowOnlyNumbers(e.target.value),
                 });
               }}
-            />
-          </Form.Item>
-
-          <Form.Item label="Unit" name="companyUnitId">
-            <Select
-              showSearch
-              allowClear
-              options={units}
-              fieldNames={{ label: "unitName", value: "id" }}
-              placeholder="Select unit"
             />
           </Form.Item>
         </Form>
