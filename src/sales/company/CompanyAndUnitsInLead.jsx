@@ -805,7 +805,7 @@ const CompanyAndUnitsInLead = () => {
         </CardHeader>
 
         <CardBody className="max-h-[300px] overflow-auto">
-          <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div className="col-span-2">
               <p className="font-medium text-gray-900">
                 {effectiveCompany?.name || "NA"}
