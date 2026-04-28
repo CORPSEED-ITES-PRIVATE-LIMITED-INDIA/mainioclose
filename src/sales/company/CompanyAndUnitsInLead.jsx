@@ -381,7 +381,7 @@ const CompanyAndUnitsInLead = () => {
     unitForm.setFieldsValue({
       unitName: unit?.unitName || "",
       companyTypeId: unit?.companyTypeId,
-      gstTypeId: unit?.gstTypeId,
+      gstTypeId: unit?.gstTypeId || unit?.gstRegistrationTypeId,
       gstNo: unit?.gstNo || "",
       address: unit?.addressLine1 || unit?.address || "",
       country: unit?.country || "",
