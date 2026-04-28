@@ -40,7 +40,8 @@ const columns = [
   { name: "ID", uid: "id" },
   { name: "DATE", uid: "date" },
   { name: "SOLUTION NAME", uid: "solutionName" },
-  { name: "EMAIL", uid: "createdByEmail" },
+  { name: "EMAIL TO", uid: "mailTo" },
+  { name: "EMAIL BY", uid: "createdByEmail" },
   { name: "BROCHURES", uid: "brochures" },
   { name: "STATUS", uid: "status" },
   { name: "ACTIONS", uid: "actions" },
@@ -54,6 +55,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "date",
   "solutionName",
+  "mailTo",
   "createdByEmail",
   "brochures",
   "status",
@@ -231,6 +233,14 @@ const AllProposal = () => {
           <p className="font-normal text-xs capitalize">
             {dayjs(rowData?.createDate).format("YYYY-MM-DD") || "-"}
           </p>
+        );
+      case "mailTo":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">
+              {rowData.mailTo?.join(" , ") || "-"}
+            </span>
+          </div>
         );
       case "createdByEmail":
         return (
