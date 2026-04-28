@@ -942,7 +942,10 @@ const CompanyAndUnitsInLead = () => {
                         <span className="text-gray-700 font-medium">
                           GST Type:
                         </span>{" "}
-                        {unit?.gstTypeName || unit?.gstType || "NA"}
+                        {unit?.gstTypeName ||
+                          unit?.gstType ||
+                          unit?.gstRegistrationTypeName ||
+                          "NA"}
                       </p>
 
                       <p className="text-gray-500">
