@@ -630,10 +630,10 @@ export const approvedAndDisapprovedExpense = createAsyncThunk(
 
 export const mapDesignationWithDepartmentInOperations = createAsyncThunk(
   "mapDesignationWithDepartmentInOperations",
-  async ({ departmentId, data }, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/operationService/api/designations/map-to-department?departmentId=${departmentId}`,
+        `/operationService/api/designations/map-to-department`,
         data,
       );
       return response.data;

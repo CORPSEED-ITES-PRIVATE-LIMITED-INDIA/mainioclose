@@ -200,6 +200,7 @@ const Department = () => {
   };
 
   const handleDesignationFinish = (values) => {
+    console.log("values", values);
     values.id = item?.id;
     dispatch(createDesiginationByDepartment(values))
       .then((resp) => {
