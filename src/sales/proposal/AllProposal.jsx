@@ -56,7 +56,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "solutionName",
   "mailTo",
-  "createdByEmail",
   "brochures",
   "status",
   "actions",
