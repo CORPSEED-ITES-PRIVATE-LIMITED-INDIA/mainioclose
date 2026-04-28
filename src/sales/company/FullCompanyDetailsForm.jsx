@@ -71,7 +71,7 @@ const unitSchema = (gstTypeList = []) =>
 
       gstNo: z.string().optional(),
       unitOpeningDate: z.string().min(1, "please enter date"),
-      companyTypeId: z.string().min(1, "please select company type"),
+      // companyTypeId: z.string().min(1, "please select company type"),
       gstTypeId: z.string().min(1, "please select gst type"),
     })
     .superRefine((data, ctx) => {
@@ -100,6 +100,7 @@ const companySchema = (obj, gstTypeList = []) =>
     //       assigneeId: z.string().min(1, "Please select assignee."),
     //     }
     //   : {}),
+    companyTypeId: z.string().min(1, "Please select company structure."),
     industryId: z.string().min(1, "Please select industry."),
     subIndustryId: z.string().min(1, "Please select sub industry."),
     subSubIndustryId: z.string().min(1, "Please select category."),
@@ -135,7 +136,7 @@ const getEmptyUnit = () => ({
   id: 0,
   unitName: "",
   gstNo: "",
-  companyTypeId: "",
+  // companyTypeId: "",
   gstTypeId: "",
   gstBusinessTypeId: "",
   gstTypePriceId: "",
@@ -673,6 +674,26 @@ export function CompanyAndUnitsForm({
                   onChange={(value) => {
                     const iso = value ? value.toString() : "";
                     field.onChange(iso);
+                  }}
+                />
+              )}
+            />
+
+            <Controller
+              name={`companyTypeId`}
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <NewSelect
+                  label="Company Structure"
+                  data={companyTypeList || []}
+                  labelKey="name"
+                  valueKey="id"
+                  isRequired
+                  value={field.value}
+                  isInvalid={!!error}
+                  errorMessage={error?.message}
+                  onChange={(value) => {
+                    field.onChange(value);
                   }}
                 />
               )}
@@ -1314,56 +1335,6 @@ export function CompanyAndUnitsForm({
                     />
 
                     {/* UNIT GST STRUCTURE */}
-                    <Controller
-                      name={`units.${index}.companyTypeId`}
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <NewSelect
-                          label="Company Structure"
-                          data={companyTypeList || []}
-                          labelKey="name"
-                          valueKey="id"
-                          isRequired
-                          value={field.value}
-                          isInvalid={!!error}
-                          errorMessage={error?.message}
-                          onChange={(value) => {
-                            field.onChange(value);
-
-                            // clear dependent fields
-                            setValue(`units.${index}.gstTypeId`, "", {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-                            setValue(`units.${index}.gstBusinessTypeId`, "", {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-                            setValue(`units.${index}.gstNo`, "", {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-
-                            // clear dependent options/state
-                            setGstTypeMap((prev) => ({
-                              ...prev,
-                              [index]: [],
-                            }));
-                            setBusinessTypeMap((prev) => ({
-                              ...prev,
-                              [index]: [],
-                            }));
-                            setGstAndPanData((prev) => ({
-                              ...prev,
-                              [index]: {
-                                gst: false,
-                                pan: false,
-                              },
-                            }));
-                          }}
-                        />
-                      )}
-                    />
 
                     <Controller
                       name={`units.${index}.gstTypeId`}
