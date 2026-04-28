@@ -1203,6 +1203,22 @@ const CompanyAndUnitsInLead = () => {
               </Form.Item>
 
               <Form.Item
+                label="Company Structure"
+                name="companyTypeId"
+                // rules={[
+                //   { required: true, message: "Please select company type" },
+                // ]}
+              >
+                <Select
+                  showSearch
+                  allowClear
+                  options={companyTypeList}
+                  fieldNames={{ label: "name", value: "id" }}
+                  placeholder="Select Company Structure"
+                />
+              </Form.Item>
+
+              <Form.Item
                 label="PAN Number"
                 name="panNo"
                 getValueFromEvent={(e) => formatPANInput(e.target.value)}
@@ -1309,20 +1325,6 @@ const CompanyAndUnitsInLead = () => {
             rules={[{ required: true, message: "Please enter unit name" }]}
           >
             <Input placeholder="Unit Name" />
-          </Form.Item>
-
-          <Form.Item
-            label="Company Structure"
-            name="companyTypeId"
-            rules={[{ required: true, message: "Please select company type" }]}
-          >
-            <Select
-              showSearch
-              allowClear
-              options={companyTypeList}
-              fieldNames={{ label: "name", value: "id" }}
-              placeholder="Select Company Structure"
-            />
           </Form.Item>
 
           <Form.Item
