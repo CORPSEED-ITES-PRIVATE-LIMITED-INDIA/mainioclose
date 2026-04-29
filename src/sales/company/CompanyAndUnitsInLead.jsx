@@ -99,6 +99,7 @@ const CompanyAndUnitsInLead = () => {
   const [selectedUnitDetail, setSelectedUnitDetail] = useState(null);
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [selectedContactDetail, setSelectedContactDetail] = useState(null);
+  const [isInitializingUnit, setIsInitializingUnit] = useState(false);
 
   const iconClass = "w-4 h-4 text-gray-500";
 
@@ -202,25 +203,25 @@ const CompanyAndUnitsInLead = () => {
 
   const isInternationalGstType = selectedUnitGstTypeName === "International";
 
-  useEffect(() => {
-    if (!unitModal) return;
+  // useEffect(() => {
+  //   if (!unitModal) return;
 
-    if (selectedUnitGstTypeId && !isInternationalGstType) {
-      unitForm.setFieldsValue({
-        country: "India",
-        state: undefined,
-        city: undefined,
-      });
+  //   if (selectedUnitGstTypeId && !isInternationalGstType) {
+  //     unitForm.setFieldsValue({
+  //       country: "India",
+  //       state: undefined,
+  //       city: undefined,
+  //     });
 
-      dispatch(getAllStatesByCountryName("India"));
-    }
-  }, [
-    unitModal,
-    selectedUnitGstTypeId,
-    isInternationalGstType,
-    unitForm,
-    dispatch,
-  ]);
+  //     dispatch(getAllStatesByCountryName("India"));
+  //   }
+  // }, [
+  //   unitModal,
+  //   selectedUnitGstTypeId,
+  //   isInternationalGstType,
+  //   unitForm,
+  //   dispatch,
+  // ]);
 
   const resetUnitModalState = () => {
     setEditingUnit(null);
@@ -387,63 +388,37 @@ const CompanyAndUnitsInLead = () => {
     setUnitModal(true);
   };
 
-  const openEditUnitModal = (unit) => {
-    if (
-      leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
-    ) {
-      addToast({
-        title: "RESTRICTED",
-        description:
-          "You are not required perform any action after approval or initiation of proposal.",
-        color: "danger",
-      });
-      return;
-    }
-
+  const openEditUnitModal = async (unit) => {
     setEditingUnit(unit);
-
-    dispatch(getAllCountries());
-    if (unit?.country) {
-      dispatch(getAllStatesByCountryName(unit.country));
-    }
-    if (unit?.state) {
-      dispatch(getAllCitiesByStateName(unit.state));
-    }
-
-    const selectedGstType = gstTypeList?.find(
-      (item) => String(item?.id) === String(unit?.gstTypeId),
-    );
-    setIsGstMandatory(
-      selectedGstType?.name === "Registered" || selectedGstType?.name === "SEZ",
-    );
-
-    const currentGstTypeName =
-      selectedGstType?.name ||
-      unit?.gstTypeName ||
-      unit?.gstType ||
-      unit?.gstRegistrationTypeName;
-
-    const isCurrentAllowed = allowedGstTypeNames.includes(currentGstTypeName);
+    setIsInitializingUnit(true);
+    setUnitModal(true);
 
     const country = unit?.country || "India";
     const state = unit?.state || "";
     const city = unit?.city || "";
 
+    const gstTypeId = unit?.gstTypeId || unit?.gstRegistrationTypeId;
+
+    const selectedGstType = gstTypeList?.find(
+      (item) => String(item?.id) === String(gstTypeId),
+    );
+
+    setIsGstMandatory(
+      selectedGstType?.name === "Registered" || selectedGstType?.name === "SEZ",
+    );
+
     if (country) {
-      dispatch(getAllStatesByCountryName(country));
+      await dispatch(getAllStatesByCountryName(country));
     }
 
     if (state) {
-      dispatch(getAllCitiesByStateName(state));
+      await dispatch(getAllCitiesByStateName(state));
     }
 
     unitForm.setFieldsValue({
       unitName: unit?.unitName || "",
       companyTypeId: unit?.companyTypeId,
-      gstTypeId: isCurrentAllowed
-        ? unit?.gstTypeId || unit?.gstRegistrationTypeId
-        : undefined,
+      gstTypeId,
       gstNo: unit?.gstNo || "",
       address: unit?.addressLine1 || unit?.address || "",
       country,
@@ -452,7 +427,9 @@ const CompanyAndUnitsInLead = () => {
       pinCode: unit?.pinCode || "",
     });
 
-    setUnitModal(true);
+    setTimeout(() => {
+      setIsInitializingUnit(false);
+    }, 300);
   };
 
   const openAddContactModal = () => {
@@ -920,33 +897,33 @@ const CompanyAndUnitsInLead = () => {
     );
   }, [gstTypeList, allowedGstTypeNames]);
 
-  useEffect(() => {
-    if (!unitModal) return;
-    if (!selectedUnitGstTypeId) return;
-    if (isInternationalGstType) return;
+  // useEffect(() => {
+  //   if (!unitModal) return;
+  //   if (!selectedUnitGstTypeId) return;
+  //   if (isInternationalGstType) return;
 
-    const currentCountry = unitForm.getFieldValue("country");
-    const currentState = unitForm.getFieldValue("state");
-    const currentCity = unitForm.getFieldValue("city");
+  //   const currentCountry = unitForm.getFieldValue("country");
+  //   const currentState = unitForm.getFieldValue("state");
+  //   const currentCity = unitForm.getFieldValue("city");
 
-    unitForm.setFieldsValue({
-      country: currentCountry || "India",
-      state: currentState || undefined,
-      city: currentCity || undefined,
-    });
+  //   unitForm.setFieldsValue({
+  //     country: currentCountry || "India",
+  //     state: currentState || undefined,
+  //     city: currentCity || undefined,
+  //   });
 
-    dispatch(getAllStatesByCountryName(currentCountry || "India"));
+  //   dispatch(getAllStatesByCountryName(currentCountry || "India"));
 
-    if (currentState) {
-      dispatch(getAllCitiesByStateName(currentState));
-    }
-  }, [
-    unitModal,
-    selectedUnitGstTypeId,
-    isInternationalGstType,
-    unitForm,
-    dispatch,
-  ]);
+  //   if (currentState) {
+  //     dispatch(getAllCitiesByStateName(currentState));
+  //   }
+  // }, [
+  //   unitModal,
+  //   selectedUnitGstTypeId,
+  //   isInternationalGstType,
+  //   unitForm,
+  //   dispatch,
+  // ]);
 
   return (
     <>
@@ -1533,6 +1510,8 @@ const CompanyAndUnitsInLead = () => {
               placeholder="Select GST Type"
               disabled={allowedGstTypeNames.length === 1}
               onChange={(value) => {
+                if (isInitializingUnit) return; // 🚫 stop reset during edit load
+
                 const selectedGstType = gstTypeList.find(
                   (item) => String(item?.id) === String(value),
                 );
@@ -1611,6 +1590,7 @@ const CompanyAndUnitsInLead = () => {
             <Select
               showSearch
               allowClear
+              optionFilterProp="name"
               options={statesList}
               fieldNames={{ label: "name", value: "name" }}
               onChange={(value) => {
@@ -1624,6 +1604,7 @@ const CompanyAndUnitsInLead = () => {
             <Select
               showSearch
               allowClear
+              optionFilterProp="name"
               options={citiesList}
               fieldNames={{ label: "name", value: "name" }}
             />
