@@ -426,6 +426,18 @@ const CompanyAndUnitsInLead = () => {
 
     const isCurrentAllowed = allowedGstTypeNames.includes(currentGstTypeName);
 
+    const country = unit?.country || "India";
+    const state = unit?.state || "";
+    const city = unit?.city || "";
+
+    if (country) {
+      dispatch(getAllStatesByCountryName(country));
+    }
+
+    if (state) {
+      dispatch(getAllCitiesByStateName(state));
+    }
+
     unitForm.setFieldsValue({
       unitName: unit?.unitName || "",
       companyTypeId: unit?.companyTypeId,
@@ -434,9 +446,9 @@ const CompanyAndUnitsInLead = () => {
         : undefined,
       gstNo: unit?.gstNo || "",
       address: unit?.addressLine1 || unit?.address || "",
-      country: unit?.country || "",
-      state: unit?.state || "",
-      city: unit?.city || "",
+      country,
+      state,
+      city,
       pinCode: unit?.pinCode || "",
     });
 
@@ -910,27 +922,31 @@ const CompanyAndUnitsInLead = () => {
 
   useEffect(() => {
     if (!unitModal) return;
+    if (!selectedUnitGstTypeId) return;
+    if (isInternationalGstType) return;
 
-    if (allowedGstTypeNames.length === 1) {
-      const onlyAllowedName = allowedGstTypeNames[0];
+    const currentCountry = unitForm.getFieldValue("country");
+    const currentState = unitForm.getFieldValue("state");
+    const currentCity = unitForm.getFieldValue("city");
 
-      const onlyType = gstTypeList.find(
-        (item) =>
-          String(item?.name || "").toLowerCase() ===
-          String(onlyAllowedName).toLowerCase(),
-      );
+    unitForm.setFieldsValue({
+      country: currentCountry || "India",
+      state: currentState || undefined,
+      city: currentCity || undefined,
+    });
 
-      if (onlyType?.id) {
-        unitForm.setFieldsValue({
-          gstTypeId: onlyType.id,
-        });
+    dispatch(getAllStatesByCountryName(currentCountry || "India"));
 
-        setIsGstMandatory(
-          onlyType.name === "Registered" || onlyType.name === "SEZ",
-        );
-      }
+    if (currentState) {
+      dispatch(getAllCitiesByStateName(currentState));
     }
-  }, [unitModal, allowedGstTypeNames, gstTypeList, unitForm]);
+  }, [
+    unitModal,
+    selectedUnitGstTypeId,
+    isInternationalGstType,
+    unitForm,
+    dispatch,
+  ]);
 
   return (
     <>
