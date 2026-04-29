@@ -64,6 +64,7 @@ const CompanyAndUnitsInLead = () => {
 
   const selectedUnitCountry = Form.useWatch("country", unitForm);
   const selectedUnitState = Form.useWatch("state", unitForm);
+  const selectedUnitGstTypeId = Form.useWatch("gstTypeId", unitForm);
 
   const countryList = useSelector((state) => state.common.countriesList || []);
   const statesList = useSelector((state) => state.common.statesList || []);
@@ -190,6 +191,36 @@ const CompanyAndUnitsInLead = () => {
       }
     });
   };
+
+  const selectedUnitGstTypeName = useMemo(() => {
+    return (
+      gstTypeList.find(
+        (item) => String(item?.id) === String(selectedUnitGstTypeId),
+      )?.name || ""
+    );
+  }, [gstTypeList, selectedUnitGstTypeId]);
+
+  const isInternationalGstType = selectedUnitGstTypeName === "International";
+
+  useEffect(() => {
+    if (!unitModal) return;
+
+    if (selectedUnitGstTypeId && !isInternationalGstType) {
+      unitForm.setFieldsValue({
+        country: "India",
+        state: undefined,
+        city: undefined,
+      });
+
+      dispatch(getAllStatesByCountryName("India"));
+    }
+  }, [
+    unitModal,
+    selectedUnitGstTypeId,
+    isInternationalGstType,
+    unitForm,
+    dispatch,
+  ]);
 
   const resetUnitModalState = () => {
     setEditingUnit(null);
@@ -831,6 +862,7 @@ const CompanyAndUnitsInLead = () => {
       ? units.filter((unit) => String(unit?.id) !== String(editingUnit.id))
       : units;
 
+    // No units yet → show all options
     if (!otherUnits.length) {
       return ["Registered", "Unregistered", "SEZ", "International"];
     }
@@ -845,8 +877,9 @@ const CompanyAndUnitsInLead = () => {
       (unit) => getGstTypeName(unit) === "Unregistered",
     );
 
+    // 🔴 NEW RULE (highest priority)
     if (firstUnitType === "International") {
-      return ["Registered", "Unregistered", "SEZ", "International"];
+      return ["International"]; // 🔒 lock completely
     }
 
     if (hasRegistered) {
@@ -869,6 +902,30 @@ const CompanyAndUnitsInLead = () => {
       allowedGstTypeNames.includes(item?.name),
     );
   }, [gstTypeList, allowedGstTypeNames]);
+
+  useEffect(() => {
+    if (!unitModal) return;
+
+    if (allowedGstTypeNames.length === 1) {
+      const onlyAllowedName = allowedGstTypeNames[0];
+
+      const onlyType = gstTypeList.find(
+        (item) =>
+          String(item?.name || "").toLowerCase() ===
+          String(onlyAllowedName).toLowerCase(),
+      );
+
+      if (onlyType?.id) {
+        unitForm.setFieldsValue({
+          gstTypeId: onlyType.id,
+        });
+
+        setIsGstMandatory(
+          onlyType.name === "Registered" || onlyType.name === "SEZ",
+        );
+      }
+    }
+  }, [unitModal, allowedGstTypeNames, gstTypeList, unitForm]);
 
   return (
     <>
@@ -1449,10 +1506,11 @@ const CompanyAndUnitsInLead = () => {
           >
             <Select
               showSearch
-              allowClear
+              allowClear={allowedGstTypeNames.length > 1}
               options={filteredGstTypeList}
               fieldNames={{ label: "name", value: "id" }}
               placeholder="Select GST Type"
+              disabled={allowedGstTypeNames.length === 1}
               onChange={(value) => {
                 const selectedGstType = gstTypeList.find(
                   (item) => String(item?.id) === String(value),
@@ -1467,7 +1525,17 @@ const CompanyAndUnitsInLead = () => {
                 unitForm.setFieldsValue({
                   gstTypeId: value,
                   gstNo: canEnterGst ? unitForm.getFieldValue("gstNo") : "",
+                  country:
+                    selectedGstType?.name === "International"
+                      ? undefined
+                      : "India",
+                  state: undefined,
+                  city: undefined,
                 });
+
+                if (selectedGstType?.name !== "International") {
+                  dispatch(getAllStatesByCountryName("India"));
+                }
               }}
             />
           </Form.Item>
@@ -1504,12 +1572,16 @@ const CompanyAndUnitsInLead = () => {
           <Form.Item label="Country" name="country">
             <Select
               showSearch
-              allowClear
+              allowClear={isInternationalGstType}
+              disabled={!isInternationalGstType}
               options={countryList}
               fieldNames={{ label: "name", value: "name" }}
               onChange={(value) => {
                 unitForm.setFieldsValue({ state: undefined, city: undefined });
-                dispatch(getAllStatesByCountryName(value));
+
+                if (value) {
+                  dispatch(getAllStatesByCountryName(value));
+                }
               }}
             />
           </Form.Item>
