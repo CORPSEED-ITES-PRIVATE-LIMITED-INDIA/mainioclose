@@ -504,6 +504,16 @@ const LeadEstimates = () => {
         : "",
     };
 
+    if (!company?.id || !company?.units?.[0]?.id) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "Please add company and unit details before creating estimate.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (leadData?.proposalStatus !== "APPROVED") {
       addToast({
         title: "RESTRICTED",
