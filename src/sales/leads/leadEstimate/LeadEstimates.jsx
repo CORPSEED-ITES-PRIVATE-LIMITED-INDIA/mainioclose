@@ -504,10 +504,7 @@ const LeadEstimates = () => {
         : "",
     };
 
-    if (
-      leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
-    ) {
+    if (leadData?.proposalStatus !== "APPROVED") {
       addToast({
         title: "RESTRICTED",
         description:
