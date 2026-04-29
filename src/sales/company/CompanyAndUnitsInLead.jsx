@@ -707,6 +707,7 @@ const CompanyAndUnitsInLead = () => {
               }),
             ).then((linkRes) => {
               if (linkRes?.meta?.requestStatus === "fulfilled") {
+                refreshLeadCompanyAndUnits();
                 addToast({
                   title: "Company and unit linked successfully.",
                   color: "success",
