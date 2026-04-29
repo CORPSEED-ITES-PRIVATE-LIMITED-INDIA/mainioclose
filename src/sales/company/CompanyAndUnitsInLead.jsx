@@ -383,12 +383,24 @@ const CompanyAndUnitsInLead = () => {
     const selectedGstType = gstTypeList?.find(
       (item) => String(item?.id) === String(unit?.gstTypeId),
     );
-    setIsGstMandatory(selectedGstType?.name === "Registered");
+    setIsGstMandatory(
+      selectedGstType?.name === "Registered" || selectedGstType?.name === "SEZ",
+    );
+
+    const currentGstTypeName =
+      selectedGstType?.name ||
+      unit?.gstTypeName ||
+      unit?.gstType ||
+      unit?.gstRegistrationTypeName;
+
+    const isCurrentAllowed = allowedGstTypeNames.includes(currentGstTypeName);
 
     unitForm.setFieldsValue({
       unitName: unit?.unitName || "",
       companyTypeId: unit?.companyTypeId,
-      gstTypeId: unit?.gstTypeId || unit?.gstRegistrationTypeId,
+      gstTypeId: isCurrentAllowed
+        ? unit?.gstTypeId || unit?.gstRegistrationTypeId
+        : undefined,
       gstNo: unit?.gstNo || "",
       address: unit?.addressLine1 || unit?.address || "",
       country: unit?.country || "",
@@ -588,6 +600,22 @@ const CompanyAndUnitsInLead = () => {
       return;
     }
 
+    const selectedGstType = gstTypeList.find(
+      (item) => String(item?.id) === String(values?.gstTypeId),
+    );
+
+    if (
+      selectedGstType?.name &&
+      !allowedGstTypeNames.includes(selectedGstType.name)
+    ) {
+      addToast({
+        title: "Invalid GST Type",
+        description: `Allowed GST types are ${allowedGstTypeNames.join(", ")} only.`,
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
       ...values,
       createdById: userId,
@@ -782,6 +810,64 @@ const CompanyAndUnitsInLead = () => {
     }
     return true;
   };
+
+  const getGstTypeName = (unit) => {
+    return (
+      unit?.gstTypeName ||
+      unit?.gstType ||
+      unit?.gstRegistrationTypeName ||
+      gstTypeList?.find(
+        (item) =>
+          String(item?.id) ===
+          String(unit?.gstTypeId || unit?.gstRegistrationTypeId),
+      )?.name ||
+      ""
+    );
+  };
+
+  const allowedGstTypeNames = useMemo(() => {
+    const otherUnits = editingUnit?.id
+      ? units.filter((unit) => String(unit?.id) !== String(editingUnit.id))
+      : units;
+
+    if (!otherUnits.length) {
+      return ["Registered", "Unregistered", "SEZ", "International"];
+    }
+
+    const firstUnitType = getGstTypeName(otherUnits[0]);
+
+    const hasRegistered = otherUnits.some(
+      (unit) => getGstTypeName(unit) === "Registered",
+    );
+
+    const hasUnregistered = otherUnits.some(
+      (unit) => getGstTypeName(unit) === "Unregistered",
+    );
+
+    if (firstUnitType === "International") {
+      return ["Registered", "Unregistered", "SEZ", "International"];
+    }
+
+    if (hasRegistered) {
+      return ["Registered", "SEZ"];
+    }
+
+    if (hasUnregistered) {
+      return ["Unregistered", "SEZ"];
+    }
+
+    if (firstUnitType === "SEZ") {
+      return ["Registered", "Unregistered", "SEZ"];
+    }
+
+    return ["Registered", "Unregistered", "SEZ"];
+  }, [units, editingUnit, gstTypeList]);
+
+  const filteredGstTypeList = useMemo(() => {
+    return gstTypeList.filter((item) =>
+      allowedGstTypeNames.includes(item?.name),
+    );
+  }, [gstTypeList, allowedGstTypeNames]);
 
   return (
     <>
@@ -1363,19 +1449,24 @@ const CompanyAndUnitsInLead = () => {
             <Select
               showSearch
               allowClear
-              options={gstTypeList}
+              options={filteredGstTypeList}
               fieldNames={{ label: "name", value: "id" }}
               placeholder="Select GST Type"
-              onChange={(value, option) => {
-                const isRegistered =
-                  option?.name === "Registered" ||
-                  option?.label === "Registered";
+              onChange={(value) => {
+                const selectedGstType = gstTypeList.find(
+                  (item) => String(item?.id) === String(value),
+                );
 
-                setIsGstMandatory(isRegistered);
+                const canEnterGst =
+                  selectedGstType?.name === "Registered" ||
+                  selectedGstType?.name === "SEZ";
 
-                if (!isRegistered) {
-                  unitForm.setFieldsValue({ gstNo: "" });
-                }
+                setIsGstMandatory(canEnterGst);
+
+                unitForm.setFieldsValue({
+                  gstTypeId: value,
+                  gstNo: canEnterGst ? unitForm.getFieldValue("gstNo") : "",
+                });
               }}
             />
           </Form.Item>
