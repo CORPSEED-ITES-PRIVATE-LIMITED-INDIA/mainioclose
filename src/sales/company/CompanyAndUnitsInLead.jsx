@@ -581,7 +581,7 @@ const CompanyAndUnitsInLead = () => {
         .then((resp) => {
           if (resp?.meta?.requestStatus === "fulfilled") {
             api.success({
-              message: "SUCCESS",
+              title: "SUCCESS",
               description: "Company details added successfully.",
             });
             handleCloseCompanyModal();
@@ -602,15 +602,17 @@ const CompanyAndUnitsInLead = () => {
                 });
               } else {
                 addToast({
-                  title: "Something went wrong !.",
-                  description: "Company and Units not linked to Lead !.",
+                  title: "ERROR",
+                  description:
+                    linkRes?.payload?.message ||
+                    "Company and Units not linked to Lead !.",
                   color: "danger",
                 });
               }
             });
           } else {
             api.error({
-              message: "ERROR",
+              title: "ERROR",
               description: resp?.payload || "Failed to add company details",
             });
           }
@@ -683,12 +685,12 @@ const CompanyAndUnitsInLead = () => {
               refreshLeadCompanyAndUnits();
             }
           } else {
-            addToast({
-              title:
+            api.error({
+              title: "ERROR",
+              description:
                 resp?.payload?.data?.message ||
                 resp?.payload?.message ||
                 "Failed to update unit",
-              color: "danger",
             });
           }
         })
@@ -757,17 +759,20 @@ const CompanyAndUnitsInLead = () => {
               refreshLeadCompanyAndUnits();
             }
           } else {
-            addToast({
-              title:
+            api.error({
+              title: "ERROR",
+              description:
                 resp?.payload?.data?.message ||
                 resp?.payload?.message ||
                 "Failed to create unit",
-              color: "danger",
             });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          api.error({
+            title: "ERROR",
+            description: "Something went wrong !.",
+          }),
         )
         .finally(() => setUnitLoading(false));
     }
@@ -816,12 +821,12 @@ const CompanyAndUnitsInLead = () => {
             refreshLeadCompanyAndUnits();
           }
         } else {
-          addToast({
-            title:
+          api.error({
+            title: "ERROR",
+            description:
               resp?.payload?.message ||
               resp?.payload?.data?.message ||
               "Failed to add contact",
-            color: "danger",
           });
         }
       })
