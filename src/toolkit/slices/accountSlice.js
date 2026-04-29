@@ -262,6 +262,22 @@ export const getAllInvoiceReport = createAsyncThunk(
   },
 );
 
+export const fetchEstimateReport = createAsyncThunk(
+  "leads/fetchEstimateReport",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/estimates/estimateReport`,
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response);
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -278,6 +294,7 @@ const AccountSlice = createSlice({
     allBankAccountsList: [],
     unbilledDetail: {},
     invoiceReport: [],
+    estimateReport: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {

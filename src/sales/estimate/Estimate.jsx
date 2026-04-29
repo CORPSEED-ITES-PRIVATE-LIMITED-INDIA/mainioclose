@@ -40,7 +40,10 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
-import { createPaymentRegister } from "../../toolkit/slices/accountSlice";
+import {
+  createPaymentRegister,
+  fetchEstimateReport,
+} from "../../toolkit/slices/accountSlice";
 import EstimatePaymentRegister from "./EstimatePaymentRegister";
 import {
   estimateSentToClient,
@@ -100,6 +103,7 @@ const Estimate = () => {
   const { userId } = useParams();
   const viewModal = useDisclosure();
   const paymentModal = useDisclosure();
+  const reportModal = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
@@ -136,6 +140,16 @@ const Estimate = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
 
   const hasSearchFilter = Boolean(filterValue);
+
+  const [reportFilters, setReportFilters] = useState({
+    fromDate: "",
+    toDate: "",
+    status: "",
+    minAmount: "",
+    maxAmount: "",
+    companyId: "",
+    companyName: "",
+  });
 
   useEffect(() => {
     dispatch(
@@ -254,6 +268,134 @@ const Estimate = () => {
       );
   };
 
+  const downloadCSV = (rows = [], fileName = "estimate-report.csv") => {
+    if (!rows.length) {
+      addToast({
+        title: "No report data found",
+        color: "warning",
+      });
+      return;
+    }
+
+    const csvHeaders = [
+      "Estimate No",
+      "PI No",
+      "Lead ID",
+      "Solution Name",
+      "Solution Type",
+      "Status",
+      "Estimate Date",
+      "Valid Until",
+      "Company Name",
+      "Company PAN",
+      "Company Status",
+      "Unit Name",
+      "GST No",
+      "City",
+      "State",
+      "Sub Total",
+      "GST Amount",
+      "Grand Total",
+      "Created By",
+      "Created At",
+    ];
+
+    const csvRows = rows.map((item) => [
+      item?.estimateNumber || "",
+      item?.performanceInvoiceNumber || "",
+      item?.leadId || "",
+      item?.solutionName || "",
+      item?.solutionType || "",
+      item?.status || "",
+      item?.estimateDate || "",
+      item?.validUntil || "",
+      item?.company?.name || "",
+      item?.company?.panNo || "",
+      item?.company?.onboardingStatus || "",
+      item?.unit?.unitName || "",
+      item?.unit?.gstNo || "",
+      item?.unit?.city || "",
+      item?.unit?.state || "",
+      item?.subTotalExGst || 0,
+      item?.totalGstAmount || 0,
+      item?.grandTotal || 0,
+      item?.createdByName || "",
+      item?.createdAt || "",
+    ]);
+
+    const csvContent = [csvHeaders, ...csvRows]
+      .map((row) =>
+        row
+          .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+          .join(","),
+      )
+      .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFetchReport = () => {
+    const payload = {
+      userId: Number(userId || 0),
+      page: 0,
+      size: 1000,
+    };
+
+    // conditional fields
+    if (reportFilters.fromDate) payload.fromDate = reportFilters.fromDate;
+    if (reportFilters.toDate) payload.toDate = reportFilters.toDate;
+    if (reportFilters.status) payload.status = reportFilters.status;
+
+    if (reportFilters.minAmount)
+      payload.minAmount = Number(reportFilters.minAmount);
+
+    if (reportFilters.maxAmount)
+      payload.maxAmount = Number(reportFilters.maxAmount);
+
+    if (reportFilters.companyId)
+      payload.companyId = Number(reportFilters.companyId);
+
+    if (reportFilters.companyName?.trim())
+      payload.companyName = reportFilters.companyName.trim();
+
+    dispatch(fetchEstimateReport(payload)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        const rows = resp?.payload?.content || [];
+
+        downloadCSV(
+          rows,
+          `estimate-report-${dayjs().format("DD-MM-YYYY-HH-mm")}.csv`,
+        );
+
+        reportModal.onClose();
+
+        addToast({
+          title: "CSV report downloaded successfully",
+          color: "success",
+        });
+      } else {
+        addToast({
+          title: "Failed to fetch report",
+          description: resp?.payload?.data?.message || "Something went wrong",
+          color: "danger",
+        });
+      }
+    });
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "estimateNumber":
@@ -268,7 +410,7 @@ const Estimate = () => {
       case "solutionName":
         return (
           <div className="flex flex-col items-start">
-            <span className="font-medium">{rowData?.solutionName}</span>
+            <span className="font-normal">{rowData?.solutionName}</span>
             {rowData?.solutionType && (
               <Badge
                 size="sm"
@@ -726,6 +868,9 @@ const Estimate = () => {
                 </div>
               </PopoverContent>
             </Popover>
+            <Button color="primary" variant="flat" onPress={reportModal.onOpen}>
+              Fetch Report
+            </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -915,6 +1060,155 @@ const Estimate = () => {
         filteration={filteration}
         filters={filters}
       />
+      <Modal
+        size="3xl"
+        isOpen={reportModal.isOpen}
+        onOpenChange={reportModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Fetch Estimate Report</ModalHeader>
+
+              <ModalBody>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <DateRangePicker
+                    showMonthAndYearPickers
+                    hideTimeZone
+                    label="Date Range"
+                    value={{
+                      start: reportFilters.fromDate
+                        ? parseDate(reportFilters.fromDate)
+                        : null,
+                      end: reportFilters.toDate
+                        ? parseDate(reportFilters.toDate)
+                        : null,
+                    }}
+                    onChange={(value) => {
+                      const formattedStart = value?.start
+                        ? `${value.start.year}-${String(
+                            value.start.month,
+                          ).padStart(
+                            2,
+                            "0",
+                          )}-${String(value.start.day).padStart(2, "0")}`
+                        : "";
+
+                      const formattedEnd = value?.end
+                        ? `${value.end.year}-${String(value.end.month).padStart(
+                            2,
+                            "0",
+                          )}-${String(value.end.day).padStart(2, "0")}`
+                        : "";
+
+                      setReportFilters((prev) => ({
+                        ...prev,
+                        fromDate: formattedStart,
+                        toDate: formattedEnd,
+                      }));
+                    }}
+                  />
+
+                  <Select
+                    label="Status"
+                    selectedKeys={
+                      reportFilters.status
+                        ? new Set([reportFilters.status])
+                        : new Set([])
+                    }
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0] || "";
+                      setReportFilters((prev) => ({
+                        ...prev,
+                        status: selected,
+                      }));
+                    }}
+                  >
+                    {ESTIMATE_STATUS.map((status) => (
+                      <SelectItem key={status}>{status}</SelectItem>
+                    ))}
+                  </Select>
+
+                  <Input
+                    type="number"
+                    label="Min Amount"
+                    value={reportFilters.minAmount}
+                    onChange={(e) =>
+                      setReportFilters((prev) => ({
+                        ...prev,
+                        minAmount: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    type="number"
+                    label="Max Amount"
+                    value={reportFilters.maxAmount}
+                    onChange={(e) =>
+                      setReportFilters((prev) => ({
+                        ...prev,
+                        maxAmount: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    type="number"
+                    label="Company ID"
+                    value={reportFilters.companyId}
+                    onChange={(e) =>
+                      setReportFilters((prev) => ({
+                        ...prev,
+                        companyId: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Company Name"
+                    value={reportFilters.companyName}
+                    onChange={(e) =>
+                      setReportFilters((prev) => ({
+                        ...prev,
+                        companyName: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    setReportFilters({
+                      fromDate: "",
+                      toDate: "",
+                      status: "",
+                      minAmount: "",
+                      maxAmount: "",
+                      companyId: "",
+                      companyName: "",
+                    });
+                  }}
+                >
+                  Reset
+                </Button>
+
+                <Button color="primary" onPress={handleFetchReport}>
+                  Fetch Report
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

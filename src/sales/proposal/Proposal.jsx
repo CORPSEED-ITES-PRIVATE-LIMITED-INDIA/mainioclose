@@ -484,7 +484,7 @@ const Proposal = () => {
       addToast({
         title: "RESTRICTED",
         description:
-          "Please add company and unit details before creating estimate.",
+          "Please add company and unit details before creating proposal.",
         color: "danger",
       });
       return;
