@@ -37,6 +37,7 @@ import dayjs from "dayjs";
 import ServiceFormFieldsDetail from "../leads/leadEstimate/ServiceFormFieldsDetail";
 import { Form } from "antd";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const formSchema = () =>
   z.object({
@@ -150,6 +151,7 @@ const Proposal = () => {
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
   const [proposalToCancel, setProposalToCancel] = useState(null);
+  const [statusLoading, setStatusLoading] = useState("");
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
@@ -309,7 +311,9 @@ const Proposal = () => {
     reset({
       ...defaultValues,
       mailTo:
-        leadData?.clients?.map((client) => client.emails).filter(Boolean) || [],
+        company?.units?.[0]?.unitContacts
+          ?.map((client) => client.emails)
+          .filter(Boolean) || [],
       mailSubject: solutionDetail?.name
         ? `Corpseed Proposal for - ${solutionDetail.name}`
         : "",
@@ -470,6 +474,7 @@ const Proposal = () => {
   };
 
   const onSubmit = (values) => {
+    setStatusLoading("pending");
     if (serviceFeeList?.length === 0 || !serviceFeeList) {
       addToast({
         title: "RESTRICTED !.",
@@ -477,6 +482,7 @@ const Proposal = () => {
           "Service prices are not available. Please select a valid service.",
         color: "danger",
       });
+      setStatusLoading("");
       return;
     }
 
@@ -487,6 +493,17 @@ const Proposal = () => {
           "Please add company and unit details before creating proposal.",
         color: "danger",
       });
+      setStatusLoading("");
+      return;
+    }
+
+    if (!company?.units?.[0]?.unitContacts?.length === 0) {
+      addToast({
+        title: "RESTRICTED",
+        description: "Please add contacts in company unit.",
+        color: "danger",
+      });
+      setStatusLoading("");
       return;
     }
 
@@ -496,6 +513,7 @@ const Proposal = () => {
         description: "No slug has been selected for this lead service. !.",
         color: "danger",
       });
+      setStatusLoading("");
       return;
     }
 
@@ -504,6 +522,7 @@ const Proposal = () => {
         title: "Please select at least one brochure",
         color: "danger",
       });
+      setStatusLoading("");
       return;
     }
 
@@ -512,6 +531,7 @@ const Proposal = () => {
         title: "Please select a proposal template",
         color: "danger",
       });
+      setStatusLoading("");
       return;
     }
 
@@ -521,6 +541,7 @@ const Proposal = () => {
         description: "Please enter at least 1000 characters in the mail body",
         color: "danger",
       });
+      setStatusLoading("");
       return;
     }
 
@@ -534,6 +555,7 @@ const Proposal = () => {
         description: "Proposal must be at least 1000 characters",
         color: "danger",
       });
+      setStatusLoading("");
       return;
     }
 
@@ -567,6 +589,7 @@ const Proposal = () => {
       dispatch(editLeadPropposal({ id: selectedProposal.id, ...values })).then(
         (resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
+            setStatusLoading("success");
             addToast({
               title: "SUCCESS",
               description:
@@ -579,6 +602,7 @@ const Proposal = () => {
             dispatch(getAllProposalByLeadId(leadId));
             proposalFormModal.onClose();
           } else {
+            setStatusLoading("rejected");
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         },
@@ -586,6 +610,7 @@ const Proposal = () => {
     } else {
       dispatch(sendProposal(values)).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
+          setStatusLoading("success");
           addToast({
             title: "SUCCESS",
             description:
@@ -601,6 +626,7 @@ const Proposal = () => {
           dispatch(getAllProposalByLeadId(leadId));
           proposalFormModal.onClose();
         } else {
+          setStatusLoading("rejected");
           addToast({
             title: resp?.payload?.data?.errorCode || "ERROR",
             description:
@@ -828,7 +854,7 @@ const Proposal = () => {
           onPress={templateModal.onOpen}
           variant="flat"
         >
-          Select Proposal Template
+          Select Proposal Template {templateName && `(1) - ${templateName}`}
         </Button>
       </div>
 
@@ -902,265 +928,195 @@ const Proposal = () => {
   );
 
   return (
-    <div className="flex flex-col gap-5 h-[75vh] overflow-auto p-3 w-full">
-      <div className="bg-white rounded-xl border shadow-sm p-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Proposals</h2>
-            <p className="text-sm text-gray-500">
-              Select a proposal to view, edit, or cancel.
-            </p>
-          </div>
-
-          <Button
-            color="primary"
-            startContent={<Plus size={16} />}
-            onPress={prepareCreateProposal}
-          >
-            Add Proposal
-          </Button>
-        </div>
-
-        {proposalList.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {proposalList.map((proposal) => (
-              <div
-                key={proposal.id}
-                className={`rounded-xl border p-4 bg-white transition-all ${
-                  selectedProposal?.id === proposal.id &&
-                  !isCreatingProposal &&
-                  !editProposal
-                    ? "border-blue-500 shadow-md"
-                    : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">
-                      {proposal?.solutionName ||
-                        proposal?.templateName ||
-                        "Proposal"}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1 truncate">
-                      {proposal?.mailSubject || "-"}
-                    </p>
-                  </div>
-
-                  <span
-                    className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium ${
-                      proposal?.status === "CANCELLED" ||
-                      proposal?.status === "REJECTED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {proposal?.status === "REJECTED" ||
-                    proposal?.status === "REJECTED"
-                      ? "CANCELLED"
-                      : proposal?.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-                  <div>
-                    <p className="text-xs text-gray-500">Created By</p>
-                    <p className="font-medium text-gray-800 truncate">
-                      {proposal?.createdByEmail || "-"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-gray-500">Date</p>
-                    <p className="font-medium text-gray-800">
-                      {proposal?.createDate
-                        ? dayjs(proposal.createDate).format("DD-MM-YYYY")
-                        : "-"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <p className="text-xs text-gray-500 mb-1">Mail To</p>
-                  <div className="flex flex-wrap gap-1">
-                    {proposal?.mailTo?.slice(0, 2).map((email, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs max-w-[130px] truncate"
-                      >
-                        {email}
-                      </span>
-                    ))}
-                    {proposal?.mailTo?.length > 2 && (
-                      <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs">
-                        +{proposal.mailTo.length - 2}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    size="sm"
-                    color="primary"
-                    variant="flat"
-                    className="flex-1"
-                    onPress={() => handleViewProposal(proposal)}
-                  >
-                    View
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="flat"
-                    className="flex-1"
-                    isDisabled={isCancelled(proposal?.status)}
-                    onPress={() => {
-                      // if (
-                      //   leadData?.proposalApproved ||
-                      //   leadData?.proposalStatus === "INITIATED"
-                      // ) {
-                      //   addToast({
-                      //     title: "RESTRICTED",
-                      //     description:
-                      //       "You are not required to cancel initiated or approved proposal.",
-                      //     color: "danger",
-                      //   });
-                      //   return;
-                      // }
-                      handleOpenCancelModal(proposal);
-                    }}
-                  >
-                    Reject / Cancel
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed py-8 text-center text-gray-500">
-            No proposals found. Click Add Proposal to create one.
-          </div>
-        )}
-      </div>
-
-      <Modal
-        isOpen={templateModal.isOpen}
-        onOpenChange={templateModal.onOpenChange}
-        size="4xl"
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <span className="text-base font-semibold">
-              Select Proposal Template
-            </span>
-            <span className="text-xs text-gray-500">
-              Click a template to apply it instantly
-            </span>
-          </ModalHeader>
-
-          <ModalBody>
-            <div className="mb-3">
-              <Input
-                size="sm"
-                placeholder="Search template..."
-                startContent={<Search size={14} />}
-                className="cursor-pointer"
-                onChange={(e) => {
-                  const value = e.target.value.toLowerCase();
-                  setTemplates(
-                    templateList.filter((t) =>
-                      t.name.toLowerCase().includes(value),
-                    ),
-                  );
-                }}
-              />
+    <>
+      {statusLoading === "pending" && <LoadingSpinner />}
+      <div className="flex flex-col gap-5 h-[75vh] overflow-auto p-3 w-full">
+        <div className="bg-white rounded-xl border shadow-sm p-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Proposals</h2>
+              <p className="text-sm text-gray-500">
+                Select a proposal to view, edit, or cancel.
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
-              {templates?.length > 0 ? (
-                templates.map((item) => (
-                  <div
-                    key={`template-${item.id}`}
-                    onClick={() => handleSetData(item)}
-                    className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2 transition-all duration-150 hover:border-blue-500 hover:bg-blue-50"
-                  >
-                    <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
-                      <img
-                        src={template}
-                        alt="template"
-                        className="h-12 w-auto object-contain"
-                      />
+            <Button
+              color="primary"
+              startContent={<Plus size={16} />}
+              onPress={prepareCreateProposal}
+            >
+              Add Proposal
+            </Button>
+          </div>
+
+          {proposalList.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {proposalList.map((proposal) => (
+                <div
+                  key={proposal.id}
+                  className={`rounded-xl border p-4 bg-white transition-all ${
+                    selectedProposal?.id === proposal.id &&
+                    !isCreatingProposal &&
+                    !editProposal
+                      ? "border-blue-500 shadow-md"
+                      : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {proposal?.solutionName ||
+                          proposal?.templateName ||
+                          "Proposal"}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {proposal?.mailSubject || "-"}
+                      </p>
                     </div>
 
-                    <p
-                      className="text-xs font-medium text-gray-800 truncate text-center"
-                      title={item.name}
-                    >
-                      {item.name}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full text-center text-gray-500 py-8 text-sm">
-                  No templates found
-                </div>
-              )}
-            </div>
-          </ModalBody>
-
-          <ModalFooter className="border-t pt-3">
-            <Button
-              size="sm"
-              variant="flat"
-              className="cursor-pointer"
-              onPress={templateModal.onClose}
-            >
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        isOpen={brochureModal.isOpen}
-        onOpenChange={brochureModal.onOpenChange}
-        size="4xl"
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <span className="text-base font-semibold">Select Brochures</span>
-            <span className="text-xs text-gray-500">
-              You can select multiple brochures
-            </span>
-          </ModalHeader>
-
-          <ModalBody>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
-              {brochureList?.length > 0 ? (
-                brochureList.map((item) => {
-                  const isSelected = brochureUrl.includes(item.id);
-
-                  return (
-                    <div
-                      key={`brochure-${item.id}`}
-                      onClick={() => handleSetBrochureData(item.id)}
-                      className={`relative cursor-pointer rounded-lg border p-2 transition-all duration-150 ${
-                        isSelected
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50"
+                    <span
+                      className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium ${
+                        proposal?.status === "CANCELLED" ||
+                        proposal?.status === "REJECTED"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
                       }`}
                     >
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 bg-blue-500 rounded-full p-1">
-                          <Check size={12} className="text-white" />
-                        </div>
-                      )}
+                      {proposal?.status === "REJECTED" ||
+                      proposal?.status === "REJECTED"
+                        ? "CANCELLED"
+                        : proposal?.status}
+                    </span>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-500">Created By</p>
+                      <p className="font-medium text-gray-800 truncate">
+                        {proposal?.createdByEmail || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500">Date</p>
+                      <p className="font-medium text-gray-800">
+                        {proposal?.createDate
+                          ? dayjs(proposal.createDate).format("DD-MM-YYYY")
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 mb-1">Mail To</p>
+                    <div className="flex flex-wrap gap-1">
+                      {proposal?.mailTo?.slice(0, 2).map((email, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs max-w-[130px] truncate"
+                        >
+                          {email}
+                        </span>
+                      ))}
+                      {proposal?.mailTo?.length > 2 && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs">
+                          +{proposal.mailTo.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      size="sm"
+                      color="primary"
+                      variant="flat"
+                      className="flex-1"
+                      onPress={() => handleViewProposal(proposal)}
+                    >
+                      View
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="flat"
+                      className="flex-1"
+                      isDisabled={isCancelled(proposal?.status)}
+                      onPress={() => {
+                        // if (
+                        //   leadData?.proposalApproved ||
+                        //   leadData?.proposalStatus === "INITIATED"
+                        // ) {
+                        //   addToast({
+                        //     title: "RESTRICTED",
+                        //     description:
+                        //       "You are not required to cancel initiated or approved proposal.",
+                        //     color: "danger",
+                        //   });
+                        //   return;
+                        // }
+                        handleOpenCancelModal(proposal);
+                      }}
+                    >
+                      Reject / Cancel
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed py-8 text-center text-gray-500">
+              No proposals found. Click Add Proposal to create one.
+            </div>
+          )}
+        </div>
+
+        <Modal
+          isOpen={templateModal.isOpen}
+          onOpenChange={templateModal.onOpenChange}
+          size="4xl"
+        >
+          <ModalContent>
+            <ModalHeader className="flex flex-col gap-1">
+              <span className="text-base font-semibold">
+                Select Proposal Template
+              </span>
+              <span className="text-xs text-gray-500">
+                Click a template to apply it instantly
+              </span>
+            </ModalHeader>
+
+            <ModalBody>
+              <div className="mb-3">
+                <Input
+                  size="sm"
+                  placeholder="Search template..."
+                  startContent={<Search size={14} />}
+                  className="cursor-pointer"
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase();
+                    setTemplates(
+                      templateList.filter((t) =>
+                        t.name.toLowerCase().includes(value),
+                      ),
+                    );
+                  }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                {templates?.length > 0 ? (
+                  templates.map((item) => (
+                    <div
+                      key={`template-${item.id}`}
+                      onClick={() => handleSetData(item)}
+                      className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2 transition-all duration-150 hover:border-blue-500 hover:bg-blue-50"
+                    >
                       <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
                         <img
                           src={template}
-                          alt="brochure"
+                          alt="template"
                           className="h-12 w-auto object-contain"
                         />
                       </div>
@@ -1172,96 +1128,169 @@ const Proposal = () => {
                         {item.name}
                       </p>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="col-span-full text-center text-gray-500 py-8 text-sm">
-                  No brochures available
-                </div>
-              )}
-            </div>
-          </ModalBody>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center text-gray-500 py-8 text-sm">
+                    No templates found
+                  </div>
+                )}
+              </div>
+            </ModalBody>
 
-          <ModalFooter className="border-t pt-3">
-            <Button
-              size="sm"
-              variant="flat"
-              className="cursor-pointer"
-              onPress={brochureModal.onClose}
-            >
-              Done
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+            <ModalFooter className="border-t pt-3">
+              <Button
+                size="sm"
+                variant="flat"
+                className="cursor-pointer"
+                onPress={templateModal.onClose}
+              >
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-      <Modal
-        isOpen={cancelModal.isOpen}
-        onOpenChange={cancelModal.onOpenChange}
-      >
-        <ModalContent>
-          <ModalHeader>Cancel Proposal</ModalHeader>
+        <Modal
+          isOpen={brochureModal.isOpen}
+          onOpenChange={brochureModal.onOpenChange}
+          size="4xl"
+        >
+          <ModalContent>
+            <ModalHeader className="flex flex-col gap-1">
+              <span className="text-base font-semibold">Select Brochures</span>
+              <span className="text-xs text-gray-500">
+                You can select multiple brochures
+              </span>
+            </ModalHeader>
 
-          <ModalBody>
-            <p className="text-sm text-gray-500">
-              Please enter the reason for cancelling this proposal.
-            </p>
+            <ModalBody>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                {brochureList?.length > 0 ? (
+                  brochureList.map((item) => {
+                    const isSelected = brochureUrl.includes(item.id);
 
-            <Input
-              label="Reason"
-              placeholder="Enter cancellation reason"
-              variant="bordered"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-            />
-          </ModalBody>
+                    return (
+                      <div
+                        key={`brochure-${item.id}`}
+                        onClick={() => handleSetBrochureData(item.id)}
+                        className={`relative cursor-pointer rounded-lg border p-2 transition-all duration-150 ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50"
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 bg-blue-500 rounded-full p-1">
+                            <Check size={12} className="text-white" />
+                          </div>
+                        )}
 
-          <ModalFooter>
-            <Button variant="flat" onPress={cancelModal.onClose}>
-              Close
-            </Button>
+                        <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
+                          <img
+                            src={template}
+                            alt="brochure"
+                            className="h-12 w-auto object-contain"
+                          />
+                        </div>
 
-            <Button color="danger" onPress={handleCancelProposal}>
-              Cancel Proposal
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+                        <p
+                          className="text-xs font-medium text-gray-800 truncate text-center"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-full text-center text-gray-500 py-8 text-sm">
+                    No brochures available
+                  </div>
+                )}
+              </div>
+            </ModalBody>
 
-      <Modal
-        isOpen={proposalViewModal.isOpen}
-        onOpenChange={proposalViewModal.onOpenChange}
-        size="full"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          <ModalHeader className="border-b">Proposal Overview</ModalHeader>
+            <ModalFooter className="border-t pt-3">
+              <Button
+                size="sm"
+                variant="flat"
+                className="cursor-pointer"
+                onPress={brochureModal.onClose}
+              >
+                Done
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-          <ModalBody className="bg-gray-100 p-0">
-            {selectedProposal && renderProposalView()}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+        <Modal
+          isOpen={cancelModal.isOpen}
+          onOpenChange={cancelModal.onOpenChange}
+        >
+          <ModalContent>
+            <ModalHeader>Cancel Proposal</ModalHeader>
 
-      <Modal
-        isOpen={proposalFormModal.isOpen}
-        onOpenChange={proposalFormModal.onOpenChange}
-        size="full"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          <ModalHeader className="border-b">
-            {editProposal ? "Edit Proposal" : "Create Proposal"}
-          </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-gray-500">
+                Please enter the reason for cancelling this proposal.
+              </p>
 
-          <ModalBody className="bg-gray-50 p-4">
-            <div className="max-w-6xl mx-auto w-full bg-white rounded-xl border shadow-sm p-4">
-              {renderProposalForm()}
-            </div>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </div>
+              <Input
+                label="Reason"
+                placeholder="Enter cancellation reason"
+                variant="bordered"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+              />
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="flat" onPress={cancelModal.onClose}>
+                Close
+              </Button>
+
+              <Button color="danger" onPress={handleCancelProposal}>
+                Cancel Proposal
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        <Modal
+          isOpen={proposalViewModal.isOpen}
+          onOpenChange={proposalViewModal.onOpenChange}
+          size="full"
+          scrollBehavior="inside"
+        >
+          <ModalContent>
+            <ModalHeader className="border-b">Proposal Overview</ModalHeader>
+
+            <ModalBody className="bg-gray-100 p-0">
+              {selectedProposal && renderProposalView()}
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        <Modal
+          isOpen={proposalFormModal.isOpen}
+          onOpenChange={proposalFormModal.onOpenChange}
+          size="full"
+          scrollBehavior="inside"
+        >
+          <ModalContent>
+            <ModalHeader className="border-b">
+              {editProposal ? "Edit Proposal" : "Create Proposal"}
+            </ModalHeader>
+
+            <ModalBody className="bg-gray-50 p-4">
+              <div className="max-w-6xl mx-auto w-full bg-white rounded-xl border shadow-sm p-4">
+                {renderProposalForm()}
+              </div>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      </div>
+    </>
   );
 };
 

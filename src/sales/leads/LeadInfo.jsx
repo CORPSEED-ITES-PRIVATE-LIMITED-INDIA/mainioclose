@@ -1342,7 +1342,7 @@ const LeadInfo = () => {
 
                           <div className="rounded-lg bg-white px-2.5 py-2 shadow-sm">
                             <p className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-default-700">
-                              {leadData?.description ||
+                              {leadData?.lead?.description ||
                                 "No description available"}
                             </p>
                           </div>
