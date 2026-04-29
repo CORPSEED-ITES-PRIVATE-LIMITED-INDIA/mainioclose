@@ -80,14 +80,14 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
 
   const handleFileInputChange = (e) => {
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
         title: "RESTRICTED",
-        color: "danger",
         description:
-          "Service name cannot be changed as proposal is already approved or initiated.",
+          "You are not required perform any action after approval or initiation of proposal.",
+        color: "danger",
       });
       return;
     }
@@ -97,14 +97,14 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
         title: "RESTRICTED",
-        color: "danger",
         description:
-          "Service name cannot be changed as proposal is already approved or initiated.",
+          "You are not required perform any action after approval or initiation of proposal.",
+        color: "danger",
       });
       return;
     }
@@ -121,14 +121,14 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
   const handleDragOver = (e) => {
     e.preventDefault();
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
         title: "RESTRICTED",
-        color: "danger",
         description:
-          "Service name cannot be changed as proposal is already approved or initiated.",
+          "You are not required perform any action after approval or initiation of proposal.",
+        color: "danger",
       });
       return;
     }
@@ -137,14 +137,14 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
 
   const handleDragLeave = () => {
     if (
-      leadData?.proposalApproved ||
+      leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
         title: "RESTRICTED",
-        color: "danger",
         description:
-          "Service name cannot be changed as proposal is already approved or initiated.",
+          "You are not required perform any action after approval or initiation of proposal.",
+        color: "danger",
       });
       return;
     }

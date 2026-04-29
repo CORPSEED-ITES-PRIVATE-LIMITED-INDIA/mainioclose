@@ -35,9 +35,11 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import { padZero } from "../../common";
 import {
+  getLocalTimeZone,
   parseAbsoluteToLocal,
   parseDate,
   toCalendarDateTime,
+  today,
 } from "@internationalized/date";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,12 +91,12 @@ const LeadTask = () => {
   const data = useSelector((state) => state.leads.getSingleLeadTask);
   const count = useSelector((state) => state.leads.getSingleLeadTask?.length);
   const allTaskStatusData = useSelector(
-    (state) => state.common.allTaskStatusData
+    (state) => state.common.allTaskStatusData,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [rowData, setRowData] = useState(null);
@@ -115,7 +117,7 @@ const LeadTask = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -124,8 +126,8 @@ const LeadTask = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -194,7 +196,7 @@ const LeadTask = () => {
           leadId,
           assignedById: userId,
           currentUserId: userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -555,6 +557,7 @@ const LeadTask = () => {
                         <DatePicker
                           hideTimeZone
                           showMonthAndYearPickers
+                          minValue={today(getLocalTimeZone())}
                           value={
                             field?.value
                               ? parseAbsoluteToLocal(field?.value)

@@ -181,7 +181,7 @@ const AllProposal = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(getAllProposalByUserIdForManager(filteration));
-          if (updateStatusData.status === "approved") {
+          if (updateStatusData.status === "APPROVED") {
             addToast({
               title: `Success`,
               description: "Proposal approved successfully and sent to client.",
@@ -220,9 +220,7 @@ const AllProposal = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link className="font-normal">
-                {rowData?.solutionName || "-"}
-              </Link>
+              <p className="font-normal">{rowData?.solutionName || "-"}</p>
             </div>
           </div>
         );
@@ -251,7 +249,9 @@ const AllProposal = () => {
         return (
           <div className="flex flex-col">
             <span className="font-normal capitalize">
-              {rowData?.status || "-"}
+              {rowData?.status === "CANCELLED" || rowData?.status === "REJECTED"
+                ? "REJECTED"
+                : rowData?.status || "-"}
             </span>
           </div>
         );
@@ -288,7 +288,10 @@ const AllProposal = () => {
                 }}
               >
                 <DropdownItem key="view">View</DropdownItem>
+                {/* {rowData?.status === "CANCELLED" ||
+                rowData?.status === "REJECTED" ? null : ( */}
                 <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                {/* )} */}
                 <DropdownItem key="REJECTED">REJECTED</DropdownItem>
               </DropdownMenu>
             </Dropdown>

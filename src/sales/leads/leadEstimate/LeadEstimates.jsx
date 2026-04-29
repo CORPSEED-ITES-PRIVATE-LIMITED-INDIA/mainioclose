@@ -505,12 +505,13 @@ const LeadEstimates = () => {
     };
 
     if (
-      !leadData?.praposalApproved &&
-      proposalDataDetail?.status !== "approved"
+      leadData?.proposalStatus === "APPROVED" ||
+      leadData?.proposalStatus === "INITIATED"
     ) {
       addToast({
-        title: "RESTRICTED !.",
-        description: "The proposal has neither been sent nor approved yet.",
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action after approval or initiation of proposal.",
         color: "danger",
       });
       return;
