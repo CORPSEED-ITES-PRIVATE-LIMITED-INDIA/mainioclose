@@ -413,6 +413,19 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openEditUnitModal = async (unit) => {
+    if (
+      leadData?.proposalStatus === "APPROVED" ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action after approval or initiation of proposal.",
+        color: "danger",
+      });
+      return;
+    }
+
     setEditingUnit(unit);
     setIsInitializingUnit(true);
     setUnitModal(true);
