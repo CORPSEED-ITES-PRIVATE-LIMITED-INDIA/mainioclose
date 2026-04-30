@@ -689,7 +689,7 @@ const CompanyAndUnitsInLead = () => {
               title: "Unit details updated successfully.",
               color: "success",
             });
-            console.log("werfgkqweguiyg   11111", linkRes);
+            console.log("werfgkqweguiyg   11111");
             dispatch(
               linkCompanyAndUnitsWithLead({
                 companyId: editingUnit?.companyId || effectiveCompany?.id,
@@ -762,7 +762,7 @@ const CompanyAndUnitsInLead = () => {
                 userId,
               }),
             ).then((linkRes) => {
-              console.log("werfgkqweguiyg", linkRes);
+              console.log("werfgkqweguiyg 333", linkRes);
               if (linkRes?.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Company and unit linked successfully.",
