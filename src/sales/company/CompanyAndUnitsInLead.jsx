@@ -550,6 +550,32 @@ const CompanyAndUnitsInLead = () => {
               title: "Company details updated successfully.",
               color: "success",
             });
+
+            dispatch(
+              linkCompanyAndUnitsWithLead({
+                companyId: resp?.payload?.id,
+                leadId,
+                unitId: resp?.payload?.units?.[0]?.id,
+                userId,
+              }),
+            ).then((linkRes) => {
+              console.log("werfgkqweguiyg", linkRes);
+              if (linkRes?.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Company and unit linked successfully.",
+                  color: "success",
+                });
+              } else {
+                addToast({
+                  title: "ERROR",
+                  description:
+                    linkRes?.payload?.message ||
+                    "Company and Units not linked to Lead !.",
+                  color: "danger",
+                });
+              }
+            });
+
             handleCloseCompanyModal();
             refreshLeadCompanyAndUnits();
           } else {
