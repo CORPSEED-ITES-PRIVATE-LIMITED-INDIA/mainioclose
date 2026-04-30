@@ -497,7 +497,7 @@ const Proposal = () => {
       return;
     }
 
-    if (!company?.units?.[0]?.unitContacts?.length === 0) {
+    if (company?.units?.[0]?.unitContacts?.length === 0) {
       addToast({
         title: "RESTRICTED",
         description: "Please add contacts in company unit.",
