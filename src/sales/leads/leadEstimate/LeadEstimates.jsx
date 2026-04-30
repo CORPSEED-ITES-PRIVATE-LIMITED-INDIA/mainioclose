@@ -534,7 +534,7 @@ const LeadEstimates = () => {
       ...formattedValues,
       companyId: company?.id,
       unitId: company?.units?.[0]?.id,
-      contactId: company?.units?.[0]?.unitContacts?.id,
+      contactId: company?.units?.[0]?.unitContacts?.[0]?.id,
       solutionType: solutionDetail?.type,
       solutionId: solutionDetail?.id,
       solutionName: solutionDetail?.name,
