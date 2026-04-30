@@ -518,7 +518,7 @@ const LeadEstimates = () => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "Actions are restricted before proposal approval and after proposal initiation.",
         color: "danger",
       });
       return;

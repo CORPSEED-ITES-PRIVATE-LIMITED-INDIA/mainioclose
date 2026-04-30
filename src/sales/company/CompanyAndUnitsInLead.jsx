@@ -373,17 +373,38 @@ const CompanyAndUnitsInLead = () => {
 
     resetUnitModalState();
 
-    unitForm.setFieldsValue({
-      unitName: "",
-      companyTypeId: undefined,
-      gstTypeId: undefined,
-      gstNo: "",
-      address: "",
-      country: "",
-      state: "",
-      city: "",
-      pinCode: "",
-    });
+    const internationalId = getGstTypeIdByName("International");
+
+    if (
+      allowedGstTypeNames.length === 1 &&
+      allowedGstTypeNames[0] === "International"
+    ) {
+      setIsGstMandatory(false);
+
+      unitForm.setFieldsValue({
+        unitName: "",
+        companyTypeId: undefined,
+        gstTypeId: internationalId,
+        gstNo: "",
+        address: "",
+        country: undefined,
+        state: undefined,
+        city: undefined,
+        pinCode: "",
+      });
+    } else {
+      unitForm.setFieldsValue({
+        unitName: "",
+        companyTypeId: undefined,
+        gstTypeId: undefined,
+        gstNo: "",
+        address: "",
+        country: "",
+        state: "",
+        city: "",
+        pinCode: "",
+      });
+    }
 
     setUnitModal(true);
   };
@@ -668,7 +689,11 @@ const CompanyAndUnitsInLead = () => {
       updatedById: userId,
     };
 
-    if (!isGstMandatory) {
+    const selectedGstTypeName = String(selectedGstType?.name || "")
+      .trim()
+      .toLowerCase();
+
+    if (selectedGstTypeName !== "registered") {
       payload.gstNo = "";
     }
 
@@ -913,6 +938,17 @@ const CompanyAndUnitsInLead = () => {
     return true;
   };
 
+  const normalizeName = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const getGstTypeIdByName = (name) => {
+    return gstTypeList?.find(
+      (item) => normalizeName(item?.name) === normalizeName(name),
+    )?.id;
+  };
+
   const getGstTypeName = (unit) => {
     return (
       unit?.gstTypeName ||
@@ -928,78 +964,107 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const allowedGstTypeNames = useMemo(() => {
-    const otherUnits = editingUnit?.id
-      ? units.filter((unit) => String(unit?.id) !== String(editingUnit.id))
-      : units;
-
-    // No units yet → show all options
-    if (!otherUnits.length) {
+    // Update case: allow changing GST type freely
+    if (editingUnit?.id) {
       return ["Registered", "Unregistered", "SEZ", "International"];
     }
 
-    const firstUnitType = getGstTypeName(otherUnits[0]);
-
-    const hasRegistered = otherUnits.some(
-      (unit) => getGstTypeName(unit) === "Registered",
-    );
-
-    const hasUnregistered = otherUnits.some(
-      (unit) => getGstTypeName(unit) === "Unregistered",
-    );
-
-    // 🔴 NEW RULE (highest priority)
-    if (firstUnitType === "International") {
-      return ["International"]; // 🔒 lock completely
+    // Add case: no unit yet
+    if (!units || units.length === 0) {
+      return ["Registered", "Unregistered", "SEZ", "International"];
     }
 
-    if (hasRegistered) {
+    const getName = (unit) =>
+      String(getGstTypeName(unit) || "")
+        .trim()
+        .toLowerCase();
+
+    const firstType = getName(units[0]);
+
+    if (firstType === "international") {
+      return ["International"];
+    }
+
+    if (firstType === "registered") {
       return ["Registered", "SEZ"];
     }
 
-    if (hasUnregistered) {
+    if (firstType === "unregistered") {
       return ["Unregistered", "SEZ"];
     }
 
-    if (firstUnitType === "SEZ") {
+    if (firstType === "sez") {
+      const hasRegistered = units.some(
+        (unit) => getName(unit) === "registered",
+      );
+      const hasUnregistered = units.some(
+        (unit) => getName(unit) === "unregistered",
+      );
+
+      if (hasRegistered) return ["Registered", "SEZ"];
+      if (hasUnregistered) return ["Unregistered", "SEZ"];
+
       return ["Registered", "Unregistered", "SEZ"];
     }
 
-    return ["Registered", "Unregistered", "SEZ"];
+    return ["Registered", "Unregistered", "SEZ", "International"];
   }, [units, editingUnit, gstTypeList]);
 
   const filteredGstTypeList = useMemo(() => {
     return gstTypeList.filter((item) =>
-      allowedGstTypeNames.includes(item?.name),
+      allowedGstTypeNames.some(
+        (name) => normalizeName(name) === normalizeName(item?.name),
+      ),
     );
   }, [gstTypeList, allowedGstTypeNames]);
 
-  // useEffect(() => {
-  //   if (!unitModal) return;
-  //   if (!selectedUnitGstTypeId) return;
-  //   if (isInternationalGstType) return;
+  const handleUnitGstTypeChange = (value) => {
+    if (isInitializingUnit) return;
 
-  //   const currentCountry = unitForm.getFieldValue("country");
-  //   const currentState = unitForm.getFieldValue("state");
-  //   const currentCity = unitForm.getFieldValue("city");
+    const selectedGstType = gstTypeList.find(
+      (item) => String(item?.id) === String(value),
+    );
 
-  //   unitForm.setFieldsValue({
-  //     country: currentCountry || "India",
-  //     state: currentState || undefined,
-  //     city: currentCity || undefined,
-  //   });
+    const gstTypeName = String(selectedGstType?.name || "")
+      .trim()
+      .toLowerCase();
 
-  //   dispatch(getAllStatesByCountryName(currentCountry || "India"));
+    const isRegistered = gstTypeName === "registered";
 
-  //   if (currentState) {
-  //     dispatch(getAllCitiesByStateName(currentState));
-  //   }
-  // }, [
-  //   unitModal,
-  //   selectedUnitGstTypeId,
-  //   isInternationalGstType,
-  //   unitForm,
-  //   dispatch,
-  // ]);
+    setIsGstMandatory(isRegistered);
+
+    unitForm.setFieldsValue({
+      gstTypeId: value,
+      gstNo: isRegistered ? unitForm.getFieldValue("gstNo") : "",
+      country: gstTypeName === "international" ? undefined : "India",
+      state: undefined,
+      city: undefined,
+    });
+
+    if (gstTypeName !== "international") {
+      dispatch(getAllStatesByCountryName("India"));
+    }
+  };
+
+  useEffect(() => {
+    if (!unitModal) return;
+
+    if (
+      allowedGstTypeNames.length === 1 &&
+      allowedGstTypeNames[0] === "International"
+    ) {
+      const internationalId = getGstTypeIdByName("International");
+
+      if (internationalId) {
+        unitForm.setFieldsValue({
+          gstTypeId: internationalId,
+          gstNo: "",
+        });
+
+        setIsGstMandatory(false);
+      }
+    }
+  }, [unitModal, allowedGstTypeNames, gstTypeList, unitForm]);
 
   return (
     <>
@@ -1585,34 +1650,7 @@ const CompanyAndUnitsInLead = () => {
               fieldNames={{ label: "name", value: "id" }}
               placeholder="Select GST Type"
               disabled={allowedGstTypeNames.length === 1}
-              onChange={(value) => {
-                if (isInitializingUnit) return; // 🚫 stop reset during edit load
-
-                const selectedGstType = gstTypeList.find(
-                  (item) => String(item?.id) === String(value),
-                );
-
-                const canEnterGst =
-                  selectedGstType?.name === "Registered" ||
-                  selectedGstType?.name === "SEZ";
-
-                setIsGstMandatory(canEnterGst);
-
-                unitForm.setFieldsValue({
-                  gstTypeId: value,
-                  gstNo: canEnterGst ? unitForm.getFieldValue("gstNo") : "",
-                  country:
-                    selectedGstType?.name === "International"
-                      ? undefined
-                      : "India",
-                  state: undefined,
-                  city: undefined,
-                });
-
-                if (selectedGstType?.name !== "International") {
-                  dispatch(getAllStatesByCountryName("India"));
-                }
-              }}
+              onChange={handleUnitGstTypeChange}
             />
           </Form.Item>
 
@@ -1620,24 +1658,37 @@ const CompanyAndUnitsInLead = () => {
             label="GST Number"
             name="gstNo"
             getValueFromEvent={(e) => formatGSTInput(e.target.value)}
-            // rules={[
-            //   {
-            //     required: isGstMandatory,
-            //     message: "Please enter GST number",
-            //   },
-            //   () => ({
-            //     validator(_, value) {
-            //       if (!isGstMandatory && !value) return Promise.resolve();
-            //       if (!value) return Promise.resolve();
-            //       return validateGST(_, value);
-            //     },
-            //   }),
-            // ]}
+            disabled={
+              !["registered", "sez"].includes(
+                String(selectedUnitGstTypeName || "")
+                  .trim()
+                  .toLowerCase(),
+              )
+            }
+            rules={[
+              {
+                required:
+                  String(selectedUnitGstTypeName || "")
+                    .trim()
+                    .toLowerCase() === "registered",
+                message: "Please enter GST number",
+              },
+              () => ({
+                validator(_, value) {
+                  if (!value) return Promise.resolve();
+                  return validateGST(_, value);
+                },
+              }),
+            ]}
           >
             <Input
               placeholder="GST Number"
               maxLength={15}
-              disabled={!isGstMandatory}
+              disabled={
+                String(selectedUnitGstTypeName || "")
+                  .trim()
+                  .toLowerCase() !== "registered"
+              }
             />
           </Form.Item>
 
