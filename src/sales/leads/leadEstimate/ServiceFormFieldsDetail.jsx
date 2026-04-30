@@ -82,7 +82,6 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                 <Input
                   type="number"
                   placeholder="Amount"
-                  readOnly
                   prefix={<IndianRupee className="h-4 w-4" />}
                 />
               </Form.Item>
@@ -126,7 +125,6 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                 <Input
                   type="number"
                   placeholder="GST %"
-                  readOnly
                   suffix={<Percent className="h-4 w-4" />}
                 />
               </Form.Item>
