@@ -665,9 +665,35 @@ const CompanyAndUnitsInLead = () => {
               title: "Unit details updated successfully.",
               color: "success",
             });
+            dispatch(
+              linkCompanyAndUnitsWithLead({
+                companyId: editingUnit?.companyId || effectiveCompany?.id,
+                leadId,
+                unitId: editingUnit?.id,
+                userId,
+              }),
+            ).then((linkRes) => {
+              console.log("werfgkqweguiyg", linkRes);
+              if (linkRes?.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Company and unit linked successfully.",
+                  color: "success",
+                });
+              } else {
+                addToast({
+                  title: "ERROR",
+                  description:
+                    linkRes?.payload?.message ||
+                    "Company and Units not linked to Lead !.",
+                  color: "danger",
+                });
+              }
+            });
+
             setUnitModal(false);
             resetUnitModalState();
             refreshLeadCompanyAndUnits();
+
             if (selectedCompanyId) {
               refreshSelectedCompanyRelatedData(selectedCompanyId);
             } else {
@@ -701,8 +727,33 @@ const CompanyAndUnitsInLead = () => {
               title: "Unit details saved.",
               color: "success",
             });
-
             const newUnit = resp?.payload;
+
+            dispatch(
+              linkCompanyAndUnitsWithLead({
+                companyId: effectiveCompany?.id,
+                leadId,
+                unitId: newUnit?.id,
+                userId,
+              }),
+            ).then((linkRes) => {
+              console.log("werfgkqweguiyg", linkRes);
+              if (linkRes?.meta.requestStatus === "fulfilled") {
+                addToast({
+                  title: "Company and unit linked successfully.",
+                  color: "success",
+                });
+              } else {
+                addToast({
+                  title: "ERROR",
+                  description:
+                    linkRes?.payload?.message ||
+                    "Company and Units not linked to Lead !.",
+                  color: "danger",
+                });
+              }
+            });
+
             refreshLeadCompanyAndUnits();
             setUnitModal(false);
             resetUnitModalState();
