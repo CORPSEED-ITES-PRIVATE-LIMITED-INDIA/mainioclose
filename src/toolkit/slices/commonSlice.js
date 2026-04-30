@@ -604,6 +604,22 @@ export const createContactViaEstimateInCompany = createAsyncThunk(
   },
 );
 
+export const updateContactViaEstimateInCompany = createAsyncThunk(
+  "updateContactViaEstimateInCompany",
+  async ({ id, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/contacts/update-contact/${id}?requestingUserId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      console.log("dssssssssssssssssssss", err);
+      return rejectWithValue(err.response.data.message);
+    }
+  },
+);
+
 export const getContactDetailListByCompanyId = createAsyncThunk(
   "getContactDetailListByCompanyId",
   async ({ companyId, userId }) => {

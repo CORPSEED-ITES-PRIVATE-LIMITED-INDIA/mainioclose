@@ -190,7 +190,7 @@ const Proposal = () => {
       .filter(Boolean);
 
   const isCancelled = (status) =>
-    status === "REJECTED" || status === "CANCELLED";
+    status === "REJECTED" || status === "CANCELLED" || status === "APPROVED";
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
@@ -969,6 +969,9 @@ const Proposal = () => {
                           proposal?.templateName ||
                           "Proposal"}
                       </h3>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {proposal?.proposalNumber || "-"}
+                      </p>
                       <p className="text-xs text-gray-500 mt-1 truncate">
                         {proposal?.mailSubject || "-"}
                       </p>

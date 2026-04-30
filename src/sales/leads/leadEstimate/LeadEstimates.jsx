@@ -517,8 +517,7 @@ const LeadEstimates = () => {
     if (leadData?.proposalStatus !== "APPROVED") {
       addToast({
         title: "RESTRICTED",
-        description:
-          "Actions are restricted before proposal approval and after proposal initiation.",
+        description: "Actions are restricted before proposal approval .",
         color: "danger",
       });
       return;

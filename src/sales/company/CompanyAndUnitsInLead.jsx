@@ -27,6 +27,7 @@ import {
   getAllCitiesByStateName,
   getAllCountries,
   getAllStatesByCountryName,
+  updateContactViaEstimateInCompany,
 } from "../../toolkit/slices/commonSlice";
 import {
   addBasicCompanyDetail,
@@ -100,6 +101,7 @@ const CompanyAndUnitsInLead = () => {
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [selectedContactDetail, setSelectedContactDetail] = useState(null);
   const [isInitializingUnit, setIsInitializingUnit] = useState(false);
+  const [editingContact, setEditingContact] = useState(null);
 
   const iconClass = "w-4 h-4 text-gray-500";
 
@@ -230,6 +232,7 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const resetContactModalState = () => {
+    setEditingContact(null);
     contactForm.resetFields();
   };
 
@@ -495,6 +498,22 @@ const CompanyAndUnitsInLead = () => {
       whatsappNo: "",
       clientDesignationId: "",
       companyUnitId: selectedUnitId,
+    });
+
+    setContactModal(true);
+  };
+
+  const openEditContactModal = (contact, unitId) => {
+    setEditingContact(contact);
+
+    contactForm.setFieldsValue({
+      title: contact?.title || "",
+      name: contact?.name || "",
+      emails: contact?.emails || "",
+      contactNo: contact?.contactNo || "",
+      whatsappNo: contact?.whatsappNo || "",
+      clientDesignationId: contact?.clientDesignationId || "",
+      companyUnitId: contact?.companyUnitId || unitId || selectedUnitId,
     });
 
     setContactModal(true);
@@ -885,24 +904,34 @@ const CompanyAndUnitsInLead = () => {
 
     setContactLoading(true);
 
-    dispatch(createContactViaEstimateInCompany(payload))
+    const action = editingContact?.id
+      ? updateContactViaEstimateInCompany({
+          id: editingContact.id,
+          userId,
+          data: payload,
+        })
+      : createContactViaEstimateInCompany(payload);
+
+    dispatch(action)
       .then((resp) => {
         if (resp?.meta?.requestStatus === "fulfilled") {
           addToast({
-            title: "Contact details saved.",
+            title: editingContact?.id
+              ? "Contact details updated successfully."
+              : "Contact details saved.",
             color: "success",
           });
 
-          const newContact = resp?.payload;
+          const savedContact = resp?.payload;
 
           setContactModal(false);
           resetContactModalState();
 
-          setSelectedContactId(newContact?.id || null);
-          setSelectedContactDetail(newContact || null);
+          setSelectedContactId(savedContact?.id || null);
+          setSelectedContactDetail(savedContact || null);
 
           companyForm.setFieldsValue({
-            existingContactId: newContact?.id,
+            existingContactId: savedContact?.id,
           });
 
           if (selectedCompanyId) {
@@ -916,7 +945,8 @@ const CompanyAndUnitsInLead = () => {
             description:
               resp?.payload?.message ||
               resp?.payload?.data?.message ||
-              "Failed to add contact",
+              resp?.payload ||
+              "Failed to save contact",
           });
         }
       })
@@ -1266,35 +1296,49 @@ const CompanyAndUnitsInLead = () => {
                         </p>
 
                         {displayContact ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
-                                Name:
-                              </span>{" "}
-                              {displayContact?.name || "NA"}
-                            </p>
+                          <>
+                            <div className="flex justify-end mb-2">
+                              <Button
+                                size="sm"
+                                variant="flat"
+                                color="primary"
+                                onClick={() =>
+                                  openEditContactModal(displayContact, unit?.id)
+                                }
+                              >
+                                Update Contact
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                              <p className="text-gray-500">
+                                <span className="text-gray-700 font-medium">
+                                  Name:
+                                </span>{" "}
+                                {displayContact?.name || "NA"}
+                              </p>
 
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
-                                Email:
-                              </span>{" "}
-                              {displayContact?.emails || "NA"}
-                            </p>
+                              <p className="text-gray-500">
+                                <span className="text-gray-700 font-medium">
+                                  Email:
+                                </span>{" "}
+                                {displayContact?.emails || "NA"}
+                              </p>
 
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
-                                Contact No:
-                              </span>{" "}
-                              {displayContact?.contactNo || "NA"}
-                            </p>
+                              <p className="text-gray-500">
+                                <span className="text-gray-700 font-medium">
+                                  Contact No:
+                                </span>{" "}
+                                {displayContact?.contactNo || "NA"}
+                              </p>
 
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
-                                Whatsapp No:
-                              </span>{" "}
-                              {displayContact?.whatsappNo || "NA"}
-                            </p>
-                          </div>
+                              <p className="text-gray-500">
+                                <span className="text-gray-700 font-medium">
+                                  Whatsapp No:
+                                </span>{" "}
+                                {displayContact?.whatsappNo || "NA"}
+                              </p>
+                            </div>
+                          </>
                         ) : (
                           <p className="text-sm text-gray-500">
                             No contact available for this unit.
