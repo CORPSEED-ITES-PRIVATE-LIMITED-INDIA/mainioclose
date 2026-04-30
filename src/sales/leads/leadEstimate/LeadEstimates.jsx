@@ -95,6 +95,7 @@ import {
   Button as AntButton,
   Input as AntInput,
 } from "antd";
+import LoadingSpinner from "../../../components/LoadingSpinner";
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
 =========================== */
@@ -180,6 +181,7 @@ const LeadEstimates = () => {
     rejectedByUserId: userId,
   });
   const [isGstMandatory, setIsGstMandatory] = useState(false);
+  const [statusLoading, setStatusLoading] = useState("");
 
   const sortedEstimates = useMemo(() => {
     const arr = Array.isArray(newEstimateDetail) ? [...newEstimateDetail] : [];
@@ -475,6 +477,7 @@ const LeadEstimates = () => {
   // };
 
   const onEstimateFinish = (values) => {
+    setStatusLoading("pending");
     if (serviceFeeList?.length === 0 || !serviceFeeList) {
       addToast({
         title: "RESTRICTED !.",
@@ -482,6 +485,7 @@ const LeadEstimates = () => {
           "Service prices are not available. Please select a valid service.",
         color: "danger",
       });
+      setStatusLoading("rejected");
       return;
     }
 
@@ -491,6 +495,7 @@ const LeadEstimates = () => {
         description: "GST Number is not is saved in Unit details !.",
         color: "danger",
       });
+      setStatusLoading("rejected");
       return;
     }
 
@@ -511,6 +516,7 @@ const LeadEstimates = () => {
           "Please add company and unit details before creating estimate.",
         color: "danger",
       });
+      setStatusLoading("rejected");
       return;
     }
 
@@ -520,6 +526,7 @@ const LeadEstimates = () => {
         description: "Actions are restricted before proposal approval .",
         color: "danger",
       });
+      setStatusLoading("rejected");
       return;
     }
 
@@ -544,8 +551,11 @@ const LeadEstimates = () => {
     )
       .then((compRes) => {
         if (compRes.meta.requestStatus === "fulfilled") {
+          setStatusLoading("success");
           addToast({
-            title: "Company and Its units added suuccessfully in Accounts",
+            title: "SUCCESS",
+            description:
+              "Company and Its units added suuccessfully in Accounts",
             color: "success",
           });
 
@@ -569,12 +579,14 @@ const LeadEstimates = () => {
               addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         } else {
+          setStatusLoading("rejected");
           addToast({ title: compRes?.payload?.data?.message, color: "danger" });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
-      );
+      .catch(() => {
+        setStatusLoading("rejected");
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      });
   };
 
   const getMappedLineItems = () =>
@@ -707,6 +719,7 @@ const LeadEstimates = () => {
 
   return (
     <>
+      {statusLoading === "pending" && <LoadingSpinner />}
       {/* ===================== TOP ACTION BAR (ALWAYS VISIBLE) ===================== */}
       <div className="w-full flex items-center justify-between mb-3 gap-2">
         {!showForm && hasEstimates && (
