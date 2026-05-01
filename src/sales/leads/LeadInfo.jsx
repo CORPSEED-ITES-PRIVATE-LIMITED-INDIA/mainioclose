@@ -859,6 +859,18 @@ const LeadInfo = () => {
                           variant="light"
                           className="w-6 h-6 rounded-full bg-none"
                           onPress={() => {
+                            if (
+                              leadData?.proposalStatus === "INITIATED" ||
+                              leadData?.proposalStatus === "APPROVED"
+                            ) {
+                              addToast({
+                                title: "RESTRICTED",
+                                color: "danger",
+                                description:
+                                  "Service name cannot be changed as proposal is already approved or initiated.",
+                              });
+                              return;
+                            }
                             contactModal.onOpen();
                             contactForm.reset({
                               name: "",
@@ -911,7 +923,22 @@ const LeadInfo = () => {
                                   startContent={
                                     <Pencil className={iconClass} />
                                   }
-                                  onPress={() => editContactModalPress(item)}
+                                  onPress={() => {
+                                    if (
+                                      leadData?.proposalStatus ===
+                                        "INITIATED" ||
+                                      leadData?.proposalStatus === "APPROVED"
+                                    ) {
+                                      addToast({
+                                        title: "RESTRICTED",
+                                        color: "danger",
+                                        description:
+                                          "Service name cannot be changed as proposal is already approved or initiated.",
+                                      });
+                                      return;
+                                    }
+                                    editContactModalPress(item);
+                                  }}
                                 >
                                   Edit
                                 </DropdownItem>
@@ -924,6 +951,19 @@ const LeadInfo = () => {
                                       <Trash className={iconClass} />
                                     }
                                     onPress={() => {
+                                      if (
+                                        leadData?.proposalStatus ===
+                                          "INITIATED" ||
+                                        leadData?.proposalStatus === "APPROVED"
+                                      ) {
+                                        addToast({
+                                          title: "RESTRICTED",
+                                          color: "danger",
+                                          description:
+                                            "Service name cannot be changed as proposal is already approved or initiated.",
+                                        });
+                                        return;
+                                      }
                                       handleDeleteContact(item);
                                     }}
                                   >
