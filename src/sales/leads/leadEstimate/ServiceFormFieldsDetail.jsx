@@ -46,7 +46,7 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                 name={["lineItems", idx, "itemName"]}
                 className="mb-0"
               >
-                <Input readOnly placeholder="Fee name" />
+                <Input placeholder="Fee name" />
               </Form.Item>
 
               <Form.Item

@@ -25,10 +25,10 @@ import {
   Textarea,
   useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   addGstInCompany,
   getGstListByCompanyId,
@@ -43,14 +43,19 @@ import {
   getIndustryDataBySubSubIndustryId,
   getSubIndustryByIndustryId,
   getSubSubIndustryBySubIndustryId,
+  createContactViaEstimateInCompany,
+  updateContactViaEstimateInCompany,
 } from "../../toolkit/slices/commonSlice";
 import { formatGSTInput, gstRegex } from "../../common";
-
+import dayjs from "dayjs";
 const columns = [
   { name: "ID", uid: "id" },
   { name: "UNIT NAME", uid: "name" },
+  { name: "STATUS", uid: "status" },
+  { name: "ADDRESS", uid: "address" },
   { name: "STATE NAME", uid: "state" },
   { name: "GST NUMBER", uid: "gstNo" },
+  { name: "GST TYPE", uid: "gstType" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -58,13 +63,22 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "state", "gstNo","actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "status",
+  "address",
+  "state",
+  "gstNo",
+  "gstType",
+  "actions",
+];
 
 const CompanyGstList = () => {
   const { userId, companyId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector((state) => state.company.companyGstList?.length);
-  const data = useSelector((state) => state.company.companyGstList)||[];
+  const data = useSelector((state) => state.company.companyGstList) || [];
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -95,7 +109,30 @@ const CompanyGstList = () => {
     column: "age",
     direction: "ascending",
   });
+
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  const [selectedUnit, setSelectedUnit] = useState(null);
+
+  const contactInitialValues = {
+    title: "",
+    name: "",
+    emails: "",
+    contactNo: "",
+    whatsappNo: "",
+    designation: "",
+  };
+
+  const [contactForm, setContactForm] = useState(contactInitialValues);
+  const [editingContactId, setEditingContactId] = useState(null);
+  const [editContactForm, setEditContactForm] = useState(contactInitialValues);
+
+  const {
+    isOpen: isUnitModalOpen,
+    onOpen: onUnitModalOpen,
+    onOpenChange: onUnitModalOpenChange,
+  } = useDisclosure();
+
   const [companyFilteration, setCompanyFilteration] = useState({
     userId: userId,
     page: 1,
@@ -130,6 +167,16 @@ const CompanyGstList = () => {
   const [isNewContact, setIsNewContact] = useState(false);
   const [gstError, setGstError] = useState("");
   const hasSearchFilter = Boolean(filterValue);
+
+  useEffect(() => {
+    if (selectedUnit?.id && data?.length > 0) {
+      const updatedUnit = data.find((item) => item.id === selectedUnit.id);
+
+      if (updatedUnit) {
+        setSelectedUnit(updatedUnit);
+      }
+    }
+  }, [data, selectedUnit?.id]);
 
   useEffect(() => {
     dispatch(getAllMainIndustry());
@@ -184,16 +231,41 @@ const CompanyGstList = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <Link
-                // to={`${company?.state}/companyUnits`}
-                className="font-semibold"
+              <button
+                type="button"
+                className="font-semibold text-primary cursor-pointer hover:underline text-left"
+                onClick={() => {
+                  setSelectedUnit(company);
+                  onUnitModalOpen();
+                }}
               >
                 {company?.unitName || "-"}
-              </Link>
+              </button>
             </div>
           </div>
         );
 
+      case "status":
+        return (
+          <div className="flex items-start gap-2">
+            <div
+              className={`${company?.status == "Active" ? "text-green-700" : "text-red-600"}`}
+            >
+              {company?.status || "-"}
+            </div>
+          </div>
+        );
+      case "address":
+        return (
+          <div className="flex items-start gap-2">
+            <div
+              className="max-w-[260px] truncate"
+              title={company?.addressLine1 || "-"}
+            >
+              {company?.addressLine1 || "-"}
+            </div>
+          </div>
+        );
       case "state":
         return (
           <div className="flex items-start gap-2">
@@ -207,33 +279,41 @@ const CompanyGstList = () => {
             <span className="font-normal">{company.gstNo || "-"}</span>
           </div>
         );
+      case "gstType":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">
+              {company.gstRegistrationTypeName || "-"}
+            </span>
+          </div>
+        );
 
-       case "actions":
-              return (
-                <div className="relative flex justify-center items-center gap-2">
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <Button isIconOnly size="sm" variant="light">
-                        <EllipsisVertical />
-                      </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu>
-                      <DropdownItem
-                        key="leads"
-                        href={`erp/${userId}/sales/company/${companyId}/gstDetails/leads`}
-                      >
-                        View Leads
-                      </DropdownItem>
-                      <DropdownItem
-                        key="projects"
-                        href={`erp/${userId}/sales/company/${companyId}/gstDetails/${company?.id}/projects`}
-                      >
-                        View Projects
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
-                </div>
-              );
+      case "actions":
+        return (
+          <div className="relative flex justify-center items-center gap-2">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem
+                  key="leads"
+                  href={`erp/${userId}/sales/company/${companyId}/gstDetails/leads`}
+                >
+                  View Leads
+                </DropdownItem>
+                <DropdownItem
+                  key="projects"
+                  href={`erp/${userId}/sales/company/${companyId}/gstDetails/${company?.id}/projects`}
+                >
+                  View Projects
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
 
       default:
         return company[columnKey] || "-";
@@ -306,6 +386,77 @@ const CompanyGstList = () => {
     dispatch(getAllCitiesByStateName(stateName));
     const error = validateGST(formData.gstNo, stateName);
     setGstError(error);
+  };
+  const handleCreateUnitContact = () => {
+    const payload = {
+      id: 0,
+      name: contactForm.name || "",
+      title: contactForm.title || "",
+      emails: contactForm.emails || "",
+      contactNo: contactForm.contactNo || "",
+      whatsappNo: contactForm.whatsappNo || "",
+      designation: contactForm.designation || "",
+      clientDesignationId: 1,
+      companyId: Number(companyId),
+      companyUnitId: Number(selectedUnit?.id),
+      makePrimaryForCompany: false,
+      makeSecondaryForCompany: false,
+      makePrimaryForUnit: true,
+      makeSecondaryForUnit: false,
+    };
+
+    dispatch(createContactViaEstimateInCompany(payload)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Contact added successfully",
+          color: "success",
+        });
+
+        setContactForm(contactInitialValues);
+        dispatch(getGstListByCompanyId(companyId));
+      } else {
+        addToast({
+          title: resp.payload || "Something went wrong",
+          color: "danger",
+        });
+      }
+    });
+  };
+
+  const handleUpdateUnitContact = (contactId) => {
+    const payload = {
+      ...editContactForm,
+      primaryForCompany: false,
+      secondaryForCompany: false,
+      primaryForUnit: true,
+      secondaryForUnit: false,
+      companyId: Number(companyId),
+      companyUnitId: Number(selectedUnit?.id),
+    };
+
+    dispatch(
+      updateContactViaEstimateInCompany({
+        id: contactId,
+        userId,
+        data: payload,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Contact updated successfully",
+          color: "success",
+        });
+
+        setEditingContactId(null);
+        setEditContactForm(contactInitialValues);
+        dispatch(getGstListByCompanyId(companyId));
+      } else {
+        addToast({
+          title: resp.payload || "Something went wrong",
+          color: "danger",
+        });
+      }
+    });
   };
 
   const topContent = useMemo(() => {
@@ -486,6 +637,451 @@ const CompanyGstList = () => {
           )}
         </TableBody>
       </Table>
+
+      <Modal
+        isOpen={isUnitModalOpen}
+        onOpenChange={onUnitModalOpenChange}
+        placement="top-center"
+        scrollBehavior="inside"
+        hideCloseButton={false}
+        motionProps={{
+          variants: {
+            enter: {
+              x: 0,
+              opacity: 1,
+              transition: { duration: 0.28, ease: "easeOut" },
+            },
+            exit: {
+              x: "100%",
+              opacity: 0,
+              transition: { duration: 0.2, ease: "easeIn" },
+            },
+          },
+          initial: { x: "100%", opacity: 0 },
+        }}
+        classNames={{
+          wrapper: "justify-end items-stretch p-0",
+          backdrop: "bg-black/35 backdrop-blur-[2px]",
+          base: "m-0 ml-auto h-screen max-h-screen w-[65vw] max-w-[65vw] rounded-none border-l border-default-200 bg-background shadow-2xl",
+          body: "p-0 overflow-hidden bg-default-50/40",
+          header:
+            "border-b border-default-200 bg-gradient-to-r from-primary/10 via-background to-background px-7 py-5",
+          footer: "border-t border-default-200 bg-background px-7 py-4",
+          closeButton:
+            "right-5 top-5 bg-default-100 hover:bg-danger/10 hover:text-danger",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <div className="flex items-start justify-between gap-4 pr-8">
+                  <div>
+                    <h2 className="text-xl font-semibold">Unit Details</h2>
+                    <p className="mt-1 text-sm font-normal text-default-500">
+                      {selectedUnit?.unitName || "-"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+                    {selectedUnit?.status || "-"}
+                  </div>
+                </div>
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="h-full overflow-y-auto px-7 py-6 space-y-5">
+                  <div className="rounded-2xl border border-default-200 bg-content1 p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-base font-semibold">
+                        Basic Information
+                      </h3>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        Unit ID: {selectedUnit?.id || "-"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-5 text-sm">
+                      <div>
+                        <p className="text-default-500">Company</p>
+                        <p className="font-medium">
+                          {selectedUnit?.companyName || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">GST Number</p>
+                        <p className="font-medium">
+                          {selectedUnit?.gstNo || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">GST Type</p>
+                        <p className="font-medium">
+                          {selectedUnit?.gstRegistrationTypeName || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-default-200 bg-content1 p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-semibold">
+                      Other Details
+                    </h3>
+
+                    <div className="grid grid-cols-3 gap-5 text-sm">
+                      <div>
+                        <p className="text-default-500">Unit Opening Date</p>
+                        <p className="font-medium">
+                          {dayjs(selectedUnit?.unitOpeningDate).format(
+                            "DD-MM-YYYY hh:mm A",
+                          ) || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">Created At</p>
+                        <p className="font-medium">
+                          {dayjs(selectedUnit?.createdAt).format(
+                            "DD-MM-YYYY hh:mm A",
+                          ) || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">Updated At</p>
+                        <p className="font-medium">
+                          {dayjs(selectedUnit?.updatedAt).format(
+                            "DD-MM-YYYY hh:mm A",
+                          ) || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-default-200 bg-content1 p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-semibold">Address</h3>
+
+                    <div className="grid grid-cols-4 gap-5 text-sm">
+                      <div className="col-span-4">
+                        <p className="text-default-500">Address Line 1</p>
+                        <p className="font-medium leading-6">
+                          {selectedUnit?.addressLine1 || "-"}
+                        </p>
+                      </div>
+
+                      <div className="col-span-4">
+                        <p className="text-default-500">Address Line 2</p>
+                        <p className="font-medium leading-6">
+                          {selectedUnit?.addressLine2 || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">City</p>
+                        <p className="font-medium">
+                          {selectedUnit?.city || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">State</p>
+                        <p className="font-medium">
+                          {selectedUnit?.state || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">Country</p>
+                        <p className="font-medium">
+                          {selectedUnit?.country || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-default-500">Pin Code</p>
+                        <p className="font-medium">
+                          {selectedUnit?.pinCode || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-default-200 bg-content1 p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-base font-semibold">Contacts</h3>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        {selectedUnit?.unitContacts?.length || 0} Contacts
+                      </span>
+                    </div>
+
+                    {selectedUnit?.unitContacts?.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedUnit.unitContacts.map((contact) => (
+                          <div
+                            key={contact?.id}
+                            className="rounded-xl border border-default-200 bg-default-50 p-4 text-sm"
+                          >
+                            {editingContactId === contact?.id ? (
+                              <div className="grid grid-cols-2 gap-3">
+                                <Input
+                                  label="Title"
+                                  value={editContactForm.title}
+                                  onChange={(e) =>
+                                    setEditContactForm((prev) => ({
+                                      ...prev,
+                                      title: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <Input
+                                  label="Name"
+                                  value={editContactForm.name}
+                                  onChange={(e) =>
+                                    setEditContactForm((prev) => ({
+                                      ...prev,
+                                      name: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <Input
+                                  label="Email"
+                                  value={editContactForm.emails}
+                                  onChange={(e) =>
+                                    setEditContactForm((prev) => ({
+                                      ...prev,
+                                      emails: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <Input
+                                  label="Designation"
+                                  value={editContactForm.designation}
+                                  onChange={(e) =>
+                                    setEditContactForm((prev) => ({
+                                      ...prev,
+                                      designation: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <Input
+                                  label="Contact No"
+                                  value={editContactForm.contactNo}
+                                  onChange={(e) =>
+                                    setEditContactForm((prev) => ({
+                                      ...prev,
+                                      contactNo: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <Input
+                                  label="WhatsApp No"
+                                  value={editContactForm.whatsappNo}
+                                  onChange={(e) =>
+                                    setEditContactForm((prev) => ({
+                                      ...prev,
+                                      whatsappNo: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <div className="col-span-2 flex justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="flat"
+                                    onPress={() => {
+                                      setEditingContactId(null);
+                                      setEditContactForm(contactInitialValues);
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+
+                                  <Button
+                                    size="sm"
+                                    color="primary"
+                                    onPress={() =>
+                                      handleUpdateUnitContact(contact?.id)
+                                    }
+                                  >
+                                    Update
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="mb-3 flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="font-semibold">
+                                      {contact?.title
+                                        ? `${capitalize(contact.title)}. `
+                                        : ""}
+                                      {contact?.name || "-"}
+                                    </p>
+
+                                    <p className="text-default-500">
+                                      {contact?.designation || "-"}
+                                    </p>
+                                  </div>
+
+                                  <Button
+                                    size="sm"
+                                    variant="flat"
+                                    onPress={() => {
+                                      setEditingContactId(contact?.id);
+                                      setEditContactForm({
+                                        title: contact?.title || "",
+                                        name: contact?.name || "",
+                                        emails: contact?.emails || "",
+                                        contactNo: contact?.contactNo || "",
+                                        whatsappNo: contact?.whatsappNo || "",
+                                        designation: contact?.designation || "",
+                                      });
+                                    }}
+                                  >
+                                    Edit
+                                  </Button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="col-span-2">
+                                    <p className="text-default-500">Email</p>
+                                    <p className="font-medium break-all">
+                                      {contact?.emails || "-"}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-default-500">
+                                      Contact No
+                                    </p>
+                                    <p className="font-medium">
+                                      {contact?.contactNo || "-"}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-default-500">
+                                      WhatsApp No
+                                    </p>
+                                    <p className="font-medium">
+                                      {contact?.whatsappNo || "-"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-default-300 p-6 text-center text-sm text-default-500">
+                        No contacts found
+                      </div>
+                    )}
+
+                    <div className="mt-5 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4">
+                      <h4 className="mb-3 text-sm font-semibold">
+                        Add New Contact
+                      </h4>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <Input
+                          label="Title"
+                          value={contactForm.title}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({
+                              ...prev,
+                              title: e.target.value,
+                            }))
+                          }
+                        />
+
+                        <Input
+                          label="Name"
+                          value={contactForm.name}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                        />
+
+                        <Input
+                          label="Designation"
+                          value={contactForm.designation}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({
+                              ...prev,
+                              designation: e.target.value,
+                            }))
+                          }
+                        />
+
+                        <Input
+                          label="Email"
+                          value={contactForm.emails}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({
+                              ...prev,
+                              emails: e.target.value,
+                            }))
+                          }
+                        />
+
+                        <Input
+                          label="Contact No"
+                          value={contactForm.contactNo}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({
+                              ...prev,
+                              contactNo: e.target.value,
+                            }))
+                          }
+                        />
+
+                        <Input
+                          label="WhatsApp No"
+                          value={contactForm.whatsappNo}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({
+                              ...prev,
+                              whatsappNo: e.target.value,
+                            }))
+                          }
+                        />
+
+                        <div className="col-span-3 flex justify-end">
+                          <Button
+                            color="primary"
+                            onPress={handleCreateUnitContact}
+                          >
+                            Add Contact
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose}>
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
       <Modal
         size="2xl"
         isDismissable={false}

@@ -52,6 +52,7 @@ import {
 import {
   cancelEstimate,
   createNewEstimate,
+  getAllProposalByLeadId,
   getNewEstimateByLeadId,
   getProposalDataByLeadId,
   getSingleLeadDataByLeadId,
@@ -86,7 +87,7 @@ import {
 } from "../../../common";
 import BasicCompany from "../../company/BasicCompany";
 import { convertEstimateToPI } from "../../../toolkit/slices/accountSlice";
-import { EllipsisVertical } from "lucide-react";
+import { EllipsisVertical, IndianRupee, Percent } from "lucide-react";
 import {
   DatePicker as DtPicker,
   Form,
@@ -96,6 +97,7 @@ import {
   Input as AntInput,
 } from "antd";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import Section from "../../../components/Section";
 /* ===========================
    ✅ Unit Modal Schema (ONLY unitName required)
 =========================== */
@@ -137,6 +139,7 @@ const LeadEstimates = () => {
   const proposalDataDetail = useSelector(
     (state) => state.leads.proposalDataDetail,
   );
+  const allProposal = useSelector((state) => state.leads.proposalListByLeadId);
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
   const gstTypeList = useSelector((state) => state.company.gstTypeList);
   const leadData = useSelector((state) => state.leads.singleLeadData);
@@ -192,7 +195,48 @@ const LeadEstimates = () => {
     );
   }, [newEstimateDetail]);
 
+  const [form] = Form.useForm();
+
   const hasEstimates = sortedEstimates.length > 0;
+
+  const approvedProposal = useMemo(() => {
+    if (!Array.isArray(allProposal)) return null;
+
+    return allProposal.find(
+      (item) =>
+        String(item?.status || "").toUpperCase() === "APPROVED" &&
+        Array.isArray(item?.lineItems) &&
+        item.lineItems.length > 0,
+    );
+  }, [allProposal]);
+
+  const approvedProposalLineItems = useMemo(() => {
+    return Array.isArray(approvedProposal?.lineItems)
+      ? approvedProposal.lineItems
+      : [];
+  }, [approvedProposal]);
+
+  useEffect(() => {
+    if (!form) return;
+
+    form.setFieldsValue({
+      lineItems: approvedProposalLineItems.map((item) => ({
+        sourceItemId: item?.sourceItemId || item?.id || 0,
+        itemName: item?.itemName || "",
+        description: item?.description || "",
+        hsnSacCode: item?.hsnSacCode || "",
+        quantity: item?.quantity || 1,
+        unit: item?.unit || "Nos",
+        unitPriceExGst: item?.unitPriceExGst || 0,
+        originalAmount: item?.unitPriceExGst || 0,
+        gstRate: item?.gstRate || 0,
+        originalGst: item?.gstRate || 0,
+        igstFlag: item?.igstFlag ?? true,
+        categoryCode: item?.categoryCode || "",
+        feeType: item?.feeType || "PROFESSIONAL_FEE",
+      })),
+    });
+  }, [form, approvedProposalLineItems]);
 
   const openEstimatePreview = (estimate, type) => {
     setSelectedEstimate(estimate);
@@ -217,8 +261,6 @@ const LeadEstimates = () => {
   /* ===========================
      Estimate form (existing)
   =========================== */
-
-  const [form] = Form.useForm();
 
   // const {
   //   control,
@@ -273,6 +315,7 @@ const LeadEstimates = () => {
   });
 
   useEffect(() => {
+    dispatch(getAllProposalByLeadId(leadId));
     dispatch(getClientDesiginationList());
     dispatch(getAllCompanyByUserId(userId));
     dispatch(getProposalDataByLeadId(leadId));
@@ -478,11 +521,10 @@ const LeadEstimates = () => {
 
   const onEstimateFinish = (values) => {
     setStatusLoading("pending");
-    if (serviceFeeList?.length === 0 || !serviceFeeList) {
+    if (!approvedProposalLineItems?.length) {
       addToast({
         title: "RESTRICTED !.",
-        description:
-          "Service prices are not available. Please select a valid service.",
+        description: "Approved proposal pricing is not available.",
         color: "danger",
       });
       setStatusLoading("rejected");
@@ -590,14 +632,21 @@ const LeadEstimates = () => {
   };
 
   const getMappedLineItems = () =>
-    Array.isArray(serviceFeeList)
-      ? serviceFeeList.map((item) => ({
-          itemName: item.name,
-          unitPriceExGst: item.baseAmount,
-          originalAmount: item.baseAmount,
-          hsnSacCode: item.hsnSacCode,
-          gstRate: item.gstPercentage,
-          originalGst: item.gstPercentage,
+    Array.isArray(approvedProposalLineItems)
+      ? approvedProposalLineItems.map((item) => ({
+          sourceItemId: item?.sourceItemId || item?.id || 0,
+          itemName: item?.itemName || "",
+          description: item?.description || "",
+          hsnSacCode: item?.hsnSacCode || "",
+          quantity: item?.quantity || 1,
+          unit: item?.unit || "Nos",
+          unitPriceExGst: item?.unitPriceExGst || 0,
+          originalAmount: item?.unitPriceExGst || 0,
+          gstRate: item?.gstRate || 0,
+          originalGst: item?.gstRate || 0,
+          igstFlag: item?.igstFlag ?? true,
+          categoryCode: item?.categoryCode || "",
+          feeType: item?.feeType || "PROFESSIONAL_FEE",
         }))
       : [];
 
@@ -1084,10 +1133,101 @@ const LeadEstimates = () => {
                     isMedium={isMedium}
                   />
                 ) : ( */}
-              <ServiceFormFieldsDetail
-                form={form}
-                serviceFeeList={serviceFeeList}
-              />
+              <Section title="Service Pricing Details">
+                {approvedProposalLineItems.length > 0 ? (
+                  approvedProposalLineItems.map((item, idx) => (
+                    <div
+                      key={item?.id || idx}
+                      className="grid grid-cols-4 gap-3 my-2"
+                    >
+                      <Form.Item
+                        label="Fee name"
+                        name={["lineItems", idx, "itemName"]}
+                        className="mb-0"
+                      >
+                        <AntInput readOnly placeholder="Fee name" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="Amount"
+                        name={["lineItems", idx, "unitPriceExGst"]}
+                        className="mb-0"
+                      >
+                        <AntInput
+                          type="number"
+                          readOnly
+                          placeholder="Amount"
+                          prefix={<IndianRupee className="h-4 w-4" />}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="HSN number"
+                        name={["lineItems", idx, "hsnSacCode"]}
+                        className="mb-0"
+                      >
+                        <AntInput readOnly placeholder="HSN number" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label="GST %"
+                        name={["lineItems", idx, "gstRate"]}
+                        className="mb-0"
+                      >
+                        <AntInput
+                          type="number"
+                          readOnly
+                          placeholder="GST %"
+                          suffix={<Percent className="h-4 w-4" />}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        name={["lineItems", idx, "sourceItemId"]}
+                        hidden
+                      >
+                        <AntInput />
+                      </Form.Item>
+
+                      <Form.Item
+                        name={["lineItems", idx, "description"]}
+                        hidden
+                      >
+                        <AntInput />
+                      </Form.Item>
+
+                      <Form.Item name={["lineItems", idx, "quantity"]} hidden>
+                        <AntInput />
+                      </Form.Item>
+
+                      <Form.Item name={["lineItems", idx, "unit"]} hidden>
+                        <AntInput />
+                      </Form.Item>
+
+                      <Form.Item name={["lineItems", idx, "igstFlag"]} hidden>
+                        <AntInput />
+                      </Form.Item>
+
+                      <Form.Item
+                        name={["lineItems", idx, "categoryCode"]}
+                        hidden
+                      >
+                        <AntInput />
+                      </Form.Item>
+
+                      <Form.Item name={["lineItems", idx, "feeType"]} hidden>
+                        <AntInput />
+                      </Form.Item>
+                    </div>
+                  ))
+                ) : (
+                  <div>
+                    <h3 className="text-sm text-red-600">
+                      No approved proposal pricing found for this lead.
+                    </h3>
+                  </div>
+                )}
+              </Section>
               {/* )} */}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

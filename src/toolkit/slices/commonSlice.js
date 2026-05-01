@@ -609,7 +609,7 @@ export const updateContactViaEstimateInCompany = createAsyncThunk(
   async ({ id, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/contacts/update-contact/${id}?requestingUserId=${userId}`,
+        `/leadService/api/v1/contacts/update-contact/${id}?requestingUserId=${userId}`,
         data,
       );
       return response.data;
