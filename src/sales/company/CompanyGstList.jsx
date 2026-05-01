@@ -30,8 +30,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
+  getAllGstType,
   addGstInCompany,
   getGstListByCompanyId,
+  updateBasicUnitByCompanyId,
 } from "../../toolkit/slices/companySlice";
 import NewSelect from "../../components/NewSelect";
 import {
@@ -82,6 +84,8 @@ const CompanyGstList = () => {
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
+  const gstTypeList = useSelector((state) => state.company.gstTypeList || []);
+
   const contactListByCompanyId = useSelector(
     (state) => state.common.contactListByCompanyId,
   );
@@ -113,6 +117,32 @@ const CompanyGstList = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const [selectedUnit, setSelectedUnit] = useState(null);
+
+  const {
+    isOpen: isEditUnitOpen,
+    onOpen: onEditUnitOpen,
+    onOpenChange: onEditUnitOpenChange,
+  } = useDisclosure();
+
+  const unitEditInitialValues = {
+    unitName: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    country: "",
+    pinCode: "",
+    gstNo: "",
+    gstTypeId: 0,
+    primaryContactId: 0,
+    secondaryContactId: 0,
+    unitOpeningDate: "",
+    status: "Active",
+    consultantPresent: true,
+  };
+
+  const [unitEditForm, setUnitEditForm] = useState(unitEditInitialValues);
+  const [unitEditGstError, setUnitEditGstError] = useState("");
 
   const contactInitialValues = {
     title: "",
@@ -168,6 +198,66 @@ const CompanyGstList = () => {
   const [gstError, setGstError] = useState("");
   const hasSearchFilter = Boolean(filterValue);
 
+  const allowOnlyNumbers = (value) => {
+    return String(value || "").replace(/\D/g, "");
+  };
+
+  const gstTypeOptions = useMemo(() => {
+    if (Array.isArray(gstTypeList) && gstTypeList.length > 0) {
+      return gstTypeList.map((item) => ({
+        id: String(item?.id),
+        name: item?.name,
+      }));
+    }
+
+    const map = new Map();
+
+    data?.forEach((unit) => {
+      const id =
+        unit?.gstTypeId ||
+        unit?.gstRegistrationTypeId ||
+        unit?.gstRegistrationType?.id;
+      const name =
+        unit?.gstTypeName ||
+        unit?.gstType ||
+        unit?.gstRegistrationTypeName ||
+        unit?.gstRegistrationType?.name;
+
+      if (id && name) {
+        map.set(String(id), {
+          id: String(id),
+          name,
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [gstTypeList, data]);
+
+  const selectedUnitGstTypeName = useMemo(() => {
+    const selectedType = gstTypeOptions?.find(
+      (item) => String(item?.id) === String(unitEditForm?.gstTypeId),
+    );
+
+    return (
+      selectedType?.name ||
+      selectedUnit?.gstTypeName ||
+      selectedUnit?.gstType ||
+      selectedUnit?.gstRegistrationTypeName ||
+      selectedUnit?.gstRegistrationType?.name ||
+      ""
+    );
+  }, [gstTypeOptions, unitEditForm?.gstTypeId, selectedUnit]);
+
+  const normalizedUnitGstTypeName = String(selectedUnitGstTypeName || "")
+    .trim()
+    .toLowerCase();
+
+  const isRegisteredUnitGstType = normalizedUnitGstTypeName === "registered";
+  const isSezUnitGstType = normalizedUnitGstTypeName === "sez";
+  const isInternationalGstType = normalizedUnitGstTypeName === "international";
+  const isGstNumberAllowed = isRegisteredUnitGstType;
+
   useEffect(() => {
     if (selectedUnit?.id && data?.length > 0) {
       const updatedUnit = data.find((item) => item.id === selectedUnit.id);
@@ -179,6 +269,7 @@ const CompanyGstList = () => {
   }, [data, selectedUnit?.id]);
 
   useEffect(() => {
+    dispatch(getAllGstType());
     dispatch(getAllMainIndustry());
     dispatch(getAllCountries());
     dispatch(getGstListByCompanyId(companyId));
@@ -310,6 +401,12 @@ const CompanyGstList = () => {
                 >
                   View Projects
                 </DropdownItem>
+                <DropdownItem
+                  key="edit"
+                  onPress={() => handleOpenUnitEdit(company)}
+                >
+                  Edit Details
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -386,6 +483,203 @@ const CompanyGstList = () => {
     dispatch(getAllCitiesByStateName(stateName));
     const error = validateGST(formData.gstNo, stateName);
     setGstError(error);
+  };
+
+  const handleOpenUnitEdit = (unit) => {
+    setSelectedUnit(unit);
+
+    const gstTypeId =
+      unit?.gstTypeId ||
+      unit?.gstRegistrationTypeId ||
+      unit?.gstRegistrationType?.id ||
+      "";
+    const gstTypeName = String(
+      unit?.gstTypeName ||
+        unit?.gstType ||
+        unit?.gstRegistrationTypeName ||
+        unit?.gstRegistrationType?.name ||
+        "",
+    )
+      .trim()
+      .toLowerCase();
+    const isInternational = gstTypeName === "international";
+    const country = isInternational ? unit?.country || "" : "India";
+
+    setUnitEditForm({
+      unitName: unit?.unitName || "",
+      addressLine1: unit?.addressLine1 || "",
+      addressLine2: unit?.addressLine2 || "",
+      city: unit?.city || "",
+      state: unit?.state || "",
+      country,
+      pinCode: unit?.pinCode || "",
+      gstNo: unit?.gstNo || "",
+      gstTypeId,
+      primaryContactId: unit?.primaryContactId || 0,
+      secondaryContactId: unit?.secondaryContactId || 0,
+      unitOpeningDate: unit?.unitOpeningDate || "",
+      status: unit?.status || "Active",
+      consultantPresent: unit?.consultantPresent ?? true,
+    });
+
+    if (country) {
+      dispatch(getAllStatesByCountryName(country));
+    }
+
+    if (unit?.state) {
+      dispatch(getAllCitiesByStateName(unit.state));
+    }
+
+    setUnitEditGstError("");
+    onEditUnitOpen();
+  };
+
+  const handleUnitEditChange = (key, value) => {
+    setUnitEditForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleUnitEditGstTypeChange = (gstTypeId) => {
+    const selectedType = gstTypeOptions?.find(
+      (item) => String(item?.id) === String(gstTypeId),
+    );
+
+    const gstTypeName = String(selectedType?.name || "")
+      .trim()
+      .toLowerCase();
+    const isInternational = gstTypeName === "international";
+    const allowGstNo = gstTypeName === "registered";
+
+    setUnitEditForm((prev) => ({
+      ...prev,
+      gstTypeId,
+      gstNo: allowGstNo ? prev.gstNo : "",
+      country: isInternational ? "" : "India",
+      state: "",
+      city: "",
+    }));
+
+    setUnitEditGstError("");
+
+    if (!isInternational) {
+      dispatch(getAllStatesByCountryName("India"));
+    }
+  };
+
+  const handleUnitEditCountryChange = (countryName) => {
+    setUnitEditForm((prev) => ({
+      ...prev,
+      country: countryName,
+      state: "",
+      city: "",
+    }));
+
+    if (countryName) {
+      dispatch(getAllStatesByCountryName(countryName));
+    }
+  };
+
+  const handleUnitEditStateChange = (stateName) => {
+    setUnitEditForm((prev) => ({
+      ...prev,
+      state: stateName,
+      city: "",
+    }));
+
+    if (stateName) {
+      dispatch(getAllCitiesByStateName(stateName));
+    }
+
+    if (unitEditForm.gstNo && isGstNumberAllowed) {
+      const error = validateGST(unitEditForm.gstNo, stateName);
+      setUnitEditGstError(error);
+    } else {
+      setUnitEditGstError("");
+    }
+  };
+
+  const handleUnitEditGstChange = (e) => {
+    const formattedValue = formatGSTInput(e.target.value);
+
+    setUnitEditForm((prev) => ({
+      ...prev,
+      gstNo: formattedValue,
+    }));
+
+    if (!formattedValue || !isGstNumberAllowed) {
+      setUnitEditGstError("");
+      return;
+    }
+
+    const error = validateGST(formattedValue, unitEditForm.state);
+    setUnitEditGstError(error);
+  };
+
+  const handleUpdateUnitDetails = () => {
+    if (!unitEditForm.unitName?.trim()) {
+      addToast({ title: "Unit name is required", color: "danger" });
+      return;
+    }
+
+    if (!unitEditForm.addressLine1?.trim()) {
+      addToast({ title: "Address Line 1 is required", color: "danger" });
+      return;
+    }
+
+    if (isRegisteredUnitGstType && !unitEditForm.gstNo?.trim()) {
+      addToast({ title: "GST number is required", color: "danger" });
+      return;
+    }
+
+    if (unitEditGstError) {
+      addToast({ title: unitEditGstError, color: "danger" });
+      return;
+    }
+
+    const payload = {
+      unitName: unitEditForm.unitName,
+      addressLine1: unitEditForm.addressLine1,
+      city: unitEditForm.city,
+      state: unitEditForm.state,
+      country: unitEditForm.country,
+      pinCode: unitEditForm.pinCode,
+      gstNo: isGstNumberAllowed ? unitEditForm.gstNo : "",
+      gstTypeId: Number(unitEditForm.gstTypeId || 0),
+      primaryContactId: Number(unitEditForm.primaryContactId || 0),
+      secondaryContactId: Number(unitEditForm.secondaryContactId || 0),
+      unitOpeningDate: unitEditForm.unitOpeningDate,
+      status: unitEditForm.status,
+      consultantPresent: Boolean(unitEditForm.consultantPresent),
+    };
+
+    dispatch(
+      updateBasicUnitByCompanyId({
+        companyId,
+        unitId: selectedUnit?.id,
+        userId,
+        data: payload,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Unit details updated successfully",
+          color: "success",
+        });
+
+        dispatch(getGstListByCompanyId(companyId));
+        onEditUnitOpenChange(false);
+      } else {
+        addToast({
+          title:
+            resp.payload?.data?.message ||
+            resp.payload?.message ||
+            "Something went wrong",
+          color: "danger",
+        });
+      }
+    });
   };
   const handleCreateUnitContact = () => {
     const payload = {
@@ -546,9 +840,6 @@ const CompanyGstList = () => {
           total={pages}
           onChange={(e) => {
             setCompanyFilteration((prev) => ({ ...prev, page: e }));
-            if (e > companyFilteration?.page) {
-              dispatch(getAllNewCompanies({ ...companyFilteration, page: e }));
-            }
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
@@ -629,7 +920,7 @@ const CompanyGstList = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.stateId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -1075,6 +1366,172 @@ const CompanyGstList = () => {
               <ModalFooter>
                 <Button variant="flat" onPress={onClose}>
                   Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="5xl"
+        isOpen={isEditUnitOpen}
+        onOpenChange={onEditUnitOpenChange}
+        placement="top-center"
+        scrollBehavior="inside"
+        classNames={{
+          backdrop: "bg-black/35 backdrop-blur-[2px]",
+          base: "rounded-3xl border border-default-200 bg-background shadow-2xl",
+          header:
+            "border-b border-default-200 bg-gradient-to-r from-primary/10 via-background to-background px-7 py-5",
+          body: "bg-default-50/40 px-7 py-6",
+          footer: "border-t border-default-200 bg-background px-7 py-4",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <h2 className="text-xl font-semibold">Edit Unit Details</h2>
+                <p className="text-sm font-normal text-default-500">
+                  Update unit information, address and GST details.
+                </p>
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="space-y-5">
+                  <div className="rounded-2xl border border-default-200 bg-content1 p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-4">
+                      <h3 className="text-base font-semibold">
+                        Basic Information
+                      </h3>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        Unit ID: {selectedUnit?.id || "-"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <Input
+                        isRequired
+                        label="Unit Name"
+                        value={unitEditForm.unitName}
+                        onChange={(e) =>
+                          handleUnitEditChange("unitName", e.target.value)
+                        }
+                      />
+
+                      <Select
+                        isRequired
+                        label="GST Type"
+                        placeholder="Select GST Type"
+                        selectedKeys={
+                          unitEditForm.gstTypeId
+                            ? [String(unitEditForm.gstTypeId)]
+                            : []
+                        }
+                        onChange={(e) =>
+                          handleUnitEditGstTypeChange(e.target.value)
+                        }
+                      >
+                        {gstTypeOptions.map((item) => (
+                          <SelectItem key={String(item.id)}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </Select>
+
+                      <Input
+                        label="GST Number"
+                        value={unitEditForm.gstNo}
+                        onChange={handleUnitEditGstChange}
+                        maxLength={15}
+                        isDisabled={!isGstNumberAllowed}
+                        isRequired={isRegisteredUnitGstType}
+                        isInvalid={!!unitEditGstError}
+                        errorMessage={unitEditGstError}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-default-200 bg-content1 p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-semibold">
+                      Address Details
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Textarea
+                        isRequired
+                        label="Address Line 1"
+                        className="col-span-2"
+                        value={unitEditForm.addressLine1}
+                        onChange={(e) =>
+                          handleUnitEditChange("addressLine1", e.target.value)
+                        }
+                      />
+
+                      <NewSelect
+                        data={
+                          isInternationalGstType
+                            ? countryList || []
+                            : (countryList || []).filter(
+                                (country) => country?.name === "India",
+                              )
+                        }
+                        isRequired={true}
+                        label="Country"
+                        name="editCountry"
+                        labelKey="name"
+                        valueKey="name"
+                        value={unitEditForm.country}
+                        disabled={!isInternationalGstType}
+                        onChange={handleUnitEditCountryChange}
+                      />
+
+                      <NewSelect
+                        data={statesList || []}
+                        isRequired={true}
+                        label="State"
+                        name="editState"
+                        labelKey="name"
+                        valueKey="name"
+                        value={unitEditForm.state}
+                        onChange={handleUnitEditStateChange}
+                      />
+
+                      <NewSelect
+                        data={citiesList || []}
+                        isRequired={true}
+                        label="City"
+                        name="editCity"
+                        labelKey="name"
+                        valueKey="name"
+                        value={unitEditForm.city}
+                        onChange={(e) => handleUnitEditChange("city", e)}
+                      />
+
+                      <Input
+                        label="Pin Code"
+                        value={unitEditForm.pinCode}
+                        onChange={(e) =>
+                          handleUnitEditChange(
+                            "pinCode",
+                            allowOnlyNumbers(e.target.value),
+                          )
+                        }
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+
+                <Button color="primary" onPress={handleUpdateUnitDetails}>
+                  Update Unit
                 </Button>
               </ModalFooter>
             </>
