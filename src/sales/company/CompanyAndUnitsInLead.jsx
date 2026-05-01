@@ -309,7 +309,7 @@ const CompanyAndUnitsInLead = () => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -360,7 +360,7 @@ const CompanyAndUnitsInLead = () => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -420,7 +420,7 @@ const CompanyAndUnitsInLead = () => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -479,7 +479,7 @@ const CompanyAndUnitsInLead = () => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -517,6 +517,19 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const openEditContactModal = (contact, unitId) => {
+    if (
+      leadData?.proposalStatus === "APPROVED" ||
+      leadData?.proposalStatus === "INITIATED"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        description:
+          "You are not required perform any action before approval or initiation of proposal.",
+        color: "danger",
+      });
+      return;
+    }
+
     setEditingContact(contact);
 
     contactForm.setFieldsValue({
@@ -1758,7 +1771,11 @@ const CompanyAndUnitsInLead = () => {
               showSearch
               allowClear={isInternationalGstType}
               disabled={!isInternationalGstType}
-              options={countryList}
+              options={
+                !isInternationalGstType
+                  ? countryList?.filter((country) => country?.name !== "India")
+                  : countryList
+              }
               fieldNames={{ label: "name", value: "name" }}
               onChange={(value) => {
                 unitForm.setFieldsValue({ state: undefined, city: undefined });

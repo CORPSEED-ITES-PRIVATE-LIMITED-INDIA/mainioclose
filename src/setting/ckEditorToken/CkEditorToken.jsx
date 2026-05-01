@@ -300,9 +300,11 @@ const CkEditorToken = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
-              Add New
-            </Button>
+            {sortedItems.length > 0 ? null : (
+              <Button color="primary" onPress={onOpen} endContent={<Plus />}>
+                Add New
+              </Button>
+            )}
           </div>
         </div>
         <div className="flex justify-between items-center">

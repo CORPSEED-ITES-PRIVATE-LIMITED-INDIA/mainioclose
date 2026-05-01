@@ -86,7 +86,7 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -103,7 +103,7 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -127,7 +127,7 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -143,7 +143,7 @@ const BulkFileUploader = ({ setFiles, files, leadData }) => {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action after approval or initiation of proposal.",
+          "You are not required perform any action before approval or initiation of proposal.",
         color: "danger",
       });
       return;
