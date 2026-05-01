@@ -36,6 +36,7 @@ import {
 import { padZero } from "../../common";
 import {
   getLocalTimeZone,
+  now,
   parseAbsoluteToLocal,
   parseDate,
   toCalendarDateTime,
@@ -557,16 +558,27 @@ const LeadTask = () => {
                         <DatePicker
                           hideTimeZone
                           showMonthAndYearPickers
-                          minValue={today(getLocalTimeZone())}
+                          minValue={now(getLocalTimeZone())}
                           value={
                             field?.value
                               ? parseAbsoluteToLocal(field?.value)
-                              : null
+                              : now(getLocalTimeZone())
                           }
                           label="Event Date"
                           onChange={(value) => {
+                            if (!value) {
+                              field.onChange(null);
+                              return;
+                            }
+
                             const dateTime = toCalendarDateTime(value);
-                            const date = `${dateTime.year}-${padZero(dateTime.month)}-${padZero(dateTime.day)}T${padZero(dateTime.hour)}:${padZero(dateTime.minute)}:${padZero(dateTime.second)}+05:30`;
+
+                            const date = `${dateTime.year}-${padZero(dateTime.month)}-${padZero(
+                              dateTime.day,
+                            )}T${padZero(dateTime.hour)}:${padZero(
+                              dateTime.minute,
+                            )}:${padZero(dateTime.second)}+05:30`;
+
                             field.onChange(date);
                           }}
                         />

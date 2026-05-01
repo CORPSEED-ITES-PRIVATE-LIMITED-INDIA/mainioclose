@@ -1095,6 +1095,7 @@ const CompanyAndUnitsInLead = () => {
       country: gstTypeName === "international" ? undefined : "India",
       state: undefined,
       city: undefined,
+      pinCode: undefined,
     });
 
     if (gstTypeName !== "international") {
@@ -1267,11 +1268,11 @@ const CompanyAndUnitsInLead = () => {
 
                         <Button
                           size="sm"
-                          variant="flat"
-                          color="primary"
+                          variant="light"
+                          isIconOnly
                           onClick={() => openEditUnitModal(unit)}
                         >
-                          Update
+                          <Pencil className={iconClass} />
                         </Button>
                       </div>
                     </div>
@@ -1317,24 +1318,26 @@ const CompanyAndUnitsInLead = () => {
                       </p>
 
                       <div className="md:col-span-2 mt-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                        <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Contact detail
-                        </p>
+                        <div className="flex justify-between items-center gap-1">
+                          <p className="text-sm font-semibold text-gray-700 mb-2">
+                            Contact detail
+                          </p>
+                          <div className="flex justify-end mb-2">
+                            <Button
+                              size="sm"
+                              variant="light"
+                              isIconOnly
+                              onClick={() =>
+                                openEditContactModal(displayContact, unit?.id)
+                              }
+                            >
+                              <Pencil className={iconClass} />
+                            </Button>
+                          </div>
+                        </div>
 
                         {displayContact ? (
                           <>
-                            <div className="flex justify-end mb-2">
-                              <Button
-                                size="sm"
-                                variant="flat"
-                                color="primary"
-                                onClick={() =>
-                                  openEditContactModal(displayContact, unit?.id)
-                                }
-                              >
-                                Update Contact
-                              </Button>
-                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                               <p className="text-gray-500">
                                 <span className="text-gray-700 font-medium">
@@ -1772,7 +1775,7 @@ const CompanyAndUnitsInLead = () => {
               allowClear={isInternationalGstType}
               disabled={!isInternationalGstType}
               options={
-                !isInternationalGstType
+                isInternationalGstType
                   ? countryList?.filter((country) => country?.name !== "India")
                   : countryList
               }

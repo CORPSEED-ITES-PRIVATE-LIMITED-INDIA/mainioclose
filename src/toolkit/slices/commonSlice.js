@@ -57,14 +57,14 @@ export const createNewContacts = createAsyncThunk(
 );
 
 export const getAllCountries = createAsyncThunk("getAllCountries", async () => {
-  const response = await api.get(`/leadService/api/v1/country/getAllCountry`);
+  const response = await api.get(`/leadService/api/v1/country/get-all`);
   return response.data;
 });
 
 export const getAllSecondaryCountries = createAsyncThunk(
   "getAllSecondaryCountries",
   async () => {
-    const response = await api.get(`/leadService/api/v1/country/getAllCountry`);
+    const response = await api.get(`/leadService/api/v1/country/get-all`);
     return response.data;
   },
 );
@@ -73,7 +73,7 @@ export const getAllStatesByCountryId = createAsyncThunk(
   "getAllStatesByCountryId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/country/getAllStateByCountryId?id=${id}`,
+      `/leadService/api/v1/country/state/get-all-by-country-id?countryId=${id}`,
     );
     return response.data;
   },
@@ -83,7 +83,7 @@ export const getAllStatesByCountryName = createAsyncThunk(
   "getAllStatesByCountryName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`,
+      `/leadService/api/v1/country/state/get-all-by-country-name?name=${name}`,
     );
     return response.data;
   },
@@ -93,7 +93,7 @@ export const getAllSecondaryStatesBySecondaryCountryName = createAsyncThunk(
   "getAllSecondaryStatesBySecondaryCountryName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/country/getAllStateByCountryName?name=${name}`,
+      `/leadService/api/v1/country/state/get-all-by-country-name?name=${name}`,
     );
     return response.data;
   },
@@ -103,7 +103,7 @@ export const getAllCitiesByStateId = createAsyncThunk(
   "getAllCitiesByStateId",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/state/getAllCityByStateId?id=${id}`,
+      `/leadService/api/v1/state/city/get-all-by-state-id?stateId=${id}`,
     );
     return response.data;
   },
@@ -113,7 +113,7 @@ export const getAllCitiesByStateName = createAsyncThunk(
   "getAllCitiesByStateName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`,
+      `/leadService/api/v1/state/city/get-all-by-state-name?name=${name}`,
     );
     return response.data;
   },
@@ -123,7 +123,7 @@ export const getAllSecondaryCitiesBySecondaryStateName = createAsyncThunk(
   "getAllSecondaryCitiesBySecondaryStateName",
   async (name) => {
     const response = await api.get(
-      `/leadService/api/v1/state/getAllCityByStateName?name=${name}`,
+      `/leadService/api/v1/state/city/get-all-by-state-name?name=${name}`,
     );
     return response.data;
   },
