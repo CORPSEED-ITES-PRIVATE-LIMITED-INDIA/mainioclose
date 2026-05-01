@@ -99,6 +99,11 @@ const AllProposal = () => {
   });
   const [proposalData, setProposalData] = useState("");
   const [loading, setLoading] = useState("");
+  const [confirmApproveModal, setConfirmApproveModal] = useState({
+    isOpen: false,
+    rowData: null,
+  });
+
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -158,6 +163,17 @@ const AllProposal = () => {
 
   const handleActionsClick = (e, rowData) => {
     if (e === "APPROVED" || e === "REJECTED") {
+      if (
+        e === "APPROVED" &&
+        (rowData?.status === "REJECTED" || rowData?.status === "CANCELLED")
+      ) {
+        setConfirmApproveModal({
+          isOpen: true,
+          rowData,
+        });
+        return;
+      }
+
       setUpdateStatusData((prev) => ({
         ...prev,
         proposalId: rowData?.id,
@@ -168,6 +184,21 @@ const AllProposal = () => {
       setProposalData(rowData?.template);
       proposalModal.onOpen();
     }
+  };
+
+  const handleConfirmRejectedToApproved = () => {
+    setUpdateStatusData((prev) => ({
+      ...prev,
+      proposalId: confirmApproveModal?.rowData?.id,
+      status: "APPROVED",
+    }));
+
+    setConfirmApproveModal({
+      isOpen: false,
+      rowData: null,
+    });
+
+    onOpen();
   };
 
   const handleChangeStatus = (values) => {
@@ -590,6 +621,58 @@ const AllProposal = () => {
                   dangerouslySetInnerHTML={{ __html: proposalData }}
                 />
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={confirmApproveModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmApproveModal({
+              isOpen: false,
+              rowData: null,
+            });
+          }
+        }}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Confirm Approval</ModalHeader>
+
+              <ModalBody>
+                <p className="text-sm text-default-600">
+                  This proposal is currently rejected. Are you sure you want to
+                  approve it?
+                </p>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    setConfirmApproveModal({
+                      isOpen: false,
+                      rowData: null,
+                    });
+                    onClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="primary"
+                  onPress={handleConfirmRejectedToApproved}
+                >
+                  Yes, Approve
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>
