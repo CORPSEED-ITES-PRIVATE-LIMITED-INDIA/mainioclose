@@ -1,6 +1,6 @@
 import { BellRing, PanelLeft } from "lucide-react";
 import Sidebar from "./Sidebar";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   addToast,
@@ -26,6 +26,7 @@ import {
   getAutomationStatus,
   handleToggleAutomation,
 } from "../toolkit/slices/authSlice";
+import BackButton from "../components/BackButton";
 
 const getNavItemsByDepartment = (department, admin) => {
   if (admin) return navItems;
@@ -51,6 +52,8 @@ const Layoutpage = () => {
   const location = useLocation();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const automationStatus = useSelector((state) => state.auth.automationStatus);
+  const { userId } = useParams();
+
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department,
@@ -97,6 +100,7 @@ const Layoutpage = () => {
         <main className={collapsed ? "w-[96%]" : "lg:w-[85%] 2xl:w-[87%]"}>
           <header className="dark:bg-black dark:text-white bg-white h-[40px] shadow px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <BackButton fallback={`/erp/${userId}/dashboard`} />
               <Button
                 variant="light"
                 size="sm"

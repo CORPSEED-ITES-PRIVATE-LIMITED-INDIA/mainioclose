@@ -105,6 +105,11 @@ const CompanyAndUnitsInLead = () => {
 
   const iconClass = "w-4 h-4 text-gray-500";
 
+  const normalizeName = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
   useEffect(() => {
     dispatch(getAllCountries());
     dispatch(getAllCompanyType());
@@ -203,27 +208,11 @@ const CompanyAndUnitsInLead = () => {
     );
   }, [gstTypeList, selectedUnitGstTypeId]);
 
-  const isInternationalGstType = selectedUnitGstTypeName === "International";
+  const isInternationalGstType =
+    normalizeName(selectedUnitGstTypeName) === "international";
 
-  // useEffect(() => {
-  //   if (!unitModal) return;
-
-  //   if (selectedUnitGstTypeId && !isInternationalGstType) {
-  //     unitForm.setFieldsValue({
-  //       country: "India",
-  //       state: undefined,
-  //       city: undefined,
-  //     });
-
-  //     dispatch(getAllStatesByCountryName("India"));
-  //   }
-  // }, [
-  //   unitModal,
-  //   selectedUnitGstTypeId,
-  //   isInternationalGstType,
-  //   unitForm,
-  //   dispatch,
-  // ]);
+  const isNonIndiaUnitCountry =
+    selectedUnitCountry && normalizeName(selectedUnitCountry) !== "india";
 
   const resetUnitModalState = () => {
     setEditingUnit(null);
@@ -349,6 +338,79 @@ const CompanyAndUnitsInLead = () => {
     setUseExistingSelection(false);
     companyForm.resetFields();
   };
+
+  const getGstTypeIdByName = (name) => {
+    return gstTypeList?.find(
+      (item) => normalizeName(item?.name) === normalizeName(name),
+    )?.id;
+  };
+
+  const getGstTypeName = (unit) => {
+    return (
+      unit?.gstTypeName ||
+      unit?.gstType ||
+      unit?.gstRegistrationTypeName ||
+      gstTypeList?.find(
+        (item) =>
+          String(item?.id) ===
+          String(unit?.gstTypeId || unit?.gstRegistrationTypeId),
+      )?.name ||
+      ""
+    );
+  };
+
+  const allowedGstTypeNames = useMemo(() => {
+    if (editingUnit?.id) {
+      return ["Registered", "Unregistered", "SEZ", "International"];
+    }
+
+    if (!units || units.length === 0) {
+      return ["Registered", "Unregistered", "SEZ", "International"];
+    }
+
+    const getName = (unit) =>
+      String(getGstTypeName(unit) || "")
+        .trim()
+        .toLowerCase();
+
+    const firstType = getName(units[0]);
+
+    if (firstType === "international") {
+      return ["International"];
+    }
+
+    if (firstType === "registered") {
+      return ["Registered", "SEZ"];
+    }
+
+    if (firstType === "unregistered") {
+      return ["Unregistered", "SEZ"];
+    }
+
+    if (firstType === "sez") {
+      const hasRegistered = units.some(
+        (unit) => getName(unit) === "registered",
+      );
+      const hasUnregistered = units.some(
+        (unit) => getName(unit) === "unregistered",
+      );
+
+      if (hasRegistered) return ["Registered", "SEZ"];
+      if (hasUnregistered) return ["Unregistered", "SEZ"];
+
+      return ["Registered", "Unregistered", "SEZ"];
+    }
+
+    return ["Registered", "Unregistered", "SEZ", "International"];
+  }, [units, editingUnit, gstTypeList]);
+
+  const filteredGstTypeList = useMemo(() => {
+    return gstTypeList.filter((item) =>
+      allowedGstTypeNames.some(
+        (name) => normalizeName(name) === normalizeName(item?.name),
+      ),
+    );
+  }, [gstTypeList, allowedGstTypeNames]);
 
   const openAddUnitModal = () => {
     if (!validateCompanySelected()) return;
@@ -492,14 +554,6 @@ const CompanyAndUnitsInLead = () => {
       });
       return;
     }
-
-    // if (!selectedUnitId) {
-    //   addToast({
-    //     title: "Please select unit first",
-    //     color: "warning",
-    //   });
-    //   return;
-    // }
 
     resetContactModalState();
 
@@ -716,8 +770,12 @@ const CompanyAndUnitsInLead = () => {
       (item) => String(item?.id) === String(values?.gstTypeId),
     );
 
+    const isCountryNonIndia =
+      values?.country && normalizeName(values.country) !== "india";
+
     if (
       selectedGstType?.name &&
+      !isCountryNonIndia &&
       !allowedGstTypeNames.includes(selectedGstType.name)
     ) {
       addToast({
@@ -738,7 +796,10 @@ const CompanyAndUnitsInLead = () => {
       .trim()
       .toLowerCase();
 
-    if (selectedGstTypeName !== "registered") {
+    if (isCountryNonIndia) {
+      payload.gstTypeId = getGstTypeIdByName("International");
+      payload.gstNo = "";
+    } else if (selectedGstTypeName !== "registered") {
       payload.gstNo = "";
     }
 
@@ -759,7 +820,7 @@ const CompanyAndUnitsInLead = () => {
               title: "Unit details updated successfully.",
               color: "success",
             });
-            console.log("werfgkqweguiyg   11111");
+
             dispatch(
               linkCompanyAndUnitsWithLead({
                 companyId: editingUnit?.companyId || effectiveCompany?.id,
@@ -768,7 +829,6 @@ const CompanyAndUnitsInLead = () => {
                 userId,
               }),
             ).then((linkRes) => {
-              console.log("werfgkqweguiyg", linkRes);
               if (linkRes?.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Company and unit linked successfully.",
@@ -832,7 +892,6 @@ const CompanyAndUnitsInLead = () => {
                 userId,
               }),
             ).then((linkRes) => {
-              console.log("werfgkqweguiyg 333", linkRes);
               if (linkRes?.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "Company and unit linked successfully.",
@@ -994,85 +1053,32 @@ const CompanyAndUnitsInLead = () => {
     return true;
   };
 
-  const normalizeName = (value) =>
-    String(value || "")
-      .trim()
-      .toLowerCase();
+  const handleUnitCountryChange = (value) => {
+    const internationalId = getGstTypeIdByName("International");
 
-  const getGstTypeIdByName = (name) => {
-    return gstTypeList?.find(
-      (item) => normalizeName(item?.name) === normalizeName(name),
-    )?.id;
+    unitForm.setFieldsValue({
+      country: value,
+      state: undefined,
+      city: undefined,
+    });
+
+    if (!value) return;
+
+    if (normalizeName(value) !== "india") {
+      unitForm.setFieldsValue({
+        gstTypeId: internationalId,
+        gstNo: "",
+        state: undefined,
+        city: undefined,
+      });
+
+      setIsGstMandatory(false);
+      dispatch(getAllStatesByCountryName(value));
+      return;
+    }
+
+    dispatch(getAllStatesByCountryName(value));
   };
-
-  const getGstTypeName = (unit) => {
-    return (
-      unit?.gstTypeName ||
-      unit?.gstType ||
-      unit?.gstRegistrationTypeName ||
-      gstTypeList?.find(
-        (item) =>
-          String(item?.id) ===
-          String(unit?.gstTypeId || unit?.gstRegistrationTypeId),
-      )?.name ||
-      ""
-    );
-  };
-
-  const allowedGstTypeNames = useMemo(() => {
-    // Update case: allow changing GST type freely
-    if (editingUnit?.id) {
-      return ["Registered", "Unregistered", "SEZ", "International"];
-    }
-
-    // Add case: no unit yet
-    if (!units || units.length === 0) {
-      return ["Registered", "Unregistered", "SEZ", "International"];
-    }
-
-    const getName = (unit) =>
-      String(getGstTypeName(unit) || "")
-        .trim()
-        .toLowerCase();
-
-    const firstType = getName(units[0]);
-
-    if (firstType === "international") {
-      return ["International"];
-    }
-
-    if (firstType === "registered") {
-      return ["Registered", "SEZ"];
-    }
-
-    if (firstType === "unregistered") {
-      return ["Unregistered", "SEZ"];
-    }
-
-    if (firstType === "sez") {
-      const hasRegistered = units.some(
-        (unit) => getName(unit) === "registered",
-      );
-      const hasUnregistered = units.some(
-        (unit) => getName(unit) === "unregistered",
-      );
-
-      if (hasRegistered) return ["Registered", "SEZ"];
-      if (hasUnregistered) return ["Unregistered", "SEZ"];
-
-      return ["Registered", "Unregistered", "SEZ"];
-    }
-
-    return ["Registered", "Unregistered", "SEZ", "International"];
-  }, [units, editingUnit, gstTypeList]);
-
-  const filteredGstTypeList = useMemo(() => {
-    return gstTypeList.filter((item) =>
-      allowedGstTypeNames.some(
-        (name) => normalizeName(name) === normalizeName(item?.name),
-      ),
-    );
-  }, [gstTypeList, allowedGstTypeNames]);
 
   const handleUnitGstTypeChange = (value) => {
     if (isInitializingUnit) return;
@@ -1245,27 +1251,6 @@ const CompanyAndUnitsInLead = () => {
                       </p>
 
                       <div className="flex gap-2">
-                        {/* <Button
-                          size="sm"
-                          variant="flat"
-                          color="default"
-                          onClick={() => {
-                            handleSelectUnit(unit?.id);
-
-                            const firstContact =
-                              Array.isArray(unit?.unitContacts) &&
-                              unit.unitContacts.length
-                                ? unit.unitContacts[0]
-                                : null;
-
-                            if (firstContact) {
-                              handleSelectContact(firstContact.id);
-                            }
-                          }}
-                        >
-                          Select
-                        </Button> */}
-
                         <Button
                           size="sm"
                           variant="light"
@@ -1337,37 +1322,35 @@ const CompanyAndUnitsInLead = () => {
                         </div>
 
                         {displayContact ? (
-                          <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                              <p className="text-gray-500">
-                                <span className="text-gray-700 font-medium">
-                                  Name:
-                                </span>{" "}
-                                {displayContact?.name || "NA"}
-                              </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <p className="text-gray-500">
+                              <span className="text-gray-700 font-medium">
+                                Name:
+                              </span>{" "}
+                              {displayContact?.name || "NA"}
+                            </p>
 
-                              <p className="text-gray-500">
-                                <span className="text-gray-700 font-medium">
-                                  Email:
-                                </span>{" "}
-                                {displayContact?.emails || "NA"}
-                              </p>
+                            <p className="text-gray-500">
+                              <span className="text-gray-700 font-medium">
+                                Email:
+                              </span>{" "}
+                              {displayContact?.emails || "NA"}
+                            </p>
 
-                              <p className="text-gray-500">
-                                <span className="text-gray-700 font-medium">
-                                  Contact No:
-                                </span>{" "}
-                                {displayContact?.contactNo || "NA"}
-                              </p>
+                            <p className="text-gray-500">
+                              <span className="text-gray-700 font-medium">
+                                Contact No:
+                              </span>{" "}
+                              {displayContact?.contactNo || "NA"}
+                            </p>
 
-                              <p className="text-gray-500">
-                                <span className="text-gray-700 font-medium">
-                                  Whatsapp No:
-                                </span>{" "}
-                                {displayContact?.whatsappNo || "NA"}
-                              </p>
-                            </div>
-                          </>
+                            <p className="text-gray-500">
+                              <span className="text-gray-700 font-medium">
+                                Whatsapp No:
+                              </span>{" "}
+                              {displayContact?.whatsappNo || "NA"}
+                            </p>
+                          </div>
                         ) : (
                           <p className="text-sm text-gray-500">
                             No contact available for this unit.
@@ -1583,13 +1566,7 @@ const CompanyAndUnitsInLead = () => {
                 <Input placeholder="Company Name" />
               </Form.Item>
 
-              <Form.Item
-                label="Company Structure"
-                name="companyTypeId"
-                // rules={[
-                //   { required: true, message: "Please select company type" },
-                // ]}
-              >
+              <Form.Item label="Company Structure" name="companyTypeId">
                 <Select
                   showSearch
                   allowClear
@@ -1603,27 +1580,15 @@ const CompanyAndUnitsInLead = () => {
                 label="PAN Number"
                 name="panNo"
                 getValueFromEvent={(e) => formatPANInput(e.target.value)}
-                // rules={[
-                //   { required: true, message: "Please enter PAN number" },
-                //   { validator: validatePAN },
-                // ]}
               >
                 <Input placeholder="PAN Number" maxLength={10} />
               </Form.Item>
 
-              <Form.Item
-                label="Address"
-                name="address"
-                // rules={[{ required: true, message: "Please enter address" }]}
-              >
+              <Form.Item label="Address" name="address">
                 <Input placeholder="Address" />
               </Form.Item>
 
-              <Form.Item
-                label="Country"
-                name="country"
-                // rules={[{ required: true, message: "Please select country" }]}
-              >
+              <Form.Item label="Country" name="country">
                 <Select
                   showSearch
                   allowClear
@@ -1642,11 +1607,7 @@ const CompanyAndUnitsInLead = () => {
                 />
               </Form.Item>
 
-              <Form.Item
-                label="State"
-                name="state"
-                // rules={[{ required: true, message: "Please select state" }]}
-              >
+              <Form.Item label="State" name="state">
                 <Select
                   showSearch
                   allowClear
@@ -1659,11 +1620,7 @@ const CompanyAndUnitsInLead = () => {
                 />
               </Form.Item>
 
-              <Form.Item
-                label="City"
-                name="city"
-                // rules={[{ required: true, message: "Please select city" }]}
-              >
+              <Form.Item label="City" name="city">
                 <Select
                   showSearch
                   allowClear
@@ -1676,7 +1633,6 @@ const CompanyAndUnitsInLead = () => {
                 label="Pin Code"
                 name="pinCode"
                 getValueFromEvent={(e) => allowOnlyNumbers(e.target.value)}
-                // rules={[{ required: true, message: "Please enter pin code" }]}
               >
                 <Input placeholder="Pin Code" maxLength={6} />
               </Form.Item>
@@ -1718,11 +1674,15 @@ const CompanyAndUnitsInLead = () => {
           >
             <Select
               showSearch
-              allowClear={allowedGstTypeNames.length > 1}
+              allowClear={
+                allowedGstTypeNames.length > 1 && !isNonIndiaUnitCountry
+              }
               options={filteredGstTypeList}
               fieldNames={{ label: "name", value: "id" }}
               placeholder="Select GST Type"
-              disabled={allowedGstTypeNames.length === 1}
+              disabled={
+                allowedGstTypeNames.length === 1 || isNonIndiaUnitCountry
+              }
               onChange={handleUnitGstTypeChange}
             />
           </Form.Item>
@@ -1772,21 +1732,10 @@ const CompanyAndUnitsInLead = () => {
           <Form.Item label="Country" name="country">
             <Select
               showSearch
-              allowClear={isInternationalGstType}
-              disabled={!isInternationalGstType}
-              options={
-                isInternationalGstType
-                  ? countryList?.filter((country) => country?.name !== "India")
-                  : countryList
-              }
+              allowClear
+              options={countryList}
               fieldNames={{ label: "name", value: "name" }}
-              onChange={(value) => {
-                unitForm.setFieldsValue({ state: undefined, city: undefined });
-
-                if (value) {
-                  dispatch(getAllStatesByCountryName(value));
-                }
-              }}
+              onChange={handleUnitCountryChange}
             />
           </Form.Item>
 
@@ -1860,6 +1809,7 @@ const CompanyAndUnitsInLead = () => {
               placeholder="Select unit"
             />
           </Form.Item>
+
           <Form.Item label="Title" name="title">
             <Select
               allowClear

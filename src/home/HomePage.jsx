@@ -3,9 +3,21 @@ import { useNavigate } from "react-router-dom";
 import logo from "../assets/CORPSEED.webp";
 import { ThemeSwitch } from "../components/theme-switch";
 import { BarChart3, Users, FileText, Briefcase } from "lucide-react";
+import { useEffect } from "react";
 
 const HomePage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const userDetail = sessionStorage.getItem("userDetail");
+
+    if (userDetail) {
+      const user = JSON.parse(userDetail);
+      if (user?.id) {
+        navigate(`/erp/${user.id}/dashboard`);
+      }
+    }
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100 dark:from-neutral-900 dark:via-neutral-900 dark:to-black">

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Form, Input, Button, addToast } from "@heroui/react";
 import logo from "../assets/CORPSEED.webp";
 import {
@@ -106,6 +106,17 @@ const Login = () => {
     },
     [dispatch, navigate],
   );
+
+  useEffect(() => {
+    const userDetail = sessionStorage.getItem("userDetail");
+
+    if (userDetail) {
+      const user = JSON.parse(userDetail);
+      if (user?.id) {
+        navigate(`/erp/${user.id}/dashboard`);
+      }
+    }
+  }, [navigate]);
 
   return (
     <div className="w-screen h-screen flex justify-center items-center">

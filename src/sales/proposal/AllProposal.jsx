@@ -40,6 +40,7 @@ const columns = [
   { name: "ID", uid: "id" },
   { name: "DATE", uid: "date" },
   { name: "SOLUTION NAME", uid: "solutionName" },
+  { name: "CREATED BY", uid: "createdBy" },
   { name: "EMAIL TO", uid: "mailTo" },
   { name: "EMAIL BY", uid: "createdByEmail" },
   { name: "BROCHURES", uid: "brochures" },
@@ -54,6 +55,7 @@ function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "date",
+  "createdBy",
   "solutionName",
   "mailTo",
   "brochures",
@@ -239,7 +241,7 @@ const AllProposal = () => {
           addToast({ title: "Something went wrong", color: "danger" });
         }
       })
-      .cactch((err) => {
+      .catch((err) => {
         setLoading("error");
         addToast({ title: "Something went wrong", color: "danger" });
       });
@@ -252,6 +254,14 @@ const AllProposal = () => {
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
               <p className="font-normal">{rowData?.solutionName || "-"}</p>
+            </div>
+          </div>
+        );
+      case "createdBy":
+        return (
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col">
+              <p className="font-normal">{rowData?.createdByName || "-"}</p>
             </div>
           </div>
         );
@@ -647,8 +657,12 @@ const AllProposal = () => {
 
               <ModalBody>
                 <p className="text-sm text-default-600">
-                  This proposal is currently rejected. Are you sure you want to
-                  approve it?
+                  This proposal is currently rejected by{" "}
+                  <strong>
+                    {confirmApproveModal?.rowData?.rejectedByName ||
+                      "Unknown User"}
+                  </strong>
+                  . Are you sure you want to approve it?
                 </p>
               </ModalBody>
 

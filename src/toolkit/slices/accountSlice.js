@@ -277,6 +277,20 @@ export const fetchEstimateReport = createAsyncThunk(
     }
   },
 );
+export const getEstimatesByLeadId = createAsyncThunk(
+  "leads/fetchEstimateReport",
+  async (leadId, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/estimates/lead/${leadId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response);
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",

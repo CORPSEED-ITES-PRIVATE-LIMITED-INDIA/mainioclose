@@ -652,9 +652,18 @@ const LeadEstimates = () => {
 
   const onCancelForm = () => {
     form.resetFields();
+
     form.setFieldsValue({
       lineItems: getMappedLineItems(),
+      customerNotes: "",
+      internalRemarks: "",
+      estimateDate: undefined,
+      validUntil: undefined,
     });
+
+    if (hasEstimates) {
+      setShowForm(false);
+    }
   };
 
   const onSaveUnitModal = (data) => {

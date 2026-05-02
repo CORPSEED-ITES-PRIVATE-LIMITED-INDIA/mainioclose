@@ -317,48 +317,48 @@ const LeadEstimate = () => {
   const addressFormModal = useDisclosure();
   const gstFormModal = useDisclosure();
   const searchCompaniesList = useSelector(
-    (state) => state.company.seachCompniesList
+    (state) => state.company.seachCompniesList,
   );
   const allCompanyUnits = useSelector((state) => state.company.allCompanyUnits);
   const contactListByCompanyId = useSelector(
-    (state) => state.company.contactListByCompanyId
+    (state) => state.company.contactListByCompanyId,
   );
   const details = useSelector((state) => state.leads.estimateDetail);
   const plantSetupData = useSelector((state) => state.leads.plantSetupDetail);
   const childLeadEstimateFlag = useSelector(
-    (state) => state.leads.childLeadFlag
+    (state) => state.leads.childLeadFlag,
   );
   const childLeads = useSelector((state) => state.leads.allChildLeadList);
   const companyDetails = useSelector(
-    (state) => state?.leads?.companyDetailsById
+    (state) => state?.leads?.companyDetailsById,
   );
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
   const gstTypeList = useSelector((state) => state.company.gstTypeList);
   const businessTypeList = useSelector(
-    (state) => state.company.businessTypeList
+    (state) => state.company.businessTypeList,
   );
   const productCategoryList = useSelector(
-    (state) => state.product.productCategoryList
+    (state) => state.product.productCategoryList,
   );
   const productSubcategoryList = useSelector(
-    (state) => state.product.productSubcategoryList
+    (state) => state.product.productSubcategoryList,
   );
   const businessArrangementList = useSelector(
-    (state) => state?.product?.businessArrangementList
+    (state) => state?.product?.businessArrangementList,
   );
   const productData = useSelector(
-    (state) => state.product.productDataByLeadName
+    (state) => state.product.productDataByLeadName,
   );
   const leadUsersList = useSelector((state) => state.leads.leadUsersList);
   const docsListInEstimate = useSelector(
-    (state) => state.leads.docsListInEstimate
+    (state) => state.leads.docsListInEstimate,
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
   const secStatesList = useSelector((state) => state.common.secondaryStateList);
   const secCitiesList = useSelector(
-    (state) => state.common.secondaryCitiesList
+    (state) => state.common.secondaryCitiesList,
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole.includes("ADMIN");
@@ -413,7 +413,7 @@ const LeadEstimate = () => {
     getValues,
   } = useForm({
     resolver: zodResolver(
-      formSchema({ productData, productSubCategoryData, gstMand, adminRole })
+      formSchema({ productData, productSubCategoryData, gstMand, adminRole }),
     ),
     defaultValues,
   });
@@ -442,11 +442,11 @@ const LeadEstimate = () => {
                   dispatch(getAllChildLeads(resp?.payload?.leadId));
                 } else {
                   dispatch(
-                    getProductListByLeadName(resp?.payload?.originalName)
+                    getProductListByLeadName(resp?.payload?.originalName),
                   );
                 }
               }
-            }
+            },
           );
         }
       }
@@ -592,7 +592,7 @@ const LeadEstimate = () => {
     dispatch(getAllCitiesByStateId(details?.primaryState?.id));
     dispatch(getAllProductCategoryById(details?.businessArrangmentId));
     dispatch(
-      getAllProductSubCategoryListByCategoryId(details?.productCategoryId)
+      getAllProductSubCategoryListByCategoryId(details?.productCategoryId),
     );
     dispatch(getAllGstTypeByCompanyTypeId(details?.companyType));
     dispatch(getBusinessTypeByGstTypeId(details?.gstType));
@@ -779,7 +779,7 @@ const LeadEstimate = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -834,7 +834,7 @@ const LeadEstimate = () => {
         }
       })
       .catch(() =>
-        addToast({ message: "Something went wrong !.", color: "danger" })
+        addToast({ message: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -877,7 +877,7 @@ const LeadEstimate = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
+              addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         } else {
           dispatch(createEstimateForApprovals(values))
@@ -900,7 +900,7 @@ const LeadEstimate = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
+              addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         }
       } else {
@@ -926,7 +926,7 @@ const LeadEstimate = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
+              addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         } else {
           dispatch(createEstimate(values))
@@ -949,7 +949,7 @@ const LeadEstimate = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" })
+              addToast({ title: "Something went wrong !.", color: "danger" }),
             );
         }
       }
@@ -963,7 +963,7 @@ const LeadEstimate = () => {
       companyAndUnitData,
       discount,
       plantSetupData,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -986,7 +986,7 @@ const LeadEstimate = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -1141,7 +1141,7 @@ const LeadEstimate = () => {
                           value={field.value}
                           onItemSelect={(item) => {
                             dispatch(
-                              getProductListByLeadName(item?.childLeadName)
+                              getProductListByLeadName(item?.childLeadName),
                             );
                           }}
                           onChange={(e) => {
@@ -1177,10 +1177,10 @@ const LeadEstimate = () => {
                               compUnit?.oneTimeUpdateAddress,
                           }));
                           dispatch(
-                            getAllGstTypeByCompanyTypeId(compUnit?.companyType)
+                            getAllGstTypeByCompanyTypeId(compUnit?.companyType),
                           );
                           dispatch(
-                            getBusinessTypeByGstTypeId(compUnit?.gstType)
+                            getBusinessTypeByGstTypeId(compUnit?.gstType),
                           );
                           setGstMand((prev) => ({
                             ...prev,
@@ -1193,21 +1193,21 @@ const LeadEstimate = () => {
                             pan: compUnit?.panPresent,
                           }));
                           dispatch(
-                            getAllStatesByCountryName(compUnit?.country)
+                            getAllStatesByCountryName(compUnit?.country),
                           );
                           dispatch(getAllCitiesByStateName(compUnit?.state));
                           if (compUnit?.seCountry) {
                             dispatch(
                               getAllSecondaryStatesBySecondaryCountryName(
-                                compUnit?.seCountry
-                              )
+                                compUnit?.seCountry,
+                              ),
                             );
                           }
                           if (compUnit?.secState) {
                             dispatch(
                               getAllSecondaryCitiesBySecondaryStateName(
-                                compUnit?.secState
-                              )
+                                compUnit?.secState,
+                              ),
                             );
                           }
                           const formValues = getValues();
@@ -1225,10 +1225,10 @@ const LeadEstimate = () => {
                             state: compUnit?.state,
                             panNo: compUnit?.panNo,
                             primaryContact: String(
-                              compUnit?.primaryContact?.id
+                              compUnit?.primaryContact?.id,
                             ),
                             secondaryContact: String(
-                              compUnit?.secondaryContact?.id
+                              compUnit?.secondaryContact?.id,
                             ),
                             assigneeId: String(compUnit?.assignee?.id),
                             primaryPinCode: compUnit?.pinCode,
@@ -1324,7 +1324,7 @@ const LeadEstimate = () => {
                         field.onChange(value);
                         const foundObject =
                           businessTypeList?.gstTypePrice?.find(
-                            (item) => item.id == value
+                            (item) => item.id == value,
                           );
                         setGstMand((prev) => ({
                           ...prev,
@@ -1526,7 +1526,7 @@ const LeadEstimate = () => {
                             value={String(field.value)}
                             onChange={(value) => {
                               dispatch(
-                                getAllProductSubCategoryListByCategoryId(value)
+                                getAllProductSubCategoryListByCategoryId(value),
                               );
                               field.onChange(value);
                             }}
@@ -1549,7 +1549,7 @@ const LeadEstimate = () => {
                             value={String(field.value)}
                             onChange={(value) => {
                               dispatch(
-                                getAllProductSubCategoryListByCategoryId(value)
+                                getAllProductSubCategoryListByCategoryId(value),
                               );
                               field.onChange(value);
                             }}
@@ -1600,15 +1600,15 @@ const LeadEstimate = () => {
                                       calculateTotalPriceWithGST(
                                         e.target.value,
                                         quantity,
-                                        gst
-                                      )
-                                    )
+                                        gst,
+                                      ),
+                                    ),
                                   );
                                   if (discount) {
                                     validateGreaterThanOrEqual(
                                       e.target.value,
                                       productSubCategoryFees?.actualPrice,
-                                      discount
+                                      discount,
                                     );
                                   }
                                 }}
@@ -1650,9 +1650,9 @@ const LeadEstimate = () => {
                                     calculateTotalPriceWithGST(
                                       actualPrice,
                                       quantity,
-                                      e.target.value
-                                    )
-                                  )
+                                      e.target.value,
+                                    ),
+                                  ),
                                 );
                                 field.onChange(e);
                               }}
@@ -1678,9 +1678,9 @@ const LeadEstimate = () => {
                                     calculateTotalPriceWithGST(
                                       actualPrice,
                                       e.target.value,
-                                      gst
-                                    )
-                                  )
+                                      gst,
+                                    ),
+                                  ),
                                 );
                               }}
                             />
@@ -2201,7 +2201,7 @@ const LeadEstimate = () => {
                       value={field.value}
                       onChange={(value) => {
                         dispatch(
-                          getAllSecondaryStatesBySecondaryCountryName(value)
+                          getAllSecondaryStatesBySecondaryCountryName(value),
                         );
                         field.onChange(value);
                       }}
@@ -2224,7 +2224,7 @@ const LeadEstimate = () => {
                       value={field.value}
                       onChange={(value) => {
                         dispatch(
-                          getAllSecondaryCitiesBySecondaryStateName(value)
+                          getAllSecondaryCitiesBySecondaryStateName(value),
                         );
                         field.onChange(value);
                       }}
@@ -2500,7 +2500,7 @@ const LeadEstimate = () => {
                                   field.onChange(value || null);
                                   const foundObject =
                                     businessTypeList?.gstTypePrice?.find(
-                                      (item) => item.id == value
+                                      (item) => item.id == value,
                                     );
                                   setUpdateGstMand((prev) => ({
                                     ...prev,

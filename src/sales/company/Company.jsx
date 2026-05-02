@@ -517,16 +517,18 @@ const Company = () => {
               <Chip
                 className="capitalize text-tiny"
                 color={
-                  company?.status === "approved"
+                  company?.onboardingStatus === "APPROVED"
                     ? "success"
-                    : company?.status === "disapproved"
-                      ? "danger"
-                      : "secondary"
+                    : company?.onboardingStatus === "INITIATED"
+                      ? "secondary"
+                      : company?.onboardingStatus === "MINIMAL"
+                        ? "warning"
+                        : "danger"
                 }
                 size="sm"
                 variant="flat"
               >
-                {company?.status || "-"}
+                {company?.onboardingStatus || "-"}
               </Chip>
             </div>
           );

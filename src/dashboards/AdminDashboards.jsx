@@ -26,16 +26,16 @@ const AdminDashboards = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const totalLeadCount = useSelector(
-    (state) => state.dashboard.totalLeadCountForGraph
+    (state) => state.dashboard.totalLeadCountForGraph,
   );
   const totalProjectCount = useSelector(
-    (state) => state.dashboard.totalProjectCountForGraph
+    (state) => state.dashboard.totalProjectCountForGraph,
   );
   const userCount = useSelector(
-    (state) => state.dashboard.totalUserCountForGraph
+    (state) => state.dashboard.totalUserCountForGraph,
   );
   const companyCount = useSelector(
-    (state) => state.dashboard.totalCompanyForGraph
+    (state) => state.dashboard.totalCompanyForGraph,
   );
 
   useEffect(() => {
@@ -43,7 +43,7 @@ const AdminDashboards = () => {
     dispatch(getTotalProjectCounts(userId));
     dispatch(totalUserCount(userId));
     dispatch(totalCompanyForGraph(userId));
-  }, [dispatch,userId]);
+  }, [dispatch, userId]);
 
   useEffect(() => {
     dispatch(getDashboardUsersByHeirarchy(userId));
@@ -104,7 +104,7 @@ const AdminDashboards = () => {
         <ProjectsDataChart />
         <ConversionStatus />
         {/* <ConvertedLeadsDataChart /> */}
-        <RevenueChart/>
+        <RevenueChart />
       </div>
     </div>
   );
