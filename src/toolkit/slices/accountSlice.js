@@ -278,13 +278,13 @@ export const fetchEstimateReport = createAsyncThunk(
   },
 );
 export const getEstimatesByLeadId = createAsyncThunk(
-  "leads/fetchEstimateReport",
+  "getEstimatesByLeadId",
   async (leadId, { rejectWithValue }) => {
     try {
-      const response = await api.post(
+      const response = await api.get(
         `/accountService/api/v1/estimates/lead/${leadId}`,
       );
-
+      console.log("Test hai Yo::",response)
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response);
@@ -309,6 +309,7 @@ const AccountSlice = createSlice({
     unbilledDetail: {},
     invoiceReport: [],
     estimateReport: [],
+    estimateList:[],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -465,6 +466,17 @@ const AccountSlice = createSlice({
     builder.addCase(getAllInvoiceReport.rejected, (state) => {
       state.loading = "rejected";
       state.invoiceReport = [];
+    });
+    builder.addCase(getEstimatesByLeadId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getEstimatesByLeadId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimateList = action.payload || [];
+    });
+    builder.addCase(getEstimatesByLeadId.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimateList = [];
     });
   },
 });

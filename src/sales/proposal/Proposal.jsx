@@ -38,6 +38,7 @@ import ServiceFormFieldsDetail from "../leads/leadEstimate/ServiceFormFieldsDeta
 import { Form } from "antd";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
 
 const formSchema = () =>
   z.object({
@@ -131,6 +132,7 @@ const Proposal = () => {
   const allProposal = useSelector((state) => state.leads.proposalListByLeadId);
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const userDetail = useSelector((state) => state.auth.currentUser);
+  const estimateList = useSelector((state) => state.account.estimateList);
   const solutionDetail = useSelector(
     (state) => state.setting.solutionDetailById,
   );
@@ -179,6 +181,35 @@ const Proposal = () => {
     return [];
   }, [allProposal]);
 
+  const latestEstimate = useMemo(() => {
+    if (!Array.isArray(estimateList) || estimateList.length === 0) return null;
+
+    return [...estimateList].sort((a, b) => {
+      const dateA = dayjs(
+        a?.createdAt ||
+          a?.updatedAt ||
+          a?.estimateDate ||
+          a?.createdDate ||
+          a?.createDate,
+      ).valueOf();
+
+      const dateB = dayjs(
+        b?.createdAt ||
+          b?.updatedAt ||
+          b?.estimateDate ||
+          b?.createdDate ||
+          b?.createDate,
+      ).valueOf();
+
+      if (dateB !== dateA) return dateB - dateA;
+
+      return Number(b?.id || 0) - Number(a?.id || 0);
+    })[0];
+  }, [estimateList]);
+
+  const isLatestEstimateRejected =
+    latestEstimate?.status?.toUpperCase() === "REJECTED";
+
   const { control, handleSubmit, reset, setValue } = useForm({
     resolver: zodResolver(formSchema()),
     defaultValues,
@@ -189,14 +220,15 @@ const Proposal = () => {
       .map((item) => (typeof item === "object" ? item.id : item))
       .filter(Boolean);
 
-  const isCancelled = (status) =>
-    status === "REJECTED" || status === "CANCELLED" || status === "APPROVED";
+  const isProposalAlreadyClosed = (status) =>
+    ["REJECTED", "CANCELLED"].includes(status?.toUpperCase());
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
     dispatch(getAllProposalTemplateList());
     dispatch(getAllBrochureList());
     dispatch(getAllSolutionList(userId));
+    dispatch(getEstimatesByLeadId(leadId));
   }, [dispatch, leadId, userId]);
 
   useEffect(() => {
@@ -1045,22 +1077,11 @@ const Proposal = () => {
                       color="danger"
                       variant="flat"
                       className="flex-1"
-                      isDisabled={isCancelled(proposal?.status)}
-                      onPress={() => {
-                        // if (
-                        //   leadData?.proposalApproved ||
-                        //   leadData?.proposalStatus === "INITIATED"
-                        // ) {
-                        //   addToast({
-                        //     title: "RESTRICTED",
-                        //     description:
-                        //       "You are not required to cancel initiated or approved proposal.",
-                        //     color: "danger",
-                        //   });
-                        //   return;
-                        // }
-                        handleOpenCancelModal(proposal);
-                      }}
+                      isDisabled={
+                        isProposalAlreadyClosed(proposal?.status) ||
+                        !isLatestEstimateRejected
+                      }
+                      onPress={() => handleOpenCancelModal(proposal)}
                     >
                       Reject / Cancel
                     </Button>
