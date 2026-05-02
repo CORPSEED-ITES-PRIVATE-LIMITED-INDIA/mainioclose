@@ -39,6 +39,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 const columns = [
   { name: "ID", uid: "id" },
   { name: "DATE", uid: "date" },
+  { name: "PROPOSAL NO.", uid: "proposalNumber" },
   { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "CREATED BY", uid: "createdBy" },
   { name: "EMAIL TO", uid: "mailTo" },
@@ -55,6 +56,7 @@ function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "date",
+  "proposalNumber",
   "createdBy",
   "solutionName",
   "mailTo",
@@ -270,6 +272,12 @@ const AllProposal = () => {
         return (
           <p className="font-normal text-xs capitalize">
             {dayjs(rowData?.createDate).format("YYYY-MM-DD") || "-"}
+          </p>
+        );
+      case "proposalNumber":
+        return (
+          <p className="font-normal text-xs capitalize">
+            {rowData?.proposalNumber || "-"}
           </p>
         );
       case "mailTo":
