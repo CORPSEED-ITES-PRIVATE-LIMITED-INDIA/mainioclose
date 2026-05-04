@@ -166,7 +166,11 @@ const AllProposal = () => {
   }, [sortDescriptor, items]);
 
   const handleActionsClick = (e, rowData) => {
-    if (e === "APPROVED" || e === "REJECTED") {
+    if (e === "view") {
+      setProposalData(rowData?.template);
+      proposalModal.onOpen();
+      return;
+    } else {
       if (
         e === "APPROVED" &&
         (rowData?.status === "REJECTED" || rowData?.status === "CANCELLED")
@@ -177,16 +181,12 @@ const AllProposal = () => {
         });
         return;
       }
-
       setUpdateStatusData((prev) => ({
         ...prev,
         proposalId: rowData?.id,
         status: e,
       }));
       onOpen();
-    } else {
-      setProposalData(rowData?.template);
-      proposalModal.onOpen();
     }
   };
 
@@ -337,11 +337,13 @@ const AllProposal = () => {
                 }}
               >
                 <DropdownItem key="view">View</DropdownItem>
-                {/* {rowData?.status === "CANCELLED" ||
-                rowData?.status === "REJECTED" ? null : ( */}
-                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
-                {/* )} */}
-                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+
+                {rowData?.status === "INITIATED" ? (
+                  <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                ) : null}
+                {rowData?.status === "INITIATED" ? (
+                  <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+                ) : null}
               </DropdownMenu>
             </Dropdown>
           </div>

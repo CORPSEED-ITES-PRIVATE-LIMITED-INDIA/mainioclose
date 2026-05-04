@@ -11,6 +11,8 @@ import {
   ModalHeader,
   Tooltip,
   useDisclosure,
+  RadioGroup,
+  Radio,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { Check, Plus, Search } from "lucide-react";
@@ -152,6 +154,7 @@ const Proposal = () => {
   const [isCreatingProposal, setIsCreatingProposal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [isClientRejected, setIsClientRejected] = useState("");
   const [proposalToCancel, setProposalToCancel] = useState(null);
   const [statusLoading, setStatusLoading] = useState("");
 
@@ -221,7 +224,7 @@ const Proposal = () => {
       .filter(Boolean);
 
   const isProposalAlreadyClosed = (status) =>
-    ["REJECTED", "CANCELLED", "APPROVED"].includes(status?.toUpperCase());
+    ["REJECTED", "CANCELLED"].includes(status?.toUpperCase());
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
@@ -463,10 +466,21 @@ const Proposal = () => {
   const handleOpenCancelModal = (proposal) => {
     setProposalToCancel(proposal);
     setCancelReason("");
+    setIsClientRejected("");
     cancelModal.onOpen();
   };
 
   const handleCancelProposal = () => {
+    if (!isClientRejected) {
+      addToast({
+        title: "Client rejection required",
+        description:
+          "Please select whether the proposal was rejected by client.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!cancelReason.trim()) {
       addToast({
         title: "Reason required",
@@ -481,6 +495,9 @@ const Proposal = () => {
         userId,
         proposalId: proposalToCancel?.id,
         reason: encodeURIComponent(cancelReason.trim()),
+
+        // send this to backend
+        isProposalRejectedByClient: isClientRejected === "YES",
       }),
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
@@ -489,9 +506,11 @@ const Proposal = () => {
           description: "Proposal cancelled successfully.",
           color: "success",
         });
+
         cancelModal.onClose();
         setProposalToCancel(null);
         setCancelReason("");
+        setIsClientRejected("");
         setSelectedProposal(null);
         dispatch(getAllProposalByLeadId(leadId));
       } else {
@@ -1080,7 +1099,7 @@ const Proposal = () => {
                       isDisabled={isProposalAlreadyClosed(proposal?.status)}
                       onPress={() => handleOpenCancelModal(proposal)}
                     >
-                      Reject / Cancel
+                      Cancel
                     </Button>
                   </div>
                 </div>
@@ -1252,26 +1271,46 @@ const Proposal = () => {
             <ModalHeader>Cancel Proposal</ModalHeader>
 
             <ModalBody>
-              <p className="text-sm text-gray-500">
-                Please enter the reason for cancelling this proposal.
-              </p>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 mb-2">
+                    Is proposal rejected by client?
+                  </p>
 
-              <Input
-                label="Reason"
-                placeholder="Enter cancellation reason"
-                variant="bordered"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-              />
+                  <RadioGroup
+                    orientation="horizontal"
+                    value={isClientRejected}
+                    onValueChange={setIsClientRejected}
+                  >
+                    <Radio value="YES">YES</Radio>
+                    <Radio value="NO">NO</Radio>
+                  </RadioGroup>
+                </div>
+
+                <Input
+                  label="Reason"
+                  variant="bordered"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                />
+              </div>
             </ModalBody>
 
             <ModalFooter>
-              <Button variant="flat" onPress={cancelModal.onClose}>
+              <Button
+                variant="flat"
+                onPress={() => {
+                  cancelModal.onClose();
+                  setProposalToCancel(null);
+                  setCancelReason("");
+                  setIsClientRejected("");
+                }}
+              >
                 Close
               </Button>
 
               <Button color="danger" onPress={handleCancelProposal}>
-                Cancel Proposal
+                Submit
               </Button>
             </ModalFooter>
           </ModalContent>
