@@ -322,9 +322,8 @@ const Proposal = () => {
       return;
     }
 
-    const hasNonCancelled = proposalList.some(
-      (item) =>
-        !["REJECTED", "CANCELLED"].includes(item?.status?.toUpperCase()),
+    const hasNonCancelled = proposalList.some((item) =>
+      ["REJECTED"].includes(item?.status?.toUpperCase()),
     );
     if (hasNonCancelled) {
       addToast({
@@ -542,19 +541,12 @@ const Proposal = () => {
     });
   };
 
-  //   if (!brochureUrl || brochureUrl.length === 0) {
-  //   addToast({
-  //     title: "RESTRICTED !.",
-  //     description:
-  //       "Please select at least one brochure before sending proposal !.",
-  //     color: "danger",
-  //   });
-  //   setStatusLoading("");
-  //   return;
-  // }
-
   const onSubmit = (values) => {
     setStatusLoading("pending");
+
+    const hadRejectedProposal = proposalList.some(
+      (p) => p.status?.toUpperCase() === "REJECTED",
+    );
 
     if (serviceFeeList?.length === 0 || !serviceFeeList) {
       addToast({
@@ -1122,7 +1114,7 @@ const Proposal = () => {
                     <div className="flex flex-col gap-1.5">
                       {proposal?.isSentToClient && (
                         <Tooltip content="Sent to client">
-                          <p className="text-xs bg-green-100 py-1 px-2.5 rounded-full text-green-700">
+                          <p className="text-xs bg-green-100 py-1 px-2.5 rounded-full w-fit text-green-700">
                             SENT
                           </p>
                         </Tooltip>
