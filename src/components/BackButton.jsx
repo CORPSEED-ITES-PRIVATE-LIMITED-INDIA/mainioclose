@@ -13,7 +13,7 @@ export default function BackButton({ fallback }) {
     <button
       type="button"
       onClick={handleBack}
-      className={`inline-flex items-center gap-2 rounded-full  px-3 py-1 text-sm font-semibold text-black dark:text-white shadow-sm transition-all duration-300 hover:bg-blue-700 hover:shadow-md`}
+      className={`inline-flex items-center gap-2 rounded-full  px-3 py-1 text-sm font-semibold outline-gray-200 text-black dark:text-white shadow-sm transition-all duration-300 hover:bg-blue-700 hover:text-white hover:outline-gray-200 hover:shadow-md cursor-pointer`}
     >
       <ArrowLeft size={16} />
       Back

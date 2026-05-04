@@ -19,7 +19,7 @@ import {
   Space,
   Switch,
 } from "antd";
-import { Building, EllipsisVertical, Pencil, Plus } from "lucide-react";
+import { Building, EllipsisVertical, Link, Pencil, Plus } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -1203,24 +1203,14 @@ const CompanyAndUnitsInLead = () => {
               <p className="text-sm font-medium">Company unit detail</p>
             </div>
 
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" radius="full" variant="flat">
-                  <EllipsisVertical />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {}}
-              >
-                <DropdownItem key="addContact" onPress={openAddContactModal}>
-                  Add contact in unit
-                </DropdownItem>
-                <DropdownItem key="addUnit" onPress={openAddUnitModal}>
-                  Add company unit
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+            <Button
+              size="sm"
+              variant="light"
+              isIconOnly
+              onPress={openAddUnitModal}
+            >
+              <Plus className={iconClass} />
+            </Button>
           </div>
         </CardHeader>
 
@@ -1255,7 +1245,15 @@ const CompanyAndUnitsInLead = () => {
                           size="sm"
                           variant="light"
                           isIconOnly
-                          onClick={() => openEditUnitModal(unit)}
+                          onPress={() => handleSelectUnit(unit?.id)}
+                        >
+                          <Link className={iconClass} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          isIconOnly
+                          onPress={() => openEditUnitModal(unit)}
                         >
                           <Pencil className={iconClass} />
                         </Button>
@@ -1312,23 +1310,33 @@ const CompanyAndUnitsInLead = () => {
                               size="sm"
                               variant="light"
                               isIconOnly
-                              onClick={() =>
-                                openEditContactModal(displayContact, unit?.id)
-                              }
+                              onPress={openAddContactModal}
                             >
-                              <Pencil className={iconClass} />
+                              <Plus className={iconClass} />
                             </Button>
                           </div>
                         </div>
 
                         {displayContact ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
-                                Name:
-                              </span>{" "}
-                              {displayContact?.name || "NA"}
-                            </p>
+                          <div className="grid grid-cols-1 md:grid-cols-1 gap-x-4 gap-y-2 text-sm">
+                            <div className="flex justify-between items-center">
+                              <p className="text-gray-500">
+                                <span className="text-gray-700 font-medium">
+                                  Name:
+                                </span>{" "}
+                                {displayContact?.name || "NA"}
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="light"
+                                isIconOnly
+                                onPress={() =>
+                                  openEditContactModal(displayContact, unit?.id)
+                                }
+                              >
+                                <Pencil className={iconClass} />
+                              </Button>
+                            </div>
 
                             <p className="text-gray-500">
                               <span className="text-gray-700 font-medium">
@@ -1732,8 +1740,13 @@ const CompanyAndUnitsInLead = () => {
           <Form.Item label="Country" name="country">
             <Select
               showSearch
-              allowClear
-              options={countryList}
+              allowClear={isInternationalGstType}
+              disabled={!isInternationalGstType}
+              options={
+                isInternationalGstType
+                  ? countryList?.filter((country) => country?.name !== "India")
+                  : countryList
+              }
               fieldNames={{ label: "name", value: "name" }}
               onChange={handleUnitCountryChange}
             />
