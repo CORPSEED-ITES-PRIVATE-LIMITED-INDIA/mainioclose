@@ -17,9 +17,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { Check, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+
 import {
   cancelProposal,
   editLeadPropposal,
@@ -28,6 +26,7 @@ import {
   getAllProposalTemplateList,
   getSingleLeadDataByLeadId,
   sendProposal,
+  sendProposalToManager,
 } from "../../toolkit/slices/leadSlice";
 import TextEditor from "../../components/TextEditor";
 import {
@@ -37,23 +36,10 @@ import {
 } from "../../toolkit/slices/settingSlice";
 import dayjs from "dayjs";
 import ServiceFormFieldsDetail from "../leads/leadEstimate/ServiceFormFieldsDetail";
-import { Form } from "antd";
+import { Form, Input as AntInput } from "antd";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
-
-const formSchema = () =>
-  z.object({
-    mailTo: z
-      .array(z.string().email("Invalid email"))
-      .min(1, "Please enter at least one valid email"),
-    mailCc: z.array(z.string().email("Invalid email")).optional(),
-    mailBcc: z.array(z.string().email("Invalid email")).optional(),
-    mailSubject: z.string().min(1, "Please give subject"),
-    brochureBook: z.array(z.number()).optional(),
-    mailBody: z.string().min(1, "Please give mail body"),
-    template: z.string().min(1, "Please give proposal"),
-  });
 
 const defaultValues = {
   mailTo: [],
@@ -124,6 +110,26 @@ export function TagsInput({
     </div>
   );
 }
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validateEmailArray = (required = false) => ({
+  validator: (_, value = []) => {
+    if (required && (!Array.isArray(value) || value.length === 0)) {
+      return Promise.reject(new Error("Please enter at least one valid email"));
+    }
+
+    if (Array.isArray(value) && value.length > 0) {
+      const invalidEmail = value.find((email) => !emailRegex.test(email));
+
+      if (invalidEmail) {
+        return Promise.reject(new Error(`Invalid email: ${invalidEmail}`));
+      }
+    }
+
+    return Promise.resolve();
+  },
+});
 
 const Proposal = () => {
   const dispatch = useDispatch();
@@ -213,11 +219,6 @@ const Proposal = () => {
   const isLatestEstimateRejected =
     latestEstimate?.status?.toUpperCase() === "REJECTED";
 
-  const { control, handleSubmit, reset, setValue } = useForm({
-    resolver: zodResolver(formSchema()),
-    defaultValues,
-  });
-
   const getBrochureIds = (items = []) =>
     items
       .map((item) => (typeof item === "object" ? item.id : item))
@@ -243,10 +244,11 @@ const Proposal = () => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         if (resp?.payload?.clients?.length > 0) {
-          setValue(
-            "mailTo",
-            resp.payload.clients.map((client) => client.emails).filter(Boolean),
-          );
+          proposalAntForm.setFieldsValue({
+            mailTo: resp.payload.clients
+              .map((client) => client.emails)
+              .filter(Boolean),
+          });
         }
 
         if (resp?.payload?.originalName) {
@@ -263,19 +265,15 @@ const Proposal = () => {
                   userId,
                 }),
               );
-              setValue(
-                "mailSubject",
-                `Corpseed Proposal for - ${res?.payload?.name}`,
-                {
-                  shouldValidate: true,
-                },
-              );
+              proposalAntForm.setFieldsValue({
+                mailSubject: `Corpseed Proposal for - ${res?.payload?.name}`,
+              });
             }
           });
         }
       }
     });
-  }, [dispatch, leadId, userId, setValue]);
+  }, [dispatch, leadId, userId]);
 
   useEffect(() => {
     if (
@@ -289,17 +287,19 @@ const Proposal = () => {
   }, [proposalList, selectedProposal, isCreatingProposal, editProposal]);
 
   const loadProposalInForm = (proposal) => {
+    const brochureIds = getBrochureIds(proposal?.brochureBook || []);
+
     setData(proposal?.template || "<h2>Your proposal </h2>");
     setMailBody(proposal?.mailBody || "<h2>Your email body</h2>");
-    setBrochureUrl(getBrochureIds(proposal?.brochureBook || []));
+    setBrochureUrl(brochureIds);
     setTemplateName(proposal?.templateName || "");
 
-    reset({
+    proposalAntForm.setFieldsValue({
       mailTo: proposal?.mailTo || [],
       mailCc: proposal?.mailCc || [],
       mailBcc: proposal?.mailBcc || [],
       mailSubject: proposal?.mailSubject || "",
-      brochureBook: getBrochureIds(proposal?.brochureBook || []),
+      brochureBook: brochureIds,
       mailBody: proposal?.mailBody || "<h2>Your email body</h2>",
       template: proposal?.template || "<h2>Your proposal </h2>",
     });
@@ -322,10 +322,10 @@ const Proposal = () => {
       return;
     }
 
-    const hasNonCancelled = (allProposal || []).some(
-      (item) => !["REJECTED", "CANCELLED"].includes(item?.status),
+    const hasNonCancelled = proposalList.some(
+      (item) =>
+        !["REJECTED", "CANCELLED"].includes(item?.status?.toUpperCase()),
     );
-
     if (hasNonCancelled) {
       addToast({
         title: "RESTRICTED",
@@ -343,7 +343,9 @@ const Proposal = () => {
     setData("<h2>Your proposal </h2>");
     setMailBody("<h2>Your email body</h2>");
 
-    reset({
+    proposalAntForm.resetFields();
+
+    proposalAntForm.setFieldsValue({
       ...defaultValues,
       mailTo:
         company?.units?.[0]?.unitContacts
@@ -352,6 +354,7 @@ const Proposal = () => {
       mailSubject: solutionDetail?.name
         ? `Corpseed Proposal for - ${solutionDetail.name}`
         : "",
+      brochureBook: [],
     });
 
     proposalFormModal.onOpen();
@@ -434,12 +437,22 @@ const Proposal = () => {
     if (item.description) {
       const modifiedTemplate = modifyTemplateHtml(item.description, variables);
       setData(modifiedTemplate);
-      setValue("template", modifiedTemplate);
+
+      proposalAntForm.setFieldsValue({
+        template: modifiedTemplate,
+      });
+
+      proposalAntForm.validateFields(["template"]);
     }
 
     if (item.body) {
       setMailBody(item.body);
-      setValue("mailBody", item.body);
+
+      proposalAntForm.setFieldsValue({
+        mailBody: item.body,
+      });
+
+      proposalAntForm.validateFields(["mailBody"]);
     }
 
     setTemplateName(item?.name);
@@ -452,7 +465,12 @@ const Proposal = () => {
       : [...brochureUrl, id];
 
     setBrochureUrl(nextSelected);
-    setValue("brochureBook", nextSelected);
+
+    proposalAntForm.setFieldsValue({
+      brochureBook: nextSelected,
+    });
+
+    proposalAntForm.validateFields(["brochureBook"]);
   };
 
   const handleEditProposal = () => {
@@ -524,8 +542,20 @@ const Proposal = () => {
     });
   };
 
+  //   if (!brochureUrl || brochureUrl.length === 0) {
+  //   addToast({
+  //     title: "RESTRICTED !.",
+  //     description:
+  //       "Please select at least one brochure before sending proposal !.",
+  //     color: "danger",
+  //   });
+  //   setStatusLoading("");
+  //   return;
+  // }
+
   const onSubmit = (values) => {
     setStatusLoading("pending");
+
     if (serviceFeeList?.length === 0 || !serviceFeeList) {
       addToast({
         title: "RESTRICTED !.",
@@ -568,60 +598,21 @@ const Proposal = () => {
       return;
     }
 
-    if (!brochureUrl || brochureUrl.length === 0) {
-      addToast({
-        title: "Please select at least one brochure",
-        color: "danger",
-      });
-      setStatusLoading("");
-      return;
-    }
-
-    if (!templateName || values.template === "<h2>Your proposal </h2>") {
-      addToast({
-        title: "Please select a proposal template",
-        color: "danger",
-      });
-      setStatusLoading("");
-      return;
-    }
-
-    if (values.mailBody?.replace(/<[^>]*>/g, "").trim().length < 1000) {
-      addToast({
-        title: "ERROR",
-        description: "Please enter at least 1000 characters in the mail body",
-        color: "danger",
-      });
-      setStatusLoading("");
-      return;
-    }
-
-    const proposalLength = values.template
-      ?.replace(/<[^>]*>/g, "")
-      .trim().length;
-
-    if (proposalLength < 1000) {
-      addToast({
-        title: "ERROR",
-        description: "Proposal must be at least 1000 characters",
-        color: "danger",
-      });
-      setStatusLoading("");
-      return;
-    }
-
-    values.leadId = leadId;
-    values.solutionId = solutionDetail?.id;
-    values.createdById = userId;
-    values.templateName = templateName;
-    values.brochureBook = brochureUrl;
-    values.companyId = company?.id;
-    values.companyUnitId = company?.units?.[0]?.id;
-    values.contactId = company?.units?.[0]?.unitContacts?.id;
+    const finalValues = {
+      ...values,
+      leadId,
+      solutionId: solutionDetail?.id,
+      createdById: userId,
+      templateName,
+      brochureBook: brochureUrl,
+      companyId: company?.id,
+      companyUnitId: company?.units?.[0]?.id,
+      contactId: company?.units?.[0]?.unitContacts?.[0]?.id,
+    };
 
     const antValues = proposalAntForm.getFieldsValue();
 
-    values.lineItems =
+    finalValues.lineItems =
       antValues?.lineItems?.map((item) => ({
         sourceItemId: item?.sourceItemId || 0,
         itemName: item?.itemName || "",
@@ -637,47 +628,63 @@ const Proposal = () => {
       })) || [];
 
     if (editProposal && selectedProposal?.id) {
-      dispatch(editLeadPropposal({ id: selectedProposal.id, ...values })).then(
-        (resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            setStatusLoading("success");
-            addToast({
-              title: "SUCCESS",
-              description:
-                "Your proposal has been sent to the manager for review !.",
-              color: "success",
-            });
-            reset(defaultValues);
-            setEditProposal(false);
-            setSelectedProposal(null);
-            dispatch(getAllProposalByLeadId(leadId));
-            proposalFormModal.onClose();
-          } else {
-            setStatusLoading("rejected");
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        },
-      );
-    } else {
-      dispatch(sendProposal(values)).then((resp) => {
+      dispatch(
+        editLeadPropposal({ id: selectedProposal.id, ...finalValues }),
+      ).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           setStatusLoading("success");
+
           addToast({
             title: "SUCCESS",
             description:
               "Your proposal has been sent to the manager for review !.",
             color: "success",
           });
-          reset(defaultValues);
+
+          proposalAntForm.resetFields();
+          proposalAntForm.setFieldsValue(defaultValues);
+
+          setEditProposal(false);
+          setSelectedProposal(null);
+          dispatch(getAllProposalByLeadId(leadId));
+          proposalFormModal.onClose();
+        } else {
+          setStatusLoading("rejected");
+
+          addToast({
+            title: "Something went wrong !.",
+            description:
+              resp?.payload?.data?.message || "Unable to update proposal.",
+            color: "danger",
+          });
+        }
+      });
+    } else {
+      dispatch(sendProposal(finalValues)).then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          setStatusLoading("success");
+
+          addToast({
+            title: "SUCCESS",
+            description:
+              "Your proposal has been sent to the manager for review !.",
+            color: "success",
+          });
+
+          proposalAntForm.resetFields();
+          proposalAntForm.setFieldsValue(defaultValues);
+
           setBrochureUrl([]);
           setTemplateName("");
           setData("<h2>Your proposal </h2>");
           setMailBody("<h2>Your email body</h2>");
           setIsCreatingProposal(false);
+
           dispatch(getAllProposalByLeadId(leadId));
           proposalFormModal.onClose();
         } else {
           setStatusLoading("rejected");
+
           addToast({
             title: resp?.payload?.data?.errorCode || "ERROR",
             description:
@@ -687,6 +694,27 @@ const Proposal = () => {
         }
       });
     }
+  };
+
+  const handleProposalSendToManager = (proposal) => {
+    setStatusLoading("pending");
+    dispatch(sendProposalToManager({ proposalId: proposal.id, userId })).then(
+      (resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          setStatusLoading("success");
+          addToast({
+            title: "SUCCESS",
+            description: "Proposal sent to manager for review.",
+            color: "success",
+          });
+          setSelectedProposal(null);
+          dispatch(getAllProposalByLeadId(leadId));
+        } else {
+          setStatusLoading("rejected");
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      },
+    );
   };
 
   const renderProposalView = () => (
@@ -840,56 +868,65 @@ const Proposal = () => {
       form={proposalAntForm}
       layout="vertical"
       className="space-y-6"
-      onFinish={handleSubmit(onSubmit)}
+      initialValues={defaultValues}
+      onFinish={onSubmit}
+      onFinishFailed={(errorInfo) => {
+        console.log("Proposal AntD validation failed:", errorInfo);
+
+        const firstError = errorInfo?.errorFields?.[0]?.errors?.[0];
+
+        addToast({
+          title: "Validation Error",
+          description:
+            firstError || "Please fill all required proposal fields.",
+          color: "danger",
+        });
+      }}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {["mailTo", "mailCc", "mailBcc"].map((fieldName) => (
-          <Controller
-            key={fieldName}
-            name={fieldName}
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">
-                  {fieldName === "mailTo"
-                    ? "To *"
-                    : fieldName === "mailCc"
-                      ? "Cc"
-                      : "Bcc"}
-                </label>
+        <Form.Item label="To" name="mailTo" rules={[validateEmailArray(true)]}>
+          <TagsInput placeholder="Enter email & press enter" />
+        </Form.Item>
 
-                <TagsInput {...field} placeholder="Enter email & press enter" />
+        <Form.Item label="Cc" name="mailCc" rules={[validateEmailArray(false)]}>
+          <TagsInput placeholder="Enter email & press enter" />
+        </Form.Item>
 
-                {error && (
-                  <span className="text-xs text-red-500">{error.message}</span>
-                )}
-              </div>
-            )}
-          />
-        ))}
+        <Form.Item
+          label="Bcc"
+          name="mailBcc"
+          rules={[validateEmailArray(false)]}
+        >
+          <TagsInput placeholder="Enter email & press enter" />
+        </Form.Item>
       </div>
 
-      <Controller
+      <Form.Item
+        label="Subject"
         name="mailSubject"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              Subject *
-            </label>
+        rules={[{ required: true, message: "Please give subject" }]}
+      >
+        <AntInput placeholder="Enter proposal subject" />
+      </Form.Item>
 
-            <Input
-              {...field}
-              variant="bordered"
-              className="cursor-pointer bg-white"
-            />
+      <Form.Item
+        name="brochureBook"
+        rules={[
+          {
+            validator: (_, value = []) => {
+              if (!Array.isArray(value) || value.length === 0) {
+                return Promise.reject(
+                  new Error("Please select at least one brochure"),
+                );
+              }
 
-            {error && (
-              <span className="text-xs text-red-500">{error.message}</span>
-            )}
-          </div>
-        )}
-      />
+              return Promise.resolve();
+            },
+          },
+        ]}
+      >
+        <input type="hidden" />
+      </Form.Item>
 
       <div className="flex flex-wrap gap-3">
         <Button
@@ -914,23 +951,48 @@ const Proposal = () => {
         serviceFeeList={serviceFeeList}
       />
 
+      <Form.Item
+        name="mailBody"
+        rules={[
+          { required: true, message: "Please give mail body" },
+          {
+            validator: (_, value) => {
+              const plainTextLength =
+                value?.replace(/<[^>]*>/g, "").trim().length || 0;
+
+              if (plainTextLength < 1000) {
+                return Promise.reject(
+                  new Error(
+                    "Please enter at least 1000 characters in the mail body",
+                  ),
+                );
+              }
+
+              return Promise.resolve();
+            },
+          },
+        ]}
+      >
+        <input type="hidden" />
+      </Form.Item>
+
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">Mail Body *</label>
 
         <div className="rounded-lg border border-gray-300 overflow-hidden">
-          <Controller
-            name="mailBody"
-            control={control}
-            render={({ field }) => (
-              <TextEditor
-                data={mailBody}
-                onChange={(prev, editor) => {
-                  const value = editor.getData();
-                  field.onChange(value);
-                  setMailBody(value);
-                }}
-              />
-            )}
+          <TextEditor
+            data={mailBody}
+            onChange={(prev, editor) => {
+              const value = editor.getData();
+
+              setMailBody(value);
+
+              proposalAntForm.setFieldsValue({
+                mailBody: value,
+              });
+
+              proposalAntForm.validateFields(["mailBody"]);
+            }}
           />
 
           <p className="text-sm text-gray-400 italic px-2 py-1">
@@ -941,23 +1003,52 @@ const Proposal = () => {
         </div>
       </div>
 
+      <Form.Item
+        name="template"
+        rules={[
+          { required: true, message: "Please give proposal" },
+          {
+            validator: (_, value) => {
+              if (!templateName || value === "<h2>Your proposal </h2>") {
+                return Promise.reject(
+                  new Error("Please select a proposal template"),
+                );
+              }
+
+              const plainTextLength =
+                value?.replace(/<[^>]*>/g, "").trim().length || 0;
+
+              if (plainTextLength < 1000) {
+                return Promise.reject(
+                  new Error("Proposal must be at least 1000 characters"),
+                );
+              }
+
+              return Promise.resolve();
+            },
+          },
+        ]}
+      >
+        <input type="hidden" />
+      </Form.Item>
+
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">Proposal *</label>
 
         <div className="rounded-lg border border-gray-300 overflow-hidden">
-          <Controller
-            name="template"
-            control={control}
-            render={({ field }) => (
-              <TextEditor
-                data={data}
-                onChange={(prev, editor) => {
-                  const value = editor.getData();
-                  field.onChange(value);
-                  setData(value);
-                }}
-              />
-            )}
+          <TextEditor
+            data={data}
+            onChange={(prev, editor) => {
+              const value = editor.getData();
+
+              setData(value);
+
+              proposalAntForm.setFieldsValue({
+                template: value,
+              });
+
+              proposalAntForm.validateFields(["template"]);
+            }}
           />
 
           <p className="text-sm text-gray-400 italic px-2 py-1">
@@ -968,12 +1059,14 @@ const Proposal = () => {
       </div>
 
       <div className="sticky bottom-0 bg-white pt-4 border-t">
-        <button
+        <Button
           type="submit"
-          className="w-full h-11 rounded-lg bg-blue-600 text-white text-lg font-medium cursor-pointer hover:bg-blue-700"
+          color="primary"
+          className="w-full h-11 rounded-lg text-white text-lg font-medium cursor-pointer"
+          isLoading={statusLoading === "pending"}
         >
           {editProposal ? "Update Proposal" : "Submit Proposal"}
-        </button>
+        </Button>
       </div>
     </Form>
   );
@@ -1028,19 +1121,30 @@ const Proposal = () => {
                       </p>
                     </div>
 
-                    <span
-                      className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium ${
-                        proposal?.status === "CANCELLED" ||
+                    <div className="flex gap-1.5">
+                      {proposal?.status === "DRAFT" && (
+                        <span
+                          className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium cursor-pointer bg-gray-300`}
+                          onClick={() => handleProposalSendToManager(proposal)}
+                        >
+                          Send to Manager
+                        </span>
+                      )}
+
+                      <span
+                        className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium ${
+                          proposal?.status === "CANCELLED" ||
+                          proposal?.status === "REJECTED"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {proposal?.status === "REJECTED" ||
                         proposal?.status === "REJECTED"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {proposal?.status === "REJECTED" ||
-                      proposal?.status === "REJECTED"
-                        ? "CANCELLED"
-                        : proposal?.status}
-                    </span>
+                          ? "CANCELLED"
+                          : proposal?.status}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mt-4 text-sm">

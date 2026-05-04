@@ -311,6 +311,20 @@ export const editLeadPropposal = createAsyncThunk(
   },
 );
 
+export const sendProposalToManager = createAsyncThunk(
+  "sendProposalToManager",
+  async ({ proposalId, userId }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/proposal/send-for-approval?proposalId=${proposalId}&userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const getProposalDataByLeadId = createAsyncThunk(
   "getProposalDataByLeadId",
   async (id) => {
