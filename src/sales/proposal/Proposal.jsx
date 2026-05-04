@@ -221,7 +221,7 @@ const Proposal = () => {
       .filter(Boolean);
 
   const isProposalAlreadyClosed = (status) =>
-    ["REJECTED", "CANCELLED"].includes(status?.toUpperCase());
+    ["REJECTED", "CANCELLED", "APPROVED"].includes(status?.toUpperCase());
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
@@ -1077,10 +1077,7 @@ const Proposal = () => {
                       color="danger"
                       variant="flat"
                       className="flex-1"
-                      isDisabled={
-                        isProposalAlreadyClosed(proposal?.status) ||
-                        !isLatestEstimateRejected
-                      }
+                      isDisabled={isProposalAlreadyClosed(proposal?.status)}
                       onPress={() => handleOpenCancelModal(proposal)}
                     >
                       Reject / Cancel

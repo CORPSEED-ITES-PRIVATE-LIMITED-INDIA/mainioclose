@@ -93,7 +93,7 @@ const AllProposal = () => {
     id: userId,
     page: 1,
     size: 50,
-    status: "all",
+    status: "initiated",
   });
   const [updateStatusData, setUpdateStatusData] = useState({
     proposalId: null,
@@ -425,6 +425,7 @@ const AllProposal = () => {
               >
                 {[
                   { label: "All", uid: "all" },
+                  { label: "Initiated", uid: "initiated" },
                   { label: "Approved", uid: "approved" },
                   { label: "Disapproved", uid: "disapproved" },
                 ].map((status) => (
@@ -665,12 +666,8 @@ const AllProposal = () => {
 
               <ModalBody>
                 <p className="text-sm text-default-600">
-                  This proposal is currently rejected by{" "}
-                  <strong>
-                    {confirmApproveModal?.rowData?.rejectedByName ||
-                      "Unknown User"}
-                  </strong>
-                  . Are you sure you want to approve it?
+                  This proposal is currently rejected . Are you sure you want to
+                  approve it?
                 </p>
               </ModalBody>
 
