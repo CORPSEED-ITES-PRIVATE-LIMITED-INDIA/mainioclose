@@ -15,7 +15,7 @@ import {
   Radio,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import { Check, Plus, Search } from "lucide-react";
+import { Check, Flag, Paperclip, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -225,7 +225,7 @@ const Proposal = () => {
       .filter(Boolean);
 
   const isProposalAlreadyClosed = (status) =>
-    ["REJECTED", "CANCELLED"].includes(status?.toUpperCase());
+    ["CANCELLED", "INITIATED"].includes(status?.toUpperCase());
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
@@ -636,8 +636,7 @@ const Proposal = () => {
 
           addToast({
             title: "SUCCESS",
-            description:
-              "Your proposal has been sent to the manager for review !.",
+            description: "Your proposal has been created as DRAFT !.",
             color: "success",
           });
 
@@ -666,8 +665,7 @@ const Proposal = () => {
 
           addToast({
             title: "SUCCESS",
-            description:
-              "Your proposal has been sent to the manager for review !.",
+            description: "Your proposal has been created as DRAFT !.",
             color: "success",
           });
 
@@ -1122,6 +1120,14 @@ const Proposal = () => {
                     </div>
 
                     <div className="flex gap-1.5">
+                      {proposal?.isSentToClient && (
+                        <Tooltip content="Sent to client">
+                          <p className="text-xs bg-green-100 py-1 px-2.5 rounded-full text-green-700">
+                            SENT
+                          </p>
+                        </Tooltip>
+                      )}
+
                       {proposal?.status === "DRAFT" && (
                         <span
                           className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium cursor-pointer bg-gray-300`}
@@ -1139,10 +1145,7 @@ const Proposal = () => {
                             : "bg-green-100 text-green-700"
                         }`}
                       >
-                        {proposal?.status === "REJECTED" ||
-                        proposal?.status === "REJECTED"
-                          ? "CANCELLED"
-                          : proposal?.status}
+                        {proposal?.status}
                       </span>
                     </div>
                   </div>

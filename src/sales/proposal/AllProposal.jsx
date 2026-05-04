@@ -404,11 +404,7 @@ const AllProposal = () => {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDown />}
-                  variant="flat"
-                  className="capitalize"
-                >
+                <Button endContent={<ChevronDown />} variant="flat">
                   {filteration?.status}
                 </Button>
               </DropdownTrigger>
@@ -426,10 +422,10 @@ const AllProposal = () => {
                 }}
               >
                 {[
-                  { label: "All", uid: "all" },
-                  { label: "Initiated", uid: "initiated" },
-                  { label: "Approved", uid: "approved" },
-                  { label: "Disapproved", uid: "disapproved" },
+                  { label: "ALL", uid: "all" },
+                  { label: "INITIATED", uid: "initiated" },
+                  { label: "APPROVED", uid: "approved" },
+                  { label: "REJECTED", uid: "rejected" },
                 ].map((status) => (
                   <DropdownItem key={status.uid} className="capitalize">
                     {capitalize(status.label)}
