@@ -323,7 +323,7 @@ const Proposal = () => {
     }
 
     const hasNonCancelled = proposalList.some((item) =>
-      ["REJECTED"].includes(item?.status?.toUpperCase()),
+      ["REJECTED", "APPROVED"].includes(item?.status?.toUpperCase()),
     );
     if (hasNonCancelled) {
       addToast({
