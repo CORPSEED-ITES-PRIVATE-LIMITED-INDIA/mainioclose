@@ -191,7 +191,8 @@ const NewSelect = ({
         isRequired={isRequired}
         name={name}
         placeholder={placeholder}
-        isVirtualized={isVirtualized}
+        // IMPORTANT: disable virtualization for wrapped long text
+        isVirtualized={false}
         isClearable={isClearable}
         selectionMode={selectionMode}
         items={filteredData}
@@ -204,18 +205,33 @@ const NewSelect = ({
         aria-label="Searchable select"
         className={className}
         classNames={{
-          trigger: "max-h-[150px] overflow-y-auto",
+          trigger: "min-h-[56px] max-h-[150px] overflow-y-auto",
+          listbox: "p-2 gap-1",
+          popoverContent: "p-0",
+          value: "whitespace-normal break-words",
         }}
         selectorIcon={<ChevronDownIcon className="w-5 h-5 text-default-500" />}
         ref={triggerRef}
         listboxProps={{
           topContent: topContent,
           emptyContent: "No data found",
+          itemClasses: {
+            base: [
+              "h-auto",
+              "min-h-[40px]",
+              "py-2",
+              "px-3",
+              "rounded-lg",
+              "items-start",
+              "data-[hover=true]:bg-default-100",
+              "data-[selectable=true]:focus:bg-default-100",
+            ].join(" "),
+            title: "whitespace-normal break-words leading-5 text-sm",
+          },
         }}
         onKeyDown={(e) => {
           const isTriggerFocused = document.activeElement === e.currentTarget;
 
-          // If space/enter pressed but select is NOT focused → ignore
           if (!isTriggerFocused && (e.key === " " || e.key === "Enter")) {
             e.preventDefault();
             e.stopPropagation();
@@ -228,26 +244,25 @@ const NewSelect = ({
 
           if (selectionMode === "multiple") {
             return (
-              <span className="text-sm">
+              <span className="text-sm whitespace-normal break-words">
                 {items.map((i) => i?.data?.[labelKey]).join(", ")}
               </span>
             );
           }
 
-          return <span className="text-sm">{items[0]?.data?.[labelKey]}</span>;
+          return (
+            <span className="text-sm whitespace-normal break-words">
+              {items[0]?.data?.[labelKey]}
+            </span>
+          );
         }}
       >
         {(item) => (
           <SelectItem
             key={String(item[valueKey])}
-            textValue={item?.[labelKey]}
-            onMouseDown={(e) => {
-              e.preventDefault();
-            }}
+            textValue={item?.[labelKey] || "Unknown"}
           >
-            <div className="flex flex-col w-full text-small my-0.5 py-1.5 whitespace-normal break-words leading-normal">
-              {item?.[labelKey] || "Unknown"}
-            </div>
+            {item?.[labelKey] || "Unknown"}
           </SelectItem>
         )}
       </Select>

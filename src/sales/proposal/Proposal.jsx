@@ -1119,7 +1119,7 @@ const Proposal = () => {
                       </p>
                     </div>
 
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-col gap-1.5">
                       {proposal?.isSentToClient && (
                         <Tooltip content="Sent to client">
                           <p className="text-xs bg-green-100 py-1 px-2.5 rounded-full text-green-700">
