@@ -239,25 +239,25 @@ const CompanyApprovals = () => {
                     <div className="grid grid-cols-[150px_20px_1fr] gap-y-2 text-sm">
                       <div className="text-gray-600">Industry name</div>
                       <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-gray-900 dark:text-slate-500 ">
                         {rowData?.industryName}
                       </div>
 
                       <div className="text-gray-600">Category</div>
                       <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-gray-900 dark:text-slate-500 ">
                         {rowData?.subIndustryName}
                       </div>
 
                       <div className="text-gray-600">Subcategory</div>
                       <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-gray-900 dark:text-slate-500">
                         {rowData?.subSubIndustryName}
                       </div>
 
                       <div className="text-gray-600">Business activity</div>
                       <div className="text-gray-600 text-center">:</div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-gray-900 dark:text-slate-500">
                         {rowData?.industryDataNames?.join(", ")}
                       </div>
                     </div>
@@ -922,7 +922,7 @@ const CompanyApprovals = () => {
 
                     <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Sub Industry
+                        Category
                       </span>
                       <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {selectedCompany?.subIndustryName || "-"}
@@ -931,7 +931,7 @@ const CompanyApprovals = () => {
 
                     <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Sub Sub Industry
+                        Sub Industry
                       </span>
                       <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {selectedCompany?.subSubIndustryName || "-"}
@@ -940,10 +940,10 @@ const CompanyApprovals = () => {
 
                     <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Payment Term
+                        Business Activity
                       </span>
                       <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {selectedCompany?.paymentTerm || "-"}
+                        {selectedCompany?.industryDataNames?.join(", ") || "-"}
                       </span>
                     </div>
 

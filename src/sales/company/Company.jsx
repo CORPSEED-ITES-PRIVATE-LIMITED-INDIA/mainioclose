@@ -51,7 +51,7 @@ import {
 import NewSelect from "../../components/NewSelect";
 import dayjs from "dayjs";
 import CreateCompanyForm from "./CreateCompanyForm";
-import { maskEmail, maskMobileNumber } from "../../common";
+import { inrCurrency, maskEmail, maskMobileNumber } from "../../common";
 import { getAllLeadUser } from "../../toolkit/slices/leadSlice";
 
 export const columns = [
@@ -268,6 +268,12 @@ const Company = () => {
   const editCompanyModal = useDisclosure();
   const historyDrawer = useDisclosure();
 
+  const {
+    isOpen: isCompanyModalOpen,
+    onOpen: onCompanyModalOpen,
+    onOpenChange: onCompanyModalChange,
+  } = useDisclosure();
+  const [selectedCompany, setSelectedCompany] = useState();
   const [companyForm] = Form.useForm();
 
   const count = useSelector((state) => state.company.newCompaniesTotalCount);
@@ -618,6 +624,15 @@ const Company = () => {
                     }}
                   >
                     Edit
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit-company"
+                    onPress={() => {
+                      setSelectedCompany(company);
+                      onCompanyModalOpen();
+                    }}
+                  >
+                    View Details
                   </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
@@ -1317,6 +1332,395 @@ const Company = () => {
           )}
         </ModalContent>
       </Modal>
+      {isCompanyModalOpen && (
+        <div className="fixed inset-0 z-[999]">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            onClick={() => onCompanyModalChange(false)}
+          />
+
+          {/* Drawer */}
+          <div
+            className={`
+              absolute right-0 top-0 h-screen w-full md:w-[70%]
+              bg-white text-gray-900 shadow-2xl
+              dark:bg-black dark:text-gray-100
+              border-l border-gray-200 dark:border-gray-800
+              animate-[slideInRight_0.28s_ease-out]
+              flex flex-col
+            `}
+          >
+            {/* Header */}
+            <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 px-6 py-4 backdrop-blur-md dark:border-gray-800 dark:bg-black/90">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                      {selectedCompany?.name || "-"}
+                    </h2>
+
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={
+                        selectedCompany?.onboardingStatus === "APPROVED"
+                          ? "success"
+                          : selectedCompany?.onboardingStatus === "DISAPPROVED"
+                            ? "danger"
+                            : "warning"
+                      }
+                      className="font-semibold"
+                    >
+                      {selectedCompany?.onboardingStatus || "-"}
+                    </Chip>
+                  </div>
+
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Complete company approval overview, business details,
+                    documents and unit status
+                  </p>
+                </div>
+
+                <Button
+                  isIconOnly
+                  variant="light"
+                  radius="full"
+                  onPress={() => onCompanyModalChange(false)}
+                  className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  ✕
+                </Button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {/* Top Summary Cards */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/30">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                    Company ID
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-blue-900 dark:text-blue-200">
+                    #{selectedCompany?.id || "-"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm dark:border-green-900/60 dark:bg-green-950/30">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
+                    Total Units
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-green-900 dark:text-green-200">
+                    {selectedCompany?.totalUnits ?? "-"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/30">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">
+                    Pending Units
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-orange-900 dark:text-orange-200">
+                    {selectedCompany?.pendingUnitsCount ?? "-"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4 shadow-sm dark:border-purple-900/60 dark:bg-purple-950/30">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
+                    Revenue
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-purple-900 dark:text-purple-200">
+                    {selectedCompany?.revenue
+                      ? inrCurrency(selectedCompany.revenue)
+                      : "-"}
+                  </p>
+                </div>
+              </div>
+
+              {/* 2 + 2 Section */}
+              <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                {/* Company Details */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-black/10">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Company Details
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        PAN Number
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.panNo || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Established Date
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.establishDate
+                          ? new Date(
+                              selectedCompany.establishDate,
+                            ).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Rating
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.rating || "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment Details */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-black/10">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Assignment Details
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Assignee
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.assigneeName || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Consultant
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.isConsultant ? "Yes" : "No"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Parent Company
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.parentName || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Company Age
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.companyAge + " Years" || "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location Details */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-black/10">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Location Details
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Address
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.address || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        City
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.city || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        State
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.state || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Country
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.country || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Pin Code
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.primaryPinCode || "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Details */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-black/10">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Business Details
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Industry
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.industryName || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Category
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.subIndustryName || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Sub Industry
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.subSubIndustryName || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Business Activity
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.industryDataNames?.join(", ") || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Revenue
+                      </span>
+                      <span className="max-w-[65%] break-words text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {selectedCompany?.revenue
+                          ? inrCurrency(selectedCompany.revenue)
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Document Status */}
+              <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:dark:bg-black/10">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Document Status
+                </h3>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Agreement
+                    </span>
+
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={
+                        selectedCompany?.aggrementPresent ? "success" : "danger"
+                      }
+                      className="font-semibold"
+                    >
+                      {selectedCompany?.aggrementPresent
+                        ? "Available"
+                        : "Not Available"}
+                    </Chip>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      NDA
+                    </span>
+
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={selectedCompany?.ndaPresent ? "success" : "danger"}
+                      className="font-semibold"
+                    >
+                      {selectedCompany?.ndaPresent
+                        ? "Available"
+                        : "Not Available"}
+                    </Chip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 border-t border-gray-200 bg-white/90 px-6 py-4 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="flat"
+                  onPress={() => onCompanyModalChange(false)}
+                >
+                  Close
+                </Button>
+
+                <Button
+                  color="primary"
+                  onPress={() => onCompanyModalChange(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <style>
+            {`
+              @keyframes slideInRight {
+                from {
+                  transform: translateX(100%);
+                  opacity: 0.7;
+                }
+                to {
+                  transform: translateX(0);
+                  opacity: 1;
+                }
+              }
+            `}
+          </style>
+        </div>
+      )}
     </>
   );
 };
