@@ -45,6 +45,7 @@ const paymentRegisterSchema = z
       "Payment type is required",
     ),
     eprFinancialYear: z.string().optional(),
+    tds: z.string().optional(),
     eprPortalRegistrationNumber: z.string().optional(),
     eprCertificateOrInvoiceNumber: z.string().optional(),
 
@@ -82,26 +83,6 @@ const paymentRegisterSchema = z
           message: "Total amount must be 0 or greater",
         });
       }
-
-      // if (
-      //   gf.receivedAmount === undefined ||
-      //   gf.receivedAmount === null ||
-      //   gf.receivedAmount === ""
-      // ) {
-      //   ctx.addIssue({
-      //     code: z.ZodIssueCode.custom,
-      //     path: ["governmentFee", "receivedAmount"],
-      //     message: "Received amount is required",
-      //   });
-      // }
-
-      // else if (Number(gf.receivedAmount) < 0) {
-      //   ctx.addIssue({
-      //     code: z.ZodIssueCode.custom,
-      //     path: ["governmentFee", "receivedAmount"],
-      //     message: "Received amount must be 0 or greater",
-      //   });
-      // }
 
       if (!gf.paymentDate) {
         ctx.addIssue({
@@ -163,6 +144,7 @@ const EstimatePaymentRegister = ({
       remarks: "",
       paymentTypeId: "",
       eprFinancialYear: "",
+      tds: "",
       eprPortalRegistrationNumber: "",
       eprCertificateOrInvoiceNumber: "",
       governmentFeeActive: false,
@@ -180,46 +162,46 @@ const EstimatePaymentRegister = ({
   const governmentFeeActive = watch("governmentFeeActive");
 
   useEffect(() => {
-  if (
-    estimateItem?.paymentTypeId !== undefined &&
-    estimateItem?.paymentTypeId !== null
-  ) {
-    setValue("paymentTypeId", String(estimateItem.paymentTypeId));
-  }
-
-  if (
-    estimateItem?.governmentFeeActive !== undefined &&
-    estimateItem?.governmentFeeActive !== null
-  ) {
-    setValue(
-      "governmentFeeActive",
-      Boolean(estimateItem.governmentFeeActive),
-    );
-
-    if (estimateItem?.governmentFee) {
-      setValue(
-        "governmentFee.totalAmount",
-        estimateItem.governmentFee.totalAmount ?? "",
-      );
-      setValue(
-        "governmentFee.paymentDate",
-        estimateItem.governmentFee.paymentDate ?? "",
-      );
-      setValue(
-        "governmentFee.feeReferenceNumber",
-        estimateItem.governmentFee.feeReferenceNumber ?? "",
-      );
-      setValue(
-        "governmentFee.departmentName",
-        estimateItem.governmentFee.departmentName ?? "",
-      );
-      setValue(
-        "governmentFee.remarks",
-        estimateItem.governmentFee.remarks ?? "",
-      );
+    if (
+      estimateItem?.paymentTypeId !== undefined &&
+      estimateItem?.paymentTypeId !== null
+    ) {
+      setValue("paymentTypeId", String(estimateItem.paymentTypeId));
     }
-  }
-}, [estimateItem, setValue]);
+
+    if (
+      estimateItem?.governmentFeeActive !== undefined &&
+      estimateItem?.governmentFeeActive !== null
+    ) {
+      setValue(
+        "governmentFeeActive",
+        Boolean(estimateItem.governmentFeeActive),
+      );
+
+      if (estimateItem?.governmentFee) {
+        setValue(
+          "governmentFee.totalAmount",
+          estimateItem.governmentFee.totalAmount ?? "",
+        );
+        setValue(
+          "governmentFee.paymentDate",
+          estimateItem.governmentFee.paymentDate ?? "",
+        );
+        setValue(
+          "governmentFee.feeReferenceNumber",
+          estimateItem.governmentFee.feeReferenceNumber ?? "",
+        );
+        setValue(
+          "governmentFee.departmentName",
+          estimateItem.governmentFee.departmentName ?? "",
+        );
+        setValue(
+          "governmentFee.remarks",
+          estimateItem.governmentFee.remarks ?? "",
+        );
+      }
+    }
+  }, [estimateItem, setValue]);
 
   const submitHandler = async (values) => {
     try {
@@ -232,15 +214,15 @@ const EstimatePaymentRegister = ({
         governmentFeeActive: values.governmentFeeActive,
         governmentFee: values.governmentFeeActive
           ? {
-            totalAmount: Number(values.governmentFee?.totalAmount || 0),
-            receivedAmount: Number(values.governmentFee?.totalAmount || 0),
-            paymentDate: values.governmentFee?.paymentDate || "",
-            feeReferenceNumber:
-              values.governmentFee?.feeReferenceNumber || "",
-            departmentName: values.governmentFee?.departmentName || "",
-            feeType: values.paymentMode || "",
-            remarks: values.governmentFee?.remarks || "",
-          }
+              totalAmount: Number(values.governmentFee?.totalAmount || 0),
+              receivedAmount: Number(values.governmentFee?.totalAmount || 0),
+              paymentDate: values.governmentFee?.paymentDate || "",
+              feeReferenceNumber:
+                values.governmentFee?.feeReferenceNumber || "",
+              departmentName: values.governmentFee?.departmentName || "",
+              feeType: values.paymentMode || "",
+              remarks: values.governmentFee?.remarks || "",
+            }
           : null,
       };
 
@@ -366,7 +348,8 @@ const EstimatePaymentRegister = ({
                         data={paymentTypeList || []}
                         labelKey="name"
                         valueKey="id"
-value={field.value ?? ""}                        onChange={(value) => {
+                        value={field.value ?? ""}
+                        onChange={(value) => {
                           field.onChange(value);
                         }}
                       />
@@ -422,6 +405,24 @@ value={field.value ?? ""}                        onChange={(value) => {
                         label="EPR Certificate/Invoice No."
                         placeholder="Enter number"
                       />
+                    )}
+                  />
+
+                  <Controller
+                    name="tds"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        label="TDS"
+                        selectedKeys={new Set([field.value ? "true" : "false"])}
+                        onSelectionChange={(keys) => {
+                          const selectedValue = Array.from(keys)?.[0];
+                          field.onChange(selectedValue === "true");
+                        }}
+                      >
+                        <SelectItem key="true">Yes</SelectItem>
+                        <SelectItem key="false">No</SelectItem>
+                      </Select>
                     )}
                   />
 
@@ -517,7 +518,7 @@ value={field.value ?? ""}                        onChange={(value) => {
                             isInvalid={!!error}
                             value={
                               field.value &&
-                                /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
                                 ? parseDate(field.value)
                                 : null
                             }

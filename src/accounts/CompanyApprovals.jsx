@@ -258,7 +258,7 @@ const CompanyApprovals = () => {
                       <div className="text-gray-600">Business activity</div>
                       <div className="text-gray-600 text-center">:</div>
                       <div className="text-gray-900 font-medium">
-                        {rowData?.industryName}
+                        {rowData?.industryDataNames?.join(", ")}
                       </div>
                     </div>
                   </div>
