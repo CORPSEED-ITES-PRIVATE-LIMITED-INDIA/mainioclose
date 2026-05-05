@@ -14,7 +14,7 @@ const NewSelect = ({
   valueKey,
   labelKey,
   isClearable = false,
-  isVirtualized,
+  isVirtualized = true,
   value,
   errorMessage,
   size,
@@ -28,82 +28,78 @@ const NewSelect = ({
 }) => {
   const isControlled = isOpen !== null && isOpen !== undefined;
 
-  const [selectedKeys, setSelectedKeys] = useState(() => {
-    if (selectionMode === "multiple") {
-      return Array.isArray(value) ? value.map(String) : [];
-    }
-    return typeof value === "string" && value ? value : "";
-  });
+  const normalizedData = useMemo(() => {
+    return (data || [])
+      .filter(
+        (item) => item?.[labelKey] && String(item[labelKey]).trim() !== "",
+      )
+      .map((item, index) => ({
+        ...item,
+        __selectKey: `${String(item?.[valueKey] ?? "value")}-${item?.id ?? index}-${index}`,
+      }));
+  }, [data, labelKey, valueKey]);
 
+  const getKeysFromValue = useCallback(
+    (val) => {
+      if (selectionMode === "multiple") {
+        if (!Array.isArray(val)) return [];
+
+        return val
+          .map((v) => {
+            const matched = normalizedData.find(
+              (item) => String(item[valueKey]) === String(v),
+            );
+            return matched?.__selectKey;
+          })
+          .filter(Boolean);
+      }
+
+      if (!val) return "";
+
+      const matched = normalizedData.find(
+        (item) => String(item[valueKey]) === String(val),
+      );
+
+      return matched?.__selectKey || "";
+    },
+    [normalizedData, selectionMode, valueKey],
+  );
+
+  const [selectedKeys, setSelectedKeys] = useState(() =>
+    getKeysFromValue(value),
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [triggerWidth, setTriggerWidth] = useState(null);
-  const [filteredData, setFilteredData] = useState(data);
+  const [filteredData, setFilteredData] = useState(normalizedData);
+
   const triggerRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (selectionMode === "multiple") {
-      setSelectedKeys(Array.isArray(value) ? value.map(String) : []);
-    } else {
-      setSelectedKeys(typeof value === "string" && value ? value : "");
-    }
-  }, [value, selectionMode]);
+    setSelectedKeys(getKeysFromValue(value));
+  }, [value, getKeysFromValue]);
 
   useEffect(() => {
-    const updateWidth = () => {
-      if (triggerRef.current) {
-        setTriggerWidth(triggerRef.current.offsetWidth);
-      }
-    };
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
-
-  useEffect(() => {
-    setFilteredData(data);
-  }, [data]);
-
-  useEffect(() => {
-    if (filteredData.length > 0 && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [filteredData]);
+    setFilteredData(normalizedData);
+  }, [normalizedData]);
 
   const handleSearchQuery = useCallback(
-    (e) => {
-      setSearchQuery(e);
+    (query) => {
+      setSearchQuery(query);
 
       let result = [];
 
-      if (!e) {
-        result = [...data];
+      if (!query) {
+        result = [...normalizedData];
       } else {
-        result = data?.filter((item) =>
-          item?.[labelKey]?.toLowerCase()?.includes(e?.toLowerCase()),
+        result = normalizedData.filter((item) =>
+          String(item?.[labelKey] || "")
+            .toLowerCase()
+            .includes(query.toLowerCase()),
         );
       }
 
-      // ✅ REMOVE invalid values
-      result = result.filter(
-        (item) => item?.[labelKey] && item[labelKey].trim() !== "",
-      );
-
-      // ✅ REMOVE DUPLICATES (IMPORTANT)
-      const uniqueMap = new Map();
-
-      result.forEach((item) => {
-        const key = item[labelKey].toLowerCase().trim();
-        if (!uniqueMap.has(key)) {
-          uniqueMap.set(key, item);
-        }
-      });
-
-      result = Array.from(uniqueMap.values());
-
-      // ✅ SORT
       result.sort((a, b) =>
-        a[labelKey].localeCompare(b[labelKey], undefined, {
+        String(a[labelKey]).localeCompare(String(b[labelKey]), undefined, {
           sensitivity: "base",
           numeric: true,
         }),
@@ -111,21 +107,21 @@ const NewSelect = ({
 
       setFilteredData(result);
     },
-    [data, labelKey],
+    [normalizedData, labelKey],
   );
 
   const topContent = useMemo(
     () => (
-      <div className="sticky top-0 z-10">
+      <div className="sticky top-0 z-10 bg-white p-1">
         <Input
           ref={inputRef}
           value={searchQuery}
           onChange={(e) => handleSearchQuery(e.target.value)}
           placeholder="Search ..."
-          className="mb-2"
           aria-label="Search data"
           variant="bordered"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         />
       </div>
     ),
@@ -134,50 +130,58 @@ const NewSelect = ({
 
   const handleSelectionChange = useCallback(
     (keys) => {
+      let selectedKeyValue;
       let selectedValue;
 
       if (selectionMode === "multiple") {
-        if (keys === "all") {
-          selectedValue = data
-            .map((item) => String(item[valueKey]))
-            .filter((key) => key !== "");
-        } else {
-          selectedValue = [...keys].map(String).filter((key) => key !== "");
-        }
+        selectedKeyValue =
+          keys === "all"
+            ? filteredData.map((item) => item.__selectKey)
+            : [...keys];
+
+        const selectedItems = normalizedData.filter((item) =>
+          selectedKeyValue.includes(item.__selectKey),
+        );
+
+        selectedValue = selectedItems.map((item) => String(item[valueKey]));
+        setSelectedKeys(selectedKeyValue);
+
+        onItemSelect(selectedItems);
+        onChange?.(selectedValue);
       } else {
-        selectedValue = keys.size > 0 ? String([...keys][0]) : "";
+        selectedKeyValue = keys.size > 0 ? String([...keys][0]) : "";
+        const selectedItem = normalizedData.find(
+          (item) => item.__selectKey === selectedKeyValue,
+        );
+
+        selectedValue = selectedItem ? String(selectedItem[valueKey]) : "";
+
+        setSelectedKeys(selectedKeyValue);
+        onItemSelect(selectedItem || null);
+        onChange?.(selectedValue);
       }
 
-      setSelectedKeys(selectedValue);
       setSearchQuery("");
 
-      // 🔥 HANDLE CLEAR CASE
-      if (!selectedValue || selectedValue.length === 0) {
-        onItemSelect(null); // ✅ IMPORTANT
-        onChange?.("");
-        return;
-      }
-
-      const selectedItem = data.find(
-        (item) => String(item[valueKey]) === selectedValue,
-      );
-
-      if (selectedItem) {
-        onItemSelect(selectedItem);
-      }
-
-      onChange?.(selectedValue);
-
       if (triggerRef.current) triggerRef.current.blur();
+
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
     },
-    [onChange, selectionMode, data, valueKey, onItemSelect],
+    [
+      selectionMode,
+      filteredData,
+      normalizedData,
+      valueKey,
+      onItemSelect,
+      onChange,
+    ],
   );
+
   const selectKeys =
     selectionMode === "multiple"
-      ? new Set(selectedKeys.map(String))
+      ? new Set(Array.isArray(selectedKeys) ? selectedKeys : [])
       : new Set([selectedKeys].filter(Boolean));
 
   return (
@@ -191,8 +195,9 @@ const NewSelect = ({
         isRequired={isRequired}
         name={name}
         placeholder={placeholder}
-        // IMPORTANT: disable virtualization for wrapped long text
-        isVirtualized={false}
+        isVirtualized={isVirtualized}
+        itemHeight={52}
+        maxListboxHeight={300}
         isClearable={isClearable}
         selectionMode={selectionMode}
         items={filteredData}
@@ -206,36 +211,19 @@ const NewSelect = ({
         className={className}
         classNames={{
           trigger: "min-h-[56px] max-h-[150px] overflow-y-auto",
+          value: "text-sm truncate",
           listbox: "p-2 gap-1",
           popoverContent: "p-0",
-          value: "whitespace-normal break-words",
         }}
         selectorIcon={<ChevronDownIcon className="w-5 h-5 text-default-500" />}
         ref={triggerRef}
         listboxProps={{
-          topContent: topContent,
+          topContent,
           emptyContent: "No data found",
           itemClasses: {
-            base: [
-              "h-auto",
-              "min-h-[40px]",
-              "py-2",
-              "px-3",
-              "rounded-lg",
-              "items-start",
-              "data-[hover=true]:bg-default-100",
-              "data-[selectable=true]:focus:bg-default-100",
-            ].join(" "),
-            title: "whitespace-normal break-words leading-5 text-sm",
+            base: "h-[52px] px-3 py-2 rounded-lg data-[hover=true]:bg-default-100 data-[selectable=true]:focus:bg-default-100",
+            title: "text-sm leading-5",
           },
-        }}
-        onKeyDown={(e) => {
-          const isTriggerFocused = document.activeElement === e.currentTarget;
-
-          if (!isTriggerFocused && (e.key === " " || e.key === "Enter")) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
         }}
         renderValue={(items) => {
           if (!items.length) {
@@ -244,14 +232,14 @@ const NewSelect = ({
 
           if (selectionMode === "multiple") {
             return (
-              <span className="text-sm whitespace-normal break-words">
+              <span className="text-sm truncate">
                 {items.map((i) => i?.data?.[labelKey]).join(", ")}
               </span>
             );
           }
 
           return (
-            <span className="text-sm whitespace-normal break-words">
+            <span className="text-sm truncate">
               {items[0]?.data?.[labelKey]}
             </span>
           );
@@ -259,10 +247,15 @@ const NewSelect = ({
       >
         {(item) => (
           <SelectItem
-            key={String(item[valueKey])}
-            textValue={item?.[labelKey] || "Unknown"}
+            key={item.__selectKey}
+            textValue={String(item?.[labelKey] || "Unknown")}
           >
-            {item?.[labelKey] || "Unknown"}
+            <span
+              title={String(item?.[labelKey] || "Unknown")}
+              className="block text-sm leading-5 line-clamp-2 break-words"
+            >
+              {item?.[labelKey] || "Unknown"}
+            </span>
           </SelectItem>
         )}
       </Select>

@@ -83,7 +83,7 @@ const CompanyApprovals = () => {
     userId: userId,
     page: 1,
     size: 50,
-    status: "ALL",
+    status: "INITIATED",
   });
 
   const [statusData, setStatusData] = useState({
@@ -329,30 +329,34 @@ const CompanyApprovals = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              <DropdownItem
-                onPress={() => {
-                  onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
-                    approve: true,
-                    companyId: rowData?.companyId,
-                  }));
-                }}
-              >
-                Approved
-              </DropdownItem>
-              <DropdownItem
-                onPress={() => {
-                  onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
-                    approve: false,
-                    companyId: rowData?.companyId,
-                  }));
-                }}
-              >
-                Disapproved
-              </DropdownItem>
+              {rowData?.onboardingStatus === "INITIATED" && (
+                <DropdownItem
+                  onPress={() => {
+                    onOpen();
+                    setStatusData((pre) => ({
+                      ...pre,
+                      approve: true,
+                      companyId: rowData?.companyId,
+                    }));
+                  }}
+                >
+                  Approved
+                </DropdownItem>
+              )}
+              {rowData?.onboardingStatus === "INITIATED" && (
+                <DropdownItem
+                  onPress={() => {
+                    onOpen();
+                    setStatusData((pre) => ({
+                      ...pre,
+                      approve: false,
+                      companyId: rowData?.companyId,
+                    }));
+                  }}
+                >
+                  Disapproved
+                </DropdownItem>
+              )}
             </DropdownMenu>
           </Dropdown>
         );

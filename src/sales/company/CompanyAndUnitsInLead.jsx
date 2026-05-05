@@ -293,12 +293,12 @@ const CompanyAndUnitsInLead = () => {
   const openCompanyModal = () => {
     if (
       leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
+      leadData?.proposalStatus === "INITIATED" ||
+      leadData?.proposalSendOrNot
     ) {
       addToast({
         title: "RESTRICTED",
-        description:
-          "You are not required perform any action before approval or initiation of proposal.",
+        description: `You are not required perform any action before approval ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or initiation of proposal.`,
         color: "danger",
       });
       return;

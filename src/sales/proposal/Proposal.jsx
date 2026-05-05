@@ -1070,7 +1070,7 @@ const Proposal = () => {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Proposals</h2>
               <p className="text-sm text-gray-500">
-                Select a proposal to view, edit, or cancel.
+                Proposal to view or cancel.
               </p>
             </div>
 

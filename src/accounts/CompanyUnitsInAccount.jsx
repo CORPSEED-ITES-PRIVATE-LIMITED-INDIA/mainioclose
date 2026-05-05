@@ -77,7 +77,7 @@ const CompanyUnitsInAccount = () => {
     userId: userId,
     page: 1,
     size: 50,
-    status: "ALL",
+    status: "INITIATED",
     companyId,
   });
 
@@ -244,30 +244,37 @@ const CompanyUnitsInAccount = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              <DropdownItem
-                onPress={() => {
-                  onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
-                    approve: true,
-                    unitId: company?.unitId,
-                  }));
-                }}
-              >
-                Approved
-              </DropdownItem>
-              <DropdownItem
-                onPress={() => {
-                  onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
-                    approve: false,
-                    unitId: company?.unitId,
-                  }));
-                }}
-              >
-                Disapproved
-              </DropdownItem>
+              {company?.onboardingStatus === "INITIATED" ||
+                (company?.onboardingStatus === "MINIMAL" && (
+                  <DropdownItem
+                    onPress={() => {
+                      onOpen();
+                      setStatusData((pre) => ({
+                        ...pre,
+                        approve: true,
+                        unitId: company?.unitId,
+                      }));
+                    }}
+                  >
+                    Approved
+                  </DropdownItem>
+                ))}
+
+              {company?.onboardingStatus === "INITIATED" ||
+                (company?.onboardingStatus === "MINIMAL" && (
+                  <DropdownItem
+                    onPress={() => {
+                      onOpen();
+                      setStatusData((pre) => ({
+                        ...pre,
+                        approve: false,
+                        unitId: company?.unitId,
+                      }));
+                    }}
+                  >
+                    Disapproved
+                  </DropdownItem>
+                ))}
             </DropdownMenu>
           </Dropdown>
         );

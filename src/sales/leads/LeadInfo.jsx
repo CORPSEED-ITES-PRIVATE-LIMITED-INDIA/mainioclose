@@ -701,13 +701,13 @@ const LeadInfo = () => {
                           onPress={() => {
                             if (
                               leadData?.proposalStatus === "INITIATED" ||
-                              leadData?.proposalStatus === "APPROVED"
+                              leadData?.proposalStatus === "APPROVED" ||
+                              leadData?.proposalSendOrNot
                             ) {
                               addToast({
                                 title: "RESTRICTED",
                                 color: "danger",
-                                description:
-                                  "Service name cannot be changed as proposal is already approved or initiated.",
+                                description: `Service name cannot be changed as proposal is already approved ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or initiated.`,
                               });
                               return;
                             }
