@@ -442,12 +442,8 @@ const LeadEstimates = () => {
           title: "Estimate cancelled successfully",
           color: "success",
         });
-        setStatusData({
-          rejectionReason: "",
-        });
-        setEstimateId(null);
         dispatch(getNewEstimateByLeadId({ leadId, userId }));
-        modal.onClose();
+        closeCancelEstimateModal();
       } else {
         addToast({
           title: resp?.payload?.data?.message || "Failed to cancel estimate",
@@ -773,6 +769,27 @@ const LeadEstimates = () => {
       .catch(() =>
         addToast({ title: "Something went wrong", color: "danger" }),
       );
+  };
+
+  const closeUnitModal = () => {
+    resetUnitForm();
+    setUnitDetail(null);
+    setIsGstMandatory(false);
+    onClose();
+  };
+
+  const closeContactModal = () => {
+    resetContactValue();
+    contactModal.onClose();
+  };
+
+  const closeCancelEstimateModal = () => {
+    setEstimateId(null);
+    setStatusData({
+      rejectionReason: "",
+      rejectedByUserId: userId,
+    });
+    modal.onClose();
   };
 
   return (
@@ -1498,7 +1515,7 @@ const LeadEstimates = () => {
                       variant="flat"
                       color="default"
                       className="cursor-pointer"
-                      onPress={onClose}
+                      onPress={closeUnitModal}
                     >
                       Close
                     </Button>
@@ -1711,23 +1728,12 @@ const LeadEstimates = () => {
                       type="button"
                       variant="flat"
                       color="default"
-                      onPress={onClose}
+                      onPress={closeContactModal}
                     >
                       Close
                     </Button>
 
-                    <Button
-                      type="submit"
-                      color="primary"
-                      onPress={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
+                    <Button type="submit" color="primary">
                       Save
                     </Button>
                   </ModalFooter>
@@ -1748,7 +1754,7 @@ const LeadEstimates = () => {
                 <Textarea
                   label="Remark"
                   isRequired
-                  value={statusData.remark}
+                  value={statusData.rejectionReason}
                   onChange={(e) =>
                     setStatusData((prev) => ({
                       ...prev,
@@ -1758,7 +1764,11 @@ const LeadEstimates = () => {
                 />
               </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
+                <Button
+                  type="button"
+                  variant="light"
+                  onPress={closeCancelEstimateModal}
+                >
                   Close
                 </Button>
                 <Button
