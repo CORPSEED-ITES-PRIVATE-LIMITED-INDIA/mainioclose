@@ -89,7 +89,7 @@ const ExportCsvPopover = ({ allLeadUser, count }) => {
   const dispatch = useDispatch();
 
   const [csvFilter, setCsvFilter] = useState({
-    status: "ALL",
+    status: "INITIATED",
     assigneeId: "",
     page: 1,
     size: 200,
@@ -191,7 +191,6 @@ const ExportCsvPopover = ({ allLeadUser, count }) => {
           setCsvFilter((prev) => ({ ...prev, status: value }));
         }}
       >
-        <SelectItem key="ALL">ALL</SelectItem>
         <SelectItem key="INITIATED">INITIATED</SelectItem>
         <SelectItem key="MINIMAL">MINIMAL</SelectItem>
         <SelectItem key="APPROVED">APPROVED</SelectItem>
@@ -333,7 +332,7 @@ const Company = () => {
     filterUserId: "",
     type: "all",
     rating: "all",
-    status: "ALL",
+    status: "INITIATED",
   });
 
   const [editData, setEditData] = useState(null);
