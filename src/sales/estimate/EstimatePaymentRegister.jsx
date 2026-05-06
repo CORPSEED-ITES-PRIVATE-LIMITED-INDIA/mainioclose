@@ -332,8 +332,8 @@ const EstimatePaymentRegister = ({
                         label="Amount"
                         placeholder="Enter amount"
                         isRequired
-                        isInvalid={!!errors.amount}
-                        errorMessage={errors.amount?.message}
+                        // isInvalid={!!errors.amount}
+                        // errorMessage={errors.amount?.message}
                       />
                     )}
                   />
@@ -347,8 +347,8 @@ const EstimatePaymentRegister = ({
                         label="Order date"
                         showMonthAndYearPickers
                         maxValue={today(getLocalTimeZone())}
-                        errorMessage={error?.message}
-                        isInvalid={!!error}
+                        // errorMessage={error?.message}
+                        // isInvalid={!!error}
                         value={
                           field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
                             ? parseDate(field.value)
@@ -375,8 +375,8 @@ const EstimatePaymentRegister = ({
                         }
                         label="Payment Mode"
                         isRequired
-                        isInvalid={!!errors.paymentMode}
-                        errorMessage={errors.paymentMode?.message}
+                        // isInvalid={!!errors.paymentMode}
+                        // errorMessage={errors.paymentMode?.message}
                       >
                         <SelectItem key="CASH">Cash</SelectItem>
                         <SelectItem key="UPI">UPI</SelectItem>
@@ -397,8 +397,8 @@ const EstimatePaymentRegister = ({
                         isRequired
                         isDisabled={estimateItem?.paymentTypeId ? true : false}
                         label="Payment term"
-                        errorMessage={error?.message}
-                        isInvalid={!!error}
+                        // errorMessage={error?.message}
+                        // isInvalid={!!error}
                         data={paymentTypeList || []}
                         labelKey="name"
                         valueKey="id"
@@ -415,13 +415,15 @@ const EstimatePaymentRegister = ({
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <SingleFileUploader
+                        isRequired={true}
+                        errorMessage={"please attach the reference document"}
                         label="Payment document"
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);
                         }}
-                        errorMessage={error?.message}
-                        isInvalid={!!error}
+                        // errorMessage={error?.message}
+                        // isInvalid={!!error}
                       />
                     )}
                   />

@@ -496,6 +496,15 @@ const Unbill = () => {
                     approvalRemarks: "",
                     rejectionReason: "",
                   });
+                  dispatch(
+                    getAllUnbillList({
+                      page,
+                      size: rowsPerPage,
+                      userId,
+                      status,
+                    }),
+                  );
+                  dispatch(getAllUnbillCount({ userId, status }));
                   statusModal.onClose();
                 } else {
                   addToast({
@@ -545,6 +554,10 @@ const Unbill = () => {
             //     addToast({ title: "Something went wrong !.", color: "danger" });
             //   }
             // });
+            dispatch(
+              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
+            );
+            dispatch(getAllUnbillCount({ userId, status }));
             setRowItem(null);
             setUpdatedStatusData({
               approverUserId: userId,

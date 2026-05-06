@@ -341,6 +341,28 @@ export function CompanyAndUnitsForm({
   const statesByCountry = useSelector((state) => state.common.statesByCountry);
   const citiesByState = useSelector((state) => state.common.citiesByState);
 
+  const getGstTypeNameById = (gstTypeId) => {
+    const selectedGstType = gstTypeList?.find(
+      (gst) => String(gst.id) === String(gstTypeId),
+    );
+
+    return selectedGstType?.name?.trim()?.toLowerCase() || "";
+  };
+
+  const isInternationalGstType = (gstTypeId) => {
+    return getGstTypeNameById(gstTypeId) === "international";
+  };
+
+  const hasSelectedGstType = (gstTypeId) => {
+    return !!String(gstTypeId || "").trim();
+  };
+
+  const removeIndiaFromCountryList = (list = []) => {
+    return list.filter(
+      (country) => country?.name?.trim()?.toLowerCase() !== "india",
+    );
+  };
+
   const validateGST = (gstNo, stateName) => {
     if (!gstNo) return "";
     if (
@@ -1332,6 +1354,15 @@ export function CompanyAndUnitsForm({
               const unitCountry = watch(`units.${index}.country`);
               const unitState = watch(`units.${index}.state`);
               const selectedGstTypeId = watch(`units.${index}.gstTypeId`);
+              const isInternationalSelected =
+                isInternationalGstType(selectedGstTypeId);
+              const isNonInternationalGstSelected =
+                hasSelectedGstType(selectedGstTypeId) &&
+                !isInternationalSelected;
+
+              const unitCountryList = isInternationalSelected
+                ? removeIndiaFromCountryList(countryList || [])
+                : countryList || [];
 
               const selectedGstType = gstTypeList?.find(
                 (gst) => String(gst.id) === String(selectedGstTypeId),
@@ -1406,9 +1437,14 @@ export function CompanyAndUnitsForm({
                                 (gst) => String(gst.id) === finalValue,
                               );
 
+                              const selectedName = selected?.name
+                                ?.trim()
+                                ?.toLowerCase();
+
                               const isRegistered =
-                                selected?.name?.trim()?.toLowerCase() ===
-                                "registered";
+                                selectedName === "registered";
+                              const isInternational =
+                                selectedName === "international";
 
                               if (!isRegistered) {
                                 setValue(`units.${index}.gstNo`, "", {
@@ -1417,6 +1453,61 @@ export function CompanyAndUnitsForm({
                                 });
 
                                 clearErrors(`units.${index}.gstNo`);
+                              }
+
+                              if (isInternational) {
+                                const currentCountry = watch(
+                                  `units.${index}.country`,
+                                );
+
+                                if (
+                                  currentCountry?.trim()?.toLowerCase() ===
+                                  "india"
+                                ) {
+                                  setValue(`units.${index}.country`, "", {
+                                    shouldValidate: false,
+                                    shouldDirty: true,
+                                  });
+
+                                  setValue(`units.${index}.state`, "", {
+                                    shouldValidate: false,
+                                    shouldDirty: true,
+                                  });
+
+                                  setValue(`units.${index}.city`, "", {
+                                    shouldValidate: false,
+                                    shouldDirty: true,
+                                  });
+
+                                  clearErrors([
+                                    `units.${index}.country`,
+                                    `units.${index}.state`,
+                                    `units.${index}.city`,
+                                  ]);
+                                }
+
+                                return;
+                              }
+
+                              if (finalValue) {
+                                setValue(`units.${index}.country`, "India", {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                });
+
+                                setValue(`units.${index}.state`, "", {
+                                  shouldValidate: false,
+                                  shouldDirty: true,
+                                });
+
+                                setValue(`units.${index}.city`, "", {
+                                  shouldValidate: false,
+                                  shouldDirty: true,
+                                });
+
+                                clearErrors(`units.${index}.country`);
+
+                                dispatch(getAllStatesByCountryName("India"));
                               }
                             }}
                           />
@@ -1525,10 +1616,11 @@ export function CompanyAndUnitsForm({
                             label="Country"
                             errorMessage={error?.message}
                             isInvalid={!!error}
-                            data={countryList || []}
+                            data={unitCountryList}
                             labelKey="name"
                             valueKey="name"
                             value={field.value}
+                            isDisabled={isNonInternationalGstSelected}
                             onChange={(value) => {
                               dispatch(getAllStatesByCountryName(value));
                               field.onChange(value);
