@@ -209,8 +209,8 @@ const NewSelect = ({
         {...(isControlled ? { isOpen, onOpenChange } : {})}
         endContent={endContent}
         isDisabled={isDisabled}
-        errorMessage={isInvalid ? errorMessage : undefined}
-        isInvalid={isInvalid}
+        {...(errorMessage ? { errorMessage: errorMessage } : {})}
+        {...(isInvalid ? { isInvalid: true } : {})}
         isRequired={isRequired}
         placeholder={placeholder}
         isVirtualized={isVirtualized}
