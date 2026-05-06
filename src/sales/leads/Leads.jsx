@@ -177,6 +177,7 @@ const Leads = () => {
   const [itemId, setItemId] = useState(null);
   const [loading, setLoading] = useState("");
   const [leadsFileUploadingUrl, setLeadsFileUploadingUrl] = useState(null);
+  const [leadFormSubmitted, setLeadFormSubmitted] = useState(false);
   const leadFormValues = {
     leadName: "",
     name: "",
@@ -1477,9 +1478,12 @@ const Leads = () => {
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto px-2 py-1">
                     <NewSelect
                       name="leadName"
-                      isRequired
                       data={solutionList || []}
-                      label="Select service"
+                      label={
+                        <div>
+                          Select service<span className="text-red-500">*</span>
+                        </div>
+                      }
                       labelKey="name"
                       valueKey="name"
                       value={leadFormData?.leadName}
@@ -1489,7 +1493,7 @@ const Leads = () => {
                           leadName: value,
                         }));
                       }}
-                      isInvalid={!leadFormData?.leadName}
+                      isInvalid={leadFormSubmitted && !leadFormData?.leadName}
                       errorMessage="please select service"
                     />
                     <Input
@@ -1536,7 +1540,7 @@ const Leads = () => {
                     />
 
                     <NewSelect
-                      isRequired={true}
+                      isRequired
                       data={allLeadUser || []}
                       label="Select assignee"
                       name="assigneeId"
@@ -1549,7 +1553,7 @@ const Leads = () => {
                           assigneeId: selectedValue,
                         }));
                       }}
-                      isInvalid={!leadFormData?.assigneeId}
+                      isInvalid={leadFormSubmitted && !leadFormData?.assigneeId}
                       errorMessage="please select assignee"
                     />
 

@@ -202,14 +202,7 @@ const NewSelect = ({
 
   return (
     <div className="w-full">
-      {name && (
-        <input
-          type="hidden"
-          name={name}
-          value={hiddenInputValue}
-          required={isRequired}
-        />
-      )}
+      {name && <input type="hidden" name={name} value={hiddenInputValue} />}
 
       <Select
         size={size}

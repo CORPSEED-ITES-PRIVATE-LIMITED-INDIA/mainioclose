@@ -101,12 +101,12 @@ const companySchema = (obj, gstTypeList = []) =>
     //       assigneeId: z.string().min(1, "Please select assignee."),
     //     }
     //   : {}),
-    companyTypeId: z.string().min(1, "Please select company structure."),
-    industryId: z.string().min(1, "Please select industry."),
-    subIndustryId: z.string().min(1, "Please select sub industry."),
-    subSubIndustryId: z.string().min(1, "Please select category."),
+    companyTypeId: z.coerce.string().min(1, "Please select company structure."),
+    industryId: z.coerce.string().min(1, "Please select industry."),
+    subIndustryId: z.coerce.string().min(1, "Please select sub industry."),
+    subSubIndustryId: z.coerce.string().min(1, "Please select category."),
     industryDataId: z
-      .array(z.string())
+      .array(z.coerce.string())
       .min(1, "Please select business activity."),
     companyFileUrl: z.string().optional(),
     ...(obj?.aggrementPresent
@@ -300,9 +300,11 @@ export function CompanyAndUnitsForm({
     watch,
     formState: { errors, isSubmitting },
     setValue,
+    clearErrors,
   } = useForm({
     resolver: zodResolver(companySchema(formCondition, gstTypeList)),
-    mode: "onChange",
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues,
   });
 
@@ -821,22 +823,33 @@ export function CompanyAndUnitsForm({
                     valueKey="id"
                     value={String(field.value)}
                     onChange={(value) => {
-                      field.onChange(value);
+                      const finalValue = String(value || "");
+
+                      field.onChange(finalValue);
+                      clearErrors("industryId");
 
                       setValue("subIndustryId", "", {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                      setValue("subSubIndustryId", "", {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                      setValue("industryDataId", [], {
-                        shouldValidate: true,
+                        shouldValidate: false,
                         shouldDirty: true,
                       });
 
-                      dispatch(getSubIndustryByIndustryId(value));
+                      setValue("subSubIndustryId", "", {
+                        shouldValidate: false,
+                        shouldDirty: true,
+                      });
+
+                      setValue("industryDataId", [], {
+                        shouldValidate: false,
+                        shouldDirty: true,
+                      });
+
+                      clearErrors([
+                        "subIndustryId",
+                        "subSubIndustryId",
+                        "industryDataId",
+                      ]);
+
+                      dispatch(getSubIndustryByIndustryId(finalValue));
                     }}
                   />
                 )}
@@ -856,18 +869,24 @@ export function CompanyAndUnitsForm({
                     valueKey="id"
                     value={field.value}
                     onChange={(value) => {
-                      field.onChange(value);
+                      const finalValue = String(value || "");
+
+                      field.onChange(finalValue);
+                      clearErrors("subIndustryId");
 
                       setValue("subSubIndustryId", "", {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                      setValue("industryDataId", [], {
-                        shouldValidate: true,
+                        shouldValidate: false,
                         shouldDirty: true,
                       });
 
-                      dispatch(getSubSubIndustryBySubIndustryId(value));
+                      setValue("industryDataId", [], {
+                        shouldValidate: false,
+                        shouldDirty: true,
+                      });
+
+                      clearErrors(["subSubIndustryId", "industryDataId"]);
+
+                      dispatch(getSubSubIndustryBySubIndustryId(finalValue));
                     }}
                   />
                 )}
@@ -887,14 +906,19 @@ export function CompanyAndUnitsForm({
                     valueKey="id"
                     value={field.value}
                     onChange={(value) => {
-                      field.onChange(value);
+                      const finalValue = String(value || "");
+
+                      field.onChange(finalValue);
+                      clearErrors("subSubIndustryId");
 
                       setValue("industryDataId", [], {
-                        shouldValidate: true,
+                        shouldValidate: false,
                         shouldDirty: true,
                       });
 
-                      dispatch(getIndustryDataBySubSubIndustryId(value));
+                      clearErrors("industryDataId");
+
+                      dispatch(getIndustryDataBySubSubIndustryId(finalValue));
                     }}
                   />
                 )}
@@ -913,8 +937,18 @@ export function CompanyAndUnitsForm({
                     data={industryDataListById || []}
                     labelKey="name"
                     valueKey="id"
-                    value={field.value}
-                    onChange={(value) => field.onChange(value)}
+                    value={field.value || []}
+                    onChange={(value) => {
+                      const finalValue = Array.isArray(value)
+                        ? value.map((item) => String(item))
+                        : [];
+
+                      field.onChange(finalValue);
+
+                      if (finalValue.length > 0) {
+                        clearErrors("industryDataId");
+                      }
+                    }}
                   />
                 )}
               />
