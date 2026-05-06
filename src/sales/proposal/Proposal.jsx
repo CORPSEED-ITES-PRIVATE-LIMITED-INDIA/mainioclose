@@ -1114,7 +1114,7 @@ const Proposal = () => {
                     <div className="flex flex-col gap-1.5">
                       {proposal?.isSentToClient && (
                         <Tooltip content="Sent to client">
-                          <p className="text-xs bg-green-100 py-1 px-2.5 rounded-full w-fit text-green-700">
+                          <p className="text-xs bg-green-100 py-1 px-4 rounded-full text-center text-green-700 w-full">
                             SENT
                           </p>
                         </Tooltip>
@@ -1122,7 +1122,7 @@ const Proposal = () => {
 
                       {proposal?.status === "DRAFT" && (
                         <span
-                          className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium cursor-pointer bg-gray-300`}
+                          className={`shrink-0 px-4 py-1 text-[11px] rounded-full text-center font-medium cursor-pointer bg-gray-300 `}
                           onClick={() => handleProposalSendToManager(proposal)}
                         >
                           Send to Manager
@@ -1130,7 +1130,7 @@ const Proposal = () => {
                       )}
 
                       <span
-                        className={`shrink-0 px-2 py-1 text-[11px] rounded-full font-medium ${
+                        className={`shrink-0 px-2 py-1 text-[11px] rounded-full text-center font-medium ${
                           proposal?.status === "CANCELLED" ||
                           proposal?.status === "REJECTED"
                             ? "bg-red-100 text-red-700"
