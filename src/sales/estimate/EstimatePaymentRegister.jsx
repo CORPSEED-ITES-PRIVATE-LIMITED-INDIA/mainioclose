@@ -22,6 +22,7 @@ import { useParams } from "react-router-dom";
 import NewSelect from "../../components/NewSelect";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
+import BaseAmountCalculator from "../../components/BaseAmountCalculator";
 
 const numberLike = (label) =>
   z
@@ -45,9 +46,15 @@ const paymentRegisterSchema = z
       "Payment type is required",
     ),
     eprFinancialYear: z.string().optional(),
-    tds: z.string().optional(),
     eprPortalRegistrationNumber: z.string().optional(),
     eprCertificateOrInvoiceNumber: z.string().optional(),
+    tdsActive: z.boolean().optional(),
+
+    tds: z
+      .object({
+        tdsPercentage: z.union([z.number(), z.string()]).optional(),
+      })
+      .optional(),
 
     governmentFeeActive: z.boolean(),
 
@@ -107,6 +114,20 @@ const paymentRegisterSchema = z
           message: "Department name is required",
         });
       }
+
+      if (data.tdsActive) {
+        if (
+          data.tds?.tdsPercentage === undefined ||
+          data.tds?.tdsPercentage === null ||
+          data.tds?.tdsPercentage === ""
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["tds", "tdsPercentage"],
+            message: "TDS percentage is required",
+          });
+        }
+      }
     }
   });
 
@@ -144,7 +165,10 @@ const EstimatePaymentRegister = ({
       remarks: "",
       paymentTypeId: "",
       eprFinancialYear: "",
-      tds: "",
+      tdsActive: false,
+      tds: {
+        tdsPercentage: "",
+      },
       eprPortalRegistrationNumber: "",
       eprCertificateOrInvoiceNumber: "",
       governmentFeeActive: false,
@@ -160,6 +184,18 @@ const EstimatePaymentRegister = ({
   });
 
   const governmentFeeActive = watch("governmentFeeActive");
+  const selectedPaymentTypeId = watch("paymentTypeId");
+  const tdsActive = watch("tdsActive");
+
+  const selectedPaymentType = paymentTypeList?.find(
+    (item) => String(item?.id) === String(selectedPaymentTypeId),
+  );
+
+  const selectedPaymentTypeName = selectedPaymentType?.name || "";
+
+  const shouldShowTds =
+    selectedPaymentTypeName === "Full Payment" ||
+    selectedPaymentTypeName === "Purchase Order Payment";
 
   useEffect(() => {
     if (
@@ -203,6 +239,17 @@ const EstimatePaymentRegister = ({
     }
   }, [estimateItem, setValue]);
 
+  useEffect(() => {
+    if (!shouldShowTds) {
+      setValue("tdsActive", false);
+      setValue("tds.tdsPercentage", "");
+    }
+
+    if (!tdsActive) {
+      setValue("tds.tdsPercentage", "");
+    }
+  }, [shouldShowTds, tdsActive, setValue]);
+
   const submitHandler = async (values) => {
     try {
       const payload = {
@@ -211,6 +258,13 @@ const EstimatePaymentRegister = ({
         amount: Number(values.amount),
         paymentTypeId: Number(values.paymentTypeId),
         paymentDate: values.paymentDate,
+        tdsActive: Boolean(values.tdsActive),
+        tds: values.tdsActive
+          ? {
+              tdsPercentage: Number(values.tds?.tdsPercentage || 0),
+            }
+          : null,
+
         governmentFeeActive: values.governmentFeeActive,
         governmentFee: values.governmentFeeActive
           ? {
@@ -261,7 +315,7 @@ const EstimatePaymentRegister = ({
               <span>Payment Register</span>
             </ModalHeader>
 
-            <ModalBody className="max-h-[70vh] overflow-auto">
+            <ModalBody className="max-h-[60vh] overflow-auto">
               <form
                 id="payment-register-form"
                 onSubmit={handleSubmit(submitHandler)}
@@ -372,7 +426,7 @@ const EstimatePaymentRegister = ({
                     )}
                   />
 
-                  <Controller
+                  {/* <Controller
                     name="eprFinancialYear"
                     control={control}
                     render={({ field }) => (
@@ -382,9 +436,9 @@ const EstimatePaymentRegister = ({
                         placeholder="e.g. 2025-26"
                       />
                     )}
-                  />
+                  /> */}
 
-                  <Controller
+                  {/* <Controller
                     name="eprPortalRegistrationNumber"
                     control={control}
                     render={({ field }) => (
@@ -394,9 +448,9 @@ const EstimatePaymentRegister = ({
                         placeholder="Enter number"
                       />
                     )}
-                  />
+                  /> */}
 
-                  <Controller
+                  {/* <Controller
                     name="eprCertificateOrInvoiceNumber"
                     control={control}
                     render={({ field }) => (
@@ -406,26 +460,61 @@ const EstimatePaymentRegister = ({
                         placeholder="Enter number"
                       />
                     )}
-                  />
+                  /> */}
 
-                  <Controller
-                    name="tds"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        label="TDS"
-                        selectedKeys={new Set([field.value ? "true" : "false"])}
-                        onSelectionChange={(keys) => {
-                          const selectedValue = Array.from(keys)?.[0];
-                          field.onChange(selectedValue === "true");
-                        }}
-                      >
-                        <SelectItem key="true">Yes</SelectItem>
-                        <SelectItem key="false">No</SelectItem>
-                      </Select>
-                    )}
-                  />
+                  {shouldShowTds && (
+                    <>
+                      <Controller
+                        name="tdsActive"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="TDS"
+                            selectedKeys={
+                              new Set([field.value ? "true" : "false"])
+                            }
+                            onSelectionChange={(keys) => {
+                              const selectedValue = Array.from(keys)?.[0];
+                              field.onChange(selectedValue === "true");
+                            }}
+                          >
+                            <SelectItem key="true">Yes</SelectItem>
+                            <SelectItem key="false">No</SelectItem>
+                          </Select>
+                        )}
+                      />
 
+                      {tdsActive && (
+                        <Controller
+                          name="tds.tdsPercentage"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Select
+                              label="TDS Percentage"
+                              isRequired
+                              selectedKeys={
+                                field.value !== undefined &&
+                                field.value !== null &&
+                                field.value !== ""
+                                  ? new Set([String(field.value)])
+                                  : new Set([])
+                              }
+                              onSelectionChange={(keys) => {
+                                const selectedValue =
+                                  Array.from(keys)?.[0] || "";
+                                field.onChange(selectedValue);
+                              }}
+                              isInvalid={!!error}
+                              errorMessage={error?.message}
+                            >
+                              <SelectItem key="10">10%</SelectItem>
+                              <SelectItem key="2">2%</SelectItem>
+                            </Select>
+                          )}
+                        />
+                      )}
+                    </>
+                  )}
                   <Controller
                     name="governmentFeeActive"
                     control={control}
@@ -585,6 +674,8 @@ const EstimatePaymentRegister = ({
             </ModalBody>
 
             <ModalFooter className="flex justify-end gap-2">
+              <BaseAmountCalculator />
+
               <Button
                 type="button"
                 variant="flat"

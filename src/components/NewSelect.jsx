@@ -11,12 +11,13 @@ const NewSelect = ({
   name,
   onChange,
   isRequired = false,
-  valueKey,
+  valueKey = "id",
   labelKey,
   isClearable = false,
   isVirtualized = true,
   value,
   errorMessage,
+  isInvalid = false,
   size,
   placeholder,
   isDisabled,
@@ -31,11 +32,15 @@ const NewSelect = ({
   const normalizedData = useMemo(() => {
     return (data || [])
       .filter(
-        (item) => item?.[labelKey] && String(item[labelKey]).trim() !== "",
+        (item) =>
+          item?.[labelKey] &&
+          String(item[labelKey]).trim() !== "" &&
+          item?.[valueKey] !== undefined &&
+          item?.[valueKey] !== null,
       )
-      .map((item, index) => ({
+      .map((item) => ({
         ...item,
-        __selectKey: `${String(item?.[valueKey] ?? "value")}-${item?.id ?? index}-${index}`,
+        __selectKey: String(item[valueKey]),
       }));
   }, [data, labelKey, valueKey]);
 
@@ -54,7 +59,7 @@ const NewSelect = ({
           .filter(Boolean);
       }
 
-      if (!val) return "";
+      if (val === undefined || val === null || val === "") return "";
 
       const matched = normalizedData.find(
         (item) => String(item[valueKey]) === String(val),
@@ -68,6 +73,7 @@ const NewSelect = ({
   const [selectedKeys, setSelectedKeys] = useState(() =>
     getKeysFromValue(value),
   );
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredData, setFilteredData] = useState(normalizedData);
 
@@ -137,24 +143,25 @@ const NewSelect = ({
         selectedKeyValue =
           keys === "all"
             ? filteredData.map((item) => item.__selectKey)
-            : [...keys];
+            : Array.from(keys);
 
         const selectedItems = normalizedData.filter((item) =>
           selectedKeyValue.includes(item.__selectKey),
         );
 
-        selectedValue = selectedItems.map((item) => String(item[valueKey]));
-        setSelectedKeys(selectedKeyValue);
+        selectedValue = selectedItems.map((item) => item[valueKey]);
 
+        setSelectedKeys(selectedKeyValue);
         onItemSelect(selectedItems);
         onChange?.(selectedValue);
       } else {
-        selectedKeyValue = keys.size > 0 ? String([...keys][0]) : "";
+        selectedKeyValue = keys.size > 0 ? String(Array.from(keys)[0]) : "";
+
         const selectedItem = normalizedData.find(
           (item) => item.__selectKey === selectedKeyValue,
         );
 
-        selectedValue = selectedItem ? String(selectedItem[valueKey]) : "";
+        selectedValue = selectedItem ? selectedItem[valueKey] : "";
 
         setSelectedKeys(selectedKeyValue);
         onItemSelect(selectedItem || null);
@@ -163,7 +170,9 @@ const NewSelect = ({
 
       setSearchQuery("");
 
-      if (triggerRef.current) triggerRef.current.blur();
+      if (triggerRef.current) {
+        triggerRef.current.blur();
+      }
 
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
@@ -182,18 +191,34 @@ const NewSelect = ({
   const selectKeys =
     selectionMode === "multiple"
       ? new Set(Array.isArray(selectedKeys) ? selectedKeys : [])
-      : new Set([selectedKeys].filter(Boolean));
+      : new Set(selectedKeys ? [selectedKeys] : []);
+
+  const hiddenInputValue =
+    selectionMode === "multiple"
+      ? Array.isArray(value)
+        ? value.join(",")
+        : ""
+      : (value ?? "");
 
   return (
     <div className="w-full">
+      {name && (
+        <input
+          type="hidden"
+          name={name}
+          value={hiddenInputValue}
+          required={isRequired}
+        />
+      )}
+
       <Select
         size={size}
         {...(isControlled ? { isOpen, onOpenChange } : {})}
         endContent={endContent}
         isDisabled={isDisabled}
-        errorMessage={errorMessage}
+        errorMessage={isInvalid ? errorMessage : undefined}
+        isInvalid={isInvalid}
         isRequired={isRequired}
-        name={name}
         placeholder={placeholder}
         isVirtualized={isVirtualized}
         itemHeight={52}
@@ -207,7 +232,7 @@ const NewSelect = ({
         selectedKeys={selectKeys}
         onSelectionChange={handleSelectionChange}
         disallowEmptySelection={false}
-        aria-label="Searchable select"
+        aria-label={typeof label === "string" ? label : "Searchable select"}
         className={className}
         classNames={{
           trigger: "min-h-[56px] max-h-[150px] overflow-y-auto",
@@ -227,7 +252,11 @@ const NewSelect = ({
         }}
         renderValue={(items) => {
           if (!items.length) {
-            return <span className="text-default-400">Select data</span>;
+            return (
+              <span className="text-default-400">
+                {placeholder || "Select data"}
+              </span>
+            );
           }
 
           if (selectionMode === "multiple") {

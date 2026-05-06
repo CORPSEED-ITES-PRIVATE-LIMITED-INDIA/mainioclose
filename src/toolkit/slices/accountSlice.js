@@ -284,7 +284,21 @@ export const getEstimatesByLeadId = createAsyncThunk(
       const response = await api.get(
         `/accountService/api/v1/estimates/lead/${leadId}`,
       );
-      console.log("Test hai Yo::",response)
+      console.log("Test hai Yo::", response);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response);
+    }
+  },
+);
+
+export const getTdsDetailByEstimateId = createAsyncThunk(
+  "getTdsDetailByEstimateId",
+  async ({ estimateId, unbilledId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/unbilled-invoices/tds?unbilledId=${unbilledId}&estimateId=${estimateId}`,
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response);
@@ -309,7 +323,8 @@ const AccountSlice = createSlice({
     unbilledDetail: {},
     invoiceReport: [],
     estimateReport: [],
-    estimateList:[],
+    estimateList: [],
+    tdsDetail: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -467,6 +482,7 @@ const AccountSlice = createSlice({
       state.loading = "rejected";
       state.invoiceReport = [];
     });
+
     builder.addCase(getEstimatesByLeadId.pending, (state) => {
       state.loading = "pending";
     });
@@ -477,6 +493,18 @@ const AccountSlice = createSlice({
     builder.addCase(getEstimatesByLeadId.rejected, (state) => {
       state.loading = "rejected";
       state.estimateList = [];
+    });
+
+    builder.addCase(getTdsDetailByEstimateId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getTdsDetailByEstimateId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.tdsDetail = action.payload || [];
+    });
+    builder.addCase(getTdsDetailByEstimateId.rejected, (state) => {
+      state.loading = "rejected";
+      state.tdsDetail = {};
     });
   },
 });

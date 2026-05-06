@@ -1476,26 +1476,22 @@ const Leads = () => {
                 >
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto px-2 py-1">
                     <NewSelect
-                      // isRequired
-                      name={"leadName"}
+                      name="leadName"
+                      isRequired
                       data={solutionList || []}
-                      label={
-                        <div>
-                          Select service<span className="text-red-500">*</span>
-                        </div>
-                      }
+                      label="Select service"
                       labelKey="name"
                       valueKey="name"
                       value={leadFormData?.leadName}
-                      // errorMessage={"please select service"}
                       onChange={(value) => {
                         setLeadFormData((prev) => ({
                           ...prev,
                           leadName: value,
                         }));
                       }}
+                      isInvalid={!leadFormData?.leadName}
+                      errorMessage="please select service"
                     />
-
                     <Input
                       isRequired
                       name="name"
@@ -1553,7 +1549,8 @@ const Leads = () => {
                           assigneeId: selectedValue,
                         }));
                       }}
-                      errorMessage={"please select assignee"}
+                      isInvalid={!leadFormData?.assigneeId}
+                      errorMessage="please select assignee"
                     />
 
                     <Select

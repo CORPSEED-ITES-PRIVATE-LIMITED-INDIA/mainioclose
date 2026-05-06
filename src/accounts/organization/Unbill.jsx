@@ -39,6 +39,7 @@ import dayjs from "dayjs";
 import {
   cancelUnBilledInvoice,
   convertUnbillToAdvanceInvoice,
+  getTdsDetailByEstimateId,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
@@ -53,6 +54,7 @@ export const columns = [
   { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
   { name: "UNBILL NO. / ADVANCE INVOICE", uid: "unbillNo" },
   { name: "GOVERNMENT FEE", uid: "governmentFee" },
+  { name: "TDS", uid: "tdsActive" },
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
   { name: "COMPANY", uid: "companyName" },
@@ -73,6 +75,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "unbillNo",
   "estimateNumber",
   "governmentFee",
+  "tdsActive",
   "service",
   "client",
   "companyName",
@@ -90,6 +93,7 @@ const Unbill = () => {
   const statusModal = useDisclosure();
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
+  const tdsModal = useDisclosure();
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
@@ -117,6 +121,7 @@ const Unbill = () => {
   const [estimateDetail, setEstimateDetail] = useState(null);
   const [viewType, setViewType] = useState("ESTIMATE");
   const [govtFeeDetail, setGovtFeeDetail] = useState();
+  const [tdsDetail, setTdsDetail] = useState();
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -193,6 +198,28 @@ const Unbill = () => {
       );
   };
 
+  const handleTdsPreview = async (estimateId, unbilledId) => {
+    dispatch(getTdsDetailByEstimateId({ estimateId, unbilledId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setTdsDetail(data);
+          tdsModal.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in TDS Estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch((e) =>
+        addToast({
+          title: e.message,
+          color: "danger",
+        }),
+      );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -222,9 +249,25 @@ const Unbill = () => {
             <button
               disabled={!rowData?.governmentFeeActiveFlag}
               className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
-              onClick={() => { handleGovtFeePreview(rowData.id); }}
+              onClick={() => {
+                handleGovtFeePreview(rowData.id);
+              }}
             >
-              {rowData?.governmentFeeActiveFlag === true ?  "True" : "False" }
+              {rowData?.governmentFeeActiveFlag === true ? "True" : "False"}
+            </button>
+          </div>
+        );
+      case "tdsActive":
+        return (
+          <div>
+            <button
+              disabled={!rowData?.tdsActiveFlag}
+              className={`capitalize text-xs font-medium ${rowData?.tdsActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
+              onClick={() => {
+                handleTdsPreview(rowData?.estimateId, rowData?.id);
+              }}
+            >
+              {rowData?.tdsActiveFlag === true ? "True" : "False"}
             </button>
           </div>
         );
@@ -782,18 +825,18 @@ const Unbill = () => {
                 </Select>
                 {(updatedStatusData?.approvalRemarks === "REJECTED" ||
                   updatedStatusData?.approvalRemarks === "CANCELLED") && (
-                    <Textarea
-                      label="Remark"
-                      isRequired
-                      value={updatedStatusData?.rejectionReason}
-                      onChange={(e) =>
-                        setUpdatedStatusData((prev) => ({
-                          ...prev,
-                          rejectionReason: e.target.value,
-                        }))
-                      }
-                    />
-                  )}
+                  <Textarea
+                    label="Remark"
+                    isRequired
+                    value={updatedStatusData?.rejectionReason}
+                    onChange={(e) =>
+                      setUpdatedStatusData((prev) => ({
+                        ...prev,
+                        rejectionReason: e.target.value,
+                      }))
+                    }
+                  />
+                )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
@@ -850,7 +893,8 @@ const Unbill = () => {
                       Government Fee Details
                     </h2>
                     <p className="mt-1 text-sm text-default-500">
-                      Complete fee summary, payment details, and audit information
+                      Complete fee summary, payment details, and audit
+                      information
                     </p>
                   </div>
 
@@ -880,8 +924,6 @@ const Unbill = () => {
                       {inrCurrency(govtFeeDetail?.totalAmount)}
                     </p>
                   </div>
-
-
                 </div>
 
                 <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
@@ -976,7 +1018,9 @@ const Unbill = () => {
                       </p>
                       <p className="mt-1 text-sm font-semibold text-default-900">
                         {govtFeeDetail?.paymentDate
-                          ? dayjs(govtFeeDetail.paymentDate).format("DD-MM-YYYY")
+                          ? dayjs(govtFeeDetail.paymentDate).format(
+                              "DD-MM-YYYY",
+                            )
                           : "NA"}
                       </p>
                     </div>
@@ -997,7 +1041,12 @@ const Unbill = () => {
                         Status
                       </p>
                       <div className="mt-2">
-                        <Chip color="primary" variant="flat" size="sm" className="capitalize">
+                        <Chip
+                          color="primary"
+                          variant="flat"
+                          size="sm"
+                          className="capitalize"
+                        >
                           {govtFeeDetail?.status || "NA"}
                         </Chip>
                       </div>
@@ -1035,7 +1084,9 @@ const Unbill = () => {
                       </p>
                       <p className="mt-1 text-sm font-semibold text-default-900">
                         {govtFeeDetail?.createdAt
-                          ? dayjs(govtFeeDetail.createdAt).format("DD-MM-YYYY HH:mm")
+                          ? dayjs(govtFeeDetail.createdAt).format(
+                              "DD-MM-YYYY HH:mm",
+                            )
                           : "NA"}
                       </p>
                     </div>
@@ -1046,7 +1097,242 @@ const Unbill = () => {
                       </p>
                       <p className="mt-1 text-sm font-semibold text-default-900">
                         {govtFeeDetail?.updatedAt
-                          ? dayjs(govtFeeDetail.updatedAt).format("DD-MM-YYYY HH:mm")
+                          ? dayjs(govtFeeDetail.updatedAt).format(
+                              "DD-MM-YYYY HH:mm",
+                            )
+                          : "NA"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter className="border-t border-default-200 bg-white px-6 py-4">
+                <Button
+                  variant="light"
+                  onPress={onClose}
+                  className="rounded-xl px-6 font-medium"
+                >
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={tdsModal.isOpen}
+        onOpenChange={tdsModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="border-b border-default-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-6 py-4">
+                <div className="flex w-full items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-default-900">
+                      TDS Details
+                    </h2>
+                    <p className="mt-1 text-sm text-default-500">
+                      TDS deduction summary with estimate, unbilled invoice, and
+                      audit information
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <Chip
+                      color={
+                        tdsDetail?.status === "PENDING"
+                          ? "warning"
+                          : tdsDetail?.status === "APPROVED"
+                            ? "success"
+                            : tdsDetail?.status === "REJECTED"
+                              ? "danger"
+                              : "primary"
+                      }
+                      variant="flat"
+                      size="sm"
+                      className="font-medium capitalize"
+                    >
+                      {tdsDetail?.status || "NA"}
+                    </Chip>
+
+                    <span className="rounded-full bg-default-100 px-3 py-1 text-xs font-medium text-default-600">
+                      TDS ID: {tdsDetail?.id || "NA"}
+                    </span>
+                  </div>
+                </div>
+              </ModalHeader>
+
+              <ModalBody className="max-h-[75vh] space-y-6 overflow-y-auto bg-gradient-to-br from-white via-default-50/40 to-blue-50/30 px-6 py-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600">
+                      Taxable Amount
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-default-900">
+                      {inrCurrency(tdsDetail?.taxableAmount)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-600">
+                      TDS Percentage
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-default-900">
+                      {tdsDetail?.tdsPercentage !== undefined &&
+                      tdsDetail?.tdsPercentage !== null
+                        ? `${Number(tdsDetail.tdsPercentage).toFixed(2)}%`
+                        : "NA"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-white p-4 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-green-600">
+                      TDS Amount
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-default-900">
+                      {inrCurrency(tdsDetail?.tdsAmount)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-default-600">
+                    Estimate & Invoice Information
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Estimate ID
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.estimateId || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Estimate Number
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.estimateNumber || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Unbilled Invoice ID
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.unbilledInvoiceId || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Unbilled Number
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.unbilledNumber || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4 md:col-span-2">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Public UUID
+                      </p>
+                      <p className="mt-1 break-all text-sm font-semibold text-default-900">
+                        {tdsDetail?.publicUuid || "NA"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-default-600">
+                    TDS Status
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Status
+                      </p>
+                      <div className="mt-2">
+                        <Chip
+                          color={
+                            tdsDetail?.status === "PENDING"
+                              ? "warning"
+                              : tdsDetail?.status === "APPROVED"
+                                ? "success"
+                                : tdsDetail?.status === "REJECTED"
+                                  ? "danger"
+                                  : "primary"
+                          }
+                          variant="flat"
+                          size="sm"
+                          className="capitalize"
+                        >
+                          {tdsDetail?.status || "NA"}
+                        </Chip>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Created By ID
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.createdById || "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Created By
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.createdByName || "NA"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-default-200 bg-white/90 p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-default-600">
+                    Audit Information
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Created At
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.createdAt
+                          ? dayjs(tdsDetail.createdAt).format(
+                              "DD-MM-YYYY HH:mm",
+                            )
+                          : "NA"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+                        Updated At
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-default-900">
+                        {tdsDetail?.updatedAt
+                          ? dayjs(tdsDetail.updatedAt).format(
+                              "DD-MM-YYYY HH:mm",
+                            )
                           : "NA"}
                       </p>
                     </div>
