@@ -1121,12 +1121,29 @@ const Proposal = () => {
                       )}
 
                       {proposal?.status === "DRAFT" && (
-                        <span
-                          className={`shrink-0 px-4 py-1 text-[11px] rounded-full text-center font-medium cursor-pointer bg-gray-300 `}
+                        <button
+                          type="button"
                           onClick={() => handleProposalSendToManager(proposal)}
+                          className="
+      w-[116px] h-[26px]
+      shrink-0
+      rounded-full
+      bg-slate-300
+      text-white
+      text-[11px]
+      font-semibold
+      leading-[13px]
+      flex items-center justify-center
+      text-center
+      px-1
+      hover:bg-slate-400
+      active:scale-[0.98]
+      transition-all duration-200
+      shadow-sm
+    "
                         >
                           Send to Manager
-                        </span>
+                        </button>
                       )}
 
                       <span
