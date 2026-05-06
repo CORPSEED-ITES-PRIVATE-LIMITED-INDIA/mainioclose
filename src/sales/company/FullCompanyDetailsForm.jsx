@@ -72,8 +72,8 @@ const unitSchema = (gstTypeList = []) =>
 
       gstNo: z.string().optional(),
       unitOpeningDate: z.string().min(1, "please enter date"),
-      // companyTypeId: z.string().min(1, "please select company type"),
-      gstTypeId: z.string().min(1, "please select gst type"),
+
+      gstTypeId: z.coerce.string().min(1, "please select gst type"),
     })
     .superRefine((data, ctx) => {
       const selectedGstType = gstTypeList?.find(
@@ -1393,14 +1393,17 @@ export function CompanyAndUnitsForm({
                             data={gstTypeList || []}
                             labelKey="name"
                             valueKey="id"
-                            value={field.value}
+                            value={String(field.value || "")}
                             isInvalid={!!error}
                             errorMessage={error?.message}
                             onChange={(value) => {
-                              field.onChange(value);
+                              const finalValue = String(value || "");
+
+                              field.onChange(finalValue);
+                              clearErrors(`units.${index}.gstTypeId`);
 
                               const selected = gstTypeList?.find(
-                                (gst) => String(gst.id) === String(value),
+                                (gst) => String(gst.id) === finalValue,
                               );
 
                               const isRegistered =
@@ -1409,9 +1412,11 @@ export function CompanyAndUnitsForm({
 
                               if (!isRegistered) {
                                 setValue(`units.${index}.gstNo`, "", {
-                                  shouldValidate: true,
+                                  shouldValidate: false,
                                   shouldDirty: true,
                                 });
+
+                                clearErrors(`units.${index}.gstNo`);
                               }
                             }}
                           />

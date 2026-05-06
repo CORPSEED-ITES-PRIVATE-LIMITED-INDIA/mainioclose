@@ -143,13 +143,13 @@ const NewSelect = ({
         selectedKeyValue =
           keys === "all"
             ? filteredData.map((item) => item.__selectKey)
-            : Array.from(keys);
+            : Array.from(keys).map(String);
 
         const selectedItems = normalizedData.filter((item) =>
           selectedKeyValue.includes(item.__selectKey),
         );
 
-        selectedValue = selectedItems.map((item) => item[valueKey]);
+        selectedValue = selectedItems.map((item) => String(item[valueKey]));
 
         setSelectedKeys(selectedKeyValue);
         onItemSelect(selectedItems);
@@ -161,7 +161,7 @@ const NewSelect = ({
           (item) => item.__selectKey === selectedKeyValue,
         );
 
-        selectedValue = selectedItem ? selectedItem[valueKey] : "";
+        selectedValue = selectedItem ? String(selectedItem[valueKey]) : "";
 
         setSelectedKeys(selectedKeyValue);
         onItemSelect(selectedItem || null);
