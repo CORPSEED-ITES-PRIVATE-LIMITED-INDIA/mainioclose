@@ -294,11 +294,12 @@ const CompanyAndUnitsInLead = () => {
     if (
       leadData?.proposalStatus === "APPROVED" ||
       leadData?.proposalStatus === "INITIATED" ||
+      leadData?.proposalStatus === "DRAFT" ||
       leadData?.proposalSendOrNot
     ) {
       addToast({
         title: "RESTRICTED",
-        description: `You are not required perform any action before approval ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or initiation of proposal.`,
+        description: `You are not required perform any action before approval ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or Draft or initiation of proposal.`,
         color: "danger",
       });
       return;
@@ -417,12 +418,13 @@ const CompanyAndUnitsInLead = () => {
 
     if (
       leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
+      leadData?.proposalStatus === "INITIATED" ||
+      leadData?.proposalStatus === "DRAFT"
     ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action before approval or initiation of proposal.",
+          "You are not required perform any action before approval or Draft or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -477,12 +479,13 @@ const CompanyAndUnitsInLead = () => {
   const openEditUnitModal = async (unit) => {
     if (
       leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
+      leadData?.proposalStatus === "INITIATED" ||
+      leadData?.proposalStatus === "DRAFT"
     ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action before approval or initiation of proposal.",
+          "You are not required perform any action before approval or Draft or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -536,12 +539,13 @@ const CompanyAndUnitsInLead = () => {
 
     if (
       leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
+      leadData?.proposalStatus === "INITIATED" ||
+      leadData?.proposalStatus === "DRAFT"
     ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action before approval or initiation of proposal.",
+          "You are not required perform any action before approval or Draft or initiation of proposal.",
         color: "danger",
       });
       return;
@@ -573,12 +577,13 @@ const CompanyAndUnitsInLead = () => {
   const openEditContactModal = (contact, unitId) => {
     if (
       leadData?.proposalStatus === "APPROVED" ||
-      leadData?.proposalStatus === "INITIATED"
+      leadData?.proposalStatus === "INITIATED" ||
+      leadData?.proposalStatus === "DRAFT"
     ) {
       addToast({
         title: "RESTRICTED",
         description:
-          "You are not required perform any action before approval or initiation of proposal.",
+          "You are not required perform any action before approval or Draft or initiation of proposal.",
         color: "danger",
       });
       return;

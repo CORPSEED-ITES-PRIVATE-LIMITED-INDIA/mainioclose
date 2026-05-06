@@ -702,12 +702,13 @@ const LeadInfo = () => {
                             if (
                               leadData?.proposalStatus === "INITIATED" ||
                               leadData?.proposalStatus === "APPROVED" ||
+                              leadData?.proposalStatus === "DRAFT" ||
                               leadData?.proposalSendOrNot
                             ) {
                               addToast({
                                 title: "RESTRICTED",
                                 color: "danger",
-                                description: `Service name cannot be changed as proposal is already approved ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or initiated.`,
+                                description: `Service name cannot be changed as proposal is already approved or ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or Draft or initiated.`,
                               });
                               return;
                             }
@@ -861,13 +862,14 @@ const LeadInfo = () => {
                           onPress={() => {
                             if (
                               leadData?.proposalStatus === "INITIATED" ||
-                              leadData?.proposalStatus === "APPROVED"
+                              leadData?.proposalStatus === "APPROVED" ||
+                              leadData?.proposalStatus === "DRAFT"
                             ) {
                               addToast({
                                 title: "RESTRICTED",
                                 color: "danger",
                                 description:
-                                  "Service name cannot be changed as proposal is already approved or initiated.",
+                                  "Contact details cannot be changed as proposal is already approved or Draft or initiated.",
                               });
                               return;
                             }
@@ -927,13 +929,14 @@ const LeadInfo = () => {
                                     if (
                                       leadData?.proposalStatus ===
                                         "INITIATED" ||
-                                      leadData?.proposalStatus === "APPROVED"
+                                      leadData?.proposalStatus === "APPROVED" ||
+                                      leadData?.proposalStatus === "DRAFT"
                                     ) {
                                       addToast({
                                         title: "RESTRICTED",
                                         color: "danger",
                                         description:
-                                          "Service name cannot be changed as proposal is already approved or initiated.",
+                                          "Contact details cannot be changed as proposal is already approved or initiated.",
                                       });
                                       return;
                                     }
@@ -954,13 +957,15 @@ const LeadInfo = () => {
                                       if (
                                         leadData?.proposalStatus ===
                                           "INITIATED" ||
-                                        leadData?.proposalStatus === "APPROVED"
+                                        leadData?.proposalStatus ===
+                                          "APPROVED" ||
+                                        leadData?.proposalStatus === "DRAFT"
                                       ) {
                                         addToast({
                                           title: "RESTRICTED",
                                           color: "danger",
                                           description:
-                                            "Service name cannot be changed as proposal is already approved or initiated.",
+                                            "Contact details cannot be deleted as proposal is already approved or Draft or initiated.",
                                         });
                                         return;
                                       }
