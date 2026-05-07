@@ -34,7 +34,7 @@ import {
   getAllProductSubCategoryListByCategoryId,
   toggleForRoundOffValue,
 } from "../../toolkit/slices/productSlice";
-import { allowOnlyNumbers } from "../../common";
+import { allowOnlyIntegerOrFloat, allowOnlyNumbers } from "../../common";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -149,6 +149,11 @@ const ProductSubCategory = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           deleteModal.onClose();
+          addToast({
+            title: "SUCCESS",
+            description: "Sub category deleted successfully",
+            color: "success",
+          });
           dispatch(
             getAllProductSubCategoryListByCategoryId({
               productRoleId: categoryId,
@@ -191,7 +196,8 @@ const ProductSubCategory = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Sub category updated successfully",
+              title: "SUCCESS",
+              description: "Sub category updated successfully",
               color: "success",
             });
             onClose();
@@ -228,7 +234,8 @@ const ProductSubCategory = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Sub category created successfully",
+              title: "SUCCESS",
+              description: "Sub category created successfully",
               color: "success",
             });
             onClose();
@@ -564,12 +571,11 @@ const ProductSubCategory = () => {
                       errorMessage="Please enter fees per unit"
                       label="Product fee ₹/unit"
                       name="feePerUnit"
-                      type="text"
                       value={formData?.feePerUnit}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          feePerUnit: allowOnlyNumbers(e.target.value),
+                          feePerUnit: allowOnlyIntegerOrFloat(e.target.value),
                         }))
                       }
                     />

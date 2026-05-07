@@ -656,7 +656,10 @@ const Proposal = () => {
 
     if (editProposal && selectedProposal?.id) {
       dispatch(
-        editLeadPropposal({ id: selectedProposal.id, ...finalValues }),
+        editLeadPropposal({
+          userId,
+          data: { id: selectedProposal.id, ...finalValues },
+        }),
       ).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           setStatusLoading("success");

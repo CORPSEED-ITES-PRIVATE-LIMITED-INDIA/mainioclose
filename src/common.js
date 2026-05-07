@@ -272,6 +272,21 @@ export const allowOnlyNumbers = (value, maxLength = 10) => {
   return value.replace(/\D/g, "").slice(0, maxLength);
 };
 
+export const allowOnlyIntegerOrFloat = (value) => {
+  const input = String(value || "");
+
+  // Allows:
+  // 123
+  // 123.45
+  // .45
+  // empty value
+  if (/^\d*\.?\d*$/.test(input)) {
+    return input;
+  }
+
+  return null;
+};
+
 export const formatEmail = (value) => {
   if (!value) return "";
   return value.replace(/\s/g, "").toLowerCase();

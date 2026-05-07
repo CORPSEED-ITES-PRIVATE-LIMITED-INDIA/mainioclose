@@ -58,15 +58,20 @@ export const createProductCategory = createAsyncThunk(
 
 export const editProductCategory = createAsyncThunk(
   "editProductCategory",
-  async ({ solutionId, tierId, roleId, data }, { rejectWithValue }) => {
+  async ({ solutionId, tierId, roleId, userId, data }, { rejectWithValue }) => {
     try {
-      const response = await api.post(
+      const response = await api.put(
         `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles/${roleId}?userId=${userId}`,
         data,
       );
+
       return response.data;
     } catch (err) {
-      return rejectWithValue(err.response);
+      return rejectWithValue(
+        err?.response?.data || {
+          message: err?.message || "Unable to update category",
+        },
+      );
     }
   },
 );
@@ -76,11 +81,16 @@ export const deleteProductCategory = createAsyncThunk(
   async ({ solutionId, tierId, roleId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.delete(
-        `/leadService/api/v1/product-solutions/${solutionId}/tiers/roles/${roleId}?userId=${userId}`,
+        `/leadService/api/v1/product-solutions/${solutionId}/tiers/${tierId}/roles/${roleId}?userId=${userId}`,
       );
+
       return response.data;
     } catch (err) {
-      return rejectWithValue(err.response);
+      return rejectWithValue(
+        err?.response?.data || {
+          message: err?.message || "Unable to delete category",
+        },
+      );
     }
   },
 );

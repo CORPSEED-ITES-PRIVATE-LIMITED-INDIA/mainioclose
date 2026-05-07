@@ -302,12 +302,16 @@ export const sendProposal = createAsyncThunk(
 
 export const editLeadPropposal = createAsyncThunk(
   "editPropposal",
-  async (data) => {
-    const response = await api.post(
-      `/leadService/api/v1/proposal/editProposal`,
-      data,
-    );
-    return response.data;
+  async ({ data, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/proposal/edit?userId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 

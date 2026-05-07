@@ -49,14 +49,14 @@ const ProductCategory = () => {
   const { businessArrangmentId, solutionId, userId } = useParams();
   const data = useSelector((state) => state.product.productCategoryList);
   const count = useSelector(
-    (state) => state.product.productCategoryList?.length
+    (state) => state.product.productCategoryList?.length,
   );
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const deleteModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -80,7 +80,7 @@ const ProductCategory = () => {
         solutionId,
         tierId: businessArrangmentId,
         userId,
-      })
+      }),
     );
   }, [dispatch, initialFilteration]);
 
@@ -88,7 +88,7 @@ const ProductCategory = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -98,8 +98,8 @@ const ProductCategory = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -124,25 +124,43 @@ const ProductCategory = () => {
         tierId: businessArrangmentId,
         roleId: rowItem?.id,
         userId,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Category deleted successfully",
+            color: "success",
+          });
+
           deleteModal.onClose();
+
           dispatch(
-              getAllProductCategoryById({
-                solutionId,
-                tierId: businessArrangmentId,
-                userId,
-              })
-            );
+            getAllProductCategoryById({
+              solutionId,
+              tierId: businessArrangmentId,
+              userId,
+            }),
+          );
+
           setRowItem(null);
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title:
+              resp?.payload?.message ||
+              resp?.payload?.data?.message ||
+              resp?.error?.message ||
+              "Something went wrong !.",
+            color: "danger",
+          });
         }
       })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+      .catch((error) =>
+        addToast({
+          title: error?.message || "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -153,39 +171,61 @@ const ProductCategory = () => {
   };
 
   const handleFinish = (values) => {
+    console.log("values 11111111111", values);
+
     if (rowItem) {
-      dispatch(
-        editProductCategory({
-          data: values,
-          tierId: businessArrangmentId,
-          roleId: rowItem?.id,
-          solutionId,
-          userId,
-        })
-      )
+      const payload = {
+        data: values,
+        tierId: businessArrangmentId,
+        categoryId: rowItem?.id,
+        roleId: rowItem?.id, // temporary, for checking both keys
+        solutionId,
+        userId,
+      };
+
+      console.log("EDIT CATEGORY PAYLOAD ===>", payload);
+
+      dispatch(editProductCategory(payload))
         .then((resp) => {
+          console.log("EDIT CATEGORY RESPONSE ===>", resp);
+
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Category updated successfully",
+              title: "SUCCESS",
+              description: "Category updated successfully",
               color: "success",
             });
+
             onClose();
             setFormData({ name: "" });
             setRowItem(null);
+
             dispatch(
               getAllProductCategoryById({
                 solutionId,
                 tierId: businessArrangmentId,
                 userId,
-              })
+              }),
             );
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({
+              title:
+                resp?.payload?.data?.message ||
+                resp?.payload?.message ||
+                resp?.error?.message ||
+                "Something went wrong !.",
+              color: "danger",
+            });
           }
         })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
-        );
+        .catch((error) => {
+          console.log("EDIT CATEGORY CATCH ERROR ===>", error);
+
+          addToast({
+            title: error?.message || "Something went wrong !.",
+            color: "danger",
+          });
+        });
     } else {
       dispatch(
         createProductCategory({
@@ -193,12 +233,13 @@ const ProductCategory = () => {
           tierId: businessArrangmentId,
           solutionId,
           userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Category created successfully",
+              title: "SUCCESS",
+              description: "Category created successfully",
               color: "success",
             });
             onClose();
@@ -209,14 +250,14 @@ const ProductCategory = () => {
                 solutionId,
                 tierId: businessArrangmentId,
                 userId,
-              })
+              }),
             );
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -344,7 +385,15 @@ const ProductCategory = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
+            <Button
+              color="primary"
+              onPress={() => {
+                setRowItem(null);
+                setFormData({ name: "" });
+                onOpen();
+              }}
+              endContent={<Plus />}
+            >
               Add New
             </Button>
           </div>
@@ -460,7 +509,6 @@ const ProductCategory = () => {
         </TableBody>
       </Table>
       <Modal
-        size="2xl"
         isDismissable={false}
         isKeyboardDismissDisabled={true}
         isOpen={isOpen}
@@ -478,7 +526,7 @@ const ProductCategory = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleFinish(data);
                   }}

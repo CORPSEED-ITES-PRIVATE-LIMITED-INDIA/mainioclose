@@ -229,7 +229,9 @@ const Solutions = () => {
             to={
               rowData?.type === "SERVICE"
                 ? `${rowData?.id}/detail/solutionPrice`
-                : `${rowData?.id}/businessArrangement`
+                : rowData?.type === "PRODUCT"
+                  ? `${rowData?.id}/businessArrangement`
+                  : ""
             }
             className="font-medium"
           >
