@@ -205,7 +205,7 @@ const CompanyApprovals = () => {
                 {rowData?.companyName || "-"}
               </Link>
               <p className="font-normal text-xs text-gray-400">
-                Age : {rowData?.age || "-"}
+                Age : {rowData?.companyAge || "-"} yrs
               </p>
               <p className="font-normal text-xs text-gray-400">
                 Pending units : {rowData?.pendingUnitsCount}
@@ -336,7 +336,8 @@ const CompanyApprovals = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              {rowData?.onboardingStatus === "INITIATED" && (
+              {(rowData?.onboardingStatus === "INITIATED" ||
+                rowData?.onboardingStatus === "MINIMAL") && (
                 <DropdownItem
                   onPress={() => {
                     onOpen();
@@ -350,7 +351,8 @@ const CompanyApprovals = () => {
                   Approved
                 </DropdownItem>
               )}
-              {rowData?.onboardingStatus === "INITIATED" && (
+              {(rowData?.onboardingStatus === "INITIATED" ||
+                rowData?.onboardingStatus === "MINIMAL") && (
                 <DropdownItem
                   onPress={() => {
                     onOpen();

@@ -46,7 +46,10 @@ import { useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
 import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
 import { set } from "zod";
-import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
+import {
+  getEstimateByEstimateId,
+  updateLeadStatus,
+} from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
@@ -539,21 +542,33 @@ const Unbill = () => {
               title: "Status updated successfully !.",
               color: "success",
             });
-            // dispatch(
-            //   createProjectsForOperations({
-            //     ...resp?.payload,
-            //     unitId: resp?.payload?.companyUnitId,
-            //   }),
-            // ).then((pro) => {
-            //   if (pro.meta.requestStatus === "fulfilled") {
-            //     addToast({
-            //       title: "Project created successfully !.",
-            //       color: "success",
-            //     });
-            //   } else {
-            //     addToast({ title: "Something went wrong !.", color: "danger" });
-            //   }
-            // });
+            dispatch(
+              updateLeadStatus({
+                leadId: rowItem?.leadId,
+                userId,
+                statusId: 10,
+              }),
+            )
+              .then((resp) => {
+                if (resp.meta.requestStatus === "fulfilled") {
+                  addToast({
+                    title: "Status updated successfully",
+                    color: "success",
+                  });
+                } else {
+                  addToast({
+                    title: "Something went wrong in lead status update  !.",
+                    color: "danger",
+                  });
+                }
+              })
+              .catch(() => {
+                addToast({
+                  title: "Something went wrong in lead status update  !.",
+                  color: "danger",
+                });
+              });
+
             dispatch(
               getAllUnbillList({ page, size: rowsPerPage, userId, status }),
             );

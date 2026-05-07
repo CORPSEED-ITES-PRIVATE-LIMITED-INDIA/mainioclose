@@ -252,37 +252,37 @@ const CompanyUnitsInAccount = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              {company?.onboardingStatus === "INITIATED" ||
-                (company?.onboardingStatus === "MINIMAL" && (
-                  <DropdownItem
-                    onPress={() => {
-                      onOpen();
-                      setStatusData((pre) => ({
-                        ...pre,
-                        approve: true,
-                        unitId: company?.unitId,
-                      }));
-                    }}
-                  >
-                    Approved
-                  </DropdownItem>
-                ))}
+              {(company?.onboardingStatus === "INITIATED" ||
+                company?.onboardingStatus === "MINIMAL") && (
+                <DropdownItem
+                  onPress={() => {
+                    onOpen();
+                    setStatusData((pre) => ({
+                      ...pre,
+                      approve: true,
+                      unitId: company?.unitId,
+                    }));
+                  }}
+                >
+                  Approved
+                </DropdownItem>
+              )}
 
-              {company?.onboardingStatus === "INITIATED" ||
-                (company?.onboardingStatus === "MINIMAL" && (
-                  <DropdownItem
-                    onPress={() => {
-                      onOpen();
-                      setStatusData((pre) => ({
-                        ...pre,
-                        approve: false,
-                        unitId: company?.unitId,
-                      }));
-                    }}
-                  >
-                    Disapproved
-                  </DropdownItem>
-                ))}
+              {(company?.onboardingStatus === "INITIATED" ||
+                company?.onboardingStatus === "MINIMAL") && (
+                <DropdownItem
+                  onPress={() => {
+                    onOpen();
+                    setStatusData((pre) => ({
+                      ...pre,
+                      approve: false,
+                      unitId: company?.unitId,
+                    }));
+                  }}
+                >
+                  Disapproved
+                </DropdownItem>
+              )}
               <DropdownItem
                 onClick={() => {
                   setSelectedUnit(company);
