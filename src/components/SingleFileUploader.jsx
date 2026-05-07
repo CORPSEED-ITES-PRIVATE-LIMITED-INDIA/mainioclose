@@ -57,7 +57,7 @@ const SingleFileUploader = ({
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       const url = response?.data;
@@ -149,7 +149,7 @@ const SingleFileUploader = ({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`w-full min-h-[52px] border-2 rounded-lg mt-1 border-gray-600 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer transition-colors ${
+        className={`w-full min-h-[42px] border-2 rounded-lg border-gray-200 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer transition-colors ${
           file && status === "success" ? "cursor-not-allowed opacity-70" : ""
         }`}
       >
@@ -188,7 +188,8 @@ const SingleFileUploader = ({
               status === "success" ? "text-green-600" : "text-gray-800"
             } text-tiny`}
           >
-            {file.name} {file.size > 0 && `(${Math.round(file.size / 1024)} KB)`}
+            {file.name}{" "}
+            {file.size > 0 && `(${Math.round(file.size / 1024)} KB)`}
             {status === "success" && value && (
               <>
                 {" "}
