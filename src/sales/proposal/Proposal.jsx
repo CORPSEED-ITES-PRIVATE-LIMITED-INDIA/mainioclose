@@ -11,6 +11,8 @@ import {
   ModalHeader,
   Tooltip,
   useDisclosure,
+  RadioGroup,
+  Radio,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { Check, Flag, Paperclip, Plus, Search } from "lucide-react";
@@ -26,7 +28,8 @@ import {
   sendProposal,
   sendProposalToManager,
 } from "../../toolkit/slices/leadSlice";
-import TextEditor from "../../components/TextEditor";
+// import TextEditor from "../../components/TextEditor";
+import NewTextEditor from "../../components/NewTextEditor";
 import {
   getAllSolutionList,
   getSolutionDetailByName,
@@ -55,42 +58,13 @@ export function TagsInput({
   placeholder = "",
   className = "",
   inputClassName = "",
-  lockedValues = [],
 }) {
   const [inputValue, setInputValue] = useState("");
 
-  const normalizeEmail = (email) =>
-    String(email || "")
-      .trim()
-      .toLowerCase();
-
-  const isLocked = (tag) =>
-    lockedValues.some(
-      (lockedEmail) => normalizeEmail(lockedEmail) === normalizeEmail(tag),
-    );
-
-  const safeOnChange = (nextValue = []) => {
-    const finalValue = [
-      ...lockedValues,
-      ...nextValue.filter((email) => !isLocked(email)),
-    ].filter(Boolean);
-
-    const uniqueValue = [...new Set(finalValue)];
-
-    onChange(uniqueValue);
-  };
-
   const addTag = (val) => {
     const trimmed = val.trim();
-
     if (!trimmed) return;
-
-    if (
-      !value.some((email) => normalizeEmail(email) === normalizeEmail(trimmed))
-    ) {
-      safeOnChange([...value, trimmed]);
-    }
-
+    if (!value.includes(trimmed)) onChange([...value, trimmed]);
     setInputValue("");
   };
 
@@ -98,14 +72,11 @@ export function TagsInput({
     if (["Enter", " ", ","].includes(e.key)) {
       e.preventDefault();
       addTag(inputValue);
-      return;
     }
 
-    // IMPORTANT:
-    // Do not remove email tags using Backspace.
-    // Locked/default emails must never be removed accidentally.
-    if (e.key === "Backspace" && inputValue === "") {
+    if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
       e.preventDefault();
+      onChange(value.slice(0, value.length - 1));
     }
   };
 
@@ -116,23 +87,16 @@ export function TagsInput({
       {value.map((tag, index) => (
         <div
           key={index}
-          className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm ${
-            isLocked(tag)
-              ? "bg-gray-100 text-gray-700 border border-gray-300"
-              : "bg-blue-100 text-blue-800"
-          }`}
+          className="flex items-center gap-1 rounded-full px-3 py-1 text-sm bg-blue-100 text-blue-800"
         >
           {tag}
-
-          {!isLocked(tag) && (
-            <button
-              type="button"
-              onClick={() => safeOnChange(value.filter((_, i) => i !== index))}
-              className="cursor-pointer font-medium text-blue-600 hover:text-red-500"
-            >
-              ×
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((_, i) => i !== index))}
+            className="cursor-pointer font-medium text-blue-600 hover:text-red-500"
+          >
+            ×
+          </button>
         </div>
       ))}
 
@@ -168,6 +132,12 @@ const validateEmailArray = (required = false) => ({
   },
 });
 
+const getPlainTextLength = (html = "") =>
+  html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim().length;
+
 const Proposal = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
@@ -197,9 +167,9 @@ const Proposal = () => {
   const [isCreatingProposal, setIsCreatingProposal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [isClientRejected, setIsClientRejected] = useState("");
   const [proposalToCancel, setProposalToCancel] = useState(null);
   const [statusLoading, setStatusLoading] = useState("");
-  const [lockedMailTo, setLockedMailTo] = useState([]);
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
@@ -331,10 +301,6 @@ const Proposal = () => {
     setBrochureUrl(brochureIds);
     setTemplateName(proposal?.templateName || "");
 
-    const existingMailTo = proposal?.mailTo || [];
-
-    setLockedMailTo(existingMailTo);
-
     proposalAntForm.setFieldsValue({
       mailTo: proposal?.mailTo || [],
       mailCc: proposal?.mailCc || [],
@@ -364,9 +330,7 @@ const Proposal = () => {
     }
 
     const hasNonCancelled = proposalList.some((item) =>
-      ["REJECTED", "APPROVED", "INITIATED", "DRAFT"].includes(
-        item?.status?.toUpperCase(),
-      ),
+      ["REJECTED", "APPROVED"].includes(item?.status?.toUpperCase()),
     );
     if (hasNonCancelled) {
       addToast({
@@ -387,16 +351,12 @@ const Proposal = () => {
 
     proposalAntForm.resetFields();
 
-    const existingMailTo =
-      company?.units?.[0]?.unitContacts
-        ?.map((client) => client.emails)
-        .filter(Boolean) || [];
-
-    setLockedMailTo(existingMailTo);
-
     proposalAntForm.setFieldsValue({
       ...defaultValues,
-      mailTo: existingMailTo,
+      mailTo:
+        company?.units?.[0]?.unitContacts
+          ?.map((client) => client.emails)
+          .filter(Boolean) || [],
       mailSubject: solutionDetail?.name
         ? `Corpseed Proposal for - ${solutionDetail.name}`
         : "",
@@ -530,10 +490,21 @@ const Proposal = () => {
   const handleOpenCancelModal = (proposal) => {
     setProposalToCancel(proposal);
     setCancelReason("");
+    setIsClientRejected("");
     cancelModal.onOpen();
   };
 
   const handleCancelProposal = () => {
+    if (!isClientRejected) {
+      addToast({
+        title: "Client rejection required",
+        description:
+          "Please select whether the proposal was rejected by client.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (!cancelReason.trim()) {
       addToast({
         title: "Reason required",
@@ -550,7 +521,7 @@ const Proposal = () => {
         reason: encodeURIComponent(cancelReason.trim()),
 
         // send this to backend
-        isProposalRejectedByClient: false,
+        isProposalRejectedByClient: isClientRejected === "YES",
       }),
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
@@ -563,6 +534,7 @@ const Proposal = () => {
         cancelModal.onClose();
         setProposalToCancel(null);
         setCancelReason("");
+        setIsClientRejected("");
         setSelectedProposal(null);
         dispatch(getAllProposalByLeadId(leadId));
       } else {
@@ -656,10 +628,7 @@ const Proposal = () => {
 
     if (editProposal && selectedProposal?.id) {
       dispatch(
-        editLeadPropposal({
-          userId,
-          data: { id: selectedProposal.id, ...finalValues },
-        }),
+        editLeadPropposal({ id: selectedProposal.id, ...finalValues }),
       ).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           setStatusLoading("success");
@@ -672,7 +641,7 @@ const Proposal = () => {
 
           proposalAntForm.resetFields();
           proposalAntForm.setFieldsValue(defaultValues);
-          setLockedMailTo([]);
+
           setEditProposal(false);
           setSelectedProposal(null);
           dispatch(getAllProposalByLeadId(leadId));
@@ -754,17 +723,16 @@ const Proposal = () => {
               Proposal Overview
             </h2>
 
-            {selectedProposal?.status === "DRAFT" && (
-              <Button
-                size="sm"
-                color="primary"
-                variant="flat"
-                className="flex items-center gap-2 shadow-sm"
-                onPress={handleEditProposal}
-              >
-                Edit
-              </Button>
-            )}
+            {/* <Button
+              size="sm"
+              color="primary"
+              variant="flat"
+              className="flex items-center gap-2 shadow-sm"
+              onPress={handleEditProposal}
+              isDisabled={isCancelled(selectedProposal?.status)}
+            >
+              Edit
+            </Button> */}
           </div>
 
           <div className="flex flex-wrap justify-between gap-4 pt-2">
@@ -880,38 +848,9 @@ const Proposal = () => {
           </div>
         </div>
 
-        {selectedProposal?.mailBody && (
-          <div className="bg-white rounded-xl shadow border p-6 md:p-8">
-            <div className="border-b pb-3 mb-4">
-              <h3 className="text-base font-semibold text-gray-800">
-                Mail Body Preview
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                This is the email body that will be sent to the client.
-              </p>
-            </div>
-
-            <div
-              className="proposal-content"
-              dangerouslySetInnerHTML={{
-                __html: selectedProposal.mailBody,
-              }}
-            />
-          </div>
-        )}
-
         <div className="bg-white rounded-xl shadow border p-6 md:p-10">
-          <div className="border-b pb-3 mb-4">
-            <h3 className="text-base font-semibold text-gray-800">
-              Proposal Preview
-            </h3>
-            <p className="text-xs text-gray-500 mt-1">
-              This is the proposal content attached with the email.
-            </p>
-          </div>
-
           <div
-            className="proposal-content"
+            className="proposal-content tiptap-preview force-preview-text"
             dangerouslySetInnerHTML={{
               __html: selectedProposal?.template,
             }}
@@ -943,10 +882,7 @@ const Proposal = () => {
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Form.Item label="To" name="mailTo" rules={[validateEmailArray(true)]}>
-          <TagsInput
-            placeholder="Enter email & press enter"
-            lockedValues={lockedMailTo}
-          />
+          <TagsInput placeholder="Enter email & press enter" />
         </Form.Item>
 
         <Form.Item label="Cc" name="mailCc" rules={[validateEmailArray(false)]}>
@@ -1014,12 +950,12 @@ const Proposal = () => {
 
       <Form.Item
         name="mailBody"
+        noStyle
         rules={[
           { required: true, message: "Please give mail body" },
           {
             validator: (_, value) => {
-              const plainTextLength =
-                value?.replace(/<[^>]*>/g, "").trim().length || 0;
+              const plainTextLength = getPlainTextLength(value);
 
               if (plainTextLength < 1000) {
                 return Promise.reject(
@@ -1037,15 +973,27 @@ const Proposal = () => {
         <input type="hidden" />
       </Form.Item>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">Mail Body *</label>
+      <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-2">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900">
+              Mail Body <span className="text-red-500">*</span>
+            </label>
 
-        <div className="rounded-lg border border-gray-300 overflow-hidden">
-          <TextEditor
-            data={mailBody}
-            onChange={(prev, editor) => {
-              const value = editor.getData();
+            <p className="mt-1 text-xs leading-5 text-gray-500">
+              This content will be sent to the client in email body.
+            </p>
+          </div>
 
+          <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+            {getPlainTextLength(mailBody)} / 1000
+          </span>
+        </div>
+
+        <div className="bg-white">
+          <NewTextEditor
+            data={mailBody || "<p></p>"}
+            onChange={(value) => {
               setMailBody(value);
 
               proposalAntForm.setFieldsValue({
@@ -1055,17 +1003,18 @@ const Proposal = () => {
               proposalAntForm.validateFields(["mailBody"]);
             }}
           />
+        </div>
 
-          <p className="text-sm text-gray-400 italic px-2 py-1">
-            Min characters required: 1000 <br />
-            your characters:{" "}
-            {mailBody?.replace(/<[^>]*>/g, "").trim().length || 0}
+        <div className="border-t border-gray-100 bg-white px-4 py-2">
+          <p className="text-xs italic text-gray-400">
+            Minimum characters required: 1000
           </p>
         </div>
       </div>
 
       <Form.Item
         name="template"
+        hidden
         rules={[
           { required: true, message: "Please give proposal" },
           {
@@ -1076,8 +1025,7 @@ const Proposal = () => {
                 );
               }
 
-              const plainTextLength =
-                value?.replace(/<[^>]*>/g, "").trim().length || 0;
+              const plainTextLength = getPlainTextLength(value);
 
               if (plainTextLength < 1000) {
                 return Promise.reject(
@@ -1090,18 +1038,30 @@ const Proposal = () => {
           },
         ]}
       >
-        <input type="hidden" />
+        <AntInput />
       </Form.Item>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">Proposal *</label>
+      <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900">
+              Proposal <span className="text-red-500">*</span>
+            </label>
 
-        <div className="rounded-lg border border-gray-300 overflow-hidden">
-          <TextEditor
-            data={data}
-            onChange={(prev, editor) => {
-              const value = editor.getData();
+            <p className="mt-1 text-xs leading-5 text-gray-500">
+              This content will be attached as the proposal document.
+            </p>
+          </div>
 
+          <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+            {getPlainTextLength(data)} / 1000
+          </span>
+        </div>
+
+        <div className="bg-white">
+          <NewTextEditor
+            data={data || "<p></p>"}
+            onChange={(value) => {
               setData(value);
 
               proposalAntForm.setFieldsValue({
@@ -1111,10 +1071,11 @@ const Proposal = () => {
               proposalAntForm.validateFields(["template"]);
             }}
           />
+        </div>
 
-          <p className="text-sm text-gray-400 italic px-2 py-1">
-            Min characters required: 1000 <br />
-            your characters: {data?.replace(/<[^>]*>/g, "").trim().length || 0}
+        <div className="border-t border-gray-100 bg-white px-4 py-2">
+          <p className="text-xs italic text-gray-400">
+            Minimum characters required: 1000
           </p>
         </div>
       </div>
@@ -1180,11 +1141,6 @@ const Proposal = () => {
                       <p className="text-xs text-gray-500 mt-1 truncate">
                         {proposal?.mailSubject || "-"}
                       </p>
-                      {proposal?.rejectionReason && (
-                        <p className="text-xs text-gray-900 bg-red-200 py-0.5 px-1.5 mt-1 rounded-xs truncate">
-                          Reject reason : {proposal?.rejectionReason || "-"}
-                        </p>
-                      )}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -1218,7 +1174,7 @@ const Proposal = () => {
       shadow-sm
     "
                         >
-                          Send for Approval
+                          Send to Manager
                         </button>
                       )}
 
@@ -1464,6 +1420,21 @@ const Proposal = () => {
 
             <ModalBody>
               <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 mb-2">
+                    Is proposal rejected by client?
+                  </p>
+
+                  <RadioGroup
+                    orientation="horizontal"
+                    value={isClientRejected}
+                    onValueChange={setIsClientRejected}
+                  >
+                    <Radio value="YES">YES</Radio>
+                    <Radio value="NO">NO</Radio>
+                  </RadioGroup>
+                </div>
+
                 <Input
                   label="Reason"
                   variant="bordered"
@@ -1480,6 +1451,7 @@ const Proposal = () => {
                   cancelModal.onClose();
                   setProposalToCancel(null);
                   setCancelReason("");
+                  setIsClientRejected("");
                 }}
               >
                 Close

@@ -1,0 +1,42 @@
+[1mdiff --git a/src/sales/proposal/Proposal.jsx b/src/sales/proposal/Proposal.jsx[m
+[1mindex 60b54db8..62f9a578 100644[m
+[1m--- a/src/sales/proposal/Proposal.jsx[m
+[1m+++ b/src/sales/proposal/Proposal.jsx[m
+[36m@@ -38,6 +38,7 @@[m [mimport { Form, Input as AntInput } from "antd";[m
+ import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";[m
+ import LoadingSpinner from "../../components/LoadingSpinner";[m
+ import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";[m
+[32m+[m[32mimport NewTextEditor from "../../components/NewTextEditor";[m
+ [m
+ const defaultValues = {[m
+   mailTo: [],[m
+[36m@@ -1041,11 +1042,9 @@[m [mconst Proposal = () => {[m
+         <label className="text-sm font-medium text-gray-700">Mail Body *</label>[m
+ [m
+         <div className="rounded-lg border border-gray-300 overflow-hidden">[m
+[31m-          <TextEditor[m
+[31m-            data={mailBody}[m
+[31m-            onChange={(prev, editor) => {[m
+[31m-              const value = editor.getData();[m
+[31m-[m
+[32m+[m[32m          <NewTextEditor[m
+[32m+[m[32m            data={mailBody || "<p></p>"}[m
+[32m+[m[32m            onChange={(value) => {[m
+               setMailBody(value);[m
+ [m
+               proposalAntForm.setFieldsValue({[m
+[36m@@ -1097,11 +1096,9 @@[m [mconst Proposal = () => {[m
+         <label className="text-sm font-medium text-gray-700">Proposal *</label>[m
+ [m
+         <div className="rounded-lg border border-gray-300 overflow-hidden">[m
+[31m-          <TextEditor[m
+[31m-            data={data}[m
+[31m-            onChange={(prev, editor) => {[m
+[31m-              const value = editor.getData();[m
+[31m-[m
+[32m+[m[32m          <NewTextEditor[m
+[32m+[m[32m            data={data || "<p></p>"}[m
+[32m+[m[32m            onChange={(value) => {[m
+               setData(value);[m
+ [m
+               proposalAntForm.setFieldsValue({[m

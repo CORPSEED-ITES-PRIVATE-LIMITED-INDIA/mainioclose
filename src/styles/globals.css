@@ -3,19 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-.selectable-table-cell {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
 
-table td {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
 
 @config "../../tailwind.config.js";
 
@@ -155,43 +143,6 @@ table td {
   --foreground: #1a1a20;
 }
 
-.container {
-  max-height: 84vh;
-  overflow: auto;
-  margin-top: 12px;
-  padding: 24px;
-}
-
-.flex {
-  display: flex;
-}
-
-.vertical {
-  display: flex;
-  flex-direction: column;
-}
-
-.space {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.gap-4 {
-  gap: 4px;
-}
-.gap-8 {
-  gap: 8px;
-}
-.gap-12 {
-  gap: 12px;
-}
-.gap-24 {
-  gap: 24px;
-}
-.gap-60 {
-  gap: 60px;
-}
 
 .align-center {
   align-items: center;
@@ -253,130 +204,882 @@ table td {
   word-break: break-word !important;
 }
 
-.ck-editor__editable {
+/* =========================================================
+   PREVIEW + PROPOSAL CONTENT
+========================================================= */
+
+.preview-container,
+.proposal-content,
+.tiptap-preview {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  color: #111827;
+  font-size: 15px;
+  line-height: 1.65;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.preview-container p,
+.proposal-content p,
+.tiptap-preview p {
+  margin: 8px 0;
+  line-height: 1.65;
+}
+
+.preview-container img,
+.proposal-content img,
+.tiptap-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.preview-container table,
+.proposal-content table,
+.tiptap-preview table {
+  width: 100% !important;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 16px 0;
+  font-size: 14px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.preview-container td,
+.preview-container th,
+.proposal-content td,
+.proposal-content th,
+.tiptap-preview td,
+.tiptap-preview th {
+  border: 1px solid #d4d4d8;
+  padding: 8px 10px;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.preview-container th,
+.proposal-content th,
+.tiptap-preview th {
+  background: #e4e4e7;
+  color: #18181b;
+  font-weight: 700;
+}
+
+.preview-container ul,
+.preview-container ol,
+.proposal-content ul,
+.proposal-content ol,
+.tiptap-preview ul,
+.tiptap-preview ol {
+  padding-left: 22px;
+  margin: 8px 0 12px;
+}
+
+.proposal-content strong,
+.tiptap-preview strong {
+  font-weight: 700;
+}
+
+.proposal-content a,
+.tiptap-preview a,
+.preview-container a {
+  color: #27272a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   WHITE TEXT / BAD INLINE COLOR FIX FOR PREVIEW
+   Use: className="proposal-content tiptap-preview force-preview-text"
+========================================================= */
+
+.force-preview-text {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.force-preview-text p,
+.force-preview-text div,
+.force-preview-text span,
+.force-preview-text li,
+.force-preview-text td,
+.force-preview-text th,
+.force-preview-text strong,
+.force-preview-text em,
+.force-preview-text u {
+  color: #111827 !important;
+}
+
+.force-preview-text h1,
+.force-preview-text h2,
+.force-preview-text h3,
+.force-preview-text h4,
+.force-preview-text h5,
+.force-preview-text h6 {
+  color: #18181b !important;
+}
+
+.force-preview-text a {
+  color: #27272a !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+.force-preview-text table {
   width: 100% !important;
   max-width: 100% !important;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #ffffff !important;
 }
 
-.ck-content table {
-  width: 100% !important;
+.force-preview-text td {
+  background: #ffffff !important;
 }
 
-.ck-content {
-  width: 100% !important;
-  max-width: 100% !important;
+.force-preview-text th {
+  background: #e4e4e7 !important;
+  color: #18181b !important;
+  font-weight: 700;
 }
 
-.ck-content table {
-  width: 100% !important;
-}
-
-.ck-content img {
-  max-width: 100% !important;
-  height: auto !important;
-}
-
-/* Fix CKEditor content spacing */
-.ck-content {
-  padding: 20px !important;
-}
-
-/* Restore list numbering */
-.ck-content ol {
-  list-style-type: decimal !important;
-  padding-left: 25px !important;
-  margin-left: 10px !important;
-}
-
-.ck-content ul {
-  list-style-type: disc !important;
-  padding-left: 25px !important;
-  margin-left: 10px !important;
-}
-
-.ck-content li {
-  margin-bottom: 6px;
-}
-
-.preview-container img {
+.force-preview-text img {
   max-width: 100%;
   height: auto;
 }
 
-.preview-container table {
+/* =========================================================
+   TIPTAP / NEW TEXT EDITOR
+========================================================= */
+
+.editor-container {
   width: 100%;
-  border-collapse: collapse;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  border: 1px solid #d4d4d8;
+  background: #ffffff;
+  color: #111827;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  border-radius: 16px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.preview-container td,
-.preview-container th {
-  border: 1px solid #ccc;
-  padding: 6px;
+.editor-container:focus-within {
+  border-color: #18181b;
+  box-shadow:
+    0 14px 32px rgba(15, 23, 42, 0.08),
+    0 0 0 3px rgba(24, 24, 27, 0.1);
 }
 
-.preview-container p {
+.editor-container.expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px;
+  border-bottom: 1px solid #e4e4e7;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f4f5 100%);
+  box-sizing: border-box;
+  backdrop-filter: blur(8px);
+}
+
+.editor-container.expanded .toolbar {
+  flex-shrink: 0;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 5px;
+  border: 1px solid #d4d4d8;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.toolbar button,
+.toolbar select,
+.toolbar input[type="color"] {
+  min-height: 34px;
+  border: 1px solid #d4d4d8;
+  background: #ffffff;
+  color: #18181b;
+  padding: 7px 9px;
+  cursor: pointer;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.toolbar select {
+  min-width: 108px;
+  font-weight: 700;
+  padding-right: 28px;
+}
+
+.toolbar input[type="color"] {
+  width: 38px;
+  padding: 4px;
+}
+
+.toolbar button:hover,
+.toolbar select:hover,
+.toolbar input[type="color"]:hover {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #18181b;
+  box-shadow: 0 8px 16px rgba(24, 24, 27, 0.14);
+  transform: translateY(-1px);
+}
+
+.toolbar button:active {
+  transform: translateY(0);
+}
+
+.toolbar button.is-active {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #09090b;
+  box-shadow: 0 8px 18px rgba(24, 24, 27, 0.18);
+}
+
+/* =========================================================
+   EDITOR WORKSPACE
+========================================================= */
+
+.editor-workspace {
+  height: 420px;
+  width: 100%;
+  max-width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(24, 24, 27, 0.035), transparent 28%),
+    #ffffff;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+.editor-container.expanded .editor-workspace {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+.tiptap-render {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.ProseMirror {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  outline: none;
+  box-sizing: border-box;
+
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.ProseMirror > *:first-child {
+  margin-top: 0;
+}
+
+.ProseMirror > *:last-child {
+  margin-bottom: 0;
+}
+
+.ProseMirror p {
   margin: 8px 0;
+  line-height: 1.65;
 }
 
-.preview-container ul,
-.preview-container ol {
-  padding-left: 20px;
+/* =========================================================
+   HEADING + TEXT SIZE FIX
+========================================================= */
+
+.ProseMirror h1,
+.tiptap-preview h1,
+.proposal-content h1 {
+  font-size: 2.625rem !important;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 18px 0 12px;
+}
+
+.ProseMirror h2,
+.tiptap-preview h2,
+.proposal-content h2 {
+  font-size: 2.125rem !important;
+  line-height: 1.18;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+  margin: 16px 0 10px;
+}
+
+.ProseMirror h3,
+.tiptap-preview h3,
+.proposal-content h3 {
+  font-size: 1.7rem !important;
+  line-height: 1.24;
+  font-weight: 740;
+  margin: 14px 0 9px;
+}
+
+.ProseMirror h4,
+.tiptap-preview h4,
+.proposal-content h4 {
+  font-size: 1.4rem !important;
+  line-height: 1.3;
+  font-weight: 720;
+  margin: 12px 0 8px;
+}
+
+.ProseMirror h5,
+.tiptap-preview h5,
+.proposal-content h5 {
+  font-size: 1.18rem !important;
+  line-height: 1.38;
+  font-weight: 700;
+  margin: 10px 0 7px;
+}
+
+.ProseMirror h6,
+.tiptap-preview h6,
+.proposal-content h6 {
+  font-size: 1rem !important;
+  line-height: 1.45;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 10px 0 7px;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  color: #18181b;
 }
 
 .proposal-content h1,
 .proposal-content h2,
-.proposal-content h3 {
-  font-weight: 600;
-  margin-top: 24px;
-  margin-bottom: 12px;
-  color: #1e3a8a;
+.proposal-content h3,
+.proposal-content h4,
+.proposal-content h5,
+.proposal-content h6,
+.tiptap-preview h1,
+.tiptap-preview h2,
+.tiptap-preview h3,
+.tiptap-preview h4,
+.tiptap-preview h5,
+.tiptap-preview h6 {
+  color: #18181b !important;
 }
 
-.proposal-content p {
-  margin-bottom: 10px;
-  line-height: 1.6;
+/* Fix heading size when imported HTML has:
+   <h1><span style="font-size: 12pt;">Heading</span></h1>
+*/
+.ProseMirror h1 span,
+.ProseMirror h1 strong,
+.ProseMirror h1 u,
+.ProseMirror h2 span,
+.ProseMirror h2 strong,
+.ProseMirror h2 u,
+.ProseMirror h3 span,
+.ProseMirror h3 strong,
+.ProseMirror h3 u,
+.ProseMirror h4 span,
+.ProseMirror h4 strong,
+.ProseMirror h4 u,
+.ProseMirror h5 span,
+.ProseMirror h5 strong,
+.ProseMirror h5 u,
+.ProseMirror h6 span,
+.ProseMirror h6 strong,
+.ProseMirror h6 u,
+.tiptap-preview h1 span,
+.tiptap-preview h1 strong,
+.tiptap-preview h1 u,
+.tiptap-preview h2 span,
+.tiptap-preview h2 strong,
+.tiptap-preview h2 u,
+.tiptap-preview h3 span,
+.tiptap-preview h3 strong,
+.tiptap-preview h3 u,
+.tiptap-preview h4 span,
+.tiptap-preview h4 strong,
+.tiptap-preview h4 u,
+.tiptap-preview h5 span,
+.tiptap-preview h5 strong,
+.tiptap-preview h5 u,
+.tiptap-preview h6 span,
+.tiptap-preview h6 strong,
+.tiptap-preview h6 u,
+.proposal-content h1 span,
+.proposal-content h1 strong,
+.proposal-content h1 u,
+.proposal-content h2 span,
+.proposal-content h2 strong,
+.proposal-content h2 u,
+.proposal-content h3 span,
+.proposal-content h3 strong,
+.proposal-content h3 u,
+.proposal-content h4 span,
+.proposal-content h4 strong,
+.proposal-content h4 u,
+.proposal-content h5 span,
+.proposal-content h5 strong,
+.proposal-content h5 u,
+.proposal-content h6 span,
+.proposal-content h6 strong,
+.proposal-content h6 u {
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
 
-.proposal-content table {
-  width: 100% !important;
-  border-collapse: collapse;
-  margin: 16px 0;
-  font-size: 14px;
-}
+/* =========================================================
+   LISTS
+========================================================= */
 
-.proposal-content td,
-.proposal-content th {
-  border: 1px solid #e5e7eb;
-  padding: 8px 10px;
-}
-
+.ProseMirror ul,
 .proposal-content ul,
-.proposal-content ol {
-  padding-left: 18px;
-  margin-bottom: 12px;
+.tiptap-preview ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0 0.75rem;
 }
 
-.proposal-content strong {
-  font-weight: 600;
+.ProseMirror ol,
+.proposal-content ol,
+.tiptap-preview ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0 0.75rem;
 }
 
-.proposal-content a {
-  color: #2563eb;
+.ProseMirror li,
+.proposal-content li,
+.tiptap-preview li {
+  margin: 4px 0;
+}
+
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ProseMirror ul[data-type="taskList"] li::before {
+  content: "■";
+  color: #18181b;
+  font-weight: 800;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  display: none;
+}
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+.ProseMirror table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 14px 0;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #d4d4d8;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  border: 1px solid #d4d4d8;
+  padding: 9px 10px;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.ProseMirror th {
+  background: linear-gradient(180deg, #f4f4f5 0%, #e4e4e7 100%);
+  color: #18181b;
+  font-weight: 800;
+}
+
+.ProseMirror tbody tr:nth-child(odd) td {
+  background: #ffffff;
+}
+
+.ProseMirror tbody tr:nth-child(even) td {
+  background: #fafafa;
+}
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+.editor-link,
+.ProseMirror a {
+  color: #27272a;
   text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.line-clamp-2-box {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+/* =========================================================
+   IMAGE NODE
+========================================================= */
+
+.image-node {
+  position: relative;
+  display: inline-block;
+  margin: 12px 0;
+  max-width: 100%;
+  border-radius: 14px;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.image-node.align-left {
+  float: left;
+  margin: 0 18px 16px 0;
+}
+
+.image-node.align-right {
+  float: right;
+  margin: 0 0 16px 18px;
+}
+
+.image-node.align-center {
+  display: block;
+  width: fit-content;
+  margin: 16px auto;
+}
+
+.image-node img {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: 14px;
+  border: 1px solid #d4d4d8;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  transition:
+    width 0.12s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.image-node:hover img {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+}
+
+.ProseMirror-selectednode img {
+  box-shadow:
+    0 0 0 2px #18181b,
+    0 14px 32px rgba(24, 24, 27, 0.18);
+}
+
+.dragging-image {
+  opacity: 0.78;
+  transform: scale(1.01);
+}
+
+.img-drag-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(24, 24, 27, 0.84);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 26px;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  z-index: 2;
+  transition: all 0.15s ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+}
+
+.img-drag-badge:hover {
+  transform: translateY(-1px);
+  background: rgba(24, 24, 27, 0.94);
+}
+
+.img-drag-badge:active {
+  cursor: grabbing;
+}
+
+.img-delete {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 27px;
+  height: 27px;
+  border-radius: 999px;
+  border: 1px solid #18181b;
+  background: #ffffff;
+  color: #18181b;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.img-delete:hover {
+  background: #18181b;
+  color: #ffffff;
+  transform: scale(1.06);
+}
+
+.resize-handle {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border: 1px solid #18181b;
+  border-radius: 7px;
+  cursor: nwse-resize;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+.resize-handle::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: #18181b;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+
+.resize-handle:hover {
+  background: #18181b;
+  transform: scale(1.06);
+}
+
+.resize-handle:hover::after {
+  background: #ffffff;
+}
+
+/* =========================================================
+   CONTEXT MENU
+========================================================= */
+
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 190px;
+  box-sizing: border-box;
   overflow: hidden;
 
-  background: #f9fafb;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-
-  font-size: 13px;
-  line-height: 1.4;
+  background: #ffffff;
+  border: 1px solid #d4d4d8;
+  border-radius: 14px;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.18);
+  animation: fadeInMenu 0.14s ease;
 }
 
+.context-menu button {
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid #f4f4f5;
+  background: #ffffff;
+  color: #18181b;
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.context-menu button:hover {
+  background: #18181b;
+  color: #ffffff;
+}
+
+.context-menu hr {
+  border: none;
+  border-top: 1px solid #e4e4e7;
+  margin: 0;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.editor-workspace::-webkit-scrollbar,
+.editor-container.expanded .toolbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.editor-workspace::-webkit-scrollbar-thumb,
+.editor-container.expanded .toolbar::-webkit-scrollbar-thumb {
+  background: #a1a1aa;
+  border-radius: 999px;
+  border: 2px solid #f4f4f5;
+}
+
+.editor-workspace::-webkit-scrollbar-thumb:hover,
+.editor-container.expanded .toolbar::-webkit-scrollbar-thumb:hover {
+  background: #71717a;
+}
+
+.editor-workspace::-webkit-scrollbar-track,
+.editor-container.expanded .toolbar::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+  .toolbar {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .toolbar-group {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .toolbar button,
+  .toolbar select,
+  .toolbar input[type="color"] {
+    min-height: 32px;
+    padding: 6px 8px;
+  }
+
+  .toolbar select {
+    min-width: 96px;
+  }
+
+  .editor-workspace {
+    height: 360px;
+    padding: 14px;
+  }
+
+  .ProseMirror {
+    font-size: 15px;
+  }
+
+  .ProseMirror h1,
+  .tiptap-preview h1,
+  .proposal-content h1 {
+    font-size: 2rem !important;
+  }
+
+  .ProseMirror h2,
+  .tiptap-preview h2,
+  .proposal-content h2 {
+    font-size: 1.7rem !important;
+  }
+
+  .ProseMirror h3,
+  .tiptap-preview h3,
+  .proposal-content h3 {
+    font-size: 1.45rem !important;
+  }
+}
+
+@keyframes fadeInMenu {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

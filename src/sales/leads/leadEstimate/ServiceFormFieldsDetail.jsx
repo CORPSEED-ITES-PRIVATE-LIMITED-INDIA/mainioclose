@@ -40,7 +40,10 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
           const originalGst = Number(item?.gstPercentage || 0);
 
           return (
-            <div key={item?.id || idx} className="grid grid-cols-4 gap-3 my-2">
+            <div
+              key={item?.id || idx}
+              className="grid grid-cols-4 gap-3 mt-2 mb-1"
+            >
               <Form.Item
                 label="Fee name"
                 name={["lineItems", idx, "itemName"]}

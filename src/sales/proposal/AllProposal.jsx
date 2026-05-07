@@ -629,14 +629,18 @@ const AllProposal = () => {
           {(onClose) => (
             <>
               <ModalHeader className="text-xl font-semibold border-b pb-3">
-                Propsal
+                Proposal
               </ModalHeader>
 
               <ModalBody>
-                <div
-                  className="preview-container max-h-screen overflow-auto p-6 bg-white rounded-xl shadow-lg mx-auto w-full max-w-4xl"
-                  dangerouslySetInnerHTML={{ __html: proposalData }}
-                />
+                <div className="max-h-screen overflow-auto p-6 bg-white rounded-xl shadow-lg mx-auto w-full max-w-4xl">
+                  <div
+                    className="proposal-content tiptap-preview force-preview-text"
+                    dangerouslySetInnerHTML={{
+                      __html: proposalData,
+                    }}
+                  />
+                </div>
               </ModalBody>
             </>
           )}
