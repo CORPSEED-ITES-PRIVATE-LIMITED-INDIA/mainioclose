@@ -1180,6 +1180,11 @@ const Proposal = () => {
                       <p className="text-xs text-gray-500 mt-1 truncate">
                         {proposal?.mailSubject || "-"}
                       </p>
+                      {proposal?.rejectionReason && (
+                        <p className="text-xs text-gray-900 bg-red-200 py-0.5 px-1.5 mt-1 rounded-xs truncate">
+                          Reject reason : {proposal?.rejectionReason || "-"}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -1213,7 +1218,7 @@ const Proposal = () => {
       shadow-sm
     "
                         >
-                          Send to Manager
+                          Send for Approval
                         </button>
                       )}
 
