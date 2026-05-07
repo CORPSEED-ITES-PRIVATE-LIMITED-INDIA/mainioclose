@@ -539,6 +539,7 @@ const LeadEstimates = () => {
 
     const formattedValues = {
       ...values,
+      proposalId: approvedProposal?.id,
       estimateDate: values?.estimateDate
         ? dayjs(values.estimateDate).format("YYYY-MM-DD")
         : "",
