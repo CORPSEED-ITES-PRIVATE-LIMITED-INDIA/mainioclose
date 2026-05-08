@@ -416,7 +416,7 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <SingleFileUploader
                         isRequired={true}
-                        errorMessage={"please attach the reference document"}
+                        // errorMessage={"please attach the reference document"}
                         label="Payment document"
                         value={field.value}
                         onChange={(value) => {
