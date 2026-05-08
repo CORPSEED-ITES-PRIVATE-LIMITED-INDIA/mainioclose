@@ -480,6 +480,23 @@ const Proposal = () => {
   };
 
   const handleSetData = (item) => {
+    const isSameTemplateSelected = templateName === item?.name;
+
+    if (isSameTemplateSelected) {
+      setTemplateName("");
+      setData("<h2>Your proposal </h2>");
+      setMailBody("<h2>Your email body</h2>");
+
+      proposalAntForm.setFieldsValue({
+        template: "<h2>Your proposal </h2>",
+        mailBody: "<h2>Your email body</h2>",
+      });
+
+      proposalAntForm.validateFields(["template", "mailBody"]);
+      templateModal.onClose();
+      return;
+    }
+
     const variables = {
       userName: userDetail?.username || "",
       userDesignation: userDetail?.roles?.join(", ") || "",
@@ -1363,28 +1380,49 @@ const Proposal = () => {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
                 {templates?.length > 0 ? (
-                  templates.map((item) => (
-                    <div
-                      key={`template-${item.id}`}
-                      onClick={() => handleSetData(item)}
-                      className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2 transition-all duration-150 hover:border-blue-500 hover:bg-blue-50"
-                    >
-                      <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
-                        <img
-                          src={template}
-                          alt="template"
-                          className="h-12 w-auto object-contain"
-                        />
-                      </div>
+                  templates.map((item) => {
+                    const isSelected = templateName === item?.name;
 
-                      <p
-                        className="text-xs font-medium text-gray-800 truncate text-center"
-                        title={item.name}
+                    return (
+                      <div
+                        key={`template-${item.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSetData(item);
+                        }}
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className={`relative cursor-pointer rounded-lg border p-2 transition-all duration-150 ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50"
+                        }`}
                       >
-                        {item.name}
-                      </p>
-                    </div>
-                  ))
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 bg-blue-500 rounded-full p-1 shadow">
+                            <Check size={12} className="text-white" />
+                          </div>
+                        )}
+                        <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
+                          <img
+                            src={template}
+                            alt="template"
+                            className="h-12 w-auto object-contain"
+                          />
+                        </div>
+
+                        <p
+                          className="text-xs font-medium text-gray-800 truncate text-center"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </p>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="col-span-full text-center text-gray-500 py-8 text-sm">
                     No templates found
@@ -1533,9 +1571,17 @@ const Proposal = () => {
 
         <Modal
           isOpen={proposalFormModal.isOpen}
-          onOpenChange={proposalFormModal.onOpenChange}
+          onOpenChange={(open) => {
+            if (!open && (templateModal.isOpen || brochureModal.isOpen)) {
+              return;
+            }
+
+            proposalFormModal.onOpenChange(open);
+          }}
           size="full"
           scrollBehavior="inside"
+          isDismissable={false}
+          isKeyboardDismissDisabled={true}
         >
           <ModalContent>
             <ModalHeader className="border-b">
