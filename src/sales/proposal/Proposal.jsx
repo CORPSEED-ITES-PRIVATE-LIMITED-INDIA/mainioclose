@@ -11,8 +11,6 @@ import {
   ModalHeader,
   Tooltip,
   useDisclosure,
-  RadioGroup,
-  Radio,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { Check, Flag, Paperclip, Plus, Search } from "lucide-react";
@@ -28,7 +26,7 @@ import {
   sendProposal,
   sendProposalToManager,
 } from "../../toolkit/slices/leadSlice";
-import NewTextEditor from "../../components/NewTextEditor";
+import TextEditor from "../../components/TextEditor";
 import {
   getAllSolutionList,
   getSolutionDetailByName,
@@ -40,6 +38,7 @@ import { Form, Input as AntInput } from "antd";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
+import NewTextEditor from "../../components/NewTextEditor";
 
 const defaultValues = {
   mailTo: [],
@@ -61,50 +60,53 @@ export function TagsInput({
 }) {
   const [inputValue, setInputValue] = useState("");
 
-  const normalizedLockedValues = lockedValues.map((item) =>
-    String(item || "")
+  const normalizeEmail = (email) =>
+    String(email || "")
       .trim()
-      .toLowerCase(),
-  );
+      .toLowerCase();
 
-  const isLockedTag = (tag) =>
-    normalizedLockedValues.includes(
-      String(tag || "")
-        .trim()
-        .toLowerCase(),
+  const isLocked = (tag) =>
+    lockedValues.some(
+      (lockedEmail) => normalizeEmail(lockedEmail) === normalizeEmail(tag),
     );
+
+  const safeOnChange = (nextValue = []) => {
+    const finalValue = [
+      ...lockedValues,
+      ...nextValue.filter((email) => !isLocked(email)),
+    ].filter(Boolean);
+
+    const uniqueValue = [...new Set(finalValue)];
+
+    onChange(uniqueValue);
+  };
 
   const addTag = (val) => {
     const trimmed = val.trim();
+
     if (!trimmed) return;
-    if (!value.includes(trimmed)) onChange([...value, trimmed]);
+
+    if (
+      !value.some((email) => normalizeEmail(email) === normalizeEmail(trimmed))
+    ) {
+      safeOnChange([...value, trimmed]);
+    }
+
     setInputValue("");
-  };
-
-  const removeTag = (index) => {
-    const tag = value[index];
-
-    if (isLockedTag(tag)) return;
-
-    onChange(value.filter((_, i) => i !== index));
   };
 
   const handleKeyDown = (e) => {
     if (["Enter", " ", ","].includes(e.key)) {
       e.preventDefault();
       addTag(inputValue);
+      return;
     }
 
-    if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
-      const lastTag = value[value.length - 1];
-
-      if (isLockedTag(lastTag)) {
-        e.preventDefault();
-        return;
-      }
-
+    // IMPORTANT:
+    // Do not remove email tags using Backspace.
+    // Locked/default emails must never be removed accidentally.
+    if (e.key === "Backspace" && inputValue === "") {
       e.preventDefault();
-      onChange(value.slice(0, value.length - 1));
     }
   };
 
@@ -112,41 +114,28 @@ export function TagsInput({
     <div
       className={`flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 bg-white border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 dark:bg-zinc-900 dark:border-zinc-700 ${className}`}
     >
-      {value.map((tag, index) => {
-        const locked = isLockedTag(tag);
+      {value.map((tag, index) => (
+        <div
+          key={index}
+          className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm ${
+            isLocked(tag)
+              ? "bg-gray-100 text-gray-700 border border-gray-300"
+              : "bg-blue-100 text-blue-800"
+          }`}
+        >
+          {tag}
 
-        return (
-          <div
-            key={index}
-            className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm ${
-              locked
-                ? "bg-gray-100 text-gray-700 border border-gray-300"
-                : "bg-blue-100 text-blue-800"
-            }`}
-          >
-            {tag}
-
-            {!locked && (
-              <button
-                type="button"
-                onClick={() => removeTag(index)}
-                className="cursor-pointer font-medium text-blue-600 hover:text-red-500"
-              >
-                ×
-              </button>
-            )}
-
-            {locked && (
-              <span
-                className="text-[11px] font-semibold text-gray-500"
-                title="This email cannot be removed"
-              >
-                locked
-              </span>
-            )}
-          </div>
-        );
-      })}
+          {!isLocked(tag) && (
+            <button
+              type="button"
+              onClick={() => safeOnChange(value.filter((_, i) => i !== index))}
+              className="cursor-pointer font-medium text-blue-600 hover:text-red-500"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
 
       <input
         value={inputValue}
@@ -215,7 +204,6 @@ const Proposal = () => {
   const [isCreatingProposal, setIsCreatingProposal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
-  const [isClientRejected, setIsClientRejected] = useState("");
   const [proposalToCancel, setProposalToCancel] = useState(null);
   const [statusLoading, setStatusLoading] = useState("");
   const [lockedMailTo, setLockedMailTo] = useState([]);
@@ -300,14 +288,10 @@ const Proposal = () => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         if (resp?.payload?.clients?.length > 0) {
-          const defaultMailTo = resp.payload.clients
-            .map((client) => client.emails)
-            .filter(Boolean);
-
-          setLockedMailTo(defaultMailTo);
-
           proposalAntForm.setFieldsValue({
-            mailTo: defaultMailTo,
+            mailTo: resp.payload.clients
+              .map((client) => client.emails)
+              .filter(Boolean),
           });
         }
 
@@ -354,6 +338,10 @@ const Proposal = () => {
     setBrochureUrl(brochureIds);
     setTemplateName(proposal?.templateName || "");
 
+    const existingMailTo = proposal?.mailTo || [];
+
+    setLockedMailTo(existingMailTo);
+
     proposalAntForm.setFieldsValue({
       mailTo: proposal?.mailTo || [],
       mailCc: proposal?.mailCc || [],
@@ -383,7 +371,9 @@ const Proposal = () => {
     }
 
     const hasNonCancelled = proposalList.some((item) =>
-      ["REJECTED", "APPROVED"].includes(item?.status?.toUpperCase()),
+      ["REJECTED", "APPROVED", "INITIATED", "DRAFT"].includes(
+        item?.status?.toUpperCase(),
+      ),
     );
     if (hasNonCancelled) {
       addToast({
@@ -404,16 +394,16 @@ const Proposal = () => {
 
     proposalAntForm.resetFields();
 
-    const defaultMailTo =
+    const existingMailTo =
       company?.units?.[0]?.unitContacts
         ?.map((client) => client.emails)
         .filter(Boolean) || [];
 
-    setLockedMailTo(defaultMailTo);
+    setLockedMailTo(existingMailTo);
 
     proposalAntForm.setFieldsValue({
       ...defaultValues,
-      mailTo: defaultMailTo,
+      mailTo: existingMailTo,
       mailSubject: solutionDetail?.name
         ? `Corpseed Proposal for - ${solutionDetail.name}`
         : "",
@@ -547,21 +537,10 @@ const Proposal = () => {
   const handleOpenCancelModal = (proposal) => {
     setProposalToCancel(proposal);
     setCancelReason("");
-    setIsClientRejected("");
     cancelModal.onOpen();
   };
 
   const handleCancelProposal = () => {
-    if (!isClientRejected) {
-      addToast({
-        title: "Client rejection required",
-        description:
-          "Please select whether the proposal was rejected by client.",
-        color: "danger",
-      });
-      return;
-    }
-
     if (!cancelReason.trim()) {
       addToast({
         title: "Reason required",
@@ -578,7 +557,7 @@ const Proposal = () => {
         reason: encodeURIComponent(cancelReason.trim()),
 
         // send this to backend
-        isProposalRejectedByClient: isClientRejected === "YES",
+        isProposalRejectedByClient: false,
       }),
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
@@ -591,7 +570,6 @@ const Proposal = () => {
         cancelModal.onClose();
         setProposalToCancel(null);
         setCancelReason("");
-        setIsClientRejected("");
         setSelectedProposal(null);
         dispatch(getAllProposalByLeadId(leadId));
       } else {
@@ -698,7 +676,7 @@ const Proposal = () => {
 
           proposalAntForm.resetFields();
           proposalAntForm.setFieldsValue(defaultValues);
-
+          setLockedMailTo([]);
           setEditProposal(false);
           setSelectedProposal(null);
           dispatch(getAllProposalByLeadId(leadId));
@@ -780,16 +758,17 @@ const Proposal = () => {
               Proposal Overview
             </h2>
 
-            {/* <Button
-              size="sm"
-              color="primary"
-              variant="flat"
-              className="flex items-center gap-2 shadow-sm"
-              onPress={handleEditProposal}
-              isDisabled={isCancelled(selectedProposal?.status)}
-            >
-              Edit
-            </Button> */}
+            {selectedProposal?.status === "DRAFT" && (
+              <Button
+                size="sm"
+                color="primary"
+                variant="flat"
+                className="flex items-center gap-2 shadow-sm"
+                onPress={handleEditProposal}
+              >
+                Edit
+              </Button>
+            )}
           </div>
 
           <div className="flex flex-wrap justify-between gap-4 pt-2">
@@ -905,9 +884,38 @@ const Proposal = () => {
           </div>
         </div>
 
+        {selectedProposal?.mailBody && (
+          <div className="bg-white rounded-xl shadow border p-6 md:p-8">
+            <div className="border-b pb-3 mb-4">
+              <h3 className="text-base font-semibold text-gray-800">
+                Mail Body Preview
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                This is the email body that will be sent to the client.
+              </p>
+            </div>
+
+            <div
+              className="proposal-content"
+              dangerouslySetInnerHTML={{
+                __html: selectedProposal.mailBody,
+              }}
+            />
+          </div>
+        )}
+
         <div className="bg-white rounded-xl shadow border p-6 md:p-10">
+          <div className="border-b pb-3 mb-4">
+            <h3 className="text-base font-semibold text-gray-800">
+              Proposal Preview
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              This is the proposal content attached with the email.
+            </p>
+          </div>
+
           <div
-            className="proposal-content tiptap-preview force-preview-text"
+            className="proposal-content"
             dangerouslySetInnerHTML={{
               __html: selectedProposal?.template,
             }}
@@ -1220,8 +1228,8 @@ const Proposal = () => {
       w-[116px] h-[26px]
       shrink-0
       rounded-full
-      bg-slate-300
-      text-white
+      bg-gray-300
+      text-gray-700
       text-[11px]
       font-semibold
       leading-[13px]
@@ -1231,10 +1239,10 @@ const Proposal = () => {
       hover:bg-slate-400
       active:scale-[0.98]
       transition-all duration-200
-      shadow-sm
+      shadow-sm cursor-pointer
     "
                         >
-                          Send to Manager
+                          Send for Approval
                         </button>
                       )}
 
@@ -1480,21 +1488,6 @@ const Proposal = () => {
 
             <ModalBody>
               <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-800 mb-2">
-                    Is proposal rejected by client?
-                  </p>
-
-                  <RadioGroup
-                    orientation="horizontal"
-                    value={isClientRejected}
-                    onValueChange={setIsClientRejected}
-                  >
-                    <Radio value="YES">YES</Radio>
-                    <Radio value="NO">NO</Radio>
-                  </RadioGroup>
-                </div>
-
                 <Input
                   label="Reason"
                   variant="bordered"
@@ -1511,7 +1504,6 @@ const Proposal = () => {
                   cancelModal.onClose();
                   setProposalToCancel(null);
                   setCancelReason("");
-                  setIsClientRejected("");
                 }}
               >
                 Close

@@ -1205,13 +1205,14 @@ const LeadInfo = () => {
                               onPress={() => {
                                 if (
                                   leadData?.proposalStatus === "APPROVED" ||
-                                  leadData?.proposalStatus === "INITIATED"
+                                  leadData?.proposalStatus === "INITIATED" ||
+                                  leadData?.proposalStatus === "DRAFT"
                                 ) {
                                   addToast({
                                     title: "RESTRICTED",
                                     color: "danger",
                                     description:
-                                      "Service name cannot be changed as proposal is already approved or initiated.",
+                                      "Service name cannot be changed as proposal is already approved or initiated or draft.",
                                   });
                                   return;
                                 }
@@ -1266,13 +1267,14 @@ const LeadInfo = () => {
                                 onPress={() => {
                                   if (
                                     leadData?.proposalStatus === "APPROVED" ||
-                                    leadData?.proposalStatus === "INITIATED"
+                                    leadData?.proposalStatus === "INITIATED" ||
+                                    leadData?.proposalStatus === "DRAFT"
                                   ) {
                                     addToast({
                                       title: "RESTRICTED",
                                       color: "danger",
                                       description:
-                                        "Service name cannot be changed as proposal is already approved or initiated.",
+                                        "Service name cannot be changed as proposal is already approved or initiated or draft.",
                                     });
                                     return;
                                   }
@@ -1326,13 +1328,15 @@ const LeadInfo = () => {
                                   onPress={() => {
                                     if (
                                       leadData?.proposalStatus === "APPROVED" ||
-                                      leadData?.proposalStatus === "INITIATED"
+                                      leadData?.proposalStatus ===
+                                        "INITIATED" ||
+                                      leadData?.proposalStatus === "DRAFT"
                                     ) {
                                       addToast({
                                         title: "RESTRICTED",
                                         color: "danger",
                                         description:
-                                          "Service name cannot be changed as proposal is already approved or initiated.",
+                                          "Service name cannot be changed as proposal is already approved or initiated or draft.",
                                       });
                                       return;
                                     }

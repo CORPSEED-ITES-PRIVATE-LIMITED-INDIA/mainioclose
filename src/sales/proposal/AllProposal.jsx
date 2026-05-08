@@ -102,6 +102,7 @@ const AllProposal = () => {
     comment: "",
   });
   const [proposalData, setProposalData] = useState("");
+  const [mailBody, setMailBody] = useState("");
   const [loading, setLoading] = useState("");
   const [confirmApproveModal, setConfirmApproveModal] = useState({
     isOpen: false,
@@ -168,6 +169,7 @@ const AllProposal = () => {
   const handleActionsClick = (e, rowData) => {
     if (e === "view") {
       setProposalData(rowData?.template);
+      setMailBody(rowData?.mailBody);
       proposalModal.onOpen();
       return;
     } else {
@@ -633,13 +635,51 @@ const AllProposal = () => {
               </ModalHeader>
 
               <ModalBody>
-                <div className="max-h-screen overflow-auto p-6 bg-white rounded-xl shadow-lg mx-auto w-full max-w-4xl">
-                  <div
-                    className="proposal-content tiptap-preview force-preview-text"
-                    dangerouslySetInnerHTML={{
-                      __html: proposalData,
-                    }}
-                  />
+                <div className="max-h-screen overflow-auto p-6 bg-gray-100 rounded-xl mx-auto w-full max-w-4xl space-y-6">
+                  {/* Mail Body Preview */}
+                  {mailBody && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                        <h3 className="text-base font-semibold text-gray-900">
+                          Mail Body
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          This content will be sent in the email body.
+                        </p>
+                      </div>
+
+                      <div className="p-5">
+                        <div
+                          className="proposal-content tiptap-preview force-preview-text"
+                          dangerouslySetInnerHTML={{
+                            __html: mailBody,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Proposal Template Preview */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                      <h3 className="text-base font-semibold text-gray-900">
+                        Proposal Template
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Final proposal content that will be shared with the
+                        client.
+                      </p>
+                    </div>
+
+                    <div className="p-5 md:p-8">
+                      <div
+                        className="proposal-content tiptap-preview force-preview-text"
+                        dangerouslySetInnerHTML={{
+                          __html: proposalData,
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </ModalBody>
             </>
