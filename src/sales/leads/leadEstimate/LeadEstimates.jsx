@@ -823,7 +823,10 @@ const LeadEstimates = () => {
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" ? "bg-red-600 text-white" : est?.status === "APPROVED" ? "bg-green-600 text-white" : est?.status === "SENT_TO_CLIENT" ? "bg-blue-600 text-white" : "bg-slate-100"} text-slate-600`}
                       >
-                        {est?.status}
+                        {est?.status === "REJECTED" ||
+                        est?.status === "CANCELLED"
+                          ? "CANCELLED"
+                          : est?.status}
                       </span>
                       <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
                         {est?.performanceInvoiceFlag
