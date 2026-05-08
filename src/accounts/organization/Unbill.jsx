@@ -161,7 +161,9 @@ const Unbill = () => {
 
   const handleViewEstimate = (rowData, type) => {
     setViewType(type);
-    dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
+    dispatch(
+      getEstimateByEstimateId({ estimateId: rowData?.estimateId, userId }),
+    )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           let data = resp?.payload;

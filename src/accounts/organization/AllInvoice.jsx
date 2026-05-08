@@ -21,6 +21,7 @@ import {
   ModalBody,
   Select,
   SelectItem,
+  ModalFooter,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -35,6 +36,8 @@ import { useParams } from "react-router-dom";
 import { inrCurrency } from "../../common";
 import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
+import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
+import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -68,6 +71,7 @@ const AllInvoice = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const viewModal = useDisclosure();
   const data = useSelector((state) => state.organization.allInvoiceList);
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
@@ -93,6 +97,8 @@ const AllInvoice = () => {
     searchText: "",
     type: "invoiceNumber",
   });
+  const [estimateDetail, setEstimateDetail] = useState(null);
+  const [viewType, setViewType] = useState("ESTIMATE");
 
   useEffect(() => {
     dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
@@ -133,7 +139,7 @@ const AllInvoice = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const handleViewEstimate = (value) => {
+  const handleViewTaxInvoice = (value) => {
     dispatch(getInvoiceDetailById({ id: value?.id, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -153,6 +159,26 @@ const AllInvoice = () => {
       );
   };
 
+  const handleViewEstimate = (rowData, type) => {
+    setViewType(type);
+    dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setEstimateDetail(data);
+          viewModal.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
+      );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -165,7 +191,12 @@ const AllInvoice = () => {
       case "invoiceNo":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{rowData?.invoiceNumber}</p>
+            <p
+              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+              onClick={() => handleViewTaxInvoice(rowData)}
+            >
+              {rowData?.invoiceNumber}
+            </p>
           </div>
         );
       case "estimateNumber":
@@ -484,6 +515,31 @@ const AllInvoice = () => {
           <ModalBody className="max-h-[90vh] overflow-auto">
             <TaxInvoice invoiceData={invoiceDetail} />
           </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <NewEstimatePreview
+                  details={estimateDetail}
+                  viewType={viewType}
+                />
+              </ModalBody>
+              <ModalFooter className="flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </>
