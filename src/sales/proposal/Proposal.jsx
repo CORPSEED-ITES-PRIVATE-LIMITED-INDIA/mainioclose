@@ -28,7 +28,6 @@ import {
   sendProposal,
   sendProposalToManager,
 } from "../../toolkit/slices/leadSlice";
-// import TextEditor from "../../components/TextEditor";
 import NewTextEditor from "../../components/NewTextEditor";
 import {
   getAllSolutionList,
@@ -58,14 +57,36 @@ export function TagsInput({
   placeholder = "",
   className = "",
   inputClassName = "",
+  lockedValues = [],
 }) {
   const [inputValue, setInputValue] = useState("");
+
+  const normalizedLockedValues = lockedValues.map((item) =>
+    String(item || "")
+      .trim()
+      .toLowerCase(),
+  );
+
+  const isLockedTag = (tag) =>
+    normalizedLockedValues.includes(
+      String(tag || "")
+        .trim()
+        .toLowerCase(),
+    );
 
   const addTag = (val) => {
     const trimmed = val.trim();
     if (!trimmed) return;
     if (!value.includes(trimmed)) onChange([...value, trimmed]);
     setInputValue("");
+  };
+
+  const removeTag = (index) => {
+    const tag = value[index];
+
+    if (isLockedTag(tag)) return;
+
+    onChange(value.filter((_, i) => i !== index));
   };
 
   const handleKeyDown = (e) => {
@@ -75,6 +96,13 @@ export function TagsInput({
     }
 
     if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
+      const lastTag = value[value.length - 1];
+
+      if (isLockedTag(lastTag)) {
+        e.preventDefault();
+        return;
+      }
+
       e.preventDefault();
       onChange(value.slice(0, value.length - 1));
     }
@@ -84,21 +112,41 @@ export function TagsInput({
     <div
       className={`flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 bg-white border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 dark:bg-zinc-900 dark:border-zinc-700 ${className}`}
     >
-      {value.map((tag, index) => (
-        <div
-          key={index}
-          className="flex items-center gap-1 rounded-full px-3 py-1 text-sm bg-blue-100 text-blue-800"
-        >
-          {tag}
-          <button
-            type="button"
-            onClick={() => onChange(value.filter((_, i) => i !== index))}
-            className="cursor-pointer font-medium text-blue-600 hover:text-red-500"
+      {value.map((tag, index) => {
+        const locked = isLockedTag(tag);
+
+        return (
+          <div
+            key={index}
+            className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm ${
+              locked
+                ? "bg-gray-100 text-gray-700 border border-gray-300"
+                : "bg-blue-100 text-blue-800"
+            }`}
           >
-            ×
-          </button>
-        </div>
-      ))}
+            {tag}
+
+            {!locked && (
+              <button
+                type="button"
+                onClick={() => removeTag(index)}
+                className="cursor-pointer font-medium text-blue-600 hover:text-red-500"
+              >
+                ×
+              </button>
+            )}
+
+            {locked && (
+              <span
+                className="text-[11px] font-semibold text-gray-500"
+                title="This email cannot be removed"
+              >
+                locked
+              </span>
+            )}
+          </div>
+        );
+      })}
 
       <input
         value={inputValue}
@@ -170,6 +218,7 @@ const Proposal = () => {
   const [isClientRejected, setIsClientRejected] = useState("");
   const [proposalToCancel, setProposalToCancel] = useState(null);
   const [statusLoading, setStatusLoading] = useState("");
+  const [lockedMailTo, setLockedMailTo] = useState([]);
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
@@ -251,10 +300,14 @@ const Proposal = () => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         if (resp?.payload?.clients?.length > 0) {
+          const defaultMailTo = resp.payload.clients
+            .map((client) => client.emails)
+            .filter(Boolean);
+
+          setLockedMailTo(defaultMailTo);
+
           proposalAntForm.setFieldsValue({
-            mailTo: resp.payload.clients
-              .map((client) => client.emails)
-              .filter(Boolean),
+            mailTo: defaultMailTo,
           });
         }
 
@@ -351,12 +404,16 @@ const Proposal = () => {
 
     proposalAntForm.resetFields();
 
+    const defaultMailTo =
+      company?.units?.[0]?.unitContacts
+        ?.map((client) => client.emails)
+        .filter(Boolean) || [];
+
+    setLockedMailTo(defaultMailTo);
+
     proposalAntForm.setFieldsValue({
       ...defaultValues,
-      mailTo:
-        company?.units?.[0]?.unitContacts
-          ?.map((client) => client.emails)
-          .filter(Boolean) || [],
+      mailTo: defaultMailTo,
       mailSubject: solutionDetail?.name
         ? `Corpseed Proposal for - ${solutionDetail.name}`
         : "",
@@ -882,7 +939,10 @@ const Proposal = () => {
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Form.Item label="To" name="mailTo" rules={[validateEmailArray(true)]}>
-          <TagsInput placeholder="Enter email & press enter" />
+          <TagsInput
+            placeholder="Enter email & press enter"
+            lockedValues={lockedMailTo}
+          />
         </Form.Item>
 
         <Form.Item label="Cc" name="mailCc" rules={[validateEmailArray(false)]}>
