@@ -24,6 +24,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 import BaseAmountCalculator from "../../components/BaseAmountCalculator";
 
+const preventNegativeNumberInput = (e) => {
+  if (["-", "+", "e", "E"].includes(e.key)) {
+    e.preventDefault();
+  }
+};
+
 const numberLike = (label) =>
   z
     .union([z.number(), z.string().min(1, `${label} is required`)])
@@ -33,8 +39,8 @@ const numberLike = (label) =>
 const paymentRegisterSchema = z
   .object({
     amount: numberLike("Amount").refine(
-      (v) => v > 0,
-      "Amount must be greater than 0",
+      (v) => v >= 0,
+      "Amount must be 0 or greater",
     ),
     paymentDate: z.string().min(1, "Payment date is required"),
     paymentMode: z.string().min(1, "Payment mode is required"),
@@ -329,11 +335,26 @@ const EstimatePaymentRegister = ({
                       <Input
                         {...field}
                         type="number"
+                        min={0}
                         label="Amount"
                         placeholder="Enter amount"
                         isRequired
-                        // isInvalid={!!errors.amount}
-                        // errorMessage={errors.amount?.message}
+                        onKeyDown={preventNegativeNumberInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          if (value === "") {
+                            field.onChange("");
+                            return;
+                          }
+
+                          if (Number(value) < 0) {
+                            field.onChange("0");
+                            return;
+                          }
+
+                          field.onChange(value);
+                        }}
                       />
                     )}
                   />
@@ -567,13 +588,30 @@ const EstimatePaymentRegister = ({
                           <Input
                             {...field}
                             type="number"
+                            min={0}
                             label="Total Amount"
                             placeholder="Enter total amount"
                             isRequired
-                            isInvalid={!!errors.governmentFee?.totalAmount}
-                            errorMessage={
-                              errors.governmentFee?.totalAmount?.message
-                            }
+                            onKeyDown={preventNegativeNumberInput}
+                            onChange={(e) => {
+                              const value = e.target.value;
+
+                              if (value === "") {
+                                field.onChange("");
+                                return;
+                              }
+
+                              if (Number(value) < 0) {
+                                field.onChange("0");
+                                return;
+                              }
+
+                              field.onChange(value);
+                            }}
+                            // isInvalid={!!errors.governmentFee?.totalAmount}
+                            // errorMessage={
+                            //   errors.governmentFee?.totalAmount?.message
+                            // }
                           />
                         )}
                       />

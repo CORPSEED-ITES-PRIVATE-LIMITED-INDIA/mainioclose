@@ -69,7 +69,7 @@ import {
 import { inrCurrency } from "../../common";
 
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
+  { name: "ID", uid: "id" },
   { name: "NAME", uid: "name" },
   { name: "PROJECT NO.", uid: "projectNo" },
   { name: "UNBILL NO.", uid: "unbilledNumber" },
@@ -212,14 +212,8 @@ const Projects = () => {
   const pages = Math.ceil(count / paginationData?.size) || 1;
 
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor?.column];
-      const second = b[sortDescriptor?.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, filteredItems]);
+    return [...filteredItems];
+  }, [filteredItems]);
 
   const handleEnterPress = useCallback(() => {
     if (searchBy === "projectName") {
