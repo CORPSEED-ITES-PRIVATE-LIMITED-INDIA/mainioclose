@@ -983,7 +983,7 @@ const Estimate = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          wrapper: "2xl:max-h-[62vh] md:max-h-[58vh] w-full",
           table: "w-full",
         }}
         // selectedKeys={selectedKeys}

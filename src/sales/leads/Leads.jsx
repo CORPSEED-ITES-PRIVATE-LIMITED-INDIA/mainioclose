@@ -40,6 +40,7 @@ import {
   ArrowUpToLine,
   ArrowUpWideNarrow,
   ChevronDown,
+  ChevronRight,
   EllipsisVertical,
   Flag,
   ListFilter,
@@ -89,7 +90,7 @@ const getRowClassName = (item) => {
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "LEAD NAME", uid: "leadName" },
-  { name: "CHILD LEADS", uid: "childLeads" },
+  // { name: "CHILD LEADS", uid: "childLeads" },
   { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
@@ -106,7 +107,7 @@ export const columns = [
 
 const INITIAL_VISIBLE_COLUMNS = [
   "leadName",
-  "childLeads",
+  // "childLeads",
   "contact",
   "assignee",
   "source",
@@ -137,6 +138,7 @@ const Leads = () => {
   const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [expandedLeadKeys, setExpandedLeadKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
@@ -222,6 +224,37 @@ const Leads = () => {
   const sortedItems = useMemo(() => {
     return [...filteredItems];
   }, [filteredItems]);
+
+  const tableItems = useMemo(() => {
+    const rows = [];
+
+    sortedItems.forEach((lead) => {
+      rows.push({
+        ...lead,
+        rowType: "parent",
+        tableKey: `lead-${lead.id}`,
+      });
+
+      const hasChildLeads =
+        lead?.plantSetupFlag === true &&
+        Array.isArray(lead?.childLeads) &&
+        lead.childLeads.length > 0;
+
+      if (hasChildLeads && expandedLeadKeys.has(lead.id)) {
+        lead.childLeads.forEach((childLead, index) => {
+          rows.push({
+            ...childLead,
+            parentLeadId: lead.id,
+            rowType: "child",
+            tableKey: `child-${lead.id}-${childLead.id}`,
+            childIndex: index + 1,
+          });
+        });
+      }
+    });
+
+    return rows;
+  }, [sortedItems, expandedLeadKeys]);
 
   const visibleCount = sortedItems.length;
 
@@ -371,15 +404,54 @@ const Leads = () => {
       );
   };
 
+  const toggleExpandLead = useCallback((leadId) => {
+    setExpandedLeadKeys((prev) => {
+      const next = new Set(prev);
+
+      if (next.has(leadId)) {
+        next.delete(leadId);
+      } else {
+        next.add(leadId);
+      }
+
+      return next;
+    });
+  }, []);
+
   const renderCell = useCallback(
     (lead, columnKey) => {
       switch (columnKey) {
-        case "leadName":
+        case "leadName": {
+          const hasChildLeads =
+            lead?.plantSetupFlag === true &&
+            Array.isArray(lead?.childLeads) &&
+            lead.childLeads.length > 0;
+
+          const isExpanded = expandedLeadKeys.has(lead?.id);
+
           return (
-            <div className="flex  gap-1">
+            <div className="flex gap-1 items-start">
+              {hasChildLeads ? (
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  className="min-w-7 h-7 mt-0.5"
+                  onPress={() => toggleExpandLead(lead?.id)}
+                >
+                  <ChevronRight
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      isExpanded ? "rotate-90" : ""
+                    }`}
+                  />
+                </Button>
+              ) : (
+                <span className="w-7" />
+              )}
+
               {department?.department === "Quality Team" && (
                 <Flag
-                  className="h-4 w-4 cursor-pointer"
+                  className="h-4 w-4 cursor-pointer mt-1"
                   color={lead?.reopenByQuality ? "red" : "black"}
                   onClick={() => handleFlag(lead)}
                 />
@@ -428,6 +500,7 @@ const Leads = () => {
               </div>
             </div>
           );
+        }
         case "childLeads":
           return (
             <div className="flex flex-col">
@@ -1440,14 +1513,90 @@ const Leads = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
-          {(item) => (
-            <TableRow key={item?.id} className={getRowClassName(item)}>
-              {(columnKey) => (
-                <TableCell>{renderCell(item, columnKey)}</TableCell>
-              )}
-            </TableRow>
-          )}
+        <TableBody emptyContent={"No leads found"} items={tableItems}>
+          {(item) => {
+            if (item.rowType === "child") {
+              return (
+                <TableRow
+                  key={item.tableKey}
+                  className="bg-default-50 border-l-4 border-primary-200"
+                >
+                  {(columnKey) => {
+                    if (columnKey === "leadName") {
+                      return (
+                        <TableCell>
+                          <div className="ml-10 flex flex-col gap-1">
+                            <Link
+                              to={`${item?.id}/leadDetail`}
+                              onClick={() =>
+                                dispatch(
+                                  handleViewHistory({
+                                    leadId: item?.id,
+                                    userId,
+                                  }),
+                                )
+                              }
+                              className="text-sm font-semibold text-primary hover:underline"
+                            >
+                              {item.childIndex}. {item?.name || "-"}
+                            </Link>
+
+                            <span className="text-xs text-default-400">
+                              Child Lead ID: {item?.id}
+                            </span>
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    if (columnKey === "childLeads") {
+                      return (
+                        <TableCell>
+                          <Chip size="sm" color="secondary" variant="flat">
+                            Child Lead
+                          </Chip>
+                        </TableCell>
+                      );
+                    }
+
+                    if (columnKey === "actions") {
+                      return (
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            color="primary"
+                            as={Link}
+                            to={`${item?.id}/leadDetail`}
+                            onPress={() =>
+                              dispatch(
+                                handleViewHistory({
+                                  leadId: item?.id,
+                                  userId,
+                                }),
+                              )
+                            }
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      );
+                    }
+
+                    return <TableCell>-</TableCell>;
+                  }}
+                </TableRow>
+              );
+            }
+
+            return (
+              <TableRow key={item.tableKey} className={getRowClassName(item)}>
+                {(columnKey) => (
+                  <TableCell>{renderCell(item, columnKey)}</TableCell>
+                )}
+              </TableRow>
+            );
+          }}
         </TableBody>
       </Table>
       <Modal
