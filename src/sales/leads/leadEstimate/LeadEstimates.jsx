@@ -180,8 +180,8 @@ const LeadEstimates = () => {
   const [isCompanyUpdated, setIsCompanyUpdated] = useState(false);
   const [estimateId, setEstimateId] = useState(false);
   const [statusData, setStatusData] = useState({
-    rejectionReason: "",
-    rejectedByUserId: userId,
+    cancellationReason: "",
+    cancelledByUserId: userId,
   });
   const [isGstMandatory, setIsGstMandatory] = useState(false);
   const [statusLoading, setStatusLoading] = useState("");
@@ -773,7 +773,8 @@ const LeadEstimates = () => {
               radius="sm"
               onPress={() => {
                 const hasAnyNonRejected = sortedEstimates?.some(
-                  (item) => item?.status !== "REJECTED",
+                  (item) =>
+                    item?.status !== "REJECTED" && item?.status !== "CANCELLED",
                 );
                 if (hasAnyNonRejected) {
                   addToast({
@@ -821,7 +822,7 @@ const LeadEstimates = () => {
                     </p>
                     <div className="flex items-center gap-0.5">
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" ? "bg-red-600 text-white" : est?.status === "APPROVED" ? "bg-green-600 text-white" : est?.status === "SENT_TO_CLIENT" ? "bg-blue-600 text-white" : "bg-slate-100"} text-slate-600`}
+                        className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" || est?.status === "CANCELLED" ? "bg-red-600 text-white" : est?.status === "APPROVED" ? "bg-green-600 text-white" : est?.status === "SENT_TO_CLIENT" ? "bg-blue-600 text-white" : "bg-slate-100"} text-slate-600`}
                       >
                         {est?.status === "REJECTED" ||
                         est?.status === "CANCELLED"
@@ -884,18 +885,19 @@ const LeadEstimates = () => {
                               Add Payment Register
                             </DropdownItem>
                           )}
-                          {est?.status !== "REJECTED" && (
-                            <DropdownItem
-                              key="cancelEstimate"
-                              color="danger"
-                              onPress={() => {
-                                modal.onOpen();
-                                setEstimateId(est?.id);
-                              }}
-                            >
-                              Cancel estimate
-                            </DropdownItem>
-                          )}
+                          {est?.status !== "REJECTED" &&
+                            est?.status !== "CANCELLED" && (
+                              <DropdownItem
+                                key="cancelEstimate"
+                                color="danger"
+                                onPress={() => {
+                                  modal.onOpen();
+                                  setEstimateId(est?.id);
+                                }}
+                              >
+                                Cancel estimate
+                              </DropdownItem>
+                            )}
                         </DropdownMenu>
                       </Dropdown>
                     </div>
@@ -1535,11 +1537,11 @@ const LeadEstimates = () => {
                 <Textarea
                   label="Remark"
                   isRequired
-                  value={statusData.rejectionReason}
+                  value={statusData.cancellationReason}
                   onChange={(e) =>
                     setStatusData((prev) => ({
                       ...prev,
-                      rejectionReason: e.target.value,
+                      cancellationReason: e.target.value,
                     }))
                   }
                 />
@@ -1554,7 +1556,7 @@ const LeadEstimates = () => {
                 </Button>
                 <Button
                   color="primary"
-                  isDisabled={statusData.rejectionReason === ""}
+                  isDisabled={statusData.cancellationReason === ""}
                   onPress={handleCancelEstimate}
                 >
                   Submit

@@ -319,3 +319,173 @@ export const formatCINInput = (value) => {
 
   return formatted;
 };
+
+export const brochureSelectionData = [
+  {
+    id: 1,
+    menuName: "Environmental Compliance",
+    menuBrochureUrl: "https://aws.sample-env.pdf",
+    categories: [
+      {
+        id: 1,
+        categoryName: "Environmental Services",
+        categoryBrochureUrl: "https://aws.environmental-services.pdf",
+        subCategories: [
+          {
+            id: 1,
+            subCategoryName: "EPR & CPCB Registration",
+            subCategoryBrochureUrl: "https://aws.epr-cpcb-registration.pdf",
+            subSubCategories: [
+              {
+                id: 1,
+                subSubCategoryName: "Plastic Waste Management",
+                subSubCategoryBrochureUrl:
+                  "https://aws.plastic-waste-management.pdf",
+                brochures: [
+                  {
+                    id: 1,
+                    brochureName: "EPR Plastic Registration",
+                    brochureUrl: "https://aws.epr-plastic-registration.pdf",
+                  },
+                  {
+                    id: 2,
+                    brochureName: "EPR Plastic Compliance",
+                    brochureUrl: "https://aws.epr-plastic-compliance.pdf",
+                  },
+                ],
+              },
+              {
+                id: 2,
+                subSubCategoryName: "E-Waste Management",
+                subSubCategoryBrochureUrl: "https://aws.e-waste-management.pdf",
+                brochures: [
+                  {
+                    id: 3,
+                    brochureName: "E-Waste EPR Registration",
+                    brochureUrl: "https://aws.e-waste-registration.pdf",
+                  },
+                  {
+                    id: 4,
+                    brochureName: "E-Waste Annual Compliance",
+                    brochureUrl: "https://aws.e-waste-compliance.pdf",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: 2,
+            subCategoryName: "Waste Management",
+            subCategoryBrochureUrl: "https://aws.waste-management.pdf",
+            subSubCategories: [
+              {
+                id: 3,
+                subSubCategoryName: "Hazardous Waste",
+                subSubCategoryBrochureUrl:
+                  "https://aws.hazardous-waste-category.pdf",
+                brochures: [
+                  {
+                    id: 5,
+                    brochureName: "Hazardous Waste Authorization",
+                    brochureUrl: "https://aws.hazardous-waste.pdf",
+                  },
+                  {
+                    id: 6,
+                    brochureName: "Battery Waste Management",
+                    brochureUrl: "https://aws.battery-waste.pdf",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 2,
+        categoryName: "Pollution Control",
+        categoryBrochureUrl: "https://aws.pollution-control.pdf",
+        subCategories: [
+          {
+            id: 3,
+            subCategoryName: "Consent Certificates",
+            subCategoryBrochureUrl: "https://aws.consent-certificates.pdf",
+            subSubCategories: [
+              {
+                id: 4,
+                subSubCategoryName: "SPCB Consent",
+                subSubCategoryBrochureUrl: "https://aws.spcb-consent.pdf",
+                brochures: [
+                  {
+                    id: 7,
+                    brochureName: "Consent to Establish",
+                    brochureUrl: "https://aws.consent-establish.pdf",
+                  },
+                  {
+                    id: 8,
+                    brochureName: "Consent to Operate",
+                    brochureUrl: "https://aws.consent-operate.pdf",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 2,
+    menuName: "Business Registration",
+    menuBrochureUrl: "https://aws.business-registration.pdf",
+    categories: [
+      {
+        id: 3,
+        categoryName: "Company Incorporation",
+        categoryBrochureUrl: "https://aws.company-incorporation.pdf",
+        subCategories: [
+          {
+            id: 4,
+            subCategoryName: "Company Registration",
+            subCategoryBrochureUrl: "https://aws.company-registration.pdf",
+            subSubCategories: [
+              {
+                id: 5,
+                subSubCategoryName: "Private Limited Company",
+                subSubCategoryBrochureUrl: "https://aws.private-limited.pdf",
+                brochures: [
+                  {
+                    id: 9,
+                    brochureName: "Private Limited Registration",
+                    brochureUrl: "https://aws.private-limited-registration.pdf",
+                  },
+                  {
+                    id: 10,
+                    brochureName: "Startup India Registration",
+                    brochureUrl: "https://aws.startup-india.pdf",
+                  },
+                ],
+              },
+              {
+                id: 6,
+                subSubCategoryName: "LLP Registration",
+                subSubCategoryBrochureUrl: "https://aws.llp-registration.pdf",
+                brochures: [
+                  {
+                    id: 11,
+                    brochureName: "LLP Incorporation",
+                    brochureUrl: "https://aws.llp-incorporation.pdf",
+                  },
+                  {
+                    id: 12,
+                    brochureName: "LLP Annual Filing",
+                    brochureUrl: "https://aws.llp-annual-filing.pdf",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];

@@ -821,8 +821,8 @@ export const cancelEstimate = createAsyncThunk(
   "cancelEstimate",
   async ({ estimateId, data }, { rejectWithValue }) => {
     try {
-      const response = await api.patch(
-        `/accountService/api/v1/estimates/${estimateId}/reject`,
+      const response = await api.put(
+        `/accountService/api/v1/estimates/${estimateId}/cancel`,
         data,
       );
       return response.data;

@@ -67,11 +67,15 @@ import {
   today,
 } from "@internationalized/date";
 import { inrCurrency } from "../../common";
+import { getEstimeteByEstimateNumber } from "../../toolkit/slices/accountSlice";
+import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name" },
   { name: "PROJECT NO.", uid: "projectNo" },
+  { name: "SERVICE NAME", uid: "name" },
+  { name: "COMPANY NAME", uid: "companyName" },
+  { name: "SALES PERSON", uid: "salesPersonName" },
   { name: "UNBILL NO.", uid: "unbilledNumber" },
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "DATE", uid: "date" },
@@ -89,8 +93,10 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
-  "name",
   "projectNo",
+  "name",
+  "companyName",
+  "salesPersonName",
   "unbilledNumber",
   "estimateNumber",
   "date",
@@ -147,6 +153,7 @@ const Projects = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const formModal = useDisclosure();
+  const viewModal = useDisclosure();
   const data = useSelector((state) => state.operation.projectListForOperation);
   const count = useSelector((state) => state.operation.projectCount) || "";
   const usersList = useSelector((state) => state?.common?.usersList);
@@ -170,6 +177,7 @@ const Projects = () => {
     page: 1,
     size: 50,
   });
+  const [estimateDetail, setEstimateDetail] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -230,14 +238,38 @@ const Projects = () => {
     }
   }, [searchBy, filterValue]);
 
+  const handleViewEstimate = (rowData, type) => {
+    dispatch(
+      getEstimeteByEstimateNumber({
+        estimateNumber: rowData?.estimateNumber,
+        userId,
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setEstimateDetail(data);
+          viewModal.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
+      );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "name":
+      case "projectNo":
         return (
           <div className="flex flex-col gap-0.5">
             <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
-              {rowData?.name}
+              {rowData?.projectNo}
             </Link>
           </div>
         );
@@ -246,7 +278,14 @@ const Projects = () => {
       case "unbilledNumber":
         return <p className="text-sm">{rowData?.unbilledNumber}</p>;
       case "estimateNumber":
-        return <p className="text-sm">{rowData?.estimateNumber}</p>;
+        return (
+          <p
+            className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+            onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+          >
+            {rowData?.estimateNumber}
+          </p>
+        );
       case "salesPersonName":
         return <p className="text-sm">{rowData?.salesPersonName}</p>;
       case "contactName":
@@ -961,6 +1000,28 @@ const Projects = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <NewEstimatePreview details={estimateDetail} />
+              </ModalBody>
+              <ModalFooter className="flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

@@ -1242,7 +1242,7 @@ const CompanyAndUnitsInLead = () => {
                   >
                     <div className="flex justify-between gap-3">
                       <p className="font-medium text-gray-900">
-                        {unit?.unitName || "NA"}
+                        {[unit?.unitName, unit?.unitType]?.join(" - ")}
                       </p>
 
                       <div className="flex gap-2">

@@ -306,6 +306,16 @@ export const getTdsDetailByEstimateId = createAsyncThunk(
   },
 );
 
+export const getEstimeteByEstimateNumber = createAsyncThunk(
+  "getEstimeteByEstimateNumber",
+  async ({ estimateNumber, userId }) => {
+    const response = await api.get(
+      `/accountService/api/v1/estimates/number/${estimateNumber}?userId=${userId}`,
+    );
+    return response.data;
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
