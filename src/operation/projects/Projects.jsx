@@ -280,8 +280,8 @@ const Projects = () => {
       case "estimateNumber":
         return (
           <p
-            className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
-            onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+            className="capitalize text-xs "
+            // onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
           >
             {rowData?.estimateNumber}
           </p>
