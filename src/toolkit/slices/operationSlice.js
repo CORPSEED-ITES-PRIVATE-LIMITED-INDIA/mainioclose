@@ -755,6 +755,16 @@ export const updateLegalRequestStatus = createAsyncThunk(
   },
 );
 
+export const getServicePaymentTermBasedOnMilestone = createAsyncThunk(
+  "getServicePaymentTermBasedOnMilestone",
+  async (productId) => {
+    const response = await api.get(
+      `/operationService/api/product-milestone-maps/product/${productId}`,
+    );
+    return response.data;
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -776,6 +786,7 @@ export const OperationSlice = createSlice({
     expenseList: [],
     legalRequestList: [],
     legalRequestCount: 0,
+    servicePaymentTerm: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1078,6 +1089,21 @@ export const OperationSlice = createSlice({
     builder.addCase(getAllLegalSupportRequestsForFilter.rejected, (state) => {
       state.loading = "rejected";
       state.legalRequestList = [];
+    });
+
+    builder.addCase(getServicePaymentTermBasedOnMilestone.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getServicePaymentTermBasedOnMilestone.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.servicePaymentTerm = action.payload;
+      },
+    );
+    builder.addCase(getServicePaymentTermBasedOnMilestone.rejected, (state) => {
+      state.loading = "rejected";
+      state.servicePaymentTerm = [];
     });
   },
 });

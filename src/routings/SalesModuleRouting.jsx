@@ -30,6 +30,7 @@ import CompanyLeads from "../sales/company/CompanyLeads";
 import ChildLead from "../sales/leads/ChildLead";
 import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
 import AllInvoice from "../accounts/organization/AllInvoice";
+import ServicePaymentTerm from "../sales/leads/ServicePaymentTerm";
 
 const SalesModuleRouting = () => {
   return (
@@ -53,6 +54,7 @@ const SalesModuleRouting = () => {
         <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
+        <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
       <Route
         path="sales/leads"
@@ -80,6 +82,7 @@ const SalesModuleRouting = () => {
         <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
+        <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
 
       <Route path="sales/leads/:leadId" element={<LeadDetail />}>
@@ -93,6 +96,7 @@ const SalesModuleRouting = () => {
         <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
+        <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
       <Route path="sales/leads/:leadId/leadHistory" element={<LeadHistory />} />
       <Route path="sales/leads/:leadId/leadTasks" element={<LeadTask />} />
@@ -136,6 +140,7 @@ const SalesModuleRouting = () => {
         <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
+        <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
 
       <Route
@@ -152,6 +157,7 @@ const SalesModuleRouting = () => {
         <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
+        <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
       <Route path="sales/leadForm" element={<CompanyForm />} />
       <Route path="sales/estimate" element={<Estimate />} />
@@ -172,6 +178,7 @@ const SalesModuleRouting = () => {
         <Route path="leadEstimates" element={<LeadEstimates />} />
         <Route path="leadTasks" element={<LeadTask />} />
         <Route path="leadHistory" element={<LeadHistory />} />
+        <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
       <Route path="sales/projects" element={<Projects />} />
       <Route path="sales/servingCompanies" element={<ServingCompanies />} />

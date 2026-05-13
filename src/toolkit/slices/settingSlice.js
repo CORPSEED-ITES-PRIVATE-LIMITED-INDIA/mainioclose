@@ -530,11 +530,11 @@ export const deleteApplicantType = createAsyncThunk(
   "deleteApplicantType",
   async (id, { rejectWithValue }) => {
     try {
-      console.log("API Delete")
+      console.log("API Delete");
       const response = await api.delete(
-        `/operationService/api/applicant-types/${id}`
+        `/operationService/api/applicant-types/${id}`,
       );
-      console.log(response)
+      console.log(response);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response);
@@ -551,7 +551,6 @@ export const addApplicantType = createAsyncThunk(
     return response.data;
   },
 );
-
 
 export const getApplicantTypeList = createAsyncThunk(
   "getApplicantTypeList",
@@ -694,6 +693,14 @@ export const updateTokenInCkEditor = createAsyncThunk(
   },
 );
 
+export const getAllPaymentTermList = createAsyncThunk(
+  "getAllPaymentTermList",
+  async () => {
+    const response = await api.get(`/accountService/api/payment-types`);
+    return response.data;
+  },
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -722,6 +729,7 @@ export const SettingSlice = createSlice({
     paymentTypeList: [],
     allSolutionList: [],
     ckEditorTokenData: {},
+    paymentTermList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1047,6 +1055,18 @@ export const SettingSlice = createSlice({
     builder.addCase(getCkEditorTokenList.rejected, (state) => {
       state.loading = "rejected";
       state.ckEditorTokenData = {};
+    });
+
+    builder.addCase(getAllPaymentTermList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPaymentTermList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.paymentTermList = action.payload;
+    });
+    builder.addCase(getAllPaymentTermList.rejected, (state) => {
+      state.loading = "rejected";
+      state.paymentTermList = [];
     });
   },
 });

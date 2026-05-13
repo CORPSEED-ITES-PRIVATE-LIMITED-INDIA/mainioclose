@@ -35,6 +35,7 @@ const LeadDetail = () => {
         ]
       : [
           { id: "leadDetail", label: "Details" },
+          { id: "paymentTerm", label: "Payment Term" },
           // { id: "childLead", label: "Child lead" },
           // { id: "companyForm", label: "Company" },
           // { id: "leadCompanyForm", label: "Lead company" },
