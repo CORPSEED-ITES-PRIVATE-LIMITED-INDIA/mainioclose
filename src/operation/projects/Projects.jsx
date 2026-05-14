@@ -475,55 +475,6 @@ const Projects = () => {
     return counts;
   }, [data, count]);
 
-  // Status card configurations
-  const statusCards = [
-    {
-      title: "Total Projects",
-      count: projectStatusCounts.total,
-      color: "blue",
-      icon: FilePlus,
-      borderColor: "border-blue-500",
-      textColor: "text-gray-800 dark:text-white",
-      iconBg: "bg-blue-100 dark:bg-blue-200",
-      iconColor: "text-blue-700 dark:text-blue-700",
-      statusValue: null, // No filter for total
-    },
-    {
-      title: "Open",
-      count: projectStatusCounts.open,
-      color: "blue",
-      icon: ChevronDown,
-      borderColor: "border-blue-400",
-      textColor: "text-blue-600",
-      iconBg: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
-      statusValue: "OPEN",
-    },
-    {
-      title: "In Progress",
-      count: projectStatusCounts.inProgress,
-      color: "yellow",
-      icon: FolderOpenDot,
-      borderColor: "border-yellow-400",
-      textColor: "text-yellow-600",
-      iconBg:
-        "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300",
-      iconColor: "text-yellow-700 dark:text-yellow-700",
-      statusValue: "IN_PROGRESS",
-    },
-    {
-      title: "Completed",
-      count: projectStatusCounts.completed,
-      color: "green",
-      icon: CircleCheckBig,
-      borderColor: "border-green-500",
-      textColor: "text-green-600",
-      iconBg:
-        "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
-      iconColor: "text-green-700 dark:text-green-700",
-      statusValue: "COMPLETED",
-    },
-  ];
-
   const topContent = React.useMemo(() => {
     return (
       <div className="flex justify-between items-center gap-3">
