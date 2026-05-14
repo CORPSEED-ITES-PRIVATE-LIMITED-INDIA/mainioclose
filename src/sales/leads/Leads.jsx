@@ -96,8 +96,6 @@ export const columns = [
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "UPDATED BY", uid: "updatedBy" },
   { name: "SOURCE", uid: "source" },
-  { name: "INDUSTRY", uid: "industry" },
-  { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -112,8 +110,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "assignee",
   "source",
   "status",
-  "industry",
-  "address",
   "actions",
 ];
 
@@ -588,8 +584,6 @@ const Leads = () => {
               </span>
             </div>
           );
-        case "industry":
-          return <p className="text-sm">{lead?.industries?.name}</p> || "-";
         case "source":
           return <p className="text-sm">{lead?.source}</p> || "-";
         case "updatedBy":
@@ -602,17 +596,6 @@ const Leads = () => {
                 {lead?.updatedDate
                   ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
                   : "-"}
-              </span>
-            </div>
-          );
-        case "address":
-          return (
-            <div className="flex flex-col">
-              <span className="font-normal text-sm">
-                {lead?.address || "-"}
-              </span>
-              <span className="text-xs text-default-500">
-                {lead?.city || ""},{lead?.state},{lead?.country}
               </span>
             </div>
           );

@@ -110,7 +110,7 @@ const ProductMilestones = ({ details }) => {
   const mileStoneList = useSelector((state) => state.operation.mileStoneList);
   const [filterValue, setFilterValue] = React.useState("");
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
 
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -123,7 +123,9 @@ const ProductMilestones = ({ details }) => {
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getProductMileStonesListByProductId({ userId, productId:solutionId }));
+    dispatch(
+      getProductMileStonesListByProductId({ userId, productId: solutionId }),
+    );
     dispatch(getAllMilestones());
   }, [dispatch]);
 
@@ -131,7 +133,7 @@ const ProductMilestones = ({ details }) => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -141,8 +143,8 @@ const ProductMilestones = ({ details }) => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
-        )
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase()),
+        ),
       );
     }
 
@@ -198,7 +200,12 @@ const ProductMilestones = ({ details }) => {
             title: "Milestone deleted successfully !.",
             color: "success",
           });
-          dispatch(getProductMileStonesListByProductId({ userId, productId:solutionId }));
+          dispatch(
+            getProductMileStonesListByProductId({
+              userId,
+              productId: solutionId,
+            }),
+          );
           setRowItem(null);
           deleteModal.onClose();
         } else {
@@ -275,7 +282,7 @@ const ProductMilestones = ({ details }) => {
     (values) => {
       const obj = {
         ...values,
-        productId:solutionId,
+        productId: solutionId,
       };
       if (rowItem) {
         dispatch(updateMilestoneInProduct({ id: rowItem?.id, data: obj }))
@@ -286,17 +293,24 @@ const ProductMilestones = ({ details }) => {
                 color: "success",
               });
               dispatch(
-                getProductMileStonesListByProductId({ userId, productId:solutionId })
+                getProductMileStonesListByProductId({
+                  userId,
+                  productId: solutionId,
+                }),
               );
               onClose();
               setRowItem(null);
               reset(defaultValues);
             } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
+              addToast({
+                title: resp.payload?.data?.errorCode,
+                description: resp.payload?.data?.message,
+                color: "danger",
+              });
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       } else {
         dispatch(addMileStoneInProduct(obj))
@@ -307,20 +321,27 @@ const ProductMilestones = ({ details }) => {
                 color: "success",
               });
               dispatch(
-                getProductMileStonesListByProductId({ userId, productId:solutionId })
+                getProductMileStonesListByProductId({
+                  userId,
+                  productId: solutionId,
+                }),
               );
               onClose();
               reset(defaultValues);
             } else {
-              addToast({ title: "Something went wrong !.", color: "danger" });
+              addToast({
+                title: resp.payload?.data?.errorCode,
+                description: resp.payload?.data?.message,
+                color: "danger",
+              });
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       }
     },
-    [dispatch, onClose, reset, userId, solutionId, rowItem]
+    [dispatch, onClose, reset, userId, solutionId, rowItem],
   );
 
   const topContent = React.useMemo(() => {

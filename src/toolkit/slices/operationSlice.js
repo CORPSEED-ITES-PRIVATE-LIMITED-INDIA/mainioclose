@@ -218,33 +218,45 @@ export const getProductMileStonesListByProductId = createAsyncThunk(
 
 export const addMileStoneInProduct = createAsyncThunk(
   "addMileStoneInProduct",
-  async (data) => {
-    const response = await api.post(
-      `/operationService/api/product-milestone-maps`,
-      data,
-    );
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/product-milestone-maps`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 
 export const updateMilestoneInProduct = createAsyncThunk(
   "updateMilestoneInProduct",
-  async ({ id, data }) => {
-    const response = await api.put(
-      `/operationService/api/product-milestone-maps/${id}`,
-      data,
-    );
-    return response.data;
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/product-milestone-maps/${id}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 
 export const deleteMileStoneInProduct = createAsyncThunk(
   "deleteMileStoneInProduct",
-  async (id) => {
-    const response = await api.delete(
-      `/operationService/api/product-milestone-maps/${id}`,
-    );
-    return response.data;
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/operationService/api/product-milestone-maps/${id}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 
@@ -258,9 +270,9 @@ export const createProjectsForOperations = createAsyncThunk(
 
 export const getAllProjectsForOperations = createAsyncThunk(
   "getAllProjectsForOperations",
-  async ({ userId, page, size }) => {
+  async ({ userId, page, size, statuses }) => {
     const response = await api.get(
-      `/operationService/api/projects?userId=${userId}&page=${page}&size=${size}`,
+      `/operationService/api/projects?userId=${userId}&page=${page}&size=${size}&statuses=${statuses}`,
     );
     return response.data;
   },
@@ -594,7 +606,7 @@ export const cancelProjectByUnbilledNumberInOperations = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error?.response?.data);
+      return rejectWithValue(error);
     }
   },
 );

@@ -485,49 +485,75 @@ const Unbill = () => {
         }),
       )
         .then((re) => {
+          console.log("redbdfgfdsdg", re);
           if (re.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Unbill canceled successfully !.",
               color: "success",
             });
-            dispatch(cancelProjectByUnbilledNumberInOperations(rowItem?.id))
-              .then((respData) => {
-                if (respData.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "Unbill canceled successfully in Operation !.",
-                    color: "success",
-                  });
-                  setRowItem(null);
-                  setUpdatedStatusData({
-                    approverUserId: userId,
-                    approvalRemarks: "",
-                    rejectionReason: "",
-                  });
-                  dispatch(
-                    getAllUnbillList({
-                      page,
-                      size: rowsPerPage,
-                      userId,
-                      status,
-                    }),
-                  );
-                  dispatch(getAllUnbillCount({ userId, status }));
-                  statusModal.onClose();
-                } else {
-                  addToast({
-                    title: respData?.payload?.data?.message,
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() =>
-                addToast({
-                  title: "Something went wrong in Operation !.",
-                  color: "danger",
-                }),
-              );
+            setRowItem(null);
+            setUpdatedStatusData({
+              approverUserId: userId,
+              approvalRemarks: "",
+              rejectionReason: "",
+            });
+            dispatch(
+              getAllUnbillList({
+                page,
+                size: rowsPerPage,
+                userId,
+                status,
+              }),
+            );
+            dispatch(getAllUnbillCount({ userId, status }));
+            statusModal.onClose();
+
+            // dispatch(cancelProjectByUnbilledNumberInOperations(rowItem?.id))
+            //   .then((respData) => {
+            //     console.log("respData", respData);
+            //     if (respData.meta.requestStatus === "fulfilled") {
+            //       addToast({
+            //         title: "Unbill canceled successfully in Operation !.",
+            //         color: "success",
+            //       });
+            //       setRowItem(null);
+            //       setUpdatedStatusData({
+            //         approverUserId: userId,
+            //         approvalRemarks: "",
+            //         rejectionReason: "",
+            //       });
+            //       dispatch(
+            //         getAllUnbillList({
+            //           page,
+            //           size: rowsPerPage,
+            //           userId,
+            //           status,
+            //         }),
+            //       );
+            //       dispatch(getAllUnbillCount({ userId, status }));
+            //       statusModal.onClose();
+            //     } else {
+            //       addToast({
+            //         title: "ERROR",
+            //         description:
+            //           respData?.payload?.data?.message ||
+            //           "Something went wrong in Operation !.",
+            //         color: "danger",
+            //       });
+            //     }
+            //   })
+            //   .catch(() =>
+            //     addToast({
+            //       title: "Something went wrong in Operation !.",
+            //       color: "danger",
+            //     }),
+            //   );
           } else {
-            addToast({ title: re?.payload?.data?.message, color: "danger" });
+            addToast({
+              title: "ERROR",
+              description: re?.payload?.message,
+              color: "danger",
+            });
           }
         })
         .catch(() =>

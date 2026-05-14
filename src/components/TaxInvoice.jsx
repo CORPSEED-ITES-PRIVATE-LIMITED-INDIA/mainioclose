@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useRef } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import logo from "../assets/CORPSEED.webp";
 import signature from "../assets/signature.png";
 import html2canvas from "html2canvas-pro";
@@ -71,6 +71,19 @@ const getHalfGstRatesLabel = (items = []) => {
   return unique.map((r) => percentStr(r / 2)).join(" / ");
 };
 
+const getFullGstRatesLabel = (items = []) => {
+  const unique = Array.from(
+    new Set(
+      (items || [])
+        .map((x) => toNumber(x?.gstRate))
+        .filter((r) => Number.isFinite(r) && r > 0),
+    ),
+  ).sort((a, b) => a - b);
+
+  if (unique.length === 0) return "";
+  return unique.map((r) => percentStr(r)).join(" / ");
+};
+
 const buildTaxSummaryRows = (lineItems = []) => {
   const map = new Map();
 
@@ -82,24 +95,33 @@ const buildTaxSummaryRows = (lineItems = []) => {
     const taxable = toNumber(it?.lineTotalExGst);
     const cgstAmt = toNumber(it?.cgstAmount);
     const sgstAmt = toNumber(it?.sgstAmount);
+    const igstAmt = toNumber(it?.igstAmount);
 
     if (!map.has(key)) {
       map.set(key, {
         hsn,
         taxableValue: 0,
-        cgstRate: rate ? rate / 2 : 0,
+
+        cgstRate: cgstAmt > 0 && rate ? rate / 2 : 0,
         cgstAmount: 0,
-        sgstRate: rate ? rate / 2 : 0,
+
+        sgstRate: sgstAmt > 0 && rate ? rate / 2 : 0,
         sgstAmount: 0,
+
+        igstRate: rate > 0 ? rate : 0,
+        igstAmount: 0,
+
         totalTax: 0,
       });
     }
 
     const row = map.get(key);
+
     row.taxableValue += taxable;
     row.cgstAmount += cgstAmt;
     row.sgstAmount += sgstAmt;
-    row.totalTax += cgstAmt + sgstAmt;
+    row.igstAmount += cgstAmt + sgstAmt;
+    row.totalTax += cgstAmt + sgstAmt + igstAmt;
   }
 
   return Array.from(map.values());
@@ -111,6 +133,7 @@ const buildTaxSummaryRows = (lineItems = []) => {
 const TaxInvoice = ({ invoiceData, heading }) => {
   const dispatch = useDispatch();
   const printRef = useRef(null);
+  const [copyText, setCopyText] = useState("Copy URL");
   const organizationDetail = useSelector(
     (state) => state.organization.organizationDetail,
   );
@@ -164,12 +187,288 @@ const TaxInvoice = ({ invoiceData, heading }) => {
   const taxSummaryRows = useMemo(() => buildTaxSummaryRows(items), [items]);
 
   const subTotalExGst = toNumber(inv?.subTotalExGst);
+  const igstAmount = toNumber(inv?.igstAmount);
   const cgstAmount = toNumber(inv?.cgstAmount);
   const sgstAmount = toNumber(inv?.sgstAmount);
   const totalGstAmount = toNumber(inv?.totalGstAmount);
   const grandTotal = toNumber(inv?.grandTotal);
 
   const halfRatesLabel = useMemo(() => getHalfGstRatesLabel(items), [items]);
+  const fullRatesLabel = useMemo(() => getFullGstRatesLabel(items), [items]);
+
+  const getShareUrl = () => {
+    return window.location.href;
+  };
+
+  const handleCopyUrl = async () => {
+    try {
+      const url = getShareUrl();
+
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const input = document.createElement("input");
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      setCopyText("Copied!");
+
+      setTimeout(() => {
+        setCopyText("Copy URL");
+      }, 1500);
+    } catch (error) {
+      console.error("URL copy failed:", error);
+      setCopyText("Failed");
+    }
+  };
+
+  const handlePrint = () => {
+    const node = printRef.current;
+    if (!node) return;
+
+    const printWindow = window.open("", "_blank", "width=1100,height=800");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+    <html>
+      <head>
+        <title>${heading || "Tax Invoice"} - ${inv?.invoiceNumber || ""}</title>
+
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            padding: 16px;
+            font-family: Arial, sans-serif;
+            background: #ffffff;
+            color: #111827;
+          }
+
+          img {
+            max-width: 120px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+
+          th,
+          td {
+            border: 1px solid #d1d5db;
+            padding: 5px;
+            font-size: 11px;
+            vertical-align: top;
+          }
+
+          th {
+            background: #f3f4f6;
+            font-weight: 700;
+          }
+
+          p {
+            margin: 0 0 4px 0;
+          }
+
+          .invoice-print-page {
+            width: 190mm !important;
+            margin: 0 auto !important;
+            background: #ffffff !important;
+          }
+
+          .grid {
+            display: grid !important;
+          }
+
+          .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .grid-cols-\\[1\\.2fr_1fr\\] {
+            grid-template-columns: 1.2fr 1fr !important;
+          }
+
+          .border {
+            border: 1px solid #d1d5db !important;
+          }
+
+          .border-b {
+            border-bottom: 1px solid #d1d5db !important;
+          }
+
+          .border-r {
+            border-right: 1px solid #d1d5db !important;
+          }
+
+          .border-t {
+            border-top: 1px solid #d1d5db !important;
+          }
+
+          .text-center {
+            text-align: center !important;
+          }
+
+          .text-right {
+            text-align: right !important;
+          }
+
+          .font-bold {
+            font-weight: 700 !important;
+          }
+
+          .font-semibold {
+            font-weight: 600 !important;
+          }
+
+          .font-extrabold {
+            font-weight: 800 !important;
+          }
+
+          .bg-gray-50,
+          .bg-gray-100 {
+            background: #f3f4f6 !important;
+          }
+
+          .bg-white {
+            background: #ffffff !important;
+          }
+
+          .text-gray-500 {
+            color: #6b7280 !important;
+          }
+
+          .text-gray-900 {
+            color: #111827 !important;
+          }
+
+          .p-2\\.5 {
+            padding: 10px !important;
+          }
+
+          .p-3 {
+            padding: 12px !important;
+          }
+
+          .px-2\\.5 {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+          }
+
+          .py-2 {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+          }
+
+          .pb-2 {
+            padding-bottom: 8px !important;
+          }
+
+          .pt-3 {
+            padding-top: 12px !important;
+          }
+
+          .mb-1 {
+            margin-bottom: 4px !important;
+          }
+
+          .mt-1 {
+            margin-top: 4px !important;
+          }
+
+          .leading-snug {
+            line-height: 1.35 !important;
+          }
+
+          .flex {
+            display: flex !important;
+          }
+
+          .items-center {
+            align-items: center !important;
+          }
+
+          .justify-end {
+            justify-content: flex-end !important;
+          }
+
+          .gap-2 {
+            gap: 8px !important;
+          }
+
+          .gap-3 {
+            gap: 12px !important;
+          }
+
+          @page {
+            size: A4;
+            margin: 10mm;
+          }
+
+          @media print {
+            body {
+              padding: 0;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+
+            .invoice-print-page {
+              width: 190mm !important;
+              margin: 0 auto !important;
+            }
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="invoice-print-page">
+          ${node.innerHTML}
+        </div>
+      </body>
+    </html>
+  `);
+
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+  };
+
+  const handleShareViaEmail = () => {
+    const invoiceNo = inv?.invoiceNumber || "Invoice";
+
+    const subject = encodeURIComponent(
+      `${heading || "Tax Invoice"} - ${invoiceNo}`,
+    );
+
+    const body = encodeURIComponent(
+      `Dear Sir/Ma'am,
+
+Please find the ${heading || "Tax Invoice"} details below:
+
+Invoice No.: ${invoiceNo}
+Invoice Date: ${
+        inv?.invoiceDate ? dayjs(inv.invoiceDate).format("DD-MM-YYYY") : "NA"
+      }
+Amount: ${inrCurrency(formatINR(grandTotal))}
+URL: ${getShareUrl()}
+
+Regards,
+Corpseed Team`,
+    );
+
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
 
   /** ✅ Single-page PDF + Real margins + smoother text */
   const downloadPDF = async () => {
@@ -242,13 +541,40 @@ const TaxInvoice = ({ invoiceData, heading }) => {
 
   return (
     <div className="p-4">
-      <div className="mb-3 flex justify-end">
-        <button
-          onClick={downloadPDF}
-          className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900"
-        >
-          Download PDF
-        </button>
+      <div className="sticky top-2 z-30 mb-3 flex justify-center">
+        <div className="flex w-fit flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+          <button
+            type="button"
+            onClick={handleCopyUrl}
+            className="cursor-pointer rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-100 active:scale-95"
+          >
+            {copyText}
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="cursor-pointer rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 transition-all hover:bg-blue-100 active:scale-95"
+          >
+            Print
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShareViaEmail}
+            className="cursor-pointer rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 transition-all hover:bg-purple-100 active:scale-95"
+          >
+            Share Email
+          </button>
+
+          <button
+            type="button"
+            onClick={downloadPDF}
+            className="cursor-pointer rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-green-700 active:scale-95"
+          >
+            Download PDF
+          </button>
+        </div>
       </div>
 
       {/* Screen preview A4 */}
@@ -256,9 +582,9 @@ const TaxInvoice = ({ invoiceData, heading }) => {
         {/* ✅ IMPORTANT: remove min-h-[297mm] to avoid 2 pages */}
         <div
           ref={printRef}
-          className="antialiased bg-white text-gray-900"
+          className="invoice-print-page antialiased bg-white text-gray-900"
           style={{
-            width: `${CONTENT_W_MM}mm`, // ✅ matches printable area (A4 - margins)
+            width: `${CONTENT_W_MM}mm`,
             margin: "0 auto",
           }}
         >
@@ -444,45 +770,71 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                         {toNumber(it?.quantity)}
                       </TableTd>
                       <TableTd className="text-right">
-                        {inrCurrency(formatINR(it?.unitPriceExGst))}
+                        {inrCurrency(it?.unitPriceExGst)}
                       </TableTd>
                       <TableTd className="text-center">
                         {it?.unit || "NOS"}
                       </TableTd>
                       <TableTd className="text-right">
-                        {inrCurrency(formatINR(it?.lineTotalExGst))}
+                        {inrCurrency(it?.lineTotalExGst)}
                       </TableTd>
                     </tr>
                   ))
                 )}
 
-                <tr>
-                  <TableTd className="text-center">{items.length + 1}</TableTd>
-                  <TableTd>CGST</TableTd>
-                  <TableTd />
-                  <TableTd />
-                  <TableTd className="text-right font-semibold">
-                    {halfRatesLabel}
-                  </TableTd>
-                  <TableTd className="text-center">%</TableTd>
-                  <TableTd className="text-right">
-                    {inrCurrency(formatINR(cgstAmount))}
-                  </TableTd>
-                </tr>
+                {igstAmount === 0 && (
+                  <tr>
+                    <TableTd className="text-center">
+                      {items.length + 1}
+                    </TableTd>
+                    <TableTd>CGST</TableTd>
+                    <TableTd />
+                    <TableTd />
+                    <TableTd className="text-right font-semibold">
+                      {halfRatesLabel}
+                    </TableTd>
+                    <TableTd className="text-center">%</TableTd>
+                    <TableTd className="text-right">
+                      {inrCurrency(cgstAmount)}
+                    </TableTd>
+                  </tr>
+                )}
 
-                <tr>
-                  <TableTd className="text-center">{items.length + 2}</TableTd>
-                  <TableTd>SGST</TableTd>
-                  <TableTd />
-                  <TableTd />
-                  <TableTd className="text-right font-semibold">
-                    {halfRatesLabel}
-                  </TableTd>
-                  <TableTd className="text-center">%</TableTd>
-                  <TableTd className="text-right">
-                    {inrCurrency(formatINR(sgstAmount))}
-                  </TableTd>
-                </tr>
+                {igstAmount === 0 && (
+                  <tr>
+                    <TableTd className="text-center">
+                      {items.length + 2}
+                    </TableTd>
+                    <TableTd>SGST</TableTd>
+                    <TableTd />
+                    <TableTd />
+                    <TableTd className="text-right font-semibold">
+                      {halfRatesLabel}
+                    </TableTd>
+                    <TableTd className="text-center">%</TableTd>
+                    <TableTd className="text-right">
+                      {inrCurrency(sgstAmount)}
+                    </TableTd>
+                  </tr>
+                )}
+
+                {cgstAmount === 0 && sgstAmount === 0 && (
+                  <tr>
+                    <TableTd className="text-center">
+                      {items.length + 1}
+                    </TableTd>
+                    <TableTd>IGST</TableTd>
+                    <TableTd />
+                    <TableTd />
+                    <TableTd className="text-right font-semibold">
+                      {fullRatesLabel}
+                    </TableTd>
+                    <TableTd className="text-center">%</TableTd>
+                    <TableTd className="text-right">
+                      {inrCurrency(igstAmount)}
+                    </TableTd>
+                  </tr>
+                )}
 
                 <tr>
                   <TableTd />
@@ -490,7 +842,7 @@ const TaxInvoice = ({ invoiceData, heading }) => {
                     Total
                   </TableTd>
                   <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(grandTotal))}
+                    {inrCurrency(grandTotal)}
                   </TableTd>
                 </tr>
               </tbody>
@@ -507,77 +859,160 @@ const TaxInvoice = ({ invoiceData, heading }) => {
             </div>
 
             {/* Tax summary table */}
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <TableTh className="text-center" rowSpan={2}>
-                    HSN/SAC
-                  </TableTh>
-                  <TableTh className="text-center" rowSpan={2}>
-                    Taxable Value (₹)
-                  </TableTh>
-                  <TableTh className="text-center" colSpan={2}>
-                    CGST
-                  </TableTh>
-                  <TableTh className="text-center" colSpan={2}>
-                    SGST
-                  </TableTh>
-                  <TableTh className="text-center" rowSpan={2}>
-                    Total Tax Amount (₹)
-                  </TableTh>
-                </tr>
-                <tr>
-                  <TableTh className="text-center">Rate (%)</TableTh>
-                  <TableTh className="text-center">Amount (₹)</TableTh>
-                  <TableTh className="text-center">Rate (%)</TableTh>
-                  <TableTh className="text-center">Amount (₹)</TableTh>
-                </tr>
-              </thead>
+            {/* Tax summary table */}
+            {cgstAmount === 0 && sgstAmount === 0 ? (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <TableTh className="text-center" rowSpan={2}>
+                      HSN/SAC
+                    </TableTh>
+                    <TableTh className="text-center" rowSpan={2}>
+                      Taxable Value (₹)
+                    </TableTh>
+                    <TableTh className="text-center" colSpan={2}>
+                      IGST
+                    </TableTh>
+                    <TableTh className="text-center" rowSpan={2}>
+                      Total Tax Amount (₹)
+                    </TableTh>
+                  </tr>
 
-              <tbody>
-                {taxSummaryRows.map((r, i) => (
-                  <tr key={i}>
-                    <TableTd className="text-center">{r.hsn}</TableTd>
-                    <TableTd className="text-right">
-                      {inrCurrency(formatINR(r.taxableValue))}
+                  <tr>
+                    <TableTh className="text-center">Rate (%)</TableTh>
+                    <TableTh className="text-center">Amount (₹)</TableTh>
+                  </tr>
+                </thead>
+
+                {console.log("dsjkgkjsgkj", taxSummaryRows)}
+                <tbody>
+                  {taxSummaryRows?.map((r, i) => (
+                    <tr key={i}>
+                      <TableTd className="text-center">{r.hsn}</TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.taxableValue)}
+                      </TableTd>
+
+                      <TableTd className="text-center">
+                        {toNumber(r.igstRate).toFixed(2)}
+                      </TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.igstAmount)}
+                      </TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.totalTax)}
+                      </TableTd>
+                    </tr>
+                  ))}
+
+                  <tr>
+                    <TableTd className="font-bold">Total</TableTd>
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(subTotalExGst)}
                     </TableTd>
-                    <TableTd className="text-center">
-                      {toNumber(r.cgstRate).toFixed(2)}
+
+                    <TableTd className="text-center">-</TableTd>
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(igstAmount)}
                     </TableTd>
-                    <TableTd className="text-right">
-                      {inrCurrency(formatINR(r.cgstAmount))}
-                    </TableTd>
-                    <TableTd className="text-center">
-                      {toNumber(r.sgstRate).toFixed(2)}
-                    </TableTd>
-                    <TableTd className="text-right">
-                      {inrCurrency(formatINR(r.sgstAmount))}
-                    </TableTd>
-                    <TableTd className="text-right">
-                      {inrCurrency(formatINR(r.totalTax))}
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(totalGstAmount)}
                     </TableTd>
                   </tr>
-                ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <TableTh className="text-center" rowSpan={2}>
+                      HSN/SAC
+                    </TableTh>
+                    <TableTh className="text-center" rowSpan={2}>
+                      Taxable Value (₹)
+                    </TableTh>
+                    <TableTh className="text-center" colSpan={2}>
+                      CGST
+                    </TableTh>
+                    <TableTh className="text-center" colSpan={2}>
+                      SGST
+                    </TableTh>
+                    <TableTh className="text-center" rowSpan={2}>
+                      Total Tax Amount (₹)
+                    </TableTh>
+                  </tr>
 
-                <tr>
-                  <TableTd className="font-bold">Total</TableTd>
-                  <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(subTotalExGst))}
-                  </TableTd>
-                  <TableTd className="text-center">-</TableTd>
-                  <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(cgstAmount))}
-                  </TableTd>
-                  <TableTd className="text-center">-</TableTd>
-                  <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(sgstAmount))}
-                  </TableTd>
-                  <TableTd className="text-right font-bold">
-                    {inrCurrency(formatINR(totalGstAmount))}
-                  </TableTd>
-                </tr>
-              </tbody>
-            </table>
+                  <tr>
+                    <TableTh className="text-center">Rate (%)</TableTh>
+                    <TableTh className="text-center">Amount (₹)</TableTh>
+                    <TableTh className="text-center">Rate (%)</TableTh>
+                    <TableTh className="text-center">Amount (₹)</TableTh>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {taxSummaryRows.map((r, i) => (
+                    <tr key={i}>
+                      <TableTd className="text-center">{r.hsn}</TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.taxableValue)}
+                      </TableTd>
+
+                      <TableTd className="text-center">
+                        {toNumber(r.cgstRate).toFixed(2)}
+                      </TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.cgstAmount)}
+                      </TableTd>
+
+                      <TableTd className="text-center">
+                        {toNumber(r.sgstRate).toFixed(2)}
+                      </TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.sgstAmount)}
+                      </TableTd>
+
+                      <TableTd className="text-right">
+                        {inrCurrency(r.totalTax)}
+                      </TableTd>
+                    </tr>
+                  ))}
+
+                  <tr>
+                    <TableTd className="font-bold">Total</TableTd>
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(subTotalExGst)}
+                    </TableTd>
+
+                    <TableTd className="text-center">-</TableTd>
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(cgstAmount)}
+                    </TableTd>
+
+                    <TableTd className="text-center">-</TableTd>
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(sgstAmount)}
+                    </TableTd>
+
+                    <TableTd className="text-right font-bold">
+                      {inrCurrency(totalGstAmount)}
+                    </TableTd>
+                  </tr>
+                </tbody>
+              </table>
+            )}
 
             <div className="px-2.5 py-2 text-[11px] text-gray-700">
               Tax amount (in words) : <b>{amountToWordsINR(totalGstAmount)}</b>

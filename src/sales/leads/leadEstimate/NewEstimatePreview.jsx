@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import logo from "../../../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import numWords from "num-words";
@@ -11,6 +11,7 @@ import { getOrganizationByName } from "../../../toolkit/slices/organizationSlice
 const NewEstimatePreview = ({ details, due, viewType }) => {
   const dispatch = useDispatch();
   const contentRef = useRef();
+  const [copyText, setCopyText] = useState("Copy URL");
   const organizationDetail = useSelector(
     (state) => state.organization.organizationDetail,
   );
@@ -18,6 +19,152 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
   useEffect(() => {
     dispatch(getOrganizationByName());
   }, [dispatch]);
+
+  const getShareUrl = () => {
+    return window.location.href;
+  };
+
+  const handleCopyUrl = async () => {
+    try {
+      const url = getShareUrl();
+
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const input = document.createElement("input");
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      setCopyText("Copied!");
+
+      setTimeout(() => {
+        setCopyText("Copy URL");
+      }, 1500);
+    } catch (error) {
+      console.error("URL copy failed:", error);
+      setCopyText("Failed");
+    }
+  };
+
+  const handlePrint = () => {
+    const element = contentRef.current;
+
+    if (!element) return;
+
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+    <html>
+      <head>
+        <title>${viewType === "PI" ? "Proforma Invoice" : "Estimate"} - ${
+          viewType === "PI"
+            ? details?.performanceInvoiceNumber || ""
+            : details?.estimateNumber || ""
+        }</title>
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            color: #111827;
+            background: #ffffff;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th,
+          td {
+            border: 1px solid #d1d5db;
+            padding: 4px;
+            font-size: 11px;
+          }
+
+          th {
+            background: #f3f4f6;
+          }
+
+          img {
+            max-width: 120px;
+          }
+
+          .shadow-md,
+          .shadow-sm {
+            box-shadow: none !important;
+          }
+
+          .rounded-xl,
+          .rounded-lg {
+            border-radius: 0 !important;
+          }
+
+          @media print {
+            body {
+              padding: 0;
+            }
+
+            @page {
+              size: A4;
+              margin: 12mm;
+            }
+          }
+        </style>
+      </head>
+
+      <body>
+        ${element.innerHTML}
+      </body>
+    </html>
+  `);
+
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+  };
+
+  const handleShareViaEmail = () => {
+    const estimateNo =
+      viewType === "PI"
+        ? details?.performanceInvoiceNumber || "Proforma Invoice"
+        : details?.estimateNumber || "Estimate";
+
+    const subject = encodeURIComponent(
+      `${viewType === "PI" ? "Proforma Invoice" : "Estimate"} - ${estimateNo}`,
+    );
+
+    const body = encodeURIComponent(
+      `Dear Sir/Ma'am,
+
+Please find the ${
+        viewType === "PI" ? "Proforma Invoice" : "Estimate"
+      } details below:
+
+${viewType === "PI" ? "Proforma Invoice No." : "Estimate No."}: ${estimateNo}
+Amount: ${inrCurrency(details?.grandTotal || 0)}
+URL: ${getShareUrl()}
+
+Regards,
+Corpseed Team`,
+    );
+
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
 
   const downloadPDF = async () => {
     const element = contentRef.current;
@@ -392,12 +539,39 @@ const NewEstimatePreview = ({ details, due, viewType }) => {
             </div>
           </div>
         </div>
-        <button
-          onClick={downloadPDF}
-          className="bg-green-600 text-white px-4 py-2 rounded-md text-sm w-fit shadow-md hover:bg-green-700 self-center cursor-pointer"
-        >
-          Download PDF
-        </button>
+        <div className="sticky bottom-2 z-20 mx-auto flex w-fit flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+          <button
+            type="button"
+            onClick={handleCopyUrl}
+            className="rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-100 active:scale-95"
+          >
+            {copyText}
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 transition-all hover:bg-blue-100 active:scale-95"
+          >
+            Print
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShareViaEmail}
+            className="rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 transition-all hover:bg-purple-100 active:scale-95"
+          >
+            Share Email
+          </button>
+
+          <button
+            type="button"
+            onClick={downloadPDF}
+            className="rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-green-700 active:scale-95"
+          >
+            Download PDF
+          </button>
+        </div>
       </div>
     </div>
   );

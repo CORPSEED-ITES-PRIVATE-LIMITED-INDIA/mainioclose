@@ -176,6 +176,7 @@ const Projects = () => {
     userId,
     page: 1,
     size: 50,
+    statuses: "OPEN",
   });
   const [estimateDetail, setEstimateDetail] = useState(null);
 
@@ -273,8 +274,6 @@ const Projects = () => {
             </Link>
           </div>
         );
-      case "projectNo":
-        return <p className="text-sm">{rowData?.projectNo}</p>;
       case "unbilledNumber":
         return <p className="text-sm">{rowData?.unbilledNumber}</p>;
       case "estimateNumber":
@@ -527,96 +526,7 @@ const Projects = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-3">
-        {/* Status Cards Row with Add/Columns buttons on the right */}
-        <div className="flex justify-between items-center gap-3">
-          {/* Status Cards on the left */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
-            {statusCards.map((card, index) => {
-              const IconComponent = card.icon;
-              const isActive = statusFilter === card.statusValue;
-              return (
-                <div
-                  key={index}
-                  className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm p-2 relative cursor-pointer transition-all duration-200 ${
-                    isActive
-                      ? "ring-2 ring-blue-500 shadow-lg"
-                      : "hover:shadow-md"
-                  }`}
-                  onClick={() => setStatusFilter(card.statusValue)}
-                >
-                  <div className="flex items-center gap-6 ">
-                    <div
-                      className={`${card.iconBg} rounded-full p-1 flex items-center justify-center`}
-                    >
-                      <IconComponent
-                        size={20}
-                        className={card.iconColor || "text-blue-600"}
-                        strokeWidth={2}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {card.title}
-                      </p>
-                      <p
-                        className={`text-2xl font-bold mt-1 ${card.textColor}`}
-                      >
-                        {card.count}
-                      </p>
-                    </div>
-
-                    <div className="absolute bottom-2 right-2 bg-gray-200 dark:bg-gray-700 rounded-full p-1.5 flex items-center justify-center">
-                      <IconComponent
-                        size={14}
-                        className="text-gray-700 dark:text-gray-300"
-                        strokeWidth={2.5}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Add and Columns buttons on the right */}
-          <div className="flex gap-2 items-center">
-            <Button
-              endContent={<Plus />}
-              onPress={formModal.onOpen}
-              color="primary"
-              radius="sm"
-            >
-              Add
-            </Button>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                  radius="sm"
-                >
-                  Columns
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        </div>
-
+      <div className="flex justify-between items-center gap-3">
         {/* Search Bar Row */}
         <div className="flex items-center w-full pb-0.5">
           <Select
@@ -647,6 +557,87 @@ const Projects = () => {
               }
             }}
           />
+        </div>
+        <div className="flex gap-2 items-center">
+          <Button
+            endContent={<Plus />}
+            onPress={formModal.onOpen}
+            color="primary"
+            radius="sm"
+          >
+            Add
+          </Button>
+          <Dropdown>
+            <DropdownTrigger className="hidden sm:flex">
+              <Button
+                endContent={<ChevronDown className="text-small" />}
+                variant="flat"
+                radius="sm"
+              >
+                {paginationData?.statuses}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              aria-label="Table Columns"
+              selectionMode="single"
+              selectedKeys={[paginationData?.statuses]}
+              onSelectionChange={(e) => {
+                const key = Array.from(e)[0];
+                setPaginationData((prev) => ({
+                  ...prev,
+                  statuses: key,
+                }));
+                dispatch(
+                  getAllProjectsForOperations({
+                    ...paginationData,
+                    statuses: key,
+                  }),
+                );
+              }}
+            >
+              <DropdownItem key={"OPEN"} className="capitalize">
+                OPEN
+              </DropdownItem>
+              <DropdownItem key={"IN_PROGRESS"} className="capitalize">
+                IN_PROGRESS
+              </DropdownItem>
+              <DropdownItem key={"COMPLETED"} className="capitalize">
+                COMPLETED
+              </DropdownItem>
+              <DropdownItem key={"CANCELLED"} className="capitalize">
+                CANCELLED
+              </DropdownItem>
+              <DropdownItem key={"REFUNDED"} className="capitalize">
+                REFUNDED
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+          <Dropdown>
+            <DropdownTrigger className="hidden sm:flex">
+              <Button
+                endContent={<ChevronDown className="text-small" />}
+                variant="flat"
+                radius="sm"
+              >
+                Columns
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              aria-label="Table Columns"
+              closeOnSelect={false}
+              selectedKeys={visibleColumns}
+              selectionMode="multiple"
+              onSelectionChange={setVisibleColumns}
+            >
+              {columns.map((column) => (
+                <DropdownItem key={column.uid} className="capitalize">
+                  {capitalize(column.name)}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
         </div>
       </div>
     );
