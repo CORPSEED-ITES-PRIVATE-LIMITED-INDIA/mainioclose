@@ -266,16 +266,37 @@ const Unbill = () => {
         );
       case "tdsActive":
         return (
-          <div>
-            <button
+          <div className="w-full  max-w-[130px] rounded-md px-3 py-2">
+            {/* <button
               disabled={!rowData?.tdsActiveFlag}
-              className={`capitalize text-xs font-medium ${rowData?.tdsActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
+              className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold transition
+      ${
+        rowData?.tdsActiveFlag === true
+          ? "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+          : "bg-gray-100 text-gray-500 cursor-not-allowed"
+      }`}
               onClick={() => {
                 handleTdsPreview(rowData?.estimateId, rowData?.id);
               }}
             >
-              {rowData?.tdsActiveFlag === true ? "True" : "False"}
-            </button>
+              {rowData?.tdsActiveFlag === true ? "Active" : "Inactive"}
+            </button> */}
+
+            {rowData?.tdsActiveFlag === true && (
+              <div className="mt-2 space-y-1 text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="whitespace-nowrap font-semibold text-gray-900">
+                    ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="whitespace-nowrap font-semibold text-gray-400">
+                    {rowData?.tdsResponseDto?.tdsPercentage ?? 0}%
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         );
       case "unbillNo":
