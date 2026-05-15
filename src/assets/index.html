@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corpseed Proposal</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      /* font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; */
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px 0;
+      background: #eef1f5;
+      color: #000000;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.32;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 24px auto;
+      padding: 14mm 9mm 12mm 9mm;
+      background: #ffffff;
+      border: 1.5px solid #c7cdd6;
+      outline: 5px solid #f3f5f8;
+      box-shadow: 0 8px 24px rgba(88, 96, 112, 0.25);
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 7mm;
+      /* border: 1px solid #dde2e9; */
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 135mm;
+  height: 135mm;
+  transform: translate(-50%, -50%) ;
+  background-image: url("CORPSEED.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.25;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+    /* .page::after {
+      content: "CORPSEED";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-32deg);
+      font-size: 82px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      color: rgba(43, 86, 163, 0.055);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    } */
+
+    .page-content {
+      position: relative;
+      z-index: 3;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .header {
+      display: table;
+      width: 100%;
+      margin-bottom: 48px;
+    }
+
+    .header-left,
+    .header-center,
+    .header-right {
+      display: table-cell;
+      vertical-align: top;
+    }
+
+    .header-left {
+      width: 18%;
+      text-align: left;
+      padding-left: 6px;
+    }
+
+    .header-center {
+      width: 32%;
+      text-align: center;
+      padding-top: 22px;
+    }
+
+    .header-right {
+      width: 50%;
+      text-align: center;
+      color: #2b56a3;
+      font-weight: 700;
+      padding-top: 7px;
+    }
+
+    .logo-img {
+      width: 96px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .proposal-title {
+      color: #2b56a3;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 18px;
+    }
+
+    .tagline {
+      font-size: 18px;
+      line-height: 22px;
+    }
+
+    .services-line {
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .top-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+    }
+
+    .top-table td {
+      border-left: 1px solid #000;
+      border-right: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 6px 8px;
+      height: 33px;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    .top-table .label-col,
+    .top-table .value-col {
+      width: 50%;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: underline;
+      margin: 29px 0 8px 0;
+      line-height: 24px;
+    }
+
+    p {
+      margin: 0 0 10px 0;
+    }
+
+    ul {
+      margin: 11px 0 0 18px;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 7px;
+      padding-left: 4px;
+    }
+
+    .scope li {
+      margin-bottom: 8px;
+    }
+
+    .scope strong,
+    .business-list strong {
+      display: block;
+      font-weight: 700;
+    }
+
+    .scope span {
+      display: block;
+    }
+
+    .process-block {
+      margin-top: 14px;
+    }
+
+    .process-item {
+      margin-bottom: 13px;
+    }
+
+    .process-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .process-desc {
+      margin-left: 16px;
+      line-height: 1.33;
+    }
+
+    .commercial-title {
+      margin-top: 34px;
+      margin-bottom: 27px;
+    }
+
+    .commercial-table {
+      width: 99%;
+      margin: 0 auto 24px auto;
+      border-collapse: collapse;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+    }
+
+    .commercial-table td {
+      border-left: 1px solid #000;
+      border-right: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 4px 7px;
+      height: 27px;
+      font-size: 14px;
+    }
+
+    .commercial-table .amount {
+      width: 14%;
+      text-align: left;
+    }
+
+    .business-title {
+      margin-top: 25px;
+      margin-bottom: 48px;
+    }
+
+    .business-list li {
+      margin-bottom: 8px;
+    }
+
+    .terms-title {
+      margin-top: 28px;
+      margin-bottom: 24px;
+    }
+
+    .terms-list {
+      list-style: lower-roman;
+      margin-left: 20px;
+      padding-left: 0;
+    }
+
+    .terms-list li {
+      margin-bottom: 15px;
+      padding-left: 3px;
+    }
+
+    .contact-title {
+      margin-top: 18px;
+      margin-bottom: 22px;
+    }
+
+    .contact-text {
+      line-height: 1.55;
+      margin-bottom: 18px;
+    }
+
+    .payment-title {
+      margin-top: 14px;
+      margin-bottom: 19px;
+    }
+
+    .signature {
+      width: 100%;
+      text-align: right;
+      margin-top: 68px;
+      padding-right: 22px;
+      line-height: 1.55;
+    }
+
+    .underline {
+      text-decoration: underline;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .page {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0;
+        border: none;
+        outline: none;
+        box-shadow: none;
+      }
+
+      .page::before {
+        border: 1px solid #d7dce3;
+      }
+
+      .watermark {
+        color: rgba(43, 86, 163, 0.14);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- PAGE 1 -->
+  <section class="page">
+    <div class="watermark"></div>
+    <div class="page-content">
+      <div class="header">
+        <div class="header-left">
+          <img src="CORPSEED.webp" alt="Corpseed Logo" class="logo-img" />
+        </div>
+
+        <div class="header-center">
+          <div class="proposal-title">Proposal</div>
+          <div class="proposal-title">Private &amp; Confidential</div>
+        </div>
+
+        <div class="header-right">
+          <div class="tagline" style="text-align: end;">We Simplify Business Compliance</div>
+          <div class="services-line" style="text-align: end;">Environment | Regulatory | Factory |</div>
+          <div class="services-line" style="text-align: end;"> Turnkey Setup | Product Quality |  </div>
+          <div class="services-line" style="text-align: end;">Statutory|  Financial | Import/Export</div>
+        </div>
+      </div>
+
+      <table class="top-table">
+        <tr>
+          <td>Date-</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><strong>Quotation No:</strong></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label-col"><strong>To,</strong></td>
+          <td class="value-col"></td>
+        </tr>
+        <tr>
+          <td>Client/Company Name:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Address:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Email:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Phone Number:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Subject:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Project Description:</td>
+          <td></td>
+        </tr>
+      </table>
+
+      <h2 class="section-title">Scope of Work</h2>
+      <p>Our engagement includes the following deliverables and responsibilities:</p>
+
+      <ul class="scope">
+        <li>
+          <strong>Dedicated Account Manager Assignment</strong>
+          <span>A single point of contact (SPOC) will be appointed to manage the entire project lifecycle, ensuring seamless communication, coordination, and support.</span>
+        </li>
+        <li>
+          <strong>End-to-End Documentation Support</strong>
+          <span>Comprehensive assistance with drafting, reviewing, and finalizing all required documents in alignment with applicable regulatory standards.</span>
+        </li>
+        <li>
+          <strong>Application Preparation &amp; Submission</strong>
+          <span>Full responsibility for the accurate preparation and timely submission of the application(s) to the relevant department or authority.</span>
+        </li>
+      </ul>
+
+      <h2 class="section-title">Step-by-Step Process</h2>
+      <p>Our service workflow is designed to ensure precision, compliance, and timely delivery. Below is a comprehensive outline of the process we follow:</p>
+
+      <div class="process-block">
+        <div class="process-item">
+          <div class="process-title">I. Initial Documentation Collection</div>
+          <div class="process-desc">Our dedicated documentation team coordinates with the client to gather all necessary documents relevant to the service.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">II. Assistance to prepare the Documents.</div>
+          <div class="process-desc">For documents that require a specific format, Corpseed provides the appropriate format to help prepare the documents correctly for the portal, reducing the chances of rejection.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">III. Verification by Legal Experts</div>
+          <div class="process-desc">The collected documents are reviewed and verified by Corpseed's legal team to ensure accuracy, completeness, and compliance with regulatory requirements.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">IV. Application &amp; Document Drafting</div>
+          <div class="process-desc">Applications and supporting documents are drafted in accordance with the latest government-prescribed formats and guidelines.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">V. Preparation for Submission</div>
+          <div class="process-desc">All documents and enclosures are organized and uploaded to the relevant government portal, ensuring adherence to submission protocols.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 2 -->
+  <section class="page">
+    <div class="watermark"></div>
+    <div class="page-content">
+      <div class="process-block">
+        <div class="process-item">
+          <div class="process-title">VI. Internal Scrutiny by Review Team</div>
+          <div class="process-desc">Our internal review team conducts a thorough pre-submission check to validate the application’s completeness and correctness.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">VII. Client Review &amp; Approval</div>
+          <div class="process-desc">The application is shared with the client for a final round of review and confirmation before official submission.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">VIII. Online Submission to Government Authorities</div>
+          <div class="process-desc">Upon client approval, the application is formally submitted to the respective government department or authority.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">VIII. Online Submission to Government Authorities</div>
+          <div class="process-desc">Upon client approval, the application is formally submitted to the respective government department or authority.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">IX. Government Fee Remittance</div>
+          <div class="process-desc">The applicable government fee is deposited through the designated payment channel, either directly by the client or via Corpseed’s account.</div>
+        </div>
+
+        <div class="process-item">
+          <div class="process-title">X. Post-Filing Reporting</div>
+          <div class="process-desc">Once the filing is complete, a detailed acknowledgment is generated and promptly shared with the client. After that, until the certificate is issued, Corpseed will follow up with the department and, if required, will visit the department to expedite the application. (If required)</div>
+        </div>
+      </div>
+
+      <h2 class="section-title commercial-title">Commercial Part</h2>
+
+      <table class="commercial-table">
+        <tr>
+          <td>Corpseed Fees for (Service Name) (Consultation, Filing, documentation)</td>
+          <td class="amount"></td>
+        </tr>
+        <tr>
+          <td>GST</td>
+          <td class="amount"></td>
+        </tr>
+        <tr>
+          <td>Government fees</td>
+          <td class="amount"></td>
+        </tr>
+        <tr>
+          <td>Total</td>
+          <td class="amount"></td>
+        </tr>
+      </table>
+
+      <h2 class="section-title business-title">Business Planning Services</h2>
+
+      <ul class="business-list">
+        <li>
+          <strong>Project Planning</strong>
+          Strategic planning and feasibility analysis to guide successful project execution from concept to implementation stage.
+        </li>
+        <li>
+          <strong>Food Related Business</strong>
+          Support in setting up food businesses, including compliance, licensing, sourcing, and operational planning.
+        </li>
+        <li>
+          <strong>Hotel &amp; Restaurant Business</strong>
+          End-to-end planning for hotels and restaurants, covering legal requirements, design, staffing, and operational strategy.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- PAGE 3 -->
+  <section class="page">
+    <div class="watermark"></div>
+    <div class="page-content">
+      <h2 class="section-title terms-title">Terms &amp; Conditions and Delivery Timeline</h2>
+
+      <ol class="terms-list">
+        <li>The application process will be completed within <strong>7–10 working days</strong>, starting <strong>post 100% procurement of required documents and information</strong> from the client.</li>
+        <li><strong>Turnaround time (TAT)</strong> will begin only after all necessary documents are received.</li>
+        <li>Acknowledgment and/or compliance report will be shared with the client upon completion.</li>
+        <li>The execution of work requires <strong>close cooperation from both parties</strong> for timely and accurate delivery.</li>
+        <li><strong>Additional documents</strong> may be requested in line with the latest departmental requirements.</li>
+        <li>The client agrees to <strong>promptly provide all necessary documents and information</strong> to facilitate processing.</li>
+        <li>We shall not be held responsible for any <strong>delays arising due to incorrect/incomplete documentation</strong> or due to <strong>updates/changes in departmental guidelines.</strong></li>
+        <li>The <strong>professional fee includes consultation, documentation, and filing services</strong> only.</li>
+        <li><strong>Payment Terms:</strong> 50% advance is required to initiate the work; the remaining 50% is to be paid <strong>prior to sharing the acknowledgment.</strong></li>
+        <li><strong>GST</strong> will be applied additionally, as per the applicable rates.</li>
+        <li><strong>Government fees</strong> are to be paid by the client, either directly to the concerned department or via <strong>Corpseed’s account.</strong></li>
+        <li>This quotation is <strong>valid for 15 days</strong> from the date of issue.</li>
+      </ol>
+
+      <h2 class="section-title contact-title">Contact Information:</h2>
+
+      <p class="contact-text">For any complaint or need assistance, please contact us at: - Email: &nbsp; <strong><span class="underline">escalation@corpseed.com</span></strong>, Address: 2nd Floor,<br />A-154A, A Block, Sector 63, Noida, Uttar Pradesh 201301</p>
+
+      <p class="contact-text">We value your business and aim to address any concerns you may have promptly and fairly.</p>
+
+      <h2 class="section-title payment-title">Payment Mode</h2>
+
+      <p>Payment should be made through IMPS / NEFT / RTGS</p>
+
+
+    </div>
+  </section>
+</body>
+</html>
