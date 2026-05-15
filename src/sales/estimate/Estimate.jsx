@@ -1052,6 +1052,8 @@ const Estimate = () => {
         estimateItem={estimateItem}
         estimateId={activeEstimateId}
         paymentTypes={paymentTypes}
+        filteration={filteration}
+        filters={filters}
         onSubmitPayment={(payload) => dispatch(createPaymentRegister(payload))}
       />
 

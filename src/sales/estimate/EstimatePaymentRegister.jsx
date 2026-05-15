@@ -23,6 +23,20 @@ import NewSelect from "../../components/NewSelect";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 import BaseAmountCalculator from "../../components/BaseAmountCalculator";
+import {
+  getAllEstimateByUserId,
+  getTotalCountOfEstimate,
+} from "../../toolkit/slices/leadSlice";
+
+const paymentTenureOptions = [
+  { label: "NET 0", value: "NET 0", days: 0 },
+  { label: "NET 7", value: "NET 7", days: 7 },
+  { label: "NET 15", value: "NET 15", days: 15 },
+  { label: "NET 30", value: "NET 30", days: 30 },
+  { label: "NET 45", value: "NET 45", days: 45 },
+  { label: "NET 60", value: "NET 60", days: 60 },
+  { label: "NET 90", value: "NET 90", days: 90 },
+];
 
 const preventNegativeNumberInput = (e) => {
   if (["-", "+", "e", "E"].includes(e.key)) {
@@ -51,6 +65,10 @@ const paymentRegisterSchema = z
       (v) => v > 0,
       "Payment type is required",
     ),
+
+    paymentTerms: z.string().optional(),
+    paymentTermsDays: z.union([z.number(), z.string()]).optional(),
+
     eprFinancialYear: z.string().optional(),
     eprPortalRegistrationNumber: z.string().optional(),
     eprCertificateOrInvoiceNumber: z.string().optional(),
@@ -67,7 +85,6 @@ const paymentRegisterSchema = z
     governmentFee: z
       .object({
         totalAmount: z.union([z.number(), z.string()]).optional(),
-        // receivedAmount: z.union([z.number(), z.string()]).optional(),
         paymentDate: z.string().optional(),
         feeReferenceNumber: z.string().optional(),
         departmentName: z.string().optional(),
@@ -120,19 +137,19 @@ const paymentRegisterSchema = z
           message: "Department name is required",
         });
       }
+    }
 
-      if (data.tdsActive) {
-        if (
-          data.tds?.tdsPercentage === undefined ||
-          data.tds?.tdsPercentage === null ||
-          data.tds?.tdsPercentage === ""
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["tds", "tdsPercentage"],
-            message: "TDS percentage is required",
-          });
-        }
+    if (data.tdsActive) {
+      if (
+        data.tds?.tdsPercentage === undefined ||
+        data.tds?.tdsPercentage === null ||
+        data.tds?.tdsPercentage === ""
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["tds", "tdsPercentage"],
+          message: "TDS percentage is required",
+        });
       }
     }
   });
@@ -145,6 +162,8 @@ const EstimatePaymentRegister = ({
   onSubmitPayment,
   paymentTypes = [],
   estimateItem,
+  filters,
+  filteration,
 }) => {
   const { userId } = useParams();
   const dispatch = useDispatch();
@@ -170,6 +189,8 @@ const EstimatePaymentRegister = ({
       transactionReference: "",
       remarks: "",
       paymentTypeId: "",
+      paymentTerms: "",
+      paymentTermsDays: "",
       eprFinancialYear: "",
       tdsActive: false,
       tds: {
@@ -203,12 +224,28 @@ const EstimatePaymentRegister = ({
     selectedPaymentTypeName === "Full Payment" ||
     selectedPaymentTypeName === "Purchase Order Payment";
 
+  const shouldShowPaymentTenure =
+    selectedPaymentTypeName === "Purchase Order Payment";
+
   useEffect(() => {
     if (
       estimateItem?.paymentTypeId !== undefined &&
       estimateItem?.paymentTypeId !== null
     ) {
       setValue("paymentTypeId", String(estimateItem.paymentTypeId));
+    }
+
+    if (estimateItem?.paymentTerms) {
+      setValue("paymentTerms", estimateItem.paymentTerms);
+
+      const selectedTenure = paymentTenureOptions.find(
+        (item) => item.value === estimateItem.paymentTerms,
+      );
+
+      setValue(
+        "paymentTermsDays",
+        estimateItem?.paymentTermsDays ?? selectedTenure?.days ?? "",
+      );
     }
 
     if (
@@ -254,16 +291,39 @@ const EstimatePaymentRegister = ({
     if (!tdsActive) {
       setValue("tds.tdsPercentage", "");
     }
-  }, [shouldShowTds, tdsActive, setValue]);
+
+    if (!shouldShowPaymentTenure) {
+      setValue("paymentTerms", "");
+      setValue("paymentTermsDays", "");
+    }
+  }, [shouldShowTds, shouldShowPaymentTenure, tdsActive, setValue]);
 
   const submitHandler = async (values) => {
     try {
+      if (shouldShowPaymentTenure && !values.paymentTerms) {
+        addToast({
+          title: "Payment tenure is required for Purchase Order Payment",
+          color: "danger",
+        });
+        return;
+      }
+
+      const selectedTenure = paymentTenureOptions.find(
+        (item) => item.value === values.paymentTerms,
+      );
+
       const payload = {
         ...values,
         estimateId: Number(estimateId),
         amount: Number(values.amount),
         paymentTypeId: Number(values.paymentTypeId),
         paymentDate: values.paymentDate,
+
+        paymentTerms: shouldShowPaymentTenure ? values.paymentTerms : null,
+        paymentTermsDays: shouldShowPaymentTenure
+          ? Number(selectedTenure?.days ?? values.paymentTermsDays ?? 0)
+          : null,
+
         tdsActive: Boolean(values.tdsActive),
         tds: values.tdsActive
           ? {
@@ -293,6 +353,31 @@ const EstimatePaymentRegister = ({
           title: "Payment registered successfully!",
           color: "success",
         });
+        dispatch(
+          getAllEstimateByUserId({
+            userId,
+            page: filteration.page,
+            size: filteration.size,
+            data: {
+              search: filters.search || "",
+              status: filters.status || "",
+              fromDate: filters.fromDate || "",
+              toDate: filters.toDate || "",
+            },
+          }),
+        );
+
+        dispatch(
+          getTotalCountOfEstimate({
+            userId,
+            data: {
+              search: filters.search || "",
+              status: filters.status || "",
+              fromDate: filters.fromDate || "",
+              toDate: filters.toDate || "",
+            },
+          }),
+        );
         onClose?.();
       } else {
         addToast({
@@ -324,7 +409,14 @@ const EstimatePaymentRegister = ({
             <ModalBody className="max-h-[60vh] overflow-auto">
               <form
                 id="payment-register-form"
-                onSubmit={handleSubmit(submitHandler)}
+                onSubmit={handleSubmit(submitHandler, (formErrors) => {
+                  console.log("Form validation errors:", formErrors);
+
+                  addToast({
+                    title: "Please check required fields",
+                    color: "danger",
+                  });
+                })}
                 className="space-y-4"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -430,6 +522,41 @@ const EstimatePaymentRegister = ({
                       />
                     )}
                   />
+
+                  {shouldShowPaymentTenure && (
+                    <Controller
+                      name="paymentTerms"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          label="Payment Tenure"
+                          placeholder="Select payment tenure"
+                          isRequired
+                          selectedKeys={
+                            field.value ? new Set([field.value]) : new Set([])
+                          }
+                          onSelectionChange={(keys) => {
+                            const selectedValue = Array.from(keys)?.[0] || "";
+                            const selectedTenure = paymentTenureOptions.find(
+                              (item) => item.value === selectedValue,
+                            );
+
+                            field.onChange(selectedValue);
+                            setValue(
+                              "paymentTermsDays",
+                              selectedTenure?.days ?? "",
+                            );
+                          }}
+                        >
+                          {paymentTenureOptions.map((item) => (
+                            <SelectItem key={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                  )}
 
                   <Controller
                     name="transactionReference"

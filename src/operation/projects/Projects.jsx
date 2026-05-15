@@ -510,14 +510,14 @@ const Projects = () => {
           />
         </div>
         <div className="flex gap-2 items-center">
-          <Button
+          {/* <Button
             endContent={<Plus />}
             onPress={formModal.onOpen}
             color="primary"
             radius="sm"
           >
             Add
-          </Button>
+          </Button> */}
           <Dropdown>
             <DropdownTrigger className="hidden sm:flex">
               <Button
