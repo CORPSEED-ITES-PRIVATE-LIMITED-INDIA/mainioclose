@@ -30,6 +30,7 @@ import SalesReport from "../accounts/organization/SalesReport";
 import CompanyUnitsInAccount from "../accounts/CompanyUnitsInAccount";
 import Expense from "../accounts/Expense";
 import Taxation from "../accounts/organization/Taxation";
+import CreditNote from "../accounts/CreditNote";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -40,6 +41,7 @@ export const AccountsModuleRouting = () => {
         path="accounts/companyApprovals/:companyId/units"
         element={<CompanyUnitsInAccount />}
       />
+      <Route path="accounts/creditNote" element={<CreditNote />} />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
       <Route path="accounts/orgEstimate" element={<OrganizationEstimate />} />

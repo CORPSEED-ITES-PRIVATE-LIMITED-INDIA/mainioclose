@@ -127,6 +127,11 @@ export const navItems = [
       //   key: "accounts/vendorsPayment",
       //   icon: "",
       // },
+      {
+        title: "Credit Note",
+        url: "accounts/creditNote",
+        key: "creditnote",
+      },
     ],
   },
   {
