@@ -90,45 +90,46 @@
       page-break-after: auto;
     }
 
-    .header {
-      display: table;
-      width: 100%;
-      margin-bottom: 48px;
-    }
+.header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: start;
+  width: 100%;
+  margin-bottom: 48px;
+  column-gap: 12px;
+}
 
-    .header-left,
-    .header-center,
-    .header-right {
-      display: table-cell;
-      vertical-align: top;
-    }
+.header-left,
+.header-center,
+.header-right {
+  width: auto;
+  display: block;
+  vertical-align: unset;
+}
 
-    .header-left {
-      width: 18%;
-      text-align: left;
-      padding-left: 6px;
-    }
+.header-left {
+  text-align: left;
+  padding-left: 6px;
+}
 
-    .header-center {
-      width: 32%;
-      text-align: center;
-      padding-top: 22px;
-    }
+.header-center {
+  text-align: center;
+  padding-top: 22px;
+}
 
-    .header-right {
-      width: 50%;
-      text-align: center;
-      color: #2b56a3;
-      font-weight: 700;
-      padding-top: 7px;
-    }
+.header-right {
+  text-align: right;
+  color: #2b56a3;
+  font-weight: 700;
+  padding-top: 7px;
+}
 
-    .logo-img {
-      width: 96px;
-      height: auto;
-      display: block;
-      object-fit: contain;
-    }
+.logo-img {
+  width: 96px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
 
     .proposal-title {
       color: #2b56a3;
@@ -347,10 +348,10 @@
         </div>
 
         <div class="header-right">
-          <div class="tagline" style="text-align: end;">We Simplify Business Compliance</div>
-          <div class="services-line" style="text-align: end;">Environment | Regulatory | Factory |</div>
-          <div class="services-line" style="text-align: end;"> Turnkey Setup | Product Quality |  </div>
-          <div class="services-line" style="text-align: end;">Statutory|  Financial | Import/Export</div>
+          <div class="tagline">We Simplify Business Compliance</div>
+<div class="services-line">Environment | Regulatory | Factory |</div>
+<div class="services-line">Turnkey Setup | Product Quality |</div>
+<div class="services-line">Statutory | Financial | Import/Export</div>
         </div>
       </div>
 
