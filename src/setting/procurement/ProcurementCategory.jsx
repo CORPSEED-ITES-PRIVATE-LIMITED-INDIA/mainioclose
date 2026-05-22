@@ -65,13 +65,13 @@ const ProcurementCategory = () => {
   const { userId } = useParams();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector(
-    (state) => state.vendors.vendorsCategoryList?.length
+    (state) => state.vendors.vendorsCategoryList?.length,
   );
   const data = useSelector((state) => state.vendors.vendorsCategoryList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -101,7 +101,7 @@ const ProcurementCategory = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -111,7 +111,7 @@ const ProcurementCategory = () => {
       filteredData = filteredData.filter((item) =>
         item?.contactPersonName
           ?.toLowerCase()
-          .includes(filterValue.toLowerCase())
+          .includes(filterValue.toLowerCase()),
       );
     }
     return filteredData;
@@ -248,7 +248,7 @@ const ProcurementCategory = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(createVendorsCategory(values))
@@ -386,7 +386,7 @@ const ProcurementCategory = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

@@ -20,8 +20,10 @@ import { ChevronDown, EllipsisVertical, Phone, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { allUserListForManagerApproval, approvedAndDisapprovedUserByManager } from "../toolkit/slices/commonSlice";
-
+import {
+  allUserListForManagerApproval,
+  approvedAndDisapprovedUserByManager,
+} from "../toolkit/slices/commonSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -62,13 +64,13 @@ const UserManagerApproval = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.common.userManagerApprovalList?.length || 0
+    (state) => state.common.userManagerApprovalList?.length || 0,
   );
   const data = useSelector((state) => state.common.userManagerApprovalList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -88,7 +90,7 @@ const UserManagerApproval = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -96,7 +98,7 @@ const UserManagerApproval = () => {
     let filteredUsers = [...data];
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item?.fullName?.toLowerCase().includes(filterValue.toLowerCase())
+        item?.fullName?.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     return filteredUsers;
@@ -121,7 +123,11 @@ const UserManagerApproval = () => {
 
   const handleActionStatus = (status, currentUserId) => {
     dispatch(
-      approvedAndDisapprovedUserByManager({ userId:currentUserId, currentUserId:userId, status })
+      approvedAndDisapprovedUserByManager({
+        userId: currentUserId,
+        currentUserId: userId,
+        status,
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -135,7 +141,7 @@ const UserManagerApproval = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong!.", color: "danger" })
+        addToast({ title: "Something went wrong!.", color: "danger" }),
       );
   };
 
@@ -464,7 +470,7 @@ const UserManagerApproval = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] max-w-full",
+          wrapper: "max-h-[60vh] max-w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

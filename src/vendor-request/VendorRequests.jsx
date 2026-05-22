@@ -98,19 +98,19 @@ const VendorRequests = () => {
   const data =
     useSelector((state) => state.vendors.allVendorsRequestList) || [];
   const vendorsExportData = useSelector(
-    (state) => state.vendors.vendorsExportData
+    (state) => state.vendors.vendorsExportData,
   );
   const vendorStatus = useSelector((state) => state.vendors.vendorsStatus);
   const loading = useSelector((state) => state.vendors.loading);
   const procurementUsers = useSelector(
-    (state) => state.common.procurementAssigneeList
+    (state) => state.common.procurementAssigneeList,
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -141,7 +141,7 @@ const VendorRequests = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -203,7 +203,7 @@ const VendorRequests = () => {
         data: [rowItem?.id],
         updatedById: userId,
         assigneeToId: assigneeId,
-      })
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -347,7 +347,7 @@ const VendorRequests = () => {
                               <span className="text-xs text-foreground-400">
                                 Updated on :{" "}
                                 {dayjs(item?.updateDate).format(
-                                  "DD-MM-YYYY , hh:mm a"
+                                  "DD-MM-YYYY , hh:mm a",
                                 ) || "-"}
                               </span>
                               <span className="text-xs text-foreground-400">
@@ -393,7 +393,7 @@ const VendorRequests = () => {
           return rowData[columnKey] || "-";
       }
     },
-    [adminRole]
+    [adminRole],
   );
 
   const onNextPage = useCallback(() => {
@@ -699,7 +699,7 @@ const VendorRequests = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh] w-full",
+          wrapper: "max-h-[65vh] w-full",
           table: "w-full overflow-scroll",
         }}
         selectedKeys={selectedKeys}
@@ -746,7 +746,7 @@ const VendorRequests = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     let data = Object.fromEntries(
-                      new FormData(e.currentTarget)
+                      new FormData(e.currentTarget),
                     );
                     handleChangeAssignee(data);
                   }}

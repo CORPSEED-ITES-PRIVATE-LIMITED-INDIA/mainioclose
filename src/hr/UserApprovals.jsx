@@ -65,13 +65,13 @@ const UserApprovals = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.common.approvalUserList?.length || 0
+    (state) => state.common.approvalUserList?.length || 0,
   );
   const data = useSelector((state) => state.common.approvalUserList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -91,7 +91,7 @@ const UserApprovals = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -100,8 +100,8 @@ const UserApprovals = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -125,9 +125,7 @@ const UserApprovals = () => {
   }, [sortDescriptor, items]);
 
   const handleActionStatus = (currentUserId) => {
-    dispatch(
-      approvedUserByHr({ userId:currentUserId, currentUserId:userId })
-    )
+    dispatch(approvedUserByHr({ userId: currentUserId, currentUserId: userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
@@ -140,7 +138,7 @@ const UserApprovals = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong!.", color: "danger" })
+        addToast({ title: "Something went wrong!.", color: "danger" }),
       );
   };
 
@@ -298,9 +296,7 @@ const UserApprovals = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              <DropdownItem
-                onPress={() => handleActionStatus(rowData?.id)}
-              >
+              <DropdownItem onPress={() => handleActionStatus(rowData?.id)}>
                 Approved
               </DropdownItem>
               {/* <DropdownItem
@@ -469,8 +465,8 @@ const UserApprovals = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

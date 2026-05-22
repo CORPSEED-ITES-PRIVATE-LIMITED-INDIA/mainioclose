@@ -428,7 +428,7 @@ const TemplatesAndEmailBody = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[68vh]",
+          wrapper: "max-h-[65vh]",
         }}
         // selectedKeys={selectedKeys}
         selectionMode="multiple"

@@ -19,6 +19,7 @@ const Login = () => {
       setLoading("pending");
       dispatch(getCurrentUser(values))
         .then((resp) => {
+          console.log("resp 11111", resp);
           if (resp.meta.requestStatus === "fulfilled") {
             if (resp?.payload?.id !== undefined) {
               // localStorage.setItem("userDetail", JSON.stringify(resp?.payload));
@@ -29,13 +30,13 @@ const Login = () => {
               setLoading("fulfilled");
               dispatch(getDepartmentOfUser(resp?.payload?.id)).then(
                 (response) => {
+                  console.log("resp 11111", response);
                   dispatch(
                     toggleAutoOnFeature({
                       userId: resp?.payload?.id,
                       flag: true,
                     }),
                   );
-                  console.log("dsjkhgkjsgkjdghj", response);
                   if (resp?.payload?.roles?.includes("ADMIN")) {
                     console.log("dsjkhgkjsgkjdghj 1111", response);
                     navigate(`/erp/${resp?.payload?.id}/dashboard`);
@@ -70,14 +71,15 @@ const Login = () => {
                       response.payload?.department === "Operations"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
-                      navigate(`/erp/${resp?.payload?.id}/"operation/projects`);
+                      navigate(`/erp/${resp?.payload?.id}/operation/projects`);
                       return;
                     }
                   }
                 },
               );
               addToast({
-                title: "User logged in successfully !.",
+                title: "SUCCESS",
+                description: "User logged in successfully !.",
                 color: "success",
               });
             } else {
@@ -91,7 +93,10 @@ const Login = () => {
             navigate(`/login`);
             setLoading("rejected");
             addToast({
-              title: "Something went wrong !.",
+              title:
+                `${resp?.payload?.error} ${resp?.payload?.status || ""}` ||
+                "Login failed !.",
+              description: resp?.payload?.message,
               color: "danger",
             });
           }

@@ -78,7 +78,7 @@ const Services = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "id",
@@ -109,7 +109,7 @@ const Services = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -118,8 +118,8 @@ const Services = () => {
     if (hasSearchFilter) {
       filteredData = filteredData?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredData;
@@ -154,7 +154,7 @@ const Services = () => {
         });
       }
     },
-    [selectedKeys, onOpen]
+    [selectedKeys, onOpen],
   );
 
   const onSubmit = (data) => {
@@ -162,7 +162,7 @@ const Services = () => {
       addMultiuserForRating({
         ...data,
         urlsManagmentId: Array.from(selectedKeys),
-      })
+      }),
     )
       .then((response) => {
         if (response.meta.requestStatus === "fulfilled") {
@@ -177,7 +177,7 @@ const Services = () => {
               rating: data?.rating,
               createdBy: userId,
               updatedBy: userId,
-            })
+            }),
           )
             .then((resp) => {
               if (resp.meta.requestStatus === "fulfilled") {
@@ -202,7 +202,7 @@ const Services = () => {
                 title:
                   "Either user is already present or empty in Operations !.",
                 color: "danger",
-              })
+              }),
             );
         } else {
           addToast({
@@ -404,8 +404,8 @@ const Services = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

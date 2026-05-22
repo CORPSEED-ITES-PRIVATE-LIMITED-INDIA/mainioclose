@@ -1,0 +1,306 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Notification Service WebSocket Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+
+      button {
+        padding: 10px 16px;
+        margin: 5px;
+        cursor: pointer;
+      }
+
+      input {
+        padding: 8px;
+        margin: 5px;
+      }
+
+      .notification {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 8px;
+        border-radius: 6px;
+      }
+
+      .unread {
+        font-weight: bold;
+        background: #f5f5f5;
+      }
+
+      #status {
+        padding: 10px;
+        background: #f3f3f3;
+        border: 1px solid #ddd;
+        margin-top: 10px;
+      }
+
+      #error {
+        color: red;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Notification Service WebSocket Test</h2>
+
+    <label>User ID:</label>
+    <input id="userId" value="10" />
+
+    <button onclick="connectSocket()">Connect WebSocket</button>
+    <button onclick="sendNotification()">Create Test Notification</button>
+    <button onclick="loadNotifications()">Load Old Notifications</button>
+    <button onclick="loadUnreadCount()">Load Unread Count</button>
+
+    <h3>Connection Status:</h3>
+    <div id="status">Not connected</div>
+
+    <h3>Error:</h3>
+    <div id="error"></div>
+
+    <h3>Unread Count:</h3>
+    <div id="unreadCount">0</div>
+
+    <h3>Live Notifications:</h3>
+    <div id="liveNotifications"></div>
+
+    <h3>Old Notifications:</h3>
+    <div id="oldNotifications"></div>
+
+    <script src="https://unpkg.com/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+
+    <script>
+      let stompClient = null;
+
+      const NOTIFICATION_SERVICE_URL = "http://localhost:9010";
+      const NOTIFICATION_SOCKET_URL = "ws://localhost:9010/ws-native";
+
+      function setStatus(message) {
+        document.getElementById("status").innerText = message;
+        console.log(message);
+      }
+
+      function setError(error) {
+        document.getElementById("error").innerText = error;
+        console.error(error);
+      }
+
+      function clearError() {
+        document.getElementById("error").innerText = "";
+      }
+
+      function connectSocket() {
+        try {
+          clearError();
+
+          const userId = document.getElementById("userId").value;
+
+          if (!userId) {
+            setError("User ID is required");
+            return;
+          }
+
+          if (typeof StompJs === "undefined") {
+            setError(
+              "STOMP library not loaded. CDN is blocked or internet is unavailable.",
+            );
+            return;
+          }
+
+          setStatus("Connecting...");
+
+          stompClient = new StompJs.Client({
+            brokerURL: NOTIFICATION_SOCKET_URL,
+            reconnectDelay: 5000,
+
+            onConnect: function () {
+              setStatus(`Connected and subscribed for user ${userId}`);
+
+              stompClient.subscribe(
+                `/topic/notifications/${userId}`,
+                function (message) {
+                  const notification = JSON.parse(message.body);
+                  console.log("Live notification received:", notification);
+                  addNotificationToLiveList(notification);
+                },
+              );
+
+              stompClient.subscribe(
+                `/topic/notifications/${userId}/unread-count`,
+                function (message) {
+                  const countResponse = JSON.parse(message.body);
+                  console.log("Unread count received:", countResponse);
+                  document.getElementById("unreadCount").innerText =
+                    countResponse.unreadCount;
+                },
+              );
+            },
+
+            onStompError: function (frame) {
+              setStatus("STOMP error");
+              setError(frame.headers["message"] || "STOMP error");
+              console.error(frame);
+            },
+
+            onWebSocketError: function (error) {
+              setStatus("WebSocket error");
+              setError(
+                "WebSocket error. Check if notification-service is running on port 9010.",
+              );
+              console.error(error);
+            },
+
+            onWebSocketClose: function () {
+              setStatus("WebSocket closed");
+            },
+          });
+
+          stompClient.activate();
+        } catch (e) {
+          setStatus("Connection failed");
+          setError(e.stack || e.message);
+        }
+      }
+
+      async function sendNotification() {
+        try {
+          clearError();
+
+          const userId = document.getElementById("userId").value;
+
+          const requestBody = {
+            receiverId: Number(userId),
+            actorId: 2,
+            actorName: "Rahul",
+            module: "LEAD",
+            eventType: "LEAD_ASSIGNED",
+            referenceId: 55,
+            referenceNumber: "LEAD-55",
+            title: "Lead Assigned To You",
+            message: "Rahul assigned GST Registration lead to you.",
+            redirectUrl: "/leads/55",
+            priority: "HIGH",
+            displayType: "SUCCESS",
+            metadataJson:
+              '{"leadName":"GST Registration","clientName":"ABC Pvt Ltd"}',
+          };
+
+          const response = await fetch(
+            `${NOTIFICATION_SERVICE_URL}/api/notifications`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            },
+          );
+
+          const data = await response.json();
+          console.log("Create notification response:", data);
+
+          if (!response.ok) {
+            setError(JSON.stringify(data));
+          }
+        } catch (e) {
+          setError(e.stack || e.message);
+        }
+      }
+
+      async function loadNotifications() {
+        try {
+          clearError();
+
+          const userId = document.getElementById("userId").value;
+
+          const response = await fetch(
+            `${NOTIFICATION_SERVICE_URL}/api/notifications?userId=${userId}&page=0&size=20`,
+          );
+
+          const data = await response.json();
+          console.log("Old notifications:", data);
+
+          const container = document.getElementById("oldNotifications");
+          container.innerHTML = "";
+
+          if (data.content) {
+            data.content.forEach((notification) => {
+              const div = createNotificationDiv(notification);
+              container.appendChild(div);
+            });
+          }
+        } catch (e) {
+          setError(e.stack || e.message);
+        }
+      }
+
+      async function loadUnreadCount() {
+        try {
+          clearError();
+
+          const userId = document.getElementById("userId").value;
+
+          const response = await fetch(
+            `${NOTIFICATION_SERVICE_URL}/api/notifications/unread-count?userId=${userId}`,
+          );
+
+          const data = await response.json();
+          console.log("Unread count:", data);
+
+          document.getElementById("unreadCount").innerText = data.unreadCount;
+        } catch (e) {
+          setError(e.stack || e.message);
+        }
+      }
+
+      function addNotificationToLiveList(notification) {
+        const container = document.getElementById("liveNotifications");
+        const div = createNotificationDiv(notification);
+        container.prepend(div);
+      }
+
+      function createNotificationDiv(notification) {
+        const div = document.createElement("div");
+        div.className = notification.read
+          ? "notification"
+          : "notification unread";
+
+        div.innerHTML = `
+            <div><strong>${notification.title}</strong></div>
+            <div>${notification.message}</div>
+            <div>Module: ${notification.module}</div>
+            <div>Event: ${notification.eventType}</div>
+            <div>Created At: ${notification.createdAt}</div>
+            <button onclick="markAsRead(${notification.id})">Mark As Read</button>
+        `;
+
+        return div;
+      }
+
+      async function markAsRead(notificationId) {
+        try {
+          clearError();
+
+          const userId = document.getElementById("userId").value;
+
+          const response = await fetch(
+            `${NOTIFICATION_SERVICE_URL}/api/notifications/${notificationId}/read?userId=${userId}`,
+            {
+              method: "PUT",
+            },
+          );
+
+          const data = await response.json();
+          console.log("Marked as read:", data);
+
+          loadNotifications();
+        } catch (e) {
+          setError(e.stack || e.message);
+        }
+      }
+    </script>
+  </body>
+</html>

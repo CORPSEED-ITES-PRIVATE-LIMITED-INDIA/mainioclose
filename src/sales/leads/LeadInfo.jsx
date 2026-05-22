@@ -277,7 +277,9 @@ const LeadInfo = () => {
     setAssigneeLoading("pending");
     dispatch(changeLeadAssigneeLeads({ assigneeId, leadId, userId }))
       .then((resp) => {
+        console.log("resp in changeLeadAssigneeLeads", resp);
         if (resp.meta.requestStatus === "fulfilled") {
+          console.log("resp in changeLeadAssigneeLeads 1111", resp);
           addToast({
             title: "Assignee updated successfully !.",
             color: "success",
@@ -286,6 +288,7 @@ const LeadInfo = () => {
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           setToggleAssignee(true);
         } else {
+          console.log("resp in changeLeadAssigneeLeads 2222", resp);
           setAssigneeLoading("rejected");
           addToast({
             title: "Something went wrong !.",
@@ -294,6 +297,7 @@ const LeadInfo = () => {
         }
       })
       .catch(() => {
+        console.log("resp in changeLeadAssigneeLeads 33333", resp);
         setAssigneeLoading("rejected");
         addToast({
           title: "Something went wrong !.",
