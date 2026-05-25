@@ -346,11 +346,17 @@ export const navItems = [
         key: "procurementCategory",
       },
       {
-        title: "Proposal & Template",
+        title: "Proposal menu",
         icon: "",
-        url: "settings/proposalTemplate",
-        key: "proposalTemplate",
+        url: "settings/menu",
+        key: "menu",
       },
+      // {
+      //   title: "Proposal & Template",
+      //   icon: "",
+      //   url: "settings/proposalTemplate",
+      //   key: "proposalTemplate",
+      // },
       {
         title: "CKEditor Key",
         icon: "",
