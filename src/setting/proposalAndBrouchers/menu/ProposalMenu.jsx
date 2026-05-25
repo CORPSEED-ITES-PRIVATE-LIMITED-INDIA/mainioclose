@@ -1,7 +1,7 @@
 import React from "react";
 
 const ProposalMenu = () => {
-  return <div></div>;
+  return <div>THis is menu</div>;
 };
 
 export default ProposalMenu;
