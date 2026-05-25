@@ -701,6 +701,77 @@ export const getAllPaymentTermList = createAsyncThunk(
   },
 );
 
+export const getAllMenus = createAsyncThunk(
+  "getAllMenus",
+  async () => {
+    const response = await api.get(`/leadService/api/menus`);
+    console.log("API DATA:",response)
+    return response.data;
+  },
+);
+export const createMenu = createAsyncThunk(
+  "createMenu",
+  async (payload,{rejectWithValue}) => {
+    try {
+      const response = await api.post("/leadService/api/menus", payload);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to create menu",
+      );
+    }
+  },
+);
+export const updateMenu = createAsyncThunk(
+  "updateMenu",
+  async ({id,payload},{rejectWithValue}) => {
+    try {
+      const response = await api.put(`/leadService/api/menus/${id}`, payload);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to create menu",
+      );
+    }
+  },
+);
+
+export const createMenuCategory = createAsyncThunk(
+  "createMenuCategory",
+  async ({ menuId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/menus/${menuId}/categories`,
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to create category",
+      );
+    }
+  },
+);
+
+export const createMenuSubCategory = createAsyncThunk(
+  "createMenuSubCategory",
+  async ({ categoryId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/menus/categories/${categoryId}/subcategories`,
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to create sub category",
+      );
+    }
+  },
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -730,6 +801,7 @@ export const SettingSlice = createSlice({
     allSolutionList: [],
     ckEditorTokenData: {},
     paymentTermList: [],
+    menuList:[],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1067,6 +1139,26 @@ export const SettingSlice = createSlice({
     builder.addCase(getAllPaymentTermList.rejected, (state) => {
       state.loading = "rejected";
       state.paymentTermList = [];
+    });
+    builder.addCase(getAllMenus.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllMenus.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.menuList = action.payload;
+    });
+    builder.addCase(getAllMenus.rejected, (state) => {
+      state.loading = "rejected";
+      state.menuList = [];
+    });
+    builder.addCase(createMenu.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(createMenu.fulfilled, (state, action) => {
+      state.loading = "success";
+    });
+    builder.addCase(createMenu.rejected, (state) => {
+      state.loading = "rejected";
     });
   },
 });
