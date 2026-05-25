@@ -21,6 +21,9 @@ import SolutionPrice from "../setting/products/SolutionPrice";
 import ProductDocument from "../setting/products/ProductDocument";
 import ProductMilestones from "../setting/products/ProductMilestones";
 import CkEditorToken from "../setting/ckEditorToken/CkEditorToken";
+import ProposalMenu from "../setting/proposalAndBrouchers/menu/ProposalMenu";
+import ProposalCategory from "../setting/proposalAndBrouchers/category/ProposalCategory";
+import ProposalSubCategory from "../setting/proposalAndBrouchers/subCategory/ProposalSubCategory";
 
 const ERPSettingRouting = () => {
   return (
@@ -71,6 +74,16 @@ const ERPSettingRouting = () => {
         path="settings/proposalTemplate"
         element={<TemplatesAndEmailBody />}
       />
+      <Route path="settings/menu" element={<ProposalMenu />} />
+      <Route
+        path="settings/menu/:menuId/category"
+        element={<ProposalCategory />}
+      />
+      <Route
+        path="settings/menu/:menuId/category/:categoryId/subcategory"
+        element={<ProposalSubCategory />}
+      />
+
       <Route path="settings/ckEditorTokens" element={<CkEditorToken />} />
     </>
   );
