@@ -1,10 +1,17 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
 
-export const getCurrentUser = createAsyncThunk("currentUser", async (data) => {
-  const userData = await api.post(`/securityService/api/auth/signin`, data);
-  return userData?.data;
-});
+export const getCurrentUser = createAsyncThunk(
+  "currentUser",
+  async (data, { rejectWithValue }) => {
+    try {
+      const userData = await api.post(`/securityService/api/auth/signin`, data);
+      return userData?.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  },
+);
 
 export const changePasswordAuthentication = createAsyncThunk(
   "changePassAuth",

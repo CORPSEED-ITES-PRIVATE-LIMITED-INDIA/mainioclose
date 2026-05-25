@@ -27,6 +27,7 @@ import {
   handleToggleAutomation,
 } from "../toolkit/slices/authSlice";
 import BackButton from "../components/BackButton";
+import NotificationBell from "../components/NotificationBell";
 
 const getNavItemsByDepartment = (department, admin) => {
   if (admin) return navItems;
@@ -132,6 +133,7 @@ const Layoutpage = () => {
                 />
               )} */}
 
+              <NotificationBell userId={userId} />
               <ThemeSwitch />
             </div>
           </header>

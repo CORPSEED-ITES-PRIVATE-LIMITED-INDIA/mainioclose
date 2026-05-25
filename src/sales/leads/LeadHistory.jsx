@@ -48,7 +48,7 @@ const LeadHistory = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -66,7 +66,7 @@ const LeadHistory = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -76,8 +76,8 @@ const LeadHistory = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -254,14 +254,14 @@ const LeadHistory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Lead history list</h1>
+      <h1 className="font-sans text-2xl font-medium m-0">Lead history list</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[55vh] md:max-h-[50vh] w-full",
+          wrapper: "2xl:max-h-[48vh] md:max-h-[43vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}

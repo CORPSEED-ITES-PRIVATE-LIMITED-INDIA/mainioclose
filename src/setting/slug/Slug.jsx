@@ -91,7 +91,7 @@ const Slug = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
@@ -133,7 +133,7 @@ const Slug = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -167,7 +167,7 @@ const Slug = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(createSlug(values))
@@ -185,7 +185,7 @@ const Slug = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -208,7 +208,7 @@ const Slug = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -428,7 +428,7 @@ const Slug = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

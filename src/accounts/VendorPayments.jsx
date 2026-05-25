@@ -102,16 +102,16 @@ const VendorPayments = () => {
   const dispatch = useDispatch();
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const data = useSelector(
-    (state) => state.account.vendorsPaymentListForAccount
+    (state) => state.account.vendorsPaymentListForAccount,
   );
   const count = useSelector(
-    (state) => state.account.vendorsPaymentCountForAccount
+    (state) => state.account.vendorsPaymentCountForAccount,
   );
   const urlList = useSelector((state) => state.common.urlList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -125,7 +125,7 @@ const VendorPayments = () => {
 
   useEffect(() => {
     dispatch(
-      getAllVendorsPaymentListForAccounts({ page, size: rowsPerPage, status })
+      getAllVendorsPaymentListForAccounts({ page, size: rowsPerPage, status }),
     );
     dispatch(getAllVendorsPaymentCountForAccounts(status));
   }, [dispatch, page, rowsPerPage, status]);
@@ -151,7 +151,7 @@ const VendorPayments = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -160,8 +160,8 @@ const VendorPayments = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -237,7 +237,7 @@ const VendorPayments = () => {
               page,
               size: rowsPerPage,
               status,
-            })
+            }),
           );
           dispatch(getAllVendorsPaymentCountForAccounts(status));
         } else {
@@ -245,7 +245,7 @@ const VendorPayments = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -527,7 +527,7 @@ const VendorPayments = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
           table: "w-full",
         }}
         sortDescriptor={sortDescriptor}

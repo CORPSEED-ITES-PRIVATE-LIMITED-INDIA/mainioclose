@@ -80,7 +80,7 @@ const Users = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortDescriptor, setSortDescriptor] = useState({
@@ -109,7 +109,7 @@ const Users = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -118,8 +118,8 @@ const Users = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -158,7 +158,7 @@ const Users = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -179,7 +179,7 @@ const Users = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -443,7 +443,7 @@ const Users = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

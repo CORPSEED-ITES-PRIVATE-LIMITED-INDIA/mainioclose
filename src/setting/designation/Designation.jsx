@@ -361,7 +361,7 @@ const Designation = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
