@@ -33,7 +33,10 @@ import {
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { inrCurrency } from "../common";
-import { getInvoiceDetailById } from "../toolkit/slices/accountSlice";
+import {
+  getAllCreditNotes,
+  getInvoiceDetailById,
+} from "../toolkit/slices/accountSlice";
 import TaxInvoice from "../components/TaxInvoice";
 
 export const columns = [
@@ -72,7 +75,7 @@ const CreditNote = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.allInvoiceList);
+  const data = useSelector((state) => state.organization.creditNoteList);
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
   );
@@ -92,16 +95,17 @@ const CreditNote = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
-  const [status, setStatus] = useState("GENERATED");
+  const [status, setStatus] = useState("PENDING ");
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
     type: "invoiceNumber",
   });
 
   useEffect(() => {
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
-    dispatch(getAllInvoiceCount({ userId, status }));
-  }, [dispatch, userId, status]);
+    dispatch(getAllCreditNotes({ status, page, size: rowsPerPage }));
+  }, [dispatch, status, status]);
+
+  console.log("Credit Note Data:", data);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -348,13 +352,10 @@ const CreditNote = () => {
                   setStatus(key);
                 }}
               >
-                <DropdownItem key="GENERATED">GENERATED</DropdownItem>
-                <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
-                <DropdownItem key="VIEWED">VIEWED</DropdownItem>
-                <DropdownItem key="PAID">PAID</DropdownItem>
-                <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
+                <DropdownItem key="PENDING">PENDING</DropdownItem>
+                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
-                <DropdownItem key="CREDIT_NOTED">CREDIT_NOTED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
             <Dropdown>

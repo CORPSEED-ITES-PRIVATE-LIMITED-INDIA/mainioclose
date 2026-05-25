@@ -39,6 +39,7 @@ import dayjs from "dayjs";
 import {
   cancelUnBilledInvoice,
   convertUnbillToAdvanceInvoice,
+  createCreditNotes,
   getTdsDetailByEstimateId,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
@@ -96,6 +97,7 @@ const Unbill = () => {
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
+  const creditNoteModal = useDisclosure();
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
@@ -127,6 +129,11 @@ const Unbill = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
   const [govtFeeDetail, setGovtFeeDetail] = useState();
   const [tdsDetail, setTdsDetail] = useState();
+  const [creditNoteData, setCreditNoteData] = useState({
+    refundAmount: "",
+    reason: "",
+  });
+  const [creditNoteRow, setCreditNoteRow] = useState(null);
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -225,6 +232,65 @@ const Unbill = () => {
           color: "danger",
         }),
       );
+  };
+  const handleCreateCreditNote = async () => {
+    if (
+      !creditNoteData.refundAmount ||
+      Number(creditNoteData.refundAmount) <= 0
+    ) {
+      addToast({
+        title: "Refund amount is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!creditNoteData.reason?.trim()) {
+      addToast({
+        title: "Reason is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      // unbilledId: creditNoteRow?.id,
+      estimateNumber: creditNoteRow?.estimateNumber,
+      createdByUserId: userId,
+      refundAmount: Number(creditNoteData.refundAmount),
+      reason: creditNoteData.reason,
+    };
+
+    try {
+      const resp = await dispatch(createCreditNotes(payload));
+      console.log("Resp F:", resp);
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Credit note created successfully!",
+          color: "success",
+        });
+
+        creditNoteModal.onClose();
+        setCreditNoteRow(null);
+        setCreditNoteData({
+          refundAmount: "",
+          reason: "",
+        });
+
+        dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
+        dispatch(getAllUnbillCount({ userId, status }));
+      } else {
+        addToast({
+          title: resp?.payload?.data?.message || "Failed to create credit note",
+          color: "danger",
+        });
+      }
+    } catch (error) {
+      addToast({
+        title: "Something went wrong!",
+        color: "danger",
+      });
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -434,6 +500,22 @@ const Unbill = () => {
                 >
                   Update status
                 </DropdownItem>
+
+                {rowData?.status === "APPROVED" && (
+                  <DropdownItem
+                    key="credit-note"
+                    onPress={() => {
+                      setCreditNoteRow(rowData);
+                      setCreditNoteData({
+                        refundAmount: "",
+                        reason: "",
+                      });
+                      creditNoteModal.onOpen();
+                    }}
+                  >
+                    Credit Note
+                  </DropdownItem>
+                )}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -1426,6 +1508,80 @@ const Unbill = () => {
                   className="rounded-xl px-6 font-medium"
                 >
                   Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={creditNoteModal.isOpen}
+        onOpenChange={creditNoteModal.onOpenChange}
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Credit Note
+                <span className="text-xs font-normal text-gray-500">
+                  {creditNoteRow?.unbilledNumber
+                    ? `Unbilled No: ${creditNoteRow.unbilledNumber}`
+                    : ""}
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="max-h-[85vh] overflow-auto">
+                <Input
+                  type="number"
+                  label="Refund Amount"
+                  placeholder="Enter refund amount"
+                  isRequired
+                  min={0}
+                  value={creditNoteData.refundAmount}
+                  onChange={(e) =>
+                    setCreditNoteData((prev) => ({
+                      ...prev,
+                      refundAmount: e.target.value,
+                    }))
+                  }
+                />
+
+                <Textarea
+                  label="Reason"
+                  placeholder="Enter reason for credit note"
+                  isRequired
+                  minRows={4}
+                  value={creditNoteData.reason}
+                  onChange={(e) =>
+                    setCreditNoteData((prev) => ({
+                      ...prev,
+                      reason: e.target.value,
+                    }))
+                  }
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  color="danger"
+                  variant="light"
+                  onPress={() => {
+                    onClose();
+                    setCreditNoteRow(null);
+                    setCreditNoteData({
+                      refundAmount: "",
+                      reason: "",
+                    });
+                  }}
+                >
+                  Close
+                </Button>
+
+                <Button color="primary" onPress={handleCreateCreditNote}>
+                  Submit
                 </Button>
               </ModalFooter>
             </>

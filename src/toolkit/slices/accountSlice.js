@@ -316,6 +316,27 @@ export const getEstimeteByEstimateNumber = createAsyncThunk(
   },
 );
 
+export const getAllCreditNotes = createAsyncThunk(
+  "getAllCreditNotes",
+  async ({ status, page, size }) => {
+    const response = await api.get(
+      `/accountService/api/credit-notes?status=${status}&page=${page}&size=${size}`,
+    );
+    console.log("API DATA: ",response);
+    return response.data;
+  },
+);
+export const createCreditNotes = createAsyncThunk(
+  "createCreditNotes",
+  async (data) => {
+    const response = await api.post(
+      `/accountService/api/credit-notes/refund`,data
+    );
+    console.log("API RES:",response)
+    return response.data;
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -334,6 +355,7 @@ const AccountSlice = createSlice({
     invoiceReport: [],
     estimateReport: [],
     estimateList: [],
+    creditNoteList:[],
     tdsDetail: {},
   },
   extraReducers: (builder) => {
@@ -515,6 +537,17 @@ const AccountSlice = createSlice({
     builder.addCase(getTdsDetailByEstimateId.rejected, (state) => {
       state.loading = "rejected";
       state.tdsDetail = {};
+    });
+    builder.addCase(getAllCreditNotes.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCreditNotes.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.creditNoteList = action.payload || [];
+    });
+    builder.addCase(getAllCreditNotes.rejected, (state) => {
+      state.loading = "rejected";
+      state.creditNoteList = {};
     });
   },
 });
