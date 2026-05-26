@@ -1,37 +1,72 @@
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../httpRequest";
+
+const allowedTypes = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "application/csv",
+];
+
+const extractUploadedUrl = (responseData) => {
+  if (!responseData) return "";
+
+  if (typeof responseData === "string") return responseData;
+
+  return (
+    responseData?.filePath ||
+    responseData?.url ||
+    responseData?.fileUrl ||
+    responseData?.path ||
+    responseData?.data ||
+    ""
+  );
+};
+
+const getFileMeta = (selectedFile, filePath) => {
+  return {
+    filePath,
+    fileName: selectedFile?.name || "",
+    contentType: selectedFile?.type || "application/octet-stream",
+    fileSize: Number(selectedFile?.size || 0),
+    description: "",
+  };
+};
 
 const FileUploader = ({
   value,
   onChange,
+  onUploadSuccess,
+  onUploadingChange,
   label,
+  placeholder,
   isRequired = false,
   errorMessage,
   uploadingType = "single",
 }) => {
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
+
   const [files, setFiles] = useState([]);
   const [statuses, setStatuses] = useState({});
 
-  const allowedTypes = [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "image/gif",
-    "application/pdf",
-    "image/webp",
-    "text/plain",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "text/csv",
-    "application/csv",
-  ];
+  useEffect(() => {
+    const isUploading = Object.values(statuses).includes("uploading");
+    onUploadingChange?.(isUploading);
+  }, [statuses, onUploadingChange]);
 
   const uploadFile = async (selectedFile, index) => {
     setStatuses((prev) => ({ ...prev, [index]: "uploading" }));
+
     const formData = new FormData();
     formData.append("file", selectedFile);
 
@@ -43,112 +78,153 @@ const FileUploader = ({
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
-      const url = response?.data;
-      if (response?.status === 200 && url) {
+      const uploadedUrl = extractUploadedUrl(response?.data);
+
+      if (response?.status === 200 && uploadedUrl) {
+        const uploadedMeta = getFileMeta(selectedFile, uploadedUrl);
+
         setStatuses((prev) => ({ ...prev, [index]: "success" }));
-        onChange(uploadingType === "multiple" ? [...(value || []), url] : url);
+
+        if (uploadingType === "multiple") {
+          const nextValue = [
+            ...(Array.isArray(value) ? value : []),
+            uploadedUrl,
+          ];
+          onChange?.(nextValue);
+        } else {
+          onChange?.(uploadedUrl);
+        }
+
+        onUploadSuccess?.(uploadedMeta, index);
       } else {
         console.warn("Unexpected response structure:", response?.data);
         setStatuses((prev) => ({ ...prev, [index]: "error" }));
       }
     } catch (error) {
-      console.error("Upload failed for", selectedFile.name, error);
+      console.error("Upload failed for", selectedFile?.name, error);
       setStatuses((prev) => ({ ...prev, [index]: "error" }));
     }
   };
 
   const handleFile = (selectedFiles) => {
-    const newFiles = Array.from(selectedFiles).filter((file) =>
-      allowedTypes.includes(file.type)
-    );
+    const selectedFileList = Array.from(selectedFiles || []);
 
-    if (newFiles.length === 0) {
+    const validFiles = selectedFileList.filter((file) => {
+      return !file?.type || allowedTypes.includes(file.type);
+    });
+
+    if (validFiles.length === 0) {
       setStatuses((prev) => ({ ...prev, [files.length]: "error" }));
       return;
     }
 
     if (uploadingType === "multiple") {
-      setFiles((prev) => [...prev, ...newFiles]);
-      newFiles.forEach((file, index) => {
-        uploadFile(file, files.length + index);
+      const startIndex = files.length;
+
+      setFiles((prev) => [...prev, ...validFiles]);
+
+      validFiles.forEach((file, fileIndex) => {
+        uploadFile(file, startIndex + fileIndex);
       });
     } else {
-      setFiles([newFiles[0]]);
-      uploadFile(newFiles[0], 0);
+      setFiles([validFiles[0]]);
+      setStatuses({});
+      uploadFile(validFiles[0], 0);
     }
   };
 
-  const handleFileInputChange = (e) => {
-    if (e.target.files.length) {
-      handleFile(e.target.files);
-      e.target.value = null;
+  const handleFileInputChange = (event) => {
+    if (event.target.files?.length) {
+      handleFile(event.target.files);
+      event.target.value = "";
     }
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (e.dataTransfer.files.length) {
-      handleFile(e.dataTransfer.files);
+  const handleDrop = (event) => {
+    event.preventDefault();
+
+    if (event.dataTransfer.files?.length) {
+      handleFile(event.dataTransfer.files);
     }
-    dropRef.current.classList.remove("highlight");
+
+    dropRef.current?.classList.remove("highlight");
   };
 
-  const handlePaste = (e) => {
-    if (e.clipboardData?.files?.length) {
-      handleFile(e.clipboardData.files);
+  const handlePaste = (event) => {
+    if (event.clipboardData?.files?.length) {
+      handleFile(event.clipboardData.files);
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    dropRef.current.classList.add("highlight");
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    dropRef.current?.classList.add("highlight");
   };
 
   const handleDragLeave = () => {
-    dropRef.current.classList.remove("highlight");
+    dropRef.current?.classList.remove("highlight");
   };
 
   const handleClickDropZone = () => {
-    if (
-      uploadingType !== "multiple" &&
-      files?.length > 0 &&
-      statuses[0] === "success"
-    ) {
-      return;
-    }
-    fileInputRef.current.click();
+    fileInputRef.current?.click();
   };
 
   const handleClearFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index));
+
     setStatuses((prev) => {
-      const newStatuses = { ...prev };
-      delete newStatuses[index];
+      const nextStatuses = { ...prev };
+      delete nextStatuses[index];
+
       const reindexedStatuses = {};
-      Object.keys(newStatuses)
-        .sort()
-        .forEach((key, i) => {
-          reindexedStatuses[i] = newStatuses[key];
+      Object.keys(nextStatuses)
+        .sort((a, b) => Number(a) - Number(b))
+        .forEach((key, newIndex) => {
+          reindexedStatuses[newIndex] = nextStatuses[key];
         });
+
       return reindexedStatuses;
     });
+
     if (uploadingType === "multiple") {
-      const newValue = (value || []).filter((_, i) => i !== index);
-      onChange(newValue?.length > 0 ? newValue : []);
+      const nextValue = (Array.isArray(value) ? value : []).filter(
+        (_, valueIndex) => valueIndex !== index,
+      );
+
+      onChange?.(nextValue.length > 0 ? nextValue : []);
     } else {
-      onChange(null);
+      onChange?.("");
+      onUploadSuccess?.({
+        filePath: "",
+        fileName: "",
+        contentType: "",
+        fileSize: 0,
+        description: "",
+      });
     }
   };
 
   useEffect(() => {
     document.addEventListener("paste", handlePaste);
+
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, []);
+  });
+
+  const hasSingleUploadedFile =
+    uploadingType !== "multiple" &&
+    files?.length > 0 &&
+    statuses[0] === "success";
+
+  const helperText =
+    placeholder ||
+    (uploadingType === "multiple"
+      ? "Drag & drop files here, paste, or choose files"
+      : "Drag & drop file here, paste, or choose file");
 
   return (
     <div className="w-full">
@@ -156,7 +232,7 @@ const FileUploader = ({
         type="file"
         ref={fileInputRef}
         accept={allowedTypes.join(",")}
-        style={{ display: "none" }}
+        className="hidden"
         onChange={handleFileInputChange}
         multiple={uploadingType === "multiple"}
       />
@@ -167,92 +243,97 @@ const FileUploader = ({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`w-full min-h-[52px] border-2 rounded-lg mt-1 border-gray-600 dark:text-white flex flex-col items-start justify-center px-2 cursor-pointer transition-colors ${
-          uploadingType !== "multiple" &&
-          files?.length > 0 &&
-          statuses[0] === "success"
-            ? "cursor-not-allowed opacity-70"
-            : ""
+        className={`mt-1 flex min-h-[76px] w-full cursor-pointer flex-col justify-center rounded-xl border border-dashed px-3 py-2 transition-colors ${
+          errorMessage
+            ? "border-danger text-danger"
+            : "border-default-300 text-default-700 hover:border-primary"
         }`}
       >
         {label && (
-          <p className="text-sm">
+          <p className="mb-1 text-sm font-medium">
             {label}
-            {isRequired && <span className="text-red-500">*</span>}
+            {isRequired && <span className="text-danger">*</span>}
           </p>
         )}
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            className={`bg-blue-500 text-white text-tiny px-2 py-[3px] rounded hover:bg-blue-600 ${
-              uploadingType !== "multiple" &&
-              files?.length > 0 &&
-              statuses[0] === "success"
-                ? "hidden"
-                : ""
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              fileInputRef.current.click();
+            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary-600"
+            onClick={(event) => {
+              event.stopPropagation();
+              fileInputRef.current?.click();
             }}
           >
-            Choose
+            {hasSingleUploadedFile ? "Replace" : "Choose"}
           </button>
-          <p className="text-tiny text-gray-400">
-            {uploadingType === "multiple" &&
-            files?.length > 0 &&
-            Object.values(statuses).includes("success")
-              ? "Files uploaded. Add more or replace."
-              : uploadingType === "multiple"
-                ? "or Drag & Drop Files Here, or Paste"
-                : files?.length > 0 && statuses[0] === "success"
-                  ? "File uploaded. Click to replace."
-                  : "or Drag & Drop File Here, or Paste"}
-          </p>
+
+          <p className="text-xs text-default-500">{helperText}</p>
         </div>
       </div>
-      {errorMessage && <p className="text-red-500 text-xs">{errorMessage}</p>}
+
+      {errorMessage && (
+        <p className="mt-1 text-xs text-danger">{errorMessage}</p>
+      )}
 
       {files.length > 0 && (
-        <div className="mt-4 flex flex-col gap-2">
-          {files.map((file, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <p
-                className={`${
-                  statuses[index] === "success"
-                    ? "text-green-600"
-                    : "text-gray-800"
-                } text-tiny`}
+        <div className="mt-3 flex flex-col gap-2">
+          {files.map((file, index) => {
+            const fileUrl =
+              uploadingType === "multiple" ? value?.[index] : value;
+
+            return (
+              <div
+                key={`${file?.name}-${index}`}
+                className="flex items-center justify-between gap-3 rounded-lg border border-default-200 px-3 py-2"
               >
-                {file?.name} ({Math.round(file?.size / 1024)} KB)
-                {statuses[index] === "success" && (
-                  <>
-                    {" "}
-                    –{" "}
+                <div className="min-w-0">
+                  <p
+                    className={`truncate text-xs font-medium ${
+                      statuses[index] === "success"
+                        ? "text-success"
+                        : statuses[index] === "error"
+                          ? "text-danger"
+                          : "text-default-700"
+                    }`}
+                  >
+                    {file?.name} ({Math.round((file?.size || 0) / 1024)} KB)
+                  </p>
+
+                  <p className="text-[11px] text-default-400">
+                    {statuses[index] === "uploading" && "Uploading..."}
+                    {statuses[index] === "success" && "Uploaded successfully"}
+                    {statuses[index] === "error" && "Upload failed"}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {statuses[index] === "success" && fileUrl && (
                     <a
-                      href={
-                        uploadingType === "multiple" ? value?.[index] : value
-                      }
-                      className="underline"
+                      href={fileUrl}
+                      className="text-xs font-medium text-primary underline"
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(event) => event.stopPropagation()}
                     >
                       View
                     </a>
-                  </>
-                )}
-                {statuses[index] === "uploading" && " – Uploading..."}
-                {statuses[index] === "error" && " – Failed"}
-              </p>
-              <button
-                type="button"
-                onClick={() => handleClearFile(index)}
-                className="text-red-500 text-tiny hover:text-red-700"
-              >
-                Clear
-              </button>
-            </div>
-          ))}
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleClearFile(index);
+                    }}
+                    className="text-xs font-medium text-danger hover:text-danger-600"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

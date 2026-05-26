@@ -24,6 +24,8 @@ import CkEditorToken from "../setting/ckEditorToken/CkEditorToken";
 import ProposalMenu from "../setting/proposalAndBrouchers/menu/ProposalMenu";
 import ProposalCategory from "../setting/proposalAndBrouchers/category/ProposalCategory";
 import ProposalSubCategory from "../setting/proposalAndBrouchers/subCategory/ProposalSubCategory";
+import ProposalService from "../setting/proposalAndBrouchers/service/ProposalService";
+import ProductServiceDetails from "../setting/products/ProductServiceDetails";
 
 const ERPSettingRouting = () => {
   return (
@@ -41,6 +43,7 @@ const ERPSettingRouting = () => {
         <Route index path="solutionPrice" element={<SolutionPrice />} />
         <Route path="documents" element={<ProductDocument />} />
         <Route path="milestones" element={<ProductMilestones />} />
+        <Route path="serviceDetails" element={<ProductServiceDetails />} />
         <Route />
       </Route>
       <Route
@@ -82,6 +85,10 @@ const ERPSettingRouting = () => {
       <Route
         path="settings/menu/:menuId/category/:categoryId/subcategory"
         element={<ProposalSubCategory />}
+      />
+      <Route
+        path="settings/menu/:menuId/category/:categoryId/subcategory/:subcategoryId/service"
+        element={<ProposalService />}
       />
 
       <Route path="settings/ckEditorTokens" element={<CkEditorToken />} />

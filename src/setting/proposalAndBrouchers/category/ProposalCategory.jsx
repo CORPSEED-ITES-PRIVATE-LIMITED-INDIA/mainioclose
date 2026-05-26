@@ -32,6 +32,8 @@ import {
   createMenuCategory,
   getAllMenus,
 } from "../../../toolkit/slices/settingSlice.js";
+import FileUploader from "../../../components/FileUploader.jsx";
+import PreviewComponent from "../../../components/PreviewComponent.jsx";
 
 const columns = [
   { name: "CATEGORY", uid: "name", sortable: true },
@@ -44,11 +46,11 @@ const columns = [
 const INITIAL_VISIBLE_COLUMNS = ["name", "brochure", "uploadedAt", "status"];
 
 const formSchema = z.object({
-  name: z.string().min(1, "Please enter category name"),
+  name: z.string().trim().min(1, "Please enter category name"),
   brochure: z.object({
-    filePath: z.string().min(1, "Please enter brochure file path"),
-    fileName: z.string().min(1, "Please enter brochure file name"),
-    contentType: z.string().min(1, "Please enter content type"),
+    filePath: z.string().trim().min(1, "Please upload brochure file"),
+    fileName: z.string().trim().min(1, "Please enter brochure file name"),
+    contentType: z.string().trim().min(1, "Please enter content type"),
     fileSize: z.coerce.number().min(0, "File size cannot be negative"),
     description: z.string().optional(),
   }),
@@ -113,7 +115,29 @@ const buildPayload = (values) => {
   };
 };
 
-const CategoryFormFields = ({ control }) => {
+const CategoryFormFields = ({ control, setValue, onUploadingChange }) => {
+  const handleBrochureUploadSuccess = (fileMeta) => {
+    setValue("brochure.filePath", fileMeta?.filePath || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue("brochure.fileName", fileMeta?.fileName || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue("brochure.contentType", fileMeta?.contentType || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue("brochure.fileSize", Number(fileMeta?.fileSize || 0), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
   return (
     <div className="grid max-h-[60vh] grid-cols-1 gap-4 overflow-auto p-2 md:grid-cols-2">
       <Controller
@@ -133,6 +157,24 @@ const CategoryFormFields = ({ control }) => {
       />
 
       <Controller
+        name="brochure.filePath"
+        control={control}
+        render={({ field, fieldState: { error } }) => (
+          <FileUploader
+            isRequired
+            label="Brochure File Path"
+            placeholder="Upload brochure file"
+            errorMessage={error?.message}
+            isInvalid={!!error}
+            value={field.value || ""}
+            onChange={(value) => field.onChange(value || "")}
+            onUploadSuccess={handleBrochureUploadSuccess}
+            onUploadingChange={onUploadingChange}
+          />
+        )}
+      />
+
+      <Controller
         name="brochure.fileName"
         control={control}
         render={({ field, fieldState: { error } }) => (
@@ -140,22 +182,6 @@ const CategoryFormFields = ({ control }) => {
             isRequired
             label="Brochure File Name"
             placeholder="example.pdf"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={field.value || ""}
-            onChange={(e) => field.onChange(e.target.value)}
-          />
-        )}
-      />
-
-      <Controller
-        name="brochure.filePath"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            isRequired
-            label="Brochure File Path"
-            placeholder="Enter brochure file path"
             errorMessage={error?.message}
             isInvalid={!!error}
             value={field.value || ""}
@@ -192,7 +218,7 @@ const CategoryFormFields = ({ control }) => {
             errorMessage={error?.message}
             isInvalid={!!error}
             value={String(field.value ?? 0)}
-            onChange={(e) => field.onChange(Number(e.target.value))}
+            onChange={(e) => field.onChange(Number(e.target.value || 0))}
           />
         )}
       />
@@ -230,10 +256,34 @@ const ProposalCategory = () => {
     control: addControl,
     handleSubmit: handleAddSubmit,
     reset: resetAddForm,
+    setValue: setAddValue,
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+
+  const {
+    isOpen: isPreviewOpen,
+    onOpen: onPreviewOpen,
+    onOpenChange: onPreviewOpenChange,
+  } = useDisclosure();
+
+  const [previewFile, setPreviewFile] = useState(null);
+  const [isAddUploading, setIsAddUploading] = useState(false);
+
+  const openPreview = (file) => {
+    if (!file?.filePath && !file?.url && !file?.fileUrl) {
+      addToast({
+        title: "No file found",
+        description: "This record does not have a valid file URL.",
+        color: "warning",
+      });
+      return;
+    }
+
+    setPreviewFile(file);
+    onPreviewOpen();
+  };
 
   const data = useSelector((state) => {
     const menuList = state.setting.menuList;
@@ -279,10 +329,20 @@ const ProposalCategory = () => {
 
   const openAddCategoryModal = useCallback(() => {
     resetAddForm(defaultValues);
+    setIsAddUploading(false);
     onAddOpen();
   }, [onAddOpen, resetAddForm]);
 
   const onAddSubmit = async (values) => {
+    if (isAddUploading) {
+      addToast({
+        title: "Upload in progress",
+        description: "Please wait until the brochure upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
     const payload = buildPayload(values);
 
     try {
@@ -300,6 +360,7 @@ const ProposalCategory = () => {
 
       onAddClose();
       resetAddForm(defaultValues);
+      setIsAddUploading(false);
       dispatch(getAllMenus());
     } catch (error) {
       addToast({
@@ -399,13 +460,17 @@ const ProposalCategory = () => {
 
         case "brochure":
           return brochure ? (
-            <div className="flex items-start gap-2">
+            <button
+              type="button"
+              onClick={() => openPreview(brochure)}
+              className="flex max-w-[320px] items-start gap-2 text-left"
+            >
               <div className="rounded-lg bg-primary-50 p-1.5 text-primary">
                 <FileText size={16} />
               </div>
 
               <div className="flex min-w-0 flex-col">
-                <span className="max-w-[260px] truncate text-sm font-medium text-default-900">
+                <span className="max-w-[260px] truncate text-sm font-medium text-default-900 hover:text-primary hover:underline">
                   {brochure?.fileName || "---"}
                 </span>
 
@@ -413,7 +478,7 @@ const ProposalCategory = () => {
                   {brochure?.description || brochure?.contentType || "---"}
                 </span>
               </div>
-            </div>
+            </button>
           ) : (
             <span className="text-sm text-default-400">No brochure</span>
           );
@@ -455,7 +520,7 @@ const ProposalCategory = () => {
           return rowData[columnKey] || "-";
       }
     },
-    [menuId],
+    [openPreview],
   );
 
   const topContent = useMemo(() => {
@@ -667,7 +732,11 @@ const ProposalCategory = () => {
                   onSubmit={handleAddSubmit(onAddSubmit)}
                   className="flex flex-col gap-4"
                 >
-                  <CategoryFormFields control={addControl} />
+                  <CategoryFormFields
+                    control={addControl}
+                    setValue={setAddValue}
+                    onUploadingChange={setIsAddUploading}
+                  />
 
                   <ModalFooter className="flex justify-end">
                     <Button
@@ -675,14 +744,20 @@ const ProposalCategory = () => {
                       variant="flat"
                       onPress={() => {
                         resetAddForm(defaultValues);
+                        setIsAddUploading(false);
                         modalClose();
                       }}
                     >
                       Cancel
                     </Button>
 
-                    <Button color="primary" type="submit">
-                      Submit
+                    <Button
+                      color="primary"
+                      type="submit"
+                      isLoading={isAddUploading}
+                      isDisabled={isAddUploading}
+                    >
+                      {isAddUploading ? "Uploading..." : "Submit"}
                     </Button>
                   </ModalFooter>
                 </form>
@@ -691,6 +766,21 @@ const ProposalCategory = () => {
           )}
         </ModalContent>
       </Modal>
+
+      <PreviewComponent
+        isOpen={isPreviewOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewFile(null);
+          }
+
+          onPreviewOpenChange(open);
+        }}
+        file={previewFile}
+        title="View Brochure"
+        modalSize="5xl"
+        previewHeight="78vh"
+      />
     </>
   );
 };

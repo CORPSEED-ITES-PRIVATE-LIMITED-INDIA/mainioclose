@@ -24,6 +24,7 @@ const SolutionDetails = () => {
     { id: "solutionPrice", label: "Price" },
     { id: "documents", label: "Documents" },
     { id: "milestones", label: "Milestones" },
+    { id: "serviceDetails", label: "Service Details" },
   ];
 
   return (

@@ -29,6 +29,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   ChevronDown,
   EllipsisVertical,
+  Eye,
   FileText,
   Plus,
   Search,
@@ -39,6 +40,8 @@ import {
   updateMenu,
 } from "../../../toolkit/slices/settingSlice.js";
 import { Link } from "react-router-dom";
+import FileUploader from "../../../components/FileUploader.jsx";
+import PreviewComponent from "../../../components/PreviewComponent.jsx";
 
 const columns = [
   { name: "NAME", uid: "name", sortable: true },
@@ -58,11 +61,11 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const formSchema = z.object({
-  name: z.string().min(1, "Please enter menu name"),
+  name: z.string().trim().min(1, "Please enter menu name"),
   brochure: z.object({
-    filePath: z.string().min(1, "Please enter brochure file path"),
-    fileName: z.string().min(1, "Please enter brochure file name"),
-    contentType: z.string().min(1, "Please enter content type"),
+    filePath: z.string().trim().min(1, "Please upload brochure file"),
+    fileName: z.string().trim().min(1, "Please enter brochure file name"),
+    contentType: z.string().trim().min(1, "Please enter content type"),
     fileSize: z.coerce.number().min(0, "File size cannot be negative"),
     description: z.string().optional(),
   }),
@@ -176,7 +179,32 @@ const flattenProposalMenuData = (menus = []) => {
   return rows;
 };
 
-const MenuFormFields = ({ control }) => {
+const MenuFormFields = ({ control, setValue, onUploadingChange }) => {
+  const handleBrochureUploadSuccess = (fileMeta) => {
+    const uploadedFile =
+      typeof fileMeta === "string" ? { filePath: fileMeta } : fileMeta || {};
+
+    setValue("brochure.filePath", uploadedFile.filePath || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue("brochure.fileName", uploadedFile.fileName || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue("brochure.contentType", uploadedFile.contentType || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue("brochure.fileSize", Number(uploadedFile.fileSize || 0), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
   return (
     <div className="grid max-h-[60vh] grid-cols-1 gap-4 overflow-auto p-2 md:grid-cols-2">
       <Controller
@@ -196,29 +224,30 @@ const MenuFormFields = ({ control }) => {
       />
 
       <Controller
+        name="brochure.filePath"
+        control={control}
+        render={({ field, fieldState: { error } }) => (
+          <FileUploader
+            isRequired
+            label="Brochure File"
+            placeholder="Upload PDF, image, document or spreadsheet"
+            errorMessage={error?.message}
+            value={field.value || ""}
+            onChange={(value) => field.onChange(value || "")}
+            onUploadSuccess={handleBrochureUploadSuccess}
+            onUploadingChange={onUploadingChange}
+          />
+        )}
+      />
+
+      <Controller
         name="brochure.fileName"
         control={control}
         render={({ field, fieldState: { error } }) => (
           <Input
             isRequired
             label="Brochure File Name"
-            placeholder="example.pdf"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={field.value || ""}
-            onChange={(e) => field.onChange(e.target.value)}
-          />
-        )}
-      />
-
-      <Controller
-        name="brochure.filePath"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            isRequired
-            label="Brochure File Path"
-            placeholder="Enter brochure file path"
+            placeholder="Auto-filled after upload"
             errorMessage={error?.message}
             isInvalid={!!error}
             value={field.value || ""}
@@ -234,7 +263,7 @@ const MenuFormFields = ({ control }) => {
           <Input
             isRequired
             label="Content Type"
-            placeholder="application/pdf"
+            placeholder="Auto-filled after upload"
             errorMessage={error?.message}
             isInvalid={!!error}
             value={field.value || ""}
@@ -251,11 +280,11 @@ const MenuFormFields = ({ control }) => {
             isRequired
             type="number"
             label="File Size"
-            placeholder="Enter file size in bytes"
+            placeholder="Auto-filled after upload"
             errorMessage={error?.message}
             isInvalid={!!error}
             value={String(field.value ?? 0)}
-            onChange={(e) => field.onChange(Number(e.target.value))}
+            onChange={(e) => field.onChange(Number(e.target.value || 0))}
           />
         )}
       />
@@ -295,6 +324,31 @@ const ProposalMenu = () => {
     onOpenChange: onEditOpenChange,
   } = useDisclosure();
 
+  const {
+    isOpen: isPreviewOpen,
+    onOpen: onPreviewOpen,
+    onOpenChange: onPreviewOpenChange,
+  } = useDisclosure();
+
+  const [previewFile, setPreviewFile] = useState(null);
+
+  const openPreview = useCallback(
+    (file) => {
+      if (!file?.filePath && !file?.url && !file?.fileUrl) {
+        addToast({
+          title: "No file found",
+          description: "This record does not have a valid file URL.",
+          color: "warning",
+        });
+        return;
+      }
+
+      setPreviewFile(file);
+      onPreviewOpen();
+    },
+    [onPreviewOpen],
+  );
+
   const data = useSelector((state) => {
     const menuList = state.setting.menuList;
 
@@ -325,6 +379,8 @@ const ProposalMenu = () => {
     size: 50,
   });
   const [rowItem, setRowItem] = useState(null);
+  const [isAddUploading, setIsAddUploading] = useState(false);
+  const [isEditUploading, setIsEditUploading] = useState(false);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -332,6 +388,7 @@ const ProposalMenu = () => {
     control: addControl,
     handleSubmit: handleAddSubmit,
     reset: resetAddForm,
+    setValue: setAddValue,
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues,
@@ -341,6 +398,7 @@ const ProposalMenu = () => {
     control: editControl,
     handleSubmit: handleEditSubmit,
     reset: resetEditForm,
+    setValue: setEditValue,
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues,
@@ -422,6 +480,7 @@ const ProposalMenu = () => {
 
   const openAddMenuModal = useCallback(() => {
     setRowItem(null);
+    setIsAddUploading(false);
     resetAddForm(defaultValues);
     onAddOpen();
   }, [onAddOpen, resetAddForm]);
@@ -429,6 +488,7 @@ const ProposalMenu = () => {
   const openEditMenuModal = useCallback(
     (rowData) => {
       setRowItem(rowData);
+      setIsEditUploading(false);
       resetEditForm(getFormValuesFromRow(rowData));
       onEditOpen();
     },
@@ -436,6 +496,15 @@ const ProposalMenu = () => {
   );
 
   const onAddSubmit = async (values) => {
+    if (isAddUploading) {
+      addToast({
+        title: "Upload in progress",
+        description: "Please wait until the brochure upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
     const payload = buildMenuPayload(values);
 
     try {
@@ -448,6 +517,7 @@ const ProposalMenu = () => {
 
       onAddClose();
       resetAddForm(defaultValues);
+      setIsAddUploading(false);
       dispatch(getAllMenus());
     } catch (error) {
       addToast({
@@ -459,6 +529,15 @@ const ProposalMenu = () => {
   };
 
   const onEditSubmit = async (values) => {
+    if (isEditUploading) {
+      addToast({
+        title: "Upload in progress",
+        description: "Please wait until the brochure upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
     if (!rowItem?.id) {
       addToast({
         title: "Invalid record",
@@ -486,6 +565,7 @@ const ProposalMenu = () => {
       onEditClose();
       resetEditForm(defaultValues);
       setRowItem(null);
+      setIsEditUploading(false);
       dispatch(getAllMenus());
     } catch (error) {
       addToast({
@@ -601,11 +681,20 @@ const ProposalMenu = () => {
                 <DropdownMenu
                   aria-label="Menu actions"
                   onAction={(key) => {
+                    if (key === "view") {
+                      openPreview(rowData?.brochure);
+                      return;
+                    }
+
                     if (key === "edit") {
                       openEditMenuModal(rowData);
                     }
                   }}
                 >
+                  <DropdownItem key="view" startContent={<Eye size={16} />}>
+                    View
+                  </DropdownItem>
+
                   <DropdownItem key="edit">Edit</DropdownItem>
                 </DropdownMenu>
               </Dropdown>
@@ -616,7 +705,7 @@ const ProposalMenu = () => {
           return rowData[columnKey] || "-";
       }
     },
-    [openEditMenuModal],
+    [openEditMenuModal, openPreview],
   );
 
   const onNextPage = useCallback(() => {
@@ -845,7 +934,11 @@ const ProposalMenu = () => {
                   onSubmit={handleAddSubmit(onAddSubmit)}
                   className="flex flex-col gap-4"
                 >
-                  <MenuFormFields control={addControl} />
+                  <MenuFormFields
+                    control={addControl}
+                    setValue={setAddValue}
+                    onUploadingChange={setIsAddUploading}
+                  />
 
                   <ModalFooter className="flex justify-end">
                     <Button
@@ -853,14 +946,20 @@ const ProposalMenu = () => {
                       variant="flat"
                       onPress={() => {
                         resetAddForm(defaultValues);
+                        setIsAddUploading(false);
                         modalClose();
                       }}
                     >
                       Cancel
                     </Button>
 
-                    <Button color="primary" type="submit">
-                      Submit
+                    <Button
+                      color="primary"
+                      type="submit"
+                      isLoading={isAddUploading}
+                      isDisabled={isAddUploading}
+                    >
+                      {isAddUploading ? "Uploading..." : "Submit"}
                     </Button>
                   </ModalFooter>
                 </form>
@@ -889,7 +988,11 @@ const ProposalMenu = () => {
                   onSubmit={handleEditSubmit(onEditSubmit)}
                   className="flex flex-col gap-4"
                 >
-                  <MenuFormFields control={editControl} />
+                  <MenuFormFields
+                    control={editControl}
+                    setValue={setEditValue}
+                    onUploadingChange={setIsEditUploading}
+                  />
 
                   <ModalFooter className="flex justify-end">
                     <Button
@@ -898,14 +1001,20 @@ const ProposalMenu = () => {
                       onPress={() => {
                         resetEditForm(defaultValues);
                         setRowItem(null);
+                        setIsEditUploading(false);
                         modalClose();
                       }}
                     >
                       Cancel
                     </Button>
 
-                    <Button color="primary" type="submit">
-                      Update
+                    <Button
+                      color="primary"
+                      type="submit"
+                      isLoading={isEditUploading}
+                      isDisabled={isEditUploading}
+                    >
+                      {isEditUploading ? "Uploading..." : "Update"}
                     </Button>
                   </ModalFooter>
                 </form>
@@ -914,6 +1023,22 @@ const ProposalMenu = () => {
           )}
         </ModalContent>
       </Modal>
+
+      {/* VIEW BROCHURE MODAL */}
+      <PreviewComponent
+        isOpen={isPreviewOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewFile(null);
+          }
+
+          onPreviewOpenChange(open);
+        }}
+        file={previewFile}
+        title="View Brochure"
+        modalSize="5xl"
+        previewHeight="78vh"
+      />
     </>
   );
 };

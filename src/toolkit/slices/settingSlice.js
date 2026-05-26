@@ -771,6 +771,23 @@ export const createMenuSubCategory = createAsyncThunk(
     }
   },
 );
+export const addBrochureToExistingSolution = createAsyncThunk(
+  "addBrochureToExistingSolution",
+  async ({ subCategoryId, solutionId ,payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/subcategories/${subCategoryId}/solutions/${solutionId}/brochure`,
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to create sub category",
+      );
+    }
+  },
+);
 
 export const SettingSlice = createSlice({
   name: "setting",
@@ -1158,6 +1175,15 @@ export const SettingSlice = createSlice({
       state.loading = "success";
     });
     builder.addCase(createMenu.rejected, (state) => {
+      state.loading = "rejected";
+    });
+    builder.addCase(addBrochureToExistingSolution.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(addBrochureToExistingSolution.fulfilled, (state, action) => {
+      state.loading = "success";
+    });
+    builder.addCase(addBrochureToExistingSolution.rejected, (state) => {
       state.loading = "rejected";
     });
   },
