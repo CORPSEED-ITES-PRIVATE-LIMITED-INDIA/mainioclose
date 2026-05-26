@@ -320,10 +320,10 @@ export const getAllCreditNotes = createAsyncThunk(
   "getAllCreditNotes",
   async ({ status, page, size }) => {
     const response = await api.get(
-      `/accountService/api/credit-notes?status=${status}&page=${page}&size=${size}`,
+      `/accountService/api/credit-notes?status=${status}&page=${page-1}&size=${size}`,
     );
     console.log("API DATA: ",response);
-    return response.data;
+    return response.data.content;
   },
 );
 export const createCreditNotes = createAsyncThunk(
@@ -543,6 +543,7 @@ const AccountSlice = createSlice({
     });
     builder.addCase(getAllCreditNotes.fulfilled, (state, action) => {
       state.loading = "success";
+      console.log("Action Payload",action.payload);
       state.creditNoteList = action.payload || [];
     });
     builder.addCase(getAllCreditNotes.rejected, (state) => {

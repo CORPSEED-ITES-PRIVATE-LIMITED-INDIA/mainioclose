@@ -13,43 +13,28 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  addToast,
-  useDisclosure,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
   Select,
   SelectItem,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllInvoice,
-  getAllInvoiceCount,
-  searchInvoiceByCompanyNameAndInvoice,
-  searchInvoiceCountByCompanyNameAndInvoice,
-} from "../toolkit/slices/organizationSlice";
 import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
 import { inrCurrency } from "../common";
-import {
-  getAllCreditNotes,
-  getInvoiceDetailById,
-} from "../toolkit/slices/accountSlice";
-import TaxInvoice from "../components/TaxInvoice";
+import { getAllCreditNotes } from "../toolkit/slices/accountSlice";
 
 export const columns = [
-  { name: "DATE", uid: "date" },
-  { name: "INVOICE NO.", uid: "invoiceNo" },
-  { name: "SERVICE", uid: "service" },
-  { name: "CLIENT", uid: "clientName" },
+  { name: "DATE", uid: "date", sortable: true },
+  { name: "CREDIT NOTE NO.", uid: "creditNoteNumber", sortable: true },
+  { name: "UNBILLED NO.", uid: "unbilledNumber" },
+  { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "COMPANY", uid: "companyName" },
-  { name: "TXN. AMOUNT", uid: "txnAmount" },
-  { name: "CGST. AMOUNT", uid: "cgstAmount" },
-  { name: "SGST. AMOUNT", uid: "sgstAmount" },
-  { name: "IGST. AMOUNT", uid: "igstAmount" },
-  { name: "ADDED BY", uid: "addedBy" },
+  { name: "CONTACT", uid: "contactName" },
+  { name: "TOTAL AMOUNT", uid: "totalAmount", sortable: true },
+  { name: "RECEIVED", uid: "receivedAmount", sortable: true },
+  { name: "OUTSTANDING", uid: "outstandingAmount", sortable: true },
+  { name: "REFUND", uid: "refundAmount", sortable: true },
+  { name: "STATUS", uid: "status" },
+  { name: "REASON", uid: "reason" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -59,53 +44,49 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
-  "invoiceNo",
-  "service",
-  //   "clientName",
+  "creditNoteNumber",
+  "unbilledNumber",
+  "estimateNumber",
   "companyName",
-  "txnAmount",
-  "cgstAmount",
-  "sgstAmount",
-  "igstAmount",
-  "addedBy",
+  "totalAmount",
+  "receivedAmount",
+  "outstandingAmount",
+  "refundAmount",
+  "status",
   "actions",
 ];
 
 const CreditNote = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const data = useSelector((state) => state.organization.creditNoteList);
-  const count = useSelector(
-    (state) => state.organization.allInvoiceList?.length,
-  );
-  const department = useSelector(
-    (state) => state.auth.getDepartmentDetail?.department,
-  );
-  const [invoiceDetail, setInvoiceDetail] = useState(null);
-  const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
-  const [visibleColumns, setVisibleColumns] = React.useState(
+
+  const data = useSelector((state) => state.account.creditNoteList);
+
+  const [filterValue, setFilterValue] = useState("");
+  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
-  const [rowsPerPage, setRowsPerPage] = React.useState(50);
-  const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
-    direction: "ascending",
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "createdAt",
+    direction: "descending",
   });
-  const [page, setPage] = React.useState(1);
-  const hasSearchFilter = Boolean(filterValue);
-  const [status, setStatus] = useState("PENDING ");
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("PENDING");
+
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
-    type: "invoiceNumber",
+    type: "creditNoteNumber",
   });
+
+  const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
     dispatch(getAllCreditNotes({ status, page, size: rowsPerPage }));
-  }, [dispatch, status, status]);
+    console.log("Data", data);
+  }, [dispatch, status, page, rowsPerPage]);
 
-  console.log("Credit Note Data:", data);
+  const count = data?.length || 0;
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -116,138 +97,207 @@ const CreditNote = () => {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...(data || [])];
+    let filteredCreditNotes = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-        ),
-      );
+      filteredCreditNotes = filteredCreditNotes.filter((item) => {
+        const searchText = filterValue.toLowerCase();
+
+        if (searchFilters.type && item?.[searchFilters.type] !== undefined) {
+          return String(item?.[searchFilters.type])
+            ?.toLowerCase()
+            ?.includes(searchText);
+        }
+
+        return Object.values(item || {}).some((val) =>
+          String(val)?.toLowerCase()?.includes(searchText),
+        );
+      });
     }
 
-    return filteredUsers;
-  }, [data, filterValue]);
+    return filteredCreditNotes;
+  }, [data, filterValue, hasSearchFilter, searchFilters.type]);
 
-  const pages = Math.ceil(count / rowsPerPage) || 1;
+  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
 
   const sortedItems = React.useMemo(() => {
     return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
+      const first = a?.[sortDescriptor.column];
+      const second = b?.[sortDescriptor.column];
+
+      if (first === undefined || first === null) return 1;
+      if (second === undefined || second === null) return -1;
+
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
 
-  const handleViewEstimate = (value) => {
-    dispatch(getInvoiceDetailById({ id: value?.id, userId }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          let tempData = resp?.payload;
-          setInvoiceDetail(tempData);
-          onOpen();
-        } else {
-          addToast({
-            title: "There is Some Issue in Invoice",
-            color: "danger",
-          });
-          onOpen();
-        }
-      })
-      .catch(() =>
-        addToast({ title: "There is Some Issue in Invoice", color: "danger" }),
-      );
+  const paginatedItems = React.useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    return sortedItems.slice(start, end);
+  }, [page, sortedItems, rowsPerPage]);
+
+  const getStatusClass = (value) => {
+    switch (value) {
+      case "APPROVED":
+        return "bg-green-100 text-green-700";
+      case "REJECTED":
+        return "bg-red-100 text-red-700";
+      case "CANCELLED":
+        return "bg-gray-100 text-gray-700";
+      default:
+        return "bg-yellow-100 text-yellow-700";
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
+
     switch (columnKey) {
       case "date":
         return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
+          <p className="text-sm">
+            {rowData?.createdAt
+              ? dayjs(rowData.createdAt).format("DD-MM-YYYY")
+              : "-"}
           </p>
         );
-      case "invoiceNo":
+
+      case "creditNoteNumber":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{rowData?.invoiceNumber}</p>
+            <p className="text-sm font-medium">
+              {rowData?.creditNoteNumber || "-"}
+            </p>
+            <p className="text-tiny text-default-400">ID: {rowData?.id}</p>
           </div>
         );
-      case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-      case "clientName":
-        return <p className="text-sm capitalize">{rowData?.clientName}</p>;
+
+      case "unbilledNumber":
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">{rowData?.unbilledNumber || "-"}</p>
+            <p className="text-tiny text-default-400">
+              Unbilled ID: {rowData?.unbilledId || "-"}
+            </p>
+          </div>
+        );
+
+      case "estimateNumber":
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">{rowData?.estimateNumber || "-"}</p>
+            <p className="text-tiny text-default-400">
+              Estimate ID: {rowData?.estimateId || "-"}
+            </p>
+          </div>
+        );
+
       case "companyName":
-        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
-      case "txnAmount":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">
-              {inrCurrency(rowData?.grandTotal)}
+            <p className="text-sm font-medium capitalize">
+              {rowData?.companyName || "-"}
             </p>
-            <div className="flex gap-1.5">
-              <span className="text-gray-500 text-tiny">GST</span>
-              <span className="text-gray-500 text-tiny">:</span>
-              <span className="text-gray-500 text-tiny">
-                {inrCurrency(rowData?.totalGstAmount)}
-              </span>
-            </div>
-          </div>
-        );
-      case "cgstAmount":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">
-              {inrCurrency(rowData?.cgstAmount)}
+            <p className="text-tiny text-default-400">
+              Company ID: {rowData?.companyId || "-"}
             </p>
           </div>
         );
-      case "sgstAmount":
+
+      case "contactName":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">
-              {inrCurrency(rowData?.sgstAmount)}
+            <p className="text-sm capitalize">{rowData?.contactName || "-"}</p>
+            <p className="text-tiny text-default-400">
+              Contact ID: {rowData?.contactId || "-"}
             </p>
           </div>
         );
-      case "igstAmount":
+
+      case "totalAmount":
+        return (
+          <p className="text-sm">{inrCurrency(rowData?.totalAmount || 0)}</p>
+        );
+
+      case "receivedAmount":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">
-              {inrCurrency(rowData?.igstAmount)}
+            <p className="text-sm">
+              {inrCurrency(rowData?.receivedAmount || 0)}
+            </p>
+            <p className="text-tiny text-default-400">
+              Current: {inrCurrency(rowData?.currentReceivedAmount || 0)}
             </p>
           </div>
         );
-      case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+
+      case "outstandingAmount":
+        return (
+          <p className="text-sm font-medium">
+            {inrCurrency(rowData?.outstandingAmount || 0)}
+          </p>
+        );
+
+      case "refundAmount":
+        return (
+          <p className="text-sm font-medium">
+            {inrCurrency(rowData?.refundAmount || 0)}
+          </p>
+        );
+
+      case "status":
+        return (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+              rowData?.status,
+            )}`}
+          >
+            {rowData?.status || "-"}
+          </span>
+        );
+
+      case "reason":
+        return (
+          <p className="max-w-[220px] truncate text-sm">
+            {rowData?.reason || "-"}
+          </p>
+        );
+
       case "actions":
         return (
-          <div className="relative flex justify-center items-center gap-2">
+          <div className="relative flex items-center justify-center gap-2">
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 selectionMode="single"
                 onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
-                  if (key == "viewEstimate") {
-                    handleViewEstimate(rowData);
+                  const key = Array.from(e)[0];
+
+                  if (key === "viewCreditNote") {
+                    console.log("View Credit Note:", rowData);
                   }
                 }}
               >
-                <DropdownItem key="viewEstimate">Tax invoice</DropdownItem>
+                <DropdownItem key="viewCreditNote">
+                  View Credit Note
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
         );
+
       default:
-        return cellValue;
+        return cellValue || "-";
     }
   }, []);
 
@@ -268,68 +318,49 @@ const CreditNote = () => {
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback(
-    (value) => {
-      if (value) {
-        setFilterValue(value);
-        setPage(1);
-        dispatch(
-          searchInvoiceByCompanyNameAndInvoice({
-            ...searchFilters,
-            searchText: value,
-            page,
-            size: rowsPerPage,
-          }),
-        );
-        dispatch(
-          searchInvoiceCountByCompanyNameAndInvoice({
-            ...searchFilters,
-            searchText: value,
-          }),
-        );
-      } else {
-        setFilterValue("");
-        dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
-        dispatch(getAllInvoiceCount({ userId, status }));
-      }
-    },
-    [searchFilters, page, rowsPerPage],
-  );
+  const onSearchChange = React.useCallback((value) => {
+    setFilterValue(value || "");
+    setPage(1);
+  }, []);
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
     setPage(1);
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
-    dispatch(getAllInvoiceCount({ userId, status }));
   }, []);
 
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center w-full pb-0.5">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex w-full items-center pb-0.5">
             <Select
               className="max-w-[15%]"
               selectionMode="single"
               selectedKeys={[searchFilters?.type]}
               onSelectionChange={(e) => {
-                let key = Array.from(e)[0];
-                setSearchFilters((preview) => ({ ...preview, type: key }));
+                const key = Array.from(e)[0];
+                setSearchFilters((prev) => ({ ...prev, type: key }));
+                setFilterValue("");
+                setPage(1);
               }}
             >
-              <SelectItem key={"invoiceNumber"}>Invoice number</SelectItem>
-              <SelectItem key={"companyName"}>Company name</SelectItem>
+              <SelectItem key="creditNoteNumber">Credit note number</SelectItem>
+              <SelectItem key="companyName">Company name</SelectItem>
+              <SelectItem key="unbilledNumber">Unbilled number</SelectItem>
+              <SelectItem key="estimateNumber">Estimate number</SelectItem>
             </Select>
+
             <Input
               isClearable
               className="w-full sm:max-w-[35%]"
               placeholder="Search ..."
               startContent={<Search />}
               value={filterValue}
-              onClear={() => onClear()}
+              onClear={onClear}
               onValueChange={onSearchChange}
             />
           </div>
+
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
@@ -341,15 +372,16 @@ const CreditNote = () => {
                   {status}
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
-                aria-label="Single selection example"
                 selectedKeys={[status]}
                 selectionMode="single"
                 variant="flat"
                 onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
+                  const key = Array.from(e)[0];
                   setStatus(key);
+                  setPage(1);
                 }}
               >
                 <DropdownItem key="PENDING">PENDING</DropdownItem>
@@ -358,12 +390,14 @@ const CreditNote = () => {
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
+
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -381,14 +415,16 @@ const CreditNote = () => {
             </Dropdown>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} Credit Notes
+
+        <div className="flex items-center justify-between">
+          <span className="text-small text-default-400">
+            Total {filteredItems.length} Credit Notes
           </span>
-          <label className="flex items-center text-default-400 text-small">
+
+          <label className="flex items-center text-small text-default-400">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent text-small text-default-400 outline-hidden"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -404,21 +440,22 @@ const CreditNote = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    count,
-    onSearchChange,
-    hasSearchFilter,
     status,
     searchFilters,
+    filteredItems.length,
+    onClear,
+    onSearchChange,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
+      <div className="flex items-center justify-between px-2 py-2">
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys.size} of ${filteredItems.length} selected`}
         </span>
+
         <Pagination
           isCompact
           showControls
@@ -428,7 +465,8 @@ const CreditNote = () => {
           total={pages}
           onChange={setPage}
         />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+
+        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -437,6 +475,7 @@ const CreditNote = () => {
           >
             Previous
           </Button>
+
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -448,14 +487,22 @@ const CreditNote = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [
+    selectedKeys,
+    filteredItems.length,
+    page,
+    pages,
+    onPreviousPage,
+    onNextPage,
+  ]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Credit Note</h1>
+      <h1 className="mb-1 font-sans text-2xl font-medium">Credit Note</h1>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Credit note table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -479,7 +526,8 @@ const CreditNote = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+
+        <TableBody emptyContent="No data found" items={paginatedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -489,21 +537,6 @@ const CreditNote = () => {
           )}
         </TableBody>
       </Table>
-      {/* <Modal
-        size="full"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="top-center"
-      >
-        <ModalContent>
-          <ModalHeader>Tax Invoice</ModalHeader>
-          <ModalBody className="max-h-[90vh] overflow-auto">
-            <TaxInvoice invoiceData={invoiceDetail} />
-          </ModalBody>
-        </ModalContent>
-      </Modal> */}
     </>
   );
 };
