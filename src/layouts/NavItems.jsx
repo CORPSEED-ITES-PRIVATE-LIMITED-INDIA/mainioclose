@@ -268,9 +268,19 @@ export const navItems = [
     key: "Procurement",
     children: [
       {
-        title: "Vendor",
+        title: "Vendor request",
         url: "procurement/vendors-requests",
         key: "vendorRequest",
+      },
+      {
+        title: "Vendor list",
+        url: "procurement/vendorList",
+        key: "vendorList",
+      },
+      {
+        title: "Projects",
+        url: "procurement/projects",
+        key: "projects",
       },
       {
         title: "Payments",
@@ -610,6 +620,12 @@ export const procurementItems = [
     icon: "User2",
     url: "procurement/vendors-requests",
     key: "vendor",
+  },
+  {
+    title: "Projects",
+    icon: "File",
+    url: "procurement/projects",
+    key: "projects",
   },
   {
     title: "Payments",

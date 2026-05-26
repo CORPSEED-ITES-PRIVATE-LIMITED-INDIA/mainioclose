@@ -5,30 +5,30 @@ export const allVendorsCategory = createAsyncThunk(
   "allVendorsCatagory",
   async () => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=1000`
+      `/leadService/api/v1/vendor/fetch-all-vendor-category?page=1&size=1000`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getSingleCategoryDataById = createAsyncThunk(
   "getSingleCatagoryDataById",
   async (id) => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/fetch-vendor-category?categoryId=${id}`
+      `/leadService/api/v1/vendor/fetch-vendor-category?categoryId=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVendorDetailList = createAsyncThunk(
   "getVendorDetail",
   async (data) => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/find-vendor-request-by-user-id?userId=${data?.userId}&leadId=${data?.leadId}`
+      `/leadService/api/v1/vendor/find-vendor-request-by-user-id?userId=${data?.userId}&leadId=${data?.leadId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const addVendorsDetail = createAsyncThunk(
@@ -36,40 +36,40 @@ export const addVendorsDetail = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/vendor/create-vendor-request?leadId=${data?.leadId}&userId=${data?.userId}`,
-      data?.data
+      data?.data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsRequest = createAsyncThunk(
   "getAllVendorsRequest",
   async ({ userId, page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/find-all-vendor-request?userId=${userId}&page=${page}&size=${size}`
+      `/leadService/api/v1/vendor/find-all-vendor-request?userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createVendorsCategory = createAsyncThunk(
   "createVendorsCategory",
   async (data) => {
     const response = await api.post(
-      `/leadService/api/v1/vendor/create-vendor-category?userId=${data?.userId}&categoryName=${data?.categoryName}`
+      `/leadService/api/v1/vendor/create-vendor-category?userId=${data?.userId}&categoryName=${data?.categoryName}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateVendorsCategory = createAsyncThunk(
   "updateVendorsCategory",
   async (data) => {
     const response = await api.put(
-      `/leadService/api/v1/vendor/update-vendor-category?userId=${data?.userId}&categoryId=${data?.categoryId}&newCategoryName=${data?.categoryName}`
+      `/leadService/api/v1/vendor/update-vendor-category?userId=${data?.userId}&categoryId=${data?.categoryId}&newCategoryName=${data?.categoryName}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const createVendorsSubCategory = createAsyncThunk(
@@ -77,20 +77,20 @@ export const createVendorsSubCategory = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/vendor/create-vendor-sub-category?userId=${data?.userId}`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateVendorsSubCategory = createAsyncThunk(
   "updateVendorsSubCategory",
   async (data) => {
     const response = await api.put(
-      `/leadService/api/v1/vendor/update-vendor-sub-category?userId=${data?.userId}&categoryId=${data?.categoryId}&subCategoryId=${data?.subCategoryId}&newSubCategoryName=${data?.subCategoryName}&vendorCategoryResearchTat=${data?.vendorCategoryResearchTat}&vendorCompletionTat=${data?.vendorCompletionTat}`
+      `/leadService/api/v1/vendor/update-vendor-sub-category?userId=${data?.userId}&categoryId=${data?.categoryId}&subCategoryId=${data?.subCategoryId}&newSubCategoryName=${data?.subCategoryName}&vendorCategoryResearchTat=${data?.vendorCategoryResearchTat}&vendorCompletionTat=${data?.vendorCompletionTat}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateProcurementUsers = createAsyncThunk(
@@ -99,10 +99,10 @@ export const updateProcurementUsers = createAsyncThunk(
     console.log("dshgsdjhgdsjgs", data);
     const response = await api.post(
       `/leadService/api/v1/vendor/map-assignee-to-sub-category?subCategoryId=${data?.subCategoryId}`,
-      JSON.stringify(data?.data || [])
+      JSON.stringify(data?.data || []),
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsStatus = createAsyncThunk(
@@ -110,37 +110,37 @@ export const getAllVendorsStatus = createAsyncThunk(
   async () => {
     const response = await api.get(`/leadService/api/v1/vendor-status-all`);
     return response.data;
-  }
+  },
 );
 
 export const getvendorHistoryByLeadId = createAsyncThunk(
   "getvendorHistoryByLeadId",
   async (data) => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/find-update-request-history?userId=${data?.userId}&leadId=${data?.leadId}&vendorRequestId=${data?.vendorRequestId}`
+      `/leadService/api/v1/vendor/find-update-request-history?userId=${data?.userId}&leadId=${data?.leadId}&vendorRequestId=${data?.vendorRequestId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVendorDetailByVendorId = createAsyncThunk(
   "getVendorDetailByVendorId",
   async ({ userId, vendorId }) => {
     const response = await api.get(
-      `/leadService/api/v1/details-with-history?userId=${userId}&vendorId=${vendorId}`
+      `/leadService/api/v1/details-with-history?userId=${userId}&vendorId=${vendorId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const cancelVendorsRequest = createAsyncThunk(
   "cancelVendorsRequest",
   async ({ vendorRequestId, userId, cancelReason }) => {
     const response = await api.delete(
-      `/leadService/api/v1/vendor/cancel-vendor-request?vendorRequestId=${vendorRequestId}&userId=${userId}&cancelReason=${cancelReason}`
+      `/leadService/api/v1/vendor/cancel-vendor-request?vendorRequestId=${vendorRequestId}&userId=${userId}&cancelReason=${cancelReason}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateVendorStatus = createAsyncThunk(
@@ -148,10 +148,10 @@ export const updateVendorStatus = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/vendor/update-vendor-request?vendorId=${data?.vendorId}&userId=${data?.userId}&leadId=${data?.leadId}`,
-      data?.data
+      data?.data,
     );
     return response.data;
-  }
+  },
 );
 
 export const sendVendorsProposal = createAsyncThunk(
@@ -159,20 +159,20 @@ export const sendVendorsProposal = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/vendor/send-quotation?leadId=${data?.leadId}&userId=${data?.userId}&vendorRequestId=${data?.vendorRequestId}`,
-      data?.data
+      data?.data,
     );
     return response.data;
-  }
+  },
 );
 
 export const searchInVendorsList = createAsyncThunk(
   `searchInVendorsList`,
   async ({ userId, searchInput }) => {
     const response = await api.get(
-      `/leadService/api/v1/vendor/vendor-search?userId=${userId}&searchInput=${searchInput}`
+      `/leadService/api/v1/vendor/vendor-search?userId=${userId}&searchInput=${searchInput}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const vendorsExportReportFilteration = createAsyncThunk(
@@ -180,50 +180,50 @@ export const vendorsExportReportFilteration = createAsyncThunk(
   async (data) => {
     const response = await api.post(
       `/leadService/api/v1/vendor/vendor-report`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getAllVendorsEstimate = createAsyncThunk(
   "getAllVendorsEstimate",
   async ({ userId, page, size }) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllEstimateForProcurement?userId=${userId}&page=${page}&size=${size}`
+      `/leadService/api/v1/leadEstimate/getAllEstimateForProcurement?userId=${userId}&page=${page}&size=${size}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVendorsEstimateCount = createAsyncThunk(
   "getVendorsEstimateCount",
   async (userId) => {
     const response = await api.get(
-      `/leadService/api/v1/leadEstimate/getAllEstimateForProcurementForCount?userId=${userId}`
+      `/leadService/api/v1/leadEstimate/getAllEstimateForProcurementForCount?userId=${userId}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updatePaymentForVendorPayment = createAsyncThunk(
   "updatePaymentForVendorPayment",
   async ({ userId, estimateId, status }) => {
     const response = await api.put(
-      `/leadService/api/v1/leadEstimate/markedEstimateSource?userId=${userId}&estimateId=${estimateId}&status=${status}`
+      `/leadService/api/v1/leadEstimate/markedEstimateSource?userId=${userId}&estimateId=${estimateId}&status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVendorPaymentHistory = createAsyncThunk(
   "getVendorPaymentHistory",
   async (id) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterHistoryById?id=${id}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterHistoryById?id=${id}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const updateVendorPaymentFromAccounts = createAsyncThunk(
@@ -231,30 +231,30 @@ export const updateVendorPaymentFromAccounts = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/accountService/api/v1/paymentRegister/addAmountByAccountTeam`,
-      data
+      data,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVendorPaymentRegisterInAdmin = createAsyncThunk(
   "getVendorPaymentRegisterInAdmin",
   async ({ page, size, status }) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterForAdmin?page=${page}&size=${size}&status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterForAdmin?page=${page}&size=${size}&status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const getVendorPaymentCountInAdmin = createAsyncThunk(
   "getVendorPaymentCountInAdmin",
   async (status) => {
     const response = await api.get(
-      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAdmin?status=${status}`
+      `/accountService/api/v1/paymentRegister/getAllVendorPaymentRegisterCountForAdmin?status=${status}`,
     );
     return response.data;
-  }
+  },
 );
 
 export const changeProcurementAssignee = createAsyncThunk(
@@ -262,10 +262,75 @@ export const changeProcurementAssignee = createAsyncThunk(
   async (data) => {
     const response = await api.put(
       `/leadService/api/v1/vendor/edit-vendor-details-request?updatedById=${data?.updatedById}&assigneeToId=${data?.assigneeToId}`,
-      data?.data
+      data?.data,
     );
     return response.data;
-  }
+  },
+);
+
+export const createVendor = createAsyncThunk(
+  "createVendor",
+  async ({ data, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/vendors?userId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  },
+);
+
+export const getAllVendors = createAsyncThunk(
+  "getAllVendors",
+  async ({ page, size, search, userId }) => {
+    const response = await api.get(
+      `/operationService/api/vendors?userId=${userId}&page=${page}&size=${size}&keyword=${search}`,
+    );
+    return response.data;
+  },
+);
+
+export const updateVendor = createAsyncThunk(
+  "vendors/updateVendor",
+  async ({ id, data, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/vendors/${id}?userId=${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || {
+          message: "Something went wrong while updating vendor",
+        },
+      );
+    }
+  },
+);
+
+export const deleteVendor = createAsyncThunk(
+  "vendors/deleteVendor",
+  async ({ id, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/operationService/api/vendors/${id}?userId=${userId}`,
+      );
+      return {
+        id,
+        data: response.data,
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || {
+          message: "Something went wrong while deleting vendor",
+        },
+      );
+    }
+  },
 );
 
 const VendorsSlice = createSlice({
@@ -286,6 +351,7 @@ const VendorsSlice = createSlice({
     vendorPaymentListForAdmin: [],
     vendorPaymentCountForAdmin: 0,
     vendorDetail: {},
+    vendorList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -384,7 +450,7 @@ const VendorsSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.vendorsExportData = action?.payload?.vendorReports;
-      }
+      },
     );
     builder.addCase(vendorsExportReportFilteration.rejected, (state) => {
       state.loading = "rejected";
@@ -435,7 +501,7 @@ const VendorsSlice = createSlice({
       (state, action) => {
         state.loading = "success";
         state.vendorPaymentListForAdmin = action?.payload;
-      }
+      },
     );
     builder.addCase(getVendorPaymentRegisterInAdmin.rejected, (state) => {
       state.loading = "rejected";
@@ -464,6 +530,18 @@ const VendorsSlice = createSlice({
     builder.addCase(getVendorDetailByVendorId.rejected, (state) => {
       state.loading = "rejected";
       state.vendorDetail = {};
+    });
+
+    builder.addCase(getAllVendors.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendors.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorList = action?.payload;
+    });
+    builder.addCase(getAllVendors.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorList = [];
     });
   },
 });
