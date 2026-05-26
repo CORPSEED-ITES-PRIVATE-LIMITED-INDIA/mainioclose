@@ -777,6 +777,21 @@ export const getServicePaymentTermBasedOnMilestone = createAsyncThunk(
   },
 );
 
+export const mapVendorWithProjectInOperations = createAsyncThunk(
+  "mapVendorWithProjectInOperations",
+  async ({ data, procurementAssignmentId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/procurement-assignments/${procurementAssignmentId}/vendor`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

@@ -41,6 +41,7 @@ import {
   getHistoryByMileStoneIdAndProjectId,
   getOperationProjectDetailById,
   getRequiredDocumentsByProductId,
+  mapVendorWithProjectInOperations,
   updateApplicantTypeInProject,
   updateAssigneeForMileStone,
   updateAssignmentStatusForMileStone,
@@ -86,6 +87,7 @@ import {
   toCalendarDate,
   today,
 } from "@internationalized/date";
+import { getAllVendors } from "../../toolkit/slices/vendorsSlice";
 
 const companyDocsList = [
   {
@@ -337,6 +339,7 @@ const ProjectDetails = () => {
   const noteModal = useDisclosure();
   const commentModal = useDisclosure();
   const legalSupportModal = useDisclosure();
+  const vendorMapModal = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -362,6 +365,7 @@ const ProjectDetails = () => {
   const activities = useSelector(
     (state) => state.operation.activitiesByProjectId?.content || [],
   );
+  const vendorList = useSelector((state) => state.vendors.vendorList?.content);
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
@@ -409,6 +413,12 @@ const ProjectDetails = () => {
   const [legalRequestData, setLegalRequestData] = useState({
     legalRequestTitle: "",
     notes: "",
+  });
+
+  const [vendorMapData, setVendorMapData] = useState({
+    vendorId: null,
+    userId: userId,
+    remarks: "",
   });
 
   useEffect(() => {
@@ -822,6 +832,39 @@ const ProjectDetails = () => {
 
   const handleAddLegalRequest = () => {};
 
+  const handleMapVendorWithProject = () => {
+    dispatch(mapVendorWithProjectInOperations(vendorMapData))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Vendor mapped with project successfully !.",
+            color: "success",
+          });
+          vendorMapModal.onClose();
+          setVendorMapData({
+            vendorId: null,
+            userId: userId,
+            remarks: "",
+          });
+          dispatch(getOperationProjectDetailById({ projectId, userId }));
+        } else {
+          addToast({
+            title: "FAILED",
+            description: resp?.payload?.message || "Something went wrong !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch((err) =>
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
+      );
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between gap-3 px-3">
@@ -916,6 +959,25 @@ const ProjectDetails = () => {
         </div>
         <div className="flex flex-col justify-between gap-2.5 py-1.5">
           <div className="flex items-center gap-1.5">
+            {(department === "Procurement" || adminRole) && (
+              <Button
+                radius="sm"
+                onPress={() => {
+                  vendorMapModal.onOpen();
+                  dispatch(
+                    getAllVendors({
+                      userId,
+                      page: 1,
+                      size: 5000,
+                      search: "",
+                    }),
+                  );
+                }}
+              >
+                Map vendor
+              </Button>
+            )}
+
             <Button
               radius="sm"
               onPress={() => {
@@ -2503,6 +2565,66 @@ const ProjectDetails = () => {
                     setLegalRequestData((prev) => ({
                       ...prev,
                       notes: e.target.value,
+                    }))
+                  }
+                />
+              </ModalBody>
+
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button onPress={onClose}>Close</Button>
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isOpen={vendorMapModal.isOpen}
+        onOpenChange={vendorMapModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form
+              className="w-full"
+              onSubmit={(e) => {
+                e.preventDefault();
+                let data = Object.fromEntries(new FormData(e.currentTarget));
+                handleMapVendorWithProject(data);
+              }}
+            >
+              <ModalHeader>Map Vendor</ModalHeader>
+              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
+                <NewSelect
+                  isRequired
+                  errorMessage={"please select vendor"}
+                  data={vendorList}
+                  label={"Select vendor"}
+                  name={"vendorId"}
+                  labelKey={"name"}
+                  valueKey={"id"}
+                  value={vendorMapData?.vendorId}
+                  onChange={(e) =>
+                    setVendorMapData((prev) => ({
+                      ...prev,
+                      vendorId: e,
+                    }))
+                  }
+                />
+
+                <Textarea
+                  label="Remark"
+                  name="remarks"
+                  isRequired
+                  errorMessage="please enter description"
+                  value={vendorMapData?.remarks}
+                  onChange={(e) =>
+                    setVendorMapData((prev) => ({
+                      ...prev,
+                      remarks: e.target.value,
                     }))
                   }
                 />
