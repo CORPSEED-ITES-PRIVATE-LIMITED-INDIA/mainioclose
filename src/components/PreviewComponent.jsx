@@ -521,10 +521,10 @@ const PreviewComponent = ({
           <RotateCw size={16} />
         </ToolbarButton>
 
-        <ToolbarButton tooltip="Fit to screen" onPress={setFitToScreen}>
+        {/* <ToolbarButton tooltip="Fit to screen" onPress={setFitToScreen}>
           <Maximize2 size={16} />
-        </ToolbarButton>
-
+        </ToolbarButton> */}
+        {/* 
         <Tooltip content="Actual size">
           <Button
             size="sm"
@@ -534,7 +534,7 @@ const PreviewComponent = ({
           >
             1:1
           </Button>
-        </Tooltip>
+        </Tooltip> */}
 
         <ToolbarButton tooltip="Reset" onPress={resetImage}>
           <RefreshCcw size={16} />

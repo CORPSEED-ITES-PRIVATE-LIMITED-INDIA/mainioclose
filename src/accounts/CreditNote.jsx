@@ -15,12 +15,23 @@ import {
   Pagination,
   Select,
   SelectItem,
+  addToast,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { inrCurrency } from "../common";
-import { getAllCreditNotes } from "../toolkit/slices/accountSlice";
+import {
+  getAllCreditNotes,
+  approveCreditNote,
+  rejectCreditNote,
+} from "../toolkit/slices/accountSlice";
 
 export const columns = [
   { name: "DATE", uid: "date", sortable: true },
@@ -58,6 +69,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const CreditNote = () => {
   const dispatch = useDispatch();
+  const { userId } = useParams();
 
   const data = useSelector((state) => state.account.creditNoteList);
 
@@ -73,6 +85,14 @@ const CreditNote = () => {
   });
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("PENDING");
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  const [rejectModal, setRejectModal] = useState({
+    isOpen: false,
+    rowData: null,
+  });
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectionReasonError, setRejectionReasonError] = useState("");
 
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
@@ -81,12 +101,13 @@ const CreditNote = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
-  useEffect(() => {
+  const fetchCreditNotes = React.useCallback(() => {
     dispatch(getAllCreditNotes({ status, page, size: rowsPerPage }));
-    console.log("Data", data);
   }, [dispatch, status, page, rowsPerPage]);
 
-  const count = data?.length || 0;
+  useEffect(() => {
+    fetchCreditNotes();
+  }, [fetchCreditNotes]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -141,165 +162,370 @@ const CreditNote = () => {
     return sortedItems.slice(start, end);
   }, [page, sortedItems, rowsPerPage]);
 
-  const getStatusClass = (value) => {
-    switch (value) {
+  const getStatusClass = React.useCallback((value) => {
+    const statusValue = String(value || "").toUpperCase();
+
+    switch (statusValue) {
       case "APPROVED":
         return "bg-green-100 text-green-700";
       case "REJECTED":
         return "bg-red-100 text-red-700";
       case "CANCELLED":
         return "bg-gray-100 text-gray-700";
+      case "PENDING":
       default:
         return "bg-yellow-100 text-yellow-700";
     }
-  };
-
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-
-    switch (columnKey) {
-      case "date":
-        return (
-          <p className="text-sm">
-            {rowData?.createdAt
-              ? dayjs(rowData.createdAt).format("DD-MM-YYYY")
-              : "-"}
-          </p>
-        );
-
-      case "creditNoteNumber":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium">
-              {rowData?.creditNoteNumber || "-"}
-            </p>
-            <p className="text-tiny text-default-400">ID: {rowData?.id}</p>
-          </div>
-        );
-
-      case "unbilledNumber":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">{rowData?.unbilledNumber || "-"}</p>
-            <p className="text-tiny text-default-400">
-              Unbilled ID: {rowData?.unbilledId || "-"}
-            </p>
-          </div>
-        );
-
-      case "estimateNumber":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">{rowData?.estimateNumber || "-"}</p>
-            <p className="text-tiny text-default-400">
-              Estimate ID: {rowData?.estimateId || "-"}
-            </p>
-          </div>
-        );
-
-      case "companyName":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium capitalize">
-              {rowData?.companyName || "-"}
-            </p>
-            <p className="text-tiny text-default-400">
-              Company ID: {rowData?.companyId || "-"}
-            </p>
-          </div>
-        );
-
-      case "contactName":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">{rowData?.contactName || "-"}</p>
-            <p className="text-tiny text-default-400">
-              Contact ID: {rowData?.contactId || "-"}
-            </p>
-          </div>
-        );
-
-      case "totalAmount":
-        return (
-          <p className="text-sm">{inrCurrency(rowData?.totalAmount || 0)}</p>
-        );
-
-      case "receivedAmount":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">
-              {inrCurrency(rowData?.receivedAmount || 0)}
-            </p>
-            <p className="text-tiny text-default-400">
-              Current: {inrCurrency(rowData?.currentReceivedAmount || 0)}
-            </p>
-          </div>
-        );
-
-      case "outstandingAmount":
-        return (
-          <p className="text-sm font-medium">
-            {inrCurrency(rowData?.outstandingAmount || 0)}
-          </p>
-        );
-
-      case "refundAmount":
-        return (
-          <p className="text-sm font-medium">
-            {inrCurrency(rowData?.refundAmount || 0)}
-          </p>
-        );
-
-      case "status":
-        return (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
-              rowData?.status,
-            )}`}
-          >
-            {rowData?.status || "-"}
-          </span>
-        );
-
-      case "reason":
-        return (
-          <p className="max-w-[220px] truncate text-sm">
-            {rowData?.reason || "-"}
-          </p>
-        );
-
-      case "actions":
-        return (
-          <div className="relative flex items-center justify-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  const key = Array.from(e)[0];
-
-                  if (key === "viewCreditNote") {
-                    console.log("View Credit Note:", rowData);
-                  }
-                }}
-              >
-                <DropdownItem key="viewCreditNote">
-                  View Credit Note
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-
-      default:
-        return cellValue || "-";
-    }
   }, []);
+
+  const closeRejectModal = React.useCallback(() => {
+    setRejectModal({
+      isOpen: false,
+      rowData: null,
+    });
+    setRejectionReason("");
+    setRejectionReasonError("");
+  }, []);
+
+  const handleApproveCreditNote = React.useCallback(
+    async (rowData) => {
+      const creditNoteId = rowData?.id;
+
+      if (!creditNoteId || !userId) {
+        addToast({
+          title: "Missing required data",
+          description: "Credit Note ID or User ID is missing.",
+          color: "danger",
+        });
+        return;
+      }
+
+      try {
+        setActionLoadingId(creditNoteId);
+
+        const resp = await dispatch(
+          approveCreditNote({
+            creditNoteId,
+            userId,
+            proposalId: rowData?.proposalId,
+          }),
+        );
+
+        if (resp?.meta?.requestStatus === "fulfilled") {
+          fetchCreditNotes();
+
+          addToast({
+            title: "Success",
+            description: "Credit note approved successfully.",
+            color: "success",
+          });
+        } else {
+          addToast({
+            title: "Something went wrong",
+            description: "Credit note approval failed.",
+            color: "danger",
+          });
+        }
+      } catch (error) {
+        console.error("Approve credit note failed:", error);
+
+        addToast({
+          title: "Something went wrong",
+          description: "Credit note approval failed.",
+          color: "danger",
+        });
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+    [dispatch, userId, fetchCreditNotes],
+  );
+
+  const openRejectModal = React.useCallback(
+    (rowData) => {
+      const creditNoteId = rowData?.id;
+
+      if (!creditNoteId || !userId) {
+        addToast({
+          title: "Missing required data",
+          description: "Credit Note ID or User ID is missing.",
+          color: "danger",
+        });
+        return;
+      }
+
+      setRejectModal({
+        isOpen: true,
+        rowData,
+      });
+      setRejectionReason("");
+      setRejectionReasonError("");
+    },
+    [userId],
+  );
+
+  const handleSubmitRejectCreditNote = React.useCallback(
+    async (e) => {
+      e?.preventDefault?.();
+
+      const rowData = rejectModal?.rowData;
+      const creditNoteId = rowData?.id;
+      const reason = rejectionReason.trim();
+
+      if (!reason) {
+        setRejectionReasonError("Please enter rejection reason.");
+        return;
+      }
+
+      if (!creditNoteId || !userId) {
+        addToast({
+          title: "Missing required data",
+          description: "Credit Note ID or User ID is missing.",
+          color: "danger",
+        });
+        return;
+      }
+
+      try {
+        setActionLoadingId(creditNoteId);
+
+        const resp = await dispatch(
+          rejectCreditNote({
+            creditNoteId,
+            userId,
+            rejectionReason: reason,
+          }),
+        );
+
+        if (resp?.meta?.requestStatus === "fulfilled") {
+          fetchCreditNotes();
+          closeRejectModal();
+
+          addToast({
+            title: "Success",
+            description: "Credit note rejected successfully.",
+            color: "success",
+          });
+        } else {
+          addToast({
+            title: "Something went wrong",
+            description: "Credit note rejection failed.",
+            color: "danger",
+          });
+        }
+      } catch (error) {
+        console.error("Reject credit note failed:", error);
+
+        addToast({
+          title: "Something went wrong",
+          description: "Credit note rejection failed.",
+          color: "danger",
+        });
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+    [
+      dispatch,
+      userId,
+      rejectModal,
+      rejectionReason,
+      fetchCreditNotes,
+      closeRejectModal,
+    ],
+  );
+
+  const handleActionsClick = React.useCallback(
+    (key, rowData) => {
+      const actionKey = String(key);
+
+      if (actionKey === "viewCreditNote") {
+        console.log("View Credit Note:", rowData);
+        return;
+      }
+
+      if (actionKey === "APPROVE") {
+        handleApproveCreditNote(rowData);
+        return;
+      }
+
+      if (actionKey === "REJECT") {
+        openRejectModal(rowData);
+      }
+    },
+    [handleApproveCreditNote, openRejectModal],
+  );
+
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
+
+      switch (columnKey) {
+        case "date":
+          return (
+            <p className="text-sm">
+              {rowData?.createdAt
+                ? dayjs(rowData.createdAt).format("DD-MM-YYYY")
+                : "-"}
+            </p>
+          );
+
+        case "creditNoteNumber":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium">
+                {rowData?.creditNoteNumber || "-"}
+              </p>
+              <p className="text-tiny text-default-400">ID: {rowData?.id}</p>
+            </div>
+          );
+
+        case "unbilledNumber":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">{rowData?.unbilledNumber || "-"}</p>
+              <p className="text-tiny text-default-400">
+                Unbilled ID: {rowData?.unbilledId || "-"}
+              </p>
+            </div>
+          );
+
+        case "estimateNumber":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">{rowData?.estimateNumber || "-"}</p>
+              <p className="text-tiny text-default-400">
+                Estimate ID: {rowData?.estimateId || "-"}
+              </p>
+            </div>
+          );
+
+        case "companyName":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium capitalize">
+                {rowData?.companyName || "-"}
+              </p>
+              <p className="text-tiny text-default-400">
+                Company ID: {rowData?.companyId || "-"}
+              </p>
+            </div>
+          );
+
+        case "contactName":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm capitalize">
+                {rowData?.contactName || "-"}
+              </p>
+              <p className="text-tiny text-default-400">
+                Contact ID: {rowData?.contactId || "-"}
+              </p>
+            </div>
+          );
+
+        case "totalAmount":
+          return (
+            <p className="text-sm">{inrCurrency(rowData?.totalAmount || 0)}</p>
+          );
+
+        case "receivedAmount":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">
+                {inrCurrency(rowData?.receivedAmount || 0)}
+              </p>
+              <p className="text-tiny text-default-400">
+                Current: {inrCurrency(rowData?.currentReceivedAmount || 0)}
+              </p>
+            </div>
+          );
+
+        case "outstandingAmount":
+          return (
+            <p className="text-sm font-medium">
+              {inrCurrency(rowData?.outstandingAmount || 0)}
+            </p>
+          );
+
+        case "refundAmount":
+          return (
+            <p className="text-sm font-medium">
+              {inrCurrency(rowData?.refundAmount || 0)}
+            </p>
+          );
+
+        case "status":
+          return (
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+                rowData?.status,
+              )}`}
+            >
+              {rowData?.status || "-"}
+            </span>
+          );
+
+        case "reason":
+          return (
+            <p className="max-w-[220px] truncate text-sm">
+              {rowData?.rejectionReason || rowData?.reason || "-"}
+            </p>
+          );
+
+        case "actions":
+          return (
+            <div className="relative flex items-center justify-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    isDisabled={actionLoadingId === rowData?.id}
+                  >
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu
+                  aria-label="Credit note actions"
+                  onAction={(key) => handleActionsClick(key, rowData)}
+                >
+                  <DropdownItem key="viewCreditNote">
+                    View Credit Note
+                  </DropdownItem>
+
+                  {rowData?.status === "PENDING" ? (
+                    <DropdownItem
+                      key="APPROVE"
+                      color="success"
+                      className="text-success"
+                    >
+                      Approve
+                    </DropdownItem>
+                  ) : null}
+
+                  {rowData?.status === "PENDING" ? (
+                    <DropdownItem
+                      key="REJECT"
+                      color="danger"
+                      className="text-danger"
+                    >
+                      Reject
+                    </DropdownItem>
+                  ) : null}
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return cellValue || "-";
+      }
+    },
+    [actionLoadingId, getStatusClass, handleActionsClick],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -537,6 +763,64 @@ const CreditNote = () => {
           )}
         </TableBody>
       </Table>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={rejectModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) closeRejectModal();
+        }}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Reject Credit Note</ModalHeader>
+
+              <form onSubmit={handleSubmitRejectCreditNote}>
+                <ModalBody>
+                  <Input
+                    label="Rejection Reason"
+                    placeholder="Enter rejection reason"
+                    value={rejectionReason}
+                    onValueChange={(value) => {
+                      setRejectionReason(value);
+                      if (value?.trim()) {
+                        setRejectionReasonError("");
+                      }
+                    }}
+                    isInvalid={Boolean(rejectionReasonError)}
+                    errorMessage={rejectionReasonError}
+                    isRequired
+                  />
+                </ModalBody>
+
+                <ModalFooter>
+                  <Button
+                    variant="flat"
+                    onPress={() => {
+                      closeRejectModal();
+                      onClose();
+                    }}
+                    isDisabled={actionLoadingId === rejectModal?.rowData?.id}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    color="danger"
+                    type="submit"
+                    isLoading={actionLoadingId === rejectModal?.rowData?.id}
+                  >
+                    Submit Reject
+                  </Button>
+                </ModalFooter>
+              </form>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

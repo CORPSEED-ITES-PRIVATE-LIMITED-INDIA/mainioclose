@@ -340,7 +340,9 @@ const ProductServiceDetails = () => {
 
     try {
       setIsSubmitting(true);
-
+      console.log("SubID:", formData.subCategoryId);
+      console.log("SolID:", solutionId);
+      console.log("Payload:", payload);
       await dispatch(
         addBrochureToExistingSolution({
           solutionId,
@@ -421,8 +423,8 @@ const ProductServiceDetails = () => {
           </Button>
         </div>
 
-        {savedDetails ? (
-          <Card className="flex min-h-0 flex-1 overflow-hidden border border-default-200 bg-background shadow-sm">
+        {/* {savedDetails ? (
+          <Card className="flex max-h-full flex-1 overflow-clip border border-default-200 bg-background shadow-sm">
             <CardHeader className="flex shrink-0 flex-col items-start justify-between gap-4 px-5 pb-3 pt-5 sm:flex-row sm:items-center">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-success-50 text-success">
@@ -554,33 +556,34 @@ const ProductServiceDetails = () => {
               </div>
             </CardBody>
           </Card>
-        ) : (
-          <Card className="flex min-h-0 flex-1 overflow-hidden border border-dashed border-default-300 bg-background/80 shadow-sm">
-            <CardBody className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-hidden p-6 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary-50 text-primary">
-                <FolderTree size={30} />
-              </div>
+        ) :
+         ( */}
+        <Card className="flex min-h-0 flex-1 overflow-hidden border border-dashed border-default-300 bg-background/80 shadow-sm">
+          <CardBody className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-hidden p-6 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary-50 text-primary">
+              <FolderTree size={30} />
+            </div>
 
-              <div>
-                <h2 className="text-lg font-bold text-default-900">
-                  No service details added yet
-                </h2>
-                <p className="mt-1 max-w-md text-sm leading-6 text-default-500">
-                  Click below to select Menu, Category and Subcategory, then add
-                  optional content and brochure.
-                </p>
-              </div>
+            <div>
+              <h2 className="text-lg font-bold text-default-900">
+                No service details added yet
+              </h2>
+              <p className="mt-1 max-w-md text-sm leading-6 text-default-500">
+                Click below to select Menu, Category and Subcategory, then add
+                optional content and brochure.
+              </p>
+            </div>
 
-              <Button
-                color="primary"
-                startContent={<Plus size={17} />}
-                onPress={() => setIsModalOpen(true)}
-              >
-                Add Service Details
-              </Button>
-            </CardBody>
-          </Card>
-        )}
+            <Button
+              color="primary"
+              startContent={<Plus size={17} />}
+              onPress={() => setIsModalOpen(true)}
+            >
+              Add Service Details
+            </Button>
+          </CardBody>
+        </Card>
+        {/* )} */}
 
         <Modal
           isOpen={isModalOpen}

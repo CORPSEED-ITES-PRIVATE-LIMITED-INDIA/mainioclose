@@ -616,13 +616,18 @@ const ProposalMenu = () => {
 
         case "brochure":
           return brochure ? (
-            <div className="flex items-start gap-2">
+            <button
+              onClick={() => {
+                openPreview(rowData?.brochure);
+              }}
+              className="flex max-w-[320px] items-start gap-2 text-left"
+            >
               <div className="rounded-lg bg-primary-50 p-1.5 text-primary">
                 <FileText size={16} />
               </div>
 
               <div className="flex min-w-0 flex-col">
-                <span className="max-w-[260px] truncate text-sm font-medium text-default-900">
+                <span className="max-w-[260px] truncate text-sm font-medium text-default-900 hover:text-primary hover:underline">
                   {brochure?.fileName || "---"}
                 </span>
 
@@ -630,7 +635,7 @@ const ProposalMenu = () => {
                   {brochure?.description || brochure?.contentType || "---"}
                 </span>
               </div>
-            </div>
+            </button>
           ) : (
             <span className="text-sm text-default-400">No brochure</span>
           );
@@ -681,20 +686,11 @@ const ProposalMenu = () => {
                 <DropdownMenu
                   aria-label="Menu actions"
                   onAction={(key) => {
-                    if (key === "view") {
-                      openPreview(rowData?.brochure);
-                      return;
-                    }
-
                     if (key === "edit") {
                       openEditMenuModal(rowData);
                     }
                   }}
                 >
-                  <DropdownItem key="view" startContent={<Eye size={16} />}>
-                    View
-                  </DropdownItem>
-
                   <DropdownItem key="edit">Edit</DropdownItem>
                 </DropdownMenu>
               </Dropdown>

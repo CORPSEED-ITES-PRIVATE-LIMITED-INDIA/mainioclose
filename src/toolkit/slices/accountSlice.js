@@ -337,6 +337,48 @@ export const createCreditNotes = createAsyncThunk(
   },
 );
 
+export const approveCreditNote = createAsyncThunk(
+  "approveCreditNote",
+  async ({ proposalId, creditNoteId, userId }, { rejectWithValue }) => {
+    try {
+      const creditNoteResponse = await api.put(
+        `/accountService/api/credit-notes/${creditNoteId}/approve/${userId}`,
+      );
+
+      let proposalCancelResponse = null;
+
+      if (proposalId) {
+        proposalCancelResponse = await api.put(
+          `/leadService/api/v1/proposals/${proposalId}/cancel`,
+        );
+      }
+
+      console.log("CREDIT NOTE API RES:", creditNoteResponse);
+      console.log("PROPOSAL CANCEL API RES:", proposalCancelResponse);
+
+      return {
+        creditNote: creditNoteResponse.data,
+        proposalCancel: proposalCancelResponse?.data || null,
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to approve credit note",
+      );
+    }
+  },
+);
+
+export const rejectCreditNote = createAsyncThunk(
+  "rejectCreditNote",
+  async ({creditNoteId,userId,rejectionReason}) => {
+    const response = await api.put(
+      `/accountService/api/credit-notes/${creditNoteId}/reject/${userId}`,{rejectionReason: rejectionReason}
+    );
+    console.log("API RES:",response)
+    return response.data;
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -549,6 +591,24 @@ const AccountSlice = createSlice({
     builder.addCase(getAllCreditNotes.rejected, (state) => {
       state.loading = "rejected";
       state.creditNoteList = {};
+    });
+    builder.addCase(approveCreditNote.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(approveCreditNote.fulfilled, (state, action) => {
+      state.loading = "success";
+    });
+    builder.addCase(approveCreditNote.rejected, (state) => {
+      state.loading = "rejected";
+    });
+    builder.addCase(rejectCreditNote.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(rejectCreditNote.fulfilled, (state, action) => {
+      state.loading = "success";
+    });
+    builder.addCase(rejectCreditNote.rejected, (state) => {
+      state.loading = "rejected";
     });
   },
 });
