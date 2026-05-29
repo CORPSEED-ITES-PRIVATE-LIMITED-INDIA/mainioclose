@@ -354,7 +354,6 @@ const ProjectDetails = () => {
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
   );
-  console.log("DD:", detailedData);
   const clientLoginPortalCredentials = useSelector(
     (state) => state.operation.clientLoginCredential,
   );
@@ -1011,7 +1010,6 @@ const ProjectDetails = () => {
 
     return extension;
   };
-  console.log("Vendor Map Data", vendorMapData);
 
   return (
     <div className="flex flex-col gap-3">

@@ -243,7 +243,7 @@ const Vendors = () => {
       mobile: vendorForm.mobile.trim(),
       gstNumber: vendorForm.gstNumber.trim().toUpperCase(),
       panNumber: vendorForm.panNumber.trim().toUpperCase(),
-      status: vendorForm.status,
+      status: "Active",
       createdBy:
         modalMode === "edit"
           ? toNumberOrNull(selectedVendor?.createdBy) || auditUserId
@@ -797,20 +797,6 @@ const Vendors = () => {
                         handleInputChange("panNumber", formatPANInput(value))
                       }
                     />
-
-                    <Select
-                      isRequired
-                      label="Status"
-                      name="status"
-                      selectedKeys={new Set([vendorForm.status])}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0];
-                        handleInputChange("status", selected);
-                      }}
-                    >
-                      <SelectItem key="ACTIVE">ACTIVE</SelectItem>
-                      <SelectItem key="INACTIVE">INACTIVE</SelectItem>
-                    </Select>
 
                     <Select
                       isRequired
