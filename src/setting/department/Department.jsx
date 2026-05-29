@@ -31,7 +31,17 @@ import {
   getAllDesiginations,
   getAllStatusData,
 } from "../../toolkit/slices/settingSlice";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Calculator,
+  ChevronDown,
+  EllipsisVertical,
+  Plus,
+  Search,
+  ShoppingCart,
+  SlidersHorizontal,
+  UsersRound,
+} from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,7 +81,7 @@ const statusFormDefaultValues = {
 };
 
 export const columns = [
-  { name: "ID", uid: "id" },
+  { name: "#", uid: "id" },
   { name: "DEPARTMENT", uid: "name" },
   { name: "DESIGNATIONS", uid: "designations" },
   { name: "STATUS", uid: "departmentStatus" },
@@ -85,6 +95,51 @@ const INITIAL_VISIBLE_COLUMNS = [
   "departmentStatus",
   "actions",
 ];
+
+const getDepartmentVisual = (name = "") => {
+  const key = String(name).toLowerCase();
+
+  if (key.includes("sales")) {
+    return {
+      icon: BriefcaseBusiness,
+      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
+    };
+  }
+
+  if (key.includes("quality")) {
+    return {
+      icon: UsersRound,
+      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
+    };
+  }
+
+  if (key.includes("account")) {
+    return {
+      icon: Calculator,
+      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
+    };
+  }
+
+  if (key.includes("procurement")) {
+    return {
+      icon: ShoppingCart,
+      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
+    };
+  }
+
+  return {
+    icon: BriefcaseBusiness,
+    box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
+  };
+};
+
+const getStatusChipClass = (name = "") => {
+  return "bg-gray-100 text-gray-900 border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800";
+};
+
+const getStatusDotClass = (name = "") => {
+  return "bg-gray-500 dark:bg-gray-400";
+};
 
 const Department = () => {
   const { userId } = useParams();
@@ -340,38 +395,96 @@ const Department = () => {
     const cellValue = rowData[columnKey];
 
     switch (columnKey) {
-      case "name":
-        return <p>{rowData?.name}</p>;
+      case "id":
+        return (
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {rowData?.id}
+          </span>
+        );
+
+      case "name": {
+        const visual = getDepartmentVisual(rowData?.name);
+        const Icon = visual.icon;
+
+        return (
+          <div className="flex min-w-[210px] items-center gap-4">
+            <div
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${visual.box}`}
+            >
+              <Icon size={21} strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-gray-900 dark:text-gray-100">
+                {rowData?.name}
+              </p>
+              <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                {rowData?.designations?.length || 0} Designations
+              </p>
+            </div>
+          </div>
+        );
+      }
 
       case "designations":
         return (
-          <p>
+          <div className="flex max-w-[520px] flex-wrap gap-2">
             {rowData?.designations?.map((item) => (
-              <Chip size="sm" key={`${item?.name}desi`} className="m-0.5">
+              <Chip
+                size="sm"
+                key={`${item?.name}desi`}
+                radius="sm"
+                variant="flat"
+                className="h-7 border border-gray-300 bg-gray-100 px-2 text-gray-900 dark:border-gray-800 dark:bg-zinc-900 dark:text-gray-100"
+                classNames={{
+                  content: "text-[12px] font-medium",
+                }}
+              >
                 {item?.name}
               </Chip>
             ))}
-          </p>
+          </div>
         );
 
       case "departmentStatus":
         return (
-          <p>
+          <div className="flex max-w-[470px] flex-wrap gap-2">
             {rowData?.departmentStatus?.map((item) => (
-              <Chip size="sm" key={`${item?.name}depart`} className="m-0.5">
+              <Chip
+                size="sm"
+                key={`${item?.name}depart`}
+                radius="sm"
+                variant="flat"
+                startContent={
+                  <span
+                    className={`ml-1 h-1.5 w-1.5 rounded-full ${getStatusDotClass(
+                      item?.name,
+                    )}`}
+                  />
+                }
+                className={`h-7 border px-2 ${getStatusChipClass(item?.name)}`}
+                classNames={{
+                  content: "text-[12px] font-semibold",
+                }}
+              >
                 {item?.name}
               </Chip>
             ))}
-          </p>
+          </div>
         );
 
       case "actions":
         return (
-          <div className="relative flex justify-center items-center gap-2">
+          <div className="relative flex items-center justify-center">
             <Dropdown>
               <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  radius="full"
+                  className="text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-zinc-900"
+                >
+                  <EllipsisVertical size={18} />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
@@ -450,23 +563,35 @@ const Department = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex w-full shrink-0 flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
+            radius="lg"
+            variant="bordered"
+            className="w-full lg:max-w-[430px]"
+            classNames={{
+              inputWrapper:
+                "h-11 border-gray-300 bg-white shadow-sm hover:border-gray-400 data-[hover=true]:border-gray-400 group-data-[focus=true]:border-gray-500 dark:border-gray-800 dark:bg-zinc-950 dark:hover:border-gray-700 dark:data-[hover=true]:border-gray-700 dark:group-data-[focus=true]:border-gray-600",
+              input:
+                "text-sm font-medium text-gray-900 placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400",
+            }}
+            placeholder="Search departments, designations or status..."
+            startContent={<Search size={19} className="text-gray-500" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+
+          <div className="flex items-center gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
+                  radius="lg"
+                  variant="bordered"
+                  className="h-11 border-gray-300 bg-white px-5 font-semibold text-gray-900 shadow-sm dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
+                  startContent={<SlidersHorizontal size={17} />}
+                  endContent={<ChevronDown size={17} />}
                 >
                   Columns
                 </Button>
@@ -486,27 +611,17 @@ const Department = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
-              Add New
+
+            <Button
+              radius="lg"
+              variant="bordered"
+              onPress={onOpen}
+              startContent={<Plus size={18} />}
+              className="h-11 border-gray-300 bg-white px-6 font-semibold text-gray-900 shadow-sm dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
+            >
+              Add New Department
             </Button>
           </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} department
-          </span>
-          <label className="flex items-center text-default-400 text-small">
-            Rows per page:
-            <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
-              onChange={onRowsPerPageChange}
-              value={initialFilteration?.size}
-            >
-              <option value="15">15</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-          </label>
         </div>
       </div>
     );
@@ -522,89 +637,156 @@ const Department = () => {
   ]);
 
   const bottomContent = React.useMemo(() => {
+    const start =
+      filteredItems.length === 0
+        ? 0
+        : (initialFilteration?.page - 1) * initialFilteration?.size + 1;
+    const end = Math.min(
+      initialFilteration?.page * initialFilteration?.size,
+      filteredItems.length,
+    );
+
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="flex shrink-0 flex-col gap-3 border-t border-gray-300 px-1 py-3 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Showing {start} to {end} of {filteredItems.length} departments
         </span>
-        <Pagination
-          isCompact
-          showControls
-          showShadow
-          color="primary"
-          page={initialFilteration?.page}
-          total={pages}
-          onChange={(e) =>
-            setInitialFilteration((prev) => ({ ...prev, page: e }))
-          }
-        />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
-          <Button
-            isDisabled={pages === 1}
-            size="sm"
-            variant="flat"
-            onPress={onPreviousPage}
-          >
-            Previous
-          </Button>
-          <Button
-            isDisabled={pages === 1}
-            size="sm"
-            variant="flat"
-            onPress={onNextPage}
-          >
-            Next
-          </Button>
+
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <label className="flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100">
+            <select
+              className="bg-transparent text-sm font-medium text-gray-900 outline-none dark:text-gray-100"
+              onChange={onRowsPerPageChange}
+              value={initialFilteration?.size}
+            >
+              <option value="10">10 per page</option>
+              <option value="15">15 per page</option>
+              <option value="25">25 per page</option>
+              <option value="50">50 per page</option>
+            </select>
+          </label>
+
+          <Pagination
+            isCompact
+            showControls
+            showShadow={false}
+            variant="bordered"
+            page={initialFilteration?.page}
+            total={pages}
+            onChange={(e) =>
+              setInitialFilteration((prev) => ({ ...prev, page: e }))
+            }
+            classNames={{
+              cursor:
+                "bg-gray-900 text-white font-semibold shadow-none dark:bg-gray-100 dark:text-gray-900",
+              item: "font-semibold text-gray-900 dark:text-gray-100",
+              prev: "text-gray-900 dark:text-gray-100",
+              next: "text-gray-900 dark:text-gray-100",
+            }}
+          />
+
+          <div className="hidden items-center gap-2 sm:flex">
+            <Button
+              isDisabled={pages === 1}
+              size="sm"
+              radius="lg"
+              variant="bordered"
+              className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+              onPress={onPreviousPage}
+            >
+              Previous
+            </Button>
+            <Button
+              isDisabled={pages === 1}
+              size="sm"
+              radius="lg"
+              variant="bordered"
+              className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+              onPress={onNextPage}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     );
-  }, [selectedKeys, initialFilteration?.page, pages, hasSearchFilter, count]);
+  }, [
+    selectedKeys,
+    initialFilteration?.page,
+    initialFilteration?.size,
+    pages,
+    hasSearchFilter,
+    count,
+    filteredItems.length,
+  ]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Department list</h1>
-      <Table
-        isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
-        bottomContent={bottomContent}
-        bottomContentPlacement="outside"
-        classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
-        }}
-        // selectedKeys={selectedKeys}
-        // selectionMode="multiple"
-        sortDescriptor={sortDescriptor}
-        topContent={topContent}
-        topContentPlacement="outside"
-        // onSelectionChange={(e) => {
-        //   let rowKeys = Array.from(e);
-        //   setSelectedKeys(rowKeys);
-        // }}
-        onSortChange={setSortDescriptor}
-      >
-        <TableHeader columns={headerColumns}>
-          {(column) => (
-            <TableColumn
-              key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
-              allowsSorting={column.sortable}
-            >
-              {column.name}
-            </TableColumn>
-          )}
-        </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
-          {(item) => (
-            <TableRow key={item.id}>
-              {(columnKey) => (
-                <TableCell>{renderCell(item, columnKey)}</TableCell>
+      <div className="flex h-[calc(100dvh-84px)] max-h-[calc(100dvh-84px)] min-h-0 w-full flex-col overflow-hidden bg-gray-50 px-4 py-4 dark:bg-black sm:px-6 lg:px-8">
+        <div className="mb-4 shrink-0">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-gray-900 dark:text-gray-100">
+            Department List
+          </h1>
+          <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+            Manage departments, designations and workflow statuses.
+          </p>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <Table
+            isHeaderSticky
+            aria-label="Example table with custom cells, pagination and sorting"
+            bottomContent={bottomContent}
+            bottomContentPlacement="outside"
+            classNames={{
+              base: "flex h-full min-h-0 w-full flex-col overflow-hidden",
+              wrapper:
+                "min-h-0 flex-1 overflow-auto rounded-2xl border border-gray-300 bg-white px-5 py-3 shadow-xl shadow-gray-200/60 dark:border-gray-800 dark:bg-zinc-950 dark:shadow-none",
+              table: "min-w-[1050px] border-separate border-spacing-0",
+              thead: "[&>tr]:first:rounded-xl",
+              th: "sticky top-0 z-20 border-b border-gray-300 bg-gray-100 py-3.5 text-xs font-bold uppercase tracking-wide text-gray-900 first:rounded-l-xl last:rounded-r-xl dark:border-gray-800 dark:bg-zinc-900 dark:text-gray-100",
+              tr: "border-b border-gray-300 dark:border-gray-800",
+              td: "border-b border-gray-300 py-5 text-sm text-gray-900 dark:border-gray-800 dark:text-gray-100",
+            }}
+            sortDescriptor={sortDescriptor}
+            topContent={topContent}
+            topContentPlacement="outside"
+            onSortChange={setSortDescriptor}
+          >
+            <TableHeader columns={headerColumns}>
+              {(column) => (
+                <TableColumn
+                  key={column.uid}
+                  align={column.uid === "actions" ? "center" : "start"}
+                  allowsSorting={column.sortable}
+                  className={
+                    column.uid === "id"
+                      ? "w-[70px]"
+                      : column.uid === "actions"
+                        ? "w-[110px]"
+                        : ""
+                  }
+                >
+                  {column.name}
+                </TableColumn>
               )}
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody emptyContent={"No data found"} items={sortedItems}>
+              {(item) => (
+                <TableRow
+                  key={item.id}
+                  className="hover:bg-gray-50 dark:hover:bg-zinc-900/70"
+                >
+                  {(columnKey) => (
+                    <TableCell>{renderCell(item, columnKey)}</TableCell>
+                  )}
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
       <Modal
         size="xl"
         isDismissable={false}
@@ -612,16 +794,25 @@ const Department = () => {
         isOpen={isOpen}
         onOpenChange={onOpenChange}
         placement="top-center"
+        classNames={{
+          base: "rounded-2xl bg-white dark:bg-zinc-950",
+          backdrop: "bg-black/60 backdrop-blur-sm",
+        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Create department
+              <ModalHeader className="flex flex-col gap-1 border-b border-gray-300 px-6 py-5 dark:border-gray-800">
+                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Create department
+                </span>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Add a new department into the ERP workflow.
+                </span>
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="px-6 py-5">
                 <form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
+                  className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
                   onSubmit={handleSubmit(handleFinish)}
                 >
                   <Controller
@@ -630,15 +821,39 @@ const Department = () => {
                     render={({ field, fieldState: { error } }) => (
                       <Input
                         isRequired
-                        errorMessage="Please enter department"
+                        radius="lg"
+                        variant="bordered"
+                        isInvalid={!!error}
+                        errorMessage={
+                          error?.message || "Please enter department"
+                        }
                         label="Department name"
+                        classNames={{
+                          inputWrapper:
+                            "border-gray-300 bg-white group-data-[focus=true]:border-gray-500 dark:border-gray-800 dark:bg-zinc-950",
+                          label:
+                            "font-semibold text-gray-900 dark:text-gray-100",
+                          input: "font-medium text-gray-900 dark:text-gray-100",
+                        }}
                         {...field}
                       />
                     )}
                   />
-                  <ModalFooter className="w-full flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
+                  <ModalFooter className="flex w-full justify-end gap-3 px-0 pb-0">
+                    <Button
+                      radius="lg"
+                      variant="bordered"
+                      className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+                      onPress={onClose}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      radius="lg"
+                      variant="bordered"
+                      type="submit"
+                      className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
+                    >
                       Submit
                     </Button>
                   </ModalFooter>
@@ -656,16 +871,25 @@ const Department = () => {
         isOpen={designationModal.isOpen}
         onOpenChange={designationModal.onOpenChange}
         placement="top-center"
+        classNames={{
+          base: "rounded-2xl bg-white dark:bg-zinc-950",
+          backdrop: "bg-black/60 backdrop-blur-sm",
+        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Add designation
+              <ModalHeader className="flex flex-col gap-1 border-b border-gray-300 px-6 py-5 dark:border-gray-800">
+                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Add designation
+                </span>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Map selected designations with this department.
+                </span>
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="px-6 py-5">
                 <form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
+                  className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
                   onSubmit={designationForm.handleSubmit(
                     handleDesignationFinish,
                   )}
@@ -689,9 +913,21 @@ const Department = () => {
                       />
                     )}
                   />
-                  <ModalFooter className="w-full flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
+                  <ModalFooter className="flex w-full justify-end gap-3 px-0 pb-0">
+                    <Button
+                      radius="lg"
+                      variant="bordered"
+                      className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+                      onPress={onClose}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      radius="lg"
+                      variant="bordered"
+                      type="submit"
+                      className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
+                    >
                       Submit
                     </Button>
                   </ModalFooter>
@@ -709,16 +945,25 @@ const Department = () => {
         isOpen={statusModal.isOpen}
         onOpenChange={statusModal.onOpenChange}
         placement="top-center"
+        classNames={{
+          base: "rounded-2xl bg-white dark:bg-zinc-950",
+          backdrop: "bg-black/60 backdrop-blur-sm",
+        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Map status
+              <ModalHeader className="flex flex-col gap-1 border-b border-gray-300 px-6 py-5 dark:border-gray-800">
+                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Map status
+                </span>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Assign workflow statuses to this department.
+                </span>
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="px-6 py-5">
                 <form
-                  className="w-full flex flex-col gap-4 max-h-[65vh] overflow-auto"
+                  className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
                   onSubmit={statusForm.handleSubmit(handleAddStatus)}
                 >
                   <Controller
@@ -740,9 +985,21 @@ const Department = () => {
                       />
                     )}
                   />
-                  <ModalFooter className="w-full flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
+                  <ModalFooter className="flex w-full justify-end gap-3 px-0 pb-0">
+                    <Button
+                      radius="lg"
+                      variant="bordered"
+                      className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+                      onPress={onClose}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      radius="lg"
+                      variant="bordered"
+                      type="submit"
+                      className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
+                    >
                       Submit
                     </Button>
                   </ModalFooter>

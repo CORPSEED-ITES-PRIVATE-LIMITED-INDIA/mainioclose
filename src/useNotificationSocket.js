@@ -44,7 +44,7 @@ export default function useNotificationSocket(userId, autoConnect = false) {
 
     try {
       const response = await api.get(
-        `/api/notifications/unread-count?userId=${userId}`,
+        `http://localhost:9001/api/notifications/unread-count?userId=${userId}`,
       );
 
       const count = extractUnreadCount(response?.data);
