@@ -28,7 +28,7 @@ import {
   useDisclosure,
   User,
 } from "@heroui/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addClientLogInCredentialForPortal,
@@ -337,6 +337,7 @@ const verifySchema = z.object({
 
 const ProjectDetails = () => {
   const dispatch = useDispatch();
+  const lastHistoryRequestRef = useRef(null);
   const { projectId, userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const assigneeModal = useDisclosure();
@@ -353,6 +354,7 @@ const ProjectDetails = () => {
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
   );
+  console.log("DD:", detailedData);
   const clientLoginPortalCredentials = useSelector(
     (state) => state.operation.clientLoginCredential,
   );
@@ -437,20 +439,45 @@ const ProjectDetails = () => {
     dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   }, [projectId]);
 
-  useEffect(() => {
-    if (detailedData?.milestones?.length > 0) {
-      const first = detailedData.milestones[0];
-      setSelectedMilestone(first);
+  const fetchMilestoneHistory = (mile, force = false) => {
+    if (!mile?.milestoneId || !mile?.projectId || !userId) return;
 
-      dispatch(
-        getHistoryByMileStoneIdAndProjectId({
-          milestoneId: first.milestoneId,
-          projectId: first.projectId,
-          userId,
-        }),
-      );
+    const requestKey = `${mile.projectId}-${mile.milestoneId}-${userId}`;
+
+    if (!force && lastHistoryRequestRef.current === requestKey) {
+      return;
     }
-  }, [detailedData]);
+
+    lastHistoryRequestRef.current = requestKey;
+
+    dispatch(
+      getHistoryByMileStoneIdAndProjectId({
+        milestoneId: mile.milestoneId,
+        projectId: mile.projectId,
+        userId,
+      }),
+    );
+  };
+
+  useEffect(() => {
+    const first = detailedData?.milestones?.[0];
+
+    if (!first?.milestoneId || !first?.projectId) return;
+
+    setSelectedMilestone((prev) => {
+      if (prev?.milestoneId === first.milestoneId) {
+        return prev;
+      }
+
+      return first;
+    });
+
+    fetchMilestoneHistory(first);
+  }, [
+    detailedData?.projectDetails?.id,
+    detailedData?.milestones?.[0]?.milestoneId,
+    userId,
+  ]);
 
   const handleChangeAssignee = () => {
     dispatch(updateAssigneeForMileStone(assigneeObj))
@@ -549,17 +576,17 @@ const ProjectDetails = () => {
       );
   };
 
-  useEffect(() => {
-    if (detailedData?.milestones?.length > 0) {
-      dispatch(
-        getHistoryByMileStoneIdAndProjectId({
-          milestoneId: detailedData?.milestones?.[0]?.milestoneId,
-          projectId: detailedData?.milestones?.[0]?.projectId,
-          userId,
-        }),
-      );
-    }
-  }, [detailedData]);
+  // useEffect(() => {
+  //   if (detailedData?.milestones?.length > 0) {
+  //     dispatch(
+  //       getHistoryByMileStoneIdAndProjectId({
+  //         milestoneId: detailedData?.milestones?.[0]?.milestoneId,
+  //         projectId: detailedData?.milestones?.[0]?.projectId,
+  //         userId,
+  //       }),
+  //     );
+  //   }
+  // }, [detailedData]);
 
   const handleUpdateApplicantType = (applicantTypeId) => {
     dispatch(updateApplicantTypeInProject({ applicantTypeId, projectId }))
@@ -885,36 +912,71 @@ const ProjectDetails = () => {
   const handleAddLegalRequest = () => {};
 
   const handleMapVendorWithProject = () => {
-    dispatch(mapVendorWithProjectInOperations(vendorMapData))
+    const procurementMilestoneAssignmentId =
+      detailedData?.projectDetails?.procurementMilestoneAssignmentId;
+
+    if (!procurementMilestoneAssignmentId) {
+      addToast({
+        title: "Missing assignment",
+        description: "Procurement milestone assignment ID not found.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!vendorMapData?.vendorId) {
+      addToast({
+        title: "Vendor required",
+        description: "Please select a vendor.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const body = {
+      vendorId: Number(vendorMapData.vendorId),
+      userId: Number(userId),
+      remarks: vendorMapData.remarks || "",
+    };
+
+    dispatch(
+      mapVendorWithProjectInOperations({
+        data: body,
+        procurementAssignmentId: procurementMilestoneAssignmentId,
+      }),
+    )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "SUCCESS",
-            description: "Vendor mapped with project successfully !.",
+            description: "Vendor mapped with project successfully!",
             color: "success",
           });
+
           vendorMapModal.onClose();
+
           setVendorMapData({
             vendorId: null,
             userId: userId,
             remarks: "",
           });
+
           dispatch(getOperationProjectDetailById({ projectId, userId }));
         } else {
           addToast({
             title: "FAILED",
-            description: resp?.payload?.message || "Something went wrong !.",
+            description: resp?.payload?.message || "Something went wrong!",
             color: "danger",
           });
         }
       })
-      .catch((err) =>
+      .catch(() => {
         addToast({
           title: "ERROR",
-          description: "Something went wrong !.",
+          description: "Something went wrong!",
           color: "danger",
-        }),
-      );
+        });
+      });
   };
 
   const getFileFormatFromMeta = (fileMeta) => {
@@ -949,6 +1011,7 @@ const ProjectDetails = () => {
 
     return extension;
   };
+  console.log("Vendor Map Data", vendorMapData);
 
   return (
     <div className="flex flex-col gap-3">
@@ -1132,13 +1195,7 @@ const ProjectDetails = () => {
                   key={i}
                   onClick={() => {
                     setSelectedMilestone(mile);
-                    dispatch(
-                      getHistoryByMileStoneIdAndProjectId({
-                        milestoneId: mile.milestoneId,
-                        projectId: mile.projectId,
-                        userId,
-                      }),
-                    );
+                    fetchMilestoneHistory(mile);
                   }}
                   className={`p-3 mb-2 rounded-lg cursor-pointer border 
         ${
@@ -2762,12 +2819,12 @@ const ProjectDetails = () => {
                   labelKey={"name"}
                   valueKey={"id"}
                   value={vendorMapData?.vendorId}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setVendorMapData((prev) => ({
                       ...prev,
                       vendorId: e,
-                    }))
-                  }
+                    }));
+                  }}
                 />
 
                 <Textarea

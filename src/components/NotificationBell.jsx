@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -8,7 +8,7 @@ import {
   DrawerFooter,
   DrawerHeader,
 } from "@heroui/react";
-import { BellRing, X } from "lucide-react";
+import { BellRing } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useNotificationSocket from "../useNotificationSocket";
 
@@ -20,12 +20,27 @@ export default function NotificationBell({ userId }) {
     connected,
     connecting,
     notifications,
-    setNotifications,
-    connectSocket,
-    disconnectSocket,
+    unreadCount,
+    fetchUnreadCount,
   } = useNotificationSocket(userId, Boolean(userId));
 
   const notificationCount = notifications?.length || 0;
+  const unreadBadgeCount = Number(unreadCount || 0);
+
+  // Auto load unread count when user logs in / userId becomes available
+  useEffect(() => {
+    if (userId) {
+      fetchUnreadCount();
+    }
+  }, [userId, fetchUnreadCount]);
+
+  const handleOpenNotifications = async () => {
+    setIsOpen(true);
+
+    if (userId) {
+      await fetchUnreadCount();
+    }
+  };
 
   const handleNotificationClick = (notification) => {
     if (notification?.redirectUrl) {
@@ -50,8 +65,8 @@ export default function NotificationBell({ userId }) {
     <>
       <Badge
         color="danger"
-        content={notificationCount > 99 ? "99+" : notificationCount}
-        isInvisible={notificationCount === 0}
+        content={unreadBadgeCount > 99 ? "99+" : unreadBadgeCount}
+        isInvisible={unreadBadgeCount === 0}
         shape="circle"
         size="sm"
       >
@@ -60,7 +75,7 @@ export default function NotificationBell({ userId }) {
           variant="light"
           isIconOnly
           radius="full"
-          onPress={() => setIsOpen(true)}
+          onPress={handleOpenNotifications}
           className="min-w-8 h-8 w-8 text-gray-600 dark:text-gray-300"
           aria-label="Open notifications"
         >
@@ -77,45 +92,37 @@ export default function NotificationBell({ userId }) {
         <DrawerContent>
           {(onClose) => (
             <>
-              <DrawerHeader className="flex items-start gap-5 border-b border-gray-200 px-5 py-4 dark:border-neutral-800">
+              <DrawerHeader className="flex items-start justify-between gap-5 border-b border-gray-200 px-5 py-4 dark:border-neutral-800">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Notifications
                   </h3>
 
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {notificationCount > 0
-                      ? `${notificationCount} notification${
-                          notificationCount > 1 ? "s" : ""
-                        } received`
-                      : "No new notifications"}
+                    {unreadBadgeCount > 0
+                      ? `${unreadBadgeCount} unread notification${
+                          unreadBadgeCount > 1 ? "s" : ""
+                        }`
+                      : "No unread notifications"}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pr-5">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                       connected
                         ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
+                        : connecting
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
                     }`}
                   >
-                    {connected ? "Live" : "Offline"}
+                    {connected
+                      ? "Live"
+                      : connecting
+                        ? "Connecting..."
+                        : "Offline"}
                   </span>
-
-                  <Button
-                    size="sm"
-                    variant="flat"
-                    color={connected ? "danger" : "success"}
-                    isLoading={connecting}
-                    onPress={connected ? disconnectSocket : connectSocket}
-                  >
-                    {connecting
-                      ? "Connecting..."
-                      : connected
-                        ? "Stop Live"
-                        : "Start Live"}
-                  </Button>
                 </div>
               </DrawerHeader>
 
@@ -139,7 +146,9 @@ export default function NotificationBell({ userId }) {
                   <div className="divide-y divide-gray-100 dark:divide-neutral-800">
                     {notifications.map((notification, index) => {
                       const dateText = formatDateTime(
-                        notification.timestamp || notification.createdAt,
+                        notification.timestamp ||
+                          notification.createdAt ||
+                          notification.createdDate,
                       );
 
                       return (
@@ -160,9 +169,13 @@ export default function NotificationBell({ userId }) {
                                   {notification.title || "New Notification"}
                                 </h4>
 
-                                {notification.type && (
+                                {(notification.type ||
+                                  notification.eventType ||
+                                  notification.module) && (
                                   <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-neutral-800 dark:text-gray-300">
-                                    {notification.type}
+                                    {notification.type ||
+                                      notification.eventType ||
+                                      notification.module}
                                   </span>
                                 )}
                               </div>
@@ -195,15 +208,6 @@ export default function NotificationBell({ userId }) {
               </DrawerBody>
 
               <DrawerFooter className="border-t border-gray-200 px-5 py-4 dark:border-neutral-800">
-                <Button
-                  variant="flat"
-                  className="flex-1"
-                  onPress={() => setNotifications([])}
-                  isDisabled={notificationCount === 0}
-                >
-                  Clear All
-                </Button>
-
                 <Button color="primary" className="flex-1" onPress={onClose}>
                   Close
                 </Button>

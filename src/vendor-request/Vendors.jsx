@@ -41,7 +41,7 @@ import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../common";
 
 const columns = [
   { name: "ID", uid: "id", sortable: true },
-  { name: "VENDOR CODE", uid: "vendorCode", sortable: true },
+  // { name: "VENDOR CODE", uid: "vendorCode", sortable: true },
   { name: "VENDOR NAME", uid: "name", sortable: true },
   { name: "CONTACT", uid: "contact" },
   { name: "GST / PAN", uid: "taxDetail" },
@@ -461,17 +461,17 @@ const Vendors = () => {
           </span>
         );
 
-      case "vendorCode":
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold text-foreground">
-              {rowData?.vendorCode || "-"}
-            </span>
-            <span className="line-clamp-1 text-xs text-default-400">
-              {rowData?.description || "No description"}
-            </span>
-          </div>
-        );
+      // case "vendorCode":
+      //   return (
+      //     <div className="flex flex-col">
+      //       <span className="font-semibold text-foreground">
+      //         {rowData?.vendorCode || "-"}
+      //       </span>
+      //       <span className="line-clamp-1 text-xs text-default-400">
+      //         {rowData?.description || "No description"}
+      //       </span>
+      //     </div>
+      //   );
 
       case "name":
         return (

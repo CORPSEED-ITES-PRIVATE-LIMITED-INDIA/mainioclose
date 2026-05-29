@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
+import { api } from "./httpRequest";
 
 export default function useNotificationSocket(userId, autoConnect = false) {
   const clientRef = useRef(null);
@@ -7,6 +8,56 @@ export default function useNotificationSocket(userId, autoConnect = false) {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const extractUnreadCount = (responseData) => {
+  if (typeof responseData === "number") {
+    return responseData;
+  }
+
+  if (typeof responseData === "string") {
+    const parsed = Number(responseData);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  if (typeof responseData?.unreadCount === "number") {
+    return responseData.unreadCount;
+  }
+
+  if (typeof responseData?.data === "number") {
+    return responseData.data;
+  }
+
+  if (typeof responseData?.data?.unreadCount === "number") {
+    return responseData.data.unreadCount;
+  }
+
+  if (typeof responseData?.count === "number") {
+    return responseData.count;
+  }
+
+  return 0;
+};
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await api.get(
+        `/api/notifications/unread-count?userId=${userId}`,
+      );
+
+      const count = extractUnreadCount(response?.data);
+
+      
+
+      console.log("Initial unread count:", count, response?.data);
+
+      setUnreadCount(count);
+    } catch (error) {
+      console.error("Failed to fetch unread count:", error);
+    }
+  }, [userId]);
 
   const disconnectSocket = useCallback(async () => {
     if (clientRef.current) {
@@ -48,23 +99,45 @@ export default function useNotificationSocket(userId, autoConnect = false) {
         console.log("STOMP:", str);
       },
 
-      onConnect: () => {
+      onConnect: async () => {
         console.log("WebSocket connected");
+
         setConnected(true);
         setConnecting(false);
+
+        // Load unread count immediately after socket connects
+        await fetchUnreadCount();
 
         client.subscribe(`/topic/notifications/${userId}`, (message) => {
           try {
             const data = JSON.parse(message.body);
+
             setNotifications((prev) => [data, ...prev]);
           } catch (error) {
             console.error("Invalid notification payload:", error);
           }
         });
 
+        client.subscribe(
+          `/topic/notifications/${userId}/unread-count`,
+          (message) => {
+            try {
+              const data = JSON.parse(message.body);
+              const count = extractUnreadCount(data);
+
+              console.log("Live unread count:", count, data);
+
+              setUnreadCount(count);
+            } catch (error) {
+              console.error("Invalid unread count payload:", error);
+            }
+          },
+        );
+
         client.subscribe("/topic/notifications", (message) => {
           try {
             const data = JSON.parse(message.body);
+
             setNotifications((prev) => [data, ...prev]);
           } catch (error) {
             console.error("Invalid global notification payload:", error);
@@ -100,11 +173,16 @@ export default function useNotificationSocket(userId, autoConnect = false) {
 
     clientRef.current = client;
     client.activate();
-  }, [userId]);
+  }, [userId, fetchUnreadCount]);
 
   useEffect(() => {
     if (autoConnect && userId) {
       connectSocket();
+    }
+
+    if (!userId) {
+      setUnreadCount(0);
+      setNotifications([]);
     }
 
     return () => {
@@ -115,8 +193,14 @@ export default function useNotificationSocket(userId, autoConnect = false) {
   return {
     connected,
     connecting,
+
     notifications,
     setNotifications,
+
+    unreadCount,
+    setUnreadCount,
+    fetchUnreadCount,
+
     connectSocket,
     disconnectSocket,
   };
