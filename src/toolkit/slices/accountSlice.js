@@ -344,14 +344,17 @@ export const approveCreditNote = createAsyncThunk(
       const creditNoteResponse = await api.put(
         `/accountService/api/credit-notes/${creditNoteId}/approve/${userId}`,
       );
+      console.log("Credit Note Approved");
 
       let proposalCancelResponse = null;
-
+      console.log("Inside Proposal API")
       if (proposalId) {
         proposalCancelResponse = await api.put(
-          `/leadService/api/v1/proposals/${proposalId}/cancel`,
+          `/leadService/api/v1/proposals/${proposalId}/cancel?userId=${userId}`,
         );
       }
+      
+      console.log("Proposal API Done");
 
       console.log("CREDIT NOTE API RES:", creditNoteResponse);
       console.log("PROPOSAL CANCEL API RES:", proposalCancelResponse);

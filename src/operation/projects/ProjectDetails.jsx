@@ -307,18 +307,27 @@ export const ActivityItem = ({ activity, onReply }) => {
   );
 };
 
-const documentSchema = (isPermanentFlag) =>
-  z.object({
+const documentSchema = z
+  .object({
+    fileUrl: z.string().min(1, "File is required"),
     fileName: z.string().min(1, "File name is required"),
-    companyDocSourceId: z.coerce.number().min(1, "Source is required"),
-    isFromCompanyDoc: z.boolean(),
-    isPermanent: z.boolean(),
-    ...(isPermanentFlag
-      ? { expiryDate: z.string().min(1, "please enter the date") }
-      : {}),
+    isFromCompanyDoc: z.boolean().default(false),
+    isPermanent: z.boolean({
+      required_error: "Please select document type",
+    }),
+    expiryDate: z.string().nullable().optional(),
     fileSizeKb: z.coerce.number().min(1, "File size required"),
     fileFormat: z.string().min(1, "File format is required"),
     remarks: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.isPermanent === false && !data.expiryDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Expiry date is required when document is not permanent",
+        path: ["expiryDate"],
+      });
+    }
   });
 
 const verifySchema = z.object({
@@ -586,25 +595,29 @@ const ProjectDetails = () => {
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = useForm({
-    resolver: zodResolver(documentSchema(isPermanent)),
+    resolver: zodResolver(documentSchema),
     defaultValues: {
+      fileUrl: "",
       fileName: "",
-      fileSizeKb: "",
-      companyDocSourceId: "",
+      fileSizeKb: 0,
       fileFormat: "",
-      expiryDate: "",
+      expiryDate: null,
       remarks: "",
       isFromCompanyDoc: false,
-      isPermanent: false,
+      isPermanent: true,
     },
   });
+
+  const isPermanentValue = watch("isPermanent");
 
   const {
     control: verifyControl,
     handleSubmit: handleVerifySubmit,
     formState: { errors: verifyErrors },
     reset: verifyReset,
+    serValue,
   } = useForm({
     resolver: zodResolver(verifySchema),
     defaultValues: {
@@ -616,16 +629,24 @@ const ProjectDetails = () => {
   const openUploadForDoc = (doc) => {
     setSelectedDoc(doc);
 
-    // reset form each time you open for a new card
+    const permanentValue =
+      doc?.isPermanent !== undefined
+        ? !!doc.isPermanent
+        : doc?.permanent !== undefined
+          ? !!doc.permanent
+          : true;
+
+    setIsPermanent(permanentValue);
+
     reset({
+      fileUrl: doc?.fileUrl || "",
       fileName: doc?.fileName || "",
-      fileSizeKb: doc?.fileSizeKb || "",
-      companyDocSourceId: doc?.companyDocSourceId || "",
+      fileSizeKb: doc?.fileSizeKb || 0,
       fileFormat: doc?.fileFormat || "",
-      expiryDate: doc?.expiryDate || "",
+      expiryDate: permanentValue ? null : doc?.expiryDate || null,
       remarks: doc?.remarks || "",
       isFromCompanyDoc: !!doc?.isFromCompanyDoc,
-      isPermanent: !!doc?.permanent || !!doc?.isPermanent,
+      isPermanent: permanentValue,
     });
 
     docModal.onOpen();
@@ -675,19 +696,47 @@ const ProjectDetails = () => {
   };
 
   const onDocumentSubmit = (data) => {
-    data.projectId = Number(projectId);
-    data.requiredDocumentId = Number(selectedDoc.documentId);
-    data.uploadedById = Number(userId);
-    data.createdById = Number(userId);
-    dispatch(uploadDocumentInProjects({ projectId, data }))
+    const payload = {
+      projectId: Number(projectId),
+      requiredDocumentId: Number(
+        selectedDoc?.documentId ||
+          selectedDoc?.requiredDocumentId ||
+          selectedDoc?.id,
+      ),
+      fileUrl: data.fileUrl,
+      fileName: data.fileName,
+      uploadedById: Number(userId),
+      createdById: Number(userId),
+      isFromCompanyDoc: Boolean(data.isFromCompanyDoc),
+      expiryDate: data.isPermanent ? null : data.expiryDate,
+      isPermanent: Boolean(data.isPermanent),
+      fileSizeKb: Number(data.fileSizeKb),
+      fileFormat: data.fileFormat,
+      remarks: data.remarks || "",
+    };
+
+    dispatch(uploadDocumentInProjects({ projectId, data: payload }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Doucment uploaded successfully !.",
+            title: "Document uploaded successfully!",
             color: "success",
           });
-          reset();
+
+          reset({
+            fileUrl: "",
+            fileName: "",
+            fileSizeKb: 0,
+            fileFormat: "",
+            expiryDate: null,
+            remarks: "",
+            isFromCompanyDoc: false,
+            isPermanent: true,
+          });
+
+          setIsPermanent(true);
           docModal.onClose();
+
           dispatch(
             getRequiredDocumentsByProductId({
               userId,
@@ -696,14 +745,17 @@ const ProjectDetails = () => {
           );
         } else {
           addToast({
-            title: resp?.payload?.status,
+            title: resp?.payload?.status || "Upload failed",
             color: "danger",
             description: resp?.payload?.message,
           });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "Something went wrong!",
+          color: "danger",
+        }),
       );
   };
 
@@ -863,6 +915,39 @@ const ProjectDetails = () => {
           color: "danger",
         }),
       );
+  };
+
+  const getFileFormatFromMeta = (fileMeta) => {
+    const fileName = fileMeta?.fileName || "";
+    const contentType = fileMeta?.contentType || "";
+
+    const mimeFormatMap = {
+      "application/pdf": "pdf",
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "application/msword": "doc",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        "docx",
+      "application/vnd.ms-excel": "xls",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        "xlsx",
+      "text/csv": "csv",
+      "application/csv": "csv",
+      "text/plain": "txt",
+      "image/gif": "gif",
+      "image/webp": "webp",
+    };
+
+    if (mimeFormatMap[contentType]) {
+      return mimeFormatMap[contentType];
+    }
+
+    const extension = fileName.split(".").pop()?.toLowerCase() || "";
+
+    if (extension === "jpeg") return "jpg";
+
+    return extension;
   };
 
   return (
@@ -1557,22 +1642,46 @@ const ProjectDetails = () => {
                               //   return;
                               // }
 
-                              console.log("API HITTTTINGGGGGG");
+                              const permanentValue =
+                                draggedDoc?.isPermanent !== undefined
+                                  ? !!draggedDoc.isPermanent
+                                  : doc?.permanent !== undefined
+                                    ? !!doc.permanent
+                                    : true;
+
+                              const expiryDateValue = permanentValue
+                                ? null
+                                : draggedDoc?.expiryDate || null;
+
+                              if (!permanentValue && !expiryDateValue) {
+                                addToast({
+                                  title: "Expiry date required",
+                                  description:
+                                    "This document is not permanent. Please upload it manually with expiry date.",
+                                  color: "warning",
+                                });
+
+                                setDraggedDoc(null);
+                                return;
+                              }
 
                               const payload = {
-                                fileName: draggedDoc.fileUrl,
-                                fileSizeKb: draggedDoc.fileSizeKb,
-                                fileFormat: draggedDoc.fileFormat || "pdf",
-                                fileUrl: draggedDoc.fileUrl,
-                                companyDocSourceId: draggedDoc.id,
-                                isPermanent: false,
-                                expiryDate: null,
-                                remarks: draggedDoc?.remarks,
-                                isFromCompanyDoc: true,
-                                requiredDocumentId: doc?.documentId,
                                 projectId: Number(projectId),
+                                requiredDocumentId: Number(
+                                  doc?.documentId ||
+                                    doc?.requiredDocumentId ||
+                                    doc?.id,
+                                ),
+                                fileUrl: draggedDoc.fileUrl,
+                                fileName: draggedDoc.fileName,
                                 uploadedById: Number(userId),
                                 createdById: Number(userId),
+                                isFromCompanyDoc: true,
+                                expiryDate: expiryDateValue,
+                                isPermanent: permanentValue,
+                                fileSizeKb: Number(draggedDoc.fileSizeKb || 0),
+                                fileFormat: draggedDoc.fileFormat || "pdf",
+                                remarks: draggedDoc?.remarks || "",
                               };
 
                               const resp = await dispatch(
@@ -1857,7 +1966,21 @@ const ProjectDetails = () => {
         isOpen={docModal.isOpen}
         onOpenChange={(open) => {
           docModal.onOpenChange(open);
-          if (!open) setSelectedDoc(null);
+
+          if (!open) {
+            setSelectedDoc(null);
+            setIsPermanent(true);
+            reset({
+              fileUrl: "",
+              fileName: "",
+              fileSizeKb: 0,
+              fileFormat: "",
+              expiryDate: null,
+              remarks: "",
+              isFromCompanyDoc: false,
+              isPermanent: true,
+            });
+          }
         }}
       >
         <ModalContent>
@@ -1874,55 +1997,62 @@ const ProjectDetails = () => {
 
               <ModalBody className="max-h-[90vh] overflow-auto">
                 <form onSubmit={handleSubmit(onDocumentSubmit)}>
-                  <div className="max-h-[60vh] overflow-auto grid grid-cols-2 gap-2.5">
-                    <Controller
-                      name="fileName"
-                      control={control}
-                      render={({ field }) => (
-                        <FileUploader
-                          label={"Upload file"}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e)}
-                        />
-                      )}
-                    />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="col-span-2">
+                      <Controller
+                        name="fileUrl"
+                        control={control}
+                        render={({ field }) => (
+                          <FileUploader
+                            label="Upload file"
+                            value={field.value}
+                            errorMessage={errors.fileUrl?.message}
+                            onChange={(uploadedUrl) => {
+                              field.onChange(uploadedUrl);
+                            }}
+                            onUploadSuccess={(fileMeta) => {
+                              const uploadedFileUrl = fileMeta?.filePath || "";
+                              const uploadedFileName = fileMeta?.fileName || "";
+                              const fileSizeKb = fileMeta?.fileSize
+                                ? Math.ceil(Number(fileMeta.fileSize) / 1024)
+                                : 0;
 
-                    <Controller
-                      name="fileSizeKb"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          isRequired
-                          type="number"
-                          label="File Size (KB)"
-                          isInvalid={!!errors.fileSizeKb}
-                          errorMessage={errors.fileSizeKb?.message}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="companyDocSourceId"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          {...field}
-                          type="number"
-                          label="Company Doc Source ID"
-                          isInvalid={!!errors.companyDocSourceId}
-                          errorMessage={errors.companyDocSourceId?.message}
-                        />
-                      )}
-                    />
+                              const fileFormat =
+                                getFileFormatFromMeta(fileMeta);
 
-                    <Controller
+                              setValue("fileUrl", uploadedFileUrl, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+
+                              setValue("fileName", uploadedFileName, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+
+                              setValue("fileSizeKb", fileSizeKb, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+
+                              setValue("fileFormat", fileFormat, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                            }}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    {/* <Controller
                       name="fileFormat"
                       control={control}
                       render={({ field }) => (
                         <Select
                           label="File Format"
                           isRequired
+                          isDisabled
                           selectedKeys={field.value ? [field.value] : []}
                           onSelectionChange={(keys) => {
                             const value = Array.from(keys)[0];
@@ -1934,17 +2064,24 @@ const ProjectDetails = () => {
                           <SelectItem key="pdf">PDF</SelectItem>
                           <SelectItem key="png">PNG</SelectItem>
                           <SelectItem key="jpg">JPG</SelectItem>
+                          <SelectItem key="doc">DOC</SelectItem>
                           <SelectItem key="docx">DOCX</SelectItem>
+                          <SelectItem key="xls">XLS</SelectItem>
+                          <SelectItem key="xlsx">XLSX</SelectItem>
+                          <SelectItem key="csv">CSV</SelectItem>
+                          <SelectItem key="txt">TXT</SelectItem>
+                          <SelectItem key="gif">GIF</SelectItem>
+                          <SelectItem key="webp">WEBP</SelectItem>
                         </Select>
                       )}
-                    />
+                    /> */}
 
                     <Controller
                       name="isPermanent"
                       control={control}
-                      render={({ field, fieldState: { error } }) => (
+                      render={({ field }) => (
                         <Select
-                          label="Document type"
+                          label="Permanent Document?"
                           isRequired
                           selectedKeys={
                             field.value !== undefined
@@ -1953,33 +2090,32 @@ const ProjectDetails = () => {
                           }
                           onSelectionChange={(keys) => {
                             const value = Array.from(keys)[0];
-                            if (value !== undefined)
-                              field.onChange(value === "true");
-                            setIsPermanent(value === "true");
+                            const boolValue = value === "true";
+
+                            field.onChange(boolValue);
+                            setIsPermanent(boolValue);
+
+                            if (boolValue) {
+                              setValue("expiryDate", null, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                            }
                           }}
                           isInvalid={!!errors.isPermanent}
                           errorMessage={errors.isPermanent?.message}
                         >
-                          {[
-                            { label: "True", value: true },
-                            { label: "False", value: false },
-                          ].map((item) => (
-                            <SelectItem
-                              key={item.value.toString()}
-                              value={item.value}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
+                          <SelectItem key="true">Yes, Permanent</SelectItem>
+                          <SelectItem key="false">No, Has Expiry</SelectItem>
                         </Select>
                       )}
                     />
 
-                    {isPermanent && (
+                    {isPermanentValue === false && (
                       <Controller
                         name="expiryDate"
                         control={control}
-                        render={({ field, fieldState: { error } }) => (
+                        render={({ field }) => (
                           <DatePicker
                             isRequired
                             label="Expiry date"
@@ -1994,7 +2130,7 @@ const ProjectDetails = () => {
                                 : null
                             }
                             onChange={(value) => {
-                              const iso = value ? value.toString() : "";
+                              const iso = value ? value.toString() : null;
                               field.onChange(iso);
                             }}
                           />
@@ -2011,6 +2147,7 @@ const ProjectDetails = () => {
                           label="Remarks"
                           minRows={3}
                           placeholder="Add remarks..."
+                          className="col-span-2"
                         />
                       )}
                     />
@@ -2028,10 +2165,28 @@ const ProjectDetails = () => {
                       )}
                     />
                   </div>
-                  <ModalFooter>
-                    <Button variant="light" onPress={onClose}>
+
+                  <ModalFooter className="px-0">
+                    <Button
+                      variant="light"
+                      onPress={() => {
+                        setIsPermanent(true);
+                        reset({
+                          fileUrl: "",
+                          fileName: "",
+                          fileSizeKb: 0,
+                          fileFormat: "",
+                          expiryDate: null,
+                          remarks: "",
+                          isFromCompanyDoc: false,
+                          isPermanent: true,
+                        });
+                        onClose();
+                      }}
+                    >
                       Cancel
                     </Button>
+
                     <Button color="primary" type="submit">
                       Submit
                     </Button>

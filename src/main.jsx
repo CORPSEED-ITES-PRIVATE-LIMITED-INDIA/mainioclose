@@ -7,6 +7,7 @@ import "./styles/globals.css";
 import App from "./App.jsx";
 import { UiProvider } from "./uiprovider.jsx";
 import { store } from "./toolkit/store.js";
+import NotificationSocketProvider from "./components/NotificationSocketProvider.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <>
@@ -18,5 +19,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </UiProvider>
       </BrowserRouter>
     </Provider>
-  </>
+  </>,
 );

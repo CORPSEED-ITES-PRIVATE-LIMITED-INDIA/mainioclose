@@ -23,7 +23,7 @@ export default function NotificationBell({ userId }) {
     setNotifications,
     connectSocket,
     disconnectSocket,
-  } = useNotificationSocket(userId, false);
+  } = useNotificationSocket(userId, Boolean(userId));
 
   const notificationCount = notifications?.length || 0;
 
