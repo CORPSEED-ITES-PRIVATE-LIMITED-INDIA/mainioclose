@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -10,36 +10,160 @@ import {
 } from "@heroui/react";
 import { BellRing } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
 import useNotificationSocket from "../useNotificationSocket";
+
+// ✅ Change base URL according to your backend
+const API_BASE_URL = "http://localhost:9010";
+
+// ✅ Change this endpoint if your get-all API URL is different
+const getAllNotificationsUrl = (userId) =>
+  `${API_BASE_URL}/api/notifications?userId=${userId}&page=0&size=20`;
+
+const getUnseenCountUrl = (userId) =>
+  `${API_BASE_URL}/api/notifications/unread-count?userId=${userId}`;
+
+const fetchJson = async (url) => {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+
+      // ✅ Add this only if your API requires token
+      // Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || `API failed with status ${response.status}`,
+    );
+  }
+
+  return data;
+};
+
+const extractNotificationList = (responseData) => {
+  if (Array.isArray(responseData)) return responseData;
+
+  if (Array.isArray(responseData?.data)) return responseData.data;
+
+  if (Array.isArray(responseData?.content)) return responseData.content;
+
+  if (Array.isArray(responseData?.data?.content)) {
+    return responseData.data.content;
+  }
+
+  if (Array.isArray(responseData?.notifications)) {
+    return responseData.notifications;
+  }
+
+  if (Array.isArray(responseData?.notificationList)) {
+    return responseData.notificationList;
+  }
+
+  return [];
+};
+
+const extractUnseenCount = (responseData) => {
+  if (typeof responseData === "number") return responseData;
+
+  if (typeof responseData === "string") {
+    const parsed = Number(responseData);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  if (typeof responseData?.data === "number") return responseData.data;
+
+  if (typeof responseData?.count === "number") return responseData.count;
+
+  if (typeof responseData?.unseenCount === "number") {
+    return responseData.unseenCount;
+  }
+
+  if (typeof responseData?.unreadCount === "number") {
+    return responseData.unreadCount;
+  }
+
+  if (typeof responseData?.data?.count === "number") {
+    return responseData.data.count;
+  }
+
+  if (typeof responseData?.data?.unseenCount === "number") {
+    return responseData.data.unseenCount;
+  }
+
+  if (typeof responseData?.data?.unreadCount === "number") {
+    return responseData.data.unreadCount;
+  }
+
+  return 0;
+};
 
 export default function NotificationBell({ userId }) {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
 
-  const {
-    connected,
-    connecting,
-    notifications,
-    unreadCount,
-    fetchUnreadCount,
-  } = useNotificationSocket(userId, Boolean(userId));
+  const [isOpen, setIsOpen] = useState(false);
+  const [initialNotifications, setInitialNotifications] = useState([]);
+  const [initialUnreadCount, setInitialUnreadCount] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(false);
+
+  const fetchInitialNotifications = useCallback(async () => {
+    if (!userId) {
+      setInitialNotifications([]);
+      setInitialUnreadCount(0);
+      return;
+    }
+
+    setInitialLoading(true);
+
+    try {
+      const [countData, notificationsData] = await Promise.all([
+        fetchJson(getUnseenCountUrl(userId)),
+        fetchJson(getAllNotificationsUrl(userId)),
+      ]);
+
+      const count = extractUnseenCount(countData);
+      const list = extractNotificationList(notificationsData);
+
+      console.log("Initial unseen count:", count, countData);
+      console.log("Initial notifications:", list, notificationsData);
+
+      setInitialUnreadCount(count);
+      setInitialNotifications(list);
+    } catch (error) {
+      console.error("Failed to fetch initial notifications:", error);
+
+      setInitialUnreadCount(0);
+      setInitialNotifications([]);
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [userId]);
+
+  // ✅ Initial API calls from this component itself
+  useEffect(() => {
+    fetchInitialNotifications();
+  }, [fetchInitialNotifications]);
+
+  const { connected, connecting, notifications, unreadCount } =
+    useNotificationSocket(userId, Boolean(userId), {
+      initialNotifications,
+      initialUnreadCount,
+    });
 
   const notificationCount = notifications?.length || 0;
   const unreadBadgeCount = Number(unreadCount || 0);
 
-  // Auto load unread count when user logs in / userId becomes available
-  useEffect(() => {
-    if (userId) {
-      fetchUnreadCount();
-    }
-  }, [userId, fetchUnreadCount]);
-
-  const handleOpenNotifications = async () => {
+  const handleOpenNotifications = () => {
     setIsOpen(true);
 
-    if (userId) {
-      await fetchUnreadCount();
-    }
+    // Optional: refresh again when drawer opens.
+    // Remove this if you want fetch only once on component start.
+    fetchInitialNotifications();
   };
 
   const handleNotificationClick = (notification) => {
@@ -99,11 +223,13 @@ export default function NotificationBell({ userId }) {
                   </h3>
 
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {unreadBadgeCount > 0
-                      ? `${unreadBadgeCount} unread notification${
-                          unreadBadgeCount > 1 ? "s" : ""
-                        }`
-                      : "No unread notifications"}
+                    {initialLoading
+                      ? "Loading notifications..."
+                      : unreadBadgeCount > 0
+                        ? `${unreadBadgeCount} unseen notification${
+                            unreadBadgeCount > 1 ? "s" : ""
+                          }`
+                        : "No unseen notifications"}
                   </p>
                 </div>
 

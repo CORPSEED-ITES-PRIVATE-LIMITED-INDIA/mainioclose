@@ -243,7 +243,7 @@ const Vendors = () => {
       mobile: vendorForm.mobile.trim(),
       gstNumber: vendorForm.gstNumber.trim().toUpperCase(),
       panNumber: vendorForm.panNumber.trim().toUpperCase(),
-      status: "Active",
+      status: "ACTIVE",
       createdBy:
         modalMode === "edit"
           ? toNumberOrNull(selectedVendor?.createdBy) || auditUserId

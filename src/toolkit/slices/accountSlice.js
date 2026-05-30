@@ -381,6 +381,16 @@ export const rejectCreditNote = createAsyncThunk(
     return response.data;
   },
 );
+export const getAllProcurementPurchaseOrders = createAsyncThunk(
+  "getAllProcurementPurchaseOrders",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/procurement`
+    );
+    console.log("API RES:",response)
+    return response.data;
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -401,6 +411,7 @@ const AccountSlice = createSlice({
     estimateReport: [],
     estimateList: [],
     creditNoteList:[],
+    procurementProductOrderList:[],
     tdsDetail: {},
   },
   extraReducers: (builder) => {
