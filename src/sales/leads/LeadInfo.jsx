@@ -1255,7 +1255,7 @@ const LeadInfo = () => {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-1">
                           {/* Status */}
                           <div className="rounded-xl border border-default-200 bg-default-50/60 p-2.5">
                             <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -1310,6 +1310,7 @@ const LeadInfo = () => {
                                 labelKey="name"
                                 valueKey="id"
                                 label="Select status"
+                                className={"w-"}
                                 value={String(leadData?.status?.id)}
                                 onChange={(e) => changeLeadStatus(e)}
                               />

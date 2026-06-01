@@ -207,102 +207,59 @@ const MenuFormFields = ({ control, setValue, onUploadingChange }) => {
 
   return (
     <div className="grid max-h-[60vh] grid-cols-1 gap-4 overflow-auto p-2 md:grid-cols-2">
-      <Controller
-        name="name"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            isRequired
-            label="Menu Name"
-            placeholder="Enter menu name"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={field.value || ""}
-            onChange={(e) => field.onChange(e.target.value)}
-          />
-        )}
-      />
+      <div className="col-span-1">
+        <Controller
+          name="name"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <Input
+              isRequired
+              label="Menu Name"
+              placeholder="Enter menu name"
+              errorMessage={error?.message}
+              isInvalid={!!error}
+              value={field.value || ""}
+              onChange={(e) => field.onChange(e.target.value)}
+            />
+          )}
+        />
+      </div>
 
-      <Controller
-        name="brochure.filePath"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <FileUploader
-            isRequired
-            label="Brochure File"
-            placeholder="Upload PDF, image, document or spreadsheet"
-            errorMessage={error?.message}
-            value={field.value || ""}
-            onChange={(value) => field.onChange(value || "")}
-            onUploadSuccess={handleBrochureUploadSuccess}
-            onUploadingChange={onUploadingChange}
-          />
-        )}
-      />
+      <div className="col-span-1">
+        <Controller
+          name="brochure.filePath"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <FileUploader
+              isRequired
+              label="Brochure File"
+              placeholder="Upload PDF, image, document or spreadsheet"
+              errorMessage={error?.message}
+              value={field.value || ""}
+              onChange={(value) => field.onChange(value || "")}
+              onUploadSuccess={handleBrochureUploadSuccess}
+              onUploadingChange={onUploadingChange}
+            />
+          )}
+        />
+      </div>
 
-      <Controller
-        name="brochure.fileName"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            isRequired
-            label="Brochure File Name"
-            placeholder="Auto-filled after upload"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={field.value || ""}
-            onChange={(e) => field.onChange(e.target.value)}
-          />
-        )}
-      />
-
-      <Controller
-        name="brochure.contentType"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            isRequired
-            label="Content Type"
-            placeholder="Auto-filled after upload"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={field.value || ""}
-            onChange={(e) => field.onChange(e.target.value)}
-          />
-        )}
-      />
-
-      <Controller
-        name="brochure.fileSize"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            isRequired
-            type="number"
-            label="File Size"
-            placeholder="Auto-filled after upload"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={String(field.value ?? 0)}
-            onChange={(e) => field.onChange(Number(e.target.value || 0))}
-          />
-        )}
-      />
-
-      <Controller
-        name="brochure.description"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            label="Description"
-            placeholder="Enter brochure description"
-            errorMessage={error?.message}
-            isInvalid={!!error}
-            value={field.value || ""}
-            onChange={(e) => field.onChange(e.target.value)}
-          />
-        )}
-      />
+      <div className="col-span-2">
+        <Controller
+          name="brochure.description"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <Input
+              label="Description"
+              placeholder="Enter brochure description"
+              errorMessage={error?.message}
+              isInvalid={!!error}
+              value={field.value || ""}
+              onChange={(e) => field.onChange(e.target.value)}
+            />
+          )}
+        />
+      </div>
     </div>
   );
 };
