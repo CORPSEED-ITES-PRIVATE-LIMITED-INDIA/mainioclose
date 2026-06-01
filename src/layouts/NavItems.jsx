@@ -114,6 +114,16 @@ export const navItems = [
         url: "accounts/taxation",
         key: "taxation",
       },
+      {
+        title: "Procurement PR",
+        url: "accounts/procurementPaymentRequests",
+        key: "procurementPaymentRequests",
+      },
+      {
+        title: "Procurement PO",
+        url: "accounts/procurementPurchaseOrders",
+        key: "procurementPurchaseOrders",
+      },
 
       // {
       //   title: "Estimate",
@@ -441,6 +451,25 @@ export const accountNavItems = [
     title: "Taxation",
     url: "sales/taxation",
     key: "taxation",
+    icon: "FileText",
+  },
+
+  {
+    title: "Procurement PR",
+    url: "accounts/procurementPaymentRequests",
+    key: "procurementPaymentRequests",
+    icon: "Coin",
+  },
+  {
+    title: "Procurement PO",
+    url: "accounts/procurementPurchaseOrders",
+    key: "procurementPurchaseOrders",
+    icon: "FileText",
+  },
+  {
+    title: "Credit Note",
+    url: "accounts/creditNote",
+    key: "creditnote",
     icon: "FileText",
   },
 
