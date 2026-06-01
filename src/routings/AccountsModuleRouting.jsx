@@ -44,7 +44,6 @@ export const AccountsModuleRouting = () => {
         element={<CompanyUnitsInAccount />}
       />
       <Route path="accounts/creditNote" element={<CreditNote />} />
-      <Route path="accounts/procurement" element={<AccountsProcurement />} />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
       <Route path="accounts/orgEstimate" element={<OrganizationEstimate />} />
