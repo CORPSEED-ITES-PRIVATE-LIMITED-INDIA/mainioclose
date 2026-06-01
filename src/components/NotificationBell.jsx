@@ -13,10 +13,8 @@ import { useNavigate } from "react-router-dom";
 
 import useNotificationSocket from "../useNotificationSocket";
 
-// ✅ Change base URL according to your backend
 const API_BASE_URL = "http://localhost:9010";
 
-// ✅ Change this endpoint if your get-all API URL is different
 const getAllNotificationsUrl = (userId) =>
   `${API_BASE_URL}/api/notifications?userId=${userId}&page=0&size=20`;
 
@@ -28,9 +26,6 @@ const fetchJson = async (url) => {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-
-      // ✅ Add this only if your API requires token
-      // Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
   });
 
@@ -144,7 +139,6 @@ export default function NotificationBell({ userId }) {
     }
   }, [userId]);
 
-  // ✅ Initial API calls from this component itself
   useEffect(() => {
     fetchInitialNotifications();
   }, [fetchInitialNotifications]);
@@ -161,8 +155,6 @@ export default function NotificationBell({ userId }) {
   const handleOpenNotifications = () => {
     setIsOpen(true);
 
-    // Optional: refresh again when drawer opens.
-    // Remove this if you want fetch only once on component start.
     fetchInitialNotifications();
   };
 
@@ -281,7 +273,7 @@ export default function NotificationBell({ userId }) {
                         <button
                           key={notification.id || index}
                           type="button"
-                          onClick={() => handleNotificationClick(notification)}
+                          // onClick={() => handleNotificationClick(notification)}
                           className="w-full px-5 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-neutral-900"
                         >
                           <div className="flex gap-3">
@@ -318,11 +310,11 @@ export default function NotificationBell({ userId }) {
                                   </span>
                                 )}
 
-                                {notification.redirectUrl && (
+                                {/* {notification.redirectUrl && (
                                   <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
                                     View
                                   </span>
-                                )}
+                                )} */}
                               </div>
                             </div>
                           </div>
