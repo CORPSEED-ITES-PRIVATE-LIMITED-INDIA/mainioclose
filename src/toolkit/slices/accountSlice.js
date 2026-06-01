@@ -320,19 +320,20 @@ export const getAllCreditNotes = createAsyncThunk(
   "getAllCreditNotes",
   async ({ status, page, size }) => {
     const response = await api.get(
-      `/accountService/api/credit-notes?status=${status}&page=${page-1}&size=${size}`,
+      `/accountService/api/credit-notes?status=${status}&page=${page}&size=${size}`,
     );
-    console.log("API DATA: ",response);
-    return response.data.content;
+    console.log("API DATA: ", response);
+    return response.data;
   },
 );
 export const createCreditNotes = createAsyncThunk(
   "createCreditNotes",
   async (data) => {
     const response = await api.post(
-      `/accountService/api/credit-notes/refund`,data
+      `/accountService/api/credit-notes/refund`,
+      data,
     );
-    console.log("API RES:",response)
+    console.log("API RES:", response);
     return response.data;
   },
 );
@@ -347,13 +348,13 @@ export const approveCreditNote = createAsyncThunk(
       console.log("Credit Note Approved");
 
       let proposalCancelResponse = null;
-      console.log("Inside Proposal API")
+      console.log("Inside Proposal API");
       if (proposalId) {
         proposalCancelResponse = await api.put(
           `/leadService/api/v1/proposals/${proposalId}/cancel?userId=${userId}`,
         );
       }
-      
+
       console.log("Proposal API Done");
 
       console.log("CREDIT NOTE API RES:", creditNoteResponse);
@@ -373,12 +374,106 @@ export const approveCreditNote = createAsyncThunk(
 
 export const rejectCreditNote = createAsyncThunk(
   "rejectCreditNote",
-  async ({creditNoteId,userId,rejectionReason}) => {
+  async ({ creditNoteId, userId, rejectionReason }) => {
     const response = await api.put(
-      `/accountService/api/credit-notes/${creditNoteId}/reject/${userId}`,{rejectionReason: rejectionReason}
+      `/accountService/api/credit-notes/${creditNoteId}/reject/${userId}`,
+      { rejectionReason: rejectionReason },
     );
-    console.log("API RES:",response)
+    console.log("API RES:", response);
     return response.data;
+  },
+);
+
+export const getProcurementPurchaseOrder = createAsyncThunk(
+  "getProcurementPurchaseOrder",
+  async ({ status, page, size }) => {
+    const response = await api.get(
+      `/accountService/api/procurement?status=${status}&page=${page - 1}&size=${size}`,
+    );
+    return response.data;
+  },
+);
+
+export const rejectProcurementPurchaseOrder = createAsyncThunk(
+  "rejectProcurementPurchaseOrder",
+  async ({ purchaseOrderId, userId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/procurement/${purchaseOrderId}/reject/${userId}?reason=${reason}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const approveProcurementPurchaseOrder = createAsyncThunk(
+  "approveProcurementPurchaseOrder",
+  async ({ purchaseOrderId, userId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/procurement/${purchaseOrderId}/approve/${userId}?comment=${reason}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const getProcurementPaymentRequestList = createAsyncThunk(
+  "getProcurementPaymentRequestList",
+  async ({ status, page, size }) => {
+    const response = await api.get(
+      `/accountService/api/procurement-payment-requests?status=${status}&page=${page - 1}&size=${size}`,
+    );
+    return response.data;
+  },
+);
+
+export const approveProcurementPaymentRequest = createAsyncThunk(
+  "approveProcurementPaymentRequest",
+  async ({ paymentRequestId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/procurement-payment-requests/${paymentRequestId}/approve/${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const rejectProcurementPaymentRequest = createAsyncThunk(
+  "rejectProcurementPaymentRequest",
+  async ({ paymentRequestId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/procurement-payment-requests/${paymentRequestId}/reject/${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const releaseProcurementPaymentRequest = createAsyncThunk(
+  "releaseProcurementPaymentRequest",
+  async ({ paymentRequestId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/procurement-payment-requests/${paymentRequestId}/release-payment/${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   },
 );
 
@@ -400,8 +495,10 @@ const AccountSlice = createSlice({
     invoiceReport: [],
     estimateReport: [],
     estimateList: [],
-    creditNoteList:[],
+    creditNoteList: [],
     tdsDetail: {},
+    procurementPurchaseOrderList: [],
+    procurementPaymentRequestList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -583,12 +680,13 @@ const AccountSlice = createSlice({
       state.loading = "rejected";
       state.tdsDetail = {};
     });
+
     builder.addCase(getAllCreditNotes.pending, (state) => {
       state.loading = "pending";
     });
     builder.addCase(getAllCreditNotes.fulfilled, (state, action) => {
       state.loading = "success";
-      console.log("Action Payload",action.payload);
+      console.log("Action Payload", action.payload);
       state.creditNoteList = action.payload || [];
     });
     builder.addCase(getAllCreditNotes.rejected, (state) => {
@@ -612,6 +710,33 @@ const AccountSlice = createSlice({
     });
     builder.addCase(rejectCreditNote.rejected, (state) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(getProcurementPurchaseOrder.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getProcurementPurchaseOrder.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.procurementPurchaseOrderList = action.payload || [];
+    });
+    builder.addCase(getProcurementPurchaseOrder.rejected, (state) => {
+      state.loading = "rejected";
+      state.procurementPurchaseOrderList = [];
+    });
+
+    builder.addCase(getProcurementPaymentRequestList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getProcurementPaymentRequestList.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.procurementPaymentRequestList = action.payload || [];
+      },
+    );
+    builder.addCase(getProcurementPaymentRequestList.rejected, (state) => {
+      state.loading = "rejected";
+      state.procurementPaymentRequestList = [];
     });
   },
 });

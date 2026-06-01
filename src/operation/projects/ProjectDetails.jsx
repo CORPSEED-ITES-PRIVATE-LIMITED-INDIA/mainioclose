@@ -2,6 +2,7 @@ import {
   Accordion,
   AccordionItem,
   addToast,
+  Avatar,
   Button,
   Card,
   CardBody,
@@ -9,6 +10,7 @@ import {
   Checkbox,
   Chip,
   DatePicker,
+  Divider,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -28,7 +30,7 @@ import {
   useDisclosure,
   User,
 } from "@heroui/react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addClientLogInCredentialForPortal,
@@ -87,7 +89,164 @@ import {
   toCalendarDate,
   today,
 } from "@internationalized/date";
-import { getAllVendors } from "../../toolkit/slices/vendorsSlice";
+import {
+  getAllVendors,
+  getVendorDetailInProject,
+} from "../../toolkit/slices/vendorsSlice";
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "VENDOR_FINALIZED":
+      return "success";
+    case "VENDOR_SHORTLISTED":
+      return "warning";
+    case "VENDOR_REQUIRED":
+      return "danger";
+    case "DRAFT":
+      return "default";
+    default:
+      return "primary";
+  }
+};
+
+const getInitials = (name = "") => {
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+};
+
+const DetailItem = ({ label, value }) => {
+  return (
+    <div className="rounded-xl border border-default-200 bg-default-50 px-4 py-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-default-400">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {value || "-"}
+      </p>
+    </div>
+  );
+};
+
+const DateItem = ({ label, value }) => {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-default-200 bg-content1 p-4">
+      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />
+
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-default-400">
+          {label}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-foreground">
+          {formatDateTime(value)}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const VendorCard = ({ vendor, isSelected }) => {
+  return (
+    <Card
+      className={`border shadow-none transition-all ${
+        isSelected
+          ? "border-success-300 bg-success-50"
+          : "border-default-200 bg-content1"
+      }`}
+    >
+      <CardBody className="space-y-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Avatar
+              name={getInitials(vendor?.name)}
+              className="bg-primary-100 text-primary"
+            />
+
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {vendor?.name || "-"}
+              </p>
+              <p className="text-xs text-default-500">
+                Vendor ID: {vendor?.id || "-"}
+              </p>
+            </div>
+          </div>
+
+          {isSelected && (
+            <Chip color="success" variant="flat" size="sm">
+              Selected
+            </Chip>
+          )}
+        </div>
+
+        <Divider />
+
+        <div className="grid grid-cols-1 gap-2 text-sm text-default-600">
+          <div className="flex justify-between gap-3">
+            <span className="text-default-400">Email</span>
+            <span className="text-right font-medium text-foreground">
+              {vendor?.email || "-"}
+            </span>
+          </div>
+
+          <div className="flex justify-between gap-3">
+            <span className="text-default-400">Mobile</span>
+            <span className="text-right font-medium text-foreground">
+              {vendor?.mobile || "-"}
+            </span>
+          </div>
+
+          <div className="flex justify-between gap-3">
+            <span className="text-default-400">GST No.</span>
+            <span className="text-right font-medium text-foreground">
+              {vendor?.gstNumber || "-"}
+            </span>
+          </div>
+
+          <div className="flex justify-between gap-3">
+            <span className="text-default-400">PAN No.</span>
+            <span className="text-right font-medium text-foreground">
+              {vendor?.panNumber || "-"}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Chip
+            size="sm"
+            color={vendor?.status === "ACTIVE" ? "success" : "default"}
+            variant="flat"
+          >
+            {vendor?.status || "-"}
+          </Chip>
+
+          <Chip
+            size="sm"
+            color={vendor?.verified ? "success" : "warning"}
+            variant="flat"
+          >
+            {vendor?.verified ? "Verified" : "Not Verified"}
+          </Chip>
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
 
 const companyDocsList = [
   {
@@ -350,6 +509,7 @@ const ProjectDetails = () => {
   const commentModal = useDisclosure();
   const legalSupportModal = useDisclosure();
   const vendorMapModal = useDisclosure();
+  const vendorDrawer = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -376,6 +536,20 @@ const ProjectDetails = () => {
     (state) => state.operation.activitiesByProjectId?.content || [],
   );
   const vendorList = useSelector((state) => state.vendors.vendorList?.content);
+  const vendorDetail = useSelector(
+    (state) => state.vendors.vendorDetailInProject,
+  );
+
+  const eligibleVendors = vendorDetail?.eligibleVendors || [];
+
+  const selectedVendor = useMemo(() => {
+    if (!vendorDetail?.selectedVendorId) return null;
+
+    return eligibleVendors.find(
+      (vendor) => Number(vendor.id) === Number(vendorDetail.selectedVendorId),
+    );
+  }, [eligibleVendors, vendorDetail?.selectedVendorId]);
+
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
@@ -945,6 +1119,7 @@ const ProjectDetails = () => {
       }),
     )
       .then((resp) => {
+        console.log("vendor map response", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "SUCCESS",
@@ -1109,18 +1284,17 @@ const ProjectDetails = () => {
               <Button
                 radius="sm"
                 onPress={() => {
-                  vendorMapModal.onOpen();
+                  vendorDrawer.onOpen();
                   dispatch(
-                    getAllVendors({
-                      userId,
-                      page: 1,
-                      size: 5000,
-                      search: "",
+                    getVendorDetailInProject({
+                      procurementAssignmentId:
+                        detailedData?.projectDetails
+                          ?.procurementMilestoneAssignmentId,
                     }),
                   );
                 }}
               >
-                Map vendor
+                Vendor
               </Button>
             )}
 
@@ -2760,7 +2934,7 @@ const ProjectDetails = () => {
                   onChange={(e) =>
                     setLegalRequestData((prev) => ({
                       ...prev,
-                      legalRequestTitle: e.target.value,
+                      legalRequestTitle: e,
                     }))
                   }
                 />
@@ -2850,6 +3024,284 @@ const ProjectDetails = () => {
           )}
         </ModalContent>
       </Modal>
+
+      <Drawer
+        isOpen={vendorDrawer.isOpen}
+        onOpenChange={vendorDrawer.onOpenChange}
+        size="5xl"
+        hideCloseButton
+      >
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="border-b border-default-200 px-6 py-5">
+                <div className="flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-xl font-semibold text-foreground">
+                        Vendor Details
+                      </h2>
+
+                      {vendorDetail?.status && (
+                        <Chip
+                          color={getStatusColor(vendorDetail.status)}
+                          variant="flat"
+                          size="sm"
+                        >
+                          {vendorDetail.status}
+                        </Chip>
+                      )}
+                    </div>
+
+                    <p className="mt-1 text-sm text-default-500">
+                      {vendorDetail?.projectName ||
+                        "Procurement project details"}
+                    </p>
+                  </div>
+
+                  <Button
+                    color="primary"
+                    variant="flat"
+                    onPress={() => {
+                      vendorMapModal.onOpen();
+
+                      dispatch(
+                        getAllVendors({
+                          userId,
+                          page: 1,
+                          size: 5000,
+                          search: "",
+                        }),
+                      );
+                    }}
+                  >
+                    Map Vendor
+                  </Button>
+                </div>
+              </DrawerHeader>
+
+              <DrawerBody className="px-6 py-5">
+                {!vendorDetail ? (
+                  <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-default-300">
+                    <p className="text-sm text-default-500">
+                      No vendor detail found.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="max-h-[calc(100vh-190px)] pr-2">
+                    <div className="space-y-6">
+                      <Card className="border border-default-200 bg-content1 shadow-none">
+                        <CardBody className="space-y-4 p-5">
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <p className="text-xs font-medium uppercase tracking-wide text-default-400">
+                                Procurement Assignment
+                              </p>
+
+                              <h3 className="mt-1 text-lg font-semibold text-foreground">
+                                {vendorDetail.projectName || "-"}
+                              </h3>
+
+                              <p className="mt-1 text-sm text-default-500">
+                                {vendorDetail.message || "-"}
+                              </p>
+                            </div>
+
+                            <Chip color="primary" variant="flat">
+                              Assignment ID:{" "}
+                              {vendorDetail.procurementAssignmentId || "-"}
+                            </Chip>
+                          </div>
+
+                          <Divider />
+
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <DetailItem
+                              label="Project No."
+                              value={vendorDetail.projectNo}
+                            />
+
+                            <DetailItem
+                              label="Project ID"
+                              value={vendorDetail.projectId}
+                            />
+
+                            <DetailItem
+                              label="Product"
+                              value={vendorDetail.productName}
+                            />
+
+                            <DetailItem
+                              label="Product ID"
+                              value={vendorDetail.productId}
+                            />
+
+                            <DetailItem
+                              label="Milestone"
+                              value={vendorDetail.milestoneName}
+                            />
+
+                            <DetailItem
+                              label="Milestone ID"
+                              value={vendorDetail.milestoneId}
+                            />
+
+                            <DetailItem
+                              label="Assigned To"
+                              value={vendorDetail.assignedToUserName}
+                            />
+
+                            <DetailItem
+                              label="Assigned User ID"
+                              value={vendorDetail.assignedToUserId}
+                            />
+                          </div>
+                        </CardBody>
+                      </Card>
+
+                      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+                        <Card className="border border-default-200 bg-content1 shadow-none lg:col-span-1">
+                          <CardBody className="space-y-4 p-5">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                  Selected Vendor
+                                </p>
+                                <p className="text-xs text-default-500">
+                                  Current vendor mapped with this procurement
+                                </p>
+                              </div>
+
+                              <Chip
+                                color={
+                                  vendorDetail.selectedVendorId
+                                    ? "success"
+                                    : "warning"
+                                }
+                                variant="flat"
+                                size="sm"
+                              >
+                                {vendorDetail.selectedVendorId
+                                  ? "Mapped"
+                                  : "Pending"}
+                              </Chip>
+                            </div>
+
+                            <Divider />
+
+                            {selectedVendor ? (
+                              <VendorCard vendor={selectedVendor} isSelected />
+                            ) : (
+                              <div className="rounded-2xl border border-dashed border-default-300 p-6 text-center">
+                                <p className="text-sm font-medium text-foreground">
+                                  No selected vendor found
+                                </p>
+                                <p className="mt-1 text-xs text-default-500">
+                                  Click on Map Vendor to assign one.
+                                </p>
+                              </div>
+                            )}
+                          </CardBody>
+                        </Card>
+
+                        <Card className="border border-default-200 bg-content1 shadow-none lg:col-span-2">
+                          <CardBody className="space-y-4 p-5">
+                            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                  Eligible Vendors
+                                </p>
+                                <p className="text-xs text-default-500">
+                                  Vendors available for this product
+                                </p>
+                              </div>
+
+                              <Chip color="primary" variant="flat" size="sm">
+                                {eligibleVendors.length} Vendor
+                                {eligibleVendors.length === 1 ? "" : "s"}
+                              </Chip>
+                            </div>
+
+                            <Divider />
+
+                            {eligibleVendors.length > 0 ? (
+                              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                {eligibleVendors.map((vendor) => (
+                                  <VendorCard
+                                    key={vendor.id}
+                                    vendor={vendor}
+                                    isSelected={
+                                      Number(vendor.id) ===
+                                      Number(vendorDetail.selectedVendorId)
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="rounded-2xl border border-dashed border-default-300 p-8 text-center">
+                                <p className="text-sm font-medium text-foreground">
+                                  No eligible vendor available
+                                </p>
+                                <p className="mt-1 text-xs text-default-500">
+                                  Please map a vendor with this product first.
+                                </p>
+                              </div>
+                            )}
+                          </CardBody>
+                        </Card>
+                      </div>
+
+                      <Card className="border border-default-200 bg-content1 shadow-none">
+                        <CardBody className="space-y-4 p-5">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              Procurement Timeline
+                            </p>
+                            <p className="text-xs text-default-500">
+                              Important dates related to this procurement
+                              milestone
+                            </p>
+                          </div>
+
+                          <Divider />
+
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <DateItem
+                              label="Vendor Shortlisted"
+                              value={vendorDetail.vendorShortlistedDate}
+                            />
+
+                            <DateItem
+                              label="PO Created"
+                              value={vendorDetail.poCreatedDate}
+                            />
+
+                            <DateItem
+                              label="PO Released"
+                              value={vendorDetail.poReleasedDate}
+                            />
+
+                            <DateItem
+                              label="Last Updated"
+                              value={vendorDetail.updatedDate}
+                            />
+                          </div>
+                        </CardBody>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+              </DrawerBody>
+
+              <DrawerFooter className="border-t border-default-200 px-6">
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

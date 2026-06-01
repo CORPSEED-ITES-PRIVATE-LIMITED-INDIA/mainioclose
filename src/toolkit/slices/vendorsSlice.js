@@ -333,6 +333,16 @@ export const deleteVendor = createAsyncThunk(
   },
 );
 
+export const getVendorDetailInProject = createAsyncThunk(
+  "getVendorDetailInProject",
+  async ({ procurementAssignmentId }) => {
+    const response = await api.get(
+      `/operationService/api/procurement-assignments/${procurementAssignmentId}`,
+    );
+    return response.data;
+  },
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -352,6 +362,7 @@ const VendorsSlice = createSlice({
     vendorPaymentCountForAdmin: 0,
     vendorDetail: {},
     vendorList: [],
+    vendorDetailInProject: {},
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -542,6 +553,18 @@ const VendorsSlice = createSlice({
     builder.addCase(getAllVendors.rejected, (state) => {
       state.loading = "rejected";
       state.vendorList = [];
+    });
+
+    builder.addCase(getVendorDetailInProject.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorDetailInProject.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorDetailInProject = action?.payload;
+    });
+    builder.addCase(getVendorDetailInProject.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorDetailInProject = {};
     });
   },
 });
