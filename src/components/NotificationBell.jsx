@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  addToast,
   Badge,
   Button,
   Drawer,
@@ -151,6 +152,39 @@ export default function NotificationBell({ userId }) {
 
   const notificationCount = notifications?.length || 0;
   const unreadBadgeCount = Number(unreadCount || 0);
+
+  const [lastToastNotificationId, setLastToastNotificationId] = useState(null);
+
+  useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
+
+    const latestNotification = notifications[0];
+
+    const notificationId =
+      latestNotification?.id ||
+      latestNotification?.notificationId ||
+      latestNotification?.createdAt ||
+      latestNotification?.timestamp;
+
+    if (!notificationId) return;
+
+    if (lastToastNotificationId === null) {
+      setLastToastNotificationId(notificationId);
+      return;
+    }
+
+    if (lastToastNotificationId !== notificationId) {
+      addToast({
+        title: latestNotification?.title || "New Notification",
+        description:
+          latestNotification?.message ||
+          "You have received a new notification.",
+        color: "primary",
+      });
+
+      setLastToastNotificationId(notificationId);
+    }
+  }, [notifications, lastToastNotificationId]);
 
   const handleOpenNotifications = () => {
     setIsOpen(true);

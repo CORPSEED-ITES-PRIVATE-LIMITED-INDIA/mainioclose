@@ -71,7 +71,7 @@ const CreditNote = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
 
-  const data = useSelector((state) => state.account.creditNoteList);
+  const data = useSelector((state) => state.account.creditNoteList?.content);
 
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));

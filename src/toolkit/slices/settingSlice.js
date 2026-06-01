@@ -701,37 +701,30 @@ export const getAllPaymentTermList = createAsyncThunk(
   },
 );
 
-export const getAllMenus = createAsyncThunk(
-  "getAllMenus",
-  async () => {
-    const response = await api.get(`/leadService/api/menus`);
-    console.log("API DATA:",response)
-    return response.data;
-  },
-);
+export const getAllMenus = createAsyncThunk("getAllMenus", async () => {
+  const response = await api.get(`/leadService/api/menus`);
+  console.log("API DATA:", response);
+  return response.data;
+});
 export const createMenu = createAsyncThunk(
   "createMenu",
-  async (payload,{rejectWithValue}) => {
+  async (payload, { rejectWithValue }) => {
     try {
       const response = await api.post("/leadService/api/menus", payload);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data || "Failed to create menu",
-      );
+      return rejectWithValue(error?.response?.data || "Failed to create menu");
     }
   },
 );
 export const updateMenu = createAsyncThunk(
   "updateMenu",
-  async ({id,payload},{rejectWithValue}) => {
+  async ({ id, payload }, { rejectWithValue }) => {
     try {
       const response = await api.put(`/leadService/api/menus/${id}`, payload);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data || "Failed to create menu",
-      );
+      return rejectWithValue(error?.response?.data || "Failed to create menu");
     }
   },
 );
@@ -773,8 +766,8 @@ export const createMenuSubCategory = createAsyncThunk(
 );
 export const addBrochureToExistingSolution = createAsyncThunk(
   "addBrochureToExistingSolution",
-  async ({ subCategoryId, solutionId ,payload }, { rejectWithValue }) => {
-    console.log("Console Log Payload:",payload);
+  async ({ subCategoryId, solutionId, payload }, { rejectWithValue }) => {
+    console.log("Console Log Payload:", payload);
     try {
       const response = await api.post(
         `/leadService/api/v1/subcategories/${subCategoryId}/solutions/${solutionId}/brochure`,
@@ -787,6 +780,16 @@ export const addBrochureToExistingSolution = createAsyncThunk(
         error?.response?.data || "Failed to create sub category",
       );
     }
+  },
+);
+
+export const getServiceBrouchersServiceDetailBySolutionId = createAsyncThunk(
+  "getServiceBrouchersServiceDetailBySolutionId",
+  async (solutionId) => {
+    const response = await api.get(
+      `/leadService/api/v1/proposal/view?solutionId=${solutionId}`,
+    );
+    return response.data;
   },
 );
 
@@ -819,7 +822,8 @@ export const SettingSlice = createSlice({
     allSolutionList: [],
     ckEditorTokenData: {},
     paymentTermList: [],
-    menuList:[],
+    menuList: [],
+    serviceBrouchersDetail: {},
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1178,15 +1182,39 @@ export const SettingSlice = createSlice({
     builder.addCase(createMenu.rejected, (state) => {
       state.loading = "rejected";
     });
+
     builder.addCase(addBrochureToExistingSolution.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(addBrochureToExistingSolution.fulfilled, (state, action) => {
-      state.loading = "success";
-    });
+    builder.addCase(
+      addBrochureToExistingSolution.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+      },
+    );
     builder.addCase(addBrochureToExistingSolution.rejected, (state) => {
       state.loading = "rejected";
     });
+
+    builder.addCase(
+      getServiceBrouchersServiceDetailBySolutionId.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getServiceBrouchersServiceDetailBySolutionId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.serviceBrouchersDetail = action.payload;
+      },
+    );
+    builder.addCase(
+      getServiceBrouchersServiceDetailBySolutionId.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
   },
 });
 
