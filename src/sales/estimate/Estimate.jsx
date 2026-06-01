@@ -37,6 +37,7 @@ import {
   getEstimateByEstimateId,
   getTotalCountOfEstimate,
   searchEstimate,
+  updateLeadStatus,
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
@@ -53,6 +54,7 @@ import {
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
+import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 
 const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -109,6 +111,8 @@ const Estimate = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
+  const statusList = useSelector((state) => state?.setting?.statusList);
+
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [estimateDetail, setEstimateDetail] = useState(null);
@@ -248,26 +252,72 @@ const Estimate = () => {
       );
   };
 
-  const handleSentToClient = (rowData) => {
-    dispatch(estimateSentToClient({ estimateId: rowData?.id, userId }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "SUCCESS",
-            description: "Eestimate sent to client successfully !.",
-            color: "success",
-          });
-        } else {
-          addToast({
-            title: `ERROR ${resp?.payload?.data?.status}`,
-            description: `${resp?.payload?.data?.message}`,
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something Went wrong !.", color: "danger" }),
+  const handleSentToClient = async (rowData) => {
+    try {
+      const sentResp = await dispatch(
+        estimateSentToClient({ estimateId: rowData?.id, userId }),
       );
+
+      if (sentResp.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: `ERROR ${sentResp?.payload?.data?.status || ""}`,
+          description:
+            sentResp?.payload?.data?.message || "Estimate sent failed.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const statusResp = await dispatch(getAllStatusData());
+
+      if (statusResp.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Status fetch failed",
+          description: "Unable to fetch lead status list.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const list = statusResp?.payload || statusList || [];
+
+      const awaitingPaymentStatus = list.find(
+        (item) =>
+          String(item?.name || item?.statusName || "")
+            .trim()
+            .toLowerCase() === "awaiting payment",
+      );
+
+      if (!awaitingPaymentStatus?.id) {
+        addToast({
+          title: "Status not found",
+          description: "Awaiting Payment status not found in status list.",
+          color: "danger",
+        });
+        return;
+      }
+
+      await dispatch(
+        updateLeadStatus({
+          leadId: rowData?.leadId,
+          statusId: awaitingPaymentStatus.id,
+          userId,
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "SUCCESS",
+        description:
+          "Estimate sent and lead status updated to Awaiting Payment.",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Something went wrong!",
+        description: error?.message || "Estimate sent/status update failed.",
+        color: "danger",
+      });
+    }
   };
 
   const downloadCSV = (rows = [], fileName = "estimate-report.csv") => {
@@ -976,7 +1026,7 @@ const Estimate = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Estimate list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Estimate List</h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"

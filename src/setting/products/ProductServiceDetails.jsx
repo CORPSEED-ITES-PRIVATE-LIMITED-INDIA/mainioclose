@@ -42,7 +42,9 @@ const initialForm = {
   menuId: "",
   categoryId: "",
   subCategoryId: "",
-  serviceDetailsBody: "<p></p>",
+  emailBody: "<p></p>",
+  emailSubject: "",
+  scopeOfWork: "<p></p>",
   brochurePath: "",
   brochureMeta: null,
   brochureDescription: "",
@@ -210,8 +212,12 @@ const ProductServiceDetails = () => {
       categoryName: selectedCategory ? getName(selectedCategory) : "",
       subCategoryId: formData.subCategoryId || null,
       subCategoryName: selectedSubCategory ? getName(selectedSubCategory) : "",
-      serviceDetailsBody: formData.serviceDetailsBody || "<p></p>",
       brochure: getBrochurePayload(formData),
+      emailTemplateRequestDto: {
+        emailBody: formData.emailBody || "<p></p>",
+        emailSubject: formData.emailSubject || "",
+        scopeOfWork: formData.scopeOfWork || "<p></p>",
+      },
     };
   }, [formData, selectedMenu, selectedCategory, selectedSubCategory]);
 
@@ -311,10 +317,17 @@ const ProductServiceDetails = () => {
     }));
   };
 
-  const handleEditorChange = (value) => {
+  const handleEmailBodyChange = (value) => {
     setFormData((prev) => ({
       ...prev,
-      serviceDetailsBody: value,
+      emailBody: value,
+    }));
+  };
+
+  const handleScopeOfWorkChange = (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      scopeOfWork: value,
     }));
   };
 
@@ -334,8 +347,12 @@ const ProductServiceDetails = () => {
     if (!validateForm()) return;
 
     const payload = {
-      serviceDetailsBody: formData.serviceDetailsBody || "<p></p>",
       brochure: getBrochurePayload(formData),
+      emailTemplateRequestDto: {
+        emailBody: formData.emailBody || "<p></p>",
+        emailSubject: formData.emailSubject || "",
+        scopeOfWork: formData.scopeOfWork || "<p></p>",
+      },
     };
 
     try {
@@ -804,8 +821,25 @@ const ProductServiceDetails = () => {
 
                         <div className="p-4">
                           <NewTextEditor
-                            data={formData.serviceDetailsBody}
-                            onChange={handleEditorChange}
+                            data={formData.emailBody}
+                            onChange={handleEmailBodyChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-default-200 bg-background shadow-sm">
+                        <div className="flex items-center justify-between gap-3 border-b border-default-200 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-bold text-default-900">
+                              Scope of Work
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4">
+                          <NewTextEditor
+                            data={formData.scopeOfWork}
+                            onChange={handleScopeOfWorkChange}
                           />
                         </div>
                       </div>

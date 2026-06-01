@@ -774,6 +774,7 @@ export const createMenuSubCategory = createAsyncThunk(
 export const addBrochureToExistingSolution = createAsyncThunk(
   "addBrochureToExistingSolution",
   async ({ subCategoryId, solutionId ,payload }, { rejectWithValue }) => {
+    console.log("Console Log Payload:",payload);
     try {
       const response = await api.post(
         `/leadService/api/v1/subcategories/${subCategoryId}/solutions/${solutionId}/brochure`,
