@@ -40,7 +40,7 @@ import {
 } from "../../toolkit/slices/settingSlice";
 import dayjs from "dayjs";
 import ServiceFormFieldsDetail from "../leads/leadEstimate/ServiceFormFieldsDetail";
-import { Form, Input as AntInput } from "antd";
+import { Form, Input as AntInput, Select } from "antd";
 import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
@@ -52,9 +52,33 @@ const defaultValues = {
   mailCc: [],
   mailBcc: [],
   mailSubject: "",
+  paymentTerm: "",
   mailBody: "<p></p>",
   scopeOfWork: "<p></p>",
 };
+
+const PAYMENT_TERM_OPTIONS = [
+  {
+    label: "100% Advance",
+    value: "FULL_ADVANCE",
+  },
+  {
+    label: "50% Advance + 50% Before Delivery",
+    value: "FIFTY_ADVANCE_FIFTY_BEFORE_DELIVERY",
+  },
+  {
+    label: "Milestone Based Payment",
+    value: "MILESTONE_BASED",
+  },
+  {
+    label: "Payment After Completion",
+    value: "PAYMENT_AFTER_COMPLETION",
+  },
+  {
+    label: "Custom Payment Terms",
+    value: "CUSTOM",
+  },
+];
 
 export function TagsInput({
   value = [],
@@ -387,6 +411,7 @@ const Proposal = () => {
       mailCc: proposal?.mailCc || [],
       mailBcc: proposal?.mailBcc || [],
       mailSubject: proposal?.mailSubject || "",
+      paymentTerm: proposal?.paymentTerm || "",
       mailBody: finalMailBody,
       scopeOfWork: finalScopeOfWork,
     });
@@ -454,6 +479,7 @@ const Proposal = () => {
         (solutionDetail?.name
           ? `Corpseed Proposal for - ${solutionDetail.name}`
           : ""),
+      paymentTerm: "",
       mailBody: apiMailBody,
       scopeOfWork: apiScopeOfWork,
     });
@@ -694,10 +720,8 @@ const Proposal = () => {
       proposalSendOrNot: true,
 
       mailSubject: values?.mailSubject || "",
+      paymentTerm: values?.paymentTerm || "",
       mailBody: values?.mailBody || "<p></p>",
-
-      // Keep this only if backend DTO has scopeOfWork field.
-      // If backend does not accept this field, remove this line.
       scopeOfWork: values?.scopeOfWork || "<p></p>",
 
       mailTo: Array.isArray(values?.mailTo) ? values.mailTo : [],
@@ -1043,6 +1067,19 @@ const Proposal = () => {
         rules={[{ required: true, message: "Please give subject" }]}
       >
         <AntInput placeholder="Enter proposal subject" />
+      </Form.Item>
+
+      <Form.Item
+        label="Payment Term"
+        name="paymentTerm"
+        rules={[{ required: true, message: "Please select payment term" }]}
+      >
+        <Select
+          size="large"
+          placeholder="Select payment term"
+          options={PAYMENT_TERM_OPTIONS}
+          allowClear
+        />
       </Form.Item>
 
       <div className="w-full rounded-2xl border border-gray-200 bg-white shadow-sm">
