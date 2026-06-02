@@ -27,31 +27,24 @@ import {
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllUnbillCount,
-  getAllUnbillGovtFeeList,
-  getAllUnbillList,
-  searchUnbilledByCompanyNameAndUnbilled,
-  updateStatusForUnbill,
-} from "../../toolkit/slices/organizationSlice";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
-import {
-  cancelUnBilledInvoice,
-  convertUnbillToAdvanceInvoice,
-  createCreditNotes,
-  getTdsDetailByEstimateId,
-  getUnBilledDetailById,
-} from "../../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
-import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
-import { set } from "zod";
 import {
   getEstimateByEstimateId,
   updateLeadStatus,
 } from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
+import {
+  getAllUnbillCount,
+  getAllUnbillList,
+  searchUnbilledByCompanyNameAndUnbilled,
+} from "../../toolkit/slices/organizationSlice";
+import {
+  createCreditNotes,
+  getTdsDetailByEstimateId,
+} from "../../toolkit/slices/accountSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -92,7 +85,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const Unbill = () => {
+const SalesUnbill = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -425,90 +418,26 @@ const Unbill = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                {!rowData?.advanceInvoiceFlag && (
+                {rowData?.status === "APPROVED" && (
                   <DropdownItem
-                    key="view"
+                    key="credit-note"
                     onPress={() => {
-                      dispatch(
-                        convertUnbillToAdvanceInvoice({
-                          unbilledId: rowData?.id,
-                          userId,
-                        }),
-                      )
-                        .then((resp) => {
-                          if (resp.meta.requestStatus === "fulfilled") {
-                            addToast({
-                              title:
-                                "Unbill converted to advance invoice successfully !.",
-                              color: "success",
-                            });
-                            dispatch(
-                              getAllUnbillList({
-                                page,
-                                size: rowsPerPage,
-                                userId,
-                                status,
-                              }),
-                            );
-                            dispatch(getAllUnbillCount({ userId, status }));
-                          } else {
-                            addToast({
-                              title:
-                                resp?.payload?.data?.message ||
-                                "Something went wrong !.",
-                              color: "danger",
-                            });
-                          }
-                        })
-                        .catch(() => {
-                          addToast({
-                            title: "Something went wrong !.",
-                            color: "danger",
-                          });
-                        });
+                      setCreditNoteRow(rowData);
+                      setCreditNoteData({
+                        refundAmount: "",
+                        reason: "",
+                      });
+                      creditNoteModal.onOpen();
                     }}
                   >
-                    Convert To AdvanceInvoice
+                    Credit Note
                   </DropdownItem>
                 )}
-
-                <DropdownItem
-                  key="unbilledview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(false);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Unbilled View
-                </DropdownItem>
-                <DropdownItem
-                  key="advanceinvoiceview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(true);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Advance Invoice View
-                </DropdownItem>
-                <DropdownItem
-                  key="status"
-                  onPress={() => {
-                    statusModal.onOpen();
-                    setRowItem(rowData);
-                  }}
-                >
-                  Update status
-                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
         );
+
       default:
         return cellValue;
     }
@@ -566,151 +495,6 @@ const Unbill = () => {
     setFilterValue("");
     setPage(1);
   }, [searchBy]);
-
-  const handleUpdateStatus = () => {
-    if (updatedStatusData?.approvalRemarks === "CANCELLED") {
-      dispatch(
-        cancelUnBilledInvoice({
-          id: rowItem?.id,
-          userId,
-          reason: updatedStatusData?.rejectionReason,
-        }),
-      )
-        .then((re) => {
-          console.log("redbdfgfdsdg", re);
-          if (re.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Unbill canceled successfully !.",
-              color: "success",
-            });
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              rejectionReason: "",
-            });
-            dispatch(
-              getAllUnbillList({
-                page,
-                size: rowsPerPage,
-                userId,
-                status,
-              }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            statusModal.onClose();
-
-            // dispatch(cancelProjectByUnbilledNumberInOperations(rowItem?.id))
-            //   .then((respData) => {
-            //     console.log("respData", respData);
-            //     if (respData.meta.requestStatus === "fulfilled") {
-            //       addToast({
-            //         title: "Unbill canceled successfully in Operation !.",
-            //         color: "success",
-            //       });
-            //       setRowItem(null);
-            //       setUpdatedStatusData({
-            //         approverUserId: userId,
-            //         approvalRemarks: "",
-            //         rejectionReason: "",
-            //       });
-            //       dispatch(
-            //         getAllUnbillList({
-            //           page,
-            //           size: rowsPerPage,
-            //           userId,
-            //           status,
-            //         }),
-            //       );
-            //       dispatch(getAllUnbillCount({ userId, status }));
-            //       statusModal.onClose();
-            //     } else {
-            //       addToast({
-            //         title: "ERROR",
-            //         description:
-            //           respData?.payload?.data?.message ||
-            //           "Something went wrong in Operation !.",
-            //         color: "danger",
-            //       });
-            //     }
-            //   })
-            //   .catch(() =>
-            //     addToast({
-            //       title: "Something went wrong in Operation !.",
-            //       color: "danger",
-            //     }),
-            //   );
-          } else {
-            addToast({
-              title: "ERROR",
-              description: re?.payload?.message,
-              color: "danger",
-            });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
-        );
-    } else {
-      dispatch(
-        updateStatusForUnbill({
-          unbilledId: rowItem?.id,
-          data: updatedStatusData,
-        }),
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Status updated successfully !.",
-              color: "success",
-            });
-            dispatch(
-              updateLeadStatus({
-                leadId: rowItem?.leadId,
-                userId,
-                statusId: 10,
-              }),
-            )
-              .then((resp) => {
-                if (resp.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "Status updated successfully",
-                    color: "success",
-                  });
-                } else {
-                  addToast({
-                    title: "Something went wrong in lead status update  !.",
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() => {
-                addToast({
-                  title: "Something went wrong in lead status update  !.",
-                  color: "danger",
-                });
-              });
-
-            dispatch(
-              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              rejectionReason: "",
-            });
-            statusModal.onClose();
-          } else {
-            addToast({ title: resp?.payload?.data?.message, color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
-        );
-    }
-  };
 
   const topContent = React.useMemo(() => {
     return (
@@ -931,69 +715,6 @@ const Unbill = () => {
                   }}
                 >
                   Close
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      <Modal
-        isOpen={statusModal.isOpen}
-        onOpenChange={statusModal.onOpenChange}
-        placement="top-center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Update Status
-              </ModalHeader>
-              <ModalBody className="max-h-[85vh] overflow-auto">
-                <Select
-                  label="Select status"
-                  isRequired
-                  selectedKeys={[updatedStatusData?.approvalRemarks]}
-                  onSelectionChange={(e) => {
-                    let key = Array.from(e)[0];
-                    setUpdatedStatusData((prev) => ({
-                      ...prev,
-                      approvalRemarks: key,
-                    }));
-                  }}
-                >
-                  {[
-                    // { key: "PENDING_APPROVAL", label: "PENDING_APPROVAL" },
-                    { key: "APPROVED", label: "APPROVED" },
-                    // { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
-                    // { key: "FULLY_PAID", label: "FULLY_PAID" },
-                    { key: "REJECTED", label: "REJECTED" },
-                    { key: "CANCELLED", label: "CANCELLED" },
-                  ].map((item) => (
-                    <SelectItem key={item.key}>{item.label}</SelectItem>
-                  ))}
-                </Select>
-                {(updatedStatusData?.approvalRemarks === "REJECTED" ||
-                  updatedStatusData?.approvalRemarks === "CANCELLED") && (
-                  <Textarea
-                    label="Remark"
-                    isRequired
-                    value={updatedStatusData?.rejectionReason}
-                    onChange={(e) =>
-                      setUpdatedStatusData((prev) => ({
-                        ...prev,
-                        rejectionReason: e.target.value,
-                      }))
-                    }
-                  />
-                )}
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-                <Button color="primary" onPress={handleUpdateStatus}>
-                  Submit
                 </Button>
               </ModalFooter>
             </>
@@ -1581,4 +1302,4 @@ const Unbill = () => {
   );
 };
 
-export default Unbill;
+export default SalesUnbill;

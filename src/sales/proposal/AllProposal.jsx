@@ -1,6 +1,10 @@
 import {
   addToast,
   Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -21,10 +25,16 @@ import {
   Tooltip,
   useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  ExternalLink,
+  FileText,
+  Search,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   getAllProposalByUserIdForManager,
   getAllPropsalListCount,
@@ -73,11 +83,177 @@ const defaultValues = {
   comment: "",
 };
 
+const hasRenderableHtml = (html = "") =>
+  String(html || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim().length > 0;
+
+const isImageBrochure = (brochure) => {
+  const fileName = brochure?.fileName || "";
+  const filePath = brochure?.filePath || "";
+
+  return /\.(jpg|jpeg|png|webp|gif)$/i.test(fileName || filePath);
+};
+
+const getProposalBrochures = (proposal) => [
+  {
+    key: "menu",
+    title: "Menu Brochure",
+    entityName: proposal?.menu?.name,
+    brochure: proposal?.menu?.brochure,
+  },
+  {
+    key: "menuCategory",
+    title: "Category Brochure",
+    entityName: proposal?.menuCategory?.name,
+    brochure: proposal?.menuCategory?.brochure,
+  },
+  {
+    key: "subCategory",
+    title: "Subcategory Brochure",
+    entityName: proposal?.subCategory?.name,
+    brochure: proposal?.subCategory?.brochure,
+  },
+  {
+    key: "solution",
+    title: "Service / Solution Brochure",
+    entityName: proposal?.solution?.name,
+    brochure: proposal?.solution?.brochure,
+  },
+];
+
+const getAvailableBrochureCount = (proposal) =>
+  getProposalBrochures(proposal).filter((item) => item?.brochure?.filePath)
+    .length;
+
+const ProposalBrochureCard = ({ title, entityName, brochure }) => {
+  const hasBrochure = Boolean(brochure?.filePath);
+  const isImage = isImageBrochure(brochure);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900">{title}</p>
+            <p className="mt-1 truncate text-xs text-gray-500">
+              {entityName || "---"}
+            </p>
+          </div>
+
+          <span
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              hasBrochure
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-gray-200 bg-gray-50 text-gray-500"
+            }`}
+          >
+            {hasBrochure ? "Available" : "Not Added"}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-4">
+        {hasBrochure ? (
+          <>
+            <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+              {isImage ? (
+                <img
+                  src={brochure.filePath}
+                  alt={brochure.fileName || title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="text-center">
+                  <FileText className="mx-auto text-gray-400" size={34} />
+                  <p className="mt-2 text-xs font-medium text-gray-500">
+                    Document
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-2 text-xs text-gray-600">
+              <p className="break-words">
+                <span className="font-semibold text-gray-900">File:</span>{" "}
+                {brochure.fileName || "---"}
+              </p>
+
+              <p>
+                <span className="font-semibold text-gray-900">ID:</span>{" "}
+                {brochure.id || "---"}
+              </p>
+            </div>
+
+            <a
+              href={brochure.filePath}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Open Brochure
+              <ExternalLink size={15} />
+            </a>
+          </>
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+            <FileText className="mx-auto text-gray-400" size={30} />
+
+            <p className="mt-2 text-sm font-semibold text-gray-700">
+              No brochure found
+            </p>
+
+            <p className="mt-1 text-xs text-gray-500">
+              Brochure is not available for this level.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const HtmlPreviewBlock = ({ title, subtitle, html, emptyText }) => {
+  const hasContent = hasRenderableHtml(html);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
+        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+
+        {subtitle ? (
+          <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
+        ) : null}
+      </div>
+
+      <div className="p-5 md:p-6">
+        {hasContent ? (
+          <div
+            className="proposal-content tiptap-preview force-preview-text max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: html,
+            }}
+          />
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+            <FileText className="mx-auto text-gray-400" size={30} />
+
+            <p className="mt-2 text-sm font-semibold text-gray-700">
+              {emptyText}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AllProposal = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const proposalModal = useDisclosure();
+  const proposalDrawer = useDisclosure();
   const count = useSelector((state) => state.leads.proposalCount);
   const data = useSelector((state) => state.leads.proposalList);
   const [filterValue, setFilterValue] = useState("");
@@ -108,6 +284,7 @@ const AllProposal = () => {
     isOpen: false,
     rowData: null,
   });
+  const [selectedProposalDetail, setSelectedProposalDetail] = useState(null);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -168,28 +345,29 @@ const AllProposal = () => {
 
   const handleActionsClick = (e, rowData) => {
     if (e === "view") {
-      setProposalData(rowData?.template);
-      setMailBody(rowData?.mailBody);
-      proposalModal.onOpen();
+      setSelectedProposalDetail(rowData);
+      proposalDrawer.onOpen();
       return;
-    } else {
-      if (
-        e === "APPROVED" &&
-        (rowData?.status === "REJECTED" || rowData?.status === "CANCELLED")
-      ) {
-        setConfirmApproveModal({
-          isOpen: true,
-          rowData,
-        });
-        return;
-      }
-      setUpdateStatusData((prev) => ({
-        ...prev,
-        proposalId: rowData?.id,
-        status: e,
-      }));
-      onOpen();
     }
+
+    if (
+      e === "APPROVED" &&
+      (rowData?.status === "REJECTED" || rowData?.status === "CANCELLED")
+    ) {
+      setConfirmApproveModal({
+        isOpen: true,
+        rowData,
+      });
+      return;
+    }
+
+    setUpdateStatusData((prev) => ({
+      ...prev,
+      proposalId: rowData?.id,
+      status: e,
+    }));
+
+    onOpen();
   };
 
   const handleConfirmRejectedToApproved = () => {
@@ -257,7 +435,7 @@ const AllProposal = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <p className="font-normal">{rowData?.solutionName || "-"}</p>
+              <p className="font-normal">{rowData?.solution?.name || "-"}</p>
             </div>
           </div>
         );
@@ -306,21 +484,23 @@ const AllProposal = () => {
             </span>
           </div>
         );
-      case "brochures":
+      case "brochures": {
+        const brochureCount = getAvailableBrochureCount(rowData);
+
         return (
-          <div className="flex gap-0.5">
-            {rowData?.brochureBook?.map((item) => (
-              <Tooltip key={item?.id} content={item?.name}>
-                <Link
-                  to={item?.brochureBook}
-                  className="inline-block max-w-[120px] bg-blue-300 rounded-lg py-0.5 px-2 truncate whitespace-nowrap overflow-hidden"
-                >
-                  {item?.name}
-                </Link>
-              </Tooltip>
-            ))}
-          </div>
+          <Tooltip content="View brochures, email body and scope of work">
+            <Button
+              size="sm"
+              variant="flat"
+              color={brochureCount > 0 ? "primary" : "default"}
+              onPress={() => handleActionsClick("view", rowData)}
+              className="font-medium"
+            >
+              View {brochureCount > 0 ? `(${brochureCount})` : ""}
+            </Button>
+          </Tooltip>
         );
+      }
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -532,6 +712,15 @@ const AllProposal = () => {
     );
   }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
 
+  const selectedBrochures = getProposalBrochures(selectedProposalDetail);
+
+  const selectedMailBody = selectedProposalDetail?.mailBody || "";
+
+  const selectedScopeOfWork =
+    selectedProposalDetail?.scopeOfWork ||
+    selectedProposalDetail?.template ||
+    "";
+
   return (
     <>
       {loading === "pending" && <LoadingSpinner />}
@@ -566,7 +755,7 @@ const AllProposal = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.leadId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -619,73 +808,144 @@ const AllProposal = () => {
           )}
         </ModalContent>
       </Modal>
-      <Modal
-        size="full"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={proposalModal.isOpen}
-        onOpenChange={proposalModal.onOpenChange}
-        placement="top-center"
+      <Drawer
+        size="5xl"
+        placement="right"
+        isOpen={proposalDrawer.isOpen}
+        onOpenChange={(open) => {
+          proposalDrawer.onOpenChange(open);
+
+          if (!open) {
+            setSelectedProposalDetail(null);
+          }
+        }}
+        classNames={{
+          base: "max-w-[92vw]",
+          body: "p-0",
+        }}
       >
-        <ModalContent>
+        <DrawerContent>
           {(onClose) => (
             <>
-              <ModalHeader className="text-xl font-semibold border-b pb-3">
-                Proposal
-              </ModalHeader>
+              <DrawerHeader className="border-b border-gray-200 px-6 py-4">
+                <div className="flex w-full flex-col gap-1">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        Proposal Details
+                      </h2>
 
-              <ModalBody>
-                <div className="max-h-screen overflow-auto p-6 bg-gray-100 rounded-xl mx-auto w-full max-w-4xl space-y-6">
-                  {/* Mail Body Preview */}
-                  {mailBody && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
-                        <h3 className="text-base font-semibold text-gray-900">
-                          Mail Body
-                        </h3>
-                        <p className="text-xs text-gray-500 mt-1">
-                          This content will be sent in the email body.
-                        </p>
-                      </div>
-
-                      <div className="p-5">
-                        <div
-                          className="proposal-content tiptap-preview force-preview-text"
-                          dangerouslySetInnerHTML={{
-                            __html: mailBody,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Proposal Template Preview */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
-                      <h3 className="text-base font-semibold text-gray-900">
-                        Proposal Template
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Final proposal content that will be shared with the
-                        client.
+                      <p className="mt-1 text-sm text-gray-500">
+                        {selectedProposalDetail?.proposalNumber || "---"} •{" "}
+                        {selectedProposalDetail?.companyName || "---"}
                       </p>
                     </div>
 
-                    <div className="p-5 md:p-8">
-                      <div
-                        className="proposal-content tiptap-preview force-preview-text"
-                        dangerouslySetInnerHTML={{
-                          __html: proposalData,
-                        }}
-                      />
-                    </div>
+                    <Button variant="flat" onPress={onClose}>
+                      Close
+                    </Button>
                   </div>
                 </div>
-              </ModalBody>
+              </DrawerHeader>
+
+              <DrawerBody className="bg-gray-50">
+                <div className="h-full overflow-auto p-5">
+                  <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+                    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-gray-400">
+                          Status
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {selectedProposalDetail?.status || "---"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-gray-400">
+                          Solution
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {selectedProposalDetail?.solution?.name || "---"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-gray-400">
+                          Created By
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {selectedProposalDetail?.createdByName || "---"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-gray-400">
+                          Created Date
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {selectedProposalDetail?.createDate
+                            ? dayjs(selectedProposalDetail.createDate).format(
+                                "YYYY-MM-DD",
+                              )
+                            : "---"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+                      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-base font-semibold text-gray-900">
+                              Attached Brochures
+                            </h3>
+
+                            <p className="mt-1 text-xs text-gray-500">
+                              Brochures fetched from menu, category, subcategory
+                              and service mapping.
+                            </p>
+                          </div>
+
+                          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                            {getAvailableBrochureCount(selectedProposalDetail)}{" "}
+                            Found
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+                        {selectedBrochures.map((item) => (
+                          <ProposalBrochureCard
+                            key={item.key}
+                            title={item.title}
+                            entityName={item.entityName}
+                            brochure={item.brochure}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <HtmlPreviewBlock
+                      title="Email Body"
+                      subtitle="This HTML content is coming from proposal mail body."
+                      html={selectedMailBody}
+                      emptyText="No email body found for this proposal."
+                    />
+
+                    <HtmlPreviewBlock
+                      title="Scope of Work"
+                      subtitle="This HTML content is coming from proposal scope of work."
+                      html={selectedScopeOfWork}
+                      emptyText="No scope of work found for this proposal."
+                    />
+                  </div>
+                </div>
+              </DrawerBody>
             </>
           )}
-        </ModalContent>
-      </Modal>
+        </DrawerContent>
+      </Drawer>
 
       <Modal
         isDismissable={false}

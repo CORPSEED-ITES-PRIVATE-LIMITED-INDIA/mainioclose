@@ -30,8 +30,8 @@ import CompanyLeads from "../sales/company/CompanyLeads";
 import ChildLead from "../sales/leads/ChildLead";
 import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
 import AllInvoice from "../accounts/organization/AllInvoice";
-import Unbill from "../accounts/organization/Unbill";
 import ServicePaymentTerm from "../sales/leads/ServicePaymentTerm";
+import SalesUnbill from "../sales/unbill/SalesUnbill";
 
 const SalesModuleRouting = () => {
   return (
@@ -164,7 +164,7 @@ const SalesModuleRouting = () => {
       <Route path="sales/estimate" element={<Estimate />} />
       <Route path="sales/allInvoice" element={<AllInvoice />} />
       <Route path="sales/proposal" element={<AllProposal />} />
-      <Route path="sales/unbilled" element={<Unbill />} />
+      <Route path="sales/unbilled" element={<SalesUnbill />} />
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />
       <Route path="sales/autoHistory" element={<AutoHistory />} />
       <Route path="sales/salesReport" element={<SalesReport />} />
