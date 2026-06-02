@@ -308,7 +308,7 @@ export default function NotificationBell({ userId }) {
                           key={notification.id || index}
                           type="button"
                           // onClick={() => handleNotificationClick(notification)}
-                          className="w-full px-5 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-neutral-900"
+                          className={`w-full px-5 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-neutral-900 ${notification.read ? "" : "bg-slate-500/20"}`}
                         >
                           <div className="flex gap-3">
                             <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">

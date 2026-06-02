@@ -44,6 +44,7 @@ export const columns = [
   { name: "RECEIVED", uid: "receivedAmount", sortable: true },
   { name: "OUTSTANDING", uid: "outstandingAmount", sortable: true },
   { name: "REFUND", uid: "refundAmount", sortable: true },
+  { name: "CREDIT", uid: "creditAmount", sortable: true },
   { name: "STATUS", uid: "status" },
   { name: "REASON", uid: "reason" },
   { name: "ACTIONS", uid: "actions" },
@@ -63,6 +64,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "receivedAmount",
   "outstandingAmount",
   "refundAmount",
+  "creditAmount",
   "status",
   "actions",
 ];
@@ -452,6 +454,12 @@ const CreditNote = () => {
           return (
             <p className="text-sm font-medium">
               {inrCurrency(rowData?.refundAmount || 0)}
+            </p>
+          );
+        case "creditAmount":
+          return (
+            <p className="text-sm font-medium">
+              {inrCurrency(rowData?.creditAmount || 0)}
             </p>
           );
 
