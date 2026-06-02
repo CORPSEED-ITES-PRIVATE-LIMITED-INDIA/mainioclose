@@ -30,7 +30,7 @@ import {
   useDisclosure,
   User,
 } from "@heroui/react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addClientLogInCredentialForPortal,
@@ -1242,9 +1242,10 @@ const ProjectDetails = () => {
                   <div className="flex items-start gap-2 w-full">
                     <User2 className="!w-4 !h-4" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm break-words">
+                      <p className="text-sm break-words capitalize">
                         Client name :{" "}
-                        {`${contact.title} ${contact.name}, ${contact?.designation}`}
+                        {`${contact.title} ${contact.name}, ${contact?.designation || ""}`.trim() ||
+                          "N/A"}
                       </p>
                     </div>
                   </div>

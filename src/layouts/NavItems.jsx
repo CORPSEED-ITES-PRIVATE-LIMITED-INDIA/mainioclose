@@ -21,6 +21,11 @@ export const navItems = [
         url: "sales/allInvoice",
         key: "allInvoice",
       },
+      {
+        title: "Unbilled",
+        url: "sales/unbilled",
+        key: "unbilled",
+      },
       // {
       //   title: "Discounted Estimate",
       //   icon: "",
@@ -598,7 +603,14 @@ export const salesNavItems = [
   {
     title: "All invoice",
     url: "sales/allInvoice",
+    icon: "BookOpenText",
     key: "allInvoice",
+  },
+  {
+    title: "Unbilled",
+    url: "sales/unbilled",
+    icon: "BookOpenText",
+    key: "unbilled",
   },
   // {
   //   title: "Discounted Estimate",

@@ -310,6 +310,7 @@ const LeadInfo = () => {
     setStatusLoading("pending");
     dispatch(updateLeadStatus({ leadId, userId, statusId }))
       .then((resp) => {
+        console.log("kjhfgjhfjhj", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Status updated successfully",
@@ -321,7 +322,8 @@ const LeadInfo = () => {
         } else {
           setStatusLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "ERROR",
+            description: resp?.payload?.response?.data,
             color: "danger",
           });
         }

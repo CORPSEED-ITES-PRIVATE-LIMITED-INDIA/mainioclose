@@ -204,11 +204,15 @@ export const changeLeadAssigneeLeads = createAsyncThunk(
 
 export const updateLeadStatus = createAsyncThunk(
   "updateLeadStatus",
-  async ({ leadId, statusId, userId }) => {
-    const response = await api.put(
-      `/leadService/api/v1/status/updateLeadStatus?leadId=${leadId}&statusId=${statusId}&currentUserId=${userId}`,
-    );
-    return response.data;
+  async ({ leadId, statusId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/status/updateLeadStatus?leadId=${leadId}&statusId=${statusId}&currentUserId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err);
+    }
   },
 );
 

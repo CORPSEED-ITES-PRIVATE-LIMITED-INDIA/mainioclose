@@ -141,6 +141,164 @@ const InfoTile = ({ icon, label, value }) => (
   </div>
 );
 
+const formatFileSize = (bytes) => {
+  const size = Number(bytes || 0);
+
+  if (!size) return "---";
+
+  const units = ["B", "KB", "MB", "GB"];
+  let value = size;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value = value / 1024;
+    unitIndex += 1;
+  }
+
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${
+    units[unitIndex]
+  }`;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "---";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const BrochurePreviewCard = ({ title, item }) => {
+  const brochure = item?.brochure;
+  const hasBrochure = Boolean(brochure?.filePath);
+  const isImage = brochure?.contentType?.startsWith("image/");
+
+  return (
+    <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-default-900">{title}</p>
+          <p className="mt-1 truncate text-xs text-default-500">
+            {getName(item)}
+          </p>
+        </div>
+
+        <Chip
+          size="sm"
+          variant="flat"
+          color={hasBrochure ? "success" : "default"}
+        >
+          {hasBrochure ? "Available" : "Not Added"}
+        </Chip>
+      </div>
+
+      {hasBrochure ? (
+        <div className="space-y-3">
+          <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-default-200 bg-background">
+            {isImage ? (
+              <img
+                src={brochure.filePath}
+                alt={brochure.fileName || title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2 text-default-400">
+                <FileText size={36} />
+                <p className="text-xs font-semibold">Document Preview</p>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2 rounded-xl bg-background p-3 text-xs">
+            <p className="break-words">
+              <span className="font-semibold text-default-800">File Name:</span>{" "}
+              {brochure.fileName || "---"}
+            </p>
+
+            <p>
+              <span className="font-semibold text-default-800">Type:</span>{" "}
+              {brochure.contentType || "---"}
+            </p>
+
+            <p>
+              <span className="font-semibold text-default-800">Size:</span>{" "}
+              {formatFileSize(brochure.fileSize)}
+            </p>
+
+            <p>
+              <span className="font-semibold text-default-800">Uploaded:</span>{" "}
+              {formatDateTime(brochure.uploadedAt)}
+            </p>
+
+            <p className="break-words">
+              <span className="font-semibold text-default-800">
+                Description:
+              </span>{" "}
+              {brochure.description || "---"}
+            </p>
+          </div>
+
+          <a
+            href={brochure.filePath}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            View Brochure
+          </a>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-default-300 bg-background p-5 text-center">
+          <UploadCloud className="mx-auto text-default-400" size={28} />
+
+          <p className="mt-2 text-sm font-semibold text-default-700">
+            No brochure uploaded
+          </p>
+
+          <p className="mt-1 text-xs text-default-500">
+            Brochure is not available for this level.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const HtmlPreview = ({ title, value, emptyText }) => {
+  const htmlValue = value?.trim();
+
+  return (
+    <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+      <p className="mb-3 text-sm font-bold text-default-900">{title}</p>
+
+      {htmlValue ? (
+        <div
+          className="max-h-72 overflow-auto rounded-xl bg-background p-4 text-sm leading-6 text-default-700 [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5"
+          dangerouslySetInnerHTML={{
+            __html: htmlValue,
+          }}
+        />
+      ) : (
+        <div className="rounded-xl border border-dashed border-default-300 bg-background p-5 text-center">
+          <FileText className="mx-auto text-default-400" size={28} />
+
+          <p className="mt-2 text-sm font-semibold text-default-700">
+            {emptyText}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProductServiceDetails = () => {
   const dispatch = useDispatch();
   const { solutionId } = useParams();
@@ -352,237 +510,191 @@ const ProductServiceDetails = () => {
   const isSaveDisabled =
     isUploading || isSubmitting || !formData.subCategoryId || !solutionId;
 
+  const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
+
   return (
-    <div className="flex h-[calc(100dvh-80px)] min-h-0 overflow-hidden bg-default-50 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="flex max-h-[85vh] overflow-auto bg-default-50 px-4 py-4 sm:px-6 lg:px-8">
       <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col gap-4 overflow-hidden">
-        <div className="shrink-0 rounded-3xl border border-default-200 bg-background p-5 shadow-sm">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-default-900 sm:text-2xl">
-                  Service Details
-                </h1>
-                <Chip color="primary" variant="flat" size="sm">
-                  Menu Mapping
+        <div className="flex shrink-0 flex-col justify-between gap-4 rounded-3xl border border-default-200 bg-background p-5 shadow-sm sm:flex-row sm:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold text-default-900 sm:text-2xl">
+                Service Details
+              </h1>
+
+              <Chip color="primary" variant="flat" size="sm">
+                Menu Mapping
+              </Chip>
+            </div>
+
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-default-500">
+              Select Menu, Category and Subcategory, then add optional service
+              details and brochure.
+            </p>
+
+            {!solutionId && (
+              <p className="mt-2 text-xs font-medium text-danger">
+                Solution ID is missing from URL.
+              </p>
+            )}
+          </div>
+
+          <Button
+            color="primary"
+            startContent={<Plus size={17} />}
+            onPress={() => setIsModalOpen(true)}
+            className="font-semibold"
+          >
+            Add Service Details
+          </Button>
+        </div>
+
+        <Card className="border border-default-200 bg-background shadow-sm">
+          <CardHeader className="flex flex-col items-start gap-1 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-50 text-primary">
+                <FileText size={22} />
+              </div>
+
+              <div>
+                <h2 className="text-base font-bold text-default-900">
+                  Current Service Brochure Details
+                </h2>
+                <p className="text-sm text-default-500">
+                  Existing mapping and brochure information for this solution.
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+
+          <Divider />
+
+          <CardBody className="space-y-6 p-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <InfoTile
+                icon={<FolderTree size={18} />}
+                label="Menu"
+                value={getName(serviceBrouchersDetail?.menu)}
+              />
+
+              <InfoTile
+                icon={<Layers3 size={18} />}
+                label="Category"
+                value={getName(serviceBrouchersDetail?.menuCategory)}
+              />
+
+              <InfoTile
+                icon={<FileText size={18} />}
+                label="Subcategory"
+                value={getName(serviceBrouchersDetail?.subCategory)}
+              />
+
+              <InfoTile
+                icon={<CheckCircle2 size={18} />}
+                label="Solution"
+                value={serviceBrouchersDetail?.solution?.name}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-default-900">
+                  Brochure Details
+                </h3>
+                <p className="text-sm text-default-500">
+                  Menu, category, subcategory and solution level brochures.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <BrochurePreviewCard
+                  title="Menu Brochure"
+                  item={serviceBrouchersDetail?.menu}
+                />
+
+                <BrochurePreviewCard
+                  title="Category Brochure"
+                  item={serviceBrouchersDetail?.menuCategory}
+                />
+
+                <BrochurePreviewCard
+                  title="Subcategory Brochure"
+                  item={serviceBrouchersDetail?.subCategory}
+                />
+
+                <BrochurePreviewCard
+                  title="Solution Brochure"
+                  item={serviceBrouchersDetail?.solution}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-default-200 bg-background shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-default-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold text-default-900">
+                    Email Template
+                  </p>
+                  <p className="text-xs text-default-500">
+                    Email subject, email body and scope of work.
+                  </p>
+                </div>
+
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={emailTemplate ? "success" : "default"}
+                >
+                  {emailTemplate ? "Available" : "Not Added"}
                 </Chip>
               </div>
 
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-default-500">
-                Select Menu, Category and Subcategory, then add optional service
-                details and brochure.
-              </p>
+              {emailTemplate ? (
+                <div className="space-y-4 p-4">
+                  <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-default-400">
+                      Email Subject
+                    </p>
 
-              {!solutionId && (
-                <p className="mt-2 text-xs font-medium text-danger">
-                  Solution ID is missing from URL.
-                </p>
-              )}
-            </div>
-
-            <Button
-              color="primary"
-              startContent={<Plus size={17} />}
-              onPress={() => setIsModalOpen(true)}
-              className="font-semibold"
-            >
-              Add / Update Service Details
-            </Button>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
-          <div className="flex flex-col gap-4 pb-4">
-            <Card className="border border-default-200 bg-background shadow-sm">
-              <CardHeader className="flex flex-col items-start gap-1 px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-50 text-primary">
-                    <FileText size={22} />
+                    <p className="mt-1 text-sm font-bold text-default-900">
+                      {emailTemplate.emailSubject || "---"}
+                    </p>
                   </div>
 
-                  <div>
-                    <h2 className="text-base font-bold text-default-900">
-                      Current Service Brochure Details
-                    </h2>
-                    <p className="text-sm text-default-500">
-                      Existing mapping and brochure information for this
-                      solution.
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <HtmlPreview
+                      title="Email Body"
+                      value={emailTemplate.emailBody}
+                      emptyText="No email body added."
+                    />
+
+                    <HtmlPreview
+                      title="Scope of Work"
+                      value={emailTemplate.scopeOfWork}
+                      emptyText="No scope of work added."
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4">
+                  <div className="rounded-xl border border-dashed border-default-300 bg-default-50 p-5 text-center">
+                    <FileText className="mx-auto text-default-400" size={28} />
+
+                    <p className="mt-2 text-sm font-semibold text-default-700">
+                      No email template added yet
+                    </p>
+
+                    <p className="mt-1 text-xs text-default-500">
+                      Add mail body and scope of work from the service details
+                      form.
                     </p>
                   </div>
                 </div>
-              </CardHeader>
-
-              <Divider />
-
-              <CardBody className="space-y-5 p-5">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                  <InfoTile
-                    icon={<FolderTree size={18} />}
-                    label="Menu"
-                    value={getName(serviceBrouchersDetail?.menu)}
-                  />
-
-                  <InfoTile
-                    icon={<Layers3 size={18} />}
-                    label="Category"
-                    value={getName(serviceBrouchersDetail?.menuCategory)}
-                  />
-
-                  <InfoTile
-                    icon={<FileText size={18} />}
-                    label="Subcategory"
-                    value={getName(serviceBrouchersDetail?.subCategory)}
-                  />
-
-                  <InfoTile
-                    icon={<CheckCircle2 size={18} />}
-                    label="Solution"
-                    value={serviceBrouchersDetail?.solution?.name}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-default-900">
-                          Brochure
-                        </p>
-                        <p className="text-xs text-default-500">
-                          Uploaded brochure details
-                        </p>
-                      </div>
-
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={
-                          serviceBrouchersDetail?.solution?.brochure
-                            ? "success"
-                            : "default"
-                        }
-                      >
-                        {serviceBrouchersDetail?.solution?.brochure
-                          ? "Available"
-                          : "Not Added"}
-                      </Chip>
-                    </div>
-
-                    {serviceBrouchersDetail?.solution?.brochure ? (
-                      <div className="space-y-2 rounded-xl bg-background p-4 text-sm">
-                        <p className="break-words">
-                          <span className="font-semibold">File Name:</span>{" "}
-                          {serviceBrouchersDetail.solution.brochure.fileName ||
-                            "---"}
-                        </p>
-
-                        <p className="break-words">
-                          <span className="font-semibold">Description:</span>{" "}
-                          {serviceBrouchersDetail.solution.brochure
-                            .description || "---"}
-                        </p>
-
-                        {serviceBrouchersDetail.solution.brochure.filePath && (
-                          <a
-                            href={
-                              serviceBrouchersDetail.solution.brochure.filePath
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex font-semibold text-primary underline"
-                          >
-                            View Brochure
-                          </a>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-dashed border-default-300 bg-background p-5 text-center">
-                        <UploadCloud
-                          className="mx-auto text-default-400"
-                          size={28}
-                        />
-                        <p className="mt-2 text-sm font-semibold text-default-700">
-                          No brochure uploaded yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-default-900">
-                          Email Template
-                        </p>
-                        <p className="text-xs text-default-500">
-                          Mail body and scope of work
-                        </p>
-                      </div>
-
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={
-                          serviceBrouchersDetail?.solution?.emailTemplate
-                            ? "success"
-                            : "default"
-                        }
-                      >
-                        {serviceBrouchersDetail?.solution?.emailTemplate
-                          ? "Available"
-                          : "Not Added"}
-                      </Chip>
-                    </div>
-
-                    {serviceBrouchersDetail?.solution?.emailTemplate ? (
-                      <div className="space-y-4 rounded-xl bg-background p-4 text-sm">
-                        <p>
-                          <span className="font-semibold">Subject:</span>{" "}
-                          {serviceBrouchersDetail.solution.emailTemplate
-                            .emailSubject || "---"}
-                        </p>
-
-                        <div>
-                          <p className="mb-1 font-semibold">Mail Body:</p>
-                          <div
-                            className="prose max-w-none text-default-700"
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                serviceBrouchersDetail.solution.emailTemplate
-                                  .emailBody || "<p>No email body added.</p>",
-                            }}
-                          />
-                        </div>
-
-                        <div>
-                          <p className="mb-1 font-semibold">Scope of Work:</p>
-                          <div
-                            className="prose max-w-none text-default-700"
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                serviceBrouchersDetail.solution.emailTemplate
-                                  .scopeOfWork ||
-                                "<p>No scope of work added.</p>",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-dashed border-default-300 bg-background p-5 text-center">
-                        <FileText
-                          className="mx-auto text-default-400"
-                          size={28}
-                        />
-                        <p className="mt-2 text-sm font-semibold text-default-700">
-                          No email template added yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+        {/* )} */}
 
         <Modal
           isOpen={isModalOpen}

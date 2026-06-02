@@ -26,9 +26,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   cancelProposal,
   editLeadPropposal,
-  getAllBrochureList,
   getAllProposalByLeadId,
-  getAllProposalTemplateList,
   getSingleLeadDataByLeadId,
   sendProposal,
   sendProposalToManager,
@@ -36,6 +34,7 @@ import {
 import TextEditor from "../../components/TextEditor";
 import {
   getAllSolutionList,
+  getServiceBrouchersServiceDetailBySolutionId,
   getSolutionDetailByName,
   getSolutionPriceListById,
 } from "../../toolkit/slices/settingSlice";
@@ -53,9 +52,8 @@ const defaultValues = {
   mailCc: [],
   mailBcc: [],
   mailSubject: "",
-  brochureBook: [],
-  mailBody: "<h2>Your email body</h2>",
-  template: "<h2>Your proposal </h2>",
+  mailBody: "<p></p>",
+  scopeOfWork: "<p></p>",
 };
 
 export function TagsInput({
@@ -199,6 +197,9 @@ const Proposal = () => {
   const serviceFeeList = useSelector(
     (state) => state.setting.solutionPriceList,
   );
+  const serviceBrouchersDetail = useSelector(
+    (state) => state.setting.serviceBrouchersDetail,
+  );
   const company = useSelector((state) => state.company.basicCompanyDetail);
 
   const [proposalAntForm] = Form.useForm();
@@ -206,8 +207,6 @@ const Proposal = () => {
   const [templates, setTemplates] = useState([]);
   const [data, setData] = useState("<h2>Your proposal </h2>");
   const [mailBody, setMailBody] = useState("<h2>Your email body</h2>");
-  const [brochureUrl, setBrochureUrl] = useState([]);
-  const [templateName, setTemplateName] = useState("");
   const [editProposal, setEditProposal] = useState(false);
   const [isCreatingProposal, setIsCreatingProposal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
@@ -215,13 +214,6 @@ const Proposal = () => {
   const [proposalToCancel, setProposalToCancel] = useState(null);
   const [statusLoading, setStatusLoading] = useState("");
   const [lockedMailTo, setLockedMailTo] = useState([]);
-  const [selectedMenuId, setSelectedMenuId] = useState(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
-  const [selectedSubSubCategoryId, setSelectedSubSubCategoryId] =
-    useState(null);
-  const [selectedBrochureObjects, setSelectedBrochureObjects] = useState([]);
-  const [brochureSearchValue, setBrochureSearchValue] = useState("");
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
@@ -275,40 +267,6 @@ const Proposal = () => {
     })[0];
   }, [estimateList]);
 
-  const selectedMenu = useMemo(() => {
-    return brochureSelectionData.find((item) => item.id === selectedMenuId);
-  }, [selectedMenuId]);
-
-  const selectedCategory = useMemo(() => {
-    return selectedMenu?.categories?.find(
-      (item) => item.id === selectedCategoryId,
-    );
-  }, [selectedMenu, selectedCategoryId]);
-
-  const selectedSubCategory = useMemo(() => {
-    return selectedCategory?.subCategories?.find(
-      (item) => item.id === selectedSubCategoryId,
-    );
-  }, [selectedCategory, selectedSubCategoryId]);
-
-  const selectedSubSubCategory = useMemo(() => {
-    return selectedSubCategory?.subSubCategories?.find(
-      (item) => item.id === selectedSubSubCategoryId,
-    );
-  }, [selectedSubCategory, selectedSubSubCategoryId]);
-
-  const filteredFinalBrochures = useMemo(() => {
-    const list = selectedSubSubCategory?.brochures || [];
-
-    if (!brochureSearchValue.trim()) return list;
-
-    return list.filter((item) =>
-      item?.brochureName
-        ?.toLowerCase()
-        .includes(brochureSearchValue.toLowerCase()),
-    );
-  }, [selectedSubSubCategory, brochureSearchValue]);
-
   const isLatestEstimateRejected =
     latestEstimate?.status?.toUpperCase() === "REJECTED";
 
@@ -322,8 +280,6 @@ const Proposal = () => {
 
   useEffect(() => {
     dispatch(getAllProposalByLeadId(leadId));
-    dispatch(getAllProposalTemplateList());
-    dispatch(getAllBrochureList());
     dispatch(getAllSolutionList(userId));
     dispatch(getEstimatesByLeadId(leadId));
   }, [dispatch, leadId, userId]);
@@ -358,6 +314,13 @@ const Proposal = () => {
                   userId,
                 }),
               );
+              if (res?.payload?.id) {
+                dispatch(
+                  getServiceBrouchersServiceDetailBySolutionId(
+                    res?.payload?.id,
+                  ),
+                );
+              }
               proposalAntForm.setFieldsValue({
                 mailSubject: `Corpseed Proposal for - ${res?.payload?.name}`,
               });
@@ -379,26 +342,41 @@ const Proposal = () => {
     }
   }, [proposalList, selectedProposal, isCreatingProposal, editProposal]);
 
+  useEffect(() => {
+    if (!serviceBrouchersDetail) return;
+
+    const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
+
+    const apiMailBody = emailTemplate?.emailBody || "<p></p>";
+    const apiScopeOfWork = emailTemplate?.scopeOfWork || "<p></p>";
+    const apiSubject = emailTemplate?.emailSubject || "";
+
+    setMailBody(apiMailBody);
+    setData(apiScopeOfWork);
+
+    const currentSubject = proposalAntForm.getFieldValue("mailSubject");
+
+    proposalAntForm.setFieldsValue({
+      mailSubject: apiSubject || currentSubject || "",
+      mailBody: apiMailBody,
+      scopeOfWork: apiScopeOfWork,
+    });
+  }, [serviceBrouchersDetail, proposalAntForm]);
+
   const loadProposalInForm = (proposal) => {
-    const brochureIds = getBrochureIds(proposal?.brochureBook || []);
+    const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
 
-    const existingBrochureObjects = Array.isArray(proposal?.brochureBook)
-      ? proposal.brochureBook
-          .filter((item) => typeof item === "object")
-          .map((item) => ({
-            id: item?.id,
-            brochureName:
-              item?.brochureName || item?.name || `Brochure ${item?.id}`,
-            brochureUrl:
-              item?.brochureUrl || item?.brochureBook || item?.url || "#",
-          }))
-      : [];
+    const finalMailBody =
+      proposal?.mailBody || emailTemplate?.emailBody || "<p></p>";
 
-    setData(proposal?.template || "<h2>Your proposal </h2>");
-    setMailBody(proposal?.mailBody || "<h2>Your email body</h2>");
-    setBrochureUrl(brochureIds);
-    setSelectedBrochureObjects(existingBrochureObjects);
-    setTemplateName(proposal?.templateName || "");
+    const finalScopeOfWork =
+      proposal?.scopeOfWork ||
+      proposal?.template ||
+      emailTemplate?.scopeOfWork ||
+      "<p></p>";
+
+    setData(finalScopeOfWork);
+    setMailBody(finalMailBody);
 
     const existingMailTo = proposal?.mailTo || [];
 
@@ -409,9 +387,8 @@ const Proposal = () => {
       mailCc: proposal?.mailCc || [],
       mailBcc: proposal?.mailBcc || [],
       mailSubject: proposal?.mailSubject || "",
-      brochureBook: brochureIds,
-      mailBody: proposal?.mailBody || "<h2>Your email body</h2>",
-      template: proposal?.template || "<h2>Your proposal </h2>",
+      mailBody: finalMailBody,
+      scopeOfWork: finalScopeOfWork,
     });
   };
 
@@ -437,6 +414,7 @@ const Proposal = () => {
         item?.status?.toUpperCase(),
       ),
     );
+
     if (hasNonCancelled) {
       addToast({
         title: "RESTRICTED",
@@ -449,16 +427,6 @@ const Proposal = () => {
     setIsCreatingProposal(true);
     setEditProposal(false);
     setSelectedProposal(null);
-    setTemplateName("");
-    setBrochureUrl([]);
-    setSelectedBrochureObjects([]);
-    setSelectedMenuId(null);
-    setSelectedCategoryId(null);
-    setSelectedSubCategoryId(null);
-    setSelectedSubSubCategoryId(null);
-    setBrochureSearchValue("");
-    setData("<h2>Your proposal </h2>");
-    setMailBody("<h2>Your email body</h2>");
 
     proposalAntForm.resetFields();
 
@@ -467,16 +435,33 @@ const Proposal = () => {
         ?.map((client) => client.emails)
         .filter(Boolean) || [];
 
+    const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
+
+    const apiMailBody = emailTemplate?.emailBody || "<p></p>";
+    const apiScopeOfWork = emailTemplate?.scopeOfWork || "<p></p>";
+    const apiSubject = emailTemplate?.emailSubject || "";
+
     setLockedMailTo(existingMailTo);
+    setMailBody(apiMailBody);
+    setData(apiScopeOfWork);
 
     proposalAntForm.setFieldsValue({
-      ...defaultValues,
       mailTo: existingMailTo,
-      mailSubject: solutionDetail?.name
-        ? `Corpseed Proposal for - ${solutionDetail.name}`
-        : "",
-      brochureBook: [],
+      mailCc: [],
+      mailBcc: [],
+      mailSubject:
+        apiSubject ||
+        (solutionDetail?.name
+          ? `Corpseed Proposal for - ${solutionDetail.name}`
+          : ""),
+      mailBody: apiMailBody,
+      scopeOfWork: apiScopeOfWork,
     });
+
+    proposalAntForm.setFields([
+      { name: "mailBody", errors: [] },
+      { name: "scopeOfWork", errors: [] },
+    ]);
 
     proposalFormModal.onOpen();
   };
@@ -551,7 +536,6 @@ const Proposal = () => {
     const isSameTemplateSelected = templateName === item?.name;
 
     if (isSameTemplateSelected) {
-      setTemplateName("");
       setData("<h2>Your proposal </h2>");
       setMailBody("<h2>Your email body</h2>");
 
@@ -592,43 +576,7 @@ const Proposal = () => {
 
       proposalAntForm.validateFields(["mailBody"]);
     }
-
-    setTemplateName(item?.name);
     templateModal.onClose();
-  };
-
-  const handleSetBrochureData = (brochure) => {
-    const alreadySelected = selectedBrochureObjects.some(
-      (item) => item.id === brochure.id,
-    );
-
-    const nextSelectedObjects = alreadySelected
-      ? selectedBrochureObjects.filter((item) => item.id !== brochure.id)
-      : [
-          ...selectedBrochureObjects,
-          {
-            ...brochure,
-            menuId: selectedMenu?.id,
-            menuName: selectedMenu?.menuName,
-            categoryId: selectedCategory?.id,
-            categoryName: selectedCategory?.categoryName,
-            subCategoryId: selectedSubCategory?.id,
-            subCategoryName: selectedSubCategory?.subCategoryName,
-            subSubCategoryId: selectedSubSubCategory?.id,
-            subSubCategoryName: selectedSubSubCategory?.subSubCategoryName,
-          },
-        ];
-
-    const nextSelectedIds = nextSelectedObjects.map((item) => item.id);
-
-    setSelectedBrochureObjects(nextSelectedObjects);
-    setBrochureUrl(nextSelectedIds);
-
-    proposalAntForm.setFieldsValue({
-      brochureBook: nextSelectedIds,
-    });
-
-    proposalAntForm.validateFields(["brochureBook"]);
   };
 
   const handleEditProposal = () => {
@@ -691,10 +639,6 @@ const Proposal = () => {
   const onSubmit = (values) => {
     setStatusLoading("pending");
 
-    const hadRejectedProposal = proposalList.some(
-      (p) => p.status?.toUpperCase() === "REJECTED",
-    );
-
     if (serviceFeeList?.length === 0 || !serviceFeeList) {
       addToast({
         title: "RESTRICTED !.",
@@ -737,35 +681,44 @@ const Proposal = () => {
       return;
     }
 
-    const finalValues = {
-      ...values,
-      leadId,
-      solutionId: solutionDetail?.id,
-      createdById: userId,
-      templateName,
-      brochureBook: brochureUrl,
-      brochureSelectionPath: selectedBrochureObjects,
-      companyId: company?.id,
-      companyUnitId: company?.units?.[0]?.id,
-      contactId: company?.units?.[0]?.unitContacts?.[0]?.id,
-    };
-
     const antValues = proposalAntForm.getFieldsValue();
 
-    finalValues.lineItems =
-      antValues?.lineItems?.map((item) => ({
-        sourceItemId: item?.sourceItemId || 0,
-        itemName: item?.itemName || "",
-        description: item?.description || "",
-        hsnSacCode: item?.hsnSacCode || "",
-        quantity: item?.quantity || 1,
-        unit: item?.unit || "Nos",
-        unitPriceExGst: Number(item?.unitPriceExGst || 0),
-        gstRate: Number(item?.gstRate || 0),
-        igstFlag: item?.igstFlag ?? true,
-        categoryCode: item?.categoryCode || "",
-        feeType: item?.feeType || "PROFESSIONAL_FEE",
-      })) || [];
+    const finalValues = {
+      leadId: Number(leadId),
+      createdById: Number(userId),
+      companyId: Number(company?.id),
+      companyUnitId: Number(company?.units?.[0]?.id),
+      contactId: Number(company?.units?.[0]?.unitContacts?.[0]?.id),
+      solutionId: Number(solutionDetail?.id),
+
+      proposalSendOrNot: true,
+
+      mailSubject: values?.mailSubject || "",
+      mailBody: values?.mailBody || "<p></p>",
+
+      // Keep this only if backend DTO has scopeOfWork field.
+      // If backend does not accept this field, remove this line.
+      scopeOfWork: values?.scopeOfWork || "<p></p>",
+
+      mailTo: Array.isArray(values?.mailTo) ? values.mailTo : [],
+      mailCc: Array.isArray(values?.mailCc) ? values.mailCc : [],
+      mailBcc: Array.isArray(values?.mailBcc) ? values.mailBcc : [],
+
+      lineItems:
+        antValues?.lineItems?.map((item) => ({
+          sourceItemId: Number(item?.sourceItemId || 0),
+          itemName: item?.itemName || "",
+          description: item?.description || "",
+          hsnSacCode: item?.hsnSacCode || "",
+          quantity: Number(item?.quantity || 1),
+          unit: item?.unit || "Nos",
+          unitPriceExGst: Number(item?.unitPriceExGst || 0),
+          gstRate: Number(item?.gstRate || 0),
+          igstFlag: item?.igstFlag ?? true,
+          categoryCode: item?.categoryCode || "",
+          feeType: item?.feeType || "PROFESSIONAL_FEE",
+        })) || [],
+    };
 
     if (editProposal && selectedProposal?.id) {
       dispatch(
@@ -776,15 +729,19 @@ const Proposal = () => {
 
           addToast({
             title: "SUCCESS",
-            description: "Your proposal has been created as DRAFT !.",
+            description: "Proposal updated successfully.",
             color: "success",
           });
 
           proposalAntForm.resetFields();
           proposalAntForm.setFieldsValue(defaultValues);
+
           setLockedMailTo([]);
           setEditProposal(false);
           setSelectedProposal(null);
+          setData("<p></p>");
+          setMailBody("<p></p>");
+
           dispatch(getAllProposalByLeadId(leadId));
           proposalFormModal.onClose();
         } else {
@@ -805,17 +762,15 @@ const Proposal = () => {
 
           addToast({
             title: "SUCCESS",
-            description: "Your proposal has been created as DRAFT !.",
+            description: "Your proposal has been created successfully.",
             color: "success",
           });
 
           proposalAntForm.resetFields();
           proposalAntForm.setFieldsValue(defaultValues);
 
-          setBrochureUrl([]);
-          setTemplateName("");
-          setData("<h2>Your proposal </h2>");
-          setMailBody("<h2>Your email body</h2>");
+          setData("<p></p>");
+          setMailBody("<p></p>");
           setIsCreatingProposal(false);
 
           dispatch(getAllProposalByLeadId(leadId));
@@ -1090,43 +1045,51 @@ const Proposal = () => {
         <AntInput placeholder="Enter proposal subject" />
       </Form.Item>
 
-      <Form.Item
-        name="brochureBook"
-        rules={[
-          {
-            validator: (_, value = []) => {
-              if (!Array.isArray(value) || value.length === 0) {
-                return Promise.reject(
-                  new Error("Please select at least one brochure"),
-                );
-              }
+      <div className="w-full rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Attached Brochures
+              </h3>
 
-              return Promise.resolve();
-            },
-          },
-        ]}
-      >
-        <input type="hidden" />
-      </Form.Item>
+              <p className="mt-1 text-xs leading-5 text-gray-500">
+                These brochures are fetched automatically from menu, category,
+                subcategory and service mapping.
+              </p>
+            </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Button
-          className="cursor-pointer"
-          onPress={brochureModal.onOpen}
-          variant="flat"
-          color={brochureUrl?.length > 0 ? "primary" : "default"}
-        >
-          Select Brochures
-          {brochureUrl?.length > 0 && `(${brochureUrl.length})`}
-        </Button>
+            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+              Auto Fetched
+            </span>
+          </div>
+        </div>
 
-        <Button
-          className="cursor-pointer"
-          onPress={templateModal.onOpen}
-          variant="flat"
-        >
-          Select Proposal Template {templateName && `(1) - ${templateName}`}
-        </Button>
+        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+          <AttachedBrochureCard
+            title="Menu Brochure"
+            name={serviceBrouchersDetail?.menu?.name}
+            brochure={serviceBrouchersDetail?.menu?.brochure}
+          />
+
+          <AttachedBrochureCard
+            title="Category Brochure"
+            name={serviceBrouchersDetail?.menuCategory?.name}
+            brochure={serviceBrouchersDetail?.menuCategory?.brochure}
+          />
+
+          <AttachedBrochureCard
+            title="Subcategory Brochure"
+            name={serviceBrouchersDetail?.subCategory?.name}
+            brochure={serviceBrouchersDetail?.subCategory?.brochure}
+          />
+
+          <AttachedBrochureCard
+            title="Service / Solution Brochure"
+            name={serviceBrouchersDetail?.solution?.name}
+            brochure={serviceBrouchersDetail?.solution?.brochure}
+          />
+        </div>
       </div>
 
       <ServiceFormFieldsDetail
@@ -1136,19 +1099,12 @@ const Proposal = () => {
 
       <Form.Item
         name="mailBody"
-        noStyle
+        hidden
         rules={[
-          { required: true, message: "Please give mail body" },
           {
             validator: (_, value) => {
-              const plainTextLength = getPlainTextLength(value);
-
-              if (plainTextLength < 1000) {
-                return Promise.reject(
-                  new Error(
-                    "Please enter at least 1000 characters in the mail body",
-                  ),
-                );
+              if (getPlainTextLength(value) === 0) {
+                return Promise.reject(new Error("Please give mail body"));
               }
 
               return Promise.resolve();
@@ -1156,7 +1112,7 @@ const Proposal = () => {
           },
         ]}
       >
-        <input type="hidden" />
+        <AntInput />
       </Form.Item>
 
       <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -1167,12 +1123,13 @@ const Proposal = () => {
             </label>
 
             <p className="mt-1 text-xs leading-5 text-gray-500">
-              This content will be sent to the client in email body.
+              Email body is fetched from service email template and can be
+              modified.
             </p>
           </div>
 
           <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            {getPlainTextLength(mailBody)} / 1000
+            {getPlainTextLength(mailBody)} chars
           </span>
         </div>
 
@@ -1190,33 +1147,16 @@ const Proposal = () => {
             }}
           />
         </div>
-
-        <div className="border-t border-gray-100 bg-white px-4 py-2">
-          <p className="text-xs italic text-gray-400">
-            Minimum characters required: 1000
-          </p>
-        </div>
       </div>
 
       <Form.Item
-        name="template"
+        name="scopeOfWork"
         hidden
         rules={[
-          { required: true, message: "Please give proposal" },
           {
             validator: (_, value) => {
-              if (!templateName || value === "<h2>Your proposal </h2>") {
-                return Promise.reject(
-                  new Error("Please select a proposal template"),
-                );
-              }
-
-              const plainTextLength = getPlainTextLength(value);
-
-              if (plainTextLength < 1000) {
-                return Promise.reject(
-                  new Error("Proposal must be at least 1000 characters"),
-                );
+              if (getPlainTextLength(value) === 0) {
+                return Promise.reject(new Error("Please give scope of work"));
               }
 
               return Promise.resolve();
@@ -1231,16 +1171,17 @@ const Proposal = () => {
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
           <div>
             <label className="block text-sm font-semibold text-gray-900">
-              Proposal <span className="text-red-500">*</span>
+              Scope of Work <span className="text-red-500">*</span>
             </label>
 
             <p className="mt-1 text-xs leading-5 text-gray-500">
-              This content will be attached as the proposal document.
+              Scope of work is fetched from service email template and can be
+              modified.
             </p>
           </div>
 
           <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            {getPlainTextLength(data)} / 1000
+            {getPlainTextLength(data)} chars
           </span>
         </div>
 
@@ -1251,18 +1192,12 @@ const Proposal = () => {
               setData(value);
 
               proposalAntForm.setFieldsValue({
-                template: value,
+                scopeOfWork: value,
               });
 
-              proposalAntForm.validateFields(["template"]);
+              proposalAntForm.validateFields(["scopeOfWork"]);
             }}
           />
-        </div>
-
-        <div className="border-t border-gray-100 bg-white px-4 py-2">
-          <p className="text-xs italic text-gray-400">
-            Minimum characters required: 1000
-          </p>
         </div>
       </div>
 
@@ -1278,6 +1213,113 @@ const Proposal = () => {
       </div>
     </Form>
   );
+
+  const formatFileSize = (bytes) => {
+    const size = Number(bytes || 0);
+
+    if (!size) return "---";
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const AttachedBrochureCard = ({ title, name, brochure }) => {
+    const hasBrochure = Boolean(brochure?.filePath);
+    const isImage = brochure?.contentType?.startsWith("image/");
+
+    return (
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{title}</p>
+
+              <p className="mt-1 truncate text-xs text-gray-500">
+                {name || "---"}
+              </p>
+            </div>
+
+            <span
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                hasBrochure
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : "border-gray-200 bg-gray-50 text-gray-500"
+              }`}
+            >
+              {hasBrochure ? "Attached" : "Not Added"}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-4">
+          {hasBrochure ? (
+            <>
+              <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                {isImage ? (
+                  <img
+                    src={brochure.filePath}
+                    alt={brochure.fileName || title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <p className="text-3xl">📄</p>
+                    <p className="mt-1 text-xs font-medium text-gray-500">
+                      Document
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2 text-xs text-gray-600">
+                <p className="break-words">
+                  <span className="font-semibold text-gray-900">File:</span>{" "}
+                  {brochure.fileName || "---"}
+                </p>
+
+                <p>
+                  <span className="font-semibold text-gray-900">Type:</span>{" "}
+                  {brochure.contentType || "---"}
+                </p>
+
+                <p>
+                  <span className="font-semibold text-gray-900">Size:</span>{" "}
+                  {formatFileSize(brochure.fileSize)}
+                </p>
+
+                <p className="break-words">
+                  <span className="font-semibold text-gray-900">
+                    Description:
+                  </span>{" "}
+                  {brochure.description || "---"}
+                </p>
+              </div>
+
+              <a
+                href={brochure.filePath}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                View Brochure
+              </a>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+              <p className="text-sm font-semibold text-gray-700">
+                No brochure found
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Brochure is not available for this level.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -1445,511 +1487,6 @@ const Proposal = () => {
             </div>
           )}
         </div>
-
-        <Modal
-          isOpen={templateModal.isOpen}
-          onOpenChange={templateModal.onOpenChange}
-          size="4xl"
-        >
-          <ModalContent>
-            <ModalHeader className="flex flex-col gap-1">
-              <span className="text-base font-semibold">
-                Select Proposal Template
-              </span>
-              <span className="text-xs text-gray-500">
-                Click a template to apply it instantly
-              </span>
-            </ModalHeader>
-
-            <ModalBody>
-              <div className="mb-3">
-                <Input
-                  size="sm"
-                  placeholder="Search template..."
-                  startContent={<Search size={14} />}
-                  className="cursor-pointer"
-                  onChange={(e) => {
-                    const value = e.target.value.toLowerCase();
-                    setTemplates(
-                      templateList.filter((t) =>
-                        t.name.toLowerCase().includes(value),
-                      ),
-                    );
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                {templates?.length > 0 ? (
-                  templates.map((item) => {
-                    const isSelected = templateName === item?.name;
-
-                    return (
-                      <div
-                        key={`template-${item.id}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleSetData(item);
-                        }}
-                        onDoubleClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        className={`relative cursor-pointer rounded-lg border p-2 transition-all duration-150 ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 bg-blue-500 rounded-full p-1 shadow">
-                            <Check size={12} className="text-white" />
-                          </div>
-                        )}
-                        <div className="flex items-center justify-center h-20 bg-gray-50 rounded mb-2">
-                          <img
-                            src={template}
-                            alt="template"
-                            className="h-12 w-auto object-contain"
-                          />
-                        </div>
-
-                        <p
-                          className="text-xs font-medium text-gray-800 truncate text-center"
-                          title={item.name}
-                        >
-                          {item.name}
-                        </p>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="col-span-full text-center text-gray-500 py-8 text-sm">
-                    No templates found
-                  </div>
-                )}
-              </div>
-            </ModalBody>
-
-            <ModalFooter className="border-t pt-3">
-              <Button
-                size="sm"
-                variant="flat"
-                className="cursor-pointer"
-                onPress={templateModal.onClose}
-              >
-                Close
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-
-        <Modal
-          isOpen={brochureModal.isOpen}
-          onOpenChange={brochureModal.onOpenChange}
-          size="5xl"
-          scrollBehavior="inside"
-        >
-          <ModalContent>
-            <ModalHeader className="flex flex-col gap-1 border-b">
-              <span className="text-lg font-semibold">
-                Select Brochures / Services
-              </span>
-              <span className="text-xs text-gray-500">
-                Select step by step: Menu → Category → Sub Category → Sub Sub
-                Category → Brochure
-              </span>
-            </ModalHeader>
-
-            <ModalBody className="bg-gray-50">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                <div className="lg:col-span-3 bg-white rounded-xl border shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b bg-gray-50">
-                    <p className="text-sm font-semibold text-gray-800">
-                      1. Menu
-                    </p>
-                  </div>
-
-                  <div className="p-2 space-y-2 max-h-[420px] overflow-y-auto">
-                    {brochureSelectionData.map((menu) => {
-                      const isSelected = selectedMenuId === menu.id;
-
-                      return (
-                        <button
-                          key={menu.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedMenuId(menu.id);
-                            setSelectedCategoryId(null);
-                            setSelectedSubCategoryId(null);
-                            setSelectedSubSubCategoryId(null);
-                            setBrochureSearchValue("");
-                          }}
-                          className={`w-full text-left rounded-lg border px-3 py-2 transition-all ${
-                            isSelected
-                              ? "border-blue-500 bg-blue-50 shadow-sm"
-                              : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <FolderOpen
-                              size={15}
-                              className={
-                                isSelected ? "text-blue-600" : "text-gray-500"
-                              }
-                            />
-                            <span className="text-sm font-medium text-gray-800 line-clamp-2">
-                              {menu.menuName}
-                            </span>
-                          </div>
-
-                          {menu.menuBrochureUrl && (
-                            <a
-                              href={menu.menuBrochureUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-1 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                            >
-                              Preview <ExternalLink size={11} />
-                            </a>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-3 bg-white rounded-xl border shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b bg-gray-50">
-                    <p className="text-sm font-semibold text-gray-800">
-                      2. Category
-                    </p>
-                  </div>
-
-                  <div className="p-2 space-y-2 max-h-[420px] overflow-y-auto">
-                    {!selectedMenu ? (
-                      <div className="py-10 text-center text-sm text-gray-400">
-                        Please select menu first
-                      </div>
-                    ) : (
-                      selectedMenu?.categories?.map((category) => {
-                        const isSelected = selectedCategoryId === category.id;
-
-                        return (
-                          <button
-                            key={category.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategoryId(category.id);
-                              setSelectedSubCategoryId(null);
-                              setSelectedSubSubCategoryId(null);
-                              setBrochureSearchValue("");
-                            }}
-                            className={`w-full text-left rounded-lg border px-3 py-2 transition-all ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-50 shadow-sm"
-                                : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Layers
-                                size={15}
-                                className={
-                                  isSelected ? "text-blue-600" : "text-gray-500"
-                                }
-                              />
-                              <span className="text-sm font-medium text-gray-800 line-clamp-2">
-                                {category.categoryName}
-                              </span>
-                            </div>
-
-                            {category.categoryBrochureUrl && (
-                              <a
-                                href={category.categoryBrochureUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="mt-1 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                              >
-                                Preview <ExternalLink size={11} />
-                              </a>
-                            )}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-3 bg-white rounded-xl border shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b bg-gray-50">
-                    <p className="text-sm font-semibold text-gray-800">
-                      3. Sub Category
-                    </p>
-                  </div>
-
-                  <div className="p-2 space-y-2 max-h-[420px] overflow-y-auto">
-                    {!selectedCategory ? (
-                      <div className="py-10 text-center text-sm text-gray-400">
-                        Please select category first
-                      </div>
-                    ) : (
-                      selectedCategory?.subCategories?.map((subCategory) => {
-                        const isSelected =
-                          selectedSubCategoryId === subCategory.id;
-
-                        return (
-                          <button
-                            key={subCategory.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedSubCategoryId(subCategory.id);
-                              setSelectedSubSubCategoryId(null);
-                              setBrochureSearchValue("");
-                            }}
-                            className={`w-full text-left rounded-lg border px-3 py-2 transition-all ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-50 shadow-sm"
-                                : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
-                            }`}
-                          >
-                            <span className="text-sm font-medium text-gray-800 line-clamp-2">
-                              {subCategory.subCategoryName}
-                            </span>
-
-                            {subCategory.subCategoryBrochureUrl && (
-                              <a
-                                href={subCategory.subCategoryBrochureUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="mt-1 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                              >
-                                Preview <ExternalLink size={11} />
-                              </a>
-                            )}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-3 bg-white rounded-xl border shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b bg-gray-50">
-                    <p className="text-sm font-semibold text-gray-800">
-                      4. Sub Sub Category
-                    </p>
-                  </div>
-
-                  <div className="p-2 space-y-2 max-h-[420px] overflow-y-auto">
-                    {!selectedSubCategory ? (
-                      <div className="py-10 text-center text-sm text-gray-400">
-                        Please select sub category first
-                      </div>
-                    ) : (
-                      selectedSubCategory?.subSubCategories?.map(
-                        (subSubCategory) => {
-                          const isSelected =
-                            selectedSubSubCategoryId === subSubCategory.id;
-
-                          return (
-                            <button
-                              key={subSubCategory.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedSubSubCategoryId(subSubCategory.id);
-                                setBrochureSearchValue("");
-                              }}
-                              className={`w-full text-left rounded-lg border px-3 py-2 transition-all ${
-                                isSelected
-                                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                                  : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
-                              }`}
-                            >
-                              <span className="text-sm font-medium text-gray-800 line-clamp-2">
-                                {subSubCategory.subSubCategoryName}
-                              </span>
-
-                              {subSubCategory.subSubCategoryBrochureUrl && (
-                                <a
-                                  href={
-                                    subSubCategory.subSubCategoryBrochureUrl
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-1 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                                >
-                                  Preview <ExternalLink size={11} />
-                                </a>
-                              )}
-                            </button>
-                          );
-                        },
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border shadow-sm mt-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 border-b bg-gray-50">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">
-                      5. Select Final Brochures / Services
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {selectedBrochureObjects.length} brochure selected
-                    </p>
-                  </div>
-
-                  <Input
-                    size="sm"
-                    placeholder="Search brochure..."
-                    startContent={<Search size={14} />}
-                    value={brochureSearchValue}
-                    onChange={(e) => setBrochureSearchValue(e.target.value)}
-                    className="md:max-w-xs"
-                    isDisabled={!selectedSubSubCategory}
-                  />
-                </div>
-
-                <div className="p-4">
-                  {!selectedSubSubCategory ? (
-                    <div className="rounded-xl border border-dashed py-10 text-center text-sm text-gray-400">
-                      Please complete above selection to view brochures.
-                    </div>
-                  ) : filteredFinalBrochures.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {filteredFinalBrochures.map((brochure) => {
-                        const isSelected = selectedBrochureObjects.some(
-                          (item) => item.id === brochure.id,
-                        );
-
-                        return (
-                          <div
-                            key={brochure.id}
-                            className={`relative rounded-xl border p-4 transition-all ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-50 shadow-sm"
-                                : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm"
-                            }`}
-                          >
-                            {isSelected && (
-                              <div className="absolute top-3 right-3 bg-blue-500 rounded-full p-1">
-                                <Check size={13} className="text-white" />
-                              </div>
-                            )}
-
-                            <div className="pr-8">
-                              <p className="text-sm font-semibold text-gray-900 line-clamp-2">
-                                {brochure.brochureName}
-                              </p>
-
-                              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                                {selectedSubSubCategory?.subSubCategoryName}
-                              </p>
-                            </div>
-
-                            <div className="flex gap-2 mt-4">
-                              <Button
-                                size="sm"
-                                color={isSelected ? "danger" : "primary"}
-                                variant={isSelected ? "flat" : "solid"}
-                                className="flex-1"
-                                onPress={() => handleSetBrochureData(brochure)}
-                              >
-                                {isSelected ? "Remove" : "Select"}
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="flat"
-                                as="a"
-                                href={brochure.brochureUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                endContent={<ExternalLink size={13} />}
-                              >
-                                Preview
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-dashed py-10 text-center text-sm text-gray-400">
-                      No brochure found.
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedBrochureObjects.length > 0 && (
-                <div className="bg-white rounded-xl border shadow-sm mt-4">
-                  <div className="px-4 py-3 border-b bg-gray-50">
-                    <p className="text-sm font-semibold text-gray-800">
-                      Selected Brochures
-                    </p>
-                  </div>
-
-                  <div className="p-4 flex flex-wrap gap-2">
-                    {selectedBrochureObjects.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5"
-                      >
-                        <span className="text-xs font-medium text-blue-700 max-w-[220px] truncate">
-                          {item.brochureName}
-                        </span>
-
-                        <a
-                          href={item.brochureUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSetBrochureData(item)}
-                          className="text-xs font-semibold text-red-500 hover:text-red-700"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </ModalBody>
-
-            <ModalFooter className="border-t">
-              <Button
-                variant="flat"
-                onPress={() => {
-                  setSelectedMenuId(null);
-                  setSelectedCategoryId(null);
-                  setSelectedSubCategoryId(null);
-                  setSelectedSubSubCategoryId(null);
-                  setBrochureSearchValue("");
-                }}
-              >
-                Reset Steps
-              </Button>
-
-              <Button color="primary" onPress={brochureModal.onClose}>
-                Done
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
 
         <Modal
           isOpen={cancelModal.isOpen}

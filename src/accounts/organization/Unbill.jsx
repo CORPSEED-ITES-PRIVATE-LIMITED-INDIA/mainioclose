@@ -101,6 +101,11 @@ const Unbill = () => {
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
+  const department = useSelector(
+    (state) => state?.auth?.getDepartmentDetail?.department,
+  );
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
@@ -411,115 +416,131 @@ const Unbill = () => {
       case "addedBy":
         return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
       case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                {!rowData?.advanceInvoiceFlag && (
-                  <DropdownItem
-                    key="view"
-                    onPress={() => {
-                      dispatch(
-                        convertUnbillToAdvanceInvoice({
-                          unbilledId: rowData?.id,
-                          userId,
-                        }),
-                      )
-                        .then((resp) => {
-                          if (resp.meta.requestStatus === "fulfilled") {
+        if (department === "Sales") {
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  {rowData?.status === "APPROVED" && (
+                    <DropdownItem
+                      key="credit-note"
+                      onPress={() => {
+                        setCreditNoteRow(rowData);
+                        setCreditNoteData({
+                          refundAmount: "",
+                          reason: "",
+                        });
+                        creditNoteModal.onOpen();
+                      }}
+                    >
+                      Credit Note
+                    </DropdownItem>
+                  )}
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        } else {
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  {!rowData?.advanceInvoiceFlag && (
+                    <DropdownItem
+                      key="view"
+                      onPress={() => {
+                        dispatch(
+                          convertUnbillToAdvanceInvoice({
+                            unbilledId: rowData?.id,
+                            userId,
+                          }),
+                        )
+                          .then((resp) => {
+                            if (resp.meta.requestStatus === "fulfilled") {
+                              addToast({
+                                title:
+                                  "Unbill converted to advance invoice successfully !.",
+                                color: "success",
+                              });
+                              dispatch(
+                                getAllUnbillList({
+                                  page,
+                                  size: rowsPerPage,
+                                  userId,
+                                  status,
+                                }),
+                              );
+                              dispatch(getAllUnbillCount({ userId, status }));
+                            } else {
+                              addToast({
+                                title:
+                                  resp?.payload?.data?.message ||
+                                  "Something went wrong !.",
+                                color: "danger",
+                              });
+                            }
+                          })
+                          .catch(() => {
                             addToast({
-                              title:
-                                "Unbill converted to advance invoice successfully !.",
-                              color: "success",
-                            });
-                            dispatch(
-                              getAllUnbillList({
-                                page,
-                                size: rowsPerPage,
-                                userId,
-                                status,
-                              }),
-                            );
-                            dispatch(getAllUnbillCount({ userId, status }));
-                          } else {
-                            addToast({
-                              title:
-                                resp?.payload?.data?.message ||
-                                "Something went wrong !.",
+                              title: "Something went wrong !.",
                               color: "danger",
                             });
-                          }
-                        })
-                        .catch(() => {
-                          addToast({
-                            title: "Something went wrong !.",
-                            color: "danger",
                           });
-                        });
-                    }}
-                  >
-                    Convert To AdvanceInvoice
-                  </DropdownItem>
-                )}
+                      }}
+                    >
+                      Convert To AdvanceInvoice
+                    </DropdownItem>
+                  )}
 
-                <DropdownItem
-                  key="unbilledview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(false);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Unbilled View
-                </DropdownItem>
-                <DropdownItem
-                  key="advanceinvoiceview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(true);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Advance Invoice View
-                </DropdownItem>
-                <DropdownItem
-                  key="status"
-                  onPress={() => {
-                    statusModal.onOpen();
-                    setRowItem(rowData);
-                  }}
-                >
-                  Update status
-                </DropdownItem>
-
-                {rowData?.status === "APPROVED" && (
                   <DropdownItem
-                    key="credit-note"
+                    key="unbilledview"
                     onPress={() => {
-                      setCreditNoteRow(rowData);
-                      setCreditNoteData({
-                        refundAmount: "",
-                        reason: "",
-                      });
-                      creditNoteModal.onOpen();
+                      setIsAdvanceInvoice(false);
+                      onOpen();
+                      dispatch(
+                        getUnBilledDetailById({ id: rowData?.id, userId }),
+                      );
                     }}
                   >
-                    Credit Note
+                    Unbilled View
                   </DropdownItem>
-                )}
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+                  <DropdownItem
+                    key="advanceinvoiceview"
+                    onPress={() => {
+                      setIsAdvanceInvoice(true);
+                      onOpen();
+                      dispatch(
+                        getUnBilledDetailById({ id: rowData?.id, userId }),
+                      );
+                    }}
+                  >
+                    Advance Invoice View
+                  </DropdownItem>
+                  <DropdownItem
+                    key="status"
+                    onPress={() => {
+                      statusModal.onOpen();
+                      setRowItem(rowData);
+                    }}
+                  >
+                    Update status
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        }
+
       default:
         return cellValue;
     }
