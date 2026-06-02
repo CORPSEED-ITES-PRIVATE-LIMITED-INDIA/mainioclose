@@ -416,7 +416,7 @@ const Unbill = () => {
       case "addedBy":
         return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
       case "actions":
-        if (department === "Sales") {
+        if (department === "Sales" || adminRole) {
           return (
             <div className="relative flex justify-center items-center gap-2">
               <Dropdown>
@@ -445,7 +445,7 @@ const Unbill = () => {
               </Dropdown>
             </div>
           );
-        } else {
+        } else if (department !== "Sales" || adminRole) {
           return (
             <div className="relative flex justify-center items-center gap-2">
               <Dropdown>
