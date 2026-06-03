@@ -61,7 +61,7 @@ export const columns = [
   { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
   { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
   { name: "ADDED BY", uid: "addedBy" },
-  { name: "ACTIONS", uid: "actions" },
+  // { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
@@ -82,7 +82,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "currentReceivedAmount",
   "outstandingAmount",
   "addedBy",
-  "actions",
+  // "actions",
 ];
 
 const SalesUnbill = () => {
