@@ -139,7 +139,11 @@ const Unbill = () => {
   const [creditNoteData, setCreditNoteData] = useState({
     refundAmount: "",
     reason: "",
+    attachment: "",
   });
+
+  const [isCreditNoteAttachmentUploading, setIsCreditNoteAttachmentUploading] =
+    useState(false);
   getAllStatusData;
   const [creditNoteRow, setCreditNoteRow] = useState(null);
 
@@ -275,17 +279,35 @@ const Unbill = () => {
       return;
     }
 
+    if (isCreditNoteAttachmentUploading) {
+      addToast({
+        title: "Upload in progress",
+        description: "Please wait until attachment upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!creditNoteData.attachment) {
+      addToast({
+        title: "Attachment is required",
+        description: "Please upload credit note attachment.",
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
-      // unbilledId: creditNoteRow?.id,
       estimateNumber: creditNoteRow?.estimateNumber,
-      createdByUserId: userId,
+      createdByUserId: Number(userId),
       refundAmount: Number(creditNoteData.refundAmount),
       reason: creditNoteData.reason,
+      attachment: creditNoteData.attachment,
     };
 
     try {
       const resp = await dispatch(createCreditNotes(payload));
-      console.log("Resp F:", resp);
+
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "Credit note created successfully!",
@@ -297,6 +319,7 @@ const Unbill = () => {
         setCreditNoteData({
           refundAmount: "",
           reason: "",
+          attachment: "",
         });
 
         dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -314,7 +337,6 @@ const Unbill = () => {
       });
     }
   };
-
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -1551,6 +1573,19 @@ const Unbill = () => {
                     }))
                   }
                 />
+                <FileUploader
+                  value={creditNoteData.attachment}
+                  onChange={(uploadedUrl) =>
+                    setCreditNoteData((prev) => ({
+                      ...prev,
+                      attachment: uploadedUrl,
+                    }))
+                  }
+                  onUploadingChange={setIsCreditNoteAttachmentUploading}
+                  label="Attachment"
+                  placeholder="Upload Credit Note attachment"
+                  isRequired
+                />
               </ModalBody>
 
               <ModalFooter>
@@ -1563,6 +1598,7 @@ const Unbill = () => {
                     setCreditNoteData({
                       refundAmount: "",
                       reason: "",
+                      attachment: "",
                     });
                   }}
                 >
