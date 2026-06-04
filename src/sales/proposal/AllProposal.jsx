@@ -714,7 +714,8 @@ const AllProposal = () => {
 
   const selectedBrochures = getProposalBrochures(selectedProposalDetail);
 
-  const selectedMailBody = selectedProposalDetail?.mailBody || "";
+  const selectedMailBody =
+    selectedProposalDetail?.mailBody || selectedProposalDetail?.emailBody || "";
 
   const selectedScopeOfWork =
     selectedProposalDetail?.scopeOfWork ||
