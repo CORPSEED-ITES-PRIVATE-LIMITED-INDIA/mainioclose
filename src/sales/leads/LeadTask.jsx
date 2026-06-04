@@ -94,6 +94,7 @@ const LeadTask = () => {
   const allTaskStatusData = useSelector(
     (state) => state.common.allTaskStatusData,
   );
+  console.log("allTaskStatusData:", allTaskStatusData);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(

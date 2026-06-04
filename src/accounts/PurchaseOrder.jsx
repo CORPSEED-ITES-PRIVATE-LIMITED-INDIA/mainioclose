@@ -20,6 +20,7 @@ import {
   ModalFooter,
   ModalHeader,
   addToast,
+  Form,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -30,15 +31,21 @@ import {
   getAllPaymentApprovals,
   getProcurementPurchaseOrder,
   rejectProcurementPurchaseOrder,
+  releaseProcurementPaymentRequestAccounts,
 } from "../toolkit/slices/accountSlice";
 
 const columns = [
-  { name: "ID", uid: "companyId" },
-  { name: "COMPANY", uid: "companyName", sortable: true },
-  { name: "GST", uid: "gstNo" },
-  { name: "ASSIGNEE", uid: "assignee" },
-  { name: "PRIMARY ADDRESS", uid: "address" },
-  { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
+  { name: "PO NUMBER", uid: "poNumber", sortable: true },
+  { name: "REFERENCE NO.", uid: "poReferenceNumber", sortable: true },
+  { name: "PROJECT", uid: "projectName", sortable: true },
+  { name: "VENDOR", uid: "vendorName", sortable: true },
+  { name: "FINAL AMOUNT", uid: "finalAmount", sortable: true },
+  { name: "GRAND TOTAL", uid: "grandTotal", sortable: true },
+  { name: "PAYMENT", uid: "payment" },
+  { name: "TAX", uid: "tax" },
+  { name: "STATUS", uid: "status", sortable: true },
+  { name: "CREATED DATE", uid: "createdDate", sortable: true },
+  { name: "ATTACHMENTS", uid: "attachmentUrls" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -47,35 +54,79 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "companyName",
-  "gstNo",
+  "poNumber",
+  "projectName",
+  "vendorName",
+  "grandTotal",
+  "payment",
   "status",
-  "assignee",
-  "address",
-  "secondaryAddress",
+  "createdDate",
   "actions",
 ];
+
+const formatAmount = (value) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "DRAFT":
+      return "default";
+    case "PENDING_APPROVAL":
+      return "warning";
+    case "APPROVED":
+      return "success";
+    case "REJECTED":
+      return "danger";
+    case "RELEASED":
+      return "primary";
+    default:
+      return "default";
+  }
+};
 
 const PurchaseOrder = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const approveModal = useDisclosure();
   const rejectModal = useDisclosure();
+  const releasePaymentModal = useDisclosure();
+
   const count = useSelector(
     (state) => state.account.procurementPurchaseOrderList?.totalElements || 0,
   );
+
   const data = useSelector(
     (state) => state.account.procurementPurchaseOrderList?.content || [],
   );
+
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
+
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
-    direction: "ascending",
+    column: "createdDate",
+    direction: "descending",
   });
+
   const [filteration, setFilteration] = useState({
     userId: userId,
     page: 1,
@@ -102,12 +153,22 @@ const PurchaseOrder = () => {
     let filteredUsers = [...(data || [])];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase()),
-      );
+      const searchValue = filterValue.toLowerCase();
+
+      filteredUsers = filteredUsers.filter((item) => {
+        return (
+          item?.poNumber?.toLowerCase().includes(searchValue) ||
+          item?.poReferenceNumber?.toLowerCase().includes(searchValue) ||
+          item?.projectName?.toLowerCase().includes(searchValue) ||
+          item?.vendorName?.toLowerCase().includes(searchValue) ||
+          item?.paymentTypeName?.toLowerCase().includes(searchValue) ||
+          item?.status?.toLowerCase().includes(searchValue)
+        );
+      });
     }
+
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
@@ -115,6 +176,7 @@ const PurchaseOrder = () => {
     return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
+
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
@@ -123,15 +185,17 @@ const PurchaseOrder = () => {
 
   const handleActionPress = (item, key) => {
     setRowItem(item);
+
     if (key === "Approved") {
       approveModal.onOpen();
     } else if (key === "Rejected") {
       rejectModal.onOpen();
+    } else if (key === "ReleasePayment") {
+      releasePaymentModal.onOpen();
     }
   };
 
   const handleApproveRequest = (values) => {
-    // Implementation for handling approve request
     dispatch(
       approveProcurementPurchaseOrder({
         purchaseOrderId: rowItem?.id,
@@ -146,11 +210,11 @@ const PurchaseOrder = () => {
             description: "Approved successfully !.",
             color: "success",
           });
+
           approveModal.onClose();
           setRowItem(null);
           dispatch(getProcurementPurchaseOrder(filteration));
         } else {
-          //handle error
           addToast({
             title: "Error",
             description: resp.payload || "Something went wrong",
@@ -168,7 +232,6 @@ const PurchaseOrder = () => {
   };
 
   const handleRejectRequest = (values) => {
-    // Implementation for handling approve request
     dispatch(
       rejectProcurementPurchaseOrder({
         purchaseOrderId: rowItem?.id,
@@ -183,11 +246,11 @@ const PurchaseOrder = () => {
             description: "Rejected successfully !.",
             color: "success",
           });
+
           rejectModal.onClose();
           setRowItem(null);
           dispatch(getProcurementPurchaseOrder(filteration));
         } else {
-          //handle error
           addToast({
             title: "Error",
             description: resp.payload || "Something went wrong",
@@ -204,82 +267,214 @@ const PurchaseOrder = () => {
       );
   };
 
+  const handleReleasePaymentRequest = (values) => {
+    const paymentRequestId = rowItem?.paymentRequestId || rowItem?.id;
+
+    const payload = {
+      comment: values.comment || "",
+      reason: values.reason || "",
+      invoiceNumber: values.invoiceNumber || "",
+      invoiceDate: values.invoiceDate
+        ? new Date(values.invoiceDate).toISOString()
+        : null,
+    };
+
+    dispatch(
+      releaseProcurementPaymentRequestAccounts({
+        paymentRequestId,
+        userId,
+        data: payload,
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Payment released successfully !.",
+            color: "success",
+          });
+
+          releasePaymentModal.onClose();
+          setRowItem(null);
+          dispatch(getProcurementPurchaseOrder(filteration));
+        } else {
+          addToast({
+            title: "Error",
+            description:
+              resp?.payload?.message || resp?.payload || "Something went wrong",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong",
+          color: "danger",
+        }),
+      );
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "companyName":
+      case "poNumber":
         return (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col">
-              <p className="font-normal capitalize">
-                {rowData?.companyName || "-"}
-              </p>
-              <p className="font-normal text-xs text-gray-400">
-                Age : {rowData?.age || "-"}
-              </p>
-            </div>
+          <div className="flex flex-col">
+            <span className="font-medium">{rowData?.poNumber || "-"}</span>
+            <span className="text-xs text-default-400">
+              ID: {rowData?.id || "-"}
+            </span>
           </div>
         );
 
-      case "gstNo":
+      case "poReferenceNumber":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">
+              {rowData?.poReferenceNumber || "-"}
+            </span>
+            <span className="text-xs text-default-400">
+              Assignment ID: {rowData?.procurementAssignmentId || "-"}
+            </span>
+          </div>
+        );
+
+      case "projectName":
         return (
           <div className="flex flex-col">
             <span className="font-normal capitalize">
-              {rowData?.gstNo || "Unknown"}
+              {rowData?.projectName || "-"}
             </span>
-            {rowData?.gstType && (
-              <Chip size="sm" className="text-tiny capitalize" variant="flat">
-                {rowData?.gstType}
-              </Chip>
+            <span className="text-xs text-default-400">
+              Project ID: {rowData?.projectId || "-"}
+            </span>
+          </div>
+        );
+
+      case "vendorName":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal capitalize">
+              {rowData?.vendorName || "-"}
+            </span>
+            <span className="text-xs text-default-400">
+              Vendor ID: {rowData?.vendorId || "-"}
+            </span>
+
+            {rowData?.vendorContactName && (
+              <span className="text-xs text-default-400">
+                Contact: {rowData.vendorContactName}
+              </span>
             )}
           </div>
         );
-      case "assignee":
+
+      case "finalAmount":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.assignee || "-"}</span>
+            <span className="font-medium">
+              {formatAmount(rowData?.finalAmount)}
+            </span>
+            <span className="text-xs text-default-400">
+              Estimated: {formatAmount(rowData?.estimatedAmount)}
+            </span>
           </div>
         );
-      case "address":
-        return rowData?.address ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.address || "-"}</span>
-            <div className="flex items-center gap-1">
-              {" "}
-              <span className="text-gray-400 text-tiny">
-                {rowData?.city || "-"},
-              </span>
-              <span className="text-gray-400 text-tiny">
-                {rowData?.state || "-"},
-              </span>
-            </div>
 
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
-                {rowData?.country || "-"}
-              </span>
-            </div>
-          </div>
-        ) : (
-          "-"
-        );
-      case "secondaryAddress":
-        return rowData?.secAddress ? (
+      case "grandTotal":
+        return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.secAddress || "-"}</span>
-            <div className="flex items-center gap-1">
-              {" "}
-              <span className="text-gray-400">{rowData?.secCity || "-"}</span>,
-              <span className="text-gray-400">{rowData?.secState || "-"}</span>,
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
-                {rowData?.seCountry || "-"}
+            <span className="font-semibold text-success">
+              {formatAmount(rowData?.grandTotal)}
+            </span>
+            <span className="text-xs text-default-400">
+              Tax: {formatAmount(rowData?.totalTaxAmount)}
+            </span>
+          </div>
+        );
+
+      case "payment":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">
+              {rowData?.paymentTypeName || "-"}
+            </span>
+            <span className="text-xs text-default-400">
+              {rowData?.paymentTerms || "-"}
+            </span>
+          </div>
+        );
+
+      case "tax":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">GST: {rowData?.gstRate || 0}%</span>
+
+            {Number(rowData?.igstAmount || 0) > 0 ? (
+              <span className="text-xs text-default-400">
+                IGST: {formatAmount(rowData?.igstAmount)}
               </span>
-            </div>
+            ) : (
+              <span className="text-xs text-default-400">
+                CGST: {formatAmount(rowData?.cgstAmount)} | SGST:{" "}
+                {formatAmount(rowData?.sgstAmount)}
+              </span>
+            )}
+          </div>
+        );
+
+      case "status":
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={getStatusColor(rowData?.status)}
+            className="capitalize"
+          >
+            {rowData?.status || "-"}
+          </Chip>
+        );
+
+      case "createdDate":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal">
+              {formatDateTime(rowData?.createdDate)}
+            </span>
+            <span className="text-xs text-default-400">
+              PO Created: {formatDateTime(rowData?.poCreatedDate)}
+            </span>
+          </div>
+        );
+
+      case "attachmentUrls":
+        return Array.isArray(rowData?.attachmentUrls) &&
+          rowData.attachmentUrls.length > 0 ? (
+          <div className="flex flex-col gap-1">
+            <Chip size="sm" variant="flat" color="primary">
+              {rowData.attachmentUrls.length} File
+              {rowData.attachmentUrls.length > 1 ? "s" : ""}
+            </Chip>
+
+            <Button
+              size="sm"
+              variant="light"
+              color="primary"
+              onPress={() => {
+                window.open(
+                  rowData.attachmentUrls[0],
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
+            >
+              View
+            </Button>
           </div>
         ) : (
           "-"
         );
+
       case "actions":
         return (
           <Dropdown>
@@ -288,20 +483,31 @@ const PurchaseOrder = () => {
                 <EllipsisVertical />
               </Button>
             </DropdownTrigger>
+
             <DropdownMenu>
               <DropdownItem
+                isDisabled={rowData?.status !== "PENDING_APPROVAL"}
                 onPress={() => handleActionPress(rowData, "Approved")}
               >
                 Approved
               </DropdownItem>
+
               <DropdownItem
+                isDisabled={rowData?.status !== "PENDING_APPROVAL"}
                 onPress={() => handleActionPress(rowData, "Rejected")}
               >
                 Rejected
               </DropdownItem>
+
+              <DropdownItem
+                onPress={() => handleActionPress(rowData, "ReleasePayment")}
+              >
+                Release Payment
+              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
         );
+
       default:
         return rowData[columnKey] || "-";
     }
@@ -348,12 +554,13 @@ const PurchaseOrder = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
+            placeholder="Search by PO, project, vendor..."
             startContent={<Search />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
+
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
@@ -365,20 +572,24 @@ const PurchaseOrder = () => {
                   {filteration?.status}
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
-                aria-label="Table Columns"
+                aria-label="Status Filter"
                 selectionMode="single"
                 selectedKeys={[filteration.status]}
                 onSelectionChange={(selectedKeys) => {
                   const selected = Array.from(selectedKeys)[0];
+
                   setFilteration((prev) => ({
                     ...prev,
+                    page: 1,
                     status: selected,
                   }));
                 }}
               >
                 {[
+                  { label: "DRAFT", uid: "DRAFT" },
                   { label: "PENDING_APPROVAL", uid: "PENDING_APPROVAL" },
                   { label: "APPROVED", uid: "APPROVED" },
                   { label: "REJECTED", uid: "REJECTED" },
@@ -387,12 +598,14 @@ const PurchaseOrder = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -410,10 +623,12 @@ const PurchaseOrder = () => {
             </Dropdown>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             Total {count} purchase orders
           </span>
+
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -434,10 +649,10 @@ const PurchaseOrder = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    data.length,
     onSearchChange,
-    hasSearchFilter,
     filteration?.status,
+    count,
+    onClear,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -448,6 +663,7 @@ const PurchaseOrder = () => {
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
+
         <Pagination
           isCompact
           showControls
@@ -455,13 +671,11 @@ const PurchaseOrder = () => {
           color="primary"
           page={filteration?.page}
           total={pages}
-          onChange={(e) => {
-            setFilteration((prev) => ({ ...prev, page: e }));
-            if (e > filteration?.page) {
-              dispatch(getAllNewCompanies({ ...filteration, page: e }));
-            }
+          onChange={(page) => {
+            setFilteration((prev) => ({ ...prev, page }));
           }}
         />
+
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
@@ -471,6 +685,7 @@ const PurchaseOrder = () => {
           >
             Previous
           </Button>
+
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -482,16 +697,24 @@ const PurchaseOrder = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
+  }, [
+    selectedKeys,
+    count,
+    filteration?.page,
+    pages,
+    onPreviousPage,
+    onNextPage,
+  ]);
 
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">
         Procurement Purchase Orders
       </h1>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Procurement purchase order table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -517,9 +740,10 @@ const PurchaseOrder = () => {
             </TableColumn>
           )}
         </TableHeader>
+
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.companyId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -539,11 +763,14 @@ const PurchaseOrder = () => {
               className="w-full"
               onSubmit={(e) => {
                 e.preventDefault();
+
                 let data = Object.fromEntries(new FormData(e.currentTarget));
+
                 handleApproveRequest(data);
               }}
             >
               <ModalHeader>Approve Request</ModalHeader>
+
               <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
                 <Input
                   label="Comment"
@@ -555,6 +782,7 @@ const PurchaseOrder = () => {
 
               <ModalFooter className="flex justify-end gap-2 w-full">
                 <Button onPress={onClose}>Close</Button>
+
                 <Button color="primary" type="submit">
                   Submit
                 </Button>
@@ -563,6 +791,7 @@ const PurchaseOrder = () => {
           )}
         </ModalContent>
       </Modal>
+
       <Modal
         size="2xl"
         isOpen={rejectModal.isOpen}
@@ -574,11 +803,14 @@ const PurchaseOrder = () => {
               className="w-full"
               onSubmit={(e) => {
                 e.preventDefault();
+
                 let data = Object.fromEntries(new FormData(e.currentTarget));
+
                 handleRejectRequest(data);
               }}
             >
               <ModalHeader>Reject Request</ModalHeader>
+
               <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
                 <Input
                   label="Reason for rejection"
@@ -590,8 +822,78 @@ const PurchaseOrder = () => {
 
               <ModalFooter className="flex justify-end gap-2 w-full">
                 <Button onPress={onClose}>Close</Button>
+
                 <Button color="primary" type="submit">
                   Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isOpen={releasePaymentModal.isOpen}
+        onOpenChange={releasePaymentModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form
+              className="w-full"
+              onSubmit={(e) => {
+                e.preventDefault();
+
+                let data = Object.fromEntries(new FormData(e.currentTarget));
+
+                handleReleasePaymentRequest(data);
+              }}
+            >
+              <ModalHeader>Release Payment</ModalHeader>
+
+              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
+                <Input
+                  label="Comment"
+                  name="comment"
+                  isRequired
+                  errorMessage="please enter a comment"
+                />
+
+                <Input
+                  label="Reason"
+                  name="reason"
+                  isRequired
+                  errorMessage="please enter a reason"
+                />
+
+                <Input
+                  label="Invoice Number"
+                  name="invoiceNumber"
+                  isRequired
+                  errorMessage="please enter invoice number"
+                />
+
+                <Input
+                  label="Invoice Date"
+                  name="invoiceDate"
+                  type="datetime-local"
+                  isRequired
+                  errorMessage="please select invoice date"
+                />
+              </ModalBody>
+
+              <ModalFooter className="flex justify-end gap-2 w-full">
+                <Button
+                  onPress={() => {
+                    setRowItem(null);
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
+
+                <Button color="primary" type="submit">
+                  Release Payment
                 </Button>
               </ModalFooter>
             </Form>

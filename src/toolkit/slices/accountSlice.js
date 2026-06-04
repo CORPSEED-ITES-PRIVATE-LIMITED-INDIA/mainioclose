@@ -476,6 +476,20 @@ export const releaseProcurementPaymentRequest = createAsyncThunk(
     }
   },
 );
+export const releaseProcurementPaymentRequestAccounts = createAsyncThunk(
+  "releaseProcurementPaymentRequestAccounts",
+  async ({ paymentRequestId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/procurement-payment-requests/${paymentRequestId}/release-payment/${userId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -717,7 +731,8 @@ const AccountSlice = createSlice({
     });
     builder.addCase(getProcurementPurchaseOrder.fulfilled, (state, action) => {
       state.loading = "success";
-      state.procurementPurchaseOrderList = action.payload || [];
+      state.procurementPurchaseOrderList = action.payload.data || [];
+      console.log("One Success:",action.payload.data);
     });
     builder.addCase(getProcurementPurchaseOrder.rejected, (state) => {
       state.loading = "rejected";

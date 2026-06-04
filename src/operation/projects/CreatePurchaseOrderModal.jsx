@@ -12,10 +12,11 @@ import {
 } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToast } from "@heroui/react";
 import { createProcurementPurchaseOrder } from "../../toolkit/slices/operationSlice";
 import FileUploader from "../../components/FileUploader";
+import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 
 const { TextArea } = Input;
 
@@ -36,14 +37,6 @@ const paymentTermOptions = [
   },
 ];
 
-const paymentTypeOptions = [
-  { label: "Bank Transfer", value: "Bank Transfer" },
-  { label: "UPI", value: "UPI" },
-  { label: "Cheque", value: "Cheque" },
-  { label: "Cash", value: "Cash" },
-  { label: "NEFT / RTGS / IMPS", value: "NEFT / RTGS / IMPS" },
-];
-
 const taxTypeOptions = [
   { label: "CGST + SGST", value: "CGST_SGST" },
   { label: "IGST", value: "IGST" },
@@ -57,7 +50,6 @@ const CreatePurchaseOrderModal = ({
   open,
   onClose,
   procurementAssignmentId,
-  vendorId,
   userId,
   createdBy,
   defaultEstimatedAmount = 0,
@@ -66,6 +58,23 @@ const CreatePurchaseOrderModal = ({
 }) => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
+
+  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+
+  const paymentTypeOptions = useMemo(() => {
+    if (!Array.isArray(paymentTypeList)) return [];
+
+    return paymentTypeList.map((item) => ({
+      label: item?.name || item?.paymentTypeName || item?.title || "",
+      value: item?.name || item?.paymentTypeName || item?.title || "",
+    }));
+  }, [paymentTypeList]);
+
+  useEffect(() => {
+    if (open) {
+      dispatch(getAllPaymentType());
+    }
+  }, [dispatch, open]);
 
   const watchedFinalAmount = Form.useWatch("finalAmount", form);
   const watchedGstRate = Form.useWatch("gstRate", form);

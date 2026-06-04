@@ -502,6 +502,9 @@ const ProjectDetails = () => {
     );
   }, [eligibleVendors, vendorDetail?.selectedVendorId]);
 
+  const selectedVendorId =
+    selectedVendor?.id || vendorDetail?.selectedVendorId || null;
+
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
@@ -559,12 +562,25 @@ const ProjectDetails = () => {
 
   const [isPoModalOpen, setIsPoModalOpen] = useState(false);
 
+  const procurementAssignmentId =
+    detailedData?.projectDetails?.procurementMilestoneAssignmentId;
+
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
     dispatch(getAllMilestoneStatusesForOperations());
     dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
     dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   }, [projectId]);
+
+  useEffect(() => {
+    if (procurementAssignmentId) {
+      dispatch(
+        getVendorDetailInProject({
+          procurementAssignmentId,
+        }),
+      );
+    }
+  }, [dispatch, procurementAssignmentId]);
 
   const fetchMilestoneHistory = (mile, force = false) => {
     if (!mile?.milestoneId || !mile?.projectId || !userId) return;
@@ -871,6 +887,7 @@ const ProjectDetails = () => {
 
     dispatch(uploadDocumentInProjects({ projectId, data: payload }))
       .then((resp) => {
+        console.log("jkhsdgkjhwsgdkj", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Document uploaded successfully!",
@@ -899,9 +916,9 @@ const ProjectDetails = () => {
           );
         } else {
           addToast({
-            title: resp?.payload?.status || "Upload failed",
+            title: "Upload failed",
             color: "danger",
-            description: resp?.payload?.message,
+            description: resp?.payload,
           });
         }
       })
@@ -1090,6 +1107,11 @@ const ProjectDetails = () => {
           });
 
           dispatch(getOperationProjectDetailById({ projectId, userId }));
+          dispatch(
+            getVendorDetailInProject({
+              procurementAssignmentId: procurementMilestoneAssignmentId,
+            }),
+          );
         } else {
           addToast({
             title: "FAILED",
@@ -1252,6 +1274,11 @@ const ProjectDetails = () => {
                 Vendor
               </Button>
             )}
+            {(department === "Procurement" || adminRole) && (
+              <Button type="primary" onClick={() => setIsPoModalOpen(true)}>
+                Create PO
+              </Button>
+            )}
 
             <Button
               radius="sm"
@@ -1310,7 +1337,7 @@ const ProjectDetails = () => {
         </Dropdown> */}
       </div>
 
-      <div className="max-h-[70vh] overflow-auto py-2.5">
+      <div className="max-h-[65vh] overflow-auto py-2.5">
         <div className="grid grid-cols-4 gap-4 h-[65vh]">
           {/* LEFT SIDEBAR - MILESTONES */}
           {adminRole && (
@@ -1449,13 +1476,6 @@ const ProjectDetails = () => {
                       >
                         {selectedMilestone?.status}
                       </Chip>
-
-                      <Button
-                        type="primary"
-                        onClick={() => setIsPoModalOpen(true)}
-                      >
-                        Create PO
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -3237,10 +3257,8 @@ const ProjectDetails = () => {
       <CreatePurchaseOrderModal
         open={isPoModalOpen}
         onClose={() => setIsPoModalOpen(false)}
-        procurementAssignmentId={
-          detailedData?.projectDetails?.procurementMilestoneAssignmentId
-        }
-        vendorId={0}
+        procurementAssignmentId={procurementAssignmentId}
+        vendorId={selectedVendorId ? Number(selectedVendorId) : null}
         userId={userId}
         createdBy={userId}
         defaultEstimatedAmount={5000}

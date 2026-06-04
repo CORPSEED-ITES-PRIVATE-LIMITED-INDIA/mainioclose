@@ -51,6 +51,7 @@ import {
   getEstimateByEstimateId,
   updateLeadStatus,
 } from "../../toolkit/slices/leadSlice";
+import { getAllStatusData } from "../../toolkit/slices/settingSlice.js";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
@@ -109,6 +110,7 @@ const Unbill = () => {
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
+  const statusList = useSelector((state) => state?.setting?.statusList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -138,7 +140,22 @@ const Unbill = () => {
     refundAmount: "",
     reason: "",
   });
+  getAllStatusData;
   const [creditNoteRow, setCreditNoteRow] = useState(null);
+
+  const handleActionMenuOpen = () => {
+    dispatch(getAllStatusData());
+    console.log("Status List", statusList);
+  };
+
+  const getAwaitingPaymentStatusId = () => {
+    const awaitingPaymentStatus = (statusList || []).find(
+      (item) =>
+        item?.name?.trim()?.toLowerCase() === "Awaiting Payment"?.toLowerCase(),
+    );
+
+    return awaitingPaymentStatus?.id;
+  };
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -420,7 +437,12 @@ const Unbill = () => {
           <div className="relative flex justify-center items-center gap-2">
             <Dropdown>
               <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  onClick={handleActionMenuOpen}
+                >
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
@@ -607,47 +629,6 @@ const Unbill = () => {
             );
             dispatch(getAllUnbillCount({ userId, status }));
             statusModal.onClose();
-
-            // dispatch(cancelProjectByUnbilledNumberInOperations(rowItem?.id))
-            //   .then((respData) => {
-            //     console.log("respData", respData);
-            //     if (respData.meta.requestStatus === "fulfilled") {
-            //       addToast({
-            //         title: "Unbill canceled successfully in Operation !.",
-            //         color: "success",
-            //       });
-            //       setRowItem(null);
-            //       setUpdatedStatusData({
-            //         approverUserId: userId,
-            //         approvalRemarks: "",
-            //         rejectionReason: "",
-            //       });
-            //       dispatch(
-            //         getAllUnbillList({
-            //           page,
-            //           size: rowsPerPage,
-            //           userId,
-            //           status,
-            //         }),
-            //       );
-            //       dispatch(getAllUnbillCount({ userId, status }));
-            //       statusModal.onClose();
-            //     } else {
-            //       addToast({
-            //         title: "ERROR",
-            //         description:
-            //           respData?.payload?.data?.message ||
-            //           "Something went wrong in Operation !.",
-            //         color: "danger",
-            //       });
-            //     }
-            //   })
-            //   .catch(() =>
-            //     addToast({
-            //       title: "Something went wrong in Operation !.",
-            //       color: "danger",
-            //     }),
-            //   );
           } else {
             addToast({
               title: "ERROR",
@@ -672,32 +653,42 @@ const Unbill = () => {
               title: "Status updated successfully !.",
               color: "success",
             });
-            dispatch(
-              updateLeadStatus({
-                leadId: rowItem?.leadId,
-                userId,
-                statusId: 10,
-              }),
-            )
-              .then((resp) => {
-                if (resp.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "Status updated successfully",
-                    color: "success",
-                  });
-                } else {
+            const awaitingPaymentStatusId = getAwaitingPaymentStatusId();
+
+            if (!awaitingPaymentStatusId) {
+              addToast({
+                title: "Awaiting Payment status not found",
+                description: "Please check status master data.",
+                color: "danger",
+              });
+            } else {
+              dispatch(
+                updateLeadStatus({
+                  leadId: rowItem?.leadId,
+                  userId,
+                  statusId: awaitingPaymentStatusId,
+                }),
+              )
+                .then((resp) => {
+                  if (resp.meta.requestStatus === "fulfilled") {
+                    addToast({
+                      title: "Status updated successfully",
+                      color: "success",
+                    });
+                  } else {
+                    addToast({
+                      title: "Something went wrong in lead status update  !.",
+                      color: "danger",
+                    });
+                  }
+                })
+                .catch(() => {
                   addToast({
                     title: "Something went wrong in lead status update  !.",
                     color: "danger",
                   });
-                }
-              })
-              .catch(() => {
-                addToast({
-                  title: "Something went wrong in lead status update  !.",
-                  color: "danger",
                 });
-              });
+            }
 
             dispatch(
               getAllUnbillList({ page, size: rowsPerPage, userId, status }),
