@@ -716,9 +716,6 @@ const Proposal = () => {
       companyUnitId: Number(company?.units?.[0]?.id),
       contactId: Number(company?.units?.[0]?.unitContacts?.[0]?.id),
       solutionId: Number(solutionDetail?.id),
-
-      proposalSendOrNot: true,
-
       mailSubject: values?.mailSubject || "",
       paymentTerm: values?.paymentTerm || "",
       mailBody: values?.mailBody || "<p></p>",
@@ -746,7 +743,10 @@ const Proposal = () => {
 
     if (editProposal && selectedProposal?.id) {
       dispatch(
-        editLeadPropposal({ id: selectedProposal.id, ...finalValues }),
+        editLeadPropposal({
+          data: { id: selectedProposal.id, ...finalValues },
+          userId,
+        }),
       ).then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           setStatusLoading("success");
@@ -834,191 +834,579 @@ const Proposal = () => {
     );
   };
 
-  const renderProposalView = () => (
-    <div className="flex justify-center bg-gray-100 py-6 px-2">
-      <div className="w-full max-w-5xl space-y-4">
-        <div className="bg-white rounded-xl shadow border p-4 md:p-6 flex flex-col gap-4 relative">
-          <div className="flex justify-between items-center border-b pb-3">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Proposal Overview
-            </h2>
+  const hasHtmlContent = (html = "") => {
+    return (
+      String(html || "")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .trim().length > 0
+    );
+  };
 
-            {selectedProposal?.status === "DRAFT" && (
-              <Button
-                size="sm"
-                color="primary"
-                variant="flat"
-                className="flex items-center gap-2 shadow-sm"
-                onPress={handleEditProposal}
-              >
-                Edit
-              </Button>
-            )}
-          </div>
+  const formatPreviewFileSize = (bytes) => {
+    const size = Number(bytes || 0);
 
-          <div className="flex flex-wrap justify-between gap-4 pt-2">
-            <div>
-              <p className="text-xs text-gray-500">Service</p>
-              <p className="font-semibold text-gray-800">
-                {selectedProposal?.solutionName || "-"}
-              </p>
-            </div>
+    if (!size) return "---";
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
 
-            <div>
-              <p className="text-xs text-gray-500">Created By</p>
-              <p className="font-medium text-gray-800">
-                {selectedProposal?.createdByEmail || "-"}
-              </p>
-            </div>
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
-            <div>
-              <p className="text-xs text-gray-500">Created Date</p>
-              <p className="font-medium text-gray-800">
-                {selectedProposal?.createDate
-                  ? dayjs(selectedProposal.createDate).format("DD-MM-YYYY")
-                  : "-"}
-              </p>
-            </div>
+  const formatPreviewDate = (value) => {
+    if (!value) return "---";
 
-            <div>
-              <p className="text-xs text-gray-500">Status</p>
-              <span
-                className={`px-2 py-1 text-xs rounded-full font-medium ${
-                  selectedProposal?.status === "CANCELLED" ||
-                  selectedProposal?.status === "REJECTED"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-green-100 text-green-700"
-                }`}
-              >
-                {selectedProposal?.status === "REJECTED" ||
-                selectedProposal?.status === "REJECTED"
-                  ? "CANCELLED"
-                  : selectedProposal?.status}
-              </span>
-            </div>
-          </div>
+    const date = new Date(value);
 
-          <div className="flex flex-wrap justify-between gap-4 pt-2">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Mail To</p>
-              <div className="flex flex-wrap gap-2">
-                {selectedProposal?.mailTo?.length > 0 ? (
-                  selectedProposal.mailTo.map((email, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
-                    >
-                      {email}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-500">No recipients</span>
-                )}
-              </div>
-            </div>
+    if (Number.isNaN(date.getTime())) return "---";
 
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Mail Cc</p>
-              <div className="flex flex-wrap gap-2">
-                {selectedProposal?.mailCc?.length > 0 ? (
-                  selectedProposal.mailCc.map((email, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
-                    >
-                      {email}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-500">No recipients</span>
-                )}
-              </div>
-            </div>
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-            <div>
-              <p className="text-xs text-gray-500">Brochure Books</p>
-              <div className="flex gap-1 flex-wrap">
-                {selectedProposal?.brochureBook?.length > 0 ? (
-                  selectedProposal.brochureBook.map((item, index) => {
-                    const name =
-                      typeof item === "object"
-                        ? item?.brochureName ||
-                          item?.name ||
-                          `Brochure ${index + 1}`
-                        : `Brochure ${index + 1}`;
+  const isImageBrochure = (brochure) => {
+    return brochure?.contentType?.startsWith("image/");
+  };
 
-                    const url =
-                      typeof item === "object"
-                        ? item?.brochureUrl ||
-                          item?.brochureBook ||
-                          item?.url ||
-                          "#"
-                        : "#";
+  const isPdfBrochure = (brochure) => {
+    return brochure?.contentType === "application/pdf";
+  };
 
-                    return (
-                      <Tooltip
-                        key={typeof item === "object" ? item?.id : index}
-                        content={name}
-                      >
-                        <Link
-                          to={url}
-                          target="_blank"
-                          className="inline-flex items-center gap-1 max-w-[180px] bg-blue-50 text-blue-700 border border-blue-200 rounded-full py-1 px-3 text-xs truncate whitespace-nowrap overflow-hidden hover:bg-blue-100"
-                        >
-                          <span className="truncate">{name}</span>
-                          <ExternalLink size={12} />
-                        </Link>
-                      </Tooltip>
-                    );
-                  })
-                ) : (
-                  <span className="text-sm text-gray-500">No brochure</span>
-                )}
-              </div>
-            </div>
-          </div>
+  const getProposalBrochures = (proposal) => {
+    return [
+      {
+        key: "menu",
+        title: "Menu Brochure",
+        name: proposal?.menu?.name,
+        brochure: proposal?.menu?.brochure,
+      },
+      {
+        key: "menuCategory",
+        title: "Category Brochure",
+        name: proposal?.menuCategory?.name,
+        brochure: proposal?.menuCategory?.brochure,
+      },
+      {
+        key: "subCategory",
+        title: "Subcategory Brochure",
+        name: proposal?.subCategory?.name,
+        brochure: proposal?.subCategory?.brochure,
+      },
+      {
+        key: "solution",
+        title: "Service / Solution Brochure",
+        name: proposal?.solution?.name,
+        brochure: proposal?.solution?.brochure,
+      },
+    ];
+  };
+
+  const HtmlPreviewCard = ({ title, description, html, emptyText }) => {
+    const hasContent = hasHtmlContent(html);
+
+    return (
+      <div className="bg-white rounded-xl shadow border overflow-hidden">
+        <div className="border-b bg-gray-50 px-5 py-3">
+          <h3 className="text-base font-semibold text-gray-800">{title}</h3>
+
+          {description && (
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
+          )}
         </div>
 
-        {selectedProposal?.mailBody && (
-          <div className="bg-white rounded-xl shadow border p-6 md:p-8">
-            <div className="border-b pb-3 mb-4">
-              <h3 className="text-base font-semibold text-gray-800">
-                Mail Body Preview
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                This is the email body that will be sent to the client.
-              </p>
-            </div>
-
+        <div className="p-5 md:p-6">
+          {hasContent ? (
             <div
-              className="proposal-content"
+              className="proposal-content tiptap-preview force-preview-text"
               dangerouslySetInnerHTML={{
-                __html: selectedProposal.mailBody,
+                __html: html,
               }}
             />
-          </div>
-        )}
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-8 text-center">
+              <p className="text-sm font-semibold text-gray-700">{emptyText}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-        <div className="bg-white rounded-xl shadow border p-6 md:p-10">
-          <div className="border-b pb-3 mb-4">
+  const ProposalPdfPreview = ({ pdfUrl, pdfFileName }) => {
+    return (
+      <div className="bg-white rounded-xl shadow border overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-gray-50 px-5 py-3">
+          <div>
             <h3 className="text-base font-semibold text-gray-800">
-              Proposal Preview
+              Proposal PDF
             </h3>
+
             <p className="text-xs text-gray-500 mt-1">
-              This is the proposal content attached with the email.
+              {pdfFileName || "Generated proposal PDF"}
             </p>
           </div>
 
-          <div
-            className="proposal-content"
-            dangerouslySetInnerHTML={{
-              __html: selectedProposal?.template,
-            }}
-          />
+          {pdfUrl && (
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Open PDF <ExternalLink size={13} />
+            </a>
+          )}
+        </div>
+
+        {pdfUrl ? (
+          <div className="bg-gray-100 p-3">
+            <iframe
+              src={pdfUrl}
+              title={pdfFileName || "Proposal PDF"}
+              className="h-[78vh] w-full rounded-lg border bg-white"
+            />
+          </div>
+        ) : (
+          <div className="p-5">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-10 text-center">
+              <p className="text-sm font-semibold text-gray-700">
+                No proposal PDF found
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const ProposalBrochurePreviewCard = ({ title, name, brochure }) => {
+    const hasBrochure = Boolean(brochure?.filePath);
+    const isImage = isImageBrochure(brochure);
+    const isPdf = isPdfBrochure(brochure);
+
+    return (
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{title}</p>
+
+              <p className="mt-1 truncate text-xs text-gray-500">
+                {name || "---"}
+              </p>
+            </div>
+
+            <span
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                hasBrochure
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : "border-gray-200 bg-gray-50 text-gray-500"
+              }`}
+            >
+              {hasBrochure ? "Available" : "Not Added"}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-4">
+          {hasBrochure ? (
+            <>
+              <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                {isImage ? (
+                  <img
+                    src={brochure.filePath}
+                    alt={brochure.fileName || title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : isPdf ? (
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-red-50 text-center">
+                    <p className="text-4xl">📄</p>
+                    <p className="mt-2 text-xs font-semibold text-red-700">
+                      PDF Document
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center text-center">
+                    <p className="text-4xl">📎</p>
+                    <p className="mt-2 text-xs font-semibold text-gray-600">
+                      Attachment
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2 text-xs text-gray-600">
+                <p className="break-words">
+                  <span className="font-semibold text-gray-900">File:</span>{" "}
+                  {brochure.fileName || "---"}
+                </p>
+
+                <p>
+                  <span className="font-semibold text-gray-900">Type:</span>{" "}
+                  {brochure.contentType || "---"}
+                </p>
+
+                <p>
+                  <span className="font-semibold text-gray-900">Size:</span>{" "}
+                  {formatPreviewFileSize(brochure.fileSize)}
+                </p>
+
+                <p>
+                  <span className="font-semibold text-gray-900">Uploaded:</span>{" "}
+                  {formatPreviewDate(brochure.uploadedAt)}
+                </p>
+
+                <p className="break-words">
+                  <span className="font-semibold text-gray-900">
+                    Description:
+                  </span>{" "}
+                  {brochure.description || "---"}
+                </p>
+              </div>
+
+              <a
+                href={brochure.filePath}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                View Brochure <ExternalLink size={14} />
+              </a>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+              <p className="text-sm font-semibold text-gray-700">
+                No brochure found
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Brochure is not available for this level.
+              </p>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderProposalView = () => {
+    const proposalBrochures = getProposalBrochures(selectedProposal);
+
+    const emailBodyHtml =
+      selectedProposal?.emailBody || selectedProposal?.mailBody || "";
+
+    const scopeOfWorkHtml =
+      selectedProposal?.scopeOfWork || selectedProposal?.template || "";
+
+    const subject =
+      selectedProposal?.emailSubject || selectedProposal?.mailSubject || "-";
+
+    return (
+      <div className="flex justify-center bg-gray-100 py-6 px-2">
+        <div className="w-full max-w-6xl space-y-5">
+          <div className="bg-white rounded-xl shadow border p-4 md:p-6 flex flex-col gap-4 relative">
+            <div className="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Proposal Overview
+                </h2>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  {selectedProposal?.proposalNumber || "-"} •{" "}
+                  {selectedProposal?.companyName || "-"}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {selectedProposal?.pdfUrl && (
+                  <a
+                    href={selectedProposal.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                  >
+                    Open PDF <ExternalLink size={13} />
+                  </a>
+                )}
+
+                {selectedProposal?.status === "DRAFT" && (
+                  <Button
+                    size="sm"
+                    color="primary"
+                    variant="flat"
+                    className="flex items-center gap-2 shadow-sm"
+                    onPress={handleEditProposal}
+                  >
+                    Edit
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div>
+                <p className="text-xs text-gray-500">Service</p>
+                <p className="font-semibold text-gray-800">
+                  {selectedProposal?.solution?.name ||
+                    selectedProposal?.solutionName ||
+                    "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Created By</p>
+                <p className="font-medium text-gray-800">
+                  {selectedProposal?.createdByName ||
+                    selectedProposal?.createdByEmail ||
+                    "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Created Date</p>
+                <p className="font-medium text-gray-800">
+                  {selectedProposal?.createDate
+                    ? dayjs(selectedProposal.createDate).format("DD-MM-YYYY")
+                    : "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Status</p>
+                <span
+                  className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${
+                    selectedProposal?.status === "CANCELLED" ||
+                    selectedProposal?.status === "REJECTED"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {selectedProposal?.status || "-"}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div>
+                <p className="text-xs text-gray-500">Menu</p>
+                <p className="font-medium text-gray-800">
+                  {selectedProposal?.menu?.name || "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Category</p>
+                <p className="font-medium text-gray-800">
+                  {selectedProposal?.menuCategory?.name || "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Subcategory</p>
+                <p className="font-medium text-gray-800">
+                  {selectedProposal?.subCategory?.name || "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Subject</p>
+                <p
+                  className="font-medium text-gray-800 truncate"
+                  title={subject}
+                >
+                  {subject}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-between gap-4 pt-2">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Mail To</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {selectedProposal?.mailTo?.length > 0 ? (
+                    selectedProposal.mailTo.map((email, i) => (
+                      <span
+                        key={`${email}-${i}`}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                      >
+                        {email}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">No recipients</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Mail Cc</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {selectedProposal?.mailCc?.length > 0 ? (
+                    selectedProposal.mailCc.map((email, i) => (
+                      <span
+                        key={`${email}-${i}`}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                      >
+                        {email}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">No recipients</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Mail Bcc</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {selectedProposal?.mailBcc?.length > 0 ? (
+                    selectedProposal.mailBcc.map((email, i) => (
+                      <span
+                        key={`${email}-${i}`}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                      >
+                        {email}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">No recipients</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow border overflow-hidden">
+            <div className="border-b bg-gray-50 px-5 py-3">
+              <h3 className="text-base font-semibold text-gray-800">
+                Attached Brochures
+              </h3>
+
+              <p className="text-xs text-gray-500 mt-1">
+                Menu, category, subcategory and service level brochures.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+              {proposalBrochures.map((item) => (
+                <ProposalBrochurePreviewCard
+                  key={item.key}
+                  title={item.title}
+                  name={item.name}
+                  brochure={item.brochure}
+                />
+              ))}
+            </div>
+          </div>
+
+          <HtmlPreviewCard
+            title="Email Body"
+            description="This email body is coming from proposal response."
+            html={emailBodyHtml}
+            emptyText="No email body found."
+          />
+
+          <HtmlPreviewCard
+            title="Scope of Work"
+            description="This scope of work is coming from proposal response."
+            html={scopeOfWorkHtml}
+            emptyText="No scope of work found."
+          />
+
+          <ProposalPdfPreview
+            pdfUrl={selectedProposal?.pdfUrl}
+            pdfFileName={selectedProposal?.pdfFileName}
+          />
+
+          {selectedProposal?.lineItems?.length > 0 && (
+            <div className="bg-white rounded-xl shadow border overflow-hidden">
+              <div className="border-b bg-gray-50 px-5 py-3">
+                <h3 className="text-base font-semibold text-gray-800">
+                  Line Items
+                </h3>
+
+                <p className="text-xs text-gray-500 mt-1">
+                  Service fee and GST details.
+                </p>
+              </div>
+
+              <div className="overflow-auto p-4">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50 text-left">
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        Item
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        HSN/SAC
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        Qty
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        Unit
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        Price Ex GST
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        GST %
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-gray-700">
+                        Fee Type
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {selectedProposal.lineItems.map((item) => (
+                      <tr key={item.id} className="border-b last:border-b-0">
+                        <td className="px-3 py-2 text-gray-800">
+                          {item?.itemName || "-"}
+                        </td>
+
+                        <td className="px-3 py-2 text-gray-600">
+                          {item?.hsnSacCode || "-"}
+                        </td>
+
+                        <td className="px-3 py-2 text-gray-600">
+                          {item?.quantity ?? "-"}
+                        </td>
+
+                        <td className="px-3 py-2 text-gray-600">
+                          {item?.unit || "-"}
+                        </td>
+
+                        <td className="px-3 py-2 text-gray-600">
+                          ₹{Number(item?.unitPriceExGst || 0).toFixed(2)}
+                        </td>
+
+                        <td className="px-3 py-2 text-gray-600">
+                          {Number(item?.gstRate || 0).toFixed(2)}%
+                        </td>
+
+                        <td className="px-3 py-2 text-gray-600">
+                          {item?.feeType || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderProposalForm = () => (
     <Form
@@ -1472,6 +1860,11 @@ const Proposal = () => {
                           : "-"}
                       </p>
                     </div>
+                    {proposal?.rejectionReason && (
+                      <p className="text-xs text-gray-900 bg-red-200 py-0.5 px-1.5 mt-1 rounded-xs truncate">
+                        Reject reason : {proposal?.rejectionReason || "-"}
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-3">

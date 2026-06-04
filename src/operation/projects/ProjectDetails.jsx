@@ -1275,9 +1275,14 @@ const ProjectDetails = () => {
               </Button>
             )}
             {(department === "Procurement" || adminRole) && (
-              <Button type="primary" onClick={() => setIsPoModalOpen(true)}>
-                Create PO
-              </Button>
+              <Link
+                to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
+              >
+                Purchase Orders
+              </Link>
+              // <Button type="primary" onClick={() => setIsPoModalOpen(true)}>
+              //   Create PO
+              // </Button>
             )}
 
             <Button

@@ -54,6 +54,7 @@ const CreatePurchaseOrderModal = ({
   createdBy,
   defaultEstimatedAmount = 0,
   onSuccess,
+  vendorId,
 }) => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();

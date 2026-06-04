@@ -8,6 +8,8 @@ import Documents from "../operation/Settings/Documents";
 import Departments from "../operation/Settings/Departments";
 import ProjectActivities from "../operation/projects/ProjectActivities";
 import LegalRequests from "../operation/legal/LegalRequests";
+import ProjectPurchaseOrder from "../operation/projects/ProjectPurchaseOrder";
+import ProjectPR from "../operation/projects/ProjectPR";
 
 const OperationModuleRouting = () => {
   return (
@@ -16,6 +18,14 @@ const OperationModuleRouting = () => {
       <Route
         path="operation/projects/:projectId/projectDetail"
         element={<ProjectDetails />}
+      />
+      <Route
+        path="operation/projects/:projectId/projectDetail/purchaseOrder"
+        element={<ProjectPurchaseOrder />}
+      />
+      <Route
+        path="operation/projects/:projectId/projectDetail/purchaseOrder/:poId/procurementPaymentRequest"
+        element={<ProjectPR />}
       />
       <Route
         path="operation/projects/:projectId/projectDetail/activities"
