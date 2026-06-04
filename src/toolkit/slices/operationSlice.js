@@ -669,6 +669,22 @@ export const createLegalSuportRequest = createAsyncThunk(
     }
   },
 );
+export const getProcurementOrderByPurchaseId = createAsyncThunk(
+  "getProcurementOrderByPurchaseId",
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/purchase-orders/byProjectId/${projectId}`,
+      );
+
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Failed to fetch purchase orders",
+      );
+    }
+  },
+);
 
 export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
   "getAllLegalSupportRequestsForFilter",
@@ -834,6 +850,9 @@ export const OperationSlice = createSlice({
     legalRequestList: [],
     legalRequestCount: 0,
     servicePaymentTerm: [],
+    procurementOrderByPurchaseIdList:[],
+procurementOrderByPurchaseIdLoading: false,
+procurementOrderByPurchaseIdError: null,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1152,7 +1171,18 @@ export const OperationSlice = createSlice({
       state.loading = "rejected";
       state.servicePaymentTerm = [];
     });
-  },
+builder.addCase(getProcurementOrderByPurchaseId.pending, (state) => {
+  state.procurementOrderByPurchaseIdLoading = true;
+  state.procurementOrderByPurchaseIdError = null;
+})
+builder.addCase(getProcurementOrderByPurchaseId.fulfilled, (state, action) => {
+  state.procurementOrderByPurchaseIdLoading = false;
+  state.procurementOrderByPurchaseId = action.payload;
+})
+builder.addCase(getProcurementOrderByPurchaseId.rejected, (state, action) => {
+  state.procurementOrderByPurchaseIdLoading = false;
+  state.procurementOrderByPurchaseIdError = action.payload;
+});}
 });
 
 export default OperationSlice.reducer;

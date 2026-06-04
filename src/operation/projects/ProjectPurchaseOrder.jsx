@@ -13,24 +13,18 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-  useDisclosure,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
   addToast,
-  Form,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  approveProcurementPurchaseOrder,
-  getProcurementPurchaseOrder,
-  releaseProcurementPaymentRequestAccounts,
-} from "../../toolkit/slices/accountSlice";
+  getOperationProjectDetailById,
+  getProcurementOrderByPurchaseId,
+} from "../../toolkit/slices/operationSlice";
+import { getVendorDetailInProject } from "../../toolkit/slices/vendorsSlice";
+import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
 
 const columns = [
   { name: "PO NUMBER", uid: "poNumber", sortable: true },
@@ -44,23 +38,25 @@ const columns = [
   { name: "STATUS", uid: "status", sortable: true },
   { name: "CREATED DATE", uid: "createdDate", sortable: true },
   { name: "ATTACHMENTS", uid: "attachmentUrls" },
-  { name: "ACTIONS", uid: "actions" },
 ];
-
-function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
 
 const INITIAL_VISIBLE_COLUMNS = [
   "poNumber",
+  "poReferenceNumber",
   "projectName",
   "vendorName",
   "grandTotal",
   "payment",
   "status",
   "createdDate",
-  "actions",
+  "attachmentUrls",
 ];
+
+function capitalize(value) {
+  return value
+    ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+    : "";
+}
 
 const formatAmount = (value) => {
   return new Intl.NumberFormat("en-IN", {
@@ -93,26 +89,104 @@ const getStatusColor = (status) => {
     case "REJECTED":
       return "danger";
     case "RELEASED":
+    case "PO_RELEASED":
       return "primary";
+    case "PAYMENT_DONE":
+      return "success";
     default:
       return "default";
   }
 };
 
+const normalizePurchaseOrderResponse = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.content)) return response.content;
+  if (Array.isArray(response?.data)) return response.data;
+  if (response && typeof response === "object") return [response];
+
+  return [];
+};
+
+const getAttachmentUrls = (rowData) => {
+  if (Array.isArray(rowData?.attachmentUrls)) {
+    return rowData.attachmentUrls;
+  }
+
+  if (Array.isArray(rowData?.attachments)) {
+    return rowData.attachments
+      .map((item) => item?.fileUrl || item?.filePath || item?.url)
+      .filter(Boolean);
+  }
+
+  if (rowData?.attachmentUrl) {
+    return [rowData.attachmentUrl];
+  }
+
+  return [];
+};
+
 const ProjectPurchaseOrder = () => {
-  const { userId } = useParams();
+  const { userId, projectId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
-  const approveModal = useDisclosure();
-  const rejectModal = useDisclosure();
-  const releasePaymentModal = useDisclosure();
 
-  const count = useSelector(
-    (state) => state.account.procurementPurchaseOrderList?.totalElements || 0,
+  const [isCreatePoModalOpen, setIsCreatePoModalOpen] = useState(false);
+
+  const purchaseOrderResponse = useSelector(
+    (state) => state.operation.procurementOrderByPurchaseIdList,
   );
 
-  const data = useSelector(
-    (state) => state.account.procurementPurchaseOrderList?.content || [],
+  const isLoading = useSelector(
+    (state) => state.operation.procurementOrderByPurchaseIdLoading,
   );
+
+  const error = useSelector(
+    (state) => state.operation.procurementOrderByPurchaseIdError,
+  );
+
+  const detailedData = useSelector(
+    (state) => state.operation.operationProjectDetail,
+  );
+
+  const vendorDetail = useSelector(
+    (state) => state.vendors.vendorDetailInProject,
+  );
+
+  const data = useMemo(() => {
+    return normalizePurchaseOrderResponse(purchaseOrderResponse);
+  }, [purchaseOrderResponse]);
+
+  const routeState = location?.state || {};
+  const firstPurchaseOrder = data?.[0] || {};
+  const projectDetails = detailedData?.projectDetails || {};
+
+  const procurementAssignmentId =
+    routeState?.procurementAssignmentId ||
+    projectDetails?.procurementMilestoneAssignmentId ||
+    projectDetails?.procurementAssignmentId ||
+    firstPurchaseOrder?.procurementAssignmentId ||
+    firstPurchaseOrder?.procurementMilestoneAssignmentId ||
+    null;
+
+  const vendorId =
+    routeState?.vendorId ||
+    vendorDetail?.selectedVendorId ||
+    vendorDetail?.selectedVendor?.id ||
+    projectDetails?.selectedVendorId ||
+    firstPurchaseOrder?.vendorId ||
+    firstPurchaseOrder?.selectedVendorId ||
+    null;
+
+  const defaultEstimatedAmount =
+    routeState?.defaultEstimatedAmount ||
+    projectDetails?.estimatedAmount ||
+    projectDetails?.amount ||
+    firstPurchaseOrder?.estimatedAmount ||
+    firstPurchaseOrder?.finalAmount ||
+    0;
+
+  const canCreatePurchaseOrder = Boolean(procurementAssignmentId && vendorId);
 
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
@@ -126,18 +200,56 @@ const ProjectPurchaseOrder = () => {
   });
 
   const [filteration, setFilteration] = useState({
-    userId: userId,
     page: 1,
-    size: 50,
-    status: "PENDING_APPROVAL",
+    size: 10,
+    status: "ALL",
   });
 
-  const hasSearchFilter = Boolean(filterValue);
-  const [rowItem, setRowItem] = useState(null);
+  const fetchPurchaseOrders = useCallback(() => {
+    if (projectId) {
+      dispatch(getProcurementOrderByPurchaseId(projectId));
+    }
+  }, [dispatch, projectId]);
 
   useEffect(() => {
-    dispatch(getProcurementPurchaseOrder(filteration));
-  }, [dispatch, filteration]);
+    if (projectId && userId) {
+      dispatch(getOperationProjectDetailById({ projectId, userId }));
+    }
+
+    fetchPurchaseOrders();
+  }, [dispatch, projectId, userId, fetchPurchaseOrders]);
+
+  useEffect(() => {
+    if (procurementAssignmentId) {
+      dispatch(
+        getVendorDetailInProject({
+          procurementAssignmentId,
+        }),
+      );
+    }
+  }, [dispatch, procurementAssignmentId]);
+
+  const handleOpenCreatePurchaseOrder = useCallback(() => {
+    if (!procurementAssignmentId) {
+      addToast({
+        title: "Procurement assignment missing",
+        description: "Procurement assignment ID is required to create PO.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!vendorId) {
+      addToast({
+        title: "Vendor missing",
+        description: "Please finalize/map vendor before creating PO.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setIsCreatePoModalOpen(true);
+  }, [procurementAssignmentId, vendorId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -148,98 +260,101 @@ const ProjectPurchaseOrder = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
+    let filteredData = [...(data || [])];
 
-    if (hasSearchFilter) {
+    if (filteration.status !== "ALL") {
+      filteredData = filteredData.filter(
+        (item) => item?.status === filteration.status,
+      );
+    }
+
+    if (filterValue) {
       const searchValue = filterValue.toLowerCase();
 
-      filteredUsers = filteredUsers.filter((item) => {
+      filteredData = filteredData.filter((item) => {
         return (
           item?.poNumber?.toLowerCase().includes(searchValue) ||
           item?.poReferenceNumber?.toLowerCase().includes(searchValue) ||
           item?.projectName?.toLowerCase().includes(searchValue) ||
           item?.vendorName?.toLowerCase().includes(searchValue) ||
           item?.paymentTypeName?.toLowerCase().includes(searchValue) ||
+          item?.paymentTerms?.toLowerCase().includes(searchValue) ||
           item?.status?.toLowerCase().includes(searchValue)
         );
       });
     }
 
-    return filteredUsers;
-  }, [data, filterValue, hasSearchFilter]);
-
-  const pages = Math.ceil(count / filteration?.size) || 1;
+    return filteredData;
+  }, [data, filterValue, filteration.status]);
 
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
+      const first = a?.[sortDescriptor.column];
+      const second = b?.[sortDescriptor.column];
 
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+      let cmp = 0;
+
+      if (first === null || first === undefined) cmp = -1;
+      else if (second === null || second === undefined) cmp = 1;
+      else if (first < second) cmp = -1;
+      else if (first > second) cmp = 1;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [filteredItems, sortDescriptor]);
 
-  const handleActionPress = (item, key) => {
-    setRowItem(item);
+  const pages = Math.ceil(sortedItems.length / filteration.size) || 1;
 
-    if (key === "Approved") {
-      approveModal.onOpen();
-    } else if (key === "Rejected") {
-      rejectModal.onOpen();
-    } else if (key === "ReleasePayment") {
-      releasePaymentModal.onOpen();
+  const paginatedItems = useMemo(() => {
+    const start = (filteration.page - 1) * filteration.size;
+    const end = start + filteration.size;
+
+    return sortedItems.slice(start, end);
+  }, [sortedItems, filteration.page, filteration.size]);
+
+  const onNextPage = useCallback(() => {
+    if (filteration.page < pages) {
+      setFilteration((prev) => ({
+        ...prev,
+        page: prev.page + 1,
+      }));
     }
-  };
+  }, [filteration.page, pages]);
 
-  const handleReleasePaymentRequest = (values) => {
-    const paymentRequestId = rowItem?.paymentRequestId || rowItem?.id;
+  const onPreviousPage = useCallback(() => {
+    if (filteration.page > 1) {
+      setFilteration((prev) => ({
+        ...prev,
+        page: prev.page - 1,
+      }));
+    }
+  }, [filteration.page]);
 
-    const payload = {
-      comment: values.comment || "",
-      reason: values.reason || "",
-      invoiceNumber: values.invoiceNumber || "",
-      invoiceDate: values.invoiceDate
-        ? new Date(values.invoiceDate).toISOString()
-        : null,
-    };
+  const onRowsPerPageChange = useCallback((e) => {
+    setFilteration((prev) => ({
+      ...prev,
+      size: Number(e.target.value),
+      page: 1,
+    }));
+  }, []);
 
-    dispatch(
-      releaseProcurementPaymentRequestAccounts({
-        paymentRequestId,
-        userId,
-        data: payload,
-      }),
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "SUCCESS",
-            description: "Payment released successfully !.",
-            color: "success",
-          });
+  const onSearchChange = useCallback((value) => {
+    setFilterValue(value || "");
 
-          releasePaymentModal.onClose();
-          setRowItem(null);
-          dispatch(getProcurementPurchaseOrder(filteration));
-        } else {
-          addToast({
-            title: "Error",
-            description:
-              resp?.payload?.message || resp?.payload || "Something went wrong",
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({
-          title: "ERROR",
-          description: "Something went wrong",
-          color: "danger",
-        }),
-      );
-  };
+    setFilteration((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  }, []);
+
+  const onClear = useCallback(() => {
+    setFilterValue("");
+
+    setFilteration((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  }, []);
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
@@ -256,9 +371,7 @@ const ProjectPurchaseOrder = () => {
       case "poReferenceNumber":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.poReferenceNumber || "-"}
-            </span>
+            <span>{rowData?.poReferenceNumber || "-"}</span>
             <span className="text-xs text-default-400">
               Assignment ID: {rowData?.procurementAssignmentId || "-"}
             </span>
@@ -268,9 +381,7 @@ const ProjectPurchaseOrder = () => {
       case "projectName":
         return (
           <div className="flex flex-col">
-            <span className="font-normal capitalize">
-              {rowData?.projectName || "-"}
-            </span>
+            <span className="capitalize">{rowData?.projectName || "-"}</span>
             <span className="text-xs text-default-400">
               Project ID: {rowData?.projectId || "-"}
             </span>
@@ -280,9 +391,7 @@ const ProjectPurchaseOrder = () => {
       case "vendorName":
         return (
           <div className="flex flex-col">
-            <span className="font-normal capitalize">
-              {rowData?.vendorName || "-"}
-            </span>
+            <span className="capitalize">{rowData?.vendorName || "-"}</span>
             <span className="text-xs text-default-400">
               Vendor ID: {rowData?.vendorId || "-"}
             </span>
@@ -322,9 +431,7 @@ const ProjectPurchaseOrder = () => {
       case "payment":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.paymentTypeName || "-"}
-            </span>
+            <span>{rowData?.paymentTypeName || "-"}</span>
             <span className="text-xs text-default-400">
               {rowData?.paymentTerms || "-"}
             </span>
@@ -334,7 +441,7 @@ const ProjectPurchaseOrder = () => {
       case "tax":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">GST: {rowData?.gstRate || 0}%</span>
+            <span>GST: {rowData?.gstRate || 0}%</span>
 
             {Number(rowData?.igstAmount || 0) > 0 ? (
               <span className="text-xs text-default-400">
@@ -364,138 +471,79 @@ const ProjectPurchaseOrder = () => {
       case "createdDate":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
-              {formatDateTime(rowData?.createdDate)}
-            </span>
+            <span>{formatDateTime(rowData?.createdDate)}</span>
             <span className="text-xs text-default-400">
               PO Created: {formatDateTime(rowData?.poCreatedDate)}
             </span>
           </div>
         );
 
-      case "attachmentUrls":
-        return Array.isArray(rowData?.attachmentUrls) &&
-          rowData.attachmentUrls.length > 0 ? (
+      case "attachmentUrls": {
+        const attachments = getAttachmentUrls(rowData);
+
+        if (!attachments.length) return "-";
+
+        return (
           <div className="flex flex-col gap-1">
             <Chip size="sm" variant="flat" color="primary">
-              {rowData.attachmentUrls.length} File
-              {rowData.attachmentUrls.length > 1 ? "s" : ""}
+              {attachments.length} File{attachments.length > 1 ? "s" : ""}
             </Chip>
 
             <Button
               size="sm"
               variant="light"
               color="primary"
+              startContent={<FileText size={14} />}
               onPress={() => {
-                window.open(
-                  rowData.attachmentUrls[0],
-                  "_blank",
-                  "noopener,noreferrer",
-                );
+                window.open(attachments[0], "_blank", "noopener,noreferrer");
               }}
             >
               View
             </Button>
           </div>
-        ) : (
-          "-"
         );
-
-      case "actions":
-        return (
-          <Dropdown>
-            <DropdownTrigger>
-              <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
-              </Button>
-            </DropdownTrigger>
-
-            <DropdownMenu>
-              <DropdownItem
-                isDisabled={rowData?.status !== "PENDING_APPROVAL"}
-                onPress={() => handleActionPress(rowData, "Approved")}
-              >
-                Approved
-              </DropdownItem>
-
-              <DropdownItem
-                isDisabled={rowData?.status !== "PENDING_APPROVAL"}
-                onPress={() => handleActionPress(rowData, "Rejected")}
-              >
-                Rejected
-              </DropdownItem>
-
-              <DropdownItem
-                onPress={() => handleActionPress(rowData, "ReleasePayment")}
-              >
-                Release Payment
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        );
+      }
 
       default:
-        return rowData[columnKey] || "-";
+        return rowData?.[columnKey] || "-";
     }
-  }, []);
-
-  const onNextPage = useCallback(() => {
-    if (filteration?.page < pages) {
-      setFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
-    }
-  }, [filteration, pages]);
-
-  const onPreviousPage = useCallback(() => {
-    if (filteration?.page > 1) {
-      setFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
-    }
-  }, [filteration]);
-
-  const onRowsPerPageChange = useCallback((e) => {
-    setFilteration((prev) => ({
-      ...prev,
-      size: Number(e.target.value),
-      page: 1,
-    }));
-  }, []);
-
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setFilteration((prev) => ({ ...prev, page: 1 }));
-    } else {
-      setFilterValue("");
-    }
-  }, []);
-
-  const onClear = useCallback(() => {
-    setFilterValue("");
-    setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const topContent = useMemo(() => {
+    const uniqueStatuses = Array.from(
+      new Set(data.map((item) => item?.status).filter(Boolean)),
+    );
+
+    const statusOptions = [
+      { label: "ALL", uid: "ALL" },
+      ...uniqueStatuses.map((status) => ({
+        label: status,
+        uid: status,
+      })),
+    ];
+
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            className="w-full md:max-w-[380px]"
             placeholder="Search by PO, project, vendor..."
-            startContent={<Search />}
+            startContent={<Search size={18} />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
+              <DropdownTrigger>
                 <Button
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown size={16} />}
                   variant="flat"
                   className="capitalize"
                 >
-                  {filteration?.status}
+                  {filteration.status}
                 </Button>
               </DropdownTrigger>
 
@@ -514,20 +562,15 @@ const ProjectPurchaseOrder = () => {
                   }));
                 }}
               >
-                {[
-                  { label: "DRAFT", uid: "DRAFT" },
-                  { label: "PENDING_APPROVAL", uid: "PENDING_APPROVAL" },
-                  { label: "APPROVED", uid: "APPROVED" },
-                  { label: "REJECTED", uid: "REJECTED" },
-                ].map((status) => (
+                {statusOptions.map((status) => (
                   <DropdownItem key={status.uid}>{status.label}</DropdownItem>
                 ))}
               </DropdownMenu>
             </Dropdown>
 
             <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+              <DropdownTrigger>
+                <Button endContent={<ChevronDown size={16} />} variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -550,9 +593,9 @@ const ProjectPurchaseOrder = () => {
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <span className="text-default-400 text-small">
-            Total {count} purchase orders
+            Total {sortedItems.length} purchase orders
           </span>
 
           <label className="flex items-center text-default-400 text-small">
@@ -560,9 +603,10 @@ const ProjectPurchaseOrder = () => {
             <select
               className="bg-transparent outline-hidden text-default-400 text-small"
               onChange={onRowsPerPageChange}
-              value={filteration?.size}
+              value={filteration.size}
             >
               <option value="5">5</option>
+              <option value="10">10</option>
               <option value="15">15</option>
               <option value="25">25</option>
               <option value="50">50</option>
@@ -572,13 +616,15 @@ const ProjectPurchaseOrder = () => {
       </div>
     );
   }, [
+    data,
     filterValue,
-    visibleColumns,
+    filteration.status,
+    filteration.size,
+    onClear,
     onRowsPerPageChange,
     onSearchChange,
-    filteration?.status,
-    count,
-    onClear,
+    sortedItems.length,
+    visibleColumns,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -587,7 +633,7 @@ const ProjectPurchaseOrder = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys.size} of ${sortedItems.length} selected`}
         </span>
 
         <Pagination
@@ -595,16 +641,19 @@ const ProjectPurchaseOrder = () => {
           showControls
           showShadow
           color="primary"
-          page={filteration?.page}
+          page={filteration.page}
           total={pages}
           onChange={(page) => {
-            setFilteration((prev) => ({ ...prev, page }));
+            setFilteration((prev) => ({
+              ...prev,
+              page,
+            }));
           }}
         />
 
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={filteration.page <= 1}
             size="sm"
             variant="flat"
             onPress={onPreviousPage}
@@ -613,7 +662,7 @@ const ProjectPurchaseOrder = () => {
           </Button>
 
           <Button
-            isDisabled={pages === 1}
+            isDisabled={filteration.page >= pages}
             size="sm"
             variant="flat"
             onPress={onNextPage}
@@ -625,22 +674,63 @@ const ProjectPurchaseOrder = () => {
     );
   }, [
     selectedKeys,
-    count,
-    filteration?.page,
+    sortedItems.length,
+    filteration.page,
     pages,
     onPreviousPage,
     onNextPage,
   ]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Procurement Purchase Orders
-      </h1>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="font-sans text-2xl font-medium">
+            Project Purchase Orders
+          </h1>
+
+          <p className="text-sm text-default-500">Project ID: {projectId}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            color="primary"
+            startContent={<Plus size={16} />}
+            onPress={handleOpenCreatePurchaseOrder}
+          >
+            Add Purchase Order
+          </Button>
+
+          <Button
+            variant="flat"
+            startContent={<ArrowLeft size={16} />}
+            onPress={() =>
+              navigate(
+                `/erp/${userId}/operation/projects/${projectId}/projectDetail`,
+              )
+            }
+          >
+            Back to Project
+          </Button>
+        </div>
+      </div>
+
+      {!canCreatePurchaseOrder && (
+        <div className="rounded-lg border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+          Purchase order creation needs procurement assignment and selected
+          vendor. Please finalize/map vendor first.
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger">
+          {error}
+        </div>
+      )}
 
       <Table
         isHeaderSticky
-        aria-label="Procurement purchase order table"
+        aria-label="Project purchase order table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -659,7 +749,7 @@ const ProjectPurchaseOrder = () => {
           {(column) => (
             <TableColumn
               key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
+              align="start"
               allowsSorting={column.sortable}
             >
               {column.name}
@@ -667,9 +757,17 @@ const ProjectPurchaseOrder = () => {
           )}
         </TableHeader>
 
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+        <TableBody
+          isLoading={isLoading}
+          emptyContent={
+            isLoading
+              ? "Loading purchase orders..."
+              : "No purchase orders found"
+          }
+          items={paginatedItems}
+        >
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item?.id || item?.poNumber}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -678,155 +776,17 @@ const ProjectPurchaseOrder = () => {
         </TableBody>
       </Table>
 
-      <Modal
-        size="2xl"
-        isOpen={approveModal.isOpen}
-        onOpenChange={approveModal.onOpenChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <Form
-              className="w-full"
-              onSubmit={(e) => {
-                e.preventDefault();
-
-                let data = Object.fromEntries(new FormData(e.currentTarget));
-
-                handleApproveRequest(data);
-              }}
-            >
-              <ModalHeader>Approve Request</ModalHeader>
-
-              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
-                <Input
-                  label="Comment"
-                  name="comment"
-                  isRequired
-                  errorMessage="please enter a comment"
-                />
-              </ModalBody>
-
-              <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button onPress={onClose}>Close</Button>
-
-                <Button color="primary" type="submit">
-                  Submit
-                </Button>
-              </ModalFooter>
-            </Form>
-          )}
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        size="2xl"
-        isOpen={rejectModal.isOpen}
-        onOpenChange={rejectModal.onOpenChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <Form
-              className="w-full"
-              onSubmit={(e) => {
-                e.preventDefault();
-
-                let data = Object.fromEntries(new FormData(e.currentTarget));
-
-                handleRejectRequest(data);
-              }}
-            >
-              <ModalHeader>Reject Request</ModalHeader>
-
-              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
-                <Input
-                  label="Reason for rejection"
-                  name="reason"
-                  isRequired
-                  errorMessage="please enter a reason for rejection"
-                />
-              </ModalBody>
-
-              <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button onPress={onClose}>Close</Button>
-
-                <Button color="primary" type="submit">
-                  Submit
-                </Button>
-              </ModalFooter>
-            </Form>
-          )}
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        size="2xl"
-        isOpen={releasePaymentModal.isOpen}
-        onOpenChange={releasePaymentModal.onOpenChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <Form
-              className="w-full"
-              onSubmit={(e) => {
-                e.preventDefault();
-
-                let data = Object.fromEntries(new FormData(e.currentTarget));
-
-                handleReleasePaymentRequest(data);
-              }}
-            >
-              <ModalHeader>Release Payment</ModalHeader>
-
-              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
-                <Input
-                  label="Comment"
-                  name="comment"
-                  isRequired
-                  errorMessage="please enter a comment"
-                />
-
-                <Input
-                  label="Reason"
-                  name="reason"
-                  isRequired
-                  errorMessage="please enter a reason"
-                />
-
-                <Input
-                  label="Invoice Number"
-                  name="invoiceNumber"
-                  isRequired
-                  errorMessage="please enter invoice number"
-                />
-
-                <Input
-                  label="Invoice Date"
-                  name="invoiceDate"
-                  type="datetime-local"
-                  isRequired
-                  errorMessage="please select invoice date"
-                />
-              </ModalBody>
-
-              <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button
-                  onPress={() => {
-                    setRowItem(null);
-                    onClose();
-                  }}
-                >
-                  Close
-                </Button>
-
-                <Button color="primary" type="submit">
-                  Release Payment
-                </Button>
-              </ModalFooter>
-            </Form>
-          )}
-        </ModalContent>
-      </Modal>
-    </>
+      <CreatePurchaseOrderModal
+        open={isCreatePoModalOpen}
+        onClose={() => setIsCreatePoModalOpen(false)}
+        procurementAssignmentId={Number(procurementAssignmentId)}
+        userId={Number(userId)}
+        createdBy={Number(userId)}
+        defaultEstimatedAmount={Number(defaultEstimatedAmount || 0)}
+        vendorId={Number(vendorId)}
+        onSuccess={fetchPurchaseOrders}
+      />
+    </div>
   );
 };
 

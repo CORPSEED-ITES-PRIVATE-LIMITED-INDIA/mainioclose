@@ -1275,14 +1275,25 @@ const ProjectDetails = () => {
               </Button>
             )}
             {(department === "Procurement" || adminRole) && (
-              <Link
+              <Button
+                as={Link}
+                radius="sm"
+                color="primary"
+                variant="flat"
                 to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
+                state={{
+                  procurementAssignmentId:
+                    detailedData?.projectDetails
+                      ?.procurementMilestoneAssignmentId,
+                  vendorId: selectedVendorId,
+                  defaultEstimatedAmount:
+                    detailedData?.projectDetails?.estimatedAmount ||
+                    detailedData?.projectDetails?.amount ||
+                    0,
+                }}
               >
                 Purchase Orders
-              </Link>
-              // <Button type="primary" onClick={() => setIsPoModalOpen(true)}>
-              //   Create PO
-              // </Button>
+              </Button>
             )}
 
             <Button
