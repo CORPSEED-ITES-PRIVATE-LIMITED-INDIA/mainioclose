@@ -43,7 +43,7 @@ import {
   getTdsDetailByEstimateId,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
 import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
 import { set } from "zod";
@@ -55,8 +55,8 @@ import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePrevie
 
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
   { name: "UNBILL NO. / ADVANCE INVOICE", uid: "unbillNo" },
+  { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
   { name: "GOVERNMENT FEE", uid: "governmentFee" },
   { name: "TDS", uid: "tdsActive" },
   { name: "SERVICE", uid: "service" },
@@ -307,8 +307,31 @@ const Unbill = () => {
             <p className="text-sm capitalize">
               {dayjs(rowData?.date).format("DD-MM-YYYY")}
             </p>
-            <Chip size="sm">{rowData?.status}</Chip>
+            <Chip
+              size="sm"
+              color={
+                rowData?.status === "APPROVED"
+                  ? "success"
+                  : rowData?.status === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
+              {rowData?.status}
+            </Chip>
           </div>
+        );
+      case "unbillNo":
+        return (
+          <Link
+            to={`${rowData?.id}/invoices`}
+            className="text-sm capitalize font-medium"
+          >
+            {`${rowData?.unbilledNumber}`}
+            {rowData?.advanceInvoiceFlag
+              ? ` / ${rowData?.advanceInvoiceNumber}`
+              : ``}{" "}
+          </Link>
         );
       case "estimateNumber":
         return (
@@ -338,21 +361,6 @@ const Unbill = () => {
       case "tdsActive":
         return (
           <div className="w-full  max-w-[130px] rounded-md px-3 py-2">
-            {/* <button
-              disabled={!rowData?.tdsActiveFlag}
-              className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold transition
-      ${
-        rowData?.tdsActiveFlag === true
-          ? "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
-          : "bg-gray-100 text-gray-500 cursor-not-allowed"
-      }`}
-              onClick={() => {
-                handleTdsPreview(rowData?.estimateId, rowData?.id);
-              }}
-            >
-              {rowData?.tdsActiveFlag === true ? "Active" : "Inactive"}
-            </button> */}
-
             {rowData?.tdsActiveFlag === true && (
               <div className="mt-2 space-y-1 text-xs">
                 <div className="flex items-center gap-3">
@@ -370,15 +378,7 @@ const Unbill = () => {
             )}
           </div>
         );
-      case "unbillNo":
-        return (
-          <p className="text-sm capitalize">
-            {`${rowData?.unbilledNumber}`}
-            {rowData?.advanceInvoiceFlag
-              ? ` / ${rowData?.advanceInvoiceNumber}`
-              : ``}{" "}
-          </p>
-        );
+
       case "service":
         return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
       case "company":
@@ -549,6 +549,14 @@ const Unbill = () => {
               page,
               size: rowsPerPage,
               unbilledNumber: value,
+            }),
+          );
+        } else if (searchBy === "estimateNumber") {
+          dispatch(
+            searchUnbilledByCompanyNameAndUnbilled({
+              page,
+              size: rowsPerPage,
+              estimateNumber: value,
             }),
           );
         }
@@ -728,6 +736,7 @@ const Unbill = () => {
             >
               <SelectItem key={"companyName"}>Company name</SelectItem>
               <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
+              <SelectItem key={"estimateNumber"}>Estimate number</SelectItem>
             </Select>
             <Input
               isClearable

@@ -792,6 +792,26 @@ export const mapVendorWithProjectInOperations = createAsyncThunk(
   },
 );
 
+export const createProcurementPurchaseOrder = createAsyncThunk(
+  "procurement/createPurchaseOrder",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/operationService/api/purchase-orders",
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Unable to create purchase order",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

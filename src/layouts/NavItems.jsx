@@ -147,11 +147,6 @@ export const navItems = [
         url: "accounts/creditNote",
         key: "creditnote",
       },
-      {
-        title: "Procurement",
-        url: "accounts/procurement",
-        key: "procurement",
-      },
     ],
   },
   {

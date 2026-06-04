@@ -33,6 +33,7 @@ import Taxation from "../accounts/organization/Taxation";
 import CreditNote from "../accounts/CreditNote";
 import ProcurementPaymentRequest from "../accounts/ProcurementPaymentRequest";
 import PurchaseOrder from "../accounts/PurchaseOrder";
+import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -51,6 +52,10 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
+      <Route
+        path="accounts/unbilled/:unbilledId/invoices"
+        element={<InvoicesByUnbilled />}
+      />
       <Route path="accounts/taxation" element={<Taxation />} />
       <Route
         path="accounts/procurementPaymentRequests"

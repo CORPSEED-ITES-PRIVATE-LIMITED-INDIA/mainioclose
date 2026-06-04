@@ -300,7 +300,18 @@ const SalesUnbill = () => {
             <p className="text-sm capitalize">
               {dayjs(rowData?.date).format("DD-MM-YYYY")}
             </p>
-            <Chip size="sm">{rowData?.status}</Chip>
+            <Chip
+              size="sm"
+              color={
+                rowData?.status === "APPROVED"
+                  ? "success"
+                  : rowData?.status === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
+              {rowData?.status}
+            </Chip>
           </div>
         );
       case "estimateNumber":
@@ -480,6 +491,14 @@ const SalesUnbill = () => {
               unbilledNumber: value,
             }),
           );
+        } else if (searchBy === "estimateNumber") {
+          dispatch(
+            searchUnbilledByCompanyNameAndUnbilled({
+              page,
+              size: rowsPerPage,
+              estimateNumber: value,
+            }),
+          );
         }
         setPage(1);
       } else {
@@ -512,6 +531,7 @@ const SalesUnbill = () => {
             >
               <SelectItem key={"companyName"}>Company name</SelectItem>
               <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
+              <SelectItem key={"estimateNumber"}>Estimate number</SelectItem>
             </Select>
             <Input
               isClearable

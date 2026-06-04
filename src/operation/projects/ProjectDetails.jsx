@@ -93,6 +93,7 @@ import {
   getAllVendors,
   getVendorDetailInProject,
 } from "../../toolkit/slices/vendorsSlice";
+import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -247,55 +248,6 @@ const VendorCard = ({ vendor, isSelected }) => {
     </Card>
   );
 };
-
-const companyDocsList = [
-  {
-    id: 1,
-    documentId: 1,
-    fileName: "PAN Card - Corpseed Pvt Ltd.pdf",
-    fileUrl: "https://example-bucket.s3.amazonaws.com/pan-card.pdf",
-    fileSizeKb: 245,
-    fileFormat: "pdf",
-    uploadedAt: "2026-03-20",
-    documentType: "PAN",
-  },
-  {
-    id: 2,
-    fileName: "GST Certificate.pdf",
-    fileUrl: "https://example-bucket.s3.amazonaws.com/gst-certificate.pdf",
-    fileSizeKb: 320,
-    fileFormat: "pdf",
-    uploadedAt: "2026-03-18",
-    documentType: "GST",
-  },
-  {
-    id: 3,
-    fileName: "Incorporation Certificate.pdf",
-    fileUrl: "https://example-bucket.s3.amazonaws.com/incorporation.pdf",
-    fileSizeKb: 410,
-    fileFormat: "pdf",
-    uploadedAt: "2026-03-15",
-    documentType: "INCORPORATION",
-  },
-  {
-    id: 4,
-    fileName: "Bank Statement March.pdf",
-    fileUrl: "https://example-bucket.s3.amazonaws.com/bank-statement.pdf",
-    fileSizeKb: 512,
-    fileFormat: "pdf",
-    uploadedAt: "2026-03-10",
-    documentType: "BANK",
-  },
-  {
-    id: 5,
-    fileName: "Director Aadhaar.png",
-    fileUrl: "https://example-bucket.s3.amazonaws.com/aadhaar.png",
-    fileSizeKb: 180,
-    fileFormat: "png",
-    uploadedAt: "2026-03-12",
-    documentType: "AADHAAR",
-  },
-];
 
 export const WhatsAppIcon = (props) => {
   return (
@@ -604,6 +556,8 @@ const ProjectDetails = () => {
     userId: userId,
     remarks: "",
   });
+
+  const [isPoModalOpen, setIsPoModalOpen] = useState(false);
 
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
@@ -1495,6 +1449,13 @@ const ProjectDetails = () => {
                       >
                         {selectedMilestone?.status}
                       </Chip>
+
+                      <Button
+                        type="primary"
+                        onClick={() => setIsPoModalOpen(true)}
+                      >
+                        Create PO
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1797,36 +1758,6 @@ const ProjectDetails = () => {
                 {/* 🔥 MAIN GRID */}
                 <div className="grid grid-cols-2 gap-3">
                   {/* ================= LEFT SIDE ================= */}
-                  {/* COMPANY DOCS */}
-                  <div className="border rounded-2xl p-3 bg-gray-50 max-h-[70vh] overflow-auto">
-                    <h3 className="text-sm font-semibold mb-3">
-                      Company Documents
-                    </h3>
-
-                    {companyDocsList.map((doc, idx) => (
-                      <Card
-                        key={idx}
-                        draggable
-                        onDragStart={() => setDraggedDoc(doc)}
-                        className="rounded-xl shadow-sm border border-gray-200 bg-white my-1.5 cursor-grab"
-                      >
-                        <CardBody className="p-3 flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            📄
-                          </div>
-
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-800">
-                              {doc.fileName}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {doc.fileSizeKb} KB
-                            </span>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    ))}
-                  </div>
 
                   {/* ================= RIGHT SIDE ================= */}
                   {/* 🔥 YOUR ORIGINAL UI (UNCHANGED) */}
@@ -3303,6 +3234,18 @@ const ProjectDetails = () => {
           )}
         </DrawerContent>
       </Drawer>
+      <CreatePurchaseOrderModal
+        open={isPoModalOpen}
+        onClose={() => setIsPoModalOpen(false)}
+        procurementAssignmentId={
+          detailedData?.projectDetails?.procurementMilestoneAssignmentId
+        }
+        vendorId={0}
+        userId={userId}
+        createdBy={userId}
+        defaultEstimatedAmount={5000}
+        onSuccess={() => {}}
+      />
     </div>
   );
 };
