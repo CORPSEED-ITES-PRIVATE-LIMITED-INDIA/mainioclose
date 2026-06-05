@@ -1773,7 +1773,14 @@ const ProjectDetails = () => {
         </ModalContent>
       </Modal> */}
 
-      <Drawer isOpen={isOpen} onOpenChange={onOpenChange} size="5xl">
+      <Drawer
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size="5xl"
+        classNames={{
+          base: "h-screen max-h-screen",
+        }}
+      >
         <DrawerContent>
           {(onClose) => (
             <>
@@ -1781,23 +1788,21 @@ const ProjectDetails = () => {
                 Documents
               </DrawerHeader>
 
-              <DrawerBody>
-                {/* SAME SELECT */}
-                <NewSelect
-                  label={"Select applicant type"}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  data={applicantTypeList?.length > 0 ? applicantTypeList : []}
-                  onChange={(e) => handleUpdateApplicantType(e)}
-                />
+              <DrawerBody className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="shrink-0">
+                  <NewSelect
+                    label={"Select applicant type"}
+                    labelKey={"name"}
+                    valueKey={"id"}
+                    data={
+                      applicantTypeList?.length > 0 ? applicantTypeList : []
+                    }
+                    onChange={(e) => handleUpdateApplicantType(e)}
+                  />
+                </div>
 
-                {/* 🔥 MAIN GRID */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* ================= LEFT SIDE ================= */}
-
-                  {/* ================= RIGHT SIDE ================= */}
-                  {/* 🔥 YOUR ORIGINAL UI (UNCHANGED) */}
-                  <div className="grid grid-cols-1 gap-2 max-h-[70vh] overflow-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+                  <div className="grid grid-cols-1 gap-3">
                     {requiredDocsList?.map((doc, idx) => {
                       const hasFile = !!doc?.fileUrl;
 
@@ -1825,20 +1830,8 @@ const ProjectDetails = () => {
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={async () => {
                             if (!draggedDoc) return;
+
                             try {
-                              // 🔥 find first doc without file
-                              // const targetDoc = requiredDocsList?.find(
-                              //   (d) => !d.fileUrl,
-                              // );
-
-                              // if (!targetDoc) {
-                              //   addToast({
-                              //     title: "All documents already uploaded",
-                              //     color: "warning",
-                              //   });
-                              //   return;
-                              // }
-
                               const permanentValue =
                                 draggedDoc?.isPermanent !== undefined
                                   ? !!draggedDoc.isPermanent
@@ -1887,7 +1880,7 @@ const ProjectDetails = () => {
                                   data: payload,
                                 }),
                               );
-                              console.log("dsjkfsdjkgdsj", resp);
+
                               if (resp.meta.requestStatus === "fulfilled") {
                                 addToast({
                                   title: "Document added successfully",
@@ -1914,11 +1907,10 @@ const ProjectDetails = () => {
                             }
                           }}
                         >
-                          <CardBody className="p-4 flex flex-col gap-4">
-                            {/* HEADER */}
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="text-[14px] font-semibold text-gray-800">
+                          <CardBody className="flex flex-col gap-4 p-4">
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="min-w-0">
+                                <h4 className="text-[14px] font-semibold text-gray-800 break-words">
                                   {doc?.documentName}
                                 </h4>
 
@@ -1944,7 +1936,7 @@ const ProjectDetails = () => {
                               </div>
 
                               <span
-                                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                                className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${
                                   doc?.status === "VERIFIED"
                                     ? "bg-green-100 text-green-700"
                                     : doc?.status === "PENDING"
@@ -1956,23 +1948,23 @@ const ProjectDetails = () => {
                               </span>
                             </div>
 
-                            {/* FILE */}
                             <div>
                               <p className="text-sm text-gray-500 mb-2">
                                 Uploaded File
                               </p>
 
                               {hasFile ? (
-                                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <div className="flex justify-between items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 shrink-0 bg-red-100 rounded-lg flex items-center justify-center">
                                       📄
                                     </div>
 
-                                    <div className="flex flex-col">
-                                      <span className="text-sm font-medium text-gray-800 truncate max-w-[180px]">
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="text-sm font-medium text-gray-800 truncate">
                                         {doc?.fileName || "Document.pdf"}
                                       </span>
+
                                       <span className="text-xs text-gray-400">
                                         {doc?.fileSizeKb
                                           ? `${doc.fileSizeKb} KB`
@@ -1983,7 +1975,7 @@ const ProjectDetails = () => {
 
                                   <Button
                                     size="sm"
-                                    className="bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
+                                    className="shrink-0 bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
                                     onPress={openPreview}
                                   >
                                     Download
@@ -1996,20 +1988,16 @@ const ProjectDetails = () => {
                               )}
                             </div>
 
-                            {/* EXPIRY */}
                             <div className="text-sm text-gray-500">
                               {doc?.expiryDate
-                                ? `Expiry: ${dayjs(doc.expiryDate).format(
-                                    "DD MMM YYYY",
-                                  )}`
+                                ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
                                 : doc?.permanent
                                   ? "No expiry date"
                                   : "No expiry date"}
                             </div>
 
-                            {/* VERIFY */}
-                            {doc?.status !== "VERIFIED" && hasFile && (
-                              <div className="pt-2">
+                            <div className="mt-auto flex shrink-0 flex-wrap justify-end gap-2 border-t border-default-100 pt-3">
+                              {doc?.status !== "VERIFIED" && hasFile && (
                                 <Button
                                   size="sm"
                                   color="primary"
@@ -2018,19 +2006,18 @@ const ProjectDetails = () => {
                                 >
                                   Verify
                                 </Button>
-                              </div>
-                            )}
+                              )}
 
-                            {/* UPLOAD */}
-                            {doc?.status !== "UPLOADED" && (
-                              <Button
-                                size="sm"
-                                color="secondary"
-                                onPress={() => openUploadForDoc(doc)}
-                              >
-                                Upload
-                              </Button>
-                            )}
+                              {doc?.status !== "UPLOADED" && (
+                                <Button
+                                  size="sm"
+                                  color="secondary"
+                                  onPress={() => openUploadForDoc(doc)}
+                                >
+                                  Upload
+                                </Button>
+                              )}
+                            </div>
                           </CardBody>
                         </Card>
                       );
@@ -2039,7 +2026,7 @@ const ProjectDetails = () => {
                 </div>
               </DrawerBody>
 
-              <DrawerFooter>
+              <DrawerFooter className="shrink-0 border-t border-default-200 bg-background">
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
@@ -2179,11 +2166,19 @@ const ProjectDetails = () => {
             });
           }
         }}
+        placement="center"
+        scrollBehavior="inside"
+        classNames={{
+          base: "max-h-[88vh]",
+        }}
       >
         <ModalContent>
           {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
+            <form
+              onSubmit={handleSubmit(onDocumentSubmit)}
+              className="flex max-h-[88vh] flex-col"
+            >
+              <ModalHeader className="flex shrink-0 flex-col gap-1 border-b border-default-200">
                 Upload document
                 {selectedDoc?.documentName ? (
                   <span className="text-xs text-default-400">
@@ -2192,205 +2187,173 @@ const ProjectDetails = () => {
                 ) : null}
               </ModalHeader>
 
-              <ModalBody className="max-h-[90vh] overflow-auto">
-                <form onSubmit={handleSubmit(onDocumentSubmit)}>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="col-span-2">
-                      <Controller
-                        name="fileUrl"
-                        control={control}
-                        render={({ field }) => (
-                          <FileUploader
-                            label="Upload file"
-                            value={field.value}
-                            errorMessage={errors.fileUrl?.message}
-                            onChange={(uploadedUrl) => {
-                              field.onChange(uploadedUrl);
-                            }}
-                            onUploadSuccess={(fileMeta) => {
-                              const uploadedFileUrl = fileMeta?.filePath || "";
-                              const uploadedFileName = fileMeta?.fileName || "";
-                              const fileSizeKb = fileMeta?.fileSize
-                                ? Math.ceil(Number(fileMeta.fileSize) / 1024)
-                                : 0;
-
-                              const fileFormat =
-                                getFileFormatFromMeta(fileMeta);
-
-                              setValue("fileUrl", uploadedFileUrl, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-
-                              setValue("fileName", uploadedFileName, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-
-                              setValue("fileSizeKb", fileSizeKb, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-
-                              setValue("fileFormat", fileFormat, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-                            }}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    {/* <Controller
-                      name="fileFormat"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          label="File Format"
-                          isRequired
-                          isDisabled
-                          selectedKeys={field.value ? [field.value] : []}
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            field.onChange(value);
-                          }}
-                          isInvalid={!!errors.fileFormat}
-                          errorMessage={errors.fileFormat?.message}
-                        >
-                          <SelectItem key="pdf">PDF</SelectItem>
-                          <SelectItem key="png">PNG</SelectItem>
-                          <SelectItem key="jpg">JPG</SelectItem>
-                          <SelectItem key="doc">DOC</SelectItem>
-                          <SelectItem key="docx">DOCX</SelectItem>
-                          <SelectItem key="xls">XLS</SelectItem>
-                          <SelectItem key="xlsx">XLSX</SelectItem>
-                          <SelectItem key="csv">CSV</SelectItem>
-                          <SelectItem key="txt">TXT</SelectItem>
-                          <SelectItem key="gif">GIF</SelectItem>
-                          <SelectItem key="webp">WEBP</SelectItem>
-                        </Select>
-                      )}
-                    /> */}
-
+              <ModalBody className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="col-span-2">
                     <Controller
-                      name="isPermanent"
+                      name="fileUrl"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          label="Permanent Document?"
-                          isRequired
-                          selectedKeys={
-                            field.value !== undefined
-                              ? [field.value.toString()]
-                              : []
-                          }
-                          onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            const boolValue = value === "true";
-
-                            field.onChange(boolValue);
-                            setIsPermanent(boolValue);
-
-                            if (boolValue) {
-                              setValue("expiryDate", null, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-                            }
+                        <FileUploader
+                          label="Upload file"
+                          value={field.value}
+                          errorMessage={errors.fileUrl?.message}
+                          onChange={(uploadedUrl) => {
+                            field.onChange(uploadedUrl);
                           }}
-                          isInvalid={!!errors.isPermanent}
-                          errorMessage={errors.isPermanent?.message}
-                        >
-                          <SelectItem key="true">Yes, Permanent</SelectItem>
-                          <SelectItem key="false">No, Has Expiry</SelectItem>
-                        </Select>
-                      )}
-                    />
+                          onUploadSuccess={(fileMeta) => {
+                            const uploadedFileUrl = fileMeta?.filePath || "";
+                            const uploadedFileName = fileMeta?.fileName || "";
+                            const fileSizeKb = fileMeta?.fileSize
+                              ? Math.ceil(Number(fileMeta.fileSize) / 1024)
+                              : 0;
 
-                    {isPermanentValue === false && (
-                      <Controller
-                        name="expiryDate"
-                        control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            isRequired
-                            label="Expiry date"
-                            showMonthAndYearPickers
-                            minValue={today(getLocalTimeZone())}
-                            isInvalid={!!errors.expiryDate}
-                            errorMessage={errors.expiryDate?.message}
-                            value={
-                              field.value &&
-                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                                ? parseDate(field.value)
-                                : null
-                            }
-                            onChange={(value) => {
-                              const iso = value ? value.toString() : null;
-                              field.onChange(iso);
-                            }}
-                          />
-                        )}
-                      />
-                    )}
+                            const fileFormat = getFileFormatFromMeta(fileMeta);
 
-                    <Controller
-                      name="remarks"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          {...field}
-                          label="Remarks"
-                          minRows={3}
-                          placeholder="Add remarks..."
-                          className="col-span-2"
+                            setValue("fileUrl", uploadedFileUrl, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+
+                            setValue("fileName", uploadedFileName, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+
+                            setValue("fileSizeKb", fileSizeKb, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+
+                            setValue("fileFormat", fileFormat, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                          }}
                         />
-                      )}
-                    />
-
-                    <Controller
-                      name="isFromCompanyDoc"
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          isSelected={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          Is From Company Doc
-                        </Checkbox>
                       )}
                     />
                   </div>
 
-                  <ModalFooter className="px-0">
-                    <Button
-                      variant="light"
-                      onPress={() => {
-                        setIsPermanent(true);
-                        reset({
-                          fileUrl: "",
-                          fileName: "",
-                          fileSizeKb: 0,
-                          fileFormat: "",
-                          expiryDate: null,
-                          remarks: "",
-                          isFromCompanyDoc: false,
-                          isPermanent: true,
-                        });
-                        onClose();
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                  <Controller
+                    name="isPermanent"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        label="Permanent Document?"
+                        isRequired
+                        selectedKeys={
+                          field.value !== undefined
+                            ? [field.value.toString()]
+                            : []
+                        }
+                        onSelectionChange={(keys) => {
+                          const value = Array.from(keys)[0];
+                          const boolValue = value === "true";
 
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
+                          field.onChange(boolValue);
+                          setIsPermanent(boolValue);
+
+                          if (boolValue) {
+                            setValue("expiryDate", null, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                          }
+                        }}
+                        isInvalid={!!errors.isPermanent}
+                        errorMessage={errors.isPermanent?.message}
+                      >
+                        <SelectItem key="true">Yes, Permanent</SelectItem>
+                        <SelectItem key="false">No, Has Expiry</SelectItem>
+                      </Select>
+                    )}
+                  />
+
+                  {isPermanentValue === false && (
+                    <Controller
+                      name="expiryDate"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          isRequired
+                          label="Expiry date"
+                          showMonthAndYearPickers
+                          minValue={today(getLocalTimeZone())}
+                          isInvalid={!!errors.expiryDate}
+                          errorMessage={errors.expiryDate?.message}
+                          value={
+                            field.value &&
+                            /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                              ? parseDate(field.value)
+                              : null
+                          }
+                          onChange={(value) => {
+                            const iso = value ? value.toString() : null;
+                            field.onChange(iso);
+                          }}
+                        />
+                      )}
+                    />
+                  )}
+
+                  <Controller
+                    name="remarks"
+                    control={control}
+                    render={({ field }) => (
+                      <Textarea
+                        {...field}
+                        label="Remarks"
+                        minRows={3}
+                        maxRows={5}
+                        placeholder="Add remarks..."
+                        className="col-span-2"
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="isFromCompanyDoc"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        isSelected={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        Is From Company Doc
+                      </Checkbox>
+                    )}
+                  />
+                </div>
               </ModalBody>
-            </>
+
+              <ModalFooter className="shrink-0 border-t border-default-200 bg-background">
+                <Button
+                  type="button"
+                  variant="light"
+                  onPress={() => {
+                    setIsPermanent(true);
+                    reset({
+                      fileUrl: "",
+                      fileName: "",
+                      fileSizeKb: 0,
+                      fileFormat: "",
+                      expiryDate: null,
+                      remarks: "",
+                      isFromCompanyDoc: false,
+                      isPermanent: true,
+                    });
+                    onClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
           )}
         </ModalContent>
       </Modal>
