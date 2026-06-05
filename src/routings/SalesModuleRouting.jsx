@@ -32,6 +32,7 @@ import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
 import AllInvoice from "../accounts/organization/AllInvoice";
 import ServicePaymentTerm from "../sales/leads/ServicePaymentTerm";
 import SalesUnbill from "../sales/unbill/SalesUnbill";
+import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
 
 const SalesModuleRouting = () => {
   return (
@@ -165,6 +166,10 @@ const SalesModuleRouting = () => {
       <Route path="sales/allInvoice" element={<AllInvoice />} />
       <Route path="sales/proposal" element={<AllProposal />} />
       <Route path="sales/unbilled" element={<SalesUnbill />} />
+      <Route
+        path="sales/unbilled/:unbilledId/invoices"
+        element={<InvoicesByUnbilled />}
+      />
       <Route path="sales/discountedEstimate" element={<DiscountedEstimate />} />
       <Route path="sales/autoHistory" element={<AutoHistory />} />
       <Route path="sales/salesReport" element={<SalesReport />} />

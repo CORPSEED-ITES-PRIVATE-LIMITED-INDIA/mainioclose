@@ -34,7 +34,10 @@ import {
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { inrCurrency } from "../../common";
-import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import {
+  getInvoiceDetailById,
+  getInvoicesByUnbilledId,
+} from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
 import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
@@ -71,12 +74,12 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const InvoicesByUnbilled = () => {
   const dispatch = useDispatch();
-  const { userId } = useParams();
+  const { userId, unbilledId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const viewModal = useDisclosure();
-  const data = useSelector((state) => state.organization.allInvoiceList);
+  const data = useSelector((state) => state.organization.invoicesByUnbilled);
   const count = useSelector(
-    (state) => state.organization.allInvoiceList?.length,
+    (state) => state.organization.invoicesByUnbilled?.length,
   );
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
@@ -103,7 +106,15 @@ const InvoicesByUnbilled = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
 
   useEffect(() => {
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+    dispatch(
+      getInvoicesByUnbilledId({
+        userId,
+        unbilledId,
+        page,
+        size: rowsPerPage,
+        status,
+      }),
+    );
     dispatch(getAllInvoiceCount({ userId, status }));
   }, [dispatch, userId, status]);
 

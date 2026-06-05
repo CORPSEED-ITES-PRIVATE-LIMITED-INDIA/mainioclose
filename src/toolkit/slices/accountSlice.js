@@ -491,6 +491,16 @@ export const releaseProcurementPaymentRequestAccounts = createAsyncThunk(
   },
 );
 
+export const getInvoicesByUnbilledId = createAsyncThunk(
+  "getInvoicesByUnbilledId",
+  async ({ userId, unbilledId, page, size }) => {
+    const response = await api.get(
+      `/accountService/api/v1/invoices/by-unbilled?userId=${userId}&unbilledId=${unbilledId}&page=${page}&size=${size}`,
+    );
+    return response.data;
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -513,6 +523,7 @@ const AccountSlice = createSlice({
     tdsDetail: {},
     procurementPurchaseOrderList: [],
     procurementPaymentRequestList: [],
+    invoicesByUnbilled: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -732,7 +743,7 @@ const AccountSlice = createSlice({
     builder.addCase(getProcurementPurchaseOrder.fulfilled, (state, action) => {
       state.loading = "success";
       state.procurementPurchaseOrderList = action.payload.data || [];
-      console.log("One Success:",action.payload.data);
+      console.log("One Success:", action.payload.data);
     });
     builder.addCase(getProcurementPurchaseOrder.rejected, (state) => {
       state.loading = "rejected";
@@ -752,6 +763,18 @@ const AccountSlice = createSlice({
     builder.addCase(getProcurementPaymentRequestList.rejected, (state) => {
       state.loading = "rejected";
       state.procurementPaymentRequestList = [];
+    });
+
+    builder.addCase(getInvoicesByUnbilledId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getInvoicesByUnbilledId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.invoicesByUnbilled = action.payload || [];
+    });
+    builder.addCase(getInvoicesByUnbilledId.rejected, (state) => {
+      state.loading = "rejected";
+      state.invoicesByUnbilled = [];
     });
   },
 });

@@ -37,14 +37,18 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 import {
+  getAllInvoice,
   getAllUnbillCount,
   getAllUnbillList,
   searchUnbilledByCompanyNameAndUnbilled,
 } from "../../toolkit/slices/organizationSlice";
 import {
   createCreditNotes,
+  getInvoicesByUnbilledId,
   getTdsDetailByEstimateId,
 } from "../../toolkit/slices/accountSlice";
+import FileUploader from "../../components/FileUploader";
+import NewSelect from "../../components/NewSelect";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -61,7 +65,7 @@ export const columns = [
   { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
   { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
   { name: "ADDED BY", uid: "addedBy" },
-  // { name: "ACTIONS", uid: "actions" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
@@ -82,7 +86,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "currentReceivedAmount",
   "outstandingAmount",
   "addedBy",
-  // "actions",
+  "actions",
 ];
 
 const SalesUnbill = () => {
@@ -95,6 +99,9 @@ const SalesUnbill = () => {
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const invoices = useSelector(
+    (state) => state.organization.invoicesByUnbilled,
+  );
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department,
@@ -130,6 +137,8 @@ const SalesUnbill = () => {
   const [creditNoteData, setCreditNoteData] = useState({
     refundAmount: "",
     reason: "",
+    attachment: "",
+    invoiceIds: [],
   });
   const [creditNoteRow, setCreditNoteRow] = useState(null);
 
@@ -376,12 +385,15 @@ const SalesUnbill = () => {
         );
       case "unbillNo":
         return (
-          <p className="text-sm capitalize">
+          <Link
+            to={`${rowData?.id}/invoices`}
+            className="text-sm capitalize font-medium"
+          >
             {`${rowData?.unbilledNumber}`}
             {rowData?.advanceInvoiceFlag
               ? ` / ${rowData?.advanceInvoiceNumber}`
               : ``}{" "}
-          </p>
+          </Link>
         );
       case "service":
         return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
@@ -433,6 +445,15 @@ const SalesUnbill = () => {
                   <DropdownItem
                     key="credit-note"
                     onPress={() => {
+                      dispatch(
+                        getInvoicesByUnbilledId({
+                          userId,
+                          unbilledId: rowData?.id,
+                          page,
+                          size: rowsPerPage,
+                          status,
+                        }),
+                      );
                       setCreditNoteRow(rowData);
                       setCreditNoteData({
                         refundAmount: "",
@@ -1275,6 +1296,29 @@ const SalesUnbill = () => {
                     setCreditNoteData((prev) => ({
                       ...prev,
                       refundAmount: e.target.value,
+                    }))
+                  }
+                />
+
+                <FileUploader
+                  value={creditNoteData.attachment}
+                  onChange={(e) =>
+                    setCreditNoteData((prev) => ({
+                      ...prev,
+                      attachment: e.target.value,
+                    }))
+                  }
+                />
+
+                <NewSelect
+                  data={invoices}
+                  labelKey={"invoiceNumber"}
+                  selectionMode="multiple"
+                  valueKey="id"
+                  onChange={(value) =>
+                    setCreditNoteData((prev) => ({
+                      ...prev,
+                      invoiceId: value,
                     }))
                   }
                 />
