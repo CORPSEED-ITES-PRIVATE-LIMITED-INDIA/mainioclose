@@ -701,6 +701,62 @@ export const getAllPaymentTermList = createAsyncThunk(
   },
 );
 
+export const createPaymentType = createAsyncThunk(
+  "paymentTypes/createPaymentType",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/accountService/api/payment-types",
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to create payment type",
+      );
+    }
+  },
+);
+
+export const updatePaymentType = createAsyncThunk(
+  "paymentTypes/updatePaymentType",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/payment-types/${id}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to update payment type",
+      );
+    }
+  },
+);
+
+export const deletePaymentType = createAsyncThunk(
+  "paymentTypes/deletePaymentType",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/accountService/api/payment-types/${id}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to delete payment type",
+      );
+    }
+  },
+);
+
 export const getAllMenus = createAsyncThunk("getAllMenus", async () => {
   const response = await api.get(`/leadService/api/menus`);
   console.log("API DATA:", response);

@@ -828,6 +828,56 @@ export const createProcurementPurchaseOrder = createAsyncThunk(
   },
 );
 
+export const createProcurementPaymentRequestByOrderId = createAsyncThunk(
+  "procurement/createProcurementPaymentRequestByOrderId",
+  async ({ procurementOrderId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/procurement-payment-requests/procurement-order/${procurementOrderId}`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to create procurement payment request",
+      );
+    }
+  },
+);
+
+export const updateProcurementPaymentRequestByOrderId = createAsyncThunk(
+  "procurement/updateProcurementPaymentRequestByOrderId",
+  async ({ procurementOrderId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/purchase-orders/${procurementOrderId}/updateStatus`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to create procurement payment request",
+      );
+    }
+  },
+);
+
+export const getProcurementPaymentRequestByOrderId = createAsyncThunk(
+  "getProcurementPaymentRequestByOrderId",
+  async ({ procurementOrderId, page, size }) => {
+    const response = await api.get(
+      `/operationService/api/procurement-payment-requests/byPurchaseOrderId/${procurementOrderId}?page=${page - 1}&size=${size}`,
+    );
+    return response.data;
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -850,9 +900,10 @@ export const OperationSlice = createSlice({
     legalRequestList: [],
     legalRequestCount: 0,
     servicePaymentTerm: [],
-    procurementOrderByPurchaseIdList:[],
-procurementOrderByPurchaseIdLoading: false,
-procurementOrderByPurchaseIdError: null,
+    procurementOrderByPurchaseIdList: [],
+    procurementOrderByPurchaseIdLoading: false,
+    procurementOrderByPurchaseIdError: null,
+    paymentRequestByPoId: {},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1171,18 +1222,43 @@ procurementOrderByPurchaseIdError: null,
       state.loading = "rejected";
       state.servicePaymentTerm = [];
     });
-builder.addCase(getProcurementOrderByPurchaseId.pending, (state) => {
-  state.procurementOrderByPurchaseIdLoading = true;
-  state.procurementOrderByPurchaseIdError = null;
-})
-builder.addCase(getProcurementOrderByPurchaseId.fulfilled, (state, action) => {
-  state.procurementOrderByPurchaseIdLoading = false;
-  state.procurementOrderByPurchaseId = action.payload;
-})
-builder.addCase(getProcurementOrderByPurchaseId.rejected, (state, action) => {
-  state.procurementOrderByPurchaseIdLoading = false;
-  state.procurementOrderByPurchaseIdError = action.payload;
-});}
+
+    builder.addCase(getProcurementOrderByPurchaseId.pending, (state) => {
+      state.procurementOrderByPurchaseIdLoading = true;
+      state.procurementOrderByPurchaseIdError = null;
+    });
+    builder.addCase(
+      getProcurementOrderByPurchaseId.fulfilled,
+      (state, action) => {
+        state.procurementOrderByPurchaseIdLoading = false;
+        state.procurementOrderByPurchaseIdList = action.payload;
+      },
+    );
+    builder.addCase(
+      getProcurementOrderByPurchaseId.rejected,
+      (state, action) => {
+        state.procurementOrderByPurchaseIdLoading = false;
+        state.procurementOrderByPurchaseIdError = action.payload;
+      },
+    );
+
+    builder.addCase(getProcurementPaymentRequestByOrderId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getProcurementPaymentRequestByOrderId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.paymentRequestByPoId = action.payload;
+      },
+    );
+    builder.addCase(
+      getProcurementPaymentRequestByOrderId.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+      },
+    );
+  },
 });
 
 export default OperationSlice.reducer;

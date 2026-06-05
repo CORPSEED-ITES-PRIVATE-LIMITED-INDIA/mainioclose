@@ -29,47 +29,79 @@ import {
   getProcurementPaymentRequestList,
   releaseProcurementPaymentRequest,
 } from "../../toolkit/slices/accountSlice";
-// import {
-//   approveProcurementPaymentRequest,
-//   getAllPaymentApprovals,
-//   getProcurementPaymentRequestList,
-//   getProcurementPurchaseOrder,
-//   rejectProcurementPaymentRequest,
-//   releaseProcurementPaymentRequest,
-// } from "../toolkit/slices/accountSlice";
+import { getProcurementPaymentRequestByOrderId } from "../../toolkit/slices/operationSlice";
+import { inrCurrency } from "../../common";
+import dayjs from "dayjs";
 
 const columns = [
-  { name: "ID", uid: "companyId" },
-  { name: "COMPANY", uid: "companyName", sortable: true },
-  { name: "GST", uid: "gstNo" },
-  { name: "ASSIGNEE", uid: "assignee" },
-  { name: "PRIMARY ADDRESS", uid: "address" },
-  { name: "SECONDARY ADDRESS", uid: "secondaryAddress" },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "ID", uid: "id" },
+  { name: "PO NO.", uid: "poNumber", sortable: true },
+  { name: "PROJECT NAME", uid: "projectName" },
+  { name: "PROJECT NO.", uid: "projectNo" },
+  { name: "VENDOR NAME", uid: "vendorName" },
+  { name: "INVOICE AMOUNT", uid: "invoiceAmount" },
+  { name: "PAYABLE AMOUNT", uid: "payableAmount" },
+  { name: "STATUS", uid: "status" },
+  { name: "APPROVED DATE", uid: "approvedDate" },
+  { name: "PAYMENT RELEASED DATE", uid: "paymentReleasedDate" },
+  { name: "ATTACHMENTS", uid: "proofAttachmentUrls" },
 ];
 
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
+const getStatusColor = (status) => {
+  switch (status) {
+    case "DRAFT":
+      return "default";
+
+    case "PENDING_APPROVAL":
+      return "warning";
+
+    case "APPROVED":
+      return "success";
+
+    case "REJECTED":
+      return "danger";
+
+    case "RELEASED":
+    case "PO_RELEASED":
+      return "primary";
+
+    case "PARTIALLY_COMPLETED":
+      return "warning";
+
+    case "COMPLETED":
+    case "PAYMENT_DONE":
+      return "success";
+
+    default:
+      return "default";
+  }
+};
+
 const INITIAL_VISIBLE_COLUMNS = [
-  "companyName",
-  "gstNo",
+  "poNumber",
+  "projectName",
+  "projectNo",
+  "vendorName",
+  "invoiceAmount",
+  "payableAmount",
   "status",
-  "assignee",
-  "address",
-  "secondaryAddress",
-  "actions",
+  "approvedDate",
+  "paymentReleasedDate",
+  "proofAttachmentUrls",
 ];
 
 const ProjectPR = () => {
-  const { userId } = useParams();
+  const { userId, poId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.account.procurementPaymentRequestList?.totalElements,
+    (state) => state.operation.paymentRequestByPoId?.totalElements,
   );
   const data = useSelector(
-    (state) => state.account.procurementPaymentRequestList?.content,
+    (state) => state.operation.paymentRequestByPoId?.content,
   );
   const approveModal = useDisclosure();
   const rejectModal = useDisclosure();
@@ -84,7 +116,7 @@ const ProjectPR = () => {
     direction: "ascending",
   });
   const [filteration, setFilteration] = useState({
-    userId: userId,
+    procurementOrderId: poId,
     page: 1,
     size: 50,
     status: "PENDING",
@@ -94,7 +126,7 @@ const ProjectPR = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getProcurementPaymentRequestList(filteration));
+    dispatch(getProcurementPaymentRequestByOrderId(filteration));
   }, [dispatch, filteration]);
 
   const headerColumns = useMemo(() => {
@@ -178,81 +210,88 @@ const ProjectPR = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "companyName":
+      case "projectName":
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
               <p className="font-normal capitalize">
-                {rowData?.companyName || "-"}
+                {rowData?.projectName || "-"}
               </p>
               <p className="font-normal text-xs text-gray-400">
-                Age : {rowData?.age || "-"}
+                {rowData?.projectNo || "-"}
               </p>
             </div>
           </div>
         );
 
-      case "gstNo":
+      case "vendorName":
         return (
           <div className="flex flex-col">
             <span className="font-normal capitalize">
-              {rowData?.gstNo || "Unknown"}
+              {rowData?.vendorName || "Unknown"}
             </span>
-            {rowData?.gstType && (
-              <Chip size="sm" className="text-tiny capitalize" variant="flat">
-                {rowData?.gstType}
-              </Chip>
-            )}
           </div>
         );
-      case "assignee":
+      case "invoiceAmount":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.assignee || "-"}</span>
+            <span className="font-normal">
+              {inrCurrency(rowData?.invoiceAmount) || "-"}
+            </span>
           </div>
         );
-      case "address":
-        return rowData?.address ? (
+      case "payableAmount":
+        return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.address || "-"}</span>
-            <div className="flex items-center gap-1">
-              {" "}
-              <span className="text-gray-400 text-tiny">
-                {rowData?.city || "-"},
-              </span>
-              <span className="text-gray-400 text-tiny">
-                {rowData?.state || "-"},
-              </span>
-            </div>
+            <span className="font-normal">
+              {inrCurrency(rowData?.payableAmount) || "-"}
+            </span>
+          </div>
+        );
+      case "status":
+        return (
+          <div className="flex flex-col">
+            <Chip
+              size="sm"
+              className="text-tiny capitalize"
+              variant="flat"
+              color={getStatusColor(rowData?.status)}
+            >
+              {rowData?.status || "-"}
+            </Chip>
+          </div>
+        );
+      case "approvedDate":
+        return (
+          <div className="flex flex-col">
+            {dayjs(rowData?.approvedDate).format("DD MMM YYYY hh:mm A") || "-"}
+          </div>
+        );
+      case "paymentReleasedDate":
+        return (
+          <div className="flex flex-col">
+            {dayjs(rowData?.paymentReleasedDate).format(
+              "DD MMM YYYY hh:mm A",
+            ) || "-"}
+          </div>
+        );
+      case "proofAttachmentUrls":
+        return (
+          <div className="flex flex-col">
+            {rowData?.proofAttachmentUrls?.map((url, index) => (
+              <a
+                key={index}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                Proof Attachment {index + 1}
+              </a>
+            )) || "-"}
+          </div>
+        );
 
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
-                {rowData?.country || "-"}
-              </span>
-            </div>
-          </div>
-        ) : (
-          "-"
-        );
-      case "secondaryAddress":
-        return rowData?.secAddress ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.secAddress || "-"}</span>
-            <div className="flex items-center gap-1">
-              {" "}
-              <span className="text-gray-400">{rowData?.secCity || "-"}</span>,
-              <span className="text-gray-400">{rowData?.secState || "-"}</span>,
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
-                {rowData?.seCountry || "-"}
-              </span>
-            </div>
-          </div>
-        ) : (
-          "-"
-        );
-      case "actions":
         return (
           <Dropdown>
             <DropdownTrigger>

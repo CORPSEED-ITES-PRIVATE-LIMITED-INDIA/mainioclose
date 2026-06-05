@@ -26,6 +26,7 @@ import ProposalCategory from "../setting/proposalAndBrouchers/category/ProposalC
 import ProposalSubCategory from "../setting/proposalAndBrouchers/subCategory/ProposalSubCategory";
 import ProposalService from "../setting/proposalAndBrouchers/service/ProposalService";
 import ProductServiceDetails from "../setting/products/ProductServiceDetails";
+import PaymentTems from "../setting/paymentTerm/PaymentTems";
 
 const ERPSettingRouting = () => {
   return (
@@ -92,6 +93,7 @@ const ERPSettingRouting = () => {
       />
 
       <Route path="settings/ckEditorTokens" element={<CkEditorToken />} />
+      <Route path="settings/paymentTerms" element={<PaymentTems />} />
     </>
   );
 };

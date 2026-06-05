@@ -33,6 +33,7 @@ import {
 } from "../../toolkit/slices/leadSlice";
 import TextEditor from "../../components/TextEditor";
 import {
+  getAllPaymentTermList,
   getAllSolutionList,
   getServiceBrouchersServiceDetailBySolutionId,
   getSolutionDetailByName,
@@ -225,6 +226,7 @@ const Proposal = () => {
     (state) => state.setting.serviceBrouchersDetail,
   );
   const company = useSelector((state) => state.company.basicCompanyDetail);
+  const paymentTerms = useSelector((state) => state.setting.paymentTermList);
 
   const [proposalAntForm] = Form.useForm();
 
@@ -303,6 +305,7 @@ const Proposal = () => {
     ["CANCELLED", "INITIATED"].includes(status?.toUpperCase());
 
   useEffect(() => {
+    dispatch(getAllPaymentTermList());
     dispatch(getAllProposalByLeadId(leadId));
     dispatch(getAllSolutionList(userId));
     dispatch(getEstimatesByLeadId(leadId));
@@ -1465,7 +1468,10 @@ const Proposal = () => {
         <Select
           size="large"
           placeholder="Select payment term"
-          options={PAYMENT_TERM_OPTIONS}
+          options={paymentTerms?.map((item) => ({
+            label: item.name,
+            value: item.name,
+          }))}
           allowClear
         />
       </Form.Item>

@@ -376,12 +376,12 @@ export const navItems = [
         url: "settings/menu",
         key: "menu",
       },
-      // {
-      //   title: "Proposal & Template",
-      //   icon: "",
-      //   url: "settings/proposalTemplate",
-      //   key: "proposalTemplate",
-      // },
+      {
+        title: "Payment terms",
+        icon: "",
+        url: "settings/paymentTerms",
+        key: "paymentTerms",
+      },
       {
         title: "CKEditor Key",
         icon: "",
