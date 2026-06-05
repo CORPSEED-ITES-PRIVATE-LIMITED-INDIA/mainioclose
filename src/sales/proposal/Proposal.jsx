@@ -51,9 +51,9 @@ const defaultValues = {
   mailTo: [],
   mailCc: [],
   mailBcc: [],
-  mailSubject: "",
+  emailSubject: "",
   paymentTerm: "",
-  mailBody: "<p></p>",
+  emailBody: "<p></p>",
   scopeOfWork: "<p></p>",
 };
 
@@ -346,7 +346,7 @@ const Proposal = () => {
                 );
               }
               proposalAntForm.setFieldsValue({
-                mailSubject: `Corpseed Proposal for - ${res?.payload?.name}`,
+                emailSubject: `Corpseed Proposal for - ${res?.payload?.name}`,
               });
             }
           });
@@ -378,11 +378,11 @@ const Proposal = () => {
     setMailBody(apiMailBody);
     setData(apiScopeOfWork);
 
-    const currentSubject = proposalAntForm.getFieldValue("mailSubject");
+    const currentSubject = proposalAntForm.getFieldValue("emailSubject");
 
     proposalAntForm.setFieldsValue({
-      mailSubject: apiSubject || currentSubject || "",
-      mailBody: apiMailBody,
+      emailSubject: apiSubject || currentSubject || "",
+      emailBody: apiMailBody,
       scopeOfWork: apiScopeOfWork,
     });
   }, [serviceBrouchersDetail, proposalAntForm]);
@@ -410,9 +410,9 @@ const Proposal = () => {
       mailTo: proposal?.mailTo || [],
       mailCc: proposal?.mailCc || [],
       mailBcc: proposal?.mailBcc || [],
-      mailSubject: proposal?.mailSubject || "",
+      emailSubject: proposal?.emailSubject || "",
       paymentTerm: proposal?.paymentTerm || "",
-      mailBody: finalMailBody,
+      emailBody: finalMailBody,
       scopeOfWork: finalScopeOfWork,
     });
   };
@@ -474,18 +474,18 @@ const Proposal = () => {
       mailTo: existingMailTo,
       mailCc: [],
       mailBcc: [],
-      mailSubject:
+      emailSubject:
         apiSubject ||
         (solutionDetail?.name
           ? `Corpseed Proposal for - ${solutionDetail.name}`
           : ""),
       paymentTerm: "",
-      mailBody: apiMailBody,
+      emailBody: apiMailBody,
       scopeOfWork: apiScopeOfWork,
     });
 
     proposalAntForm.setFields([
-      { name: "mailBody", errors: [] },
+      { name: "emailBody", errors: [] },
       { name: "scopeOfWork", errors: [] },
     ]);
 
@@ -567,10 +567,10 @@ const Proposal = () => {
 
       proposalAntForm.setFieldsValue({
         template: "<h2>Your proposal </h2>",
-        mailBody: "<h2>Your email body</h2>",
+        emailBody: "<h2>Your email body</h2>",
       });
 
-      proposalAntForm.validateFields(["template", "mailBody"]);
+      proposalAntForm.validateFields(["template", "emailBody"]);
       templateModal.onClose();
       return;
     }
@@ -597,10 +597,10 @@ const Proposal = () => {
       setMailBody(item.body);
 
       proposalAntForm.setFieldsValue({
-        mailBody: item.body,
+        emailBody: item.body,
       });
 
-      proposalAntForm.validateFields(["mailBody"]);
+      proposalAntForm.validateFields(["emailBody"]);
     }
     templateModal.onClose();
   };
@@ -716,9 +716,9 @@ const Proposal = () => {
       companyUnitId: Number(company?.units?.[0]?.id),
       contactId: Number(company?.units?.[0]?.unitContacts?.[0]?.id),
       solutionId: Number(solutionDetail?.id),
-      mailSubject: values?.mailSubject || "",
+      emailSubject: values?.emailSubject || "",
       paymentTerm: values?.paymentTerm || "",
-      mailBody: values?.mailBody || "<p></p>",
+      emailBody: values?.emailBody || "<p></p>",
       scopeOfWork: values?.scopeOfWork || "<p></p>",
 
       mailTo: Array.isArray(values?.mailTo) ? values.mailTo : [],
@@ -1451,7 +1451,7 @@ const Proposal = () => {
 
       <Form.Item
         label="Subject"
-        name="mailSubject"
+        name="emailSubject"
         rules={[{ required: true, message: "Please give subject" }]}
       >
         <AntInput placeholder="Enter proposal subject" />
@@ -1523,7 +1523,7 @@ const Proposal = () => {
       />
 
       <Form.Item
-        name="mailBody"
+        name="emailBody"
         hidden
         rules={[
           {
@@ -1565,10 +1565,10 @@ const Proposal = () => {
               setMailBody(value);
 
               proposalAntForm.setFieldsValue({
-                mailBody: value,
+                emailBody: value,
               });
 
-              proposalAntForm.validateFields(["mailBody"]);
+              proposalAntForm.validateFields(["emailBody"]);
             }}
           />
         </div>
@@ -1792,7 +1792,7 @@ const Proposal = () => {
                         {proposal?.proposalNumber || "-"}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 truncate">
-                        {proposal?.mailSubject || "-"}
+                        {proposal?.emailSubject || "-"}
                       </p>
                     </div>
 
