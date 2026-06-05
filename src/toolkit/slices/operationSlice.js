@@ -878,6 +878,22 @@ export const getProcurementPaymentRequestByOrderId = createAsyncThunk(
   },
 );
 
+export const createLegalRequest = createAsyncThunk(
+  "operation/createLegalRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/api/legal-requests", data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to create legal request",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

@@ -37,6 +37,7 @@ import {
   addCommentInProject,
   addExpensesInProject,
   addNoteInProject,
+  createLegalRequest,
   getActivitiesByProjectId,
   getActivitiesByTypeAndProjectId,
   getClientLogInCredentialDetailForPortal,
@@ -552,6 +553,9 @@ const ProjectDetails = () => {
   const [legalRequestData, setLegalRequestData] = useState({
     legalRequestTitle: "",
     notes: "",
+    documents: [],
+    tatInDays: "",
+    tatReason: "",
   });
 
   const [vendorMapData, setVendorMapData] = useState({
@@ -1053,7 +1057,76 @@ const ProjectDetails = () => {
 
   const [draggedDoc, setDraggedDoc] = useState(null);
 
-  const handleAddLegalRequest = () => {};
+  const handleAddLegalRequest = () => {
+    if (!legalRequestData.legalRequestTitle?.trim()) {
+      addToast({
+        title: "Request title required",
+        description: "Please enter legal request title.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!legalRequestData.notes?.trim()) {
+      addToast({
+        title: "Description required",
+        description: "Please enter request description.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const selectedDocumentIds = Array.isArray(legalRequestData.documents)
+      ? legalRequestData.documents
+      : [];
+
+    const payload = {
+      id: 0,
+      projectId: Number(projectId),
+      milestoneId: Number(selectedMilestone?.milestoneId || 0),
+      tatInDays: Number(legalRequestData.tatInDays || 0),
+      tatReason: legalRequestData.tatReason || "",
+      status: "PENDING",
+      milestoneAssigneeId: Number(selectedMilestone?.id || 0),
+      createdById: Number(userId),
+      updatedById: Number(userId),
+      assignedToLegal: 0,
+      statusReason: "",
+      notes: legalRequestData.notes,
+      viewedBy: 0,
+      documents: selectedDocumentIds.map(String),
+      legalRequestTitle: legalRequestData.legalRequestTitle,
+    };
+
+    dispatch(createLegalRequest(payload)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Success",
+          description: "Legal request created successfully.",
+          color: "success",
+        });
+
+        legalSupportModal.onClose();
+
+        setLegalRequestData({
+          legalRequestTitle: "",
+          notes: "",
+          documents: [],
+          tatInDays: "",
+          tatReason: "",
+        });
+      } else {
+        addToast({
+          title: "Failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Something went wrong while creating legal request.",
+          color: "danger",
+        });
+      }
+    });
+  };
 
   const handleMapVendorWithProject = () => {
     const procurementMilestoneAssignmentId =
@@ -2828,70 +2901,153 @@ const ProjectDetails = () => {
       <Modal
         size="2xl"
         isOpen={legalSupportModal.isOpen}
-        onOpenChange={legalSupportModal.onOpenChange}
+        onOpenChange={(open) => {
+          legalSupportModal.onOpenChange(open);
+
+          if (!open) {
+            setLegalRequestData({
+              legalRequestTitle: "",
+              notes: "",
+              documents: [],
+              tatInDays: "",
+              tatReason: "",
+            });
+          }
+        }}
+        placement="center"
+        scrollBehavior="inside"
+        classNames={{
+          base: "max-h-[88vh]",
+        }}
       >
         <ModalContent>
           {(onClose) => (
-            <Form
-              className="w-full"
+            <form
+              className="flex max-h-[88vh] w-full flex-col"
               onSubmit={(e) => {
                 e.preventDefault();
-                let data = Object.fromEntries(new FormData(e.currentTarget));
-                handleAddLegalRequest(data);
+                handleAddLegalRequest();
               }}
             >
-              <ModalHeader>Legal request</ModalHeader>
-              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
-                <Input
-                  label="Request title"
-                  name="legalRequestTitle"
-                  isRequired
-                  errorMessage="please enter request title"
-                  value={legalRequestData.legalRequestTitle}
-                  onChange={(e) =>
-                    setLegalRequestData((prev) => ({
-                      ...prev,
-                      legalRequestTitle: e.target.value,
-                    }))
-                  }
-                />
-                <NewSelect
-                  data={requiredDocsList}
-                  label={"Select document"}
-                  name={""}
-                  labelKey={"documentName"}
-                  valueKey={"documentId"}
-                  value={legalRequestData?.legalRequestTitle}
-                  onChange={(e) =>
-                    setLegalRequestData((prev) => ({
-                      ...prev,
-                      legalRequestTitle: e,
-                    }))
-                  }
-                />
+              <ModalHeader className="flex shrink-0 flex-col gap-1 border-b border-default-200">
+                Legal Request
+                {selectedMilestone?.milestoneName && (
+                  <span className="text-xs font-normal text-default-500">
+                    Milestone: {selectedMilestone.milestoneName}
+                  </span>
+                )}
+              </ModalHeader>
 
-                <Textarea
-                  label="Request description"
-                  name="notes"
-                  isRequired
-                  errorMessage="please enter description"
-                  value={legalRequestData.notes}
-                  onChange={(e) =>
-                    setLegalRequestData((prev) => ({
-                      ...prev,
-                      notes: e.target.value,
-                    }))
-                  }
-                />
+              <ModalBody className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    label="Request title"
+                    name="legalRequestTitle"
+                    isRequired
+                    placeholder="Enter request title"
+                    errorMessage="Please enter request title"
+                    value={legalRequestData.legalRequestTitle}
+                    onChange={(e) =>
+                      setLegalRequestData((prev) => ({
+                        ...prev,
+                        legalRequestTitle: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Select
+                    label="Select documents"
+                    placeholder="Select related documents"
+                    selectionMode="multiple"
+                    selectedKeys={new Set(legalRequestData.documents)}
+                    onSelectionChange={(keys) => {
+                      setLegalRequestData((prev) => ({
+                        ...prev,
+                        documents: Array.from(keys),
+                      }));
+                    }}
+                  >
+                    {(requiredDocsList || []).map((doc) => (
+                      <SelectItem
+                        key={String(
+                          doc?.documentId || doc?.requiredDocumentId || doc?.id,
+                        )}
+                      >
+                        {doc?.documentName || "Unnamed Document"}
+                      </SelectItem>
+                    ))}
+                  </Select>
+
+                  <Input
+                    label="TAT in Days"
+                    name="tatInDays"
+                    type="number"
+                    min="0"
+                    placeholder="Enter TAT in days"
+                    value={legalRequestData.tatInDays}
+                    onChange={(e) =>
+                      setLegalRequestData((prev) => ({
+                        ...prev,
+                        tatInDays: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="TAT Reason"
+                    name="tatReason"
+                    placeholder="Enter TAT reason"
+                    value={legalRequestData.tatReason}
+                    onChange={(e) =>
+                      setLegalRequestData((prev) => ({
+                        ...prev,
+                        tatReason: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Textarea
+                    label="Request description"
+                    name="notes"
+                    isRequired
+                    minRows={4}
+                    maxRows={6}
+                    placeholder="Enter request description"
+                    errorMessage="Please enter description"
+                    value={legalRequestData.notes}
+                    onChange={(e) =>
+                      setLegalRequestData((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </ModalBody>
 
-              <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button onPress={onClose}>Close</Button>
+              <ModalFooter className="shrink-0 border-t border-default-200 bg-background">
+                <Button
+                  type="button"
+                  variant="light"
+                  onPress={() => {
+                    setLegalRequestData({
+                      legalRequestTitle: "",
+                      notes: "",
+                      documents: [],
+                      tatInDays: "",
+                      tatReason: "",
+                    });
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
+
                 <Button color="primary" type="submit">
                   Submit
                 </Button>
               </ModalFooter>
-            </Form>
+            </form>
           )}
         </ModalContent>
       </Modal>
