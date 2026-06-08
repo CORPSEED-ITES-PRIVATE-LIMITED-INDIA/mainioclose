@@ -32,6 +32,7 @@ import {
   approveCreditNote,
   rejectCreditNote,
 } from "../toolkit/slices/accountSlice";
+import PreviewComponent from "../components/PreviewComponent.jsx";
 
 export const columns = [
   { name: "DATE", uid: "date", sortable: true },
@@ -95,6 +96,11 @@ const CreditNote = () => {
   });
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionReasonError, setRejectionReasonError] = useState("");
+
+  const [attachmentPreviewModal, setAttachmentPreviewModal] = useState({
+    isOpen: false,
+    file: null,
+  });
 
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
@@ -337,12 +343,68 @@ const CreditNote = () => {
     ],
   );
 
+  const getCreditNoteAttachment = React.useCallback((rowData) => {
+    const attachment =
+      Array.isArray(rowData?.attachmentUrls) && rowData?.attachmentUrls?.length
+        ? rowData.attachmentUrls[0]
+        : rowData?.attachmentUrl ||
+          rowData?.attachment ||
+          rowData?.fileUrl ||
+          rowData?.filePath ||
+          null;
+
+    if (!attachment) return null;
+
+    if (typeof attachment === "string") {
+      return {
+        fileUrl: attachment,
+        fileName: attachment.split("?")[0].split("/").pop() || "Attachment",
+      };
+    }
+
+    return {
+      ...attachment,
+      fileUrl:
+        attachment?.fileUrl ||
+        attachment?.filePath ||
+        attachment?.url ||
+        attachment?.path ||
+        "",
+      fileName:
+        attachment?.fileName ||
+        attachment?.name ||
+        attachment?.originalName ||
+        "Attachment",
+      contentType: attachment?.contentType || attachment?.mimeType || "",
+      fileSize: attachment?.fileSize || attachment?.size || 0,
+    };
+  }, []);
+
   const handleActionsClick = React.useCallback(
     (key, rowData) => {
       const actionKey = String(key);
 
       if (actionKey === "viewCreditNote") {
         console.log("View Credit Note:", rowData);
+        return;
+      }
+
+      if (actionKey === "viewAttachment") {
+        const attachment = getCreditNoteAttachment(rowData);
+
+        if (!attachment?.fileUrl) {
+          addToast({
+            title: "Attachment not found",
+            description: "No attachment is available for this credit note.",
+            color: "warning",
+          });
+          return;
+        }
+
+        setAttachmentPreviewModal({
+          isOpen: true,
+          file: attachment,
+        });
         return;
       }
 
@@ -355,7 +417,7 @@ const CreditNote = () => {
         openRejectModal(rowData);
       }
     },
-    [handleApproveCreditNote, openRejectModal],
+    [handleApproveCreditNote, openRejectModal, getCreditNoteAttachment],
   );
 
   const renderCell = React.useCallback(
@@ -456,6 +518,7 @@ const CreditNote = () => {
               {inrCurrency(rowData?.refundAmount || 0)}
             </p>
           );
+
         case "creditAmount":
           return (
             <p className="text-sm font-medium">
@@ -502,6 +565,10 @@ const CreditNote = () => {
                 >
                   <DropdownItem key="viewCreditNote">
                     View Credit Note
+                  </DropdownItem>
+
+                  <DropdownItem key="viewAttachment">
+                    View Attachment
                   </DropdownItem>
 
                   {rowData?.status === "PENDING" ? (
@@ -829,6 +896,22 @@ const CreditNote = () => {
           )}
         </ModalContent>
       </Modal>
+
+      <PreviewComponent
+        isOpen={attachmentPreviewModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAttachmentPreviewModal({
+              isOpen: false,
+              file: null,
+            });
+          }
+        }}
+        file={attachmentPreviewModal.file}
+        title="Credit Note Attachment"
+        modalSize="full"
+        showDetailsPanelDefault={false}
+      />
     </>
   );
 };

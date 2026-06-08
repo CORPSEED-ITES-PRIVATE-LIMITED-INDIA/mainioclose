@@ -99,9 +99,7 @@ const SalesUnbill = () => {
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
-  const invoices = useSelector(
-    (state) => state.organization.invoicesByUnbilled,
-  );
+  const invoices = useSelector((state) => state.account.invoicesByUnbilled);
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department,
@@ -134,12 +132,13 @@ const SalesUnbill = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
   const [govtFeeDetail, setGovtFeeDetail] = useState();
   const [tdsDetail, setTdsDetail] = useState();
-  const [creditNoteData, setCreditNoteData] = useState({
+  const initialCreditNoteData = {
     refundAmount: "",
     reason: "",
     attachment: "",
     invoiceIds: [],
-  });
+  };
+  const [creditNoteData, setCreditNoteData] = useState(initialCreditNoteData);
   const [creditNoteRow, setCreditNoteRow] = useState(null);
 
   useEffect(() => {
@@ -261,16 +260,18 @@ const SalesUnbill = () => {
     }
 
     const payload = {
-      // unbilledId: creditNoteRow?.id,
+      unbilledId: creditNoteRow?.id,
       estimateNumber: creditNoteRow?.estimateNumber,
-      createdByUserId: userId,
+      createdByUserId: Number(userId),
       refundAmount: Number(creditNoteData.refundAmount),
-      reason: creditNoteData.reason,
+      reason: creditNoteData.reason.trim(),
+      attachment: creditNoteData.attachment,
+      invoiceIds: creditNoteData.invoiceIds || [],
     };
 
     try {
       const resp = await dispatch(createCreditNotes(payload));
-      console.log("Resp F:", resp);
+
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "Credit note created successfully!",
@@ -279,10 +280,7 @@ const SalesUnbill = () => {
 
         creditNoteModal.onClose();
         setCreditNoteRow(null);
-        setCreditNoteData({
-          refundAmount: "",
-          reason: "",
-        });
+        setCreditNoteData(initialCreditNoteData);
 
         dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
         dispatch(getAllUnbillCount({ userId, status }));
@@ -300,58 +298,59 @@ const SalesUnbill = () => {
     }
   };
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-    switch (columnKey) {
-      case "date":
-        return (
-          <div>
-            <p className="text-sm capitalize">
-              {dayjs(rowData?.date).format("DD-MM-YYYY")}
-            </p>
-            <Chip
-              size="sm"
-              color={
-                rowData?.status === "APPROVED"
-                  ? "success"
-                  : rowData?.status === "REJECTED"
-                    ? "danger"
-                    : "warning"
-              }
-            >
-              {rowData?.status}
-            </Chip>
-          </div>
-        );
-      case "estimateNumber":
-        return (
-          <div>
-            <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
-              onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
-            >
-              {rowData?.estimateNumber || "NA"}
-            </p>
-          </div>
-        );
-      case "governmentFee":
-        return (
-          <div>
-            <button
-              disabled={!rowData?.governmentFeeActiveFlag}
-              className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
-              onClick={() => {
-                handleGovtFeePreview(rowData.id);
-              }}
-            >
-              {rowData?.governmentFeeActiveFlag === true ? "True" : "False"}
-            </button>
-          </div>
-        );
-      case "tdsActive":
-        return (
-          <div className="w-full  max-w-[130px] rounded-md px-3 py-2">
-            {/* <button
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
+      switch (columnKey) {
+        case "date":
+          return (
+            <div>
+              <p className="text-sm capitalize">
+                {dayjs(rowData?.date).format("DD-MM-YYYY")}
+              </p>
+              <Chip
+                size="sm"
+                color={
+                  rowData?.status === "APPROVED"
+                    ? "success"
+                    : rowData?.status === "REJECTED"
+                      ? "danger"
+                      : "warning"
+                }
+              >
+                {rowData?.status}
+              </Chip>
+            </div>
+          );
+        case "estimateNumber":
+          return (
+            <div>
+              <p
+                className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+                onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+              >
+                {rowData?.estimateNumber || "NA"}
+              </p>
+            </div>
+          );
+        case "governmentFee":
+          return (
+            <div>
+              <button
+                disabled={!rowData?.governmentFeeActiveFlag}
+                className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
+                onClick={() => {
+                  handleGovtFeePreview(rowData.id);
+                }}
+              >
+                {rowData?.governmentFeeActiveFlag === true ? "True" : "False"}
+              </button>
+            </div>
+          );
+        case "tdsActive":
+          return (
+            <div className="w-full  max-w-[130px] rounded-md px-3 py-2">
+              {/* <button
               disabled={!rowData?.tdsActiveFlag}
               className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold transition
       ${
@@ -366,114 +365,121 @@ const SalesUnbill = () => {
               {rowData?.tdsActiveFlag === true ? "Active" : "Inactive"}
             </button> */}
 
-            {rowData?.tdsActiveFlag === true && (
-              <div className="mt-2 space-y-1 text-xs">
-                <div className="flex items-center gap-3">
-                  <span className="whitespace-nowrap font-semibold text-gray-900">
-                    ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
-                  </span>
-                </div>
+              {rowData?.tdsActiveFlag === true && (
+                <div className="mt-2 space-y-1 text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap font-semibold text-gray-900">
+                      ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="whitespace-nowrap font-semibold text-gray-400">
-                    {rowData?.tdsResponseDto?.tdsPercentage ?? 0}%
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap font-semibold text-gray-400">
+                      {rowData?.tdsResponseDto?.tdsPercentage ?? 0}%
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-      case "unbillNo":
-        return (
-          <Link
-            to={`${rowData?.id}/invoices`}
-            className="text-sm capitalize font-medium"
-          >
-            {`${rowData?.unbilledNumber}`}
-            {rowData?.advanceInvoiceFlag
-              ? ` / ${rowData?.advanceInvoiceNumber}`
-              : ``}{" "}
-          </Link>
-        );
-      case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-      case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
-      case "client":
-        return (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.contactName}</p>
-          </div>
-        );
-      case "totalAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalAmount)}
-          </p>
-        );
-      case "receivedAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.receivedAmount)}
-          </p>
-        );
-      case "currentReceivedAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.currentReceivedAmount)}
-          </p>
-        );
-      case "outstandingAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.outstandingAmount)}
-          </p>
-        );
-      case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                {rowData?.status === "APPROVED" && (
-                  <DropdownItem
-                    key="credit-note"
-                    onPress={() => {
-                      dispatch(
-                        getInvoicesByUnbilledId({
-                          userId,
-                          unbilledId: rowData?.id,
-                          page,
-                          size: rowsPerPage,
-                          status,
-                        }),
-                      );
-                      setCreditNoteRow(rowData);
-                      setCreditNoteData({
-                        refundAmount: "",
-                        reason: "",
-                      });
-                      creditNoteModal.onOpen();
-                    }}
-                  >
-                    Credit Note
-                  </DropdownItem>
-                )}
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+              )}
+            </div>
+          );
+        case "unbillNo":
+          return (
+            <Link
+              to={`${rowData?.id}/invoices`}
+              className="text-sm capitalize font-medium"
+            >
+              {`${rowData?.unbilledNumber}`}
+              {rowData?.advanceInvoiceFlag
+                ? ` / ${rowData?.advanceInvoiceNumber}`
+                : ``}{" "}
+            </Link>
+          );
+        case "service":
+          return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
+        case "company":
+          return <p className="text-sm capitalize">{rowData?.company}</p>;
+        case "client":
+          return (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm capitalize">{rowData?.contactName}</p>
+            </div>
+          );
+        case "totalAmount":
+          return (
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.totalAmount)}
+            </p>
+          );
+        case "receivedAmount":
+          return (
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.receivedAmount)}
+            </p>
+          );
+        case "currentReceivedAmount":
+          return (
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.currentReceivedAmount)}
+            </p>
+          );
+        case "outstandingAmount":
+          return (
+            <p className="text-sm capitalize">
+              {inrCurrency(rowData?.outstandingAmount)}
+            </p>
+          );
+        case "addedBy":
+          return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  {rowData?.status === "APPROVED" && (
+                    <DropdownItem
+                      key="credit-note"
+                      onPress={() => {
+                        dispatch(
+                          getInvoicesByUnbilledId({
+                            userId: Number(userId),
+                            unbilledId: rowData?.id,
+                            page: 1,
+                            size: 100,
+                          }),
+                        );
 
-      default:
-        return cellValue;
-    }
-  }, []);
+                        setCreditNoteRow(rowData);
+                        setCreditNoteData(initialCreditNoteData);
+                        creditNoteModal.onOpen();
+                      }}
+                    >
+                      Credit Note
+                    </DropdownItem>
+                  )}
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return cellValue;
+      }
+    },
+    [
+      dispatch,
+      userId,
+      page,
+      rowsPerPage,
+      status,
+      creditNoteModal,
+      handleViewEstimate,
+    ],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -1302,23 +1308,28 @@ const SalesUnbill = () => {
 
                 <FileUploader
                   value={creditNoteData.attachment}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     setCreditNoteData((prev) => ({
                       ...prev,
-                      attachment: e.target.value,
+                      attachment: value,
                     }))
                   }
                 />
 
                 <NewSelect
-                  data={invoices}
-                  labelKey={"invoiceNumber"}
+                  data={invoices || []}
+                  labelKey="invoiceNumber"
+                  label={"Invoice Ids"}
+                  placeholder="Select Invoice Ids"
+                  isRequired
                   selectionMode="multiple"
                   valueKey="id"
                   onChange={(value) =>
                     setCreditNoteData((prev) => ({
                       ...prev,
-                      invoiceId: value,
+                      invoiceIds: Array.isArray(value)
+                        ? value.map(Number)
+                        : [Number(value)],
                     }))
                   }
                 />
