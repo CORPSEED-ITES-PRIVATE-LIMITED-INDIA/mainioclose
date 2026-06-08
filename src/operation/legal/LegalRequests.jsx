@@ -398,6 +398,7 @@ const LegalRequests = () => {
             </Dropdown>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             Total {count} legal request
