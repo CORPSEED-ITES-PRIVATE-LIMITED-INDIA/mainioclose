@@ -551,13 +551,14 @@ const ProjectDetails = () => {
   });
 
   const [isLegalDocUploading, setIsLegalDocUploading] = useState(false);
+  const legalDocsRef = useRef([]);
 
   const [legalRequestData, setLegalRequestData] = useState({
     legalRequestTitle: "",
     notes: "",
+    statusReason: "",
     documents: [],
-    tatInDays: "",
-    tatReason: "",
+    legalRequestDocumentDtoList: [],
   });
 
   const [vendorMapData, setVendorMapData] = useState({
@@ -1059,6 +1060,122 @@ const ProjectDetails = () => {
 
   const [draggedDoc, setDraggedDoc] = useState(null);
 
+  const getFileNameFromUrl = (url = "") => {
+    try {
+      const cleanUrl = String(url).split("?")[0];
+      const name = cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1);
+      return decodeURIComponent(name || "document");
+    } catch {
+      return "document";
+    }
+  };
+
+  const getFileTypeFromNameOrUrl = (fileName = "", fileUrl = "") => {
+    const source = fileName || fileUrl || "";
+    const extension = source.split("?")[0].split(".").pop()?.toLowerCase();
+    return extension || "file";
+  };
+
+  const makeLegalDocUuid = () => {
+    return (
+      globalThis.crypto?.randomUUID?.() ||
+      `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    );
+  };
+
+  const normalizeLegalUploadedFile = (fileMeta) => {
+    if (!fileMeta) return null;
+
+    const meta = fileMeta?.data || fileMeta?.response || fileMeta;
+
+    if (typeof meta === "string") {
+      const fileUrl = meta;
+      const fileName = getFileNameFromUrl(fileUrl);
+
+      return {
+        fileName,
+        fileUrl,
+        fileType: getFileTypeFromNameOrUrl(fileName, fileUrl),
+        fileSize: 0,
+        uuid: makeLegalDocUuid(),
+        uploadedAt: new Date().toISOString(),
+      };
+    }
+
+    const fileUrl =
+      meta?.fileUrl ||
+      meta?.filePath ||
+      meta?.url ||
+      meta?.location ||
+      meta?.secureUrl ||
+      meta?.path ||
+      "";
+
+    if (!fileUrl) return null;
+
+    const fileName =
+      meta?.fileName ||
+      meta?.name ||
+      meta?.originalName ||
+      getFileNameFromUrl(fileUrl);
+
+    return {
+      fileName,
+      fileUrl,
+      fileType:
+        meta?.fileType ||
+        meta?.contentType ||
+        meta?.mimeType ||
+        getFileTypeFromNameOrUrl(fileName, fileUrl),
+      fileSize: Number(meta?.fileSize || meta?.size || 0),
+      uuid: meta?.uuid || meta?.id || makeLegalDocUuid(),
+      uploadedAt: meta?.uploadedAt || new Date().toISOString(),
+    };
+  };
+
+  const saveLegalDocs = (uploadedFiles) => {
+    const files = Array.isArray(uploadedFiles)
+      ? uploadedFiles
+      : uploadedFiles
+        ? [uploadedFiles]
+        : [];
+
+    const legalDocs = files
+      .map((file) => normalizeLegalUploadedFile(file))
+      .filter(Boolean);
+
+    legalDocsRef.current = legalDocs;
+
+    setLegalRequestData((prev) => ({
+      ...prev,
+      documents: files,
+      legalRequestDocumentDtoList: legalDocs,
+    }));
+  };
+
+  const appendLegalDoc = (fileMeta) => {
+    const dto = normalizeLegalUploadedFile(fileMeta);
+
+    if (!dto) return;
+
+    const merged = [...legalDocsRef.current];
+
+    const alreadyExists = merged.some(
+      (item) => item.fileUrl === dto.fileUrl || item.uuid === dto.uuid,
+    );
+
+    if (!alreadyExists) {
+      merged.push(dto);
+    }
+
+    legalDocsRef.current = merged;
+
+    setLegalRequestData((prev) => ({
+      ...prev,
+      legalRequestDocumentDtoList: merged,
+    }));
+  };
+
   const handleAddLegalRequest = () => {
     if (!legalRequestData.legalRequestTitle?.trim()) {
       addToast({
@@ -1087,23 +1204,39 @@ const ProjectDetails = () => {
       return;
     }
 
+    const legalRequestDocumentDtoList =
+      legalDocsRef.current?.length > 0
+        ? legalDocsRef.current
+        : legalRequestData.legalRequestDocumentDtoList?.length > 0
+          ? legalRequestData.legalRequestDocumentDtoList
+          : (legalRequestData.documents || [])
+              .map((file) => normalizeLegalUploadedFile(file))
+              .filter(Boolean);
+
     const payload = {
+      id: 0,
       projectId: Number(projectId),
       projectMilestoneAssignmentId: Number(selectedMilestone?.id || 0),
-      milestoneAssignedId: Number(
+
+      milestoneAssigneeId: Number(
         selectedMilestone?.assignedUser?.id ||
           selectedMilestone?.assignedUserId ||
-          2,
+          0,
       ),
-      assignedToLegal: userId,
+
+      status: "PENDING",
       statusReason: legalRequestData.statusReason || "",
-      legalRequestTitle: legalRequestData.legalRequestTitle,
+      legalRequestTitle: legalRequestData.legalRequestTitle.trim(),
+
+      assignedToLegal: Number(userId),
       createdById: Number(userId),
-      notes: legalRequestData.notes,
-      documents: Array.isArray(legalRequestData.documents)
-        ? legalRequestData.documents
-        : [],
+
+      notes: legalRequestData.notes.trim(),
+
+      legalRequestDocumentDtoList,
     };
+
+    console.log("LEGAL REQUEST FINAL PAYLOAD:", payload);
 
     dispatch(createLegalRequest(payload)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
@@ -1118,10 +1251,12 @@ const ProjectDetails = () => {
         setLegalRequestData({
           legalRequestTitle: "",
           notes: "",
-          documents: [],
           statusReason: "",
+          documents: [],
+          legalRequestDocumentDtoList: [],
         });
 
+        legalDocsRef.current = [];
         setIsLegalDocUploading(false);
       } else {
         addToast({
@@ -2917,9 +3052,9 @@ const ProjectDetails = () => {
               legalRequestTitle: "",
               notes: "",
               documents: [],
-              statusReason: "",
+              tatInDays: "",
+              tatReason: "",
             });
-            setIsLegalDocUploading(false);
           }
         }}
         placement="center"
@@ -2978,6 +3113,22 @@ const ProjectDetails = () => {
                     }
                   />
 
+                  <FileUploader
+                    label="Document Attachments"
+                    placeholder="Upload legal request documents"
+                    uploadingType="multiple"
+                    value={legalRequestData.documents || []}
+                    onChange={(uploadedFiles) => {
+                      console.log("LEGAL REQUEST UPLOADER RAW:", uploadedFiles);
+                      saveLegalDocs(uploadedFiles);
+                    }}
+                    onUploadSuccess={(fileMeta) => {
+                      console.log("LEGAL REQUEST UPLOAD SUCCESS:", fileMeta);
+                      appendLegalDoc(fileMeta);
+                    }}
+                    onUploadingChange={setIsLegalDocUploading}
+                  />
+
                   <Textarea
                     label="Request description"
                     name="notes"
@@ -2994,22 +3145,6 @@ const ProjectDetails = () => {
                       }))
                     }
                   />
-
-                  <FileUploader
-                    label="Document Attachments"
-                    placeholder="Upload legal request documents"
-                    uploadingType="multiple"
-                    value={legalRequestData.documents}
-                    onChange={(uploadedUrls) => {
-                      setLegalRequestData((prev) => ({
-                        ...prev,
-                        documents: Array.isArray(uploadedUrls)
-                          ? uploadedUrls
-                          : [],
-                      }));
-                    }}
-                    onUploadingChange={setIsLegalDocUploading}
-                  />
                 </div>
               </ModalBody>
 
@@ -3017,27 +3152,21 @@ const ProjectDetails = () => {
                 <Button
                   type="button"
                   variant="light"
-                  isDisabled={isLegalDocUploading}
                   onPress={() => {
                     setLegalRequestData({
                       legalRequestTitle: "",
                       notes: "",
                       documents: [],
-                      statusReason: "",
+                      tatInDays: "",
+                      tatReason: "",
                     });
-                    setIsLegalDocUploading(false);
                     onClose();
                   }}
                 >
                   Close
                 </Button>
 
-                <Button
-                  color="primary"
-                  type="submit"
-                  isLoading={isLegalDocUploading}
-                  isDisabled={isLegalDocUploading}
-                >
+                <Button color="primary" type="submit">
                   Submit
                 </Button>
               </ModalFooter>

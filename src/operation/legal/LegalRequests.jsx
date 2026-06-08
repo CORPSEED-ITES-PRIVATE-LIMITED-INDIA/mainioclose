@@ -24,9 +24,16 @@ import {
   SelectItem,
   addToast,
   Chip,
+  Card,
+  CardBody,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  Search,
+  FileText,
+  ExternalLink,
+} from "lucide-react";
 import {
   getAllUnbillCount,
   getAllUnbillList,
@@ -49,6 +56,7 @@ import {
 } from "../../toolkit/slices/operationSlice";
 import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
+import { useDispatch, useSelector } from "react-redux";
 
 export const columns = [
   { name: "DATE", uid: "createdAt" },
@@ -56,9 +64,9 @@ export const columns = [
   { name: "STATUS", uid: "status" },
   { name: "NOTES", uid: "notes" },
   { name: "RAISED BY", uid: "raisedBy" },
+  { name: "DOCUMENTS", uid: "documents" },
   { name: "ACTIONS", uid: "actions" },
 ];
-
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
@@ -69,8 +77,47 @@ const INITIAL_VISIBLE_COLUMNS = [
   "status",
   "notes",
   "raisedBy",
+  "documents",
   "actions",
 ];
+
+const normalizeFileUrl = (url = "") => {
+  const raw = String(url || "").trim();
+
+  if (!raw) return "";
+
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    return raw;
+  }
+
+  return `https://${raw}`;
+};
+
+const isImageDocument = (doc) => {
+  const fileType = String(doc?.fileType || "").toLowerCase();
+  const fileName = String(doc?.fileName || "").toLowerCase();
+
+  return (
+    fileType.includes("image") ||
+    ["png", "jpg", "jpeg", "webp", "gif"].some(
+      (ext) => fileType === ext || fileName.endsWith(`.${ext}`),
+    )
+  );
+};
+
+const formatFileSize = (size) => {
+  const fileSize = Number(size || 0);
+
+  if (!fileSize) return "-";
+
+  if (fileSize < 1024) return `${fileSize} B`;
+
+  if (fileSize < 1024 * 1024) {
+    return `${(fileSize / 1024).toFixed(2)} KB`;
+  }
+
+  return `${(fileSize / (1024 * 1024)).toFixed(2)} MB`;
+};
 
 const LegalRequests = () => {
   const dispatch = useDispatch();
@@ -78,6 +125,9 @@ const LegalRequests = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
   const viewModal = useDisclosure();
+  const documentsModal = useDisclosure();
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const data = useSelector((state) => state.operation.legalRequestList);
   const count = useSelector((state) => state.operation.legalRequestCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
@@ -165,62 +215,122 @@ const LegalRequests = () => {
       );
   };
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-    switch (columnKey) {
-      case "createdAt":
-        return (
-          <div>
-            <p className="text-sm capitalize">
-              {dayjs(rowData?.createdAt).format("DD-MM-YYYY hh:mm A")}
-            </p>
-          </div>
-        );
-      case "legalRequestTitle":
-        return (
-          <div>
-            <p className="capitalize font-medium ">
-              {rowData?.legalRequestTitle || "NA"}
-            </p>
-          </div>
-        );
-      case "status":
-        return (
-          <Chip size="sm" color={statusColorCode[rowData?.status]}>
-            {rowData?.status}
-          </Chip>
-        );
-      case "notes":
-        return <p className="text-xs capitalize">{rowData?.notes}</p>;
-      case "raisedBy":
-        return <p className="text-sm capitalize">{rowData?.raisedBy}</p>;
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem
-                  key="status"
-                  onPress={() => {
-                    statusModal.onOpen();
-                    setRowItem(rowData);
-                  }}
-                >
-                  Update status
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-      default:
-        return cellValue;
+  const formatFileSize = (size) => {
+    const fileSize = Number(size || 0);
+
+    if (!fileSize) return "-";
+
+    if (fileSize < 1024) {
+      return `${fileSize} B`;
     }
-  }, []);
+
+    if (fileSize < 1024 * 1024) {
+      return `${(fileSize / 1024).toFixed(2)} KB`;
+    }
+
+    return `${(fileSize / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const openDocumentUrl = (fileUrl) => {
+    if (!fileUrl) {
+      addToast({
+        title: "File URL not found",
+        color: "danger",
+      });
+      return;
+    }
+
+    window.open(fileUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
+      switch (columnKey) {
+        case "createdAt":
+          return (
+            <div>
+              <p className="text-sm capitalize">
+                {dayjs(rowData?.createdAt).format("DD-MM-YYYY hh:mm A")}
+              </p>
+            </div>
+          );
+        case "legalRequestTitle":
+          return (
+            <div>
+              <p className="capitalize font-medium ">
+                {rowData?.legalRequestTitle || "NA"}
+              </p>
+            </div>
+          );
+        case "status":
+          return (
+            <Chip size="sm" color={statusColorCode[rowData?.status]}>
+              {rowData?.status}
+            </Chip>
+          );
+        case "notes":
+          return <p className="text-xs capitalize">{rowData?.notes}</p>;
+        case "raisedBy":
+          return <p className="text-sm capitalize">{rowData?.raisedBy}</p>;
+        case "documents": {
+          const documents = Array.isArray(rowData?.documents)
+            ? rowData.documents
+            : [];
+
+          if (documents.length === 0) {
+            return (
+              <Chip size="sm" variant="flat" color="default">
+                No docs
+              </Chip>
+            );
+          }
+
+          return (
+            <Button
+              size="sm"
+              color="primary"
+              variant="flat"
+              startContent={<FileText size={16} />}
+              onPress={() => {
+                setSelectedDocuments(documents);
+                setSelectedRequest(rowData);
+                documentsModal.onOpen();
+              }}
+            >
+              View {documents.length}
+            </Button>
+          );
+        }
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem
+                    key="status"
+                    onPress={() => {
+                      statusModal.onOpen();
+                      setRowItem(rowData);
+                    }}
+                  >
+                    Update status
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return cellValue;
+      }
+    },
+    [documentsModal, statusModal],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -638,6 +748,120 @@ const LegalRequests = () => {
               </ModalBody>
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={documentsModal.isOpen}
+        onOpenChange={documentsModal.onOpenChange}
+        size="5xl"
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Documents
+                <span className="text-xs font-normal text-default-500">
+                  Request: {selectedRequest?.legalRequestTitle || "-"}
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="max-h-[75vh] overflow-auto">
+                {selectedDocuments?.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {selectedDocuments.map((doc, index) => {
+                      const fileUrl = normalizeFileUrl(doc?.fileUrl);
+                      const isImage = isImageDocument(doc);
+
+                      return (
+                        <Card
+                          key={doc?.id || doc?.uuid || index}
+                          isPressable
+                          shadow="sm"
+                          className="border border-default-200 hover:border-primary cursor-pointer"
+                          onPress={() => {
+                            if (!fileUrl) {
+                              addToast({
+                                title: "File URL not found",
+                                color: "danger",
+                              });
+                              return;
+                            }
+
+                            window.open(
+                              fileUrl,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }}
+                        >
+                          <CardBody className="p-0">
+                            <div className="h-40 w-full overflow-hidden rounded-t-xl bg-default-100 flex items-center justify-center">
+                              {isImage && fileUrl ? (
+                                <img
+                                  src={fileUrl}
+                                  alt={doc?.fileName || "Document"}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <FileText
+                                  size={48}
+                                  className="text-default-400"
+                                />
+                              )}
+                            </div>
+
+                            <div className="p-4">
+                              <p className="text-sm font-semibold break-all line-clamp-2">
+                                {doc?.fileName || "Unnamed document"}
+                              </p>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <Chip size="sm" variant="flat" color="primary">
+                                  {doc?.fileType || "file"}
+                                </Chip>
+
+                                <Chip size="sm" variant="flat" color="default">
+                                  {formatFileSize(doc?.fileSize)}
+                                </Chip>
+                              </div>
+
+                              <p className="mt-3 text-xs text-default-500">
+                                Uploaded:{" "}
+                                {doc?.uploadedAt
+                                  ? dayjs(doc.uploadedAt).format(
+                                      "DD-MM-YYYY hh:mm A",
+                                    )
+                                  : "-"}
+                              </p>
+
+                              <p className="mt-2 text-xs text-primary font-medium">
+                                Click card to open full page
+                              </p>
+                            </div>
+                          </CardBody>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-default-300 bg-default-50 p-6 text-center">
+                    <p className="text-sm text-default-500">
+                      No documents attached.
+                    </p>
+                  </div>
+                )}
+              </ModalBody>
+
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
               </ModalFooter>
             </>
           )}
