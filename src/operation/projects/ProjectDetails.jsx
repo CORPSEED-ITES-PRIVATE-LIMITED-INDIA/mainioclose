@@ -550,6 +550,8 @@ const ProjectDetails = () => {
     paymentMedium: "",
   });
 
+  const [isLegalDocUploading, setIsLegalDocUploading] = useState(false);
+
   const [legalRequestData, setLegalRequestData] = useState({
     legalRequestTitle: "",
     notes: "",
@@ -1076,26 +1078,31 @@ const ProjectDetails = () => {
       return;
     }
 
-    const selectedDocumentIds = Array.isArray(legalRequestData.documents)
-      ? legalRequestData.documents
-      : [];
+    if (isLegalDocUploading) {
+      addToast({
+        title: "File uploading",
+        description: "Please wait until document upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
 
     const payload = {
-      id: 0,
       projectId: Number(projectId),
-      milestoneId: Number(selectedMilestone?.milestoneId || 0),
-      tatInDays: Number(legalRequestData.tatInDays || 0),
-      tatReason: legalRequestData.tatReason || "",
-      status: "PENDING",
-      milestoneAssigneeId: Number(selectedMilestone?.id || 0),
-      createdById: Number(userId),
-      updatedById: Number(userId),
-      assignedToLegal: 0,
-      statusReason: "",
-      notes: legalRequestData.notes,
-      viewedBy: 0,
-      documents: selectedDocumentIds.map(String),
+      projectMilestoneAssignmentId: Number(selectedMilestone?.id || 0),
+      milestoneAssignedId: Number(
+        selectedMilestone?.assignedUser?.id ||
+          selectedMilestone?.assignedUserId ||
+          2,
+      ),
+      assignedToLegal: userId,
+      statusReason: legalRequestData.statusReason || "",
       legalRequestTitle: legalRequestData.legalRequestTitle,
+      createdById: Number(userId),
+      notes: legalRequestData.notes,
+      documents: Array.isArray(legalRequestData.documents)
+        ? legalRequestData.documents
+        : [],
     };
 
     dispatch(createLegalRequest(payload)).then((resp) => {
@@ -1112,9 +1119,10 @@ const ProjectDetails = () => {
           legalRequestTitle: "",
           notes: "",
           documents: [],
-          tatInDays: "",
-          tatReason: "",
+          statusReason: "",
         });
+
+        setIsLegalDocUploading(false);
       } else {
         addToast({
           title: "Failed",
@@ -2909,9 +2917,9 @@ const ProjectDetails = () => {
               legalRequestTitle: "",
               notes: "",
               documents: [],
-              tatInDays: "",
-              tatReason: "",
+              statusReason: "",
             });
+            setIsLegalDocUploading(false);
           }
         }}
         placement="center"
@@ -2955,53 +2963,17 @@ const ProjectDetails = () => {
                     }
                   />
 
-                  <Select
-                    label="Select documents"
-                    placeholder="Select related documents"
-                    selectionMode="multiple"
-                    selectedKeys={new Set(legalRequestData.documents)}
-                    onSelectionChange={(keys) => {
-                      setLegalRequestData((prev) => ({
-                        ...prev,
-                        documents: Array.from(keys),
-                      }));
-                    }}
-                  >
-                    {(requiredDocsList || []).map((doc) => (
-                      <SelectItem
-                        key={String(
-                          doc?.documentId || doc?.requiredDocumentId || doc?.id,
-                        )}
-                      >
-                        {doc?.documentName || "Unnamed Document"}
-                      </SelectItem>
-                    ))}
-                  </Select>
-
-                  <Input
-                    label="TAT in Days"
-                    name="tatInDays"
-                    type="number"
-                    min="0"
-                    placeholder="Enter TAT in days"
-                    value={legalRequestData.tatInDays}
+                  <Textarea
+                    label="Status Reason"
+                    name="statusReason"
+                    minRows={2}
+                    maxRows={4}
+                    placeholder="Enter status reason"
+                    value={legalRequestData.statusReason}
                     onChange={(e) =>
                       setLegalRequestData((prev) => ({
                         ...prev,
-                        tatInDays: e.target.value,
-                      }))
-                    }
-                  />
-
-                  <Input
-                    label="TAT Reason"
-                    name="tatReason"
-                    placeholder="Enter TAT reason"
-                    value={legalRequestData.tatReason}
-                    onChange={(e) =>
-                      setLegalRequestData((prev) => ({
-                        ...prev,
-                        tatReason: e.target.value,
+                        statusReason: e.target.value,
                       }))
                     }
                   />
@@ -3022,6 +2994,22 @@ const ProjectDetails = () => {
                       }))
                     }
                   />
+
+                  <FileUploader
+                    label="Document Attachments"
+                    placeholder="Upload legal request documents"
+                    uploadingType="multiple"
+                    value={legalRequestData.documents}
+                    onChange={(uploadedUrls) => {
+                      setLegalRequestData((prev) => ({
+                        ...prev,
+                        documents: Array.isArray(uploadedUrls)
+                          ? uploadedUrls
+                          : [],
+                      }));
+                    }}
+                    onUploadingChange={setIsLegalDocUploading}
+                  />
                 </div>
               </ModalBody>
 
@@ -3029,21 +3017,27 @@ const ProjectDetails = () => {
                 <Button
                   type="button"
                   variant="light"
+                  isDisabled={isLegalDocUploading}
                   onPress={() => {
                     setLegalRequestData({
                       legalRequestTitle: "",
                       notes: "",
                       documents: [],
-                      tatInDays: "",
-                      tatReason: "",
+                      statusReason: "",
                     });
+                    setIsLegalDocUploading(false);
                     onClose();
                   }}
                 >
                   Close
                 </Button>
 
-                <Button color="primary" type="submit">
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isLegalDocUploading}
+                  isDisabled={isLegalDocUploading}
+                >
                   Submit
                 </Button>
               </ModalFooter>

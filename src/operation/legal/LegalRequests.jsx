@@ -91,13 +91,15 @@ const LegalRequests = () => {
     column: "age",
     direction: "ascending",
   });
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
   const [rowItem, setRowItem] = useState(null);
-  const [status, setStatus] = useState("ALL");
+  const [status, setStatus] = useState("INITIATED");
   const [updatedStatusData, setUpdatedStatusData] = useState({
     status: "",
     statusReason: "",
+    resolutionSummary: "",
+    userId: Number(userId),
   });
   const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
   const [searchBy, setSearchBy] = useState("companyName");
@@ -107,13 +109,13 @@ const LegalRequests = () => {
   useEffect(() => {
     dispatch(
       getAllLegalSupportRequestsForFilter({
-        page,
-        size: rowsPerPage,
         userId,
         status,
+        page,
+        size: rowsPerPage,
       }),
     );
-  }, [dispatch, page, rowsPerPage, status]);
+  }, [dispatch, userId, page, rowsPerPage, status]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -283,7 +285,8 @@ const LegalRequests = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Status updated successfully !.",
+            title: "SUCCESS",
+            description: "Status updated successfully !.",
             color: "success",
           });
           setRowItem(null);
@@ -294,18 +297,26 @@ const LegalRequests = () => {
           statusModal.onClose();
           dispatch(
             getAllLegalSupportRequestsForFilter({
-              page,
-              size: rowsPerPage,
               userId,
               status,
+              page,
+              size: rowsPerPage,
             }),
           );
         } else {
-          addToast({ title: resp?.payload?.data?.message, color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: resp?.payload,
+            color: "danger",
+          });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -358,7 +369,6 @@ const LegalRequests = () => {
                   setStatus(key);
                 }}
               >
-                <DropdownItem key="ALL">ALL</DropdownItem>
                 <DropdownItem key="INITIATED">INITIATED</DropdownItem>
                 <DropdownItem key="PENDING">PENDING</DropdownItem>
                 <DropdownItem key="APPROVED">APPROVED</DropdownItem>
@@ -569,13 +579,24 @@ const LegalRequests = () => {
                   ))}
                 </Select>
                 <Textarea
-                  label="Remark"
+                  label="Reason"
                   isRequired
                   value={updatedStatusData?.statusReason}
                   onChange={(e) =>
                     setUpdatedStatusData((prev) => ({
                       ...prev,
                       statusReason: e.target.value,
+                    }))
+                  }
+                />
+                <Textarea
+                  label="Resolution summary"
+                  isRequired
+                  value={updatedStatusData?.resolutionSummary}
+                  onChange={(e) =>
+                    setUpdatedStatusData((prev) => ({
+                      ...prev,
+                      resolutionSummary: e.target.value,
                     }))
                   }
                 />

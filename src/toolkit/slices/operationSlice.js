@@ -688,23 +688,10 @@ export const getProcurementOrderByPurchaseId = createAsyncThunk(
 
 export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
   "getAllLegalSupportRequestsForFilter",
-  async (
-    {
-      page,
-      size,
-      status,
-      projectId,
-      assignedTo,
-      createdBy,
-      projectName,
-      milestoneName,
-      startDate,
-      endDate,
-    },
-    { rejectWithValue },
-  ) => {
+  async ({ userId, page = 1, size = 10, status } = {}, { rejectWithValue }) => {
     try {
       const params = {
+        userId: Number(userId),
         page,
         size,
       };
@@ -718,47 +705,15 @@ export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
         params.status = status;
       }
 
-      if (projectId !== undefined && projectId !== null && projectId !== "") {
-        params.projectId = projectId;
-      }
-
-      if (
-        assignedTo !== undefined &&
-        assignedTo !== null &&
-        assignedTo !== ""
-      ) {
-        params.assignedTo = assignedTo;
-      }
-
-      if (createdBy !== undefined && createdBy !== null && createdBy !== "") {
-        params.createdBy = createdBy;
-      }
-
-      if (projectName?.trim()) {
-        params.projectName = projectName.trim();
-      }
-
-      if (milestoneName?.trim()) {
-        params.milestoneName = milestoneName.trim();
-      }
-
-      if (startDate) {
-        params.startDate = startDate;
-      }
-
-      if (endDate) {
-        params.endDate = endDate;
-      }
-
-      const response = await api.get(
-        "/operationService/api/legal-request/AllFilter",
-        { params },
-      );
+      const response = await api.get("/operationService/api/legal-requests", {
+        params,
+      });
 
       return response.data;
     } catch (error) {
       return rejectWithValue(
         error?.response?.data?.message ||
+          error?.response?.data ||
           "Failed to fetch legal support requests",
       );
     }
@@ -770,7 +725,7 @@ export const updateLegalRequestStatus = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await api.patch(
-        `/operationService/api/legal-request/${id}/status`,
+        `/operationService/api/legal-requests/${id}/status`,
         data,
       );
       return response.data;
@@ -882,7 +837,10 @@ export const createLegalRequest = createAsyncThunk(
   "operation/createLegalRequest",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await api.post("/api/legal-requests", data);
+      const response = await api.post(
+        "/operationService/api/legal-requests",
+        data,
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(
