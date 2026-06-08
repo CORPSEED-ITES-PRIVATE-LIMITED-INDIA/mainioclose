@@ -54,6 +54,7 @@ const defaultValues = {
   mailBcc: [],
   emailSubject: "",
   paymentTerm: "",
+  paymentTermDescription: "",
   emailBody: "<p></p>",
   scopeOfWork: "<p></p>",
 };
@@ -415,6 +416,7 @@ const Proposal = () => {
       mailBcc: proposal?.mailBcc || [],
       emailSubject: proposal?.emailSubject || "",
       paymentTerm: proposal?.paymentTerm || "",
+      paymentTermDescription: proposal?.paymentTermDescription || "",
       emailBody: finalMailBody,
       scopeOfWork: finalScopeOfWork,
     });
@@ -483,6 +485,7 @@ const Proposal = () => {
           ? `Corpseed Proposal for - ${solutionDetail.name}`
           : ""),
       paymentTerm: "",
+      paymentTermDescription: "",
       emailBody: apiMailBody,
       scopeOfWork: apiScopeOfWork,
     });
@@ -721,6 +724,7 @@ const Proposal = () => {
       solutionId: Number(solutionDetail?.id),
       emailSubject: values?.emailSubject || "",
       paymentTerm: values?.paymentTerm || "",
+      paymentTermDescription: values?.paymentTermDescription || "",
       emailBody: values?.emailBody || "<p></p>",
       scopeOfWork: values?.scopeOfWork || "<p></p>",
 
@@ -1471,9 +1475,27 @@ const Proposal = () => {
           options={paymentTerms?.map((item) => ({
             label: item.name,
             value: item.name,
+            description: item.description || "",
+            ...item,
           }))}
           allowClear
+          onChange={(value, option) => {
+            proposalAntForm.setFieldsValue({
+              paymentTerm: value || "",
+              paymentTermDescription: option?.description || "",
+            });
+          }}
+          onClear={() => {
+            proposalAntForm.setFieldsValue({
+              paymentTerm: "",
+              paymentTermDescription: "",
+            });
+          }}
         />
+      </Form.Item>
+
+      <Form.Item name="paymentTermDescription" hidden>
+        <AntInput />
       </Form.Item>
 
       <div className="w-full rounded-2xl border border-gray-200 bg-white shadow-sm">
