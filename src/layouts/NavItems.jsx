@@ -274,6 +274,11 @@ export const navItems = [
         key: "approvalList",
         url: "users/approvalList",
       },
+      {
+        title: "Mail Configuration",
+        key: "mailConfig",
+        url: "users/usersMailConfig",
+      },
     ],
   },
   {

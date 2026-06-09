@@ -29,6 +29,7 @@ import EstimatePreview from "./components/EstimatePreview";
 import VendorPaymentApproval from "./admin/VendorPaymentApproval";
 import DiscountedEstimateApproval from "./admin/DiscountedEstimateApproval";
 import { restoreSession } from "./toolkit/slices/authSlice";
+import UserMailConfig from "./users/UserMailConfig";
 
 function App() {
   const dispatch = useDispatch();
@@ -61,6 +62,7 @@ function App() {
             {OperationModuleRouting()}
 
             <Route path="users/usersList" element={<Users />} />
+            <Route path="users/usersMailConfig" element={<UserMailConfig />} />
             <Route
               path="users/deactiveUsersList"
               element={<DeactiveUserList />}

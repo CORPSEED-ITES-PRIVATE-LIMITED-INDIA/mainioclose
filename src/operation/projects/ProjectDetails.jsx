@@ -572,6 +572,9 @@ const ProjectDetails = () => {
   const procurementAssignmentId =
     detailedData?.projectDetails?.procurementMilestoneAssignmentId;
 
+  const isProcurementMilestone =
+    selectedMilestone?.milestoneName?.toLowerCase() === "procurement";
+
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
     dispatch(getAllMilestoneStatusesForOperations());
@@ -666,14 +669,35 @@ const ProjectDetails = () => {
             title: "Status updated successfully !.",
             color: "success",
           });
+
+          const updatedStatus = statusObj.newStatusName;
+
+          setSelectedMilestone((prev) => ({
+            ...prev,
+            status: updatedStatus,
+          }));
+
           setStatusObj({
             assignmentId: null,
             newStatusName: "",
             statusReason: "",
             changedById: null,
           });
+
           statusModal.onClose();
-          dispatch(getOperationProjectDetailById({ projectId, userId }));
+
+          dispatch(getOperationProjectDetailById({ projectId, userId })).then(
+            (res) => {
+              const updatedMilestone = res?.payload?.milestones?.find(
+                (mile) => Number(mile.id) === Number(selectedMilestone?.id),
+              );
+
+              if (updatedMilestone) {
+                setSelectedMilestone(updatedMilestone);
+                fetchMilestoneHistory(updatedMilestone, true);
+              }
+            },
+          );
         } else {
           addToast({
             title: resp?.payload?.status,
@@ -1331,7 +1355,7 @@ const ProjectDetails = () => {
         } else {
           addToast({
             title: "FAILED",
-            description: resp?.payload?.message || "Something went wrong!",
+            description: resp?.payload || "Something went wrong!",
             color: "danger",
           });
         }
@@ -1473,44 +1497,46 @@ const ProjectDetails = () => {
         </div>
         <div className="flex flex-col justify-between gap-2.5 py-1.5">
           <div className="flex items-center gap-1.5">
-            {(department === "Procurement" || adminRole) && (
-              <Button
-                radius="sm"
-                onPress={() => {
-                  vendorDrawer.onOpen();
-                  dispatch(
-                    getVendorDetailInProject({
-                      procurementAssignmentId:
-                        detailedData?.projectDetails
-                          ?.procurementMilestoneAssignmentId,
-                    }),
-                  );
-                }}
-              >
-                Vendor
-              </Button>
-            )}
-            {(department === "Procurement" || adminRole) && (
-              <Button
-                as={Link}
-                radius="sm"
-                color="primary"
-                variant="flat"
-                to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
-                state={{
-                  procurementAssignmentId:
-                    detailedData?.projectDetails
-                      ?.procurementMilestoneAssignmentId,
-                  vendorId: selectedVendorId,
-                  defaultEstimatedAmount:
-                    detailedData?.projectDetails?.estimatedAmount ||
-                    detailedData?.projectDetails?.amount ||
-                    0,
-                }}
-              >
-                Purchase Orders
-              </Button>
-            )}
+            {isProcurementMilestone &&
+              (department === "Procurement" || adminRole) && (
+                <Button
+                  radius="sm"
+                  onPress={() => {
+                    vendorDrawer.onOpen();
+                    dispatch(
+                      getVendorDetailInProject({
+                        procurementAssignmentId:
+                          detailedData?.projectDetails
+                            ?.procurementMilestoneAssignmentId,
+                      }),
+                    );
+                  }}
+                >
+                  Vendor
+                </Button>
+              )}
+            {isProcurementMilestone &&
+              (department === "Procurement" || adminRole) && (
+                <Button
+                  as={Link}
+                  radius="sm"
+                  color="primary"
+                  variant="flat"
+                  to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
+                  state={{
+                    procurementAssignmentId:
+                      detailedData?.projectDetails
+                        ?.procurementMilestoneAssignmentId,
+                    vendorId: selectedVendorId,
+                    defaultEstimatedAmount:
+                      detailedData?.projectDetails?.estimatedAmount ||
+                      detailedData?.projectDetails?.amount ||
+                      0,
+                  }}
+                >
+                  Purchase Orders
+                </Button>
+              )}
 
             <Button
               radius="sm"

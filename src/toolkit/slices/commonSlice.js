@@ -630,6 +630,55 @@ export const getContactDetailListByCompanyId = createAsyncThunk(
   },
 );
 
+export const createUserMailConfig = createAsyncThunk(
+  "createUserMailConfig",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/leadService/api/user-mail-config",
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || "Failed to create user mail configuration",
+      );
+    }
+  },
+);
+
+export const getAllUserMailConfigs = createAsyncThunk(
+  "getAllUserMailConfigs",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/leadService/api/user-mail-config");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || "Failed to fetch mail configs",
+      );
+    }
+  },
+);
+
+export const updateUserMailConfig = createAsyncThunk(
+  "updateUserMailConfig",
+  async ({ userId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/user-mail-config/${userId}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || "Failed to update mail config",
+      );
+    }
+  },
+);
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -677,6 +726,7 @@ const CommonSlice = createSlice({
     contactListByCompanyId: [],
     statesByCountry: {},
     citiesByState: {},
+    userMailConfigs: [],
   },
   reducers: {
     handleReset: (state) => {
@@ -1221,6 +1271,17 @@ const CommonSlice = createSlice({
       },
     );
     builder.addCase(getContactDetailListByCompanyId.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getAllUserMailConfigs.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllUserMailConfigs.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.userMailConfigs = action.payload;
+    });
+    builder.addCase(getAllUserMailConfigs.rejected, (state) => {
       state.loading = "rejected";
     });
   },

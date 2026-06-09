@@ -40,6 +40,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   activateOrDeActivateUser,
+  createUserMailConfig,
   deleteUserInLeadService,
   getAllUsers,
 } from "../toolkit/slices/commonSlice";
@@ -88,6 +89,7 @@ const Users = () => {
     direction: "ascending",
   });
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const emailConfigModal = useDisclosure();
   const deleteModal = useDisclosure();
   const [initialFilteration, setInitialFilteration] = useState({
     userId: userId,
@@ -100,6 +102,19 @@ const Users = () => {
   const [userData, setUserData] = useState(null);
   const hasSearchFilter = Boolean(filterValue);
   const [rowId, setRowId] = useState(null);
+  const [emailConfigForm, setEmailConfigForm] = useState({
+    userId: "",
+    fromEmail: "",
+    fromName: "",
+    smtpHost: "",
+    smtpPort: "",
+    smtpUsername: "",
+    smtpPassword: "",
+    authEnabled: true,
+    starttlsEnabled: true,
+    active: true,
+  });
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -183,6 +198,65 @@ const Users = () => {
       );
   };
 
+  const openEmailConfigModal = (rowData) => {
+    setEmailConfigForm({
+      userId: rowData?.id || "",
+      fromEmail: rowData?.email || "",
+      fromName: rowData?.fullName || "",
+      smtpHost: "",
+      smtpPort: "",
+      smtpUsername: rowData?.email || "",
+      smtpPassword: "",
+      authEnabled: true,
+      starttlsEnabled: true,
+      active: true,
+    });
+
+    emailConfigModal.onOpen();
+  };
+
+  const handleEmailConfigChange = (field, value) => {
+    setEmailConfigForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleCreateEmailConfig = () => {
+    const payload = {
+      ...emailConfigForm,
+      userId: Number(emailConfigForm.userId),
+      smtpPort: Number(emailConfigForm.smtpPort),
+    };
+
+    dispatch(createUserMailConfig(payload))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Email configuration saved successfully!",
+            color: "success",
+          });
+
+          emailConfigModal.onClose();
+        } else {
+          addToast({
+            title: "ERROR",
+            description:
+              resp?.payload?.message ||
+              "Something went wrong while saving email config!",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Something went wrong while saving email config!",
+          color: "danger",
+        });
+      });
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "fullName":
@@ -262,6 +336,12 @@ const Users = () => {
               <DropdownMenu>
                 <DropdownItem key="userHistory">
                   <Link to={`${rowData?.id}/userHistory`}>User history</Link>
+                </DropdownItem>
+                <DropdownItem
+                  key="emailConfig"
+                  onPress={() => openEmailConfigModal(rowData)}
+                >
+                  Email Config
                 </DropdownItem>
                 <DropdownItem
                   key="action"
@@ -436,7 +516,7 @@ const Users = () => {
   }, [selectedKeys, count, initialFilteration, pages, hasSearchFilter]);
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Users</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Users </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -659,6 +739,142 @@ const Users = () => {
                 <Button onPress={onClose}>No</Button>
                 <Button color="primary" onPress={handleDeleteUser}>
                   Yes
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={emailConfigModal.isOpen}
+        onOpenChange={emailConfigModal.onOpenChange}
+        backdrop="blur"
+        size="3xl"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                User Mail Configuration
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="User ID"
+                    value={String(emailConfigForm.userId)}
+                    isReadOnly
+                  />
+
+                  <Input
+                    label="From Name"
+                    value={emailConfigForm.fromName}
+                    onValueChange={(value) =>
+                      handleEmailConfigChange("fromName", value)
+                    }
+                  />
+
+                  <Input
+                    label="From Email"
+                    value={emailConfigForm.fromEmail}
+                    onValueChange={(value) =>
+                      handleEmailConfigChange("fromEmail", value)
+                    }
+                  />
+
+                  <Input
+                    label="SMTP Username"
+                    value={emailConfigForm.smtpUsername}
+                    onValueChange={(value) =>
+                      handleEmailConfigChange("smtpUsername", value)
+                    }
+                  />
+
+                  <Input
+                    label="SMTP Host"
+                    value={emailConfigForm.smtpHost}
+                    onValueChange={(value) =>
+                      handleEmailConfigChange("smtpHost", value)
+                    }
+                  />
+
+                  <Input
+                    label="SMTP Port"
+                    type="number"
+                    value={String(emailConfigForm.smtpPort)}
+                    onValueChange={(value) =>
+                      handleEmailConfigChange("smtpPort", value)
+                    }
+                  />
+
+                  <Input
+                    label="SMTP Password"
+                    type={showSmtpPassword ? "text" : "password"}
+                    value={emailConfigForm.smtpPassword}
+                    onValueChange={(value) =>
+                      handleEmailConfigChange("smtpPassword", value)
+                    }
+                    endContent={
+                      <button
+                        type="button"
+                        className="text-sm text-primary font-medium cursor-pointer"
+                        onClick={() => setShowSmtpPassword((prev) => !prev)}
+                      >
+                        {showSmtpPassword ? "Hide" : "Show"}
+                      </button>
+                    }
+                  />
+
+                  <div className="flex flex-col gap-3 mt-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={emailConfigForm.authEnabled}
+                        onChange={(e) =>
+                          handleEmailConfigChange(
+                            "authEnabled",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      Auth Enabled
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={emailConfigForm.starttlsEnabled}
+                        onChange={(e) =>
+                          handleEmailConfigChange(
+                            "starttlsEnabled",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      STARTTLS Enabled
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={emailConfigForm.active}
+                        onChange={(e) =>
+                          handleEmailConfigChange("active", e.target.checked)
+                        }
+                      />
+                      Active
+                    </label>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="light" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button color="primary" onPress={handleCreateEmailConfig}>
+                  Save Configuration
                 </Button>
               </ModalFooter>
             </>
