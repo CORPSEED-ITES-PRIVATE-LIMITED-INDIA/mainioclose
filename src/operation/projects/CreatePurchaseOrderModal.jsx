@@ -251,7 +251,7 @@ const CreatePurchaseOrderModal = ({
               },
             ]}
           >
-            <Input placeholder="Example: PO-2026-0001" />
+            <Input />
           </Form.Item>
 
           <Form.Item
