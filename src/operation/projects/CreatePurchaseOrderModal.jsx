@@ -118,12 +118,10 @@ const CreatePurchaseOrderModal = ({
       procurementAssignmentId: Number(procurementAssignmentId || 0),
       vendorId: Number(vendorId || 0),
       poReferenceNumber: "",
-      estimatedAmount: Number(defaultEstimatedAmount || 0),
       finalAmount: Number(defaultEstimatedAmount || 0),
       gstRate: 18,
       taxType: "CGST_SGST",
       scopeOfWork: "",
-      paymentTerms: "",
       termsAndConditions: "",
       remarks: "",
       validTillDate: dayjs().add(15, "day"),
@@ -168,30 +166,37 @@ const CreatePurchaseOrderModal = ({
     }
 
     const payload = {
-      procurementAssignmentId: procurementAssignmentId,
-      vendorId: vendorId,
+      procurementAssignmentId: Number(procurementAssignmentId || 0),
+      vendorId: Number(vendorId || 0),
+
       poReferenceNumber: values.poReferenceNumber?.trim() || "",
+
       finalAmount: Number(values.finalAmount || 0),
-      estimatedAmount: Number(values.estimatedAmount || 0),
       gstRate: Number(values.gstRate || 0),
+
       cgstAmount: Number(values.cgstAmount || 0),
       sgstAmount: Number(values.sgstAmount || 0),
       igstAmount: Number(values.igstAmount || 0),
+
       totalTaxAmount: Number(values.totalTaxAmount || 0),
       grandTotal: Number(values.grandTotal || 0),
+
       scopeOfWork: values.scopeOfWork?.trim() || "",
-      paymentTerms: values.paymentTerms || "",
       termsAndConditions: values.termsAndConditions?.trim() || "",
       remarks: values.remarks?.trim() || "",
+
       validTillDate: values.validTillDate
         ? dayjs(values.validTillDate).format("YYYY-MM-DD")
         : null,
+
       paymentTypeName: values.paymentTypeName || "",
+
       attachmentUrls: Array.isArray(values.attachmentUrls)
         ? values.attachmentUrls.filter(Boolean)
         : [],
-      createdBy: Number(values.createdBy || createdBy || userId || 0),
-      userId: Number(values.userId || userId || 0),
+
+      createdBy: Number(createdBy || userId || 0),
+      userId: Number(userId || 0),
     };
 
     try {
@@ -237,12 +242,12 @@ const CreatePurchaseOrderModal = ({
       >
         <div className="grid grid-cols-1 gap-x-5 md:grid-cols-2">
           <Form.Item
-            label="PO Reference Number"
+            label="Proposal Number"
             name="poReferenceNumber"
             rules={[
               {
                 required: true,
-                message: "Please enter PO reference number",
+                message: "Please enter proposal number",
               },
             ]}
           >
@@ -260,25 +265,6 @@ const CreatePurchaseOrderModal = ({
             ]}
           >
             <DatePicker className="w-full" format="YYYY-MM-DD" />
-          </Form.Item>
-
-          <Form.Item
-            label="Estimated Amount"
-            name="estimatedAmount"
-            rules={[
-              {
-                required: true,
-                message: "Please enter estimated amount",
-              },
-            ]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              className="w-full"
-              min={0}
-              precision={2}
-              placeholder="Enter estimated amount"
-            />
           </Form.Item>
 
           <Form.Item
@@ -391,23 +377,6 @@ const CreatePurchaseOrderModal = ({
             <Select
               placeholder="Select payment type"
               options={paymentTypeOptions}
-              allowClear
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Payment Terms"
-            name="paymentTerms"
-            rules={[
-              {
-                required: true,
-                message: "Please select payment terms",
-              },
-            ]}
-          >
-            <Select
-              placeholder="Select payment terms"
-              options={paymentTermOptions}
               allowClear
             />
           </Form.Item>
