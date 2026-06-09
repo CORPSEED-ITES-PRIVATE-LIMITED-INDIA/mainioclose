@@ -214,9 +214,9 @@ const EstimatePaymentRegister = ({
   const selectedPaymentTypeId = watch("paymentTypeId");
   const tdsActive = watch("tdsActive");
 
-  const selectedPaymentType =
-    paymentTypeList ||
-    []?.find((item) => String(item?.id) === String(selectedPaymentTypeId));
+  const selectedPaymentType = (paymentTypeList || []).find(
+    (item) => String(item?.id) === String(selectedPaymentTypeId),
+  );
 
   const selectedPaymentTypeName = selectedPaymentType?.name || "";
 
