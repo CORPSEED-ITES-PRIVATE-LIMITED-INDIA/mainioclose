@@ -1135,10 +1135,10 @@ const ProjectPurchaseOrder = () => {
                       isRequired
                       errorMessage="please select status"
                       items={[
-                        {
-                          label: "PARTIALLY_COMPLETED",
-                          uid: "PARTIALLY_COMPLETED",
-                        },
+                        // {
+                        //   label: "PARTIALLY_COMPLETED",
+                        //   uid: "PARTIALLY_COMPLETED",
+                        // },
                         { label: "COMPLETED", uid: "COMPLETED" },
                       ]}
                       label="Select status"
