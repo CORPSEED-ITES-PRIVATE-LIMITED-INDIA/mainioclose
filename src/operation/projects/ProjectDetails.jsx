@@ -3538,16 +3538,6 @@ const ProjectDetails = () => {
           )}
         </DrawerContent>
       </Drawer>
-      <CreatePurchaseOrderModal
-        open={isPoModalOpen}
-        onClose={() => setIsPoModalOpen(false)}
-        procurementAssignmentId={procurementAssignmentId}
-        vendorId={selectedVendorId ? Number(selectedVendorId) : null}
-        userId={userId}
-        createdBy={userId}
-        defaultEstimatedAmount={5000}
-        onSuccess={() => {}}
-      />
     </div>
   );
 };
