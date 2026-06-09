@@ -3270,11 +3270,11 @@ const ProjectDetails = () => {
         <DrawerContent>
           {(onClose) => (
             <>
-              <DrawerHeader className="border-b border-default-200 px-6 py-5">
-                <div className="flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <DrawerHeader className="border-b border-default-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 px-6 py-5">
+                <div className="flex w-full items-center justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-xl font-semibold text-foreground">
+                      <h2 className="text-2xl font-semibold text-foreground">
                         Vendor Details
                       </h2>
 
@@ -3290,210 +3290,236 @@ const ProjectDetails = () => {
                     </div>
 
                     <p className="mt-1 text-sm text-default-500">
-                      {vendorDetail?.projectName ||
-                        "Procurement project details"}
+                      View procurement vendor details for this project
                     </p>
                   </div>
 
-                  <Button
-                    color="primary"
-                    variant="flat"
-                    onPress={() => {
-                      vendorMapModal.onOpen();
+                  <div className="flex items-center gap-2">
+                    <Button
+                      color="primary"
+                      variant="flat"
+                      onPress={() => {
+                        vendorMapModal.onOpen();
 
-                      dispatch(
-                        getAllVendors({
-                          userId,
-                          page: 1,
-                          size: 5000,
-                          search: "",
-                        }),
-                      );
-                    }}
-                  >
-                    Map Vendor
-                  </Button>
+                        dispatch(
+                          getAllVendors({
+                            userId,
+                            page: 1,
+                            size: 5000,
+                            search: "",
+                          }),
+                        );
+                      }}
+                    >
+                      Map Vendor
+                    </Button>
+
+                    <Button color="danger" variant="light" onPress={onClose}>
+                      Close
+                    </Button>
+                  </div>
                 </div>
               </DrawerHeader>
 
-              <DrawerBody className="px-6 py-5">
+              <DrawerBody className="bg-default-50 px-6 py-6">
                 {!vendorDetail ? (
-                  <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-default-300">
-                    <p className="text-sm text-default-500">
-                      No vendor detail found.
-                    </p>
+                  <div className="flex min-h-[350px] items-center justify-center rounded-3xl border border-dashed border-default-300 bg-white">
+                    <div className="text-center">
+                      <p className="text-base font-semibold text-foreground">
+                        No vendor detail found
+                      </p>
+                      <p className="mt-1 text-sm text-default-500">
+                        Vendor data is not available for this procurement
+                        milestone.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="max-h-[calc(100vh-190px)] pr-2">
-                    <div className="space-y-6">
-                      <Card className="border border-default-200 bg-content1 shadow-none">
-                        <CardBody className="space-y-4 p-5">
-                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                              <p className="text-xs font-medium uppercase tracking-wide text-default-400">
-                                Procurement Assignment
-                              </p>
+                  <div className="max-h-[calc(100vh-170px)] overflow-y-auto pr-2">
+                    <div className="space-y-5">
+                      <Card className="overflow-hidden border border-default-200 bg-white shadow-sm">
+                        <CardBody className="p-0">
+                          <div className="bg-gradient-to-r from-primary-100 via-blue-50 to-white p-5">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                                  Procurement Assignment
+                                </p>
 
-                              <h3 className="mt-1 text-lg font-semibold text-foreground">
-                                {vendorDetail.projectName || "-"}
-                              </h3>
+                                <h3 className="mt-1 text-xl font-bold text-foreground">
+                                  {vendorDetail.projectName || "-"}
+                                </h3>
 
-                              <p className="mt-1 text-sm text-default-500">
-                                {vendorDetail.message || "-"}
-                              </p>
+                                <p className="mt-1 text-sm text-default-600">
+                                  {vendorDetail.message ||
+                                    "Procurement vendor information"}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <Chip color="primary" variant="flat">
+                                  Assignment ID:{" "}
+                                  {vendorDetail.procurementAssignmentId || "-"}
+                                </Chip>
+
+                                <Chip color="secondary" variant="flat">
+                                  Project No: {vendorDetail.projectNo || "-"}
+                                </Chip>
+                              </div>
                             </div>
-
-                            <Chip color="primary" variant="flat">
-                              Assignment ID:{" "}
-                              {vendorDetail.procurementAssignmentId || "-"}
-                            </Chip>
                           </div>
 
-                          <Divider />
-
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                            <DetailItem
-                              label="Project No."
-                              value={vendorDetail.projectNo}
-                            />
-
+                          <div className="grid grid-cols-1 gap-3 p-5 md:grid-cols-2 xl:grid-cols-4">
                             <DetailItem
                               label="Project ID"
                               value={vendorDetail.projectId}
                             />
-
                             <DetailItem
                               label="Product"
                               value={vendorDetail.productName}
                             />
-
                             <DetailItem
                               label="Product ID"
                               value={vendorDetail.productId}
                             />
-
                             <DetailItem
                               label="Milestone"
                               value={vendorDetail.milestoneName}
                             />
-
                             <DetailItem
                               label="Milestone ID"
                               value={vendorDetail.milestoneId}
                             />
-
                             <DetailItem
                               label="Assigned To"
                               value={vendorDetail.assignedToUserName}
                             />
-
                             <DetailItem
                               label="Assigned User ID"
                               value={vendorDetail.assignedToUserId}
+                            />
+                            <DetailItem
+                              label="Selected Vendor ID"
+                              value={vendorDetail.selectedVendorId}
                             />
                           </div>
                         </CardBody>
                       </Card>
 
-                      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-                        <Card className="border border-default-200 bg-content1 shadow-none lg:col-span-1">
-                          <CardBody className="space-y-4 p-5">
-                            <div className="flex items-center justify-between gap-3">
-                              <div>
-                                <p className="text-sm font-semibold text-foreground">
-                                  Selected Vendor
-                                </p>
-                                <p className="text-xs text-default-500">
-                                  Current vendor mapped with this procurement
-                                </p>
-                              </div>
-
-                              <Chip
-                                color={
-                                  vendorDetail.selectedVendorId
-                                    ? "success"
-                                    : "warning"
-                                }
-                                variant="flat"
-                                size="sm"
-                              >
-                                {vendorDetail.selectedVendorId
-                                  ? "Mapped"
-                                  : "Pending"}
-                              </Chip>
+                      <Card className="border border-default-200 bg-white shadow-sm">
+                        <CardBody className="p-5">
+                          <div className="mb-4 flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-base font-semibold text-foreground">
+                                Selected Vendor
+                              </p>
+                              <p className="text-sm text-default-500">
+                                Vendor currently mapped with this procurement
+                                assignment
+                              </p>
                             </div>
 
-                            <Divider />
+                            <Chip
+                              color={selectedVendor ? "success" : "warning"}
+                              variant="flat"
+                            >
+                              {selectedVendor ? "Mapped" : "Not Mapped"}
+                            </Chip>
+                          </div>
 
+                          <Divider />
+
+                          <div className="mt-5">
                             {selectedVendor ? (
-                              <VendorCard vendor={selectedVendor} isSelected />
+                              <div className="rounded-3xl border border-success-200 bg-gradient-to-br from-success-50 to-white p-5">
+                                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <Avatar
+                                      name={getInitials(selectedVendor?.name)}
+                                      className="h-14 w-14 bg-success-100 text-success"
+                                    />
+
+                                    <div>
+                                      <h3 className="text-lg font-bold text-foreground">
+                                        {selectedVendor?.name || "-"}
+                                      </h3>
+
+                                      <p className="text-sm text-default-500">
+                                        Vendor ID: {selectedVendor?.id || "-"}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-2">
+                                    <Chip
+                                      size="sm"
+                                      color={
+                                        selectedVendor?.status === "ACTIVE"
+                                          ? "success"
+                                          : "default"
+                                      }
+                                      variant="flat"
+                                    >
+                                      {selectedVendor?.status || "-"}
+                                    </Chip>
+
+                                    <Chip
+                                      size="sm"
+                                      color={
+                                        selectedVendor?.verified
+                                          ? "success"
+                                          : "warning"
+                                      }
+                                      variant="flat"
+                                    >
+                                      {selectedVendor?.verified
+                                        ? "Verified"
+                                        : "Not Verified"}
+                                    </Chip>
+                                  </div>
+                                </div>
+
+                                <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                  <DetailItem
+                                    label="Email"
+                                    value={selectedVendor?.email}
+                                  />
+                                  <DetailItem
+                                    label="Mobile"
+                                    value={selectedVendor?.mobile}
+                                  />
+                                  <DetailItem
+                                    label="GST Number"
+                                    value={selectedVendor?.gstNumber}
+                                  />
+                                  <DetailItem
+                                    label="PAN Number"
+                                    value={selectedVendor?.panNumber}
+                                  />
+                                </div>
+                              </div>
                             ) : (
-                              <div className="rounded-2xl border border-dashed border-default-300 p-6 text-center">
-                                <p className="text-sm font-medium text-foreground">
+                              <div className="rounded-3xl border border-dashed border-default-300 bg-default-50 p-8 text-center">
+                                <p className="text-base font-semibold text-foreground">
                                   No selected vendor found
                                 </p>
-                                <p className="mt-1 text-xs text-default-500">
-                                  Click on Map Vendor to assign one.
+                                <p className="mt-1 text-sm text-default-500">
+                                  No vendor is currently mapped with this
+                                  procurement.
                                 </p>
                               </div>
                             )}
-                          </CardBody>
-                        </Card>
+                          </div>
+                        </CardBody>
+                      </Card>
 
-                        <Card className="border border-default-200 bg-content1 shadow-none lg:col-span-2">
-                          <CardBody className="space-y-4 p-5">
-                            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                              <div>
-                                <p className="text-sm font-semibold text-foreground">
-                                  Eligible Vendors
-                                </p>
-                                <p className="text-xs text-default-500">
-                                  Vendors available for this product
-                                </p>
-                              </div>
-
-                              <Chip color="primary" variant="flat" size="sm">
-                                {eligibleVendors.length} Vendor
-                                {eligibleVendors.length === 1 ? "" : "s"}
-                              </Chip>
-                            </div>
-
-                            <Divider />
-
-                            {eligibleVendors.length > 0 ? (
-                              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                                {eligibleVendors.map((vendor) => (
-                                  <VendorCard
-                                    key={vendor.id}
-                                    vendor={vendor}
-                                    isSelected={
-                                      Number(vendor.id) ===
-                                      Number(vendorDetail.selectedVendorId)
-                                    }
-                                  />
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="rounded-2xl border border-dashed border-default-300 p-8 text-center">
-                                <p className="text-sm font-medium text-foreground">
-                                  No eligible vendor available
-                                </p>
-                                <p className="mt-1 text-xs text-default-500">
-                                  Please map a vendor with this product first.
-                                </p>
-                              </div>
-                            )}
-                          </CardBody>
-                        </Card>
-                      </div>
-
-                      <Card className="border border-default-200 bg-content1 shadow-none">
-                        <CardBody className="space-y-4 p-5">
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">
+                      <Card className="border border-default-200 bg-white shadow-sm">
+                        <CardBody className="p-5">
+                          <div className="mb-4">
+                            <p className="text-base font-semibold text-foreground">
                               Procurement Timeline
                             </p>
-                            <p className="text-xs text-default-500">
+                            <p className="text-sm text-default-500">
                               Important dates related to this procurement
                               milestone
                             </p>
@@ -3501,7 +3527,7 @@ const ProjectDetails = () => {
 
                           <Divider />
 
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                             <DateItem
                               label="Vendor Shortlisted"
                               value={vendorDetail.vendorShortlistedDate}
@@ -3528,12 +3554,6 @@ const ProjectDetails = () => {
                   </div>
                 )}
               </DrawerBody>
-
-              <DrawerFooter className="border-t border-default-200 px-6">
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-              </DrawerFooter>
             </>
           )}
         </DrawerContent>
