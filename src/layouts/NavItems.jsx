@@ -387,12 +387,6 @@ export const navItems = [
         url: "settings/paymentTerms",
         key: "paymentTerms",
       },
-      {
-        title: "CKEditor Key",
-        icon: "",
-        url: "settings/ckEditorTokens",
-        key: "ckEditorTokens",
-      },
     ],
   },
 ];

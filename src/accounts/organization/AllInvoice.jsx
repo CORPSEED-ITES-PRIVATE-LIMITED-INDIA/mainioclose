@@ -36,7 +36,6 @@ import { useParams } from "react-router-dom";
 import { inrCurrency } from "../../common";
 import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
-import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
 export const columns = [
@@ -74,13 +73,12 @@ const AllInvoice = () => {
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const viewModal = useDisclosure();
+
   const data = useSelector((state) => state.organization.allInvoiceList);
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
   );
-  const department = useSelector(
-    (state) => state.auth.getDepartmentDetail?.department,
-  );
+
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -161,28 +159,63 @@ const AllInvoice = () => {
       );
   };
 
-  const handleViewEstimate = (rowData, type) => {
+  const handleViewEstimate = (rowData, type = "ESTIMATE") => {
     setViewType(type);
-    dispatch(getEstimateByEstimateId({ estimateId: rowData?.id, userId }))
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          let data = resp?.payload;
-          setEstimateDetail(data);
-          viewModal.onOpen();
-        } else {
-          addToast({
-            title: "There is Some Issue in estimate",
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
-      );
+
+    const taxableAmount =
+      Number(rowData?.grandTotal || 0) - Number(rowData?.totalGstAmount || 0);
+
+    setEstimateDetail({
+      id: rowData?.estimateId,
+      estimateNumber: rowData?.estimateNumber,
+      estimateDate: rowData?.invoiceDate,
+      validUntil: rowData?.invoiceDate,
+      solutionName: rowData?.solutionName,
+      subTotalExGst: taxableAmount,
+      totalGstAmount: rowData?.totalGstAmount || 0,
+      grandTotal: rowData?.grandTotal || 0,
+      cgstAmount: rowData?.cgstAmount || 0,
+      sgstAmount: rowData?.sgstAmount || 0,
+      igstAmount: rowData?.igstAmount || 0,
+
+      unit: {
+        unitName: rowData?.companyName || "NA",
+        gstNo: rowData?.organizationGstNo || "",
+        addressLine1: rowData?.organizationAddressLine1 || "",
+        addressLine2: rowData?.organizationAddressLine2 || "",
+        city: rowData?.organizationCity || "",
+        state: rowData?.organizationState || "",
+        country: rowData?.organizationCountry || "",
+        pinCode: rowData?.organizationPinCode || "",
+      },
+
+      lineItems: [
+        {
+          id: rowData?.id,
+          itemName: rowData?.solutionName || "Service",
+          description: rowData?.estimateNumber || "",
+          hsnSacCode: "NA",
+          quantity: 1,
+          unitPriceExGst: taxableAmount,
+          gstRate:
+            taxableAmount > 0
+              ? (
+                  (Number(rowData?.totalGstAmount || 0) / taxableAmount) *
+                  100
+                ).toFixed(0)
+              : 0,
+          gstAmount: rowData?.totalGstAmount || 0,
+          lineTotalExGst: taxableAmount,
+        },
+      ],
+    });
+
+    viewModal.onOpen();
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
+
     switch (columnKey) {
       case "date":
         return (
@@ -190,6 +223,7 @@ const AllInvoice = () => {
             {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
           </p>
         );
+
       case "invoiceNo":
         return (
           <div className="flex flex-col gap-1">
@@ -201,6 +235,7 @@ const AllInvoice = () => {
             </p>
           </div>
         );
+
       case "estimateNumber":
         return (
           <div>
@@ -212,12 +247,16 @@ const AllInvoice = () => {
             </p>
           </div>
         );
+
       case "service":
         return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
+
       case "clientName":
         return <p className="text-sm capitalize">{rowData?.contactName}</p>;
+
       case "companyName":
         return <p className="text-sm capitalize">{rowData?.companyName}</p>;
+
       case "txnAmount":
         return (
           <div className="flex flex-col gap-1">
@@ -233,8 +272,10 @@ const AllInvoice = () => {
             </div>
           </div>
         );
+
       case "addedBy":
         return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -244,12 +285,14 @@ const AllInvoice = () => {
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let key = Array.from(e)[0];
+
                   if (key == "viewEstimate") {
-                    handleViewEstimate(rowData);
+                    handleViewEstimate(rowData, "ESTIMATE");
                   }
                 }}
               >
@@ -258,6 +301,7 @@ const AllInvoice = () => {
             </Dropdown>
           </div>
         );
+
       default:
         return cellValue;
     }
@@ -332,6 +376,7 @@ const AllInvoice = () => {
               <SelectItem key={"invoiceNumber"}>Invoice number</SelectItem>
               <SelectItem key={"companyName"}>Company name</SelectItem>
             </Select>
+
             <Input
               isClearable
               className="w-full sm:max-w-[35%]"
@@ -342,6 +387,7 @@ const AllInvoice = () => {
               onValueChange={onSearchChange}
             />
           </div>
+
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
@@ -353,6 +399,7 @@ const AllInvoice = () => {
                   {status}
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Single selection example"
@@ -373,12 +420,14 @@ const AllInvoice = () => {
                 <DropdownItem key="CREDIT_NOTED">CREDIT_NOTED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
+
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -396,10 +445,12 @@ const AllInvoice = () => {
             </Dropdown>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             Total {count} invoice
           </span>
+
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -434,6 +485,7 @@ const AllInvoice = () => {
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
+
         <Pagination
           isCompact
           showControls
@@ -443,6 +495,7 @@ const AllInvoice = () => {
           total={pages}
           onChange={setPage}
         />
+
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
@@ -452,6 +505,7 @@ const AllInvoice = () => {
           >
             Previous
           </Button>
+
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -468,6 +522,7 @@ const AllInvoice = () => {
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
+
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -494,6 +549,7 @@ const AllInvoice = () => {
             </TableColumn>
           )}
         </TableHeader>
+
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
@@ -504,6 +560,7 @@ const AllInvoice = () => {
           )}
         </TableBody>
       </Table>
+
       <Modal
         size="full"
         isDismissable={false}
@@ -537,6 +594,7 @@ const AllInvoice = () => {
                   viewType={viewType}
                 />
               </ModalBody>
+
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>
               </ModalFooter>

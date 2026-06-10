@@ -31,7 +31,6 @@ import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import TextEditor from "../../components/TextEditor";
 
 const formSchema = z.object({
   name: z.string().min(1, "please enter the name."),

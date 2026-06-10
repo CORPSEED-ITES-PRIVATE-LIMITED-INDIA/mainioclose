@@ -31,7 +31,6 @@ import {
   sendProposal,
   sendProposalToManager,
 } from "../../toolkit/slices/leadSlice";
-import TextEditor from "../../components/TextEditor";
 import {
   getAllPaymentTermList,
   getAllSolutionList,

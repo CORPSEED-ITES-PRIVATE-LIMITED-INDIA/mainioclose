@@ -20,7 +20,6 @@ import SolutionDetails from "../setting/products/SolutionDetails";
 import SolutionPrice from "../setting/products/SolutionPrice";
 import ProductDocument from "../setting/products/ProductDocument";
 import ProductMilestones from "../setting/products/ProductMilestones";
-import CkEditorToken from "../setting/ckEditorToken/CkEditorToken";
 import ProposalMenu from "../setting/proposalAndBrouchers/menu/ProposalMenu";
 import ProposalCategory from "../setting/proposalAndBrouchers/category/ProposalCategory";
 import ProposalSubCategory from "../setting/proposalAndBrouchers/subCategory/ProposalSubCategory";
@@ -92,7 +91,7 @@ const ERPSettingRouting = () => {
         element={<ProposalService />}
       />
 
-      <Route path="settings/ckEditorTokens" element={<CkEditorToken />} />
+      {/* <Route path="settings/ckEditorTokens" element={<CkEditorToken />} /> */}
       <Route path="settings/paymentTerms" element={<PaymentTems />} />
     </>
   );

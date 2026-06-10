@@ -284,15 +284,16 @@ Corpseed Team`,
                 <p className="font-medium">{details?.unit?.unitName}</p>
                 {details?.unit?.gstNo && <p>GSTIN: {details?.unit?.gstNo}</p>}
                 <p>
-                  {details?.unit?.addressLine1}{" "}
                   {[
+                    details?.unit?.addressLine1,
+                    details?.unit?.addressLine2,
                     details?.unit?.city,
                     details?.unit?.state,
                     details?.unit?.country,
                     details?.unit?.pinCode,
                   ]
                     ?.filter(Boolean)
-                    .join(", ")}{" "}
+                    .join(", ") || "NA"}
                 </p>
               </div>
               <div className="max-w-[35%] text-wrap text-xs text-right">
