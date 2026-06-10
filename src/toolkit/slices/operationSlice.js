@@ -210,6 +210,24 @@ export const createDepartmentInOPerations = createAsyncThunk(
   },
 );
 
+export const updateOperationDepartment = createAsyncThunk(
+  "updateOperationDepartment",
+  async ({ id, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/departments/${id}`,
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to update operation department",
+      );
+    }
+  },
+);
+
 export const createDesignationInOPerations = createAsyncThunk(
   "createDesignationInOPerations",
   async (data, { rejectWithValue }) => {

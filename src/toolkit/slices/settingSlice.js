@@ -434,6 +434,24 @@ export const createDepartment = createAsyncThunk(
   },
 );
 
+export const updateDesignationDepartment = createAsyncThunk(
+  "updateDesignationDepartment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        "/leadService/api/v1/designation/updateDepartment",
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to update designation department",
+      );
+    }
+  },
+);
+
 export const getAllDesiginations = createAsyncThunk(
   "allDesiginations",
   async () => {

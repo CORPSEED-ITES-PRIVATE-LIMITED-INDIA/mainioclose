@@ -30,6 +30,7 @@ import {
   getAllDepartment,
   getAllDesiginations,
   getAllStatusData,
+  updateDesignationDepartment,
 } from "../../toolkit/slices/settingSlice";
 import {
   BriefcaseBusiness,
@@ -49,10 +50,12 @@ import NewSelect from "../../components/NewSelect";
 import {
   createAuthDepartment,
   createDesiginationByDepartment,
+  updateDepartment,
 } from "../../toolkit/slices/authSlice";
 import {
   createDepartmentInOPerations,
   mapDesignationWithDepartmentInOperations,
+  updateOperationDepartment,
 } from "../../toolkit/slices/operationSlice";
 import { useParams } from "react-router-dom";
 
@@ -162,6 +165,7 @@ const Department = () => {
   });
 
   const [item, setItem] = useState(null);
+  const isEditMode = Boolean(item);
   const [initialFilteration, setInitialFilteration] = useState({
     page: 1,
     size: 50,
@@ -227,6 +231,16 @@ const Department = () => {
   const sortedItems = React.useMemo(() => {
     return [...items];
   }, [sortDescriptor, items]);
+
+  const handleOpenUpdateModal = (rowData) => {
+    setItem(rowData);
+
+    reset({
+      name: rowData?.name || "",
+    });
+
+    onOpen();
+  };
 
   const handleAddStatus = (values) => {
     dispatch(
@@ -327,90 +341,110 @@ const Department = () => {
       });
   };
 
-  const handleFinish = (values) => {
-    dispatch(createAuthDepartment(values))
-      .then((res) => {
-        if (res.meta.requestStatus === "fulfilled") {
-          console.log("sdjkfssssss   11", res);
-          addToast({
-            title: "Department created successfully in Auth !.",
-            color: "success",
-          });
-          dispatch(createDepartment(values))
-            .then((resp) => {
-              console.log("sdjkfssssss   22", resp);
-              if (resp.meta.requestStatus === "fulfilled") {
-                const responseData = resp?.payload;
-                addToast({
-                  title: "SUCCESS",
-                  description: "Department created successfully !.",
-                  color: "success",
-                });
-                console.log("responseData", responseData);
-                dispatch(
-                  createDepartmentInOPerations({
-                    id: responseData?.id,
-                    name: responseData?.name,
-                    createdBy: userId,
-                  }),
-                )
-                  .then((resu) => {
-                    console.log("sdjkfssssss   33", resu);
-                    if (resu.meta.requestStatus === "fulfilled") {
-                      addToast({
-                        title: "SUCCESS",
-                        description:
-                          "Desigination added successfully in operations !.",
-                        color: "success",
-                      });
-                      onOpenChange(false);
-                      dispatch(getAllDepartment());
-                      reset(defaultValues);
-                    } else {
-                      addToast({
-                        description: `${resu?.payload?.message} in Operations`,
-                        title: resu?.payload?.status,
-                        color: "danger",
-                      });
-                    }
-                  })
-                  .catch(() => {
-                    addToast({
-                      title: "ERROR",
-                      description: "Something went wrong in operations !.",
-                      color: "danger",
-                    });
-                  });
-              } else {
-                addToast({
-                  description: `${resp?.payload?.message} in Leads`,
-                  title: resp?.payload?.status,
-                  color: "danger",
-                });
-              }
-            })
-            .catch(() =>
-              addToast({
-                title: "ERROR",
-                description: "Something went wrong !.",
-                color: "danger",
-              }),
-            );
-        } else {
-          addToast({
-            description: `${res?.payload?.message} in Security`,
-            title: res?.payload?.status,
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({
-          title: "ERROR",
-          description: "Something went wrong !.",
-          color: "danger",
+  const handleFinish = async (values) => {
+    try {
+      // 1. Security API
+      const securityResponse = await dispatch(
+        createAuthDepartment(values),
+      ).unwrap();
+
+      addToast({
+        title: "SUCCESS",
+        description: "Department created successfully in Security.",
+        color: "success",
+      });
+
+      // 2. Lead Service API
+      const leadResponse = await dispatch(createDepartment(values)).unwrap();
+
+      addToast({
+        title: "SUCCESS",
+        description: "Department created successfully in Lead Service.",
+        color: "success",
+      });
+
+      // 3. Operation Service API
+      await dispatch(
+        createDepartmentInOPerations({
+          id: leadResponse?.id,
+          name: leadResponse?.name,
+          createdBy: userId,
         }),
-      );
+      ).unwrap();
+
+      addToast({
+        title: "SUCCESS",
+        description: "Department created successfully in Operations.",
+        color: "success",
+      });
+
+      onOpenChange(false);
+      dispatch(getAllDepartment());
+      reset(defaultValues);
+    } catch (error) {
+      addToast({
+        title: error?.status || "ERROR",
+        description:
+          error?.message ||
+          error?.data?.message ||
+          "Something went wrong while creating department.",
+        color: "danger",
+      });
+    }
+  };
+
+  const handleUpdateDepartment = async (values) => {
+    try {
+      const payload = {
+        id: item?.id,
+        name: values?.name,
+        designation: item?.designations?.map((d) => d?.id) || [],
+      };
+
+      // 1. Security API
+      await dispatch(updateDepartment(payload)).unwrap();
+
+      // 2. Lead Service API
+      await dispatch(
+        updateDesignationDepartment({
+          id: item?.id,
+          name: values?.name,
+          designationIds: item?.designations?.map((d) => d?.id) || [],
+          weightValue: item?.weightValue || 0,
+        }),
+      ).unwrap();
+
+      // 3. Operation Service API
+      await dispatch(
+        updateOperationDepartment({
+          id: item?.id,
+          payload: {
+            id: item?.id,
+            name: values?.name,
+          },
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "SUCCESS",
+        description: "Department updated successfully in all services.",
+        color: "success",
+      });
+
+      onOpenChange(false);
+      dispatch(getAllDepartment());
+      reset(defaultValues);
+      setItem(null);
+    } catch (error) {
+      addToast({
+        title: error?.status || "ERROR",
+        description:
+          error?.message ||
+          error?.data?.message ||
+          "Something went wrong while updating department.",
+        color: "danger",
+      });
+    }
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -524,8 +558,12 @@ const Department = () => {
                     setItem(rowData);
                     dispatch(getAllStatusData());
                   }
+                  if (key === "update") {
+                    handleOpenUpdateModal(rowData);
+                  }
                 }}
               >
+                <DropdownItem key="update">Update department</DropdownItem>
                 <DropdownItem key="designation">Add designation</DropdownItem>
                 <DropdownItem key="mapStaus">Map status</DropdownItem>
               </DropdownMenu>
@@ -835,7 +873,9 @@ const Department = () => {
               <ModalBody className="px-6 py-5">
                 <form
                   className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
-                  onSubmit={handleSubmit(handleFinish)}
+                  onSubmit={handleSubmit(
+                    isEditMode ? handleUpdateDepartment : handleFinish,
+                  )}
                 >
                   <Controller
                     name="name"
@@ -1022,7 +1062,7 @@ const Department = () => {
                       type="submit"
                       className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
                     >
-                      Submit
+                      {isEditMode ? "Update" : "Submit"}
                     </Button>
                   </ModalFooter>
                 </form>

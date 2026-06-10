@@ -68,6 +68,24 @@ export const createAuthDepartment = createAsyncThunk(
   },
 );
 
+export const updateDepartment = createAsyncThunk(
+  "updateDepartment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        "/securityService/api/department/updateDepartment",
+        payload,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to update department",
+      );
+    }
+  },
+);
+
 export const createAuthDesigination = createAsyncThunk(
   "createAuthDesignibnation",
   async (data, { rejectWithValue }) => {
