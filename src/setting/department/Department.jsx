@@ -31,17 +31,7 @@ import {
   getAllDesiginations,
   getAllStatusData,
 } from "../../toolkit/slices/settingSlice";
-import {
-  BriefcaseBusiness,
-  Calculator,
-  ChevronDown,
-  EllipsisVertical,
-  Plus,
-  Search,
-  ShoppingCart,
-  SlidersHorizontal,
-  UsersRound,
-} from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -96,72 +86,32 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const getDepartmentVisual = (name = "") => {
-  const key = String(name).toLowerCase();
-
-  if (key.includes("sales")) {
-    return {
-      icon: BriefcaseBusiness,
-      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
-    };
-  }
-
-  if (key.includes("quality")) {
-    return {
-      icon: UsersRound,
-      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
-    };
-  }
-
-  if (key.includes("account")) {
-    return {
-      icon: Calculator,
-      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
-    };
-  }
-
-  if (key.includes("procurement")) {
-    return {
-      icon: ShoppingCart,
-      box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
-    };
-  }
-
-  return {
-    icon: BriefcaseBusiness,
-    box: "bg-gray-100 text-gray-900 border border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800",
-  };
-};
-
-const getStatusChipClass = (name = "") => {
-  return "bg-gray-100 text-gray-900 border-gray-300 dark:bg-zinc-900 dark:text-gray-100 dark:border-gray-800";
-};
-
-const getStatusDotClass = (name = "") => {
-  return "bg-gray-500 dark:bg-gray-400";
-};
-
 const Department = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
+
   const data = useSelector((state) => state.setting.departmentList);
   const count = useSelector((state) => state.setting.departmentList?.length);
   const designationList = useSelector((state) => state.setting.designationList);
   const statusList = useSelector((state) => state.setting.statusList);
+
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const designationModal = useDisclosure();
   const statusModal = useDisclosure();
+
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
+
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "name",
     direction: "ascending",
   });
 
   const [item, setItem] = useState(null);
+
   const [initialFilteration, setInitialFilteration] = useState({
     page: 1,
     size: 50,
@@ -169,14 +119,7 @@ const Department = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-    reset,
-  } = useForm({
+  const { control, handleSubmit, reset } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues,
   });
@@ -213,16 +156,18 @@ const Department = () => {
         ),
       );
     }
+
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / initialFilteration?.size) || 1;
 
   const items = React.useMemo(() => {
     const start = (initialFilteration?.page - 1) * initialFilteration?.size;
     const end = start + initialFilteration?.size;
+
     return filteredItems.slice(start, end);
-  }, [initialFilteration?.page, filteredItems, initialFilteration?.size]);
+  }, [initialFilteration?.page, initialFilteration?.size, filteredItems]);
 
   const sortedItems = React.useMemo(() => {
     return [...items];
@@ -241,6 +186,7 @@ const Department = () => {
             title: "Status added successfully in department !.",
             color: "success",
           });
+
           dispatch(getAllDepartment());
           setItem(null);
           statusForm.reset(statusFormDefaultValues);
@@ -255,28 +201,26 @@ const Department = () => {
   };
 
   const handleDesignationFinish = (values) => {
-    console.log("values", values);
     values.id = item?.id;
+
     dispatch(createDesiginationByDepartment(values))
       .then((resp) => {
-        console.log("sdjkfssssss   11", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(createDesiginationByDepartmentId(values))
             .then((response) => {
-              console.log("sdjkfssssss   22", response);
               if (response.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "SUCCESS",
                   description: "Desigination added successfully !.",
                   color: "success",
                 });
+
                 dispatch(
                   mapDesignationWithDepartmentInOperations({
                     departmentId: item?.id,
                     designationIds: values?.designation,
                   }),
                 ).then((respo) => {
-                  console.log("sdjkfssssss   33", respo);
                   if (respo.meta.requestStatus === "fulfilled") {
                     addToast({
                       title: "SUCCESS",
@@ -284,6 +228,7 @@ const Department = () => {
                         "Desigination added successfully in Operations !.",
                       color: "success",
                     });
+
                     dispatch(getAllDepartment());
                     designationModal.onClose();
                     designationForm.reset(designationFormDefaultValues);
@@ -331,22 +276,22 @@ const Department = () => {
     dispatch(createAuthDepartment(values))
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
-          console.log("sdjkfssssss   11", res);
           addToast({
             title: "Department created successfully in Auth !.",
             color: "success",
           });
+
           dispatch(createDepartment(values))
             .then((resp) => {
-              console.log("sdjkfssssss   22", resp);
               if (resp.meta.requestStatus === "fulfilled") {
                 const responseData = resp?.payload;
+
                 addToast({
                   title: "SUCCESS",
                   description: "Department created successfully !.",
                   color: "success",
                 });
-                console.log("responseData", responseData);
+
                 dispatch(
                   createDepartmentInOPerations({
                     id: responseData?.id,
@@ -355,7 +300,6 @@ const Department = () => {
                   }),
                 )
                   .then((resu) => {
-                    console.log("sdjkfssssss   33", resu);
                     if (resu.meta.requestStatus === "fulfilled") {
                       addToast({
                         title: "SUCCESS",
@@ -363,6 +307,7 @@ const Department = () => {
                           "Desigination added successfully in operations !.",
                         color: "success",
                       });
+
                       onOpenChange(false);
                       dispatch(getAllDepartment());
                       reset(defaultValues);
@@ -418,49 +363,16 @@ const Department = () => {
 
     switch (columnKey) {
       case "id":
-        return (
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {rowData?.id}
-          </span>
-        );
+        return <span>{rowData?.id}</span>;
 
-      case "name": {
-        const visual = getDepartmentVisual(rowData?.name);
-        const Icon = visual.icon;
-
-        return (
-          <div className="flex min-w-[210px] items-center gap-4">
-            <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${visual.box}`}
-            >
-              <Icon size={21} strokeWidth={2.4} />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-[15px] font-semibold text-gray-900 dark:text-gray-100">
-                {rowData?.name}
-              </p>
-              <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-                {rowData?.designations?.length || 0} Designations
-              </p>
-            </div>
-          </div>
-        );
-      }
+      case "name":
+        return <span className="font-medium">{rowData?.name}</span>;
 
       case "designations":
         return (
-          <div className="flex max-w-[520px] flex-wrap gap-2">
+          <div className="flex max-w-[420px] flex-wrap gap-1">
             {rowData?.designations?.map((item) => (
-              <Chip
-                size="sm"
-                key={`${item?.name}desi`}
-                radius="sm"
-                variant="flat"
-                className="h-7 border border-gray-300 bg-gray-100 px-2 text-gray-900 dark:border-gray-800 dark:bg-zinc-900 dark:text-gray-100"
-                classNames={{
-                  content: "text-[12px] font-medium",
-                }}
-              >
+              <Chip size="sm" key={`${item?.name}desi`} variant="flat">
                 {item?.name}
               </Chip>
             ))}
@@ -469,25 +381,9 @@ const Department = () => {
 
       case "departmentStatus":
         return (
-          <div className="flex max-w-[470px] flex-wrap gap-2">
+          <div className="flex max-w-[420px] flex-wrap gap-1">
             {rowData?.departmentStatus?.map((item) => (
-              <Chip
-                size="sm"
-                key={`${item?.name}depart`}
-                radius="sm"
-                variant="flat"
-                startContent={
-                  <span
-                    className={`ml-1 h-1.5 w-1.5 rounded-full ${getStatusDotClass(
-                      item?.name,
-                    )}`}
-                  />
-                }
-                className={`h-7 border px-2 ${getStatusChipClass(item?.name)}`}
-                classNames={{
-                  content: "text-[12px] font-semibold",
-                }}
-              >
+              <Chip size="sm" key={`${item?.name}depart`} variant="flat">
                 {item?.name}
               </Chip>
             ))}
@@ -499,26 +395,23 @@ const Department = () => {
           <div className="relative flex items-center justify-center">
             <Dropdown>
               <DropdownTrigger>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="light"
-                  radius="full"
-                  className="text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-zinc-900"
-                >
+                <Button isIconOnly size="sm" variant="light">
                   <EllipsisVertical size={18} />
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let key = Array.from(e)[0];
+
                   if (key === "designation") {
                     designationModal.onOpen();
                     designationForm.reset(designationFormDefaultValues);
                     setItem(rowData);
                     dispatch(getAllDesiginations());
                   }
+
                   if (key === "mapStaus") {
                     statusModal.onOpen();
                     setItem(rowData);
@@ -532,6 +425,7 @@ const Department = () => {
             </Dropdown>
           </div>
         );
+
       default:
         return cellValue;
     }
@@ -585,21 +479,13 @@ const Department = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex w-full shrink-0 flex-col gap-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex shrink-0 flex-col gap-4">
+        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
           <Input
             isClearable
-            radius="lg"
-            variant="bordered"
-            className="w-full lg:max-w-[430px]"
-            classNames={{
-              inputWrapper:
-                "h-11 border-gray-300 bg-white shadow-sm hover:border-gray-400 data-[hover=true]:border-gray-400 group-data-[focus=true]:border-gray-500 dark:border-gray-800 dark:bg-zinc-950 dark:hover:border-gray-700 dark:data-[hover=true]:border-gray-700 dark:group-data-[focus=true]:border-gray-600",
-              input:
-                "text-sm font-medium text-gray-900 placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400",
-            }}
-            placeholder="Search departments, designations or status..."
-            startContent={<Search size={19} className="text-gray-500" />}
+            className="w-full md:max-w-[400px]"
+            placeholder="Search..."
+            startContent={<Search size={18} />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
@@ -608,16 +494,11 @@ const Department = () => {
           <div className="flex items-center gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  radius="lg"
-                  variant="bordered"
-                  className="h-11 border-gray-300 bg-white px-5 font-semibold text-gray-900 shadow-sm dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
-                  startContent={<SlidersHorizontal size={17} />}
-                  endContent={<ChevronDown size={17} />}
-                >
+                <Button variant="flat" endContent={<ChevronDown size={16} />}>
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -635,11 +516,9 @@ const Department = () => {
             </Dropdown>
 
             <Button
-              radius="lg"
-              variant="bordered"
+              color="primary"
               onPress={onOpen}
               startContent={<Plus size={18} />}
-              className="h-11 border-gray-300 bg-white px-6 font-semibold text-gray-900 shadow-sm dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
             >
               Add New Department
             </Button>
@@ -647,83 +526,56 @@ const Department = () => {
         </div>
       </div>
     );
-  }, [
-    filterValue,
-    initialFilteration,
-    visibleColumns,
-    onRowsPerPageChange,
-    count,
-    onSearchChange,
-    hasSearchFilter,
-    selectedKeys,
-  ]);
+  }, [filterValue, visibleColumns, onSearchChange, selectedKeys]);
 
   const bottomContent = React.useMemo(() => {
-    const start =
-      filteredItems.length === 0
-        ? 0
-        : (initialFilteration?.page - 1) * initialFilteration?.size + 1;
-    const end = Math.min(
-      initialFilteration?.page * initialFilteration?.size,
-      filteredItems.length,
-    );
-
     return (
-      <div className="flex shrink-0 flex-col gap-3 border-t border-gray-300 px-1 py-3 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-          Showing {start} to {end} of {filteredItems.length} departments
+      <div className="flex shrink-0 flex-col items-center justify-between gap-3 py-2 md:flex-row">
+        <span className="text-small text-default-400">
+          Total {filteredItems.length} departments
         </span>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <label className="flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-small text-default-400">
+            Rows per page:
             <select
-              className="bg-transparent text-sm font-medium text-gray-900 outline-none dark:text-gray-100"
+              className="bg-transparent text-small text-default-500 outline-none"
               onChange={onRowsPerPageChange}
               value={initialFilteration?.size}
             >
-              <option value="10">10 per page</option>
-              <option value="15">15 per page</option>
-              <option value="25">25 per page</option>
-              <option value="50">50 per page</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
             </select>
           </label>
 
           <Pagination
             isCompact
             showControls
-            showShadow={false}
-            variant="bordered"
+            showShadow
+            color="primary"
             page={initialFilteration?.page}
             total={pages}
             onChange={(e) =>
               setInitialFilteration((prev) => ({ ...prev, page: e }))
             }
-            classNames={{
-              cursor:
-                "bg-gray-900 text-white font-semibold shadow-none dark:bg-gray-100 dark:text-gray-900",
-              item: "font-semibold text-gray-900 dark:text-gray-100",
-              prev: "text-gray-900 dark:text-gray-100",
-              next: "text-gray-900 dark:text-gray-100",
-            }}
           />
 
           <div className="hidden items-center gap-2 sm:flex">
             <Button
               isDisabled={pages === 1}
               size="sm"
-              radius="lg"
-              variant="bordered"
-              className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+              variant="flat"
               onPress={onPreviousPage}
             >
               Previous
             </Button>
+
             <Button
               isDisabled={pages === 1}
               size="sm"
-              radius="lg"
-              variant="bordered"
-              className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
+              variant="flat"
               onPress={onNextPage}
             >
               Next
@@ -737,43 +589,31 @@ const Department = () => {
     initialFilteration?.page,
     initialFilteration?.size,
     pages,
-    hasSearchFilter,
     count,
     filteredItems.length,
   ]);
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-84px)] max-h-[calc(100dvh-84px)] min-h-0 w-full flex-col overflow-hidden bg-gray-50 px-4 py-4 dark:bg-black sm:px-6 lg:px-8">
+      <div className="flex h-[calc(100vh-90px)] w-full flex-col overflow-hidden p-4">
         <div className="mb-4 shrink-0">
-          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-gray-900 dark:text-gray-100">
-            Department List
-          </h1>
-          <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-            Manage departments, designations and workflow statuses.
-          </p>
+          <h1 className="text-2xl font-semibold">Department List</h1>
         </div>
 
         <div className="min-h-0 flex-1 overflow-hidden">
           <Table
-            isHeaderSticky
-            aria-label="Example table with custom cells, pagination and sorting"
+            aria-label="Department table"
             bottomContent={bottomContent}
             bottomContentPlacement="outside"
-            classNames={{
-              base: "flex h-full min-h-0 w-full flex-col overflow-hidden",
-              wrapper:
-                "min-h-0 flex-1 overflow-auto rounded-2xl border border-gray-300 bg-white px-5 py-3 shadow-xl shadow-gray-200/60 dark:border-gray-800 dark:bg-zinc-950 dark:shadow-none",
-              table: "min-w-[1050px] border-separate border-spacing-0",
-              thead: "[&>tr]:first:rounded-xl",
-              th: "sticky top-0 z-20 border-b border-gray-300 bg-gray-100 py-3.5 text-xs font-bold uppercase tracking-wide text-gray-900 first:rounded-l-xl last:rounded-r-xl dark:border-gray-800 dark:bg-zinc-900 dark:text-gray-100",
-              tr: "border-b border-gray-300 dark:border-gray-800",
-              td: "border-b border-gray-300 py-5 text-sm text-gray-900 dark:border-gray-800 dark:text-gray-100",
-            }}
             sortDescriptor={sortDescriptor}
             topContent={topContent}
             topContentPlacement="outside"
             onSortChange={setSortDescriptor}
+            classNames={{
+              base: "flex h-full min-h-0 flex-col overflow-hidden",
+              wrapper: "min-h-0 flex-1 overflow-auto",
+              table: "min-w-[1000px]",
+            }}
           >
             <TableHeader columns={headerColumns}>
               {(column) => (
@@ -781,24 +621,15 @@ const Department = () => {
                   key={column.uid}
                   align={column.uid === "actions" ? "center" : "start"}
                   allowsSorting={column.sortable}
-                  className={
-                    column.uid === "id"
-                      ? "w-[70px]"
-                      : column.uid === "actions"
-                        ? "w-[110px]"
-                        : ""
-                  }
                 >
                   {column.name}
                 </TableColumn>
               )}
             </TableHeader>
+
             <TableBody emptyContent={"No data found"} items={sortedItems}>
               {(item) => (
-                <TableRow
-                  key={item.id}
-                  className="hover:bg-gray-50 dark:hover:bg-zinc-900/70"
-                >
+                <TableRow key={item.id}>
                   {(columnKey) => (
                     <TableCell>{renderCell(item, columnKey)}</TableCell>
                   )}
@@ -816,25 +647,15 @@ const Department = () => {
         isOpen={isOpen}
         onOpenChange={onOpenChange}
         placement="top-center"
-        classNames={{
-          base: "rounded-2xl bg-white dark:bg-zinc-950",
-          backdrop: "bg-black/60 backdrop-blur-sm",
-        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 border-b border-gray-300 px-6 py-5 dark:border-gray-800">
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Create department
-                </span>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Add a new department into the ERP workflow.
-                </span>
-              </ModalHeader>
-              <ModalBody className="px-6 py-5">
+              <ModalHeader>Create department</ModalHeader>
+
+              <ModalBody>
                 <form
-                  className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
+                  className="flex max-h-[65vh] w-full flex-col gap-4 overflow-auto"
                   onSubmit={handleSubmit(handleFinish)}
                 >
                   <Controller
@@ -843,39 +664,22 @@ const Department = () => {
                     render={({ field, fieldState: { error } }) => (
                       <Input
                         isRequired
-                        radius="lg"
-                        variant="bordered"
                         isInvalid={!!error}
                         errorMessage={
                           error?.message || "Please enter department"
                         }
                         label="Department name"
-                        classNames={{
-                          inputWrapper:
-                            "border-gray-300 bg-white group-data-[focus=true]:border-gray-500 dark:border-gray-800 dark:bg-zinc-950",
-                          label:
-                            "font-semibold text-gray-900 dark:text-gray-100",
-                          input: "font-medium text-gray-900 dark:text-gray-100",
-                        }}
                         {...field}
                       />
                     )}
                   />
-                  <ModalFooter className="flex w-full justify-end gap-3 px-0 pb-0">
-                    <Button
-                      radius="lg"
-                      variant="bordered"
-                      className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
-                      onPress={onClose}
-                    >
+
+                  <ModalFooter className="px-0">
+                    <Button variant="flat" onPress={onClose}>
                       Cancel
                     </Button>
-                    <Button
-                      radius="lg"
-                      variant="bordered"
-                      type="submit"
-                      className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
-                    >
+
+                    <Button color="primary" type="submit">
                       Submit
                     </Button>
                   </ModalFooter>
@@ -893,25 +697,15 @@ const Department = () => {
         isOpen={designationModal.isOpen}
         onOpenChange={designationModal.onOpenChange}
         placement="top-center"
-        classNames={{
-          base: "rounded-2xl bg-white dark:bg-zinc-950",
-          backdrop: "bg-black/60 backdrop-blur-sm",
-        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 border-b border-gray-300 px-6 py-5 dark:border-gray-800">
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Add designation
-                </span>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Map selected designations with this department.
-                </span>
-              </ModalHeader>
-              <ModalBody className="px-6 py-5">
+              <ModalHeader>Add designation</ModalHeader>
+
+              <ModalBody>
                 <form
-                  className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
+                  className="flex max-h-[65vh] w-full flex-col gap-4 overflow-auto"
                   onSubmit={designationForm.handleSubmit(
                     handleDesignationFinish,
                   )}
@@ -919,7 +713,7 @@ const Department = () => {
                   <Controller
                     name="designation"
                     control={designationForm.control}
-                    render={({ field, fieldState: { error } }) => (
+                    render={({ field }) => (
                       <NewSelect
                         isRequired
                         label="Designations"
@@ -935,21 +729,13 @@ const Department = () => {
                       />
                     )}
                   />
-                  <ModalFooter className="flex w-full justify-end gap-3 px-0 pb-0">
-                    <Button
-                      radius="lg"
-                      variant="bordered"
-                      className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
-                      onPress={onClose}
-                    >
+
+                  <ModalFooter className="px-0">
+                    <Button variant="flat" onPress={onClose}>
                       Cancel
                     </Button>
-                    <Button
-                      radius="lg"
-                      variant="bordered"
-                      type="submit"
-                      className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
-                    >
+
+                    <Button color="primary" type="submit">
                       Submit
                     </Button>
                   </ModalFooter>
@@ -967,31 +753,21 @@ const Department = () => {
         isOpen={statusModal.isOpen}
         onOpenChange={statusModal.onOpenChange}
         placement="top-center"
-        classNames={{
-          base: "rounded-2xl bg-white dark:bg-zinc-950",
-          backdrop: "bg-black/60 backdrop-blur-sm",
-        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 border-b border-gray-300 px-6 py-5 dark:border-gray-800">
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Map status
-                </span>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Assign workflow statuses to this department.
-                </span>
-              </ModalHeader>
-              <ModalBody className="px-6 py-5">
+              <ModalHeader>Map status</ModalHeader>
+
+              <ModalBody>
                 <form
-                  className="flex max-h-[65vh] w-full flex-col gap-5 overflow-auto"
+                  className="flex max-h-[65vh] w-full flex-col gap-4 overflow-auto"
                   onSubmit={statusForm.handleSubmit(handleAddStatus)}
                 >
                   <Controller
                     name="statusId"
                     control={statusForm.control}
-                    render={({ field, fieldState: { error } }) => (
+                    render={({ field }) => (
                       <NewSelect
                         isRequired
                         label="Status"
@@ -1007,21 +783,13 @@ const Department = () => {
                       />
                     )}
                   />
-                  <ModalFooter className="flex w-full justify-end gap-3 px-0 pb-0">
-                    <Button
-                      radius="lg"
-                      variant="bordered"
-                      className="border-gray-300 font-semibold text-gray-900 dark:border-gray-800 dark:text-gray-100"
-                      onPress={onClose}
-                    >
+
+                  <ModalFooter className="px-0">
+                    <Button variant="flat" onPress={onClose}>
                       Cancel
                     </Button>
-                    <Button
-                      radius="lg"
-                      variant="bordered"
-                      type="submit"
-                      className="border-gray-300 bg-white px-6 font-semibold text-gray-900 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-100"
-                    >
+
+                    <Button color="primary" type="submit">
                       Submit
                     </Button>
                   </ModalFooter>
