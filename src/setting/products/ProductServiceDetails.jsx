@@ -465,7 +465,9 @@ const ProductServiceDetails = () => {
   };
 
   const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
-  const isSolutionExists = Boolean(serviceBrouchersDetail?.solution?.id);
+  const isSolutionExists = Boolean(
+    serviceBrouchersDetail?.solution?.brochure?.id,
+  );
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
