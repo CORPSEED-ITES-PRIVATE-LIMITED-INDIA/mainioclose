@@ -1671,23 +1671,27 @@ const Leads = () => {
                       }
                     />
 
-                    <NewSelect
-                      isRequired
-                      data={allLeadUser || []}
-                      label="Select assignee"
-                      name="assigneeId"
-                      labelKey="fullName"
-                      valueKey="id"
-                      value={leadFormData?.assigneeId}
-                      onChange={(selectedValue) => {
-                        setLeadFormData((prev) => ({
-                          ...prev,
-                          assigneeId: selectedValue,
-                        }));
-                      }}
-                      isInvalid={leadFormSubmitted && !leadFormData?.assigneeId}
-                      errorMessage="please select assignee"
-                    />
+                    {adminRole && (
+                      <NewSelect
+                        isRequired
+                        data={allLeadUser || []}
+                        label="Select assignee"
+                        name="assigneeId"
+                        labelKey="fullName"
+                        valueKey="id"
+                        value={leadFormData?.assigneeId}
+                        onChange={(selectedValue) => {
+                          setLeadFormData((prev) => ({
+                            ...prev,
+                            assigneeId: selectedValue,
+                          }));
+                        }}
+                        isInvalid={
+                          leadFormSubmitted && !leadFormData?.assigneeId
+                        }
+                        errorMessage="please select assignee"
+                      />
+                    )}
 
                     <Select
                       isRequired
