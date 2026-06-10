@@ -68,6 +68,39 @@ export const createMileStone = createAsyncThunk(
   },
 );
 
+export const updateMileStone = createAsyncThunk(
+  "updateMileStone",
+  async ({ id, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/milestones/${id}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to update milestone",
+      );
+    }
+  },
+);
+
+export const deleteMileStone = createAsyncThunk(
+  "deleteMileStone",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/operationService/api/milestones/${id}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to delete milestone",
+      );
+    }
+  },
+);
+
 export const createUsersInOperations = createAsyncThunk(
   "createUsersInOperations",
   async (data, { rejectWithValue }) => {

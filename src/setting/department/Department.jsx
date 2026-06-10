@@ -266,7 +266,8 @@ const Department = () => {
               console.log("sdjkfssssss   22", response);
               if (response.meta.requestStatus === "fulfilled") {
                 addToast({
-                  title: "Desigination added successfully !.",
+                  title: "SUCCESS",
+                  description: "Desigination added successfully !.",
                   color: "success",
                 });
                 dispatch(
@@ -278,7 +279,9 @@ const Department = () => {
                   console.log("sdjkfssssss   33", respo);
                   if (respo.meta.requestStatus === "fulfilled") {
                     addToast({
-                      title: "Desigination added successfully in Operations !.",
+                      title: "SUCCESS",
+                      description:
+                        "Desigination added successfully in Operations !.",
                       color: "success",
                     });
                     dispatch(getAllDepartment());
@@ -301,7 +304,11 @@ const Department = () => {
               }
             })
             .catch(() => {
-              addToast({ title: "Something went wrong !.", color: "danger" });
+              addToast({
+                title: "ERROR",
+                description: "Something went wrong !.",
+                color: "danger",
+              });
             });
         } else {
           addToast({
@@ -312,7 +319,11 @@ const Department = () => {
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -331,7 +342,8 @@ const Department = () => {
               if (resp.meta.requestStatus === "fulfilled") {
                 const responseData = resp?.payload;
                 addToast({
-                  title: "Department created successfully !.",
+                  title: "SUCCESS",
+                  description: "Department created successfully !.",
                   color: "success",
                 });
                 console.log("responseData", responseData);
@@ -346,7 +358,8 @@ const Department = () => {
                     console.log("sdjkfssssss   33", resu);
                     if (resu.meta.requestStatus === "fulfilled") {
                       addToast({
-                        title:
+                        title: "SUCCESS",
+                        description:
                           "Desigination added successfully in operations !.",
                         color: "success",
                       });
@@ -363,7 +376,8 @@ const Department = () => {
                   })
                   .catch(() => {
                     addToast({
-                      title: "Something went wrong in operations !.",
+                      title: "ERROR",
+                      description: "Something went wrong in operations !.",
                       color: "danger",
                     });
                   });
@@ -376,7 +390,11 @@ const Department = () => {
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" }),
+              addToast({
+                title: "ERROR",
+                description: "Something went wrong !.",
+                color: "danger",
+              }),
             );
         } else {
           addToast({
@@ -387,7 +405,11 @@ const Department = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 

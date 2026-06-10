@@ -351,7 +351,8 @@ const UsersList = () => {
                 console.log("Response in Lead1", res);
                 if (res.meta.requestStatus === "fulfilled") {
                   addToast({
-                    title: "User updated successfully in Leads !.",
+                    title: "SUCCESS",
+                    description: "User updated successfully in Leads !.",
                     color: "success",
                   });
 
@@ -368,7 +369,8 @@ const UsersList = () => {
                     console.log("Response   account1", acco);
                     if (acco.meta.requestStatus === "fulfilled") {
                       addToast({
-                        title: "User updated in Accounts",
+                        title: "SUCCESS",
+                        description: "User updated in Accounts",
                         color: "success",
                       });
                       dispatch(
@@ -393,7 +395,8 @@ const UsersList = () => {
                         console.log("Response   operation1", oper);
                         if (oper.meta.requestStatus === "fulfilled") {
                           addToast({
-                            title: "User updated in operation",
+                            title: "SUCCESS",
+                            description: "User updated in operation",
                             color: "success",
                           });
                           setRowItem(null);
@@ -402,41 +405,47 @@ const UsersList = () => {
                           dispatch(getAllUsers());
                         } else {
                           addToast({
-                            title: "Something went wrong in Operations",
+                            title: "ERROR",
+                            description: "Something went wrong in Operations",
                             color: "danger",
                           });
                         }
                       });
                     } else {
                       addToast({
-                        title: "Something went wrong in Accounts",
+                        title: "ERROR",
+                        description: "Something went wrong in Accounts",
                         color: "danger",
                       });
                     }
                   });
                 } else {
                   addToast({
-                    title: "Something went wrong !.",
+                    title: "ERROR",
+                    description: "Something went wrong !.",
                     color: "danger",
                   });
                 }
               })
               .catch(() => {
                 addToast({
-                  title: "Something went wrong !.",
+                  title: "ERROR",
+                  description: "Something went wrong !.",
                   color: "danger",
                 });
               });
           } else {
             addToast({
-              title: "Something went wrong !.",
+              title: "ERROR",
+              description: "Something went wrong !.",
               color: "danger",
             });
           }
         })
         .catch(() => {
           addToast({
-            title: "Something went wrong !.",
+            title: "ERROR",
+            description: "Something went wrong !.",
             color: "danger",
           });
         });
@@ -463,7 +472,8 @@ const UsersList = () => {
                 if (info.meta.requestStatus === "fulfilled") {
                   const userInfo = info?.payload?.data;
                   addToast({
-                    title: "User created successfully !.",
+                    title: "SUCCESS",
+                    description: "User created successfully !.",
                     color: "success",
                   });
                   dispatch(
@@ -478,7 +488,8 @@ const UsersList = () => {
                   ).then((acc) => {
                     if (acc.meta.requestStatus === "fulfilled") {
                       addToast({
-                        title: "User created in Accounts",
+                        title: "SUCCESS",
+                        description: "User created in Accounts",
                         color: "success",
                       });
                       dispatch(
@@ -498,7 +509,8 @@ const UsersList = () => {
                       ).then((oper) => {
                         if (oper.meta.requestStatus === "fulfilled") {
                           addToast({
-                            title: "User created in operation",
+                            title: "SUCCESS",
+                            description: "User created in operation",
                             color: "success",
                           });
                           onClose();
@@ -506,7 +518,8 @@ const UsersList = () => {
                           dispatch(getAllUsers());
                         } else {
                           addToast({
-                            title:
+                            title: "ERROR",
+                            description:
                               oper?.payload?.message ||
                               "Something went wrong in Operations",
                             color: "danger",
@@ -515,7 +528,8 @@ const UsersList = () => {
                       });
                     } else {
                       addToast({
-                        title:
+                        title: "ERROR",
+                        description:
                           acc?.payload?.message ||
                           "Something went wrong in Accounts",
                         color: "danger",
@@ -524,27 +538,31 @@ const UsersList = () => {
                   });
                 } else {
                   addToast({
-                    title: info?.payload,
+                    title: "ERROR",
+                    description: info?.payload,
                     color: "danger",
                   });
                 }
               })
               .catch(() => {
                 addToast({
-                  title: "Something went wrong !.",
+                  title: "ERROR",
+                  description: "Something went wrong !.",
                   color: "danger",
                 });
               });
           } else {
             addToast({
-              title: resp?.payload || "Something went wrong !.",
+              title: "ERROR",
+              description: resp?.payload || "Something went wrong !.",
               color: "danger",
             });
           }
         })
         .catch(() => {
           addToast({
-            title: "Something went wrong !.",
+            title: "ERROR",
+            description: "Something went wrong !.",
             color: "danger",
           });
         });

@@ -26,7 +26,9 @@ import { ChevronDown, Plus, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createMileStone,
+  deleteMileStone,
   getAllMilestones,
+  updateMileStone,
 } from "../../toolkit/slices/operationSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -39,13 +41,14 @@ export const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "name", sortable: true },
   { name: "DEPARTMENTS", uid: "departments" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "departments"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "departments", "actions"];
 
 const formSchema = z.object({
   name: z.string().min(1, "Please enter milestone name."),
@@ -68,7 +71,7 @@ const Milestone = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
 
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
@@ -76,10 +79,14 @@ const Milestone = () => {
     column: "name",
     direction: "ascending",
   });
+
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const isLarge = useMediaQuery({ minWidth: 1536 });
+
+  const [selectedMilestone, setSelectedMilestone] = React.useState(null);
+  const isEditMode = Boolean(selectedMilestone);
 
   useEffect(() => {
     dispatch(getAllMilestones());
@@ -90,7 +97,7 @@ const Milestone = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -100,8 +107,8 @@ const Milestone = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
-        )
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase()),
+        ),
       );
     }
 
@@ -137,42 +144,118 @@ const Milestone = () => {
     defaultValues,
   });
 
+  const handleOpenCreateModal = () => {
+    setSelectedMilestone(null);
+    reset(defaultValues);
+    onOpen();
+  };
+
+  const handleOpenEditModal = (rowData) => {
+    setSelectedMilestone(rowData);
+
+    reset({
+      name: rowData?.name || "",
+      description: rowData?.description || "",
+      departmentIds:
+        rowData?.departmentResponseDtos?.map((item) => String(item?.id)) || [],
+    });
+
+    onOpen();
+  };
+
+  const handleDeleteMilestone = (id) => {
+    dispatch(deleteMileStone(id)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Milestone deleted successfully.",
+          color: "success",
+        });
+        dispatch(getAllMilestones());
+      } else {
+        addToast({
+          title: "Failed to delete milestone.",
+          color: "danger",
+        });
+      }
+    });
+  };
+
   const onSubmit = useCallback(
     (values) => {
-      dispatch(createMileStone(values))
+      const payload = {
+        name: values.name,
+        description: values.description,
+        departmentIds: values.departmentIds.map(Number),
+      };
+
+      const action = isEditMode
+        ? updateMileStone({ id: selectedMilestone.id, payload })
+        : createMileStone(payload);
+
+      dispatch(action)
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Milestone created successfully !.",
+              title: isEditMode
+                ? "Milestone updated successfully."
+                : "Milestone created successfully.",
               color: "success",
             });
+
             dispatch(getAllMilestones());
             onClose();
             reset(defaultValues);
+            setSelectedMilestone(null);
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({ title: "Something went wrong.", color: "danger" });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong.", color: "danger" }),
         );
     },
-    [dispatch, onClose, reset]
+    [dispatch, onClose, reset, isEditMode, selectedMilestone],
   );
 
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
+
     switch (columnKey) {
       case "name":
-        return <p>{rowData?.name} </p>;
+        return <p>{rowData?.name}</p>;
+
       case "departments":
         return (
           <p>
             {rowData?.departmentResponseDtos
               ?.map((item) => item?.name)
-              ?.join(", ")}{" "}
+              ?.join(", ")}
           </p>
         );
+
+      case "actions":
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              color="primary"
+              variant="flat"
+              onPress={() => handleOpenEditModal(rowData)}
+            >
+              Update
+            </Button>
+
+            <Button
+              size="sm"
+              color="danger"
+              variant="flat"
+              onPress={() => handleDeleteMilestone(rowData.id)}
+            >
+              Delete
+            </Button>
+          </div>
+        );
+
       default:
         return cellValue;
     }
@@ -226,7 +309,7 @@ const Milestone = () => {
             <Button
               endContent={<Plus />}
               color="primary"
-              onPress={onOpen}
+              onPress={handleOpenCreateModal}
               size={isMedium ? "sm" : isLarge ? "md" : ""}
             >
               Add Milestone
@@ -371,7 +454,9 @@ const Milestone = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Add Milestone</ModalHeader>
+              <ModalHeader>
+                {isEditMode ? "Update Milestone" : "Add Milestone"}
+              </ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
@@ -430,7 +515,7 @@ const Milestone = () => {
                   <ModalFooter className="flex justify-end">
                     <Button onPress={onClose}>Cancel</Button>
                     <Button color="primary" type="submit">
-                      Submit
+                      {isEditMode ? "Update" : "Submit"}
                     </Button>
                   </ModalFooter>
                 </form>

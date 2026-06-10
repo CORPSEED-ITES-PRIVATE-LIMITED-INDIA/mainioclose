@@ -58,6 +58,11 @@ const Login = () => {
                       navigate(`/erp/${resp?.payload?.id}/hr/usersList`);
                       return;
                     }
+                    if (response.payload?.department === "Quality Team") {
+                      console.log("dsjkhgkjsgkjdghj 2222", response);
+                      navigate(`/erp/${resp?.payload?.id}/quality/dashboard`);
+                      return;
+                    }
                     if (response.payload?.department === "Accounts") {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
                       navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
@@ -68,6 +73,7 @@ const Login = () => {
                       response.payload?.department === "Legal" ||
                       response.payload?.department === "Technical" ||
                       response.payload?.department === "Liaisoning" ||
+                      response.payload?.department === "CRT Test" ||
                       response.payload?.department === "Operations"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
