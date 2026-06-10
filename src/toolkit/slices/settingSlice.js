@@ -848,6 +848,17 @@ export const getServiceBrouchersServiceDetailBySolutionId = createAsyncThunk(
     return response.data;
   },
 );
+export const updateServiceBrouchersServiceDetailBySolutionId = createAsyncThunk(
+  "updateServiceBrouchersServiceDetailBySolutionId",
+  async ({ subCategoryId, solutionId, payload }) => {
+    const response = await api.put(
+      `/leadService/api/v1/subcategories/${subCategoryId}/solutions/${solutionId}/brochure`,
+      payload,
+    );
+
+    return response.data;
+  },
+);
 
 export const SettingSlice = createSlice({
   name: "setting",
@@ -1267,6 +1278,24 @@ export const SettingSlice = createSlice({
     );
     builder.addCase(
       getServiceBrouchersServiceDetailBySolutionId.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      updateServiceBrouchersServiceDetailBySolutionId.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      updateServiceBrouchersServiceDetailBySolutionId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+      },
+    );
+    builder.addCase(
+      updateServiceBrouchersServiceDetailBySolutionId.rejected,
       (state) => {
         state.loading = "rejected";
       },

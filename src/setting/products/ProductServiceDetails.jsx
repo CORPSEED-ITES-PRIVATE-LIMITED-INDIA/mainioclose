@@ -33,6 +33,7 @@ import {
   addBrochureToExistingSolution,
   getAllMenus,
   getServiceBrouchersServiceDetailBySolutionId,
+  updateServiceBrouchersServiceDetailBySolutionId,
 } from "../../toolkit/slices/settingSlice.js";
 
 import NewTextEditor from "../../components/NewTextEditor";
@@ -463,6 +464,9 @@ const ProductServiceDetails = () => {
     }));
   };
 
+  const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
+  const isSolutionExists = Boolean(serviceBrouchersDetail?.solution?.id);
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -479,16 +483,26 @@ const ProductServiceDetails = () => {
       setIsSubmitting(true);
 
       await dispatch(
-        addBrochureToExistingSolution({
-          solutionId,
-          subCategoryId: formData.subCategoryId,
-          payload,
-        }),
+        isSolutionExists
+          ? updateServiceBrouchersServiceDetailBySolutionId({
+              solutionId,
+              subCategoryId: formData.subCategoryId,
+              payload,
+            })
+          : addBrochureToExistingSolution({
+              solutionId,
+              subCategoryId: formData.subCategoryId,
+              payload,
+            }),
       ).unwrap();
 
       addToast({
-        title: "Service details saved",
-        description: "Service details have been submitted successfully.",
+        title: isSolutionExists
+          ? "Service details updated"
+          : "Service details saved",
+        description: isSolutionExists
+          ? "Service details have been updated successfully."
+          : "Service details have been submitted successfully.",
         color: "success",
       });
 
@@ -509,8 +523,6 @@ const ProductServiceDetails = () => {
 
   const isSaveDisabled =
     isUploading || isSubmitting || !formData.subCategoryId || !solutionId;
-
-  const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
 
   return (
     <div className="flex max-h-[85vh] overflow-auto bg-default-50 px-4 py-4 sm:px-6 lg:px-8">
@@ -545,7 +557,7 @@ const ProductServiceDetails = () => {
             onPress={() => setIsModalOpen(true)}
             className="font-semibold"
           >
-            Add Service Details
+            {isSolutionExists ? "Update Solution" : "Add Solution"}
           </Button>
         </div>
 
@@ -694,7 +706,6 @@ const ProductServiceDetails = () => {
             </div>
           </CardBody>
         </Card>
-        {/* )} */}
 
         <Modal
           isOpen={isModalOpen}
@@ -720,7 +731,9 @@ const ProductServiceDetails = () => {
 
                     <div>
                       <h2 className="text-lg font-bold text-default-900">
-                        Add / Update Service Details
+                        {isSolutionExists
+                          ? "Update Service Details"
+                          : "Add Service Details"}
                       </h2>
                       <p className="text-sm font-normal text-default-500">
                         Fields are pre-filled from existing solution details.
@@ -1010,7 +1023,9 @@ const ProductServiceDetails = () => {
                       ? "Uploading..."
                       : isSubmitting
                         ? "Submitting..."
-                        : "Submit"}
+                        : isSolutionExists
+                          ? "Update Solution"
+                          : "Submit"}
                   </Button>
                 </ModalFooter>
               </>
