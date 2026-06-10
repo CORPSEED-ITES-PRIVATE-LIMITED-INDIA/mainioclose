@@ -399,17 +399,17 @@ const Unbill = () => {
         );
       case "tdsActive":
         return (
-          <div className="w-full  max-w-[130px] rounded-md px-3 py-2">
+          <div className="w-full max-w-[130px] rounded-md px-3 py-2">
             {rowData?.tdsActiveFlag === true && (
               <div className="mt-2 space-y-1 text-xs">
                 <div className="flex items-center gap-3">
-                  <span className="whitespace-nowrap font-semibold text-gray-900">
+                  <span className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">
                     ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="whitespace-nowrap font-semibold text-gray-400">
+                  <span className="whitespace-nowrap font-semibold text-gray-600 dark:text-gray-300">
                     {rowData?.tdsResponseDto?.tdsPercentage ?? 0}%
                   </span>
                 </div>

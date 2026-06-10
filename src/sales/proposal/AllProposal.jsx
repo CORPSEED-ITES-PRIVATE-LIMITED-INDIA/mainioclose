@@ -633,7 +633,11 @@ const AllProposal = () => {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown />}
+                  variant="flat"
+                  className="capitalize"
+                >
                   {filteration?.status}
                 </Button>
               </DropdownTrigger>
