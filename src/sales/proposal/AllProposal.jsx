@@ -988,12 +988,12 @@ const AllProposal = () => {
                       emptyText="No email body found for this proposal."
                     />
 
-                    <HtmlPreviewBlock
+                    {/* <HtmlPreviewBlock
                       title="Scope of Work"
                       subtitle="This HTML content is coming from proposal scope of work."
                       html={selectedScopeOfWork}
                       emptyText="No scope of work found for this proposal."
-                    />
+                    /> */}
 
                     <ProposalPdfPreview
                       pdfUrl={selectedProposal}

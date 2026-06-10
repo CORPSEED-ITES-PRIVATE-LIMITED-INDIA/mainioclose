@@ -463,7 +463,7 @@ export const accountNavItems = [
     title: "Procurement PR",
     url: "accounts/procurementPaymentRequests",
     key: "procurementPaymentRequests",
-    icon: "Coin",
+    icon: "FileText",
   },
   {
     title: "Procurement PO",
