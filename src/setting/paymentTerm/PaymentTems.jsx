@@ -43,6 +43,7 @@ import {
   getAllPaymentTermList,
   updatePaymentType,
 } from "../../toolkit/slices/settingSlice";
+import { useParams } from "react-router-dom";
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
@@ -90,6 +91,7 @@ const normalizePaymentTypeResponse = (response) => {
 };
 
 const PaymentTems = () => {
+  const { userId } = useParams();
   const dispatch = useDispatch();
 
   const formModal = useDisclosure();
@@ -266,13 +268,13 @@ const PaymentTems = () => {
 
   const handleSubmitPaymentType = (values) => {
     const payload = {
-      id: selectedItem?.id || 0,
+      id: selectedItem?.id,
       code: values.code,
       name: values.name,
       description: values.description,
       active: values.active === "true",
-      createdBy: Number(localStorage.getItem("userId") || 0),
-      updatedBy: Number(localStorage.getItem("userId") || 0),
+      createdBy: userId,
+      updatedBy: userId,
     };
 
     if (selectedItem?.id) {
