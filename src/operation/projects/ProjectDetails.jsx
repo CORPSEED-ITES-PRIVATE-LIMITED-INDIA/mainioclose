@@ -292,30 +292,35 @@ export const PdfIcon = (props) => {
 
 const CommentThread = ({ comment, level = 0, onReply }) => {
   return (
-    <div className="mt-2" style={{ marginLeft: Math.min(level * 16, 64) }}>
-      <div className="group rounded-md p-2 bg-gradient-to-br from-blue-50 to-blue-100 border text-xs relative max-w-full overflow-hidden">
-        <div className="flex justify-between text-gray-500 text-[11px]">
-          <span className="font-medium text-gray-700">
-            {comment.createdByUserName}
+    <div className="mt-3" style={{ marginLeft: Math.min(level * 14, 56) }}>
+      <div className="group border-l border-default-200 pl-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-default-500">
+          <span className="font-semibold text-foreground">
+            {comment.createdByUserName || "-"}
           </span>
-
-          <span>{dayjs(comment.createdDate).format("DD/MM/YYYY , HH:mm")}</span>
+          <span>•</span>
+          <span>
+            {comment.createdDate
+              ? dayjs(comment.createdDate).format("DD/MM/YYYY, HH:mm")
+              : "-"}
+          </span>
         </div>
 
-        <div className="mt-1 text-gray-700 break-words whitespace-pre-wrap">
-          {comment.commentText}
-        </div>
+        <p className="mt-1 whitespace-pre-wrap break-words text-default-700">
+          {comment.commentText || "-"}
+        </p>
 
         <button
+          type="button"
           onClick={() => onReply(comment.id)}
-          className="absolute right-2 bottom-2 text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+          className="mt-1 text-[11px] font-medium text-primary opacity-80 hover:opacity-100"
         >
           Reply
         </button>
       </div>
 
       {comment.children?.length > 0 && (
-        <div className="border-l pl-3 mt-2">
+        <div className="mt-2">
           {comment.children.map((child) => (
             <CommentThread
               key={child.id}
@@ -335,22 +340,24 @@ export const ActivityItem = ({ activity, onReply }) => {
     switch (activity.activityType) {
       case "COMMENT":
         return (
-          <>
-            <div className="group mt-1 rounded-md p-2 bg-gradient-to-br from-gray-50 to-gray-100 border text-xs relative">
-              {activity.details?.commentText}
+          <div className="group">
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-default-700">
+              {activity.details?.commentText || "-"}
+            </p>
 
-              {/* Reply button */}
-              <button
-                onClick={() => onReply(activity.details?.id)}
-                className="absolute right-2 bottom-2 text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition cursor-pointer"
-              >
-                Reply
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onReply(activity.details?.id)}
+              className="mt-1 text-xs font-medium text-primary opacity-80 hover:opacity-100"
+            >
+              Reply
+            </button>
 
             {activity.details?.children?.length > 0 && (
-              <div className="mt-2 ml-2 border-l pl-3">
-                <span className="text-[11px] text-gray-400">Replies</span>
+              <div className="mt-3 border-l border-default-200 pl-3">
+                <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-default-400">
+                  Replies
+                </p>
 
                 {activity.details.children.map((child) => (
                   <CommentThread
@@ -361,28 +368,28 @@ export const ActivityItem = ({ activity, onReply }) => {
                 ))}
               </div>
             )}
-          </>
+          </div>
         );
 
       case "NOTE":
         return (
-          <div className="mt-1 rounded-md p-2 bg-gradient-to-br from-green-50 to-green-100 border text-xs">
-            {activity.details?.noteText}
-          </div>
+          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-default-700">
+            {activity.details?.noteText || "-"}
+          </p>
         );
 
       case "EXPENSE":
         return (
-          <div className="mt-1 rounded-md p-2 bg-gradient-to-br from-yellow-50 to-yellow-100 border text-xs">
-            <div>
-              {activity.details?.expenseType}{" "}
+          <div className="mt-1 text-sm text-default-700">
+            <p className="font-medium text-foreground">
+              {activity.details?.expenseType || "Expense"}{" "}
               {inrCurrency(activity.details?.amount)}
-            </div>
+            </p>
 
             {activity.details?.description && (
-              <div className="text-gray-500 text-[11px] mt-1">
+              <p className="mt-1 whitespace-pre-wrap break-words text-xs text-default-500">
                 {activity.details.description}
-              </div>
+              </p>
             )}
           </div>
         );
@@ -393,22 +400,21 @@ export const ActivityItem = ({ activity, onReply }) => {
   };
 
   return (
-    <div className="flex gap-2 text-xs">
-      {/* timeline dot */}
-      <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 shrink-0" />
+    <div className="relative flex gap-3 border-b border-default-100 py-3 text-xs last:border-b-0">
+      <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
 
-      <div className="flex flex-col w-full">
-        {/* header */}
-        <div className="flex gap-2 items-center text-gray-500">
-          <span className="font-medium text-gray-700">
-            {activity.createdByUserName}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-default-500">
+          <span className="font-semibold text-foreground">
+            {activity.createdByUserName || "-"}
           </span>
-
+          <span>•</span>
           <span>
-            {dayjs(activity.activityDate).format("DD/MM/YYYY , HH:mm")}
+            {activity.activityDate
+              ? dayjs(activity.activityDate).format("DD/MM/YYYY, HH:mm")
+              : "-"}
           </span>
-
-          <span className="text-[10px] px-2 py-[1px] rounded bg-gray-100">
+          <span className="rounded-full bg-default-100 px-2 py-0.5 text-[10px] font-medium text-default-600">
             {activity.activityType}
           </span>
         </div>
@@ -463,6 +469,7 @@ const ProjectDetails = () => {
   const legalSupportModal = useDisclosure();
   const vendorMapModal = useDisclosure();
   const vendorDrawer = useDisclosure();
+  const activityDrawer = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -1403,308 +1410,417 @@ const ProjectDetails = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex justify-between gap-3 px-3">
-        <div className="flex gap-3">
-          <div className="flex flex-col gap-2">
-            <div>
-              <h1 className="font-medium">
-                {detailedData?.projectDetails?.name}
-              </h1>
-              <h3 className="text-default-500 text-xs">
-                {detailedData?.projectDetails?.projectNo}{" "}
-                {detailedData?.projectDetails?.date &&
-                  `(created date : ${dayjs(detailedData?.projectDetails?.createdDate).format("DD-MM-YYYY")})`}
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <Building className="w-4 h-4" />{" "}
-              <h3 className="text-sm font-medium">
-                {detailedData?.projectDetails?.companyName}
-              </h3>
-            </div>
-            {detailedData?.projectDetails?.address && (
-              <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4" />{" "}
-                <div className="flex flex-col ">
-                  <p className="text-sm">
+    <div className="h-[calc(100vh-80px)] w-full overflow-y-auto overflow-x-hidden bg-background px-3 py-3">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-3 pb-6">
+        <section className="border-b border-default-200 bg-background pb-3">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <Chip size="sm" color="primary" variant="flat">
+                  Project Detail
+                </Chip>
+
+                {selectedMilestone?.status && (
+                  <Chip
+                    size="sm"
+                    color={statusColors[selectedMilestone?.status] || "default"}
+                    variant="flat"
+                  >
+                    {selectedMilestone?.status}
+                  </Chip>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1 lg:flex-row lg:items-end lg:gap-3">
+                <h1 className="min-w-0 break-words text-xl font-semibold leading-tight text-foreground lg:text-2xl">
+                  {detailedData?.projectDetails?.name || "Project"}
+                </h1>
+
+                <p className="text-xs font-medium text-default-500">
+                  {detailedData?.projectDetails?.projectNo || "-"}
+                  {(detailedData?.projectDetails?.createdDate ||
+                    detailedData?.projectDetails?.date) &&
+                    ` • Created: ${dayjs(
+                      detailedData?.projectDetails?.createdDate ||
+                        detailedData?.projectDetails?.date,
+                    ).format("DD-MM-YYYY")}`}
+                </p>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <div className="flex items-center gap-2 text-default-600">
+                  <Building className="h-4 w-4 text-default-400" />
+                  <span className="text-default-400">Company:</span>
+                  <span className="font-medium text-foreground">
+                    {detailedData?.projectDetails?.companyName || "-"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-default-600">
+                  <Calendar className="h-4 w-4 text-default-400" />
+                  <span className="text-default-400">Updated:</span>
+                  <span className="font-medium text-foreground">
+                    {detailedData?.projectDetails?.updatedDate
+                      ? dayjs(detailedData?.projectDetails?.updatedDate).format(
+                          "DD-MM-YYYY",
+                        )
+                      : "-"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-default-600">
+                  <GitFork className="h-4 w-4 text-default-400" />
+                  <span className="text-default-400">Milestones:</span>
+                  <span className="font-medium text-foreground">
+                    {detailedData?.milestones?.length || 0}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-default-600">
+                  <User2 className="h-4 w-4 text-default-400" />
+                  <span className="text-default-400">Assignee:</span>
+                  <span className="font-medium text-foreground">
+                    {selectedMilestone?.assignedUser?.fullName || "Unassigned"}
+                  </span>
+                </div>
+              </div>
+
+              {detailedData?.projectDetails?.address && (
+                <div className="mt-2 flex items-start gap-2 text-sm text-default-600">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-default-400" />
+                  <span className="break-words">
                     {[
                       detailedData?.projectDetails?.address,
                       detailedData?.projectDetails?.city,
                       detailedData?.projectDetails?.state,
                       detailedData?.projectDetails?.country,
-                    ].join(",")}
-                  </p>
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
+                  </span>
                 </div>
-              </div>
-            )}
-
-            <div className="flex items-start gap-2">
-              <Calendar className="w-4 h-4" />{" "}
-              <div className="flex flex-col ">
-                <p className="text-sm">
-                  Last updated :{" "}
-                  {dayjs(detailedData?.projectDetails?.updatedDate).format(
-                    "DD-MM-YYYY",
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {(department === "CRT" || adminRole) &&
-              detailedData?.projectDetails?.contacts?.length > 0 &&
-              detailedData?.projectDetails?.contacts?.map((contact) => (
-                <>
-                  <div className="flex items-start gap-2 w-full">
-                    <User2 className="!w-4 !h-4" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm break-words capitalize">
-                        Client name :{" "}
-                        {`${contact.title} ${contact.name}, ${contact?.designation || ""}`.trim() ||
-                          "N/A"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <Phone className="w-4 h-4" />{" "}
-                    <div className="flex flex-col ">
-                      <p className="text-sm">Phone : {contact.contactNo}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <Mail className="w-4 h-4" />{" "}
-                    <div className="flex flex-col ">
-                      <p className="text-sm">
-                        Email : {contact.emails || "N/A"}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              ))}
-
-            {/* <Progress
-              label={"Completed"}
-              aria-label="Downloading..."
-              className="max-w-md"
-              color="success"
-              showValueLabel={true}
-              size="sm"
-              value={100}
-            /> */}
-          </div>
-        </div>
-        <div className="flex flex-col justify-between gap-2.5 py-1.5">
-          <div className="flex items-center gap-1.5">
-            {isProcurementMilestone &&
-              (department === "Procurement" || adminRole) && (
-                <Button
-                  radius="sm"
-                  onPress={() => {
-                    vendorDrawer.onOpen();
-                    dispatch(
-                      getVendorDetailInProject({
-                        procurementAssignmentId:
-                          detailedData?.projectDetails
-                            ?.procurementMilestoneAssignmentId,
-                      }),
-                    );
-                  }}
-                >
-                  Vendor
-                </Button>
-              )}
-            {isProcurementMilestone &&
-              (department === "Procurement" || adminRole) && (
-                <Button
-                  as={Link}
-                  radius="sm"
-                  color="primary"
-                  variant="flat"
-                  to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
-                  state={{
-                    procurementAssignmentId:
-                      detailedData?.projectDetails
-                        ?.procurementMilestoneAssignmentId,
-                    vendorId: selectedVendorId,
-                    defaultEstimatedAmount:
-                      detailedData?.projectDetails?.estimatedAmount ||
-                      detailedData?.projectDetails?.amount ||
-                      0,
-                  }}
-                >
-                  Purchase Orders
-                </Button>
               )}
 
-            <Button
-              radius="sm"
-              onPress={() => {
-                onOpen();
-                dispatch(
-                  getRequiredDocumentsByProductId({
-                    userId,
-                    projectId,
-                  }),
-                );
-              }}
-            >
-              Documents
-            </Button>
-            <Button radius="sm" onPress={clientModal.onOpen}>
-              Client login credentials
-            </Button>
-          </div>
-          {/* <div className="flex items-center gap-1.5">
-            <h3 className="text-xl font-medium">Due Amount</h3>
-            <h3 className="text-xl font-medium">:</h3>
-            <h3 className="text-xl font-medium">₹ 0</h3>
-          </div> */}
-        </div>
-        {/* <Dropdown>
-          <DropdownTrigger>
-            <Button variant="light" isIconOnly radius="full">
-              <EllipsisVertical />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu aria-label="Static Actions">
-            <DropdownItem
-              key="documents"
-              startContent={<BookText />}
-              onPress={() => {
-                onOpen();
-                dispatch(
-                  getRequiredDocumentsByProductId({
-                    userId,
-                    projectId,
-                  }),
-                );
-              }}
-            >
-              Documents
-            </DropdownItem>
-            <DropdownItem
-              key="clientLoginDetails"
-              startContent={<User2 />}
-              onPress={clientModal.onOpen}
-            >
-              Client login credentials
-            </DropdownItem>
-          </DropdownMenu>
-        </Dropdown> */}
-      </div>
-
-      <div className="max-h-[65vh] overflow-auto py-2.5">
-        <div className="grid grid-cols-4 gap-4 h-[65vh]">
-          {/* LEFT SIDEBAR - MILESTONES */}
-          {adminRole && (
-            <div className="col-span-1 border rounded-xl p-3 overflow-auto">
-              <h3 className="font-semibold mb-3">Milestones</h3>
-
-              {detailedData?.milestones?.map((mile, i) => (
-                <div
-                  key={i}
-                  onClick={() => {
-                    setSelectedMilestone(mile);
-                    fetchMilestoneHistory(mile);
-                  }}
-                  className={`p-3 mb-2 rounded-lg cursor-pointer border 
-        ${
-          selectedMilestone?.milestoneId === mile.milestoneId
-            ? "bg-blue-50 border-blue-400"
-            : "hover:bg-gray-50"
-        }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-sm">
-                      {mile.milestoneName}
-                    </span>
-
-                    <Chip size="sm" color={statusColors[mile?.status]}>
-                      {mile?.status}
-                    </Chip>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* CENTER CONTENT */}
-          <div className="col-span-2 border rounded-xl overflow-auto">
-            {selectedMilestone && (
-              <>
-                <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-100 via-blue-50 to-blue-100 rounded-t-xl mb-2.5">
-                  <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="font-semibold text-lg">
-                      {selectedMilestone.milestoneName}
-                    </h2>
-                    <div className="flex items-center gap-1.5">
-                      {selectedMilestone?.assignedUser ? (
-                        <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-medium text-gray-700">
-                              {selectedMilestone?.assignedUser?.fullName}
-                            </span>
-
-                            <span className="text-gray-400 text-xs">
-                              {selectedMilestone?.assignedUser?.email}{" "}
-                            </span>
+              {(department === "CRT" || adminRole) &&
+                detailedData?.projectDetails?.contacts?.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 border-t border-default-100 pt-3 text-sm">
+                    {detailedData?.projectDetails?.contacts?.map(
+                      (contact, index) => (
+                        <div
+                          key={`${contact?.contactNo || contact?.emails || index}`}
+                          className="flex min-w-[240px] flex-col gap-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar
+                              size="sm"
+                              name={getInitials(contact?.name)}
+                              className="bg-primary-100 text-primary"
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold capitalize text-foreground">
+                                {`${contact?.title || ""} ${contact?.name || ""}`.trim() ||
+                                  "N/A"}
+                              </p>
+                              <p className="truncate text-xs text-default-500">
+                                {contact?.designation || "Client Contact"}
+                              </p>
+                            </div>
                           </div>
 
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            onPress={() => {
-                              assigneeModal.onOpen();
-
-                              dispatch(
-                                getUsersListByDepartmentId(
-                                  selectedMilestone?.departmentId,
-                                ),
-                              );
-
-                              setAssigneeObj((prev) => ({
-                                ...prev,
-                                assignmentId: selectedMilestone?.id,
-                                changedById: userId,
-                              }));
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          <div className="ml-8 flex flex-wrap gap-x-5 gap-y-1 text-xs text-default-600">
+                            <span className="inline-flex min-w-0 items-center gap-1.5">
+                              <Phone className="h-3.5 w-3.5 shrink-0" />
+                              {contact?.contactNo || "N/A"}
+                            </span>
+                            <span className="inline-flex min-w-0 items-center gap-1.5">
+                              <Mail className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">
+                                {contact?.emails || "N/A"}
+                              </span>
+                            </span>
+                          </div>
                         </div>
-                      ) : (
-                        <div className=" flex items-center gap-2 px-3 py-1 border rounded-md bg-gray-50 text-sm text-gray-400 italic">
-                          Select Assignee
-                          <Button
-                            isIconOnly
+                      ),
+                    )}
+                  </div>
+                )}
+            </div>
+
+            <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:max-w-[560px] xl:justify-end">
+              {isProcurementMilestone &&
+                (department === "Procurement" || adminRole) && (
+                  <Button
+                    size="sm"
+                    radius="md"
+                    variant="flat"
+                    className="font-medium"
+                    onPress={() => {
+                      vendorDrawer.onOpen();
+                      dispatch(
+                        getVendorDetailInProject({
+                          procurementAssignmentId:
+                            detailedData?.projectDetails
+                              ?.procurementMilestoneAssignmentId,
+                        }),
+                      );
+                    }}
+                  >
+                    Vendor
+                  </Button>
+                )}
+
+              {isProcurementMilestone &&
+                (department === "Procurement" || adminRole) && (
+                  <Button
+                    as={Link}
+                    size="sm"
+                    radius="md"
+                    color="primary"
+                    variant="flat"
+                    className="font-medium"
+                    to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
+                    state={{
+                      procurementAssignmentId:
+                        detailedData?.projectDetails
+                          ?.procurementMilestoneAssignmentId,
+                      vendorId: selectedVendorId,
+                      defaultEstimatedAmount:
+                        detailedData?.projectDetails?.estimatedAmount ||
+                        detailedData?.projectDetails?.amount ||
+                        0,
+                    }}
+                  >
+                    Purchase Orders
+                  </Button>
+                )}
+
+              <Button
+                size="sm"
+                radius="md"
+                variant="flat"
+                className="font-medium"
+                onPress={() => {
+                  onOpen();
+                  dispatch(
+                    getRequiredDocumentsByProductId({
+                      userId,
+                      projectId,
+                    }),
+                  );
+                }}
+              >
+                Documents
+              </Button>
+
+              <Button
+                size="sm"
+                radius="md"
+                variant="flat"
+                className="font-medium"
+                onPress={clientModal.onOpen}
+              >
+                Client login credentials
+              </Button>
+
+              <Button
+                size="sm"
+                radius="md"
+                color="primary"
+                className="font-medium"
+                onPress={activityDrawer.onOpen}
+              >
+                Comment
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {!adminRole && detailedData?.milestones?.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto border-b border-default-100 pb-2">
+            {detailedData?.milestones?.map((mile, index) => (
+              <Button
+                key={`${mile?.milestoneId || index}`}
+                size="sm"
+                radius="full"
+                variant={
+                  selectedMilestone?.milestoneId === mile?.milestoneId
+                    ? "solid"
+                    : "light"
+                }
+                color={
+                  selectedMilestone?.milestoneId === mile?.milestoneId
+                    ? "primary"
+                    : "default"
+                }
+                className="shrink-0"
+                onPress={() => {
+                  setSelectedMilestone(mile);
+                  fetchMilestoneHistory(mile);
+                }}
+              >
+                {mile?.milestoneName || "Milestone"}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          {adminRole && (
+            <aside className="lg:col-span-3">
+              <div className="sticky top-0 max-h-[calc(100vh-150px)] overflow-y-auto border-r border-default-200 pr-3">
+                <div className="mb-3">
+                  <p className="text-base font-semibold text-foreground">
+                    Milestones
+                  </p>
+                  <p className="text-xs text-default-500">
+                    Select a milestone to view assignment history
+                  </p>
+                </div>
+
+                <div className="divide-y divide-default-100">
+                  {detailedData?.milestones?.length > 0 ? (
+                    detailedData?.milestones?.map((mile, index) => {
+                      const isActive =
+                        selectedMilestone?.milestoneId === mile?.milestoneId;
+
+                      return (
+                        <button
+                          key={`${mile?.milestoneId || index}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedMilestone(mile);
+                            fetchMilestoneHistory(mile);
+                          }}
+                          className={`w-full px-2 py-3 text-left transition-colors ${
+                            isActive
+                              ? "bg-primary-50 text-primary"
+                              : "hover:bg-default-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">
+                                {mile?.milestoneName || "Milestone"}
+                              </p>
+                              <p className="mt-0.5 truncate text-xs text-default-500">
+                                {mile?.assignedUser?.fullName
+                                  ? `Assigned to ${mile.assignedUser.fullName}`
+                                  : "Unassigned"}
+                              </p>
+                            </div>
+
+                            <Chip
+                              size="sm"
+                              color={statusColors[mile?.status] || "default"}
+                              variant="flat"
+                              className="shrink-0"
+                            >
+                              {mile?.status || "-"}
+                            </Chip>
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="py-6 text-center text-sm text-default-500">
+                      No milestones found
+                    </p>
+                  )}
+                </div>
+              </div>
+            </aside>
+          )}
+
+          <main className={adminRole ? "lg:col-span-9" : "lg:col-span-12"}>
+            {selectedMilestone ? (
+              <section className="overflow-hidden rounded-xl border border-default-200 bg-content1">
+                <div className="border-b border-default-200 bg-primary-50/60 px-4 py-3">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="min-w-0">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <Chip color="primary" variant="flat" size="sm">
+                          Active Milestone
+                        </Chip>
+                        <Chip
+                          size="sm"
+                          color={
+                            statusColors[selectedMilestone?.status] || "default"
+                          }
+                          className="cursor-pointer"
+                          onClick={() => {
+                            statusModal.onOpen();
+                            setStatusObj((prev) => ({
+                              ...prev,
+                              newStatusName: selectedMilestone?.status,
+                              assignmentId: selectedMilestone?.id,
+                              changedById: userId,
+                            }));
+                          }}
+                        >
+                          {selectedMilestone?.status || "-"}
+                        </Chip>
+                      </div>
+
+                      <h2 className="truncate text-lg font-semibold text-foreground">
+                        {selectedMilestone?.milestoneName || "Milestone"}
+                      </h2>
+                      <p className="mt-0.5 text-xs text-default-500">
+                        Assignment ID: {selectedMilestone?.id || "-"}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex min-w-[220px] items-center justify-between gap-3 rounded-lg bg-content1 px-3 py-2 shadow-sm ring-1 ring-default-200">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Avatar
                             size="sm"
-                            variant="light"
-                            onPress={() => {
-                              assigneeModal.onOpen();
-
-                              dispatch(
-                                getUsersListByDepartmentId(
-                                  selectedMilestone?.departmentId,
-                                ),
-                              );
-
-                              setAssigneeObj((prev) => ({
-                                ...prev,
-                                assignmentId: selectedMilestone?.id,
-                                changedById: userId,
-                              }));
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                            name={getInitials(
+                              selectedMilestone?.assignedUser?.fullName ||
+                                "Unassigned",
+                            )}
+                            className="bg-primary-100 text-primary"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {selectedMilestone?.assignedUser?.fullName ||
+                                "Select Assignee"}
+                            </p>
+                            <p className="truncate text-xs text-default-500">
+                              {selectedMilestone?.assignedUser?.email ||
+                                "No assignee selected"}
+                            </p>
+                          </div>
                         </div>
-                      )}
+
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          radius="full"
+                          onPress={() => {
+                            assigneeModal.onOpen();
+
+                            dispatch(
+                              getUsersListByDepartmentId(
+                                selectedMilestone?.departmentId,
+                              ),
+                            );
+
+                            setAssigneeObj((prev) => ({
+                              ...prev,
+                              assignmentId: selectedMilestone?.id,
+                              changedById: userId,
+                            }));
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
 
                       <Button
                         size="sm"
                         color="primary"
+                        radius="md"
                         onPress={() => {
                           legalSupportModal.onOpen();
                           dispatch(
@@ -1717,132 +1833,252 @@ const ProjectDetails = () => {
                       >
                         Legal Request
                       </Button>
-
-                      <Chip
-                        size="sm"
-                        className="cursor-pointer"
-                        onClick={() => {
-                          statusModal.onOpen();
-                          setStatusObj((prev) => ({
-                            ...prev,
-                            newStatusName: selectedMilestone?.status,
-                            assignmentId: selectedMilestone?.id,
-                            changedById: userId,
-                          }));
-                        }}
-                        color={statusColors[selectedMilestone?.status]}
-                      >
-                        {selectedMilestone?.status}
-                      </Chip>
                     </div>
                   </div>
                 </div>
 
-                {/* Timeline / Tasks */}
-                <div className="space-y-3 px-2.5">
-                  {mileStoneHistoryDetail?.assignmentEvents?.map(
-                    (history, index) => (
-                      <div
-                        key={index}
-                        className="border rounded-lg p-3 flex flex-col gap-3"
-                      >
-                        <div className="p-3 flex gap-3">
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2"></div>
+                <div className="p-4">
+                  <dl className="grid grid-cols-1 gap-x-8 gap-y-3 border-b border-default-100 pb-4 text-sm md:grid-cols-3">
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-default-400">
+                        Department
+                      </dt>
+                      <dd className="mt-0.5 font-semibold text-foreground">
+                        {selectedMilestone?.departmentName || "-"}
+                      </dd>
+                    </div>
 
-                          <div>
-                            <p className="text-blue-600 text-sm font-medium">
-                              {history?.reason || "N/A"}
-                            </p>
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-default-400">
+                        Assigned To
+                      </dt>
+                      <dd className="mt-0.5 font-semibold text-foreground">
+                        {selectedMilestone?.assignedUser?.fullName ||
+                          "Unassigned"}
+                      </dd>
+                    </div>
 
-                            <p className="text-xs text-gray-500">
-                              Assigned to:{" "}
-                              {history?.assignedToName || "Unassigned"}
-                            </p>
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-default-400">
+                        Milestone Status
+                      </dt>
+                      <dd className="mt-0.5 font-semibold text-foreground">
+                        {selectedMilestone?.status || "-"}
+                      </dd>
+                    </div>
+                  </dl>
 
-                            <p className="text-xs text-gray-400">
-                              Assigned by {history?.assignedByName} •{" "}
-                              {dayjs(history?.date).format(
-                                "DD MMM YYYY , HH:mm a",
-                              )}
-                            </p>
-                          </div>
-                        </div>
+                  <div className="pt-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-base font-semibold text-foreground">
+                          Assignment History
+                        </p>
+                        <p className="text-xs text-default-500">
+                          Latest updates for selected milestone
+                        </p>
                       </div>
-                    ),
-                  )}
+
+                      <span className="text-xs font-medium text-default-500">
+                        {mileStoneHistoryDetail?.assignmentEvents?.length || 0}{" "}
+                        Updates
+                      </span>
+                    </div>
+
+                    {mileStoneHistoryDetail?.assignmentEvents?.length > 0 ? (
+                      <div className="relative space-y-0 before:absolute before:left-[5px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-default-200">
+                        {mileStoneHistoryDetail?.assignmentEvents?.map(
+                          (history, index) => (
+                            <div
+                              key={`${history?.date || index}`}
+                              className="relative flex gap-3 border-b border-default-100 py-3 last:border-b-0"
+                            >
+                              <div className="z-[1] mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-warning" />
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <p className="break-words text-sm font-semibold text-primary">
+                                    {history?.reason || "N/A"}
+                                  </p>
+
+                                  <span className="text-xs font-medium text-default-400">
+                                    {history?.date
+                                      ? dayjs(history?.date).format(
+                                          "DD MMM YYYY, hh:mm A",
+                                        )
+                                      : "-"}
+                                  </span>
+                                </div>
+
+                                <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs text-default-600">
+                                  <p>
+                                    <span className="text-default-400">
+                                      Assigned to:
+                                    </span>{" "}
+                                    <span className="font-medium text-foreground">
+                                      {history?.assignedToName || "Unassigned"}
+                                    </span>
+                                  </p>
+                                  <p>
+                                    <span className="text-default-400">
+                                      Assigned by:
+                                    </span>{" "}
+                                    <span className="font-medium text-foreground">
+                                      {history?.assignedByName || "-"}
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <div className="py-10 text-center">
+                        <p className="text-base font-semibold text-foreground">
+                          No assignment history found
+                        </p>
+                        <p className="mt-1 text-sm text-default-500">
+                          History will appear here once this milestone is
+                          updated.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </section>
+            ) : (
+              <div className="py-16 text-center">
+                <p className="text-lg font-semibold text-foreground">
+                  No milestone selected
+                </p>
+                <p className="mt-1 text-sm text-default-500">
+                  Select a milestone to view details.
+                </p>
+              </div>
+            )}
+          </main>
+        </div>
+
+        <Drawer
+          isOpen={activityDrawer.isOpen}
+          onOpenChange={activityDrawer.onOpenChange}
+          size="2xl"
+          classNames={{
+            base: "h-screen max-h-screen",
+          }}
+        >
+          <DrawerContent>
+            {(onClose) => (
+              <>
+                <DrawerHeader className="border-b border-default-200">
+                  <div className="flex w-full flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">
+                          Comments
+                        </p>
+                        <p className="text-xs text-default-500">
+                          Comments, notes and expenses for this project
+                        </p>
+                      </div>
+
+                      <Button
+                        isIconOnly
+                        size="sm"
+                        radius="full"
+                        variant="light"
+                        onPress={onClose}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <Select
+                        size="sm"
+                        selectedKeys={[activityType]}
+                        onSelectionChange={(keys) => {
+                          handleFilterChange(Array.from(keys)[0]);
+                        }}
+                        className="sm:max-w-[220px]"
+                      >
+                        <SelectItem key="ALL">All</SelectItem>
+                        <SelectItem key="COMMENT">Comments</SelectItem>
+                        <SelectItem key="NOTE">Notes</SelectItem>
+                        <SelectItem key="EXPENSE">Expenses</SelectItem>
+                      </Select>
+
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          radius="md"
+                          variant="flat"
+                          onPress={() => commentModal.onOpen()}
+                        >
+                          Comment
+                        </Button>
+                        <Button
+                          size="sm"
+                          radius="md"
+                          variant="flat"
+                          onPress={() => noteModal.onOpen()}
+                        >
+                          Note
+                        </Button>
+                        <Button
+                          size="sm"
+                          radius="md"
+                          variant="flat"
+                          onPress={() => expenseModal.onOpen()}
+                        >
+                          Expense
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </DrawerHeader>
+
+                <DrawerBody className="min-h-0 flex-1 overflow-y-auto p-4">
+                  {activities?.length > 0 ? (
+                    <div className="divide-y divide-default-100">
+                      {activities.map(
+                        (activity) =>
+                          activity?.details && (
+                            <ActivityItem
+                              key={activity.activityId}
+                              activity={activity}
+                              onReply={handleReply}
+                            />
+                          ),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center p-10 text-center">
+                      <div>
+                        <p className="text-base font-semibold text-foreground">
+                          No activity found
+                        </p>
+                        <p className="mt-1 text-sm text-default-500">
+                          Add a comment, note or expense to start the timeline.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </DrawerBody>
+
+                <DrawerFooter className="border-t border-default-200 bg-content1">
+                  <Button as={Link} variant="light" to={`activities`}>
+                    See All
+                  </Button>
+                  <Button color="primary" onPress={onClose}>
+                    Done
+                  </Button>
+                </DrawerFooter>
               </>
             )}
-          </div>
-
-          {/* RIGHT TIMELINE */}
-          <div
-            className={`${adminRole ? "col-span-1" : "col-span-2"} border rounded-xl overflow-hidden relative flex flex-col h-full`}
-          >
-            {/* Sticky Header */}
-            <div className="sticky top-0 z-10 bg-white border-b p-3">
-              <div className="flex gap-2 justify-between items-center w-full">
-                <h3 className="font-semibold text-sm text-nowrap">
-                  Activity Timeline
-                </h3>
-
-                <Select
-                  size="sm"
-                  selectedKeys={[activityType]}
-                  onSelectionChange={(keys) => {
-                    handleFilterChange(Array.from(keys)[0]);
-                  }}
-                  className="max-w-[250px]"
-                >
-                  <SelectItem key="ALL">All</SelectItem>
-                  <SelectItem key="COMMENT">Comments</SelectItem>
-                  <SelectItem key="NOTE">Notes</SelectItem>
-                  <SelectItem key="EXPENSE">Expenses</SelectItem>
-                </Select>
-              </div>
-
-              <div className="flex gap-2 mt-2 w-full">
-                <Button size="sm" onPress={() => commentModal.onOpen()}>
-                  Comment
-                </Button>
-
-                <Button size="sm" onPress={() => noteModal.onOpen()}>
-                  Note
-                </Button>
-
-                <Button size="sm" onPress={() => expenseModal.onOpen()}>
-                  Expense
-                </Button>
-              </div>
-            </div>
-
-            {/* Scrollable Activity Area */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {activities.map(
-                (activity) =>
-                  activity?.details && (
-                    <ActivityItem
-                      key={activity.activityId}
-                      activity={activity}
-                      onReply={handleReply}
-                    />
-                  ),
-              )}
-            </div>
-
-            {/* Sticky Footer */}
-            <div className="sticky bottom-0 bg-gradient-to-t from-white via-white/80 to-transparent p-2 text-center border-t">
-              <Link
-                className="text-xs"
-                variant="light"
-                // to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/activities`}
-                to={`activities`}
-              >
-                See All
-              </Link>
-            </div>
-          </div>
-        </div>
+          </DrawerContent>
+        </Drawer>
       </div>
 
       {/* <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
