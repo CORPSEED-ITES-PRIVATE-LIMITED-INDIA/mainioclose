@@ -698,12 +698,12 @@ const Estimate = () => {
                   }
                 }}
               >
-                {rowData?.company?.onboardingStatus !== "APPROVED" &&
-                  rowData?.unit?.onboardingStatus !== "APPROVED" && (
-                    <DropdownItem key="updateCompanyDetail">
-                      Update company detail
-                    </DropdownItem>
-                  )}
+                {(rowData?.company?.onboardingStatus !== "APPROVED" ||
+                  rowData?.unit?.onboardingStatus !== "APPROVED") && (
+                  <DropdownItem key="updateCompanyDetail">
+                    Update company detail
+                  </DropdownItem>
+                )}
 
                 {rowData?.status !== "CANCELLED" && (
                   <DropdownItem key="paymentRegister">
