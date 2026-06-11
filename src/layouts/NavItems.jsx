@@ -663,7 +663,7 @@ export const procurementItems = [
   },
   {
     title: "Projects",
-    icon: "File",
+    icon: "FileText",
     url: "procurement/projects",
     key: "projects",
   },
