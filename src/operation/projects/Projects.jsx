@@ -481,7 +481,7 @@ const Projects = () => {
         {/* Search Bar Row */}
         <div className="flex items-center w-full pb-0.5">
           <Select
-            className="max-w-[15%]"
+            className="max-w-[20%]"
             selectionMode="single"
             selectedKeys={[searchBy]}
             onSelectionChange={(e) => {
