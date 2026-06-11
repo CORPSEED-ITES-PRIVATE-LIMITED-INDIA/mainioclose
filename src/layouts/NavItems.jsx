@@ -656,22 +656,29 @@ export const qualityNavItems = [
 
 export const procurementItems = [
   {
-    title: "Vendor",
-    icon: "User2",
-    url: "procurement/vendors-requests",
-    key: "vendor",
-  },
-  {
     title: "Projects",
     icon: "FileText",
     url: "procurement/projects",
     key: "projects",
   },
   {
+    title: "Vendor list",
+    icon: "User2",
+    url: "procurement/vendorList",
+    key: "vendorList",
+  },
+
+  {
     title: "Payments",
     icon: "HandCoins",
     url: "procurement/vendors-payments",
     key: "vendors-payments",
+  },
+  {
+    title: "Vendor requests",
+    icon: "User2",
+    url: "procurement/vendors-requests",
+    key: "vendors-requests",
   },
   {
     title: "Estimate",
