@@ -173,6 +173,8 @@ const Taxation = () => {
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
   );
@@ -548,129 +550,136 @@ const Taxation = () => {
               onValueChange={onSearchChange}
             />
           </div>
-          <Popover
-            isOpen={isReportPopoverOpen}
-            onOpenChange={setIsReportPopoverOpen}
-            placement="bottom-end"
-            showArrow
-          >
-            <PopoverTrigger>
-              <Button
-                color="primary"
-                variant="flat"
-                startContent={<FileDown size={16} />}
+          {adminRole && (
+            <>
+              <Popover
+                isOpen={isReportPopoverOpen}
+                onOpenChange={setIsReportPopoverOpen}
+                placement="bottom-end"
+                showArrow
               >
-                Fetch Report
-              </Button>
-            </PopoverTrigger>
-
-            <PopoverContent className="w-[360px] p-0">
-              <div className="w-full p-4">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Export invoice report
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Select filters and download CSV report.
-                  </p>
-                </div>
-
-                <div className="mt-4 grid grid-cols-1 gap-3">
-                  <NewSelect
-                    data={reportUserOptions}
-                    label="Created By"
-                    name="createdByUserId"
-                    labelKey="fullName"
-                    valueKey="id"
-                    value={reportFilters.createdByUserId}
-                    onChange={(selectedValue) => {
-                      setReportFilters((prev) => ({
-                        ...prev,
-                        createdByUserId: selectedValue || "",
-                      }));
-                    }}
-                  />
-
-                  <Select
-                    label="Status"
-                    labelPlacement="outside"
-                    size="sm"
-                    selectedKeys={[reportFilters.status]}
-                    onSelectionChange={(keys) => {
-                      const selectedStatus = Array.from(keys)[0];
-
-                      setReportFilters((prev) => ({
-                        ...prev,
-                        status: selectedStatus || "ALL",
-                      }));
-                    }}
-                  >
-                    <SelectItem key="ALL">All</SelectItem>
-                    <SelectItem key="GENERATED">GENERATED</SelectItem>
-                    <SelectItem key="CANCELLED">CANCELLED</SelectItem>
-                    <SelectItem key="REFUNDED">REFUNDED</SelectItem>
-                  </Select>
-
-                  <Input
-                    type="date"
-                    label="From date"
-                    labelPlacement="outside"
-                    size="sm"
-                    value={reportFilters.fromDate}
-                    max={reportFilters.toDate || undefined}
-                    onChange={(e) =>
-                      setReportFilters((prev) => ({
-                        ...prev,
-                        fromDate: e.target.value,
-                      }))
-                    }
-                  />
-
-                  <Input
-                    type="date"
-                    label="To date"
-                    labelPlacement="outside"
-                    size="sm"
-                    value={reportFilters.toDate}
-                    min={reportFilters.fromDate || undefined}
-                    onChange={(e) =>
-                      setReportFilters((prev) => ({
-                        ...prev,
-                        toDate: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="mt-4 flex justify-end gap-2 border-t border-default-200 pt-3">
+                <PopoverTrigger>
                   <Button
-                    size="sm"
-                    variant="light"
-                    onPress={() =>
-                      setReportFilters({
-                        fromDate: "",
-                        toDate: "",
-                        status: "ALL",
-                        createdByUserId: "",
-                      })
-                    }
-                  >
-                    Clear
-                  </Button>
-
-                  <Button
-                    size="sm"
                     color="primary"
-                    isLoading={isReportFetching}
-                    startContent={!isReportFetching && <FileDown size={15} />}
-                    onPress={handleFetchInvoiceReport}
+                    variant="flat"
+                    startContent={<FileDown size={16} />}
                   >
-                    Download CSV
+                    Fetch Report
                   </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+                </PopoverTrigger>
+
+                <PopoverContent className="w-[360px] p-0">
+                  <div className="w-full p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Export invoice report
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Select filters and download CSV report.
+                      </p>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-3">
+                      <NewSelect
+                        data={reportUserOptions}
+                        label="Created By"
+                        name="createdByUserId"
+                        labelKey="fullName"
+                        valueKey="id"
+                        value={reportFilters.createdByUserId}
+                        onChange={(selectedValue) => {
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            createdByUserId: selectedValue || "",
+                          }));
+                        }}
+                      />
+
+                      <Select
+                        label="Status"
+                        labelPlacement="outside"
+                        size="sm"
+                        selectedKeys={[reportFilters.status]}
+                        onSelectionChange={(keys) => {
+                          const selectedStatus = Array.from(keys)[0];
+
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            status: selectedStatus || "ALL",
+                          }));
+                        }}
+                      >
+                        <SelectItem key="ALL">All</SelectItem>
+                        <SelectItem key="GENERATED">GENERATED</SelectItem>
+                        <SelectItem key="CANCELLED">CANCELLED</SelectItem>
+                        <SelectItem key="REFUNDED">REFUNDED</SelectItem>
+                      </Select>
+
+                      <Input
+                        type="date"
+                        label="From date"
+                        labelPlacement="outside"
+                        size="sm"
+                        value={reportFilters.fromDate}
+                        max={reportFilters.toDate || undefined}
+                        onChange={(e) =>
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            fromDate: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <Input
+                        type="date"
+                        label="To date"
+                        labelPlacement="outside"
+                        size="sm"
+                        value={reportFilters.toDate}
+                        min={reportFilters.fromDate || undefined}
+                        onChange={(e) =>
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            toDate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="mt-4 flex justify-end gap-2 border-t border-default-200 pt-3">
+                      <Button
+                        size="sm"
+                        variant="light"
+                        onPress={() =>
+                          setReportFilters({
+                            fromDate: "",
+                            toDate: "",
+                            status: "ALL",
+                            createdByUserId: "",
+                          })
+                        }
+                      >
+                        Clear
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        color="primary"
+                        isLoading={isReportFetching}
+                        startContent={
+                          !isReportFetching && <FileDown size={15} />
+                        }
+                        onPress={handleFetchInvoiceReport}
+                      >
+                        Download CSV
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
