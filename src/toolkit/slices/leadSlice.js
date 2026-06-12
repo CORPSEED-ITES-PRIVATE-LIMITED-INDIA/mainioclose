@@ -860,6 +860,20 @@ export const cancelProposal = createAsyncThunk(
   },
 );
 
+export const deleteFileSystem = createAsyncThunk(
+  "deleteFileSystem",
+  async ({ fileName }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/upload/removeDocument?fileName=${fileName}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  }
+);
+
 export const LeadSlice = createSlice({
   name: "leads",
   initialState: {

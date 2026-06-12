@@ -531,6 +531,16 @@ export const uploadDocumentInProjects = createAsyncThunk(
   },
 );
 
+export const replaceDocumentInProjects = createAsyncThunk(
+  "replaceDocumentInProjects",
+  async ({ documentId,projectId, data }) => {
+    const response = await api.put(
+      `/operationService/api/projects/${projectId}/documents/${documentId}/replace`,
+      data,
+    );
+    return response.data;
+  },
+);
 export const updateDocumentStatus = createAsyncThunk(
   "operation/updateDocumentStatus",
   async ({ documentId, data }) => {

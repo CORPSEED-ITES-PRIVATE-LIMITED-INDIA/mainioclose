@@ -50,6 +50,7 @@ import {
   updateAssignmentStatusForMileStone,
   updateDocumentStatus,
   uploadDocumentInProjects,
+  replaceDocumentInProjects,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -480,6 +481,7 @@ const ProjectDetails = () => {
   const requiredDocsList = useSelector(
     (state) => state.operation.requiredDoucmentListOfProduct,
   );
+  console.log("Required Doc List:", requiredDocsList);
   const userListBydepartment = useSelector(
     (state) => state.common.userListByDepartment,
   );
@@ -860,6 +862,31 @@ const ProjectDetails = () => {
     docModal.onOpen();
   };
 
+  const openReplaceForDoc = (doc) => {
+    const permanentValue =
+      doc?.isPermanent !== undefined
+        ? !!doc.isPermanent
+        : doc?.permanent !== undefined
+          ? !!doc.permanent
+          : true;
+
+    setSelectedDoc({ ...doc, isReplace: true, oldFileUrl: doc?.fileUrl || "" });
+    setIsPermanent(permanentValue);
+
+    reset({
+      fileUrl: "",
+      fileName: "",
+      fileSizeKb: 0,
+      fileFormat: "",
+      expiryDate: permanentValue ? null : doc?.expiryDate || null,
+      remarks: doc?.remarks || "",
+      isFromCompanyDoc: !!doc?.isFromCompanyDoc,
+      isPermanent: permanentValue,
+    });
+
+    docModal.onOpen();
+  };
+
   const openVerify = (doc) => {
     setVerifyDocId(doc.uploadId);
     verifyReset({
@@ -903,14 +930,16 @@ const ProjectDetails = () => {
     });
   };
 
-  const onDocumentSubmit = (data) => {
-    const payload = {
+  const onDocumentSubmit = async (data) => {
+    const requiredDocumentId = Number(
+      selectedDoc?.documentId ||
+        selectedDoc?.requiredDocumentId ||
+        selectedDoc?.id,
+    );
+
+    const uploadPayload = {
       projectId: Number(projectId),
-      requiredDocumentId: Number(
-        selectedDoc?.documentId ||
-          selectedDoc?.requiredDocumentId ||
-          selectedDoc?.id,
-      ),
+      requiredDocumentId,
       fileUrl: data.fileUrl,
       fileName: data.fileName,
       uploadedById: Number(userId),
@@ -923,49 +952,80 @@ const ProjectDetails = () => {
       remarks: data.remarks || "",
     };
 
-    dispatch(uploadDocumentInProjects({ projectId, data: payload }))
-      .then((resp) => {
-        console.log("jkhsdgkjhwsgdkj", resp);
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Document uploaded successfully!",
-            color: "success",
-          });
+    const replacePayload = {
+      projectId: Number(projectId),
+      requiredDocumentId,
+      fileName: data.fileName,
+      uploadedById: Number(userId),
+      createdById: Number(userId),
+      companyDocSourceId: Number(selectedDoc?.companyDocSourceId || 0),
+      isFromCompanyDoc: Boolean(data.isFromCompanyDoc),
+      expiryDate: data.isPermanent ? null : data.expiryDate,
+      isPermanent: Boolean(data.isPermanent),
+      fileSizeKb: Number(data.fileSizeKb),
+      fileFormat: data.fileFormat,
+      remarks: data.remarks || "",
+    };
 
-          reset({
-            fileUrl: "",
-            fileName: "",
-            fileSizeKb: 0,
-            fileFormat: "",
-            expiryDate: null,
-            remarks: "",
-            isFromCompanyDoc: false,
-            isPermanent: true,
-          });
+    try {
+      let resp;
 
-          setIsPermanent(true);
-          docModal.onClose();
+      if (selectedDoc?.isReplace) {
+        resp = await dispatch(
+          replaceDocumentInProjects({
+            projectId,
+            documentId: selectedDoc?.uploadId,
+            data: replacePayload,
+          }),
+        );
+      } else {
+        resp = await dispatch(
+          uploadDocumentInProjects({ projectId, data: uploadPayload }),
+        );
+      }
 
-          dispatch(
-            getRequiredDocumentsByProductId({
-              userId,
-              projectId,
-            }),
-          );
-        } else {
-          addToast({
-            title: "Upload failed",
-            color: "danger",
-            description: resp?.payload,
-          });
-        }
-      })
-      .catch(() =>
+      console.log("jkhsdgkjhwsgdkj", resp);
+      if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Something went wrong!",
+          title: selectedDoc?.isReplace
+            ? "Document replaced successfully!"
+            : "Document uploaded successfully!",
+          color: "success",
+        });
+
+        reset({
+          fileUrl: "",
+          fileName: "",
+          fileSizeKb: 0,
+          fileFormat: "",
+          expiryDate: null,
+          remarks: "",
+          isFromCompanyDoc: false,
+          isPermanent: true,
+        });
+
+        setIsPermanent(true);
+        docModal.onClose();
+
+        dispatch(
+          getRequiredDocumentsByProductId({
+            userId,
+            projectId,
+          }),
+        );
+      } else {
+        addToast({
+          title: selectedDoc?.isReplace ? "Replace failed" : "Upload failed",
           color: "danger",
-        }),
-      );
+          description: resp?.error.message,
+        });
+      }
+    } catch {
+      addToast({
+        title: "Something went wrong!",
+        color: "danger",
+      });
+    }
   };
 
   useEffect(() => {
@@ -2476,14 +2536,26 @@ const ProjectDetails = () => {
 
                             <div className="mt-auto flex shrink-0 flex-wrap justify-end gap-2 border-t border-default-100 pt-3">
                               {doc?.status !== "VERIFIED" && hasFile && (
-                                <Button
-                                  size="sm"
-                                  color="primary"
-                                  className="rounded-full px-6"
-                                  onPress={() => openVerify(doc)}
-                                >
-                                  Verify
-                                </Button>
+                                <>
+                                  <Button
+                                    size="sm"
+                                    color="primary"
+                                    className="rounded-full px-6"
+                                    onPress={() => openVerify(doc)}
+                                  >
+                                    Verify
+                                  </Button>
+
+                                  <Button
+                                    size="sm"
+                                    color="warning"
+                                    variant="flat"
+                                    className="rounded-full px-6"
+                                    onPress={() => openReplaceForDoc(doc)}
+                                  >
+                                    Replace Document
+                                  </Button>
+                                </>
                               )}
 
                               {doc?.status !== "UPLOADED" && (
