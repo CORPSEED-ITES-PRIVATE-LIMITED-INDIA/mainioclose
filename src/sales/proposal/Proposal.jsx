@@ -240,12 +240,14 @@ const Proposal = () => {
   const [proposalToCancel, setProposalToCancel] = useState(null);
   const [statusLoading, setStatusLoading] = useState("");
   const [lockedMailTo, setLockedMailTo] = useState([]);
+  const [pendingSubmitValues, setPendingSubmitValues] = useState(null);
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
   const cancelModal = useDisclosure();
   const proposalViewModal = useDisclosure();
   const proposalFormModal = useDisclosure();
+  const submitConfirmModal = useDisclosure();
 
   const proposalList = useMemo(() => {
     if (Array.isArray(allProposal)) return allProposal;
@@ -665,6 +667,41 @@ const Proposal = () => {
         });
       }
     });
+  };
+
+  const getSelectedUnitName = () => {
+    console.log("Company details:", company);
+    const unit = company?.units?.[0];
+    const fieldVal =
+      (unit?.unitName ||
+        unit?.name ||
+        unit?.companyUnitName ||
+        unit?.businessName ||
+        "-") +
+      ", " +
+      (unit.addressLine1 +
+        ", " +
+        unit.city +
+        ", " +
+        unit.country +
+        " - " +
+        unit.pinCode);
+    return fieldVal;
+  };
+
+  const handleProposalFormFinish = (values) => {
+    setPendingSubmitValues(values);
+    submitConfirmModal.onOpen();
+  };
+
+  const handleConfirmProposalSubmit = () => {
+    if (!pendingSubmitValues) return;
+
+    const valuesToSubmit = pendingSubmitValues;
+
+    setPendingSubmitValues(null);
+    submitConfirmModal.onClose();
+    onSubmit(valuesToSubmit);
   };
 
   const onSubmit = (values) => {
@@ -1420,7 +1457,7 @@ const Proposal = () => {
       layout="vertical"
       className="space-y-6"
       initialValues={defaultValues}
-      onFinish={onSubmit}
+      onFinish={handleProposalFormFinish}
       onFinishFailed={(errorInfo) => {
         console.log("Proposal AntD validation failed:", errorInfo);
 
@@ -2021,6 +2058,76 @@ const Proposal = () => {
                 {renderProposalForm()}
               </div>
             </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        <Modal
+          isOpen={submitConfirmModal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingSubmitValues(null);
+            }
+
+            submitConfirmModal.onOpenChange(open);
+          }}
+          isDismissable={false}
+          isKeyboardDismissDisabled={true}
+        >
+          <ModalContent>
+            <ModalHeader className="border-b border-warning-200 bg-warning-50">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-100 text-warning-700">
+                  ⚠️
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-warning-800">
+                    Confirm Proposal Submission
+                  </h3>
+                  <p className="text-xs font-normal text-warning-700">
+                    Please confirm before sending this proposal.
+                  </p>
+                </div>
+              </div>
+            </ModalHeader>
+
+            <ModalBody className="bg-warning-50/40 py-5">
+              <div className="rounded-xl border border-warning-200 bg-white p-4">
+                <p className="text-sm leading-6 text-gray-700">
+                  Do you want to send proposal to unit{" "}
+                  <span className="font-semibold text-warning-800">
+                    {getSelectedUnitName()}
+                  </span>
+                  ?
+                </p>
+
+                <p className="mt-2 text-xs text-gray-500">
+                  Once confirmed, the proposal submission process will continue.
+                </p>
+              </div>
+            </ModalBody>
+
+            <ModalFooter className="border-t bg-gray-50">
+              <Button
+                variant="flat"
+                color="default"
+                onPress={() => {
+                  setPendingSubmitValues(null);
+                  submitConfirmModal.onClose();
+                }}
+                isDisabled={statusLoading === "pending"}
+              >
+                No, Cancel
+              </Button>
+
+              <Button
+                color="warning"
+                onPress={handleConfirmProposalSubmit}
+                isLoading={statusLoading === "pending"}
+              >
+                Yes, Send Proposal
+              </Button>
+            </ModalFooter>
           </ModalContent>
         </Modal>
       </div>
