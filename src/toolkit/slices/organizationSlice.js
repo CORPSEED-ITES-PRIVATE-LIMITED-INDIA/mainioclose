@@ -266,7 +266,7 @@ export const getAllInvoice = createAsyncThunk(
     const response = await api.get(
       `/accountService/api/v1/invoices/list?status=${status}&userId=${userId}&page=${page}&size=${size}`,
     );
-    console.log("Invoice API Res:",response)
+    console.log("Invoice API Res:", response);
     return response.data;
   },
 );
@@ -338,7 +338,7 @@ export const getAllUnbillGovtFeeList = createAsyncThunk(
     const response = await api.get(
       `/accountService/api/v1/unbilled-invoices/government-fee?unbilledId=${unbilledId}`,
     );
-    console.log("Govt Fee API Res:",response)
+    console.log("Govt Fee API Res:", response);
     return response.data;
   },
 );
@@ -689,6 +689,55 @@ export const searchUnbilledByCompanyNameAndUnbilled = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const getUnbilledReport = createAsyncThunk(
+  "organization/getUnbilledReport",
+  async (
+    { userId, createdByUserId, status, fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {};
+
+      if (userId !== undefined && userId !== null && userId !== "") {
+        params.userId = userId;
+      }
+
+      if (
+        createdByUserId !== undefined &&
+        createdByUserId !== null &&
+        createdByUserId !== ""
+      ) {
+        params.createdByUserId = createdByUserId;
+      }
+
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      if (fromDate) {
+        params.fromDate = String(fromDate).trim();
+      }
+
+      if (toDate) {
+        params.toDate = String(toDate).trim();
+      }
+
+      const response = await api.get(
+        "/accountService/api/v1/unbilled-invoices/report",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: error?.message || "Failed to fetch unbilled report",
+        },
+      );
     }
   },
 );

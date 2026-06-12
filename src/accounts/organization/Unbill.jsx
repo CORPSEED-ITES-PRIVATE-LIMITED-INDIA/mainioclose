@@ -24,13 +24,24 @@ import {
   SelectItem,
   addToast,
   Chip,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  ExternalLink,
+  FileDown,
+  Paperclip,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllUnbillCount,
   getAllUnbillGovtFeeList,
   getAllUnbillList,
+  getUnbilledReport,
   searchUnbilledByCompanyNameAndUnbilled,
   updateStatusForUnbill,
 } from "../../toolkit/slices/organizationSlice";
@@ -48,11 +59,13 @@ import UnbilledView from "../../components/UnbilledView";
 import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
 import { set } from "zod";
 import {
+  getAllLeadUser,
   getEstimateByEstimateId,
   updateLeadStatus,
 } from "../../toolkit/slices/leadSlice";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice.js";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
+import NewSelect from "../../components/NewSelect.jsx";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -68,6 +81,7 @@ export const columns = [
   { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
   { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
   { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
+  { name: "PAYMENT PROOF", uid: "paymentProof" },
   { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -89,9 +103,136 @@ const INITIAL_VISIBLE_COLUMNS = [
   "totalAmount",
   "currentReceivedAmount",
   "outstandingAmount",
+  "paymentProof",
   "addedBy",
   "actions",
 ];
+
+const REPORT_COLUMNS = [
+  {
+    header: "Date",
+    value: (row) => {
+      const dateValue = row?.createdAt || row?.date;
+      return dateValue ? dayjs(dateValue).format("DD-MM-YYYY") : "";
+    },
+  },
+  { header: "Unbilled Number", value: (row) => row?.unbilledNumber },
+  {
+    header: "Advance Invoice Number",
+    value: (row) => row?.advanceInvoiceNumber,
+  },
+  { header: "Estimate Number", value: (row) => row?.estimateNumber },
+  { header: "Status", value: (row) => row?.status },
+  {
+    header: "Government Fee Active",
+    value: (row) => (row?.governmentFeeActiveFlag ? "Yes" : "No"),
+  },
+  {
+    header: "TDS Active",
+    value: (row) => (row?.tdsActiveFlag ? "Yes" : "No"),
+  },
+  {
+    header: "TDS Amount",
+    value: (row) => row?.tdsResponseDto?.tdsAmount ?? "",
+  },
+  {
+    header: "TDS Percentage",
+    value: (row) => row?.tdsResponseDto?.tdsPercentage ?? "",
+  },
+  { header: "Service", value: (row) => row?.solutionName },
+  { header: "Client", value: (row) => row?.contactName },
+  { header: "Company", value: (row) => row?.companyName || row?.company },
+  { header: "Payment Term", value: (row) => row?.paymentTypeCode },
+  { header: "Total Amount", value: (row) => row?.totalAmount },
+  { header: "Received Amount", value: (row) => row?.receivedAmount },
+  {
+    header: "Current Received Amount",
+    value: (row) => row?.currentReceivedAmount,
+  },
+  { header: "Outstanding Amount", value: (row) => row?.outstandingAmount },
+  { header: "Added By", value: (row) => row?.createdByName },
+];
+
+const normalizeReportPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+
+  if (Array.isArray(payload?.content)) return payload.content;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.content)) return payload.data.content;
+  if (Array.isArray(payload?.response)) return payload.response;
+  if (Array.isArray(payload?.response?.content))
+    return payload.response.content;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.records)) return payload.records;
+
+  return [];
+};
+
+const escapeCsvCell = (value) => {
+  if (value === null || value === undefined) return "";
+
+  const stringValue = String(value)
+    .replace(/\r?\n|\r/g, " ")
+    .trim();
+
+  if (
+    stringValue.includes(",") ||
+    stringValue.includes('"') ||
+    stringValue.includes("\n")
+  ) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+
+  return stringValue;
+};
+
+const convertRowsToCsv = (rows = []) => {
+  const header = REPORT_COLUMNS.map((column) =>
+    escapeCsvCell(column.header),
+  ).join(",");
+
+  const body = rows
+    .map((row) =>
+      REPORT_COLUMNS.map((column) => escapeCsvCell(column.value(row))).join(
+        ",",
+      ),
+    )
+    .join("\n");
+
+  return [header, body].filter(Boolean).join("\n");
+};
+
+const downloadCsvFile = (csvContent, fileName) => {
+  const blob = new Blob(["\ufeff", csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};
+
+const isDateInRange = (value, startDate, endDate) => {
+  if (!value) return false;
+
+  const itemDate = dayjs(value);
+  const start = dayjs(startDate).startOf("day");
+  const end = dayjs(endDate).endOf("day");
+
+  if (!itemDate.isValid()) return false;
+
+  return (
+    itemDate.isAfter(start.subtract(1, "millisecond")) &&
+    itemDate.isBefore(end.add(1, "millisecond"))
+  );
+};
 
 const Unbill = () => {
   const dispatch = useDispatch();
@@ -102,6 +243,8 @@ const Unbill = () => {
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
+  const paymentProofModal = useDisclosure();
+  const [selectedPaymentProof, setSelectedPaymentProof] = useState("");
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
@@ -111,6 +254,7 @@ const Unbill = () => {
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
   const statusList = useSelector((state) => state?.setting?.statusList);
+  const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -146,6 +290,19 @@ const Unbill = () => {
     useState(false);
   getAllStatusData;
   const [creditNoteRow, setCreditNoteRow] = useState(null);
+  const [reportFilters, setReportFilters] = useState({
+    fromDate: "",
+    toDate: "",
+    status: "ALL",
+    createdByUserId: "",
+  });
+  const [isReportFetching, setIsReportFetching] = useState(false);
+  const [isReportPopoverOpen, setIsReportPopoverOpen] = useState(false);
+
+  const reportUserOptions = React.useMemo(
+    () => [{ id: "", fullName: "All Users" }, ...(allLeadUser || [])],
+    [allLeadUser],
+  );
 
   const handleActionMenuOpen = () => {
     dispatch(getAllStatusData());
@@ -160,6 +317,12 @@ const Unbill = () => {
 
     return awaitingPaymentStatus?.id;
   };
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(getAllLeadUser(userId));
+    }
+  }, [dispatch, userId]);
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -337,6 +500,20 @@ const Unbill = () => {
       });
     }
   };
+
+  const handlePaymentProofPreview = (paymentProofUrl) => {
+    if (!paymentProofUrl) {
+      addToast({
+        title: "No payment proof available",
+        color: "warning",
+      });
+      return;
+    }
+
+    setSelectedPaymentProof(paymentProofUrl);
+    paymentProofModal.onOpen();
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -454,6 +631,26 @@ const Unbill = () => {
         );
       case "addedBy":
         return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+      case "paymentProof":
+        return (
+          <div className="flex items-center gap-2">
+            {rowData?.paymentProof ? (
+              <Button
+                size="sm"
+                color="primary"
+                variant="flat"
+                startContent={<Paperclip size={14} />}
+                onPress={() => handlePaymentProofPreview(rowData?.paymentProof)}
+              >
+                View
+              </Button>
+            ) : (
+              <Chip size="sm" variant="flat" color="default">
+                No Proof
+              </Chip>
+            )}
+          </div>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -733,13 +930,117 @@ const Unbill = () => {
     }
   };
 
+  const handleFetchReport = React.useCallback(async () => {
+    const hasFromDate = Boolean(reportFilters.fromDate);
+    const hasToDate = Boolean(reportFilters.toDate);
+
+    if ((hasFromDate && !hasToDate) || (!hasFromDate && hasToDate)) {
+      addToast({
+        title: "Incomplete date range",
+        description:
+          "Please select both from date and to date, or leave both blank for all dates.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      reportFilters.fromDate &&
+      reportFilters.toDate &&
+      dayjs(reportFilters.toDate).isBefore(dayjs(reportFilters.fromDate))
+    ) {
+      addToast({
+        title: "Invalid date range",
+        description: "To date cannot be earlier than from date.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setIsReportFetching(true);
+
+    try {
+      const payload = {
+        userId,
+        createdByUserId: reportFilters.createdByUserId || undefined,
+        status:
+          reportFilters.status !== "ALL" ? reportFilters.status : undefined,
+        fromDate: reportFilters.fromDate || undefined,
+        toDate: reportFilters.toDate || undefined,
+      };
+
+      console.log("Calling unbilled report API with filters:", payload);
+
+      const resp = await dispatch(getUnbilledReport(payload));
+
+      console.log("Unbilled report API response:", resp);
+
+      if (resp.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Report fetch failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            "Unable to fetch report data.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const reportRows = normalizeReportPayload(resp.payload);
+
+      if (!reportRows.length) {
+        addToast({
+          title: "No records found",
+          description: "No unbilled data found for the selected filters.",
+          color: "warning",
+        });
+        return;
+      }
+
+      const csvContent = convertRowsToCsv(reportRows);
+
+      const dateLabel =
+        reportFilters.fromDate && reportFilters.toDate
+          ? `${reportFilters.fromDate}-to-${reportFilters.toDate}`
+          : "all-dates";
+
+      const statusLabel =
+        reportFilters.status && reportFilters.status !== "ALL"
+          ? reportFilters.status
+          : "all-status";
+
+      const fileName = `unbilled-report-${statusLabel}-${dateLabel}.csv`;
+
+      downloadCsvFile(csvContent, fileName);
+
+      addToast({
+        title: "Report downloaded",
+        description: `${reportRows.length} record(s) exported successfully.`,
+        color: "success",
+      });
+
+      setIsReportPopoverOpen(false);
+    } catch (error) {
+      console.error("Unbilled report frontend error:", error);
+
+      addToast({
+        title: "Something went wrong",
+        description: error?.message || "Unable to generate report.",
+        color: "danger",
+      });
+    } finally {
+      setIsReportFetching(false);
+    }
+  }, [dispatch, reportFilters, userId]);
+
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center gap-0.5 w-[70%]">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex w-full flex-col gap-2 sm:flex-row lg:max-w-[58%]">
             <Select
-              className="max-w-[20%]"
+              className="w-full sm:max-w-[180px]"
               selectionMode="single"
               selectedKeys={[searchBy]}
               onSelectionChange={(e) => {
@@ -751,17 +1052,20 @@ const Unbill = () => {
               <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
               <SelectItem key={"estimateNumber"}>Estimate number</SelectItem>
             </Select>
+
             <Input
               isClearable
-              className="w-full sm:max-w-[45%]"
+              className="w-full"
               placeholder="Search ..."
+              className="w-[50%]"
               startContent={<Search />}
               value={filterValue}
               onClear={() => onClear()}
               onValueChange={onSearchChange}
             />
           </div>
-          <div className="flex gap-3">
+
+          <div className="flex w-full flex-wrap items-end gap-2 lg:w-auto lg:justify-end">
             <Dropdown>
               <DropdownTrigger>
                 <Button
@@ -791,6 +1095,7 @@ const Unbill = () => {
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
               </DropdownMenu>
             </Dropdown>
+
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -812,6 +1117,134 @@ const Unbill = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+
+            <Popover
+              isOpen={isReportPopoverOpen}
+              onOpenChange={setIsReportPopoverOpen}
+              placement="bottom-end"
+              showArrow
+            >
+              <PopoverTrigger>
+                <Button
+                  color="primary"
+                  variant="flat"
+                  startContent={<FileDown size={16} />}
+                >
+                  Fetch Report
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-[360px] p-0">
+                <div className="w-full p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Export unbilled report
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Select filters and download CSV report.
+                    </p>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-3">
+                    <NewSelect
+                      data={reportUserOptions}
+                      label="Created By"
+                      name="createdByUserId"
+                      labelKey="fullName"
+                      valueKey="id"
+                      value={reportFilters.createdByUserId}
+                      onChange={(selectedValue) => {
+                        setReportFilters((prev) => ({
+                          ...prev,
+                          createdByUserId: selectedValue || "",
+                        }));
+                      }}
+                    />
+
+                    <Select
+                      label="Status"
+                      labelPlacement="outside"
+                      size="sm"
+                      selectedKeys={[reportFilters.status]}
+                      onSelectionChange={(keys) => {
+                        const selectedStatus = Array.from(keys)[0];
+
+                        setReportFilters((prev) => ({
+                          ...prev,
+                          status: selectedStatus || "ALL",
+                        }));
+                      }}
+                    >
+                      <SelectItem key="ALL">All</SelectItem>
+                      <SelectItem key="PENDING_APPROVAL">
+                        PENDING_APPROVAL
+                      </SelectItem>
+                      <SelectItem key="APPROVED">APPROVED</SelectItem>
+                      <SelectItem key="CANCELLED">CANCELLED</SelectItem>
+                      <SelectItem key="REJECTED">REJECTED</SelectItem>
+                      <SelectItem key="REFUNDED">REFUNDED</SelectItem>
+                    </Select>
+
+                    <Input
+                      type="date"
+                      label="From date"
+                      labelPlacement="outside"
+                      size="sm"
+                      value={reportFilters.fromDate}
+                      max={reportFilters.toDate || undefined}
+                      onChange={(e) =>
+                        setReportFilters((prev) => ({
+                          ...prev,
+                          fromDate: e.target.value,
+                        }))
+                      }
+                    />
+
+                    <Input
+                      type="date"
+                      label="To date"
+                      labelPlacement="outside"
+                      size="sm"
+                      value={reportFilters.toDate}
+                      min={reportFilters.fromDate || undefined}
+                      onChange={(e) =>
+                        setReportFilters((prev) => ({
+                          ...prev,
+                          toDate: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-4 flex justify-end gap-2 border-t border-default-200 pt-3">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      onPress={() =>
+                        setReportFilters({
+                          fromDate: "",
+                          toDate: "",
+                          status: "ALL",
+                          createdByUserId: "",
+                        })
+                      }
+                    >
+                      Clear
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      color="primary"
+                      isLoading={isReportFetching}
+                      startContent={!isReportFetching && <FileDown size={15} />}
+                      onPress={handleFetchReport}
+                    >
+                      Download CSV
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -844,6 +1277,11 @@ const Unbill = () => {
     hasSearchFilter,
     status,
     searchBy,
+    reportFilters,
+    reportUserOptions,
+    isReportFetching,
+    handleFetchReport,
+    isReportPopoverOpen,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -1611,6 +2049,149 @@ const Unbill = () => {
               </ModalFooter>
             </>
           )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="5xl"
+        isOpen={paymentProofModal.isOpen}
+        onOpenChange={paymentProofModal.onOpenChange}
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => {
+            const attachmentType = getAttachmentType(selectedPaymentProof);
+            const fileName = getAttachmentFileName(selectedPaymentProof);
+
+            return (
+              <>
+                <ModalHeader className="flex flex-col gap-1">
+                  Payment Proof
+                  <span className="text-xs font-normal text-gray-500 break-all">
+                    {fileName}
+                  </span>
+                </ModalHeader>
+
+                <ModalBody className="max-h-[78vh] overflow-auto">
+                  {!selectedPaymentProof ? (
+                    <div className="rounded-xl border border-default-200 p-6 text-center text-sm text-default-500">
+                      No payment proof available.
+                    </div>
+                  ) : attachmentType === "image" ? (
+                    <div className="flex justify-center rounded-xl border border-default-200 bg-default-50 p-3">
+                      <img
+                        src={selectedPaymentProof}
+                        alt="Payment Proof"
+                        className="max-h-[70vh] max-w-full rounded-lg object-contain"
+                      />
+                    </div>
+                  ) : attachmentType === "pdf" ? (
+                    <object
+                      data={selectedPaymentProof}
+                      type="application/pdf"
+                      className="h-[72vh] w-full rounded-xl border border-default-200"
+                    >
+                      <div className="rounded-xl border border-default-200 p-6 text-center">
+                        <p className="text-sm text-default-600">
+                          PDF preview is not available in this browser.
+                        </p>
+                        <Button
+                          className="mt-3"
+                          color="primary"
+                          variant="flat"
+                          startContent={<ExternalLink size={15} />}
+                          onPress={() =>
+                            window.open(
+                              selectedPaymentProof,
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }
+                        >
+                          Open Proof
+                        </Button>
+                      </div>
+                    </object>
+                  ) : attachmentType === "text" ? (
+                    <object
+                      data={selectedPaymentProof}
+                      type="text/plain"
+                      className="h-[72vh] w-full rounded-xl border border-default-200 bg-white"
+                    >
+                      <div className="rounded-xl border border-default-200 p-6 text-center">
+                        <p className="text-sm text-default-600">
+                          Text preview is not available.
+                        </p>
+                        <Button
+                          className="mt-3"
+                          color="primary"
+                          variant="flat"
+                          startContent={<ExternalLink size={15} />}
+                          onPress={() =>
+                            window.open(
+                              selectedPaymentProof,
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }
+                        >
+                          Open Proof
+                        </Button>
+                      </div>
+                    </object>
+                  ) : (
+                    <div className="rounded-xl border border-default-200 p-6 text-center">
+                      <Paperclip className="mx-auto mb-3 text-default-400" />
+                      <p className="text-sm font-medium text-default-700">
+                        Preview is not available for this file type.
+                      </p>
+                      <p className="mt-1 break-all text-xs text-default-500">
+                        {selectedPaymentProof}
+                      </p>
+                      <Button
+                        className="mt-4"
+                        color="primary"
+                        variant="flat"
+                        startContent={<ExternalLink size={15} />}
+                        onPress={() =>
+                          window.open(
+                            selectedPaymentProof,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                      >
+                        Open Proof
+                      </Button>
+                    </div>
+                  )}
+                </ModalBody>
+
+                <ModalFooter>
+                  {selectedPaymentProof && (
+                    <Button
+                      variant="flat"
+                      startContent={<ExternalLink size={15} />}
+                      onPress={() =>
+                        window.open(
+                          selectedPaymentProof,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                    >
+                      Open in New Tab
+                    </Button>
+                  )}
+
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Close
+                  </Button>
+                </ModalFooter>
+              </>
+            );
+          }}
         </ModalContent>
       </Modal>
     </>

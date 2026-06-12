@@ -1365,7 +1365,6 @@ const Leads = () => {
     allMultiFilterData,
     statusList,
     selectedKeys,
-    allLeadUser,
     filterPopOver,
     actionPopOver,
     sortedItems,
