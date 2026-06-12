@@ -41,7 +41,10 @@ import {
 import dayjs from "dayjs";
 import ServiceFormFieldsDetail from "../leads/leadEstimate/ServiceFormFieldsDetail";
 import { Form, Input as AntInput, Select } from "antd";
-import { getBasicCompanyDetails } from "../../toolkit/slices/companySlice";
+import {
+  getBasicCompanyDetails,
+  getGstListByCompanyId,
+} from "../../toolkit/slices/companySlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
 import NewTextEditor from "../../components/NewTextEditor";
@@ -226,6 +229,7 @@ const Proposal = () => {
     (state) => state.setting.serviceBrouchersDetail,
   );
   const company = useSelector((state) => state.company.basicCompanyDetail);
+  const companyGstList = useSelector((state) => state.company.companyGstList);
   const paymentTerms = useSelector((state) => state.setting.paymentTermList);
 
   const [proposalAntForm] = Form.useForm();
@@ -268,6 +272,18 @@ const Proposal = () => {
 
     return [];
   }, [allProposal]);
+
+  const companyGstUnitList = useMemo(() => {
+    if (Array.isArray(companyGstList)) return companyGstList;
+
+    if (Array.isArray(companyGstList?.data)) return companyGstList.data;
+
+    if (Array.isArray(companyGstList?.content)) return companyGstList.content;
+
+    if (Array.isArray(companyGstList?.response)) return companyGstList.response;
+
+    return [];
+  }, [companyGstList]);
 
   const latestEstimate = useMemo(() => {
     if (!Array.isArray(estimateList) || estimateList.length === 0) return null;
@@ -359,6 +375,12 @@ const Proposal = () => {
       }
     });
   }, [dispatch, leadId, userId]);
+
+  useEffect(() => {
+    if (!company?.id) return;
+
+    dispatch(getGstListByCompanyId(company.id));
+  }, [dispatch, company?.id]);
 
   useEffect(() => {
     if (
@@ -454,6 +476,8 @@ const Proposal = () => {
       });
       return;
     }
+
+    dispatch(getGstListByCompanyId(company.id));
 
     setIsCreatingProposal(true);
     setEditProposal(false);
@@ -670,23 +694,58 @@ const Proposal = () => {
   };
 
   const getSelectedUnitName = () => {
-    console.log("Company details:", company);
-    const unit = company?.units?.[0];
-    const fieldVal =
-      (unit?.unitName ||
+    const selectedUnitId = company?.units?.[0]?.id;
+
+    const unitFromGstList = selectedUnitId
+      ? companyGstUnitList.find(
+          (unit) => String(unit?.id) === String(selectedUnitId),
+        )
+      : null;
+
+    const unit = unitFromGstList || companyGstUnitList?.[0];
+
+    return (
+      unit?.unitName ||
+      unit?.name ||
+      unit?.companyUnitName ||
+      unit?.businessName ||
+      "-"
+    );
+  };
+
+  const getCompanyUnitsForWarning = () => {
+    if (!Array.isArray(companyGstUnitList)) return [];
+
+    return companyGstUnitList.map((unit, index) => {
+      const unitName =
+        unit?.unitName ||
         unit?.name ||
         unit?.companyUnitName ||
         unit?.businessName ||
-        "-") +
-      ", " +
-      (unit.addressLine1 +
-        ", " +
-        unit.city +
-        ", " +
-        unit.country +
-        " - " +
-        unit.pinCode);
-    return fieldVal;
+        `Unit ${index + 1}`;
+
+      const unitAddress = [
+        unit?.addressLine1,
+        unit?.addressLine2,
+        unit?.city,
+        unit?.state,
+        unit?.country,
+        unit?.pinCode,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return {
+        id: unit?.id || index,
+        name: unitName,
+        address: unitAddress || "Address not available",
+        gstRegistrationTypeName: unit?.gstRegistrationTypeName || "-",
+        status: unit?.status || "-",
+        isSelected:
+          company?.units?.[0]?.id &&
+          String(unit?.id) === String(company?.units?.[0]?.id),
+      };
+    });
   };
 
   const handleProposalFormFinish = (values) => {
@@ -2076,7 +2135,7 @@ const Proposal = () => {
           <ModalContent>
             <ModalHeader className="border-b border-warning-200 bg-warning-50">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-100 text-warning-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-100 text-xl text-warning-700">
                   ⚠️
                 </div>
 
@@ -2085,25 +2144,80 @@ const Proposal = () => {
                     Confirm Proposal Submission
                   </h3>
                   <p className="text-xs font-normal text-warning-700">
-                    Please confirm before sending this proposal.
+                    Please review company unit details before sending.
                   </p>
                 </div>
               </div>
             </ModalHeader>
 
             <ModalBody className="bg-warning-50/40 py-5">
-              <div className="rounded-xl border border-warning-200 bg-white p-4">
-                <p className="text-sm leading-6 text-gray-700">
-                  Do you want to send proposal to unit{" "}
-                  <span className="font-semibold text-warning-800">
-                    {getSelectedUnitName()}
-                  </span>
-                  ?
-                </p>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-warning-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm leading-6 text-gray-700">
+                    Do you want to send proposal to company unit
+                    <span className="font-semibold text-warning-800">
+                      {" "}
+                      {getSelectedUnitName()}
+                    </span>
+                    ?
+                  </p>
 
-                <p className="mt-2 text-xs text-gray-500">
-                  Once confirmed, the proposal submission process will continue.
-                </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    All available units are fetched from the company GST/unit
+                    API.
+                  </p>
+                </div>
+
+                <div className="max-h-[320px] space-y-3 overflow-y-auto pr-1">
+                  {getCompanyUnitsForWarning().length > 0 ? (
+                    getCompanyUnitsForWarning().map((unit, index) => (
+                      <div
+                        key={unit.id}
+                        className="rounded-2xl border border-warning-200 bg-white p-4 shadow-sm transition-all hover:border-warning-300 hover:shadow-md"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-100 text-sm font-bold text-warning-700">
+                            {index + 1}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-gray-900">
+                                {unit.name}
+                              </p>
+
+                              {unit.isSelected && (
+                                <span className="rounded-full border border-warning-200 bg-warning-50 px-2 py-0.5 text-[11px] font-semibold text-warning-700">
+                                  Selected
+                                </span>
+                              )}
+
+                              {unit.status !== "-" && (
+                                <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-semibold text-green-700">
+                                  {unit.status}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="mt-2 text-sm leading-5 text-gray-600">
+                              {unit.address}
+                            </p>
+
+                            <p className="mt-2 inline-flex rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-semibold text-gray-600">
+                              GST Type: {unit.gstRegistrationTypeName}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-warning-300 bg-white p-5 text-center">
+                      <p className="text-sm font-semibold text-gray-700">
+                        No unit details found.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </ModalBody>
 
