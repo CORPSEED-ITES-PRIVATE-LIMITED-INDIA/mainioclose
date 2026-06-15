@@ -599,25 +599,42 @@ const Unbill = () => {
 
       case "service":
         return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-      case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
+      case "companyName":
+        return (
+          <Link
+            to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
+            className=" p-4"
+          >
+            <p className="text-[11px] uppercase text-default-500">Company:</p>
+
+            <p className="mt-1 text-sm font-semibold text-default-900">
+              {rowData?.companyName || ""}
+            </p>
+
+            <p className="mt-2 text-[11px] uppercase text-default-500">
+              Status:
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-default-900">
+              {rowData?.companyStatus || ""}
+            </p>
+          </Link>
+        );
       case "unitName":
         return (
-          <div className="rounded-xl border border-default-200 bg-default-50 p-4">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
-              Unit
+          <div className=" p-4">
+            <p className="text-[11px] uppercase text-default-500">Unit:</p>
+
+            <p className="mt-1 text-sm font-semibold text-default-900">
+              {rowData?.unitName || ""}
+            </p>
+
+            <p className="mt-2 text-[11px] uppercase text-default-500">
+              Status:
             </p>
 
             <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.unitName || "NA"}
-            </p>
-
-            <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-default-500">
-              Status
-            </p>
-
-            <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.unitStatus || "NA"}
+              {rowData?.unitStatus || ""}
             </p>
           </div>
         );
