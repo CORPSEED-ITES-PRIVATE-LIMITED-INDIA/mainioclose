@@ -45,7 +45,7 @@ import {
   searchUnbilledByCompanyNameAndUnbilled,
   updateStatusForUnbill,
 } from "../../toolkit/slices/organizationSlice";
-import { inrCurrency } from "../../common";
+import { inrCurrency, splitTextIntoTwoLines } from "../../common";
 import dayjs from "dayjs";
 import {
   cancelUnBilledInvoice,
@@ -550,6 +550,23 @@ const Unbill = () => {
     paymentProofModal.onOpen();
   };
 
+  const renderTwoLineText = (text, maxWidth = "220px", className = "") => {
+    const lines = splitTextIntoTwoLines(text);
+
+    return (
+      <div
+        className={`text-sm capitalize leading-5 ${className}`}
+        style={{ maxWidth }}
+      >
+        {lines.map((line, index) => (
+          <p key={index} className="whitespace-nowrap">
+            {line}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -632,33 +649,23 @@ const Unbill = () => {
         );
 
       case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-      case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
+        return renderTwoLineText(rowData?.solutionName, "220px");
+
+      case "companyName":
+        return renderTwoLineText(
+          rowData?.companyName || rowData?.company,
+          "220px",
+        );
+
+      case "client":
+        return renderTwoLineText(rowData?.contactName, "220px");
       case "unitName":
         return (
-          <div className="rounded-xl border border-default-200 bg-default-50 p-4">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
-              Unit
-            </p>
-
-            <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.unitName || "NA"}
-            </p>
-
-            <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-default-500">
-              Status
-            </p>
-
+          <div className="">
+            {renderTwoLineText(rowData?.unitName, "220px")}
             <p className="mt-1 text-sm font-semibold text-default-900">
               {rowData?.unitStatus || "NA"}
             </p>
-          </div>
-        );
-      case "client":
-        return (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.contactName}</p>
           </div>
         );
       case "totalAmount":
