@@ -25,9 +25,15 @@ import {
   addToast,
   Chip,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  ExternalLink,
+  Paperclip,
+  Search,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { inrCurrency } from "../../common";
+import { inrCurrency, splitTextIntoTwoLines } from "../../common";
 import dayjs from "dayjs";
 import { Link, useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
@@ -59,18 +65,54 @@ export const columns = [
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
   { name: "COMPANY", uid: "companyName" },
+  { name: "UNIT", uid: "unitName" },
   { name: "PAYMENT TERM", uid: "paymentTypeCode" },
   { name: "TOTAL AMOUNT", uid: "totalAmount" },
   { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
   { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
   { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
   { name: "ADDED BY", uid: "addedBy" },
+  { name: "PAYMENT PROOF", uid: "paymentProof" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
+
+const getAttachmentFileName = (attachmentUrl = "") => {
+  if (!attachmentUrl) return "Attachment";
+
+  try {
+    const decodedUrl = decodeURIComponent(attachmentUrl);
+    const urlPath = decodedUrl.startsWith("http")
+      ? new URL(decodedUrl).pathname
+      : decodedUrl;
+
+    const fileName = urlPath.split("/").pop();
+
+    return fileName || "Attachment";
+  } catch (error) {
+    return attachmentUrl.split("/").pop()?.split("?")[0] || "Attachment";
+  }
+};
+
+const getAttachmentType = (attachmentUrl = "") => {
+  if (!attachmentUrl) return "unknown";
+
+  const cleanUrl = attachmentUrl.split("?")[0].split("#")[0].toLowerCase();
+  const extension = cleanUrl.split(".").pop();
+
+  const imageTypes = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"];
+  const pdfTypes = ["pdf"];
+  const textTypes = ["txt", "csv", "log", "json", "xml"];
+
+  if (imageTypes.includes(extension)) return "image";
+  if (pdfTypes.includes(extension)) return "pdf";
+  if (textTypes.includes(extension)) return "text";
+
+  return "unknown";
+};
 
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
@@ -81,11 +123,13 @@ const INITIAL_VISIBLE_COLUMNS = [
   "service",
   "client",
   "companyName",
+  "unitName",
   "paymentTypeCode",
   "totalAmount",
   "currentReceivedAmount",
   "outstandingAmount",
   "addedBy",
+  "paymentProof",
   "actions",
 ];
 
@@ -98,6 +142,7 @@ const SalesUnbill = () => {
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
+  const paymentProofModal = useDisclosure();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const invoices = useSelector((state) => state.account.invoicesByUnbilled);
   const adminRole = userRole.includes("ADMIN");
@@ -140,6 +185,7 @@ const SalesUnbill = () => {
   };
   const [creditNoteData, setCreditNoteData] = useState(initialCreditNoteData);
   const [creditNoteRow, setCreditNoteRow] = useState(null);
+  const [selectedPaymentProof, setSelectedPaymentProof] = useState("");
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -298,6 +344,36 @@ const SalesUnbill = () => {
     }
   };
 
+  const handlePaymentProofPreview = (paymentProofUrl) => {
+    if (!paymentProofUrl) {
+      addToast({
+        title: "No payment proof available",
+        color: "warning",
+      });
+      return;
+    }
+
+    setSelectedPaymentProof(paymentProofUrl);
+    paymentProofModal.onOpen();
+  };
+
+  const renderTwoLineText = (text, maxWidth = "220px", className = "") => {
+    const lines = splitTextIntoTwoLines(text);
+
+    return (
+      <div
+        className={`text-sm capitalize leading-5 ${className}`}
+        style={{ maxWidth }}
+      >
+        {lines.map((line, index) => (
+          <p key={index} className="whitespace-nowrap">
+            {line}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   const renderCell = React.useCallback(
     (rowData, columnKey) => {
       const cellValue = rowData[columnKey];
@@ -395,13 +471,23 @@ const SalesUnbill = () => {
             </Link>
           );
         case "service":
-          return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-        case "company":
-          return <p className="text-sm capitalize">{rowData?.company}</p>;
+          return renderTwoLineText(rowData?.solutionName, "220px");
+
+        case "companyName":
+          return renderTwoLineText(
+            rowData?.companyName || rowData?.company,
+            "220px",
+          );
+
         case "client":
+          return renderTwoLineText(rowData?.contactName, "220px");
+        case "unitName":
           return (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm capitalize">{rowData?.contactName}</p>
+            <div className="">
+              {renderTwoLineText(rowData?.unitName, "220px")}
+              <p className="mt-1 text-sm font-semibold text-default-900">
+                {rowData?.unitStatus || "NA"}
+              </p>
             </div>
           );
         case "totalAmount":
@@ -429,7 +515,29 @@ const SalesUnbill = () => {
             </p>
           );
         case "addedBy":
-          return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+          return renderTwoLineText(rowData?.createdByName, "220px");
+        case "paymentProof":
+          return (
+            <div className="flex items-center gap-2">
+              {rowData?.transactionReference ? (
+                <Button
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  startContent={<Paperclip size={14} />}
+                  onPress={() =>
+                    handlePaymentProofPreview(rowData?.transactionReference)
+                  }
+                >
+                  View
+                </Button>
+              ) : (
+                <Chip size="sm" variant="flat" color="default">
+                  No Proof
+                </Chip>
+              )}
+            </div>
+          );
         case "actions":
           return (
             <div className="relative flex justify-center items-center gap-2">
@@ -1371,6 +1479,149 @@ const SalesUnbill = () => {
               </ModalFooter>
             </>
           )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="5xl"
+        isOpen={paymentProofModal.isOpen}
+        onOpenChange={paymentProofModal.onOpenChange}
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => {
+            const attachmentType = getAttachmentType(selectedPaymentProof);
+            const fileName = getAttachmentFileName(selectedPaymentProof);
+
+            return (
+              <>
+                <ModalHeader className="flex flex-col gap-1">
+                  Payment Proof
+                  <span className="text-xs font-normal text-gray-500 break-all">
+                    {fileName}
+                  </span>
+                </ModalHeader>
+
+                <ModalBody className="max-h-[78vh] overflow-auto">
+                  {!selectedPaymentProof ? (
+                    <div className="rounded-xl border border-default-200 p-6 text-center text-sm text-default-500">
+                      No payment proof available.
+                    </div>
+                  ) : attachmentType === "image" ? (
+                    <div className="flex justify-center rounded-xl border border-default-200 bg-default-50 p-3">
+                      <img
+                        src={selectedPaymentProof}
+                        alt="Payment Proof"
+                        className="max-h-[70vh] max-w-full rounded-lg object-contain"
+                      />
+                    </div>
+                  ) : attachmentType === "pdf" ? (
+                    <object
+                      data={selectedPaymentProof}
+                      type="application/pdf"
+                      className="h-[72vh] w-full rounded-xl border border-default-200"
+                    >
+                      <div className="rounded-xl border border-default-200 p-6 text-center">
+                        <p className="text-sm text-default-600">
+                          PDF preview is not available in this browser.
+                        </p>
+                        <Button
+                          className="mt-3"
+                          color="primary"
+                          variant="flat"
+                          startContent={<ExternalLink size={15} />}
+                          onPress={() =>
+                            window.open(
+                              selectedPaymentProof,
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }
+                        >
+                          Open Proof
+                        </Button>
+                      </div>
+                    </object>
+                  ) : attachmentType === "text" ? (
+                    <object
+                      data={selectedPaymentProof}
+                      type="text/plain"
+                      className="h-[72vh] w-full rounded-xl border border-default-200 bg-white"
+                    >
+                      <div className="rounded-xl border border-default-200 p-6 text-center">
+                        <p className="text-sm text-default-600">
+                          Text preview is not available.
+                        </p>
+                        <Button
+                          className="mt-3"
+                          color="primary"
+                          variant="flat"
+                          startContent={<ExternalLink size={15} />}
+                          onPress={() =>
+                            window.open(
+                              selectedPaymentProof,
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }
+                        >
+                          Open Proof
+                        </Button>
+                      </div>
+                    </object>
+                  ) : (
+                    <div className="rounded-xl border border-default-200 p-6 text-center">
+                      <Paperclip className="mx-auto mb-3 text-default-400" />
+                      <p className="text-sm font-medium text-default-700">
+                        Preview is not available for this file type.
+                      </p>
+                      <p className="mt-1 break-all text-xs text-default-500">
+                        {selectedPaymentProof}
+                      </p>
+                      <Button
+                        className="mt-4"
+                        color="primary"
+                        variant="flat"
+                        startContent={<ExternalLink size={15} />}
+                        onPress={() =>
+                          window.open(
+                            selectedPaymentProof,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                      >
+                        Open Proof
+                      </Button>
+                    </div>
+                  )}
+                </ModalBody>
+
+                <ModalFooter>
+                  {selectedPaymentProof && (
+                    <Button
+                      variant="flat"
+                      startContent={<ExternalLink size={15} />}
+                      onPress={() =>
+                        window.open(
+                          selectedPaymentProof,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                    >
+                      Open in New Tab
+                    </Button>
+                  )}
+
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Close
+                  </Button>
+                </ModalFooter>
+              </>
+            );
+          }}
         </ModalContent>
       </Modal>
     </>

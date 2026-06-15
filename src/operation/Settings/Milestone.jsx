@@ -86,6 +86,10 @@ const Milestone = () => {
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   const [selectedMilestone, setSelectedMilestone] = React.useState(null);
+  const [selectedDeleteMilestone, setSelectedDeleteMilestone] =
+    React.useState(null);
+  const [isDeletingMilestone, setIsDeletingMilestone] = React.useState(false);
+  const deleteConfirmModal = useDisclosure();
   const isEditMode = Boolean(selectedMilestone);
 
   useEffect(() => {
@@ -163,21 +167,46 @@ const Milestone = () => {
     onOpen();
   };
 
-  const handleDeleteMilestone = (id) => {
-    dispatch(deleteMileStone(id)).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
+  const handleOpenDeleteConfirm = (rowData) => {
+    setSelectedDeleteMilestone(rowData);
+    deleteConfirmModal.onOpen();
+  };
+
+  const handleDeleteMilestone = () => {
+    if (!selectedDeleteMilestone?.id) return;
+
+    setIsDeletingMilestone(true);
+
+    dispatch(deleteMileStone(selectedDeleteMilestone.id))
+      .then((resp) => {
+        console.log("delete resp", resp);
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Milestone deleted successfully.",
+            color: "success",
+          });
+
+          dispatch(getAllMilestones());
+          deleteConfirmModal.onClose();
+          setSelectedDeleteMilestone(null);
+        } else {
+          addToast({
+            title: "ERROR",
+            description: resp?.payload?.message || "Something went wrong.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
         addToast({
-          title: "Milestone deleted successfully.",
-          color: "success",
-        });
-        dispatch(getAllMilestones());
-      } else {
-        addToast({
-          title: "Failed to delete milestone.",
+          title: "Something went wrong.",
           color: "danger",
         });
-      }
-    });
+      })
+      .finally(() => {
+        setIsDeletingMilestone(false);
+      });
   };
 
   const onSubmit = useCallback(
@@ -249,7 +278,7 @@ const Milestone = () => {
               size="sm"
               color="danger"
               variant="flat"
-              onPress={() => handleDeleteMilestone(rowData.id)}
+              onPress={() => handleOpenDeleteConfirm(rowData)}
             >
               Delete
             </Button>
@@ -424,11 +453,7 @@ const Milestone = () => {
       >
         <TableHeader columns={headerColumns}>
           {(column) => (
-            <TableColumn
-              key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
-              allowsSorting={column.sortable}
-            >
+            <TableColumn key={column.uid} allowsSorting={column.sortable}>
               {column.name}
             </TableColumn>
           )}
@@ -520,6 +545,56 @@ const Milestone = () => {
                   </ModalFooter>
                 </form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={deleteConfirmModal.isOpen}
+        onOpenChange={deleteConfirmModal.onOpenChange}
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Delete Milestone
+              </ModalHeader>
+
+              <ModalBody>
+                <p className="text-sm text-default-700">
+                  Are you sure you want to delete this milestone?
+                </p>
+
+                <p className="text-sm font-semibold text-danger">
+                  {selectedDeleteMilestone?.name}
+                </p>
+
+                <p className="text-xs text-default-500">
+                  This action cannot be undone.
+                </p>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  onPress={() => {
+                    onClose();
+                    setSelectedDeleteMilestone(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="danger"
+                  isLoading={isDeletingMilestone}
+                  onPress={handleDeleteMilestone}
+                >
+                  Yes, Delete
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

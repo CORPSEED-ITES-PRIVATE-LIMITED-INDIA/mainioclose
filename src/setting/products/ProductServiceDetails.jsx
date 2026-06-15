@@ -678,7 +678,7 @@ const ProductServiceDetails = () => {
 
               {emailTemplate ? (
                 <div className="space-y-4 p-4">
-                  <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+                  {/* <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-default-400">
                       Email Subject
                     </p>
@@ -686,7 +686,7 @@ const ProductServiceDetails = () => {
                     <p className="mt-1 text-sm font-bold text-default-900">
                       {emailTemplate.emailSubject || "---"}
                     </p>
-                  </div>
+                  </div> */}
 
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <HtmlPreview

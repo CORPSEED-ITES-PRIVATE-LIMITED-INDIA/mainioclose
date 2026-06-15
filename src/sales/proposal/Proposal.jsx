@@ -48,7 +48,6 @@ import {
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
 import NewTextEditor from "../../components/NewTextEditor";
-import { brochureSelectionData } from "../../common";
 
 const defaultValues = {
   mailTo: [],

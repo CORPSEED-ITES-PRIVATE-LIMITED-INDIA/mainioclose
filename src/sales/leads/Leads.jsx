@@ -640,9 +640,12 @@ const Leads = () => {
                   Lead tasks
                 </DropdownItem> */}
                   {/* <DropdownItem key="edit">Edit</DropdownItem> */}
-                  <DropdownItem key="delete" color="danger">
-                    Delete
-                  </DropdownItem>
+
+                  {adminRole && (
+                    <DropdownItem key="delete" color="danger">
+                      Delete
+                    </DropdownItem>
+                  )}
                 </DropdownMenu>
               </Dropdown>
             </div>

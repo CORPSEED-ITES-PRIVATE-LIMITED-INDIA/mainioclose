@@ -45,7 +45,7 @@ import {
   searchUnbilledByCompanyNameAndUnbilled,
   updateStatusForUnbill,
 } from "../../toolkit/slices/organizationSlice";
-import { inrCurrency } from "../../common";
+import { inrCurrency, splitTextIntoTwoLines } from "../../common";
 import dayjs from "dayjs";
 import {
   cancelUnBilledInvoice,
@@ -109,6 +109,40 @@ const INITIAL_VISIBLE_COLUMNS = [
   "addedBy",
   "actions",
 ];
+
+const getAttachmentFileName = (attachmentUrl = "") => {
+  if (!attachmentUrl) return "Attachment";
+
+  try {
+    const decodedUrl = decodeURIComponent(attachmentUrl);
+    const urlPath = decodedUrl.startsWith("http")
+      ? new URL(decodedUrl).pathname
+      : decodedUrl;
+
+    const fileName = urlPath.split("/").pop();
+
+    return fileName || "Attachment";
+  } catch (error) {
+    return attachmentUrl.split("/").pop()?.split("?")[0] || "Attachment";
+  }
+};
+
+const getAttachmentType = (attachmentUrl = "") => {
+  if (!attachmentUrl) return "unknown";
+
+  const cleanUrl = attachmentUrl.split("?")[0].split("#")[0].toLowerCase();
+  const extension = cleanUrl.split(".").pop();
+
+  const imageTypes = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"];
+  const pdfTypes = ["pdf"];
+  const textTypes = ["txt", "csv", "log", "json", "xml"];
+
+  if (imageTypes.includes(extension)) return "image";
+  if (pdfTypes.includes(extension)) return "pdf";
+  if (textTypes.includes(extension)) return "text";
+
+  return "unknown";
+};
 
 const REPORT_COLUMNS = [
   {
@@ -516,6 +550,23 @@ const Unbill = () => {
     paymentProofModal.onOpen();
   };
 
+  const renderTwoLineText = (text, maxWidth = "220px", className = "") => {
+    const lines = splitTextIntoTwoLines(text);
+
+    return (
+      <div
+        className={`text-sm capitalize leading-5 ${className}`}
+        style={{ maxWidth }}
+      >
+        {lines.map((line, index) => (
+          <p key={index} className="whitespace-nowrap">
+            {line}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -598,50 +649,59 @@ const Unbill = () => {
         );
 
       case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
+        return renderTwoLineText(rowData?.solutionName, "220px");
+
       case "companyName":
         return (
-          <Link
-            to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
-            className=" p-4"
-          >
-            <p className="text-[11px] uppercase text-default-500">Company:</p>
-
-            <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.companyName || ""}
-            </p>
-
-            <p className="mt-2 text-[11px] uppercase text-default-500">
-              Status:
-            </p>
-
-            <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.companyStatus || ""}
-            </p>
-          </Link>
+          <>
+            <Link
+              className="font-medium"
+              to={`/erp/${userId}/accounts/companyApprovals`}
+            >
+              {renderTwoLineText(
+                rowData?.companyName || rowData?.company,
+                "220px",
+              )}
+            </Link>
+            <Chip
+              size="sm"
+              color={
+                rowData?.companyStatus === "APPROVED"
+                  ? "success"
+                  : rowData?.companyStatus === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
+              {rowData?.companyStatus}
+            </Chip>
+          </>
         );
+
+      case "client":
+        return renderTwoLineText(rowData?.contactName, "220px");
       case "unitName":
         return (
-          <div className=" p-4">
-            <p className="text-[11px] uppercase text-default-500">Unit:</p>
+          <div className="">
+            <Link
+              className="font-medium"
+              to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
+            >
+              {renderTwoLineText(rowData?.unitName, "220px")}
+            </Link>
 
-            <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.unitName || ""}
-            </p>
-
-            <p className="mt-2 text-[11px] uppercase text-default-500">
-              Status:
-            </p>
-
-            <p className="mt-1 text-sm font-semibold text-default-900">
-              {rowData?.unitStatus || ""}
-            </p>
-          </div>
-        );
-      case "client":
-        return (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm capitalize">{rowData?.contactName}</p>
+            <Chip
+              size="sm"
+              color={
+                rowData?.unitStatus === "APPROVED"
+                  ? "success"
+                  : rowData?.unitStatus === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
+              {rowData?.unitStatus || "NA"}
+            </Chip>
           </div>
         );
       case "totalAmount":
@@ -673,13 +733,15 @@ const Unbill = () => {
       case "paymentProof":
         return (
           <div className="flex items-center gap-2">
-            {rowData?.paymentProof ? (
+            {rowData?.transactionReference ? (
               <Button
                 size="sm"
                 color="primary"
                 variant="flat"
                 startContent={<Paperclip size={14} />}
-                onPress={() => handlePaymentProofPreview(rowData?.paymentProof)}
+                onPress={() =>
+                  handlePaymentProofPreview(rowData?.transactionReference)
+                }
               >
                 View
               </Button>
@@ -868,7 +930,8 @@ const Unbill = () => {
           console.log("redbdfgfdsdg", re);
           if (re.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Unbill canceled successfully !.",
+              title: "SUCCESS",
+              description: "Unbill canceled successfully !.",
               color: "success",
             });
             setRowItem(null);
@@ -896,7 +959,11 @@ const Unbill = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          }),
         );
     } else {
       dispatch(
@@ -908,7 +975,8 @@ const Unbill = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Status updated successfully !.",
+              title: "SUCCESS",
+              description: "Status updated successfully !.",
               color: "success",
             });
             const awaitingPaymentStatusId = getAwaitingPaymentStatusId();
@@ -930,19 +998,25 @@ const Unbill = () => {
                 .then((resp) => {
                   if (resp.meta.requestStatus === "fulfilled") {
                     addToast({
-                      title: "Status updated successfully",
+                      title: "ERROR",
+                      description: "Status updated successfully",
                       color: "success",
                     });
                   } else {
                     addToast({
-                      title: "Something went wrong in lead status update  !.",
+                      title: "ERROR",
+                      description:
+                        resp?.payload?.data?.message ||
+                        "Something went wrong in lead status update !.",
                       color: "danger",
                     });
                   }
                 })
                 .catch(() => {
                   addToast({
-                    title: "Something went wrong in lead status update  !.",
+                    title: "ERROR",
+                    description:
+                      "Something went wrong in lead status update !.",
                     color: "danger",
                   });
                 });
@@ -960,11 +1034,19 @@ const Unbill = () => {
             });
             statusModal.onClose();
           } else {
-            addToast({ title: resp?.payload?.data?.message, color: "danger" });
+            addToast({
+              title: "ERROR",
+              description: resp?.payload?.data?.message,
+              color: "danger",
+            });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          }),
         );
     }
   };
