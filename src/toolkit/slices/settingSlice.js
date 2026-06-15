@@ -877,6 +877,16 @@ export const updateServiceBrouchersServiceDetailBySolutionId = createAsyncThunk(
     return response.data;
   },
 );
+export const getSolutionById = createAsyncThunk(
+  "getSolutionById",
+  async ({ solutionId,userId }) => {
+    const response = await api.get(
+      `/leadService/api/v1/getSolutionById?id=${solutionId}&userId=${userId}`
+    );
+
+    return response.data;
+  },
+);
 
 export const SettingSlice = createSlice({
   name: "setting",
@@ -909,6 +919,7 @@ export const SettingSlice = createSlice({
     paymentTermList: [],
     menuList: [],
     serviceBrouchersDetail: {},
+    solutionName:null
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1314,6 +1325,26 @@ export const SettingSlice = createSlice({
     );
     builder.addCase(
       updateServiceBrouchersServiceDetailBySolutionId.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      getSolutionById.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getSolutionById.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        console.log("Get Solution By Name",action.payload);
+        state.solutionName = action.payload.name;
+      },
+    );
+    builder.addCase(
+      getSolutionById.rejected,
       (state) => {
         state.loading = "rejected";
       },

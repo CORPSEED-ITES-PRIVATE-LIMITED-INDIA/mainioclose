@@ -76,6 +76,7 @@ export const columns = [
   { name: "SERVICE", uid: "service" },
   { name: "CLIENT", uid: "client" },
   { name: "COMPANY", uid: "companyName" },
+  { name: "UNIT", uid: "unitName" },
   { name: "PAYMENT TERM", uid: "paymentTypeCode" },
   { name: "TOTAL AMOUNT", uid: "totalAmount" },
   { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
@@ -99,6 +100,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "service",
   "client",
   "companyName",
+  "unitName",
   "paymentTypeCode",
   "totalAmount",
   "currentReceivedAmount",
@@ -599,6 +601,26 @@ const Unbill = () => {
         return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
       case "company":
         return <p className="text-sm capitalize">{rowData?.company}</p>;
+      case "unitName":
+        return (
+          <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-default-500">
+              Unit
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-default-900">
+              {rowData?.unitName || "NA"}
+            </p>
+
+            <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-default-500">
+              Status
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-default-900">
+              {rowData?.unitStatus || "NA"}
+            </p>
+          </div>
+        );
       case "client":
         return (
           <div className="flex flex-col gap-2">

@@ -34,6 +34,7 @@ import {
   getAllMenus,
   getServiceBrouchersServiceDetailBySolutionId,
   updateServiceBrouchersServiceDetailBySolutionId,
+  getSolutionById,
 } from "../../toolkit/slices/settingSlice.js";
 
 import NewTextEditor from "../../components/NewTextEditor";
@@ -302,12 +303,13 @@ const HtmlPreview = ({ title, value, emptyText }) => {
 
 const ProductServiceDetails = () => {
   const dispatch = useDispatch();
-  const { solutionId } = useParams();
+  const { solutionId, userId } = useParams();
 
   const menuList = useSelector((state) => state.setting.menuList);
   const serviceBrouchersDetail = useSelector(
     (state) => state.setting.serviceBrouchersDetail,
   );
+  const solutionName = useSelector((state) => state.setting.solutionName);
 
   const menus = useMemo(() => getMenuList(menuList), [menuList]);
 
@@ -468,6 +470,17 @@ const ProductServiceDetails = () => {
   const isSolutionExists = Boolean(
     serviceBrouchersDetail?.solution?.brochure?.id,
   );
+  useEffect(() => {
+    if (!isSolutionExists) return;
+    if (!solutionId || !userId) return;
+
+    dispatch(
+      getSolutionById({
+        solutionId,
+        userId,
+      }),
+    );
+  }, [dispatch, isSolutionExists, solutionId, userId]);
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
@@ -606,7 +619,7 @@ const ProductServiceDetails = () => {
               <InfoTile
                 icon={<CheckCircle2 size={18} />}
                 label="Solution"
-                value={serviceBrouchersDetail?.solution?.name}
+                value={isSolutionExists ? solutionName : "---"}
               />
             </div>
 
@@ -734,7 +747,7 @@ const ProductServiceDetails = () => {
                     <div>
                       <h2 className="text-lg font-bold text-default-900">
                         {isSolutionExists
-                          ? "Update Service Details"
+                          ? `Update Service Detail for Solution: ${solutionName}`
                           : "Add Service Details"}
                       </h2>
                       <p className="text-sm font-normal text-default-500">
