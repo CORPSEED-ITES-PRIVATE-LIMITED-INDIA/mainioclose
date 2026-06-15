@@ -299,7 +299,9 @@ const CompanyAndUnitsInLead = () => {
     ) {
       addToast({
         title: "RESTRICTED",
-        description: `You are not required perform any action before approval ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or Draft or initiation of proposal.`,
+        description: `You are not required perform any action before approval ${
+          leadData?.proposalSendOrNot ? ", sent to the client" : ""
+        } or Draft or initiation of proposal.`,
         color: "danger",
       });
       return;
@@ -1138,19 +1140,19 @@ const CompanyAndUnitsInLead = () => {
     <>
       {contextHolder}
 
-      <Card className="my-2">
-        <CardHeader>
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
+      <Card className="my-2 overflow-hidden">
+        <CardHeader className="px-4 py-3">
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
               <Building className={iconClass} />
-              <p className="text-sm font-medium">Company detail</p>
+              <p className="truncate text-sm font-medium">Company detail</p>
             </div>
 
             <Button
               size="sm"
               isIconOnly
               variant="light"
-              className="w-6 h-6 rounded-full bg-none"
+              className="h-6 w-6 shrink-0 rounded-full bg-none"
               onClick={openCompanyModal}
             >
               {effectiveCompany?.id ? (
@@ -1162,33 +1164,33 @@ const CompanyAndUnitsInLead = () => {
           </div>
         </CardHeader>
 
-        <CardBody className="max-h-[300px] overflow-auto">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div className="col-span-2">
-              <p className="font-medium text-gray-900">
+        <CardBody className="max-h-[300px] overflow-y-auto overflow-x-hidden px-4 py-3">
+          <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-2 text-sm break-words">
+            <div className="min-w-0">
+              <p className="break-words font-medium text-gray-900">
                 {effectiveCompany?.name || "NA"}
               </p>
             </div>
 
-            <p className="text-gray-500 col-span-2">
-              <span className="text-gray-700 font-medium">PAN:</span>{" "}
+            <p className="min-w-0 break-words text-gray-500">
+              <span className="font-medium text-gray-700">PAN:</span>{" "}
               {effectiveCompany?.panNo || "NA"}
             </p>
 
-            <p className="text-gray-500 col-span-2">
-              <span className="text-gray-700 font-medium">Company Type:</span>{" "}
+            <p className="min-w-0 break-words text-gray-500">
+              <span className="font-medium text-gray-700">Company Type:</span>{" "}
               {effectiveCompany?.companyTypeName ||
                 effectiveCompany?.companyType ||
                 "NA"}
             </p>
 
-            <p className="text-gray-500 col-span-2">
-              <span className="text-gray-700 font-medium">Address:</span>{" "}
+            <p className="min-w-0 break-words text-gray-500">
+              <span className="font-medium text-gray-700">Address:</span>{" "}
               {effectiveCompany?.address || "NA"}
             </p>
 
-            <p className="text-gray-500 col-span-2">
-              <span className="text-gray-700 font-medium">Location:</span>{" "}
+            <p className="min-w-0 break-words text-gray-500">
+              <span className="font-medium text-gray-700">Location:</span>{" "}
               {effectiveCompany?.city || "NA"},{" "}
               {effectiveCompany?.state || "NA"},{" "}
               {effectiveCompany?.country || "NA"} -{" "}
@@ -1200,18 +1202,21 @@ const CompanyAndUnitsInLead = () => {
         </CardBody>
       </Card>
 
-      <Card className="my-2">
-        <CardHeader>
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
+      <Card className="my-2 overflow-hidden">
+        <CardHeader className="px-4 py-3">
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
               <Building className={iconClass} />
-              <p className="text-sm font-medium">Company unit detail</p>
+              <p className="truncate text-sm font-medium">
+                Company unit detail
+              </p>
             </div>
 
             <Button
               size="sm"
               variant="light"
               isIconOnly
+              className="shrink-0"
               onPress={openAddUnitModal}
             >
               <Plus className={iconClass} />
@@ -1219,7 +1224,7 @@ const CompanyAndUnitsInLead = () => {
           </div>
         </CardHeader>
 
-        <CardBody className="max-h-[500px] overflow-auto">
+        <CardBody className="max-h-[500px] overflow-y-auto overflow-x-hidden px-4 py-3">
           {!effectiveCompany?.id ? (
             <p className="text-sm text-gray-500">No company selected yet.</p>
           ) : units?.length > 0 ? (
@@ -1236,16 +1241,16 @@ const CompanyAndUnitsInLead = () => {
                 return (
                   <div
                     key={unit?.id}
-                    className={`border rounded-lg p-3 bg-white shadow-sm ${
+                    className={`min-w-0 overflow-hidden rounded-lg border bg-white p-3 shadow-sm ${
                       isSelected ? "border-blue-500 ring-1 ring-blue-200" : ""
                     }`}
                   >
-                    <div className="flex justify-between gap-3">
-                      <p className="font-medium text-gray-900">
-                        {[unit?.unitName, unit?.unitType]?.join(" - ")}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 break-words font-medium text-gray-900">
+                        {[unit?.unitName, unit?.unitType].join(" - ")}
                       </p>
 
-                      <div className="flex gap-2">
+                      <div className="flex shrink-0 gap-2">
                         <Button
                           size="sm"
                           variant="light"
@@ -1254,6 +1259,7 @@ const CompanyAndUnitsInLead = () => {
                         >
                           <Link className={iconClass} />
                         </Button>
+
                         <Button
                           size="sm"
                           variant="light"
@@ -1265,16 +1271,16 @@ const CompanyAndUnitsInLead = () => {
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                      <p className="text-gray-500">
-                        <span className="text-gray-700 font-medium grid-cols-2">
+                    <div className="mt-3 grid min-w-0 grid-cols-1 gap-x-4 gap-y-2 text-sm md:grid-cols-2">
+                      <p className="min-w-0 break-words text-gray-500">
+                        <span className="font-medium text-gray-700">
                           GST No:
                         </span>{" "}
                         {unit?.gstNo || "NA"}
                       </p>
 
-                      <p className="text-gray-500 md:col-span-2">
-                        <span className="text-gray-700 font-medium">
+                      <p className="min-w-0 break-words text-gray-500 md:col-span-2">
+                        <span className="font-medium text-gray-700">
                           GST Type:
                         </span>{" "}
                         {unit?.gstTypeName ||
@@ -1283,34 +1289,35 @@ const CompanyAndUnitsInLead = () => {
                           "NA"}
                       </p>
 
-                      <p className="text-gray-500 ">
-                        <span className="text-gray-700 font-medium">
+                      <p className="min-w-0 break-words text-gray-500">
+                        <span className="font-medium text-gray-700">
                           Pin Code:
                         </span>{" "}
                         {unit?.pinCode || "NA"}
                       </p>
 
-                      <p className="text-gray-500 md:col-span-2">
-                        <span className="text-gray-700 font-medium">
+                      <p className="min-w-0 break-words text-gray-500 md:col-span-2">
+                        <span className="font-medium text-gray-700">
                           Address:
                         </span>{" "}
                         {unit?.addressLine1 || unit?.address || "NA"}
                       </p>
 
-                      <p className="text-gray-500 md:col-span-2">
-                        <span className="text-gray-700 font-medium">
+                      <p className="min-w-0 break-words text-gray-500 md:col-span-2">
+                        <span className="font-medium text-gray-700">
                           Location:
                         </span>{" "}
                         {unit?.city || "NA"}, {unit?.state || "NA"},{" "}
                         {unit?.country || "NA"}
                       </p>
 
-                      <div className="md:col-span-2 mt-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                        <div className="flex justify-between items-center gap-1">
-                          <p className="text-sm font-semibold text-gray-700 mb-2">
+                      <div className="mt-2 min-w-0 rounded-lg border border-gray-100 bg-gray-50 p-3 md:col-span-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="mb-2 min-w-0 truncate text-sm font-semibold text-gray-700">
                             Contact detail
                           </p>
-                          <div className="flex justify-end mb-2">
+
+                          <div className="mb-2 flex shrink-0 justify-end">
                             <Button
                               size="sm"
                               variant="light"
@@ -1323,18 +1330,20 @@ const CompanyAndUnitsInLead = () => {
                         </div>
 
                         {displayContact ? (
-                          <div className="grid grid-cols-1 md:grid-cols-1 gap-x-4 gap-y-2 text-sm">
-                            <div className="flex justify-between items-center">
-                              <p className="text-gray-500">
-                                <span className="text-gray-700 font-medium">
+                          <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-2 text-sm">
+                            <div className="flex min-w-0 items-start justify-between gap-3">
+                              <p className="min-w-0 break-words text-gray-500">
+                                <span className="font-medium text-gray-700">
                                   Name:
                                 </span>{" "}
                                 {displayContact?.name || "NA"}
                               </p>
+
                               <Button
                                 size="sm"
                                 variant="light"
                                 isIconOnly
+                                className="shrink-0"
                                 onPress={() =>
                                   openEditContactModal(displayContact, unit?.id)
                                 }
@@ -1343,22 +1352,22 @@ const CompanyAndUnitsInLead = () => {
                               </Button>
                             </div>
 
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
+                            <p className="min-w-0 break-words text-gray-500">
+                              <span className="font-medium text-gray-700">
                                 Email:
                               </span>{" "}
                               {displayContact?.emails || "NA"}
                             </p>
 
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
+                            <p className="min-w-0 break-words text-gray-500">
+                              <span className="font-medium text-gray-700">
                                 Contact No:
                               </span>{" "}
                               {displayContact?.contactNo || "NA"}
                             </p>
 
-                            <p className="text-gray-500">
-                              <span className="text-gray-700 font-medium">
+                            <p className="min-w-0 break-words text-gray-500">
+                              <span className="font-medium text-gray-700">
                                 Whatsapp No:
                               </span>{" "}
                               {displayContact?.whatsappNo || "NA"}
@@ -1406,14 +1415,15 @@ const CompanyAndUnitsInLead = () => {
               : "Submit"
         }
         confirmLoading={companyLoading}
-        width="48%"
+        width="min(96vw, 900px)"
       >
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-          <div>
-            <p className="text-sm font-medium text-gray-800">
+        <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="break-words text-sm font-medium text-gray-800">
               Use Existing Company / Unit / Contact
             </p>
-            <p className="text-xs text-gray-500">
+
+            <p className="break-words text-xs text-gray-500">
               Turn on to select from existing records
             </p>
           </div>
@@ -1453,7 +1463,7 @@ const CompanyAndUnitsInLead = () => {
           layout="vertical"
           form={companyForm}
           onFinish={onSubmitCompany}
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-2"
         >
           {useExistingSelection ? (
             <>
@@ -1461,7 +1471,7 @@ const CompanyAndUnitsInLead = () => {
                 label="Select Company"
                 name="existingCompanyId"
                 rules={[{ required: true, message: "Please select company" }]}
-                className="col-span-2"
+                className="md:col-span-2"
               >
                 <Select
                   showSearch
@@ -1546,21 +1556,21 @@ const CompanyAndUnitsInLead = () => {
               </Form.Item>
 
               {(selectedCompanyId || selectedUnitId || selectedContactId) && (
-                <div className="col-span-2 mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex min-w-0 flex-wrap gap-2 md:col-span-2">
                   {selectedCompanyId && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-700">
+                    <span className="max-w-full break-words rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
                       Company: {effectiveCompany?.name || "Selected"}
                     </span>
                   )}
 
                   {selectedUnitId && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-700">
+                    <span className="max-w-full break-words rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
                       Unit: {selectedUnitDetail?.unitName || "Selected"}
                     </span>
                   )}
 
                   {selectedContactId && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-700">
+                    <span className="max-w-full break-words rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
                       Contact: {selectedContactDetail?.name || "Selected"}
                     </span>
                   )}
@@ -1664,13 +1674,13 @@ const CompanyAndUnitsInLead = () => {
         onOk={() => unitForm.submit()}
         okText={editingUnit ? "Update" : "Submit"}
         confirmLoading={unitLoading}
-        width="48%"
+        width="min(96vw, 900px)"
       >
         <Form
           layout="vertical"
           form={unitForm}
           onFinish={onSubmitUnit}
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-2"
         >
           <Form.Item
             label="Unit Name"
@@ -1801,13 +1811,13 @@ const CompanyAndUnitsInLead = () => {
         onOk={() => contactForm.submit()}
         okText="Save"
         confirmLoading={contactLoading}
-        width="48%"
+        width="min(96vw, 900px)"
       >
         <Form
           layout="vertical"
           form={contactForm}
           onFinish={onSubmitContact}
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-2"
         >
           <Form.Item
             label="Unit"
