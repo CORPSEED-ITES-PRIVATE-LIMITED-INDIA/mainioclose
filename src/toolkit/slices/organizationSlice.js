@@ -742,6 +742,54 @@ export const getUnbilledReport = createAsyncThunk(
   },
 );
 
+export const getInvoiceReport = createAsyncThunk(
+  "organization/getInvoiceReport",
+  async (
+    { userId, createdByUserId, status, fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {};
+
+      if (userId !== undefined && userId !== null && userId !== "") {
+        params.userId = userId;
+      }
+
+      if (
+        createdByUserId !== undefined &&
+        createdByUserId !== null &&
+        createdByUserId !== ""
+      ) {
+        params.createdByUserId = createdByUserId;
+      }
+
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      if (fromDate) {
+        params.fromDate = String(fromDate).trim();
+      }
+
+      if (toDate) {
+        params.toDate = String(toDate).trim();
+      }
+
+      const response = await api.get("/accountService/api/v1/invoices/report", {
+        params,
+      });
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: error?.message || "Failed to fetch invoice report",
+        },
+      );
+    }
+  },
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {

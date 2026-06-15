@@ -422,12 +422,12 @@ export const accountNavItems = [
   //   key: "bankStatement",
   //   icon: "NotebookText",
   // },
-  {
-    title: "Payment register",
-    url: "accounts/paymentRegister",
-    key: "paymentRegister",
-    icon: "BanknoteArrowDown",
-  },
+  // {
+  //   title: "Payment register",
+  //   url: "accounts/paymentRegister",
+  //   key: "paymentRegister",
+  //   icon: "BanknoteArrowDown",
+  // },
   {
     title: "Unbilled",
     url: "accounts/unbilled",
@@ -448,7 +448,7 @@ export const accountNavItems = [
   },
   {
     title: "Taxation",
-    url: "sales/taxation",
+    url: "accounts/taxation",
     key: "taxation",
     icon: "FileText",
   },

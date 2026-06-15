@@ -21,12 +21,16 @@ import {
   ModalBody,
   Select,
   SelectItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search, FileDown } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllInvoice,
   getAllInvoiceCount,
+  getInvoiceReport,
   searchInvoiceByCompanyNameAndInvoice,
   searchInvoiceCountByCompanyNameAndInvoice,
 } from "../../toolkit/slices/organizationSlice";
@@ -35,6 +39,9 @@ import { useParams } from "react-router-dom";
 import { inrCurrency } from "../../common";
 import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
+
+import NewSelect from "../../components/NewSelect.jsx";
+import { getAllLeadUser } from "../../toolkit/slices/leadSlice.js";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -68,6 +75,96 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+const INVOICE_REPORT_COLUMNS = [
+  {
+    header: "Invoice Date",
+    value: (row) =>
+      row?.invoiceDate ? dayjs(row.invoiceDate).format("DD-MM-YYYY") : "",
+  },
+  { header: "Invoice Number", value: (row) => row?.invoiceNumber },
+  { header: "Status", value: (row) => row?.status },
+  { header: "Service", value: (row) => row?.solutionName },
+  { header: "Client", value: (row) => row?.clientName || row?.contactName },
+  { header: "Company", value: (row) => row?.companyName },
+  { header: "Grand Total", value: (row) => row?.grandTotal },
+  { header: "GST Amount", value: (row) => row?.totalGstAmount },
+  { header: "CGST Amount", value: (row) => row?.cgstAmount },
+  { header: "SGST Amount", value: (row) => row?.sgstAmount },
+  { header: "IGST Amount", value: (row) => row?.igstAmount },
+  { header: "Created By", value: (row) => row?.createdByName },
+  {
+    header: "Created At",
+    value: (row) =>
+      row?.createdAt ? dayjs(row.createdAt).format("DD-MM-YYYY HH:mm") : "",
+  },
+];
+
+const normalizeReportPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+
+  if (Array.isArray(payload?.content)) return payload.content;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.content)) return payload.data.content;
+  if (Array.isArray(payload?.response)) return payload.response;
+  if (Array.isArray(payload?.response?.content))
+    return payload.response.content;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.records)) return payload.records;
+
+  return [];
+};
+
+const escapeCsvCell = (value) => {
+  if (value === null || value === undefined) return "";
+
+  const stringValue = String(value)
+    .replace(/\r?\n|\r/g, " ")
+    .trim();
+
+  if (
+    stringValue.includes(",") ||
+    stringValue.includes('"') ||
+    stringValue.includes("\n")
+  ) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+
+  return stringValue;
+};
+
+const convertInvoiceRowsToCsv = (rows = []) => {
+  const header = INVOICE_REPORT_COLUMNS.map((column) =>
+    escapeCsvCell(column.header),
+  ).join(",");
+
+  const body = rows
+    .map((row) =>
+      INVOICE_REPORT_COLUMNS.map((column) =>
+        escapeCsvCell(column.value(row)),
+      ).join(","),
+    )
+    .join("\n");
+
+  return [header, body].filter(Boolean).join("\n");
+};
+
+const downloadCsvFile = (csvContent, fileName) => {
+  const blob = new Blob(["\ufeff", csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};
+
 const Taxation = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
@@ -76,9 +173,12 @@ const Taxation = () => {
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
   );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
   );
+  const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -97,6 +197,26 @@ const Taxation = () => {
     searchText: "",
     type: "invoiceNumber",
   });
+  const [reportFilters, setReportFilters] = useState({
+    fromDate: "",
+    toDate: "",
+    status: "ALL",
+    createdByUserId: "",
+  });
+
+  const [isReportFetching, setIsReportFetching] = useState(false);
+  const [isReportPopoverOpen, setIsReportPopoverOpen] = useState(false);
+
+  const reportUserOptions = React.useMemo(
+    () => [{ id: "", fullName: "All Users" }, ...(allLeadUser || [])],
+    [allLeadUser],
+  );
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(getAllLeadUser(userId));
+    }
+  }, [dispatch, userId]);
 
   useEffect(() => {
     dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
@@ -136,6 +256,110 @@ const Taxation = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
+
+  const handleFetchInvoiceReport = React.useCallback(async () => {
+    const hasFromDate = Boolean(reportFilters.fromDate);
+    const hasToDate = Boolean(reportFilters.toDate);
+
+    if ((hasFromDate && !hasToDate) || (!hasFromDate && hasToDate)) {
+      addToast({
+        title: "Incomplete date range",
+        description:
+          "Please select both from date and to date, or leave both blank for all dates.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      reportFilters.fromDate &&
+      reportFilters.toDate &&
+      dayjs(reportFilters.toDate).isBefore(dayjs(reportFilters.fromDate))
+    ) {
+      addToast({
+        title: "Invalid date range",
+        description: "To date cannot be earlier than from date.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setIsReportFetching(true);
+
+    try {
+      const payload = {
+        userId,
+        createdByUserId: reportFilters.createdByUserId || undefined,
+        status:
+          reportFilters.status !== "ALL" ? reportFilters.status : undefined,
+        fromDate: reportFilters.fromDate || undefined,
+        toDate: reportFilters.toDate || undefined,
+      };
+
+      console.log("Calling invoice report API with filters:", payload);
+
+      const resp = await dispatch(getInvoiceReport(payload));
+
+      console.log("Invoice report API response:", resp);
+
+      if (resp.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Report fetch failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            "Unable to fetch invoice report data.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const reportRows = normalizeReportPayload(resp.payload);
+
+      if (!reportRows.length) {
+        addToast({
+          title: "No records found",
+          description: "No invoice data found for the selected filters.",
+          color: "warning",
+        });
+        return;
+      }
+
+      const csvContent = convertInvoiceRowsToCsv(reportRows);
+
+      const dateLabel =
+        reportFilters.fromDate && reportFilters.toDate
+          ? `${reportFilters.fromDate}-to-${reportFilters.toDate}`
+          : "all-dates";
+
+      const statusLabel =
+        reportFilters.status && reportFilters.status !== "ALL"
+          ? reportFilters.status
+          : "all-status";
+
+      const fileName = `invoice-report-${statusLabel}-${dateLabel}.csv`;
+
+      downloadCsvFile(csvContent, fileName);
+
+      addToast({
+        title: "Report downloaded",
+        description: `${reportRows.length} invoice record(s) exported successfully.`,
+        color: "success",
+      });
+
+      setIsReportPopoverOpen(false);
+    } catch (error) {
+      console.error("Invoice report frontend error:", error);
+
+      addToast({
+        title: "Something went wrong",
+        description: error?.message || "Unable to generate invoice report.",
+        color: "danger",
+      });
+    } finally {
+      setIsReportFetching(false);
+    }
+  }, [dispatch, reportFilters, userId]);
 
   const handleViewEstimate = (value) => {
     dispatch(getInvoiceDetailById({ id: value?.id, userId }))
@@ -326,6 +550,136 @@ const Taxation = () => {
               onValueChange={onSearchChange}
             />
           </div>
+          {adminRole && (
+            <>
+              <Popover
+                isOpen={isReportPopoverOpen}
+                onOpenChange={setIsReportPopoverOpen}
+                placement="bottom-end"
+                showArrow
+              >
+                <PopoverTrigger>
+                  <Button
+                    color="primary"
+                    variant="flat"
+                    startContent={<FileDown size={16} />}
+                  >
+                    Fetch Report
+                  </Button>
+                </PopoverTrigger>
+
+                <PopoverContent className="w-[360px] p-0">
+                  <div className="w-full p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Export invoice report
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Select filters and download CSV report.
+                      </p>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-3">
+                      <NewSelect
+                        data={reportUserOptions}
+                        label="Created By"
+                        name="createdByUserId"
+                        labelKey="fullName"
+                        valueKey="id"
+                        value={reportFilters.createdByUserId}
+                        onChange={(selectedValue) => {
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            createdByUserId: selectedValue || "",
+                          }));
+                        }}
+                      />
+
+                      <Select
+                        label="Status"
+                        labelPlacement="outside"
+                        size="sm"
+                        selectedKeys={[reportFilters.status]}
+                        onSelectionChange={(keys) => {
+                          const selectedStatus = Array.from(keys)[0];
+
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            status: selectedStatus || "ALL",
+                          }));
+                        }}
+                      >
+                        <SelectItem key="ALL">All</SelectItem>
+                        <SelectItem key="GENERATED">GENERATED</SelectItem>
+                        <SelectItem key="CANCELLED">CANCELLED</SelectItem>
+                        <SelectItem key="REFUNDED">REFUNDED</SelectItem>
+                      </Select>
+
+                      <Input
+                        type="date"
+                        label="From date"
+                        labelPlacement="outside"
+                        size="sm"
+                        value={reportFilters.fromDate}
+                        max={reportFilters.toDate || undefined}
+                        onChange={(e) =>
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            fromDate: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <Input
+                        type="date"
+                        label="To date"
+                        labelPlacement="outside"
+                        size="sm"
+                        value={reportFilters.toDate}
+                        min={reportFilters.fromDate || undefined}
+                        onChange={(e) =>
+                          setReportFilters((prev) => ({
+                            ...prev,
+                            toDate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="mt-4 flex justify-end gap-2 border-t border-default-200 pt-3">
+                      <Button
+                        size="sm"
+                        variant="light"
+                        onPress={() =>
+                          setReportFilters({
+                            fromDate: "",
+                            toDate: "",
+                            status: "ALL",
+                            createdByUserId: "",
+                          })
+                        }
+                      >
+                        Clear
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        color="primary"
+                        isLoading={isReportFetching}
+                        startContent={
+                          !isReportFetching && <FileDown size={15} />
+                        }
+                        onPress={handleFetchInvoiceReport}
+                      >
+                        Download CSV
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger>
@@ -408,6 +762,11 @@ const Taxation = () => {
     hasSearchFilter,
     status,
     searchFilters,
+    reportFilters,
+    reportUserOptions,
+    isReportFetching,
+    handleFetchInvoiceReport,
+    isReportPopoverOpen,
   ]);
 
   const bottomContent = React.useMemo(() => {
