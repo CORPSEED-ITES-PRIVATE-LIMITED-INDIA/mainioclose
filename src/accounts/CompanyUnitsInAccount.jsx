@@ -217,7 +217,18 @@ const CompanyUnitsInAccount = () => {
       case "status":
         return (
           <div className="flex items-start gap-2">
-            <Chip size="sm">{company?.onboardingStatus || "-"}</Chip>
+            <Chip
+              size="sm"
+              color={
+                company?.onboardingStatus === "APPROVED"
+                  ? "success"
+                  : company?.onboardingStatus === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
+              {company?.onboardingStatus || "-"}
+            </Chip>
           </div>
         );
 

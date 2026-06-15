@@ -652,9 +652,30 @@ const Unbill = () => {
         return renderTwoLineText(rowData?.solutionName, "220px");
 
       case "companyName":
-        return renderTwoLineText(
-          rowData?.companyName || rowData?.company,
-          "220px",
+        return (
+          <>
+            <Link
+              className="font-medium"
+              to={`/erp/${userId}/accounts/companyApprovals`}
+            >
+              {renderTwoLineText(
+                rowData?.companyName || rowData?.company,
+                "220px",
+              )}
+            </Link>
+            <Chip
+              size="sm"
+              color={
+                rowData?.companyStatus === "APPROVED"
+                  ? "success"
+                  : rowData?.companyStatus === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
+              {rowData?.companyStatus}
+            </Chip>
+          </>
         );
 
       case "client":
@@ -662,10 +683,25 @@ const Unbill = () => {
       case "unitName":
         return (
           <div className="">
-            {renderTwoLineText(rowData?.unitName, "220px")}
-            <p className="mt-1 text-sm font-semibold text-default-900">
+            <Link
+              className="font-medium"
+              to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
+            >
+              {renderTwoLineText(rowData?.unitName, "220px")}
+            </Link>
+
+            <Chip
+              size="sm"
+              color={
+                rowData?.unitStatus === "APPROVED"
+                  ? "success"
+                  : rowData?.unitStatus === "REJECTED"
+                    ? "danger"
+                    : "warning"
+              }
+            >
               {rowData?.unitStatus || "NA"}
-            </p>
+            </Chip>
           </div>
         );
       case "totalAmount":
