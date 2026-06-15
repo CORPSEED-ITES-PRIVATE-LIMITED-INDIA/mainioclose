@@ -110,6 +110,40 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+const getAttachmentFileName = (attachmentUrl = "") => {
+  if (!attachmentUrl) return "Attachment";
+
+  try {
+    const decodedUrl = decodeURIComponent(attachmentUrl);
+    const urlPath = decodedUrl.startsWith("http")
+      ? new URL(decodedUrl).pathname
+      : decodedUrl;
+
+    const fileName = urlPath.split("/").pop();
+
+    return fileName || "Attachment";
+  } catch (error) {
+    return attachmentUrl.split("/").pop()?.split("?")[0] || "Attachment";
+  }
+};
+
+const getAttachmentType = (attachmentUrl = "") => {
+  if (!attachmentUrl) return "unknown";
+
+  const cleanUrl = attachmentUrl.split("?")[0].split("#")[0].toLowerCase();
+  const extension = cleanUrl.split(".").pop();
+
+  const imageTypes = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"];
+  const pdfTypes = ["pdf"];
+  const textTypes = ["txt", "csv", "log", "json", "xml"];
+
+  if (imageTypes.includes(extension)) return "image";
+  if (pdfTypes.includes(extension)) return "pdf";
+  if (textTypes.includes(extension)) return "text";
+
+  return "unknown";
+};
+
 const REPORT_COLUMNS = [
   {
     header: "Date",
@@ -656,13 +690,15 @@ const Unbill = () => {
       case "paymentProof":
         return (
           <div className="flex items-center gap-2">
-            {rowData?.paymentProof ? (
+            {rowData?.transactionReference ? (
               <Button
                 size="sm"
                 color="primary"
                 variant="flat"
                 startContent={<Paperclip size={14} />}
-                onPress={() => handlePaymentProofPreview(rowData?.paymentProof)}
+                onPress={() =>
+                  handlePaymentProofPreview(rowData?.transactionReference)
+                }
               >
                 View
               </Button>
@@ -851,7 +887,8 @@ const Unbill = () => {
           console.log("redbdfgfdsdg", re);
           if (re.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Unbill canceled successfully !.",
+              title: "SUCCESS",
+              description: "Unbill canceled successfully !.",
               color: "success",
             });
             setRowItem(null);
@@ -879,7 +916,11 @@ const Unbill = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          }),
         );
     } else {
       dispatch(
@@ -891,7 +932,8 @@ const Unbill = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Status updated successfully !.",
+              title: "SUCCESS",
+              description: "Status updated successfully !.",
               color: "success",
             });
             const awaitingPaymentStatusId = getAwaitingPaymentStatusId();
@@ -913,19 +955,25 @@ const Unbill = () => {
                 .then((resp) => {
                   if (resp.meta.requestStatus === "fulfilled") {
                     addToast({
-                      title: "Status updated successfully",
+                      title: "ERROR",
+                      description: "Status updated successfully",
                       color: "success",
                     });
                   } else {
                     addToast({
-                      title: "Something went wrong in lead status update  !.",
+                      title: "ERROR",
+                      description:
+                        resp?.payload?.data?.message ||
+                        "Something went wrong in lead status update !.",
                       color: "danger",
                     });
                   }
                 })
                 .catch(() => {
                   addToast({
-                    title: "Something went wrong in lead status update  !.",
+                    title: "ERROR",
+                    description:
+                      "Something went wrong in lead status update !.",
                     color: "danger",
                   });
                 });
@@ -943,11 +991,19 @@ const Unbill = () => {
             });
             statusModal.onClose();
           } else {
-            addToast({ title: resp?.payload?.data?.message, color: "danger" });
+            addToast({
+              title: "ERROR",
+              description: resp?.payload?.data?.message,
+              color: "danger",
+            });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          }),
         );
     }
   };
