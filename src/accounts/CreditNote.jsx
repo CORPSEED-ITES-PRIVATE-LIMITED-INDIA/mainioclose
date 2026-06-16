@@ -215,7 +215,6 @@ const CreditNote = () => {
           approveCreditNote({
             creditNoteId,
             userId,
-            proposalId: rowData?.proposalId,
           }),
         );
 

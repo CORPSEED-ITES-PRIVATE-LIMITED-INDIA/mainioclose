@@ -340,29 +340,16 @@ export const createCreditNotes = createAsyncThunk(
 
 export const approveCreditNote = createAsyncThunk(
   "approveCreditNote",
-  async ({ proposalId, creditNoteId, userId }, { rejectWithValue }) => {
+  async ({ creditNoteId, userId }, { rejectWithValue }) => {
     try {
       const creditNoteResponse = await api.put(
         `/accountService/api/credit-notes/${creditNoteId}/approve/${userId}`,
       );
       console.log("Credit Note Approved");
-
-      let proposalCancelResponse = null;
-      console.log("Inside Proposal API");
-      if (proposalId) {
-        proposalCancelResponse = await api.put(
-          `/leadService/api/v1/proposals/${proposalId}/cancel?userId=${userId}`,
-        );
-      }
-
-      console.log("Proposal API Done");
-
       console.log("CREDIT NOTE API RES:", creditNoteResponse);
-      console.log("PROPOSAL CANCEL API RES:", proposalCancelResponse);
 
       return {
         creditNote: creditNoteResponse.data,
-        proposalCancel: proposalCancelResponse?.data || null,
       };
     } catch (error) {
       return rejectWithValue(
