@@ -48,6 +48,7 @@ import {
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
 import NewTextEditor from "../../components/NewTextEditor";
+import { getProductMileStonesListByProductId } from "../../toolkit/slices/operationSlice";
 
 const defaultValues = {
   mailTo: [],
@@ -244,6 +245,7 @@ const Proposal = () => {
   const [statusLoading, setStatusLoading] = useState("");
   const [lockedMailTo, setLockedMailTo] = useState([]);
   const [pendingSubmitValues, setPendingSubmitValues] = useState(null);
+  const [solutionId, setSolutionId] = useState(null);
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
@@ -352,6 +354,7 @@ const Proposal = () => {
             }),
           ).then((res) => {
             if (res.meta.requestStatus === "fulfilled") {
+              setSolutionId(res?.payload?.id);
               dispatch(
                 getSolutionPriceListById({
                   solutionId: res?.payload?.id,
@@ -452,6 +455,29 @@ const Proposal = () => {
   };
 
   const prepareCreateProposal = () => {
+    dispatch(
+      getProductMileStonesListByProductId({ userId, productId: solutionId }),
+    ).then((resp) => {
+      if (resp?.meta?.requestStatus === "fulfilled") {
+        const milestones = resp?.payload || [];
+
+        if (
+          !Array.isArray(milestones) ||
+          milestones.length === 0 ||
+          !milestones
+        ) {
+          addToast({
+            title: "RESTRICTED",
+            description:
+              "Milestones for this service is not added please contact admin for this !.",
+            color: "danger",
+          });
+
+          return;
+        }
+      }
+    });
+
     if (!company?.id) {
       addToast({
         title: "RESTRICTED",
