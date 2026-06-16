@@ -225,7 +225,7 @@ export const convertEstimateToPI = createAsyncThunk(
 
 export const cancelUnBilledInvoice = createAsyncThunk(
   "cancelUnBilledInvoice",
-  async ({ id, userId, reason,cancelAttachment }, { rejectWithValue }) => {
+  async ({ id, userId, reason, cancelAttachment }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/accountService/api/v1/unbilled-invoices/cancel/${userId}/${id}?reason=${reason}&cancelAttachment=${cancelAttachment}`,
@@ -328,13 +328,17 @@ export const getAllCreditNotes = createAsyncThunk(
 );
 export const createCreditNotes = createAsyncThunk(
   "createCreditNotes",
-  async (data) => {
-    const response = await api.post(
-      `/accountService/api/credit-notes/refund`,
-      data,
-    );
-    console.log("API RES:", response);
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/credit-notes/refund`,
+        data,
+      );
+      console.log("API RES:", response);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
   },
 );
 
@@ -355,6 +359,24 @@ export const approveCreditNote = createAsyncThunk(
       return rejectWithValue(
         error?.response?.data || "Failed to approve credit note",
       );
+    }
+  },
+);
+
+export const accountApproveCreditNote = createAsyncThunk(
+  "account/accountApproveCreditNote",
+  async ({ creditNoteId, userId, approvalRemarks }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/credit-notes/${creditNoteId}/account-approve/${userId}`,
+        {
+          approvalRemarks: approvalRemarks || "",
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
     }
   },
 );

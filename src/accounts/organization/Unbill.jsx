@@ -531,7 +531,9 @@ const Unbill = () => {
         dispatch(getAllUnbillCount({ userId, status }));
       } else {
         addToast({
-          title: resp?.payload?.data?.message || "Failed to create credit note",
+          title: "RESTRICTED",
+          description:
+            resp?.payload?.data?.message || "Failed to create credit note",
           color: "danger",
         });
       }
@@ -1245,9 +1247,8 @@ const Unbill = () => {
 
             <Input
               isClearable
-              className="w-full"
-              placeholder="Search ..."
               className="w-[50%]"
+              placeholder="Search ..."
               startContent={<Search />}
               value={filterValue}
               onClear={() => onClear()}

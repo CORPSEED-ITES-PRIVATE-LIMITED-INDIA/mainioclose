@@ -31,6 +31,7 @@ import {
   getAllCreditNotes,
   approveCreditNote,
   rejectCreditNote,
+  accountApproveCreditNote,
 } from "../toolkit/slices/accountSlice";
 import PreviewComponent from "../components/PreviewComponent.jsx";
 
@@ -75,7 +76,8 @@ const CreditNote = () => {
   const { userId } = useParams();
 
   const data = useSelector((state) => state.account.creditNoteList?.content);
-
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -211,41 +213,51 @@ const CreditNote = () => {
       try {
         setActionLoadingId(creditNoteId);
 
-        const resp = await dispatch(
-          approveCreditNote({
-            creditNoteId,
-            userId,
-          }),
-        );
+        const resp = adminRole
+          ? await dispatch(
+              approveCreditNote({
+                creditNoteId,
+                userId,
+                proposalId: rowData?.proposalId,
+              }),
+            )
+          : await dispatch(
+              accountApproveCreditNote({
+                creditNoteId,
+                userId,
+                approvalRemarks: "Approved by account user",
+              }),
+            );
 
         if (resp?.meta?.requestStatus === "fulfilled") {
           fetchCreditNotes();
 
           addToast({
             title: "Success",
-            description: "Credit note approved successfully.",
+            description: adminRole
+              ? "Credit note approved successfully."
+              : "Credit note account approved successfully.",
             color: "success",
           });
         } else {
           addToast({
-            title: resp.payload.error,
-            description: resp.payload.message,
+            title: "Something went wrong",
+            description:
+              resp?.payload?.message || "Credit note approval failed.",
             color: "danger",
           });
         }
       } catch (error) {
-        console.error("Approve credit note failed:", error);
-
         addToast({
           title: "Something went wrong",
-          description: "Credit note approval failed.",
+          description: error?.message || "Credit note approval failed.",
           color: "danger",
         });
       } finally {
         setActionLoadingId(null);
       }
     },
-    [dispatch, userId, fetchCreditNotes],
+    [dispatch, userId, fetchCreditNotes, adminRole],
   );
 
   const openRejectModal = React.useCallback(

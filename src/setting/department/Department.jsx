@@ -224,6 +224,7 @@ const Department = () => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(createDesiginationByDepartmentId(values))
             .then((response) => {
+              console.log("dskjgjkdsg", response);
               if (response.meta.requestStatus === "fulfilled") {
                 addToast({
                   title: "SUCCESS",
