@@ -589,6 +589,44 @@ const CreditNote = () => {
                       Reject
                     </DropdownItem>
                   ) : null}
+                  {rowData?.status === "PENDING_ACCOUNT_REVIEW" ? (
+                    <DropdownItem
+                      key="APPROVE"
+                      color="success"
+                      className="text-success"
+                    >
+                      Approve
+                    </DropdownItem>
+                  ) : null}
+
+                  {rowData?.status === "PENDING_ACCOUNT_REVIEW" ? (
+                    <DropdownItem
+                      key="REJECT"
+                      color="danger"
+                      className="text-danger"
+                    >
+                      Reject
+                    </DropdownItem>
+                  ) : null}
+                  {rowData?.status === "PENDING_ADMIN_APPROVAL" ? (
+                    <DropdownItem
+                      key="APPROVE"
+                      color="success"
+                      className="text-success"
+                    >
+                      Approve
+                    </DropdownItem>
+                  ) : null}
+
+                  {rowData?.status === "PENDING_ADMIN_APPROVAL" ? (
+                    <DropdownItem
+                      key="REJECT"
+                      color="danger"
+                      className="text-danger"
+                    >
+                      Reject
+                    </DropdownItem>
+                  ) : null}
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -688,6 +726,12 @@ const CreditNote = () => {
                 <DropdownItem key="APPROVED">APPROVED</DropdownItem>
                 <DropdownItem key="REJECTED">REJECTED</DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
+                <DropdownItem key="PENDING_ACCOUNT_REVIEW">
+                  PENDING_ACCOUNT_REVIEW
+                </DropdownItem>
+                <DropdownItem key="PENDING_ADMIN_APPROVAL">
+                  PENDING_ADMIN_APPROVAL
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
 
