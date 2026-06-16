@@ -454,29 +454,32 @@ const Proposal = () => {
     proposalViewModal.onOpen();
   };
 
-  const prepareCreateProposal = () => {
-    dispatch(
-      getProductMileStonesListByProductId({ userId, productId: solutionId }),
-    ).then((resp) => {
-      if (resp?.meta?.requestStatus === "fulfilled") {
-        const milestones = resp?.payload || [];
+  const prepareCreateProposal = async () => {
+    try {
+      const milestones = await dispatch(
+        getProductMileStonesListByProductId({ userId, productId: solutionId }),
+      ).unwrap();
 
-        if (
-          !Array.isArray(milestones) ||
-          milestones.length === 0 ||
-          !milestones
-        ) {
-          addToast({
-            title: "RESTRICTED",
-            description:
-              "Milestones for this service is not added please contact admin for this !.",
-            color: "danger",
-          });
+      if (!Array.isArray(milestones) || milestones.length === 0) {
+        addToast({
+          title: "RESTRICTED",
+          description:
+            "Milestones for this service is not added please contact admin for this !.",
+          color: "danger",
+        });
 
-          return;
-        }
+        return;
       }
-    });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description:
+          error?.message || "Failed to check milestones for this service.",
+        color: "danger",
+      });
+
+      return;
+    }
 
     if (!company?.id) {
       addToast({
@@ -487,7 +490,7 @@ const Proposal = () => {
       return;
     }
 
-    const hasNonCancelled = proposalList.some((item) =>
+    const hasNonCancelled = (proposalList || []).some((item) =>
       ["REJECTED", "APPROVED", "INITIATED", "DRAFT"].includes(
         item?.status?.toUpperCase(),
       ),
