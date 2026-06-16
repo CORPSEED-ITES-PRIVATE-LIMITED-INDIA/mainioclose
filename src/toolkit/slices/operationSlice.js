@@ -33,11 +33,42 @@ export const getAllOperationsProject = createAsyncThunk(
 
 export const getAllUserMappedWithProduct = createAsyncThunk(
   "getAllUserMappedWithProduct",
-  async () => {
-    const response = await api.get(
-      `/operationService/api/user-product-mappings/list`,
-    );
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-product-mappings/list`,
+      );
+
+      return response.data || [];
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Failed to fetch user product mappings",
+        },
+      );
+    }
+  },
+);
+
+export const getGroupedUserMappedWithProduct = createAsyncThunk(
+  "getGroupedUserMappedWithProduct",
+  async (groupBy = "user", { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-product-mappings/grouped`,
+        {
+          params: { groupBy },
+        },
+      );
+
+      return response.data || [];
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Failed to fetch grouped user product mappings",
+        },
+      );
+    }
   },
 );
 
@@ -533,7 +564,7 @@ export const uploadDocumentInProjects = createAsyncThunk(
 
 export const replaceDocumentInProjects = createAsyncThunk(
   "replaceDocumentInProjects",
-  async ({ documentId,projectId, data }) => {
+  async ({ documentId, projectId, data }) => {
     const response = await api.put(
       `/operationService/api/projects/${projectId}/documents/${documentId}/replace`,
       data,
@@ -913,6 +944,50 @@ export const createLegalRequest = createAsyncThunk(
   },
 );
 
+export const createUserProductMapping = createAsyncThunk(
+  "operation/createUserProductMapping",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/user-product-mappings`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// PUT update mapping
+export const updateUserProductMapping = createAsyncThunk(
+  "operation/updateUserProductMapping",
+  async ({ id, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/user-product-mappings/${id}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// DELETE mapping
+export const deleteUserProductMapping = createAsyncThunk(
+  "operation/deleteUserProductMapping",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/operationService/api/user-product-mappings/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -954,14 +1029,16 @@ export const OperationSlice = createSlice({
     });
 
     builder.addCase(getAllUserMappedWithProduct.pending, (state) => {
-      state.loading = "pending";
+      state.userProductMappingLoading = "pending";
     });
+
     builder.addCase(getAllUserMappedWithProduct.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.userMappedWithProductList = action?.payload;
+      state.userProductMappingLoading = "success";
+      state.userMappedWithProductList = action?.payload || [];
     });
+
     builder.addCase(getAllUserMappedWithProduct.rejected, (state) => {
-      state.loading = "rejected";
+      state.userProductMappingLoading = "rejected";
       state.userMappedWithProductList = [];
     });
 
