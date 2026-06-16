@@ -27,6 +27,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  input,
 } from "@heroui/react";
 import {
   ChevronDown,
@@ -66,6 +67,7 @@ import {
 import { getAllStatusData } from "../../toolkit/slices/settingSlice.js";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 import NewSelect from "../../components/NewSelect.jsx";
+import FileUploader from "../../components/FileUploader.jsx";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -309,7 +311,11 @@ const Unbill = () => {
     approverUserId: userId,
     approvalRemarks: "",
     rejectionReason: "",
+    attachment: "",
   });
+
+  const [isCancelAttachmentUploading, setIsCancelAttachmentUploading] =
+    useState(false);
   const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
   const [searchBy, setSearchBy] = useState("companyName");
   const [estimateDetail, setEstimateDetail] = useState(null);
@@ -918,28 +924,72 @@ const Unbill = () => {
   }, [searchBy]);
 
   const handleUpdateStatus = () => {
-    if (updatedStatusData?.approvalRemarks === "CANCELLED") {
+    const selectedStatus = updatedStatusData?.approvalRemarks;
+
+    if (!selectedStatus) {
+      addToast({
+        title: "Status is required",
+        description: "Please select status.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      (selectedStatus === "REJECTED" || selectedStatus === "CANCELLED") &&
+      !updatedStatusData?.rejectionReason?.trim()
+    ) {
+      addToast({
+        title: "Remark is required",
+        description: "Please enter remark.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (selectedStatus === "CANCELLED" && isCancelAttachmentUploading) {
+      addToast({
+        title: "Upload in progress",
+        description: "Please wait until attachment upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (selectedStatus === "CANCELLED" && !updatedStatusData?.attachment) {
+      addToast({
+        title: "Attachment is required",
+        description: "Please upload attachment for cancelled status.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (selectedStatus === "CANCELLED") {
       dispatch(
         cancelUnBilledInvoice({
           id: rowItem?.id,
           userId,
           reason: updatedStatusData?.rejectionReason,
+          cancelAttachment: updatedStatusData?.attachment,
         }),
       )
         .then((re) => {
-          console.log("redbdfgfdsdg", re);
           if (re.meta.requestStatus === "fulfilled") {
             addToast({
               title: "SUCCESS",
               description: "Unbill canceled successfully !.",
               color: "success",
             });
+
             setRowItem(null);
             setUpdatedStatusData({
               approverUserId: userId,
               approvalRemarks: "",
               rejectionReason: "",
+              attachment: "",
             });
+
             dispatch(
               getAllUnbillList({
                 page,
@@ -953,7 +1003,10 @@ const Unbill = () => {
           } else {
             addToast({
               title: "ERROR",
-              description: re?.payload?.message,
+              description:
+                re?.payload?.data?.message ||
+                re?.payload?.message ||
+                "Failed to cancel unbill.",
               color: "danger",
             });
           }
@@ -965,20 +1018,31 @@ const Unbill = () => {
             color: "danger",
           }),
         );
-    } else {
-      dispatch(
-        updateStatusForUnbill({
-          unbilledId: rowItem?.id,
-          data: updatedStatusData,
-        }),
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "SUCCESS",
-              description: "Status updated successfully !.",
-              color: "success",
-            });
+
+      return;
+    }
+
+    const payload = {
+      approverUserId: updatedStatusData?.approverUserId,
+      approvalRemarks: updatedStatusData?.approvalRemarks,
+      rejectionReason: updatedStatusData?.rejectionReason,
+    };
+
+    dispatch(
+      updateStatusForUnbill({
+        unbilledId: rowItem?.id,
+        data: payload,
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Status updated successfully !.",
+            color: "success",
+          });
+
+          if (selectedStatus === "APPROVED") {
             const awaitingPaymentStatusId = getAwaitingPaymentStatusId();
 
             if (!awaitingPaymentStatusId) {
@@ -998,8 +1062,8 @@ const Unbill = () => {
                 .then((resp) => {
                   if (resp.meta.requestStatus === "fulfilled") {
                     addToast({
-                      title: "ERROR",
-                      description: "Status updated successfully",
+                      title: "SUCCESS",
+                      description: "Lead status updated successfully",
                       color: "success",
                     });
                   } else {
@@ -1021,36 +1085,41 @@ const Unbill = () => {
                   });
                 });
             }
-
-            dispatch(
-              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              rejectionReason: "",
-            });
-            statusModal.onClose();
-          } else {
-            addToast({
-              title: "ERROR",
-              description: resp?.payload?.data?.message,
-              color: "danger",
-            });
           }
-        })
-        .catch(() =>
+
+          dispatch(
+            getAllUnbillList({ page, size: rowsPerPage, userId, status }),
+          );
+          dispatch(getAllUnbillCount({ userId, status }));
+
+          setRowItem(null);
+          setUpdatedStatusData({
+            approverUserId: userId,
+            approvalRemarks: "",
+            rejectionReason: "",
+            attachment: "",
+          });
+
+          statusModal.onClose();
+        } else {
           addToast({
             title: "ERROR",
-            description: "Something went wrong !.",
+            description:
+              resp?.payload?.data?.message ||
+              resp?.payload?.message ||
+              "Failed to update status.",
             color: "danger",
-          }),
-        );
-    }
+          });
+        }
+      })
+      .catch(() =>
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
+      );
   };
-
   const handleFetchReport = React.useCallback(async () => {
     const hasFromDate = Boolean(reportFilters.fromDate);
     const hasToDate = Boolean(reportFilters.toDate);
@@ -1535,30 +1604,39 @@ const Unbill = () => {
               <ModalHeader className="flex flex-col gap-1">
                 Update Status
               </ModalHeader>
+
               <ModalBody className="max-h-[85vh] overflow-auto">
                 <Select
                   label="Select status"
                   isRequired
-                  selectedKeys={[updatedStatusData?.approvalRemarks]}
+                  selectedKeys={
+                    updatedStatusData?.approvalRemarks
+                      ? [updatedStatusData?.approvalRemarks]
+                      : []
+                  }
                   onSelectionChange={(e) => {
-                    let key = Array.from(e)[0];
+                    const key = Array.from(e)[0];
+
                     setUpdatedStatusData((prev) => ({
                       ...prev,
                       approvalRemarks: key,
+                      rejectionReason:
+                        key === "REJECTED" || key === "CANCELLED"
+                          ? prev.rejectionReason
+                          : "",
+                      attachment: key === "CANCELLED" ? prev.attachment : "",
                     }));
                   }}
                 >
                   {[
-                    // { key: "PENDING_APPROVAL", label: "PENDING_APPROVAL" },
                     { key: "APPROVED", label: "APPROVED" },
-                    // { key: "PARTIALLY_PAID", label: "PARTIALLY_PAID" },
-                    // { key: "FULLY_PAID", label: "FULLY_PAID" },
                     { key: "REJECTED", label: "REJECTED" },
                     { key: "CANCELLED", label: "CANCELLED" },
                   ].map((item) => (
                     <SelectItem key={item.key}>{item.label}</SelectItem>
                   ))}
                 </Select>
+
                 {(updatedStatusData?.approvalRemarks === "REJECTED" ||
                   updatedStatusData?.approvalRemarks === "CANCELLED") && (
                   <Textarea
@@ -1573,11 +1651,42 @@ const Unbill = () => {
                     }
                   />
                 )}
+
+                {updatedStatusData?.approvalRemarks === "CANCELLED" && (
+                  <FileUploader
+                    value={updatedStatusData?.attachment}
+                    onChange={(uploadedUrl) =>
+                      setUpdatedStatusData((prev) => ({
+                        ...prev,
+                        attachment: uploadedUrl,
+                      }))
+                    }
+                    onUploadingChange={setIsCancelAttachmentUploading}
+                    label="Attachment"
+                    placeholder="Upload cancellation attachment"
+                    isRequired
+                  />
+                )}
               </ModalBody>
+
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
+                <Button
+                  color="danger"
+                  variant="light"
+                  onPress={() => {
+                    setUpdatedStatusData({
+                      approverUserId: userId,
+                      approvalRemarks: "",
+                      rejectionReason: "",
+                      attachment: "",
+                    });
+                    setRowItem(null);
+                    onClose();
+                  }}
+                >
                   Close
                 </Button>
+
                 <Button color="primary" onPress={handleUpdateStatus}>
                   Submit
                 </Button>
