@@ -228,8 +228,8 @@ const CreditNote = () => {
           });
         } else {
           addToast({
-            title: "Something went wrong",
-            description: "Credit note approval failed.",
+            title: resp.payload.error,
+            description: resp.payload.message,
             color: "danger",
           });
         }
