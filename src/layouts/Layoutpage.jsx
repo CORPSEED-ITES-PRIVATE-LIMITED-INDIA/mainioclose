@@ -44,6 +44,7 @@ const getNavItemsByDepartment = (department, admin) => {
     Liaisoning: operationNavItems,
     Operations: operationEmpItems,
     "Liasoning test": operationEmpItems,
+    "CRT Test": operationEmpItems,
     // NA: navItems,
   };
   return items[trimmed];

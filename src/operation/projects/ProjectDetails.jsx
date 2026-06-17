@@ -584,6 +584,9 @@ const ProjectDetails = () => {
   const isProcurementMilestone =
     selectedMilestone?.milestoneName?.toLowerCase() === "procurement";
 
+  const isCertificationMilestone =
+    selectedMilestone?.milestoneName?.toLowerCase() === "certification";
+
   useEffect(() => {
     dispatch(getOperationProjectDetailById({ projectId, userId }));
     dispatch(getAllMilestoneStatusesForOperations());
@@ -1828,75 +1831,75 @@ const ProjectDetails = () => {
                         Assignment ID: {selectedMilestone?.id || "-"}
                       </p>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex min-w-[220px] items-center justify-between gap-3 rounded-lg bg-content1 px-3 py-2 shadow-sm ring-1 ring-default-200">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <Avatar
-                            size="sm"
-                            name={getInitials(
-                              selectedMilestone?.assignedUser?.fullName ||
-                                "Unassigned",
-                            )}
-                            className="bg-primary-100 text-primary"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground">
-                              {selectedMilestone?.assignedUser?.fullName ||
-                                "Select Assignee"}
-                            </p>
-                            <p className="truncate text-xs text-default-500">
-                              {selectedMilestone?.assignedUser?.email ||
-                                "No assignee selected"}
-                            </p>
+                    {!isCertificationMilestone && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex min-w-[220px] items-center justify-between gap-3 rounded-lg bg-content1 px-3 py-2 shadow-sm ring-1 ring-default-200">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Avatar
+                              size="sm"
+                              name={getInitials(
+                                selectedMilestone?.assignedUser?.fullName ||
+                                  "Unassigned",
+                              )}
+                              className="bg-primary-100 text-primary"
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-foreground">
+                                {selectedMilestone?.assignedUser?.fullName ||
+                                  "Select Assignee"}
+                              </p>
+                              <p className="truncate text-xs text-default-500">
+                                {selectedMilestone?.assignedUser?.email ||
+                                  "No assignee selected"}
+                              </p>
+                            </div>
                           </div>
+
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            radius="full"
+                            onPress={() => {
+                              assigneeModal.onOpen();
+
+                              dispatch(
+                                getUsersListByDepartmentId(
+                                  selectedMilestone?.departmentId,
+                                ),
+                              );
+
+                              setAssigneeObj((prev) => ({
+                                ...prev,
+                                assignmentId: selectedMilestone?.id,
+                                changedById: userId,
+                              }));
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                         </div>
 
                         <Button
-                          isIconOnly
                           size="sm"
-                          variant="light"
-                          radius="full"
+                          color="primary"
+                          radius="md"
                           onPress={() => {
-                            assigneeModal.onOpen();
-
+                            legalSupportModal.onOpen();
                             dispatch(
-                              getUsersListByDepartmentId(
-                                selectedMilestone?.departmentId,
-                              ),
+                              getRequiredDocumentsByProductId({
+                                userId,
+                                projectId,
+                              }),
                             );
-
-                            setAssigneeObj((prev) => ({
-                              ...prev,
-                              assignmentId: selectedMilestone?.id,
-                              changedById: userId,
-                            }));
                           }}
                         >
-                          <Pencil className="h-4 w-4" />
+                          Legal Request
                         </Button>
                       </div>
-
-                      <Button
-                        size="sm"
-                        color="primary"
-                        radius="md"
-                        onPress={() => {
-                          legalSupportModal.onOpen();
-                          dispatch(
-                            getRequiredDocumentsByProductId({
-                              userId,
-                              projectId,
-                            }),
-                          );
-                        }}
-                      >
-                        Legal Request
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </div>
-
                 <div className="p-4">
                   <dl className="grid grid-cols-1 gap-x-8 gap-y-3 border-b border-default-100 pb-4 text-sm md:grid-cols-3">
                     <div>
