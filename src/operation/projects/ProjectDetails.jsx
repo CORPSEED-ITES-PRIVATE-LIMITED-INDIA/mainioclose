@@ -51,6 +51,7 @@ import {
   updateDocumentStatus,
   uploadDocumentInProjects,
   replaceDocumentInProjects,
+  getAllCompanyDocumentsByCompanyIdAndUnitId,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -520,6 +521,9 @@ const ProjectDetails = () => {
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
   );
+  const companyDocumentsList = useSelector(
+    (state) => state.operation.compnyDocumentListByCompanyIdAndUnitId || [],
+  );
 
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [activityType, setActivityType] = useState("ALL");
@@ -762,18 +766,6 @@ const ProjectDetails = () => {
       );
   };
 
-  // useEffect(() => {
-  //   if (detailedData?.milestones?.length > 0) {
-  //     dispatch(
-  //       getHistoryByMileStoneIdAndProjectId({
-  //         milestoneId: detailedData?.milestones?.[0]?.milestoneId,
-  //         projectId: detailedData?.milestones?.[0]?.projectId,
-  //         userId,
-  //       }),
-  //     );
-  //   }
-  // }, [detailedData]);
-
   const handleUpdateApplicantType = (applicantTypeId) => {
     dispatch(updateApplicantTypeInProject({ applicantTypeId, projectId }))
       .then((resp) => {
@@ -899,6 +891,22 @@ const ProjectDetails = () => {
     verifyModal.onOpen();
   };
 
+  const fetchCompanyDocuments = React.useCallback(() => {
+    const companyId = detailedData?.projectDetails?.companyId;
+    const companyUnitId =
+      detailedData?.projectDetails?.companyUnitId ||
+      detailedData?.projectDetails?.unitId;
+
+    if (!companyId || !companyUnitId) return;
+
+    dispatch(
+      getAllCompanyDocumentsByCompanyIdAndUnitId({
+        companyId,
+        companyUnitId,
+      }),
+    );
+  }, [dispatch, detailedData?.projectDetails]);
+
   const handleVerifyDocument = (values) => {
     const payload = {
       newStatus: values.newStatus,
@@ -924,6 +932,7 @@ const ProjectDetails = () => {
             projectId,
           }),
         );
+        fetchCompanyDocuments();
       } else {
         addToast({
           title: "Something went wrong!",
@@ -1018,9 +1027,9 @@ const ProjectDetails = () => {
         );
       } else {
         addToast({
-          title: selectedDoc?.isReplace ? "Replace failed" : "Upload failed",
+          title: "ERROR",
           color: "danger",
-          description: resp?.error.message,
+          description: resp?.payload,
         });
       }
     } catch {
@@ -1472,6 +1481,63 @@ const ProjectDetails = () => {
     return extension;
   };
 
+  const isSameRequiredDocument = (requiredDoc, companyDoc) => {
+    const requiredDocumentId =
+      requiredDoc?.documentId ||
+      requiredDoc?.requiredDocumentId ||
+      requiredDoc?.id;
+
+    if (
+      requiredDocumentId &&
+      companyDoc?.requiredDocumentId &&
+      Number(requiredDocumentId) === Number(companyDoc.requiredDocumentId)
+    ) {
+      return true;
+    }
+
+    return (
+      String(requiredDoc?.documentName || "")
+        .trim()
+        .toLowerCase() ===
+      String(companyDoc?.requiredDocumentName || "")
+        .trim()
+        .toLowerCase()
+    );
+  };
+
+  const getCompanyDocFormat = (doc) => {
+    return (
+      doc?.fileFormat ||
+      doc?.fileName?.split(".")?.pop()?.toLowerCase() ||
+      "file"
+    );
+  };
+
+  const openCompanyDocPreview = (companyDoc) => {
+    const raw = String(companyDoc?.fileUrl || "").trim();
+
+    if (!raw) {
+      addToast({
+        title: "File not found",
+        description: "No file URL available for this document.",
+        color: "warning",
+      });
+      return;
+    }
+
+    const fixed =
+      raw.includes("amazonaws.com") && !raw.includes("amazonaws.com/")
+        ? raw.replace("amazonaws.com", "amazonaws.com/")
+        : raw;
+
+    const href =
+      fixed.startsWith("http://") || fixed.startsWith("https://")
+        ? fixed
+        : `https://${fixed}`;
+
+    window.open(href, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="h-[calc(100vh-80px)] w-full overflow-y-auto overflow-x-hidden bg-background px-3 py-3">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-3 pb-6">
@@ -1516,6 +1582,14 @@ const ProjectDetails = () => {
                   <span className="text-default-400">Company:</span>
                   <span className="font-medium text-foreground">
                     {detailedData?.projectDetails?.companyName || "-"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-default-600">
+                  <Building className="h-4 w-4 text-default-400" />
+                  <span className="text-default-400">Company unit:</span>
+                  <span className="font-medium text-foreground">
+                    {detailedData?.projectDetails?.companyUnitName || "-"}
                   </span>
                 </div>
 
@@ -1664,12 +1738,15 @@ const ProjectDetails = () => {
                 className="font-medium"
                 onPress={() => {
                   onOpen();
+
                   dispatch(
                     getRequiredDocumentsByProductId({
                       userId,
                       projectId,
                     }),
                   );
+
+                  fetchCompanyDocuments();
                 }}
               >
                 Documents
@@ -2144,176 +2221,6 @@ const ProjectDetails = () => {
         </Drawer>
       </div>
 
-      {/* <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Documents
-              </ModalHeader>
-              <ModalBody>
-                <NewSelect
-                  label={"Select applicant type"}
-                  labelKey={"name"}
-                  valueKey={"id"}
-                  data={applicantTypeList?.length > 0 ? applicantTypeList : []}
-                  onChange={(e) => handleUpdateApplicantType(e)}
-                />
-
-                <div className="max-h-[80vh] overflow-auto grid grid-cols-2 gap-2">
-                  {requiredDocsList?.map((doc, idx) => {
-                    const hasFile = !!doc?.fileUrl;
-
-                    const openPreview = () => {
-                      const raw = String(doc?.fileUrl || "").trim();
-                      const fixed =
-                        raw.includes("amazonaws.com") &&
-                        !raw.includes("amazonaws.com/")
-                          ? raw.replace("amazonaws.com", "amazonaws.com/")
-                          : raw;
-
-                      const href =
-                        fixed.startsWith("http://") ||
-                        fixed.startsWith("https://")
-                          ? fixed
-                          : `https://${fixed}`;
-
-                      window.open(href, "_blank", "noopener,noreferrer");
-                    };
-
-                    return (
-                      <Card
-                        key={`doc${idx}`}
-                        className="rounded-2xl shadow-sm border border-gray-200 bg-white my-1.5"
-                      >
-                        <CardBody className="p-4 flex flex-col gap-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="text-[14px] font-semibold text-gray-800">
-                                {doc?.documentName}
-                              </h4>
-
-                              <div className="flex gap-2 mt-2 flex-wrap">
-                                {doc?.mandatory && (
-                                  <span className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md font-medium">
-                                    Mandatory
-                                  </span>
-                                )}
-
-                                {doc?.permanent && (
-                                  <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-md font-medium">
-                                    Permanent
-                                  </span>
-                                )}
-
-                                {doc?.expired && (
-                                  <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-medium">
-                                    Expired
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <span
-                              className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                                doc?.status === "VERIFIED"
-                                  ? "bg-green-100 text-green-700"
-                                  : doc?.status === "PENDING"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-gray-100 text-gray-600"
-                              }`}
-                            >
-                              {doc?.status}
-                            </span>
-                          </div>
-
-
-                          <div>
-                            <p className="text-sm text-gray-500 mb-2">
-                              Uploaded File
-                            </p>
-
-                            {hasFile ? (
-                              <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                    <PdfIcon className="text-red-500 w-5 h-5" />
-                                  </div>
-
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[180px]">
-                                      {doc?.fileName || "Document.pdf"}
-                                    </span>
-                                    <span className="text-xs text-gray-400">
-                                      {doc?.fileSizeKb
-                                        ? `${doc.fileSizeKb} KB`
-                                        : ""}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
-                                  onPress={openPreview}
-                                >
-                                  Download
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="text-sm italic text-gray-400">
-                                No file uploaded
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="text-sm text-gray-500">
-                            {doc?.expiryDate
-                              ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
-                              : doc?.permanent
-                                ? "No expiry date"
-                                : "No expiry date"}
-                          </div>
-
-
-                          {doc?.status !== "VERIFIED" && hasFile && (
-                            <div className="pt-2">
-                              <Button
-                                size="sm"
-                                color="primary"
-                                className="rounded-full px-6"
-                                onPress={() => openVerify(doc)}
-                              >
-                                Verify
-                              </Button>
-                            </div>
-                          )}
-
-                          {doc?.status !== "UPLOADED" && (
-                            <Button
-                              size="sm"
-                              color="secondary"
-                              onPress={() => openUploadForDoc(doc)}
-                            >
-                              Upload
-                            </Button>
-                          )}
-                        </CardBody>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal> */}
-
       <Drawer
         isOpen={isOpen}
         onOpenChange={onOpenChange}
@@ -2342,53 +2249,142 @@ const ProjectDetails = () => {
                   />
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto pr-2">
-                  <div className="grid grid-cols-1 gap-3">
-                    {requiredDocsList?.map((doc, idx) => {
-                      const hasFile = !!doc?.fileUrl;
+                <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-12">
+                  {/* LEFT SIDE: COMPANY DOCUMENTS */}
+                  <aside className="min-h-0 overflow-hidden rounded-2xl border border-default-200 bg-content1 lg:col-span-4">
+                    <div className="border-b border-default-200 bg-default-50 px-4 py-3">
+                      <p className="text-sm font-semibold text-foreground">
+                        Company Documents
+                      </p>
+                      <p className="text-xs text-default-500">
+                        Drag matching document and drop on required document
+                        card
+                      </p>
+                    </div>
 
-                      const openPreview = () => {
-                        const raw = String(doc?.fileUrl || "").trim();
-                        const fixed =
-                          raw.includes("amazonaws.com") &&
-                          !raw.includes("amazonaws.com/")
-                            ? raw.replace("amazonaws.com", "amazonaws.com/")
-                            : raw;
+                    <div className="max-h-[60vh] space-y-2 overflow-y-auto p-3">
+                      {companyDocumentsList?.length > 0 ? (
+                        companyDocumentsList.map((companyDoc) => (
+                          <div
+                            key={companyDoc?.id}
+                            draggable
+                            onDragStart={() => setDraggedDoc(companyDoc)}
+                            onDragEnd={() => setDraggedDoc(null)}
+                            className="cursor-grab rounded-xl border border-default-200 bg-white p-3 shadow-sm transition-all hover:border-primary hover:bg-primary-50 active:cursor-grabbing"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-foreground">
+                                  {companyDoc?.requiredDocumentName ||
+                                    "Document"}
+                                </p>
+                                <p className="mt-0.5 truncate text-xs text-default-500">
+                                  {companyDoc?.fileName || "-"}
+                                </p>
+                              </div>
 
-                        const href =
-                          fixed.startsWith("http://") ||
-                          fixed.startsWith("https://")
-                            ? fixed
-                            : `https://${fixed}`;
+                              <Chip
+                                size="sm"
+                                color={
+                                  companyDoc?.status === "VERIFIED"
+                                    ? "success"
+                                    : "warning"
+                                }
+                                variant="flat"
+                              >
+                                {companyDoc?.status || "NA"}
+                              </Chip>
+                            </div>
 
-                        window.open(href, "_blank", "noopener,noreferrer");
-                      };
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Chip size="sm" variant="flat">
+                                {getCompanyDocFormat(companyDoc)}
+                              </Chip>
 
-                      return (
-                        <Card
-                          key={`doc${idx}`}
-                          className="rounded-2xl shadow-sm border border-gray-200 bg-white my-1.5"
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={async () => {
-                            if (!draggedDoc) return;
+                              <Chip size="sm" variant="flat">
+                                {companyDoc?.fileSizeKb || 0} KB
+                              </Chip>
 
-                            try {
-                              const permanentValue =
-                                draggedDoc?.isPermanent !== undefined
-                                  ? !!draggedDoc.isPermanent
-                                  : doc?.permanent !== undefined
-                                    ? !!doc.permanent
-                                    : true;
+                              {companyDoc?.permanent ? (
+                                <Chip size="sm" color="success" variant="flat">
+                                  Permanent
+                                </Chip>
+                              ) : (
+                                <Chip size="sm" color="warning" variant="flat">
+                                  Expirable
+                                </Chip>
+                              )}
+                              <Chip
+                                size="sm"
+                                color="primary"
+                                variant="flat"
+                                className="cursor-pointer"
+                                onClick={() =>
+                                  openCompanyDocPreview(companyDoc)
+                                }
+                              >
+                                View
+                              </Chip>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-default-300 text-center">
+                          <div>
+                            <p className="text-sm font-medium text-default-600">
+                              No company documents found
+                            </p>
+                            <p className="mt-1 text-xs text-default-400">
+                              Upload documents in company repository first
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </aside>
 
-                              const expiryDateValue = permanentValue
-                                ? null
-                                : draggedDoc?.expiryDate || null;
+                  {/* RIGHT SIDE: REQUIRED SERVICE DOCUMENTS */}
+                  <section className="min-h-0 overflow-y-auto pr-2 lg:col-span-8">
+                    <div className="grid grid-cols-1 gap-3">
+                      {requiredDocsList?.map((doc, idx) => {
+                        const hasFile = !!doc?.fileUrl;
 
-                              if (!permanentValue && !expiryDateValue) {
+                        const openPreview = () => {
+                          const raw = String(doc?.fileUrl || "").trim();
+                          const fixed =
+                            raw.includes("amazonaws.com") &&
+                            !raw.includes("amazonaws.com/")
+                              ? raw.replace("amazonaws.com", "amazonaws.com/")
+                              : raw;
+
+                          const href =
+                            fixed.startsWith("http://") ||
+                            fixed.startsWith("https://")
+                              ? fixed
+                              : `https://${fixed}`;
+
+                          window.open(href, "_blank", "noopener,noreferrer");
+                        };
+
+                        return (
+                          <Card
+                            key={`doc${idx}`}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+
+                              if (!draggedDoc) return;
+
+                              if (!isSameRequiredDocument(doc, draggedDoc)) {
                                 addToast({
-                                  title: "Expiry date required",
-                                  description:
-                                    "This document is not permanent. Please upload it manually with expiry date.",
+                                  title: "Document mismatch",
+                                  description: `${
+                                    draggedDoc?.requiredDocumentName ||
+                                    "Selected document"
+                                  } cannot be dropped on ${
+                                    doc?.documentName ||
+                                    "this required document"
+                                  }.`,
                                   color: "warning",
                                 });
 
@@ -2396,186 +2392,268 @@ const ProjectDetails = () => {
                                 return;
                               }
 
-                              const payload = {
-                                projectId: Number(projectId),
-                                requiredDocumentId: Number(
+                              try {
+                                const permanentValue =
+                                  draggedDoc?.permanent !== undefined
+                                    ? !!draggedDoc.permanent
+                                    : draggedDoc?.isPermanent !== undefined
+                                      ? !!draggedDoc.isPermanent
+                                      : doc?.permanent !== undefined
+                                        ? !!doc.permanent
+                                        : true;
+
+                                const expiryDateValue = permanentValue
+                                  ? null
+                                  : draggedDoc?.expiryDate || null;
+
+                                // if (!permanentValue && !expiryDateValue) {
+                                //   addToast({
+                                //     title: "Expiry date required",
+                                //     description:
+                                //       "This document is not permanent. Please upload it manually with expiry date.",
+                                //     color: "warning",
+                                //   });
+
+                                //   setDraggedDoc(null);
+                                //   return;
+                                // }
+
+                                const requiredDocumentId = Number(
                                   doc?.documentId ||
                                     doc?.requiredDocumentId ||
                                     doc?.id,
-                                ),
-                                fileUrl: draggedDoc.fileUrl,
-                                fileName: draggedDoc.fileName,
-                                uploadedById: Number(userId),
-                                createdById: Number(userId),
-                                isFromCompanyDoc: true,
-                                expiryDate: expiryDateValue,
-                                isPermanent: permanentValue,
-                                fileSizeKb: Number(draggedDoc.fileSizeKb || 0),
-                                fileFormat: draggedDoc.fileFormat || "pdf",
-                                remarks: draggedDoc?.remarks || "",
-                              };
+                                );
 
-                              const resp = await dispatch(
-                                uploadDocumentInProjects({
-                                  projectId,
-                                  data: payload,
-                                }),
-                              );
+                                const payload = {
+                                  projectId: Number(projectId),
+                                  requiredDocumentId,
+                                  fileUrl: draggedDoc?.fileUrl,
+                                  fileName: draggedDoc?.fileName,
+                                  uploadedById: Number(userId),
+                                  createdById: Number(userId),
+                                  companyDocSourceId: Number(
+                                    draggedDoc?.companyDocSourceId ||
+                                      draggedDoc?.id ||
+                                      0,
+                                  ),
+                                  isFromCompanyDoc: true,
+                                  expiryDate: expiryDateValue,
+                                  isPermanent: permanentValue,
+                                  fileSizeKb: Number(
+                                    draggedDoc?.fileSizeKb || 0,
+                                  ),
+                                  fileFormat: getCompanyDocFormat(draggedDoc),
+                                  remarks: draggedDoc?.remarks || "",
+                                };
 
-                              if (resp.meta.requestStatus === "fulfilled") {
-                                addToast({
-                                  title: "Document added successfully",
-                                  color: "success",
-                                });
-
-                                dispatch(
-                                  getRequiredDocumentsByProductId({
-                                    userId,
+                                const resp = await dispatch(
+                                  uploadDocumentInProjects({
                                     projectId,
+                                    data: payload,
                                   }),
                                 );
-                              } else {
+
+                                if (resp?.meta?.requestStatus === "fulfilled") {
+                                  addToast({
+                                    title: "Document uploaded",
+                                    description:
+                                      "Company document added to required document successfully.",
+                                    color: "success",
+                                  });
+
+                                  dispatch(
+                                    getRequiredDocumentsByProductId({
+                                      userId,
+                                      projectId,
+                                    }),
+                                  );
+
+                                  fetchCompanyDocuments();
+                                } else {
+                                  addToast({
+                                    title: "Upload failed",
+                                    description:
+                                      resp?.payload ||
+                                      "Something went wrong while uploading.",
+                                    color: "danger",
+                                  });
+                                }
+                              } catch (error) {
                                 addToast({
-                                  title: resp?.error?.message,
+                                  title: "Error",
+                                  description:
+                                    "Something went wrong while dropping document.",
                                   color: "danger",
-                                  description: resp?.payload || "Upload failed",
                                 });
+                              } finally {
+                                setDraggedDoc(null);
                               }
-                            } catch (err) {
-                              console.error("Drop failed", err);
-                            } finally {
-                              setDraggedDoc(null);
-                            }
-                          }}
-                        >
-                          <CardBody className="flex flex-col gap-4 p-4">
-                            <div className="flex justify-between items-start gap-3">
-                              <div className="min-w-0">
-                                <h4 className="text-[14px] font-semibold text-gray-800 break-words">
-                                  {doc?.documentName}
-                                </h4>
+                            }}
+                            className={`rounded-2xl border bg-white shadow-sm transition-all ${
+                              draggedDoc
+                                ? "border-dashed border-primary bg-primary-50/40"
+                                : "border-default-200"
+                            }`}
+                          >
+                            <CardBody className="flex flex-col gap-4 p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h4 className="text-sm font-semibold text-foreground">
+                                    {doc?.documentName}
+                                  </h4>
 
-                                <div className="flex gap-2 mt-2 flex-wrap">
-                                  {doc?.mandatory && (
-                                    <span className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md font-medium">
-                                      Mandatory
-                                    </span>
-                                  )}
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {doc?.mandatory && (
+                                      <Chip
+                                        size="sm"
+                                        color="danger"
+                                        variant="flat"
+                                      >
+                                        Mandatory
+                                      </Chip>
+                                    )}
 
-                                  {doc?.permanent && (
-                                    <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-md font-medium">
-                                      Permanent
-                                    </span>
-                                  )}
+                                    {doc?.permanent && (
+                                      <Chip
+                                        size="sm"
+                                        color="success"
+                                        variant="flat"
+                                      >
+                                        Permanent
+                                      </Chip>
+                                    )}
 
-                                  {doc?.expired && (
-                                    <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-medium">
-                                      Expired
-                                    </span>
-                                  )}
+                                    {doc?.expired && (
+                                      <Chip
+                                        size="sm"
+                                        color="warning"
+                                        variant="flat"
+                                      >
+                                        Expired
+                                      </Chip>
+                                    )}
+
+                                    {draggedDoc && (
+                                      <Chip
+                                        size="sm"
+                                        color="primary"
+                                        variant="flat"
+                                      >
+                                        Drop here
+                                      </Chip>
+                                    )}
+                                  </div>
                                 </div>
+
+                                <Chip
+                                  size="sm"
+                                  color={
+                                    doc?.status === "VERIFIED"
+                                      ? "success"
+                                      : doc?.status === "PENDING"
+                                        ? "warning"
+                                        : "default"
+                                  }
+                                  variant="flat"
+                                >
+                                  {doc?.status || "NA"}
+                                </Chip>
                               </div>
 
-                              <span
-                                className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${
-                                  doc?.status === "VERIFIED"
-                                    ? "bg-green-100 text-green-700"
-                                    : doc?.status === "PENDING"
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-gray-100 text-gray-600"
-                                }`}
-                              >
-                                {doc?.status}
-                              </span>
-                            </div>
+                              <div>
+                                <p className="mb-2 text-sm text-default-500">
+                                  Uploaded File
+                                </p>
 
-                            <div>
-                              <p className="text-sm text-gray-500 mb-2">
-                                Uploaded File
-                              </p>
+                                {hasFile ? (
+                                  <div className="flex items-center justify-between rounded-xl border border-default-100 bg-default-50 px-4 py-3">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-100">
+                                        <PdfIcon className="h-5 w-5 text-red-500" />
+                                      </div>
 
-                              {hasFile ? (
-                                <div className="flex justify-between items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 shrink-0 bg-red-100 rounded-lg flex items-center justify-center">
-                                      📄
+                                      <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-foreground">
+                                          {doc?.fileName || "Document"}
+                                        </p>
+                                        <p className="text-xs text-default-400">
+                                          {doc?.fileSizeKb
+                                            ? `${doc.fileSizeKb} KB`
+                                            : ""}
+                                        </p>
+                                      </div>
                                     </div>
 
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="text-sm font-medium text-gray-800 truncate">
-                                        {doc?.fileName || "Document.pdf"}
-                                      </span>
-
-                                      <span className="text-xs text-gray-400">
-                                        {doc?.fileSizeKb
-                                          ? `${doc.fileSizeKb} KB`
-                                          : ""}
-                                      </span>
-                                    </div>
+                                    <Button
+                                      size="sm"
+                                      color="success"
+                                      variant="flat"
+                                      onPress={openPreview}
+                                    >
+                                      View
+                                    </Button>
                                   </div>
+                                ) : (
+                                  <div className="rounded-xl border border-dashed border-default-300 bg-default-50 px-4 py-6 text-center">
+                                    <p className="text-sm font-medium text-default-500">
+                                      No file uploaded
+                                    </p>
+                                    <p className="mt-1 text-xs text-default-400">
+                                      Upload manually or drag matching company
+                                      document here
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
 
-                                  <Button
-                                    size="sm"
-                                    className="shrink-0 bg-green-600 text-white hover:bg-green-700 rounded-full px-4"
-                                    onPress={openPreview}
-                                  >
-                                    Download
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="text-sm italic text-gray-400">
-                                  No file uploaded
-                                </div>
-                              )}
-                            </div>
+                              <div className="text-sm text-default-500">
+                                {doc?.expiryDate
+                                  ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
+                                  : doc?.permanent
+                                    ? "No expiry date"
+                                    : "No expiry date"}
+                              </div>
 
-                            <div className="text-sm text-gray-500">
-                              {doc?.expiryDate
-                                ? `Expiry: ${dayjs(doc.expiryDate).format("DD MMM YYYY")}`
-                                : doc?.permanent
-                                  ? "No expiry date"
-                                  : "No expiry date"}
-                            </div>
-
-                            <div className="mt-auto flex shrink-0 flex-wrap justify-end gap-2 border-t border-default-100 pt-3">
-                              {doc?.status !== "VERIFIED" && hasFile && (
-                                <>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {doc?.status !== "VERIFIED" && hasFile && (
                                   <Button
                                     size="sm"
                                     color="primary"
-                                    className="rounded-full px-6"
+                                    variant="flat"
                                     onPress={() => openVerify(doc)}
                                   >
                                     Verify
                                   </Button>
+                                )}
 
+                                {doc?.status !== "UPLOADED" && (
+                                  <Button
+                                    size="sm"
+                                    color="secondary"
+                                    variant="flat"
+                                    onPress={() => openUploadForDoc(doc)}
+                                  >
+                                    Upload
+                                  </Button>
+                                )}
+
+                                {hasFile && (
                                   <Button
                                     size="sm"
                                     color="warning"
                                     variant="flat"
-                                    className="rounded-full px-6"
                                     onPress={() => openReplaceForDoc(doc)}
                                   >
-                                    Replace Document
+                                    Replace
                                   </Button>
-                                </>
-                              )}
-
-                              {doc?.status !== "UPLOADED" && (
-                                <Button
-                                  size="sm"
-                                  color="secondary"
-                                  onPress={() => openUploadForDoc(doc)}
-                                >
-                                  Upload
-                                </Button>
-                              )}
-                            </div>
-                          </CardBody>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                                )}
+                              </div>
+                            </CardBody>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </section>
                 </div>
               </DrawerBody>
 

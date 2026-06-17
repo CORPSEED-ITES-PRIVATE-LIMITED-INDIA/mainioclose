@@ -564,12 +564,16 @@ export const uploadDocumentInProjects = createAsyncThunk(
 
 export const replaceDocumentInProjects = createAsyncThunk(
   "replaceDocumentInProjects",
-  async ({ documentId, projectId, data }) => {
-    const response = await api.put(
-      `/operationService/api/projects/${projectId}/documents/${documentId}/replace`,
-      data,
-    );
-    return response.data;
+  async ({ documentId, projectId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/${projectId}/documents/${documentId}/replace`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message);
+    }
   },
 );
 export const updateDocumentStatus = createAsyncThunk(
@@ -998,6 +1002,20 @@ export const addVendorQuotation = createAsyncThunk(
   },
 );
 
+export const getAllCompanyDocumentsByCompanyIdAndUnitId = createAsyncThunk(
+  "getAllCompanyDocumentsByCompanyIdAndUnitId",
+  async ({ companyId, companyUnitId }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/company-documents?companyId=${companyId}&companyUnitId=${companyUnitId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return err;
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -1024,6 +1042,7 @@ export const OperationSlice = createSlice({
     procurementOrderByPurchaseIdLoading: false,
     procurementOrderByPurchaseIdError: null,
     paymentRequestByPoId: {},
+    compnyDocumentListByCompanyIdAndUnitId: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1376,6 +1395,26 @@ export const OperationSlice = createSlice({
     );
     builder.addCase(
       getProcurementPaymentRequestByOrderId.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+      },
+    );
+
+    builder.addCase(
+      getAllCompanyDocumentsByCompanyIdAndUnitId.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getAllCompanyDocumentsByCompanyIdAndUnitId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.compnyDocumentListByCompanyIdAndUnitId = action.payload;
+      },
+    );
+    builder.addCase(
+      getAllCompanyDocumentsByCompanyIdAndUnitId.rejected,
       (state, action) => {
         state.loading = "rejected";
       },

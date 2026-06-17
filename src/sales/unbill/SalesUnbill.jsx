@@ -476,9 +476,25 @@ const SalesUnbill = () => {
           return renderTwoLineText(rowData?.solutionName, "220px");
 
         case "companyName":
-          return renderTwoLineText(
-            rowData?.companyName || rowData?.company,
-            "220px",
+          return (
+            <>
+              {renderTwoLineText(
+                rowData?.companyName || rowData?.company,
+                "220px",
+              )}
+              <Chip
+                size="sm"
+                color={
+                  rowData?.companyStatus === "APPROVED"
+                    ? "success"
+                    : rowData?.companyStatus === "REJECTED"
+                      ? "danger"
+                      : "warning"
+                }
+              >
+                {rowData?.companyStatus}
+              </Chip>
+            </>
           );
 
         case "client":
@@ -487,9 +503,18 @@ const SalesUnbill = () => {
           return (
             <div className="">
               {renderTwoLineText(rowData?.unitName, "220px")}
-              <p className="mt-1 text-sm font-semibold text-default-900">
-                {rowData?.unitStatus || "NA"}
-              </p>
+              <Chip
+                size="sm"
+                color={
+                  rowData?.unitStatus === "APPROVED"
+                    ? "success"
+                    : rowData?.unitStatus === "REJECTED"
+                      ? "danger"
+                      : "warning"
+                }
+              >
+                {rowData?.unitStatus}
+              </Chip>
             </div>
           );
         case "totalAmount":

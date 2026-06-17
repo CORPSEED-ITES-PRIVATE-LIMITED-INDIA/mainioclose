@@ -77,9 +77,9 @@ const InvoicesByUnbilled = () => {
   const { userId, unbilledId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const viewModal = useDisclosure();
-  const data = useSelector((state) => state.organization.invoicesByUnbilled);
+  const data = useSelector((state) => state.account.invoicesByUnbilled);
   const count = useSelector(
-    (state) => state.organization.invoicesByUnbilled?.length,
+    (state) => state.account.invoicesByUnbilled?.length,
   );
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,

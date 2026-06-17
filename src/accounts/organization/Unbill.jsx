@@ -1065,7 +1065,7 @@ const Unbill = () => {
                   if (resp.meta.requestStatus === "fulfilled") {
                     addToast({
                       title: "SUCCESS",
-                      description: "Lead status updated successfully",
+                      description: "Payment approved successfully",
                       color: "success",
                     });
                   } else {
