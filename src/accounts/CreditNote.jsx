@@ -48,6 +48,7 @@ export const columns = [
   { name: "OUTSTANDING", uid: "outstandingAmount", sortable: true },
   { name: "REFUND", uid: "refundAmount", sortable: true },
   { name: "CREDIT", uid: "creditAmount", sortable: true },
+  { name: "GST PORTAL ATTACHMENT", uid: "gstPortalAttachment" },
   { name: "STATUS", uid: "status" },
   { name: "REASON", uid: "reason" },
   { name: "ACTIONS", uid: "actions" },
@@ -68,6 +69,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "outstandingAmount",
   "refundAmount",
   "creditAmount",
+  "gstPortalAttachment",
   "status",
   "actions",
 ];
@@ -592,6 +594,36 @@ const CreditNote = () => {
             </div>
           );
 
+        case "gstPortalAttachment": {
+          const fileUrl = rowData?.gstPortalAttachment;
+
+          if (!fileUrl) {
+            return <p className="text-sm text-default-400">-</p>;
+          }
+
+          const file = {
+            fileUrl,
+            fileName:
+              fileUrl.split("?")[0].split("/").pop() || "GST Portal Attachment",
+          };
+
+          return (
+            <Button
+              size="sm"
+              variant="flat"
+              color="primary"
+              onPress={() =>
+                setAttachmentPreviewModal({
+                  isOpen: true,
+                  file,
+                })
+              }
+            >
+              View
+            </Button>
+          );
+        }
+
         case "totalAmount":
           return (
             <p className="text-sm">{inrCurrency(rowData?.totalAmount || 0)}</p>
@@ -1086,7 +1118,7 @@ const CreditNote = () => {
               />
 
               <FileUploader
-                label="Attachment"
+                label="GST Portal Credit Note"
                 value={approvalAttachment}
                 isRequired
                 errorMessage={approvalAttachmentError}
