@@ -987,6 +987,16 @@ export const deleteUserProductMapping = createAsyncThunk(
     }
   },
 );
+export const addVendorQuotation = createAsyncThunk(
+  "addVendorQuotation",
+  async ({procurementAssignmentId, body}, { rejectWithValue }) => {
+    try {
+      await api.post(`/operationService/api/procurement-assignments/${procurementAssignmentId}/vendor-quotations`,body);
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
 
 export const OperationSlice = createSlice({
   name: "operation",

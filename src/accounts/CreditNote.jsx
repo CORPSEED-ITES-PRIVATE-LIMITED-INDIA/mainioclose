@@ -34,6 +34,7 @@ import {
   accountApproveCreditNote,
 } from "../toolkit/slices/accountSlice";
 import PreviewComponent from "../components/PreviewComponent.jsx";
+import FileUploader from "../components/FileUploader.jsx";
 
 export const columns = [
   { name: "DATE", uid: "date", sortable: true },
@@ -103,6 +104,15 @@ const CreditNote = () => {
     isOpen: false,
     file: null,
   });
+
+  const [approveModal, setApproveModal] = useState({
+    isOpen: false,
+    rowData: null,
+  });
+
+  const [approvalRemarks, setApprovalRemarks] = useState("");
+  const [approvalAttachment, setApprovalAttachment] = useState("");
+  const [approvalAttachmentError, setApprovalAttachmentError] = useState("");
 
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
@@ -225,7 +235,8 @@ const CreditNote = () => {
               accountApproveCreditNote({
                 creditNoteId,
                 userId,
-                approvalRemarks: "Approved by account user",
+                approvalRemarks,
+                gstPortalAttachment: approvalAttachment,
               }),
             );
 
@@ -391,6 +402,77 @@ const CreditNote = () => {
     };
   }, []);
 
+  const handleAccountApproval = async (e) => {
+    e?.preventDefault?.();
+
+    const rowData = approveModal?.rowData;
+    const creditNoteId = rowData?.id;
+
+    if (!creditNoteId || !userId) {
+      addToast({
+        title: "Missing required data",
+        description: "Credit Note ID or User ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!String(approvalAttachment || "").trim()) {
+      setApprovalAttachmentError("Attachment is required.");
+      return;
+    }
+
+    try {
+      setActionLoadingId(creditNoteId);
+
+      const resp = await dispatch(
+        accountApproveCreditNote({
+          creditNoteId,
+          userId,
+          approvalRemarks:
+            approvalRemarks?.trim() || "Approved by account user",
+          gstPortalAttachment: approvalAttachment,
+        }),
+      );
+
+      if (resp?.meta?.requestStatus === "fulfilled") {
+        fetchCreditNotes();
+
+        addToast({
+          title: "Success",
+          description: "Credit note account approved successfully.",
+          color: "success",
+        });
+
+        setApproveModal({
+          isOpen: false,
+          rowData: null,
+        });
+
+        setApprovalRemarks("");
+        setApprovalAttachment("");
+        setApprovalAttachmentError("");
+      } else {
+        addToast({
+          title: "Approval failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Credit note account approval failed.",
+          color: "danger",
+        });
+      }
+    } catch (error) {
+      addToast({
+        title: "Something went wrong",
+        description: error?.message || "Credit note account approval failed.",
+        color: "danger",
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleActionsClick = React.useCallback(
     (key, rowData) => {
       const actionKey = String(key);
@@ -415,6 +497,17 @@ const CreditNote = () => {
         setAttachmentPreviewModal({
           isOpen: true,
           file: attachment,
+        });
+        return;
+      }
+
+      if (
+        actionKey === "APPROVE" &&
+        rowData?.status === "PENDING_ACCOUNT_REVIEW"
+      ) {
+        setApproveModal({
+          isOpen: true,
+          rowData,
         });
         return;
       }
@@ -967,6 +1060,78 @@ const CreditNote = () => {
         modalSize="full"
         showDetailsPanelDefault={false}
       />
+      <Modal
+        isOpen={approveModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setApproveModal({
+              isOpen: false,
+              rowData: null,
+            });
+            setApprovalRemarks("");
+            setApprovalAttachment("");
+            setApprovalAttachmentError("");
+          }
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>Approve Credit Note</ModalHeader>
+
+          <form onSubmit={handleAccountApproval}>
+            <ModalBody>
+              <Input
+                label="Approval Remarks"
+                value={approvalRemarks}
+                onValueChange={setApprovalRemarks}
+              />
+
+              <FileUploader
+                label="Attachment"
+                value={approvalAttachment}
+                isRequired
+                errorMessage={approvalAttachmentError}
+                onChange={(url) => {
+                  setApprovalAttachment(url);
+                  setApprovalAttachmentError("");
+                }}
+                onUploadSuccess={(file) => {
+                  setApprovalAttachment(file?.filePath || "");
+                  setApprovalAttachmentError("");
+                }}
+              />
+
+              {approvalAttachmentError && (
+                <p className="text-danger text-sm">{approvalAttachmentError}</p>
+              )}
+            </ModalBody>
+
+            <ModalFooter>
+              <Button
+                variant="flat"
+                onPress={() => {
+                  setApproveModal({
+                    isOpen: false,
+                    rowData: null,
+                  });
+                  setApprovalRemarks("");
+                  setApprovalAttachment("");
+                  setApprovalAttachmentError("");
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                color="success"
+                type="submit"
+                isLoading={actionLoadingId === approveModal?.rowData?.id}
+              >
+                Approve
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

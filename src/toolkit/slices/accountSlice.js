@@ -365,12 +365,13 @@ export const approveCreditNote = createAsyncThunk(
 
 export const accountApproveCreditNote = createAsyncThunk(
   "account/accountApproveCreditNote",
-  async ({ creditNoteId, userId, approvalRemarks }, { rejectWithValue }) => {
+  async ({ creditNoteId, userId, approvalRemarks,gstPortalAttachment }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/accountService/api/credit-notes/${creditNoteId}/account-approve/${userId}`,
         {
           approvalRemarks: approvalRemarks || "",
+          gstPortalAttachment:gstPortalAttachment || "",
         },
       );
 
