@@ -50,11 +50,27 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = ["id", "name", "departments", "actions"];
 
-const formSchema = z.object({
-  name: z.string().min(1, "Please enter milestone name."),
-  departmentIds: z.array(z.string()).min(1, "Please select department"),
-  description: z.string().min(1, "Please enter description"),
-});
+const formSchema = z
+  .object({
+    name: z.string().min(1, "Please enter milestone name."),
+    departmentIds: z.array(z.string()).optional().default([]),
+    description: z.string().min(1, "Please enter description"),
+  })
+  .superRefine((values, ctx) => {
+    const isCertification =
+      values.name?.trim().toLowerCase() === "certification";
+
+    if (
+      !isCertification &&
+      (!values.departmentIds || values.departmentIds.length === 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select department",
+        path: ["departmentIds"],
+      });
+    }
+  });
 
 const defaultValues = {
   name: "",
@@ -211,12 +227,16 @@ const Milestone = () => {
 
   const onSubmit = useCallback(
     (values) => {
+      const isCertification =
+        values.name?.trim().toLowerCase() === "certification";
+
       const payload = {
         name: values.name,
         description: values.description,
-        departmentIds: values.departmentIds.map(Number),
+        departmentIds: isCertification
+          ? null
+          : values.departmentIds.map(Number),
       };
-
       const action = isEditMode
         ? updateMileStone({ id: selectedMilestone.id, payload })
         : createMileStone(payload);
