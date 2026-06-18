@@ -2394,7 +2394,7 @@ const ProjectDetails = () => {
 
                               try {
                                 const permanentValue =
-                                  draggedDoc?.permanent !== undefined
+                                  draggedDoc?.expired !== undefined
                                     ? !!draggedDoc.permanent
                                     : draggedDoc?.isPermanent !== undefined
                                       ? !!draggedDoc.isPermanent
@@ -2406,17 +2406,20 @@ const ProjectDetails = () => {
                                   ? null
                                   : draggedDoc?.expiryDate || null;
 
-                                // if (!permanentValue && !expiryDateValue) {
-                                //   addToast({
-                                //     title: "Expiry date required",
-                                //     description:
-                                //       "This document is not permanent. Please upload it manually with expiry date.",
-                                //     color: "warning",
-                                //   });
+                                if (
+                                  !draggedDoc?.expired &&
+                                  !draggedDoc?.expiryDate
+                                ) {
+                                  addToast({
+                                    title: "Expiry date required",
+                                    description:
+                                      "This document is not permanent. Please upload it manually with expiry date.",
+                                    color: "warning",
+                                  });
 
-                                //   setDraggedDoc(null);
-                                //   return;
-                                // }
+                                  setDraggedDoc(null);
+                                  return;
+                                }
 
                                 const requiredDocumentId = Number(
                                   doc?.documentId ||
