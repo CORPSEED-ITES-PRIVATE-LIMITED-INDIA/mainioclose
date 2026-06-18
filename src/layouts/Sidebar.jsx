@@ -34,6 +34,7 @@ import {
   BanknoteArrowDown,
   Book,
   ReceiptText,
+  Scale,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
