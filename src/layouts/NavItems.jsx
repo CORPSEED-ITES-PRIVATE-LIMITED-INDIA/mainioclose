@@ -723,7 +723,7 @@ export const operationEmpItems = [
   },
   {
     title: "Legal request",
-    icon: "Scale",
+    icon: "scale",
     url: "operation/legalRequests",
     key: "legalRequests",
   },
