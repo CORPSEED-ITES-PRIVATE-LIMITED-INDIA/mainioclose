@@ -854,7 +854,7 @@ const RequestForQuotation = () => {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
-                            label="Agreement Attachment"
+                            label="Attachment"
                             value={field.value}
                             onChange={(value) => {
                               field.onChange(value);

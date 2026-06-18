@@ -29,6 +29,7 @@ const ProcuremntSolutionDetailPage = () => {
 
   const tabs = [
     { id: "overview", label: "Overview" },
+    { id: "vendors-data", label: "Vendor Data" },
     { id: "rfq", label: "RFQ" },
   ];
 

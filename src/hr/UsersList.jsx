@@ -347,6 +347,8 @@ const UsersList = () => {
         departmentId: Number(values?.departmentId),
         role: values?.role,
         isManager: Boolean(values?.managerFlag),
+        bucketSize: Number(values?.lockerSize),
+        lockerSize: Number(values?.lockerSize),
       };
       dispatch(updateUserData(tempObj))
         .then((response) => {
@@ -371,6 +373,8 @@ const UsersList = () => {
                       department: res?.payload?.data?.userDepartment?.name,
                       role: res?.payload?.data?.role,
                       isManager: Boolean(values?.managerFlag),
+                      bucketSize: Number(values?.lockerSize),
+                      lockerSize: Number(values?.lockerSize),
                     }),
                   ).then((acco) => {
                     console.log("Response   account1", acco);
@@ -397,6 +401,8 @@ const UsersList = () => {
                               ? values?.managerId
                               : userId,
                             managerFlag: Boolean(values?.managerFlag),
+                            bucketSize: Number(values?.lockerSize),
+                            lockerSize: Number(values?.lockerSize),
                           },
                         }),
                       ).then((oper) => {
@@ -467,6 +473,8 @@ const UsersList = () => {
         designationId: Number(values?.designationId),
         departmentId: Number(values?.departmentId),
         isManager: Boolean(values?.managerFlag),
+        bucketSize: Number(values?.lockerSize),
+        lockerSize: Number(values?.lockerSize),
       };
 
       dispatch(createNewUserInAuth(authData))
@@ -496,6 +504,7 @@ const UsersList = () => {
 
           const obj = {
             id: temp.userId,
+            isManager: Boolean(values?.managerFlag),
             ...values,
           };
 
@@ -531,6 +540,9 @@ const UsersList = () => {
                 designation: userInfo?.userDesignation?.name,
                 department: userInfo?.userDepartment?.name,
                 role: userInfo?.role,
+                isManager: Boolean(values?.managerFlag),
+                bucketSize: Number(values?.lockerSize),
+                lockerSize: Number(values?.lockerSize),
               }),
             ).then((acc) => {
               if (acc.meta.requestStatus !== "fulfilled") {
@@ -556,6 +568,7 @@ const UsersList = () => {
                   roleIds: temp?.role?.map((role) => role?.id) || [],
                   managerId: userInfo?.managers?.id || userId,
                   managerFlag: Boolean(values?.managerFlag),
+                  bucketSize: Number(values?.lockerSize),
                 }),
               ).then((oper) => {
                 if (oper.meta.requestStatus !== "fulfilled") {
