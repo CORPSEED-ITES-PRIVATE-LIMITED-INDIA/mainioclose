@@ -9,10 +9,23 @@ import ProjectDetails from "../operation/projects/ProjectDetails";
 import ProjectActivities from "../operation/projects/ProjectActivities";
 import Projects from "../operation/projects/Projects";
 import Vendors from "../vendor-request/Vendors";
+import ProcurementSolutions from "../procurement/solutions/ProcurementSolutions";
+import SolutionOverview from "../procurement/solutions/SolutionOverview";
+import ProcuremntSolutionDetailPage from "../procurement/solutions/ProcuremntSolutionDetailPage";
+import RequestForQuotation from "../procurement/solutions/RequestForQuotation";
 
 const ProcurementRouting = () => {
   return (
     <>
+      <Route path="procurement/solutions" element={<ProcurementSolutions />} />
+      <Route
+        path="procurement/solutions/:solutionId/detail"
+        element={<ProcuremntSolutionDetailPage />}
+      >
+        <Route index path="overview" element={<SolutionOverview />} />
+        <Route path="rfq" element={<RequestForQuotation />} />
+        <Route />
+      </Route>
       <Route path="procurement/vendorList" element={<Vendors />} />
       <Route path="procurement/vendors-requests" element={<VendorRequests />} />
       <Route

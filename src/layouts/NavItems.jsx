@@ -288,6 +288,11 @@ export const navItems = [
     key: "Procurement",
     children: [
       {
+        title: "Solutions",
+        url: "procurement/solutions",
+        key: "solutions",
+      },
+      {
         title: "Vendor request",
         url: "procurement/vendors-requests",
         key: "vendorRequest",
@@ -655,6 +660,12 @@ export const qualityNavItems = [
 ];
 
 export const procurementItems = [
+  {
+    title: "Solutions",
+    icon: "FileText",
+    url: "procurement/solutions",
+    key: "solutions",
+  },
   {
     title: "Projects",
     icon: "FileText",

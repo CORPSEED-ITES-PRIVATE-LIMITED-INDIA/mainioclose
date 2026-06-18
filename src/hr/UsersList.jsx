@@ -121,6 +121,7 @@ const formSchema = (flags) =>
     aadharCard: z.string().min(1, "Please enter aadhar card number"),
     panNumber: z.string().min(1, "Please enter pan number"),
     managerId: z.string().optional(),
+    managerFlag: z.boolean().optional(),
     lockerSize: z.string().optional(),
     expInYear: z.string().min(1, "Please enter experience in years"),
     expInMonth: z.string().min(1, "Please enter experience in months"),
@@ -163,6 +164,7 @@ const defaultValues = {
   epfNo: "",
   aadharCard: "",
   managerId: "",
+  managerFlag: false,
   lockerSize: "",
   expInYear: "",
   expInMonth: "",
@@ -295,6 +297,7 @@ const UsersList = () => {
         epfNo: data?.epfNo,
         aadharCard: data?.aadharCard,
         managerId: String(data?.managers?.id),
+        managerFlag: Boolean(data?.managerFlag ?? data?.isManager ?? false),
         expInMonth: String(data?.expInMonth),
         expInYear: String(data?.expInYear),
         dateOfJoining: data.dateOfJoining
@@ -389,6 +392,7 @@ const UsersList = () => {
                             managerId: values?.managerId
                               ? values?.managerId
                               : userId,
+                            managerFlag: Boolean(values?.managerFlag),
                           },
                         }),
                       ).then((oper) => {
@@ -504,7 +508,7 @@ const UsersList = () => {
                           managerId: userInfo?.managers?.id
                             ? userInfo?.managers?.id
                             : userId,
-                          managerFlag: true,
+                          managerFlag: Boolean(values?.managerFlag),
                         }),
                       ).then((oper) => {
                         if (oper.meta.requestStatus === "fulfilled") {
@@ -1231,6 +1235,33 @@ const UsersList = () => {
                                 No managers available
                               </SelectItem>
                             )}
+                          </Select>
+                        )}
+                      />
+                      <Controller
+                        name="managerFlag"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="Manager Flag"
+                            selectedKeys={
+                              field.value !== undefined
+                                ? [field.value.toString()]
+                                : []
+                            }
+                            onSelectionChange={(keys) => {
+                              const value = Array.from(keys)[0];
+                              if (value !== undefined) {
+                                field.onChange(value === "true");
+                              }
+                            }}
+                          >
+                            <SelectItem key="true" value="true">
+                              True
+                            </SelectItem>
+                            <SelectItem key="false" value="false">
+                              False
+                            </SelectItem>
                           </Select>
                         )}
                       />

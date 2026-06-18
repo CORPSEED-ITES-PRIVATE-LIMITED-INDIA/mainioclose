@@ -16,11 +16,11 @@ const LeadDetail = () => {
     (state) => state.auth.getDepartmentDetail?.department,
   );
 
-  const [selectedKey, setSelectedKey] = useState("leadEstimate");
+  const [selectedKey, setSelectedKey] = useState("leadDetail");
 
   useEffect(() => {
     setSelectedKey(pathKey[pathKey?.length - 1]);
-  }, []);
+  }, [pathKey]);
 
   const handleSelect = (key) => {
     navigate(key);

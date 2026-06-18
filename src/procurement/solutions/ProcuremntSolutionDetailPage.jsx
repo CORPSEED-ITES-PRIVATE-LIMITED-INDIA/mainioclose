@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import RoundedTabs from "../../components/RoundedTabs";
+import { getSolutionById } from "../../toolkit/slices/settingSlice";
 
-const SolutionDetails = () => {
+const ProcuremntSolutionDetailPage = () => {
   const path = useLocation();
+  const { solutionId, userId } = useParams();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const pathKey = path?.pathname?.split("/");
-  const details = useSelector((state) => state.setting.singleProductDetail);
+  const solutionName = useSelector((state) => state.setting.solutionName);
 
-  const [selectedKey, setSelectedKey] = useState("solutionPrice");
+  const [selectedKey, setSelectedKey] = useState("overview");
+
+  useEffect(() => {
+    dispatch(getSolutionById({ solutionId, userId }));
+  }, [solutionId, userId]);
 
   useEffect(() => {
     setSelectedKey(pathKey[pathKey?.length - 1]);
@@ -21,16 +28,14 @@ const SolutionDetails = () => {
   };
 
   const tabs = [
-    { id: "solutionPrice", label: "Price" },
-    { id: "documents", label: "Documents" },
-    { id: "milestones", label: "Milestones" },
-    { id: "serviceDetails", label: "Service Details" },
+    { id: "overview", label: "Overview" },
+    { id: "rfq", label: "RFQ" },
   ];
 
   return (
     <div className="relative">
       <div className="sticky top-0 z-10 my-2">
-        <h1 className="text-xl font-medium">{details?.productName}</h1>
+        <h1 className="text-xl font-medium">{solutionName}</h1>
       </div>
       <RoundedTabs tabs={tabs} value={selectedKey} onChange={handleSelect} />
       <Outlet />
@@ -38,4 +43,4 @@ const SolutionDetails = () => {
   );
 };
 
-export default SolutionDetails;
+export default ProcuremntSolutionDetailPage;

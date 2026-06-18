@@ -343,6 +343,53 @@ export const getVendorDetailInProject = createAsyncThunk(
   },
 );
 
+export const getProductVendorsByProductId = createAsyncThunk(
+  "operation/getProductVendorsByProductId",
+  async ({ productId, userId, page = 1, size = 10 }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/products/${productId}/vendors`,
+        {
+          params: {
+            userId,
+            page,
+            size,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || error?.message || "Failed to fetch vendors",
+      );
+    }
+  },
+);
+
+export const createVendorAgainstProduct = createAsyncThunk(
+  "operation/createVendorAgainstProduct",
+  async ({ productId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/products/${productId}/vendors`,
+        data,
+        {
+          params: {
+            userId,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || error?.message || "Failed to create RFQ",
+      );
+    }
+  },
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
