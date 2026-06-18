@@ -347,6 +347,8 @@ const UsersList = () => {
         departmentId: Number(values?.departmentId),
         role: values?.role,
         isManager: Boolean(values?.managerFlag),
+        bucketSize: Number(values?.lockerSize),
+        lockerSize: Number(values?.lockerSize),
       };
       dispatch(updateUserData(tempObj))
         .then((response) => {
@@ -371,6 +373,8 @@ const UsersList = () => {
                       department: res?.payload?.data?.userDepartment?.name,
                       role: res?.payload?.data?.role,
                       isManager: Boolean(values?.managerFlag),
+                      bucketSize: Number(values?.lockerSize),
+                      lockerSize: Number(values?.lockerSize),
                     }),
                   ).then((acco) => {
                     console.log("Response   account1", acco);
@@ -397,6 +401,8 @@ const UsersList = () => {
                               ? values?.managerId
                               : userId,
                             managerFlag: Boolean(values?.managerFlag),
+                            bucketSize: Number(values?.lockerSize),
+                            lockerSize: Number(values?.lockerSize),
                           },
                         }),
                       ).then((oper) => {
@@ -467,107 +473,13 @@ const UsersList = () => {
         designationId: Number(values?.designationId),
         departmentId: Number(values?.departmentId),
         isManager: Boolean(values?.managerFlag),
+        bucketSize: Number(values?.lockerSize),
+        lockerSize: Number(values?.lockerSize),
       };
 
       dispatch(createNewUserInAuth(authData))
         .then((resp) => {
-<<<<<<< Updated upstream
-          if (resp.meta.requestStatus === "fulfilled") {
-            const temp = resp?.payload?.data?.data;
-            const obj = {
-              id: temp.userId,
-              isManager: Boolean(values?.managerFlag),
-              ...values,
-            };
-            dispatch(createUserByHr(obj))
-              .then((info) => {
-                if (info.meta.requestStatus === "fulfilled") {
-                  const userInfo = info?.payload?.data;
-                  addToast({
-                    title: "SUCCESS",
-                    description: "User created successfully !.",
-                    color: "success",
-                  });
-                  dispatch(
-                    createUserInAccounts({
-                      id: userInfo?.id,
-                      username: userInfo?.fullName,
-                      email: userInfo?.email,
-                      designation: userInfo?.userDesignation?.name,
-                      department: userInfo?.userDepartment?.name,
-                      role: userInfo?.role,
-                      isManager: Boolean(values?.managerFlag),
-                    }),
-                  ).then((acc) => {
-                    if (acc.meta.requestStatus === "fulfilled") {
-                      addToast({
-                        title: "SUCCESS",
-                        description: "User created in Accounts",
-                        color: "success",
-                      });
-                      dispatch(
-                        createUsersInOperations({
-                          id: userInfo?.id,
-                          fullName: userInfo?.fullName,
-                          email: userInfo?.email,
-                          contactNo: userInfo?.contactNo,
-                          designationId: values?.designationId,
-                          departmentIds: [values?.departmentId],
-                          roleIds: temp?.role?.map((role) => role?.id),
-                          managerId: userInfo?.managers?.id
-                            ? userInfo?.managers?.id
-                            : userId,
-                          managerFlag: Boolean(values?.managerFlag),
-                        }),
-                      ).then((oper) => {
-                        if (oper.meta.requestStatus === "fulfilled") {
-                          addToast({
-                            title: "SUCCESS",
-                            description: "User created in operation",
-                            color: "success",
-                          });
-                          onClose();
-                          reset(defaultValues);
-                          dispatch(getAllUsers());
-                        } else {
-                          addToast({
-                            title: "ERROR",
-                            description:
-                              oper?.payload?.message ||
-                              "Something went wrong in Operations",
-                            color: "danger",
-                          });
-                        }
-                      });
-                    } else {
-                      addToast({
-                        title: "ERROR",
-                        description:
-                          acc?.payload?.message ||
-                          "Something went wrong in Accounts",
-                        color: "danger",
-                      });
-                    }
-                  });
-                } else {
-                  addToast({
-                    title: "ERROR",
-                    description: info?.payload,
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() => {
-                addToast({
-                  title: "ERROR",
-                  description: "Something went wrong !.",
-                  color: "danger",
-                });
-              });
-          } else {
-=======
           if (resp.meta.requestStatus !== "fulfilled") {
->>>>>>> Stashed changes
             addToast({
               title: "ERROR",
               description:
@@ -592,6 +504,7 @@ const UsersList = () => {
 
           const obj = {
             id: temp.userId,
+            isManager: Boolean(values?.managerFlag),
             ...values,
           };
 
@@ -627,6 +540,9 @@ const UsersList = () => {
                 designation: userInfo?.userDesignation?.name,
                 department: userInfo?.userDepartment?.name,
                 role: userInfo?.role,
+                isManager: Boolean(values?.managerFlag),
+                bucketSize: Number(values?.lockerSize),
+                lockerSize: Number(values?.lockerSize),
               }),
             ).then((acc) => {
               if (acc.meta.requestStatus !== "fulfilled") {
@@ -652,6 +568,7 @@ const UsersList = () => {
                   roleIds: temp?.role?.map((role) => role?.id) || [],
                   managerId: userInfo?.managers?.id || userId,
                   managerFlag: Boolean(values?.managerFlag),
+                  bucketSize: Number(values?.lockerSize),
                 }),
               ).then((oper) => {
                 if (oper.meta.requestStatus !== "fulfilled") {

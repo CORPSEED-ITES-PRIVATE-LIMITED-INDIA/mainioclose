@@ -25,24 +25,27 @@ import {
   Tooltip,
   useDisclosure,
   addToast,
+  Switch,
 } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { EllipsisVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useParams } from "react-router-dom";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../../common";
 import {
   createVendor,
   deleteVendor,
   getAllVendors,
   updateVendor,
-} from "../toolkit/slices/vendorsSlice";
-import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../common";
+} from "../../toolkit/slices/vendorsSlice";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import { Select as AntSelect } from "antd";
+import NewSelect from "../../components/NewSelect";
 
 const columns = [
-  { name: "ID", uid: "id", sortable: true },
+  { name: "ID", uid: "id" },
   // { name: "VENDOR CODE", uid: "vendorCode", sortable: true },
-  { name: "VENDOR NAME", uid: "name", sortable: true },
+  { name: "VENDOR NAME", uid: "name" },
   { name: "CONTACT", uid: "contact" },
   { name: "GST / PAN", uid: "taxDetail" },
   { name: "STATUS", uid: "status" },
@@ -87,7 +90,7 @@ const getErrorMessage = (error, fallbackMessage) => {
   );
 };
 
-const Vendors = () => {
+const VendorsData = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
 
@@ -109,6 +112,7 @@ const Vendors = () => {
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [modalMode, setModalMode] = useState("create");
   const [vendorForm, setVendorForm] = useState(initialVendorForm);
+  const [isSelected, setIsSelected] = useState(false);
 
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "id",
@@ -391,22 +395,7 @@ const Vendors = () => {
   }, [filteredItems, pagination.page, pagination.size]);
 
   const sortedItems = useMemo(() => {
-    return [...paginatedItems].sort((a, b) => {
-      const firstValue = a?.[sortDescriptor.column] ?? "";
-      const secondValue = b?.[sortDescriptor.column] ?? "";
-
-      const first =
-        typeof firstValue === "string" ? firstValue.toLowerCase() : firstValue;
-
-      const second =
-        typeof secondValue === "string"
-          ? secondValue.toLowerCase()
-          : secondValue;
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...paginatedItems];
   }, [paginatedItems, sortDescriptor]);
 
   const onSearchChange = useCallback((value) => {
@@ -686,8 +675,8 @@ const Vendors = () => {
           th: "bg-default-100 text-xs font-semibold uppercase text-default-600",
           td: "py-3",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectedKeys={selectedKeys}
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
@@ -727,103 +716,125 @@ const Vendors = () => {
         <ModalContent>
           {(modalClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 border-b border-default-200">
-                <span className="text-xl font-semibold">
-                  {modalMode === "edit" ? "Update Vendor" : "Create New Vendor"}
-                </span>
-                <span className="text-sm font-normal text-default-500">
-                  {modalMode === "edit"
-                    ? "Update vendor details as per operation vendor master."
-                    : "Fill vendor details as per operation vendor master."}
-                </span>
+              <ModalHeader className="flex justify-between">
+                {isSelected ? (
+                  <span className="text-xl font-semibold">
+                    Map existing vendor
+                  </span>
+                ) : (
+                  <div className="flex flex-col gap-1 border-b border-default-200">
+                    <span className="text-xl font-semibold">
+                      {modalMode === "edit"
+                        ? "Update Vendor"
+                        : "Create New Vendor"}
+                    </span>
+                    <span className="text-sm font-normal text-default-500">
+                      {modalMode === "edit"
+                        ? "Update vendor details as per operation vendor master."
+                        : "Fill vendor details as per operation vendor master."}
+                    </span>
+                  </div>
+                )}
+
+                <Switch
+                  isSelected={isSelected}
+                  size="sm"
+                  onValueChange={setIsSelected}
+                >
+                  Map Existing vendor
+                </Switch>
               </ModalHeader>
 
               <ModalBody className="py-5">
                 <Form className="w-full" onSubmit={handleSubmitVendor}>
-                  <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-                    <Input
-                      isRequired
-                      label="Vendor Name"
-                      name="name"
-                      placeholder="Enter vendor company name"
-                      value={vendorForm.name}
-                      onValueChange={(value) =>
-                        handleInputChange("name", value)
-                      }
-                    />
+                  {isSelected ? (
+                    <NewSelect label={"Search vendor"} />
+                  ) : (
+                    <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                      <Input
+                        isRequired
+                        label="Vendor Name"
+                        name="name"
+                        placeholder="Enter vendor company name"
+                        value={vendorForm.name}
+                        onValueChange={(value) =>
+                          handleInputChange("name", value)
+                        }
+                      />
 
-                    <Input
-                      isRequired
-                      type="email"
-                      label="Email"
-                      name="email"
-                      placeholder="vendor@example.com"
-                      value={vendorForm.email}
-                      onValueChange={(value) =>
-                        handleInputChange("email", value)
-                      }
-                    />
+                      <Input
+                        isRequired
+                        type="email"
+                        label="Email"
+                        name="email"
+                        placeholder="vendor@example.com"
+                        value={vendorForm.email}
+                        onValueChange={(value) =>
+                          handleInputChange("email", value)
+                        }
+                      />
 
-                    <Input
-                      isRequired
-                      label="Mobile"
-                      name="mobile"
-                      placeholder="Enter mobile number"
-                      value={vendorForm.mobile}
-                      onValueChange={(value) =>
-                        handleInputChange("mobile", allowOnlyNumbers(value))
-                      }
-                    />
+                      <Input
+                        isRequired
+                        label="Mobile"
+                        name="mobile"
+                        placeholder="Enter mobile number"
+                        value={vendorForm.mobile}
+                        onValueChange={(value) =>
+                          handleInputChange("mobile", allowOnlyNumbers(value))
+                        }
+                      />
 
-                    <Input
-                      isRequired
-                      label="GST Number"
-                      name="gstNumber"
-                      placeholder="Enter GST number"
-                      value={vendorForm.gstNumber}
-                      maxLength={15}
-                      onValueChange={(value) =>
-                        handleInputChange("gstNumber", formatGSTInput(value))
-                      }
-                    />
+                      <Input
+                        isRequired
+                        label="GST Number"
+                        name="gstNumber"
+                        placeholder="Enter GST number"
+                        value={vendorForm.gstNumber}
+                        maxLength={15}
+                        onValueChange={(value) =>
+                          handleInputChange("gstNumber", formatGSTInput(value))
+                        }
+                      />
 
-                    <Input
-                      isRequired
-                      label="PAN Number"
-                      name="panNumber"
-                      placeholder="Enter PAN number"
-                      value={vendorForm.panNumber}
-                      onValueChange={(value) =>
-                        handleInputChange("panNumber", formatPANInput(value))
-                      }
-                    />
+                      <Input
+                        isRequired
+                        label="PAN Number"
+                        name="panNumber"
+                        placeholder="Enter PAN number"
+                        value={vendorForm.panNumber}
+                        onValueChange={(value) =>
+                          handleInputChange("panNumber", formatPANInput(value))
+                        }
+                      />
 
-                    <Select
-                      isRequired
-                      label="Verified"
-                      name="verified"
-                      selectedKeys={new Set([vendorForm.verified])}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0];
-                        handleInputChange("verified", selected);
-                      }}
-                    >
-                      <SelectItem key="true">Verified</SelectItem>
-                      <SelectItem key="false">Not Verified</SelectItem>
-                    </Select>
+                      <Select
+                        isRequired
+                        label="Verified"
+                        name="verified"
+                        selectedKeys={new Set([vendorForm.verified])}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0];
+                          handleInputChange("verified", selected);
+                        }}
+                      >
+                        <SelectItem key="true">Verified</SelectItem>
+                        <SelectItem key="false">Not Verified</SelectItem>
+                      </Select>
 
-                    <Textarea
-                      className="md:col-span-2"
-                      label="Description"
-                      name="description"
-                      placeholder="Enter vendor description"
-                      minRows={3}
-                      value={vendorForm.description}
-                      onValueChange={(value) =>
-                        handleInputChange("description", value)
-                      }
-                    />
-                  </div>
+                      <Textarea
+                        className="md:col-span-2"
+                        label="Description"
+                        name="description"
+                        placeholder="Enter vendor description"
+                        minRows={3}
+                        value={vendorForm.description}
+                        onValueChange={(value) =>
+                          handleInputChange("description", value)
+                        }
+                      />
+                    </div>
+                  )}
 
                   <ModalFooter className="mt-4 flex w-full justify-end gap-2 border-t border-default-200 px-0 pt-4">
                     <Button
@@ -906,4 +917,4 @@ const Vendors = () => {
   );
 };
 
-export default Vendors;
+export default VendorsData;

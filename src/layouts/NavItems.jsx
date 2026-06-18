@@ -288,19 +288,19 @@ export const navItems = [
     key: "Procurement",
     children: [
       {
-        title: "Solutions",
-        url: "procurement/solutions",
-        key: "solutions",
-      },
-      {
-        title: "Vendor request",
+        title: "Research",
         url: "procurement/vendors-requests",
         key: "vendorRequest",
       },
       {
-        title: "Vendor list",
+        title: "Vendor's Data",
         url: "procurement/vendorList",
         key: "vendorList",
+      },
+      {
+        title: "Vendor Quotations",
+        url: "procurement/vendor-quotations",
+        key: "vendor-quotations",
       },
       {
         title: "Projects",
@@ -312,11 +312,11 @@ export const navItems = [
         url: "procurement/vendors-payments",
         key: "vendors-payments",
       },
-      {
-        title: "Estimate",
-        url: "procurement/vendors-estimates",
-        key: "vendors-estimates",
-      },
+      // {
+      //   title: "Estimate",
+      //   url: "procurement/vendors-estimates",
+      //   key: "vendors-estimates",
+      // },
     ],
   },
   {
