@@ -2406,20 +2406,20 @@ const ProjectDetails = () => {
                                   ? null
                                   : draggedDoc?.expiryDate || null;
 
-                                if (
-                                  !draggedDoc?.expired &&
-                                  !draggedDoc?.expiryDate
-                                ) {
-                                  addToast({
-                                    title: "Expiry date required",
-                                    description:
-                                      "This document is not permanent. Please upload it manually with expiry date.",
-                                    color: "warning",
-                                  });
+                                // if (
+                                //   !draggedDoc?.expired &&
+                                //   !draggedDoc?.expiryDate
+                                // ) {
+                                //   addToast({
+                                //     title: "Expiry date required",
+                                //     description:
+                                //       "This document is not permanent. Please upload it manually with expiry date.",
+                                //     color: "warning",
+                                //   });
 
-                                  setDraggedDoc(null);
-                                  return;
-                                }
+                                //   setDraggedDoc(null);
+                                //   return;
+                                // }
 
                                 const requiredDocumentId = Number(
                                   doc?.documentId ||
