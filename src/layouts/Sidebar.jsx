@@ -80,6 +80,7 @@ const icons = {
   BanknoteArrowDown,
   ReceiptText,
   Book,
+  Scale,
 };
 
 const Sidebar = ({ items, collapsed }) => {
