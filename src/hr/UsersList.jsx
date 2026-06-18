@@ -153,6 +153,7 @@ const formSchema = (flags) =>
   });
 
 const defaultValues = {
+  employeeId: "",
   userName: "",
   email: "",
   personalEmail: "",
@@ -163,6 +164,7 @@ const defaultValues = {
   designationId: "",
   epfNo: "",
   aadharCard: "",
+  panNumber: "",
   managerId: "",
   managerFlag: false,
   lockerSize: "",
@@ -466,8 +468,10 @@ const UsersList = () => {
         departmentId: Number(values?.departmentId),
         isManager: Boolean(values?.managerFlag),
       };
+
       dispatch(createNewUserInAuth(authData))
         .then((resp) => {
+<<<<<<< Updated upstream
           if (resp.meta.requestStatus === "fulfilled") {
             const temp = resp?.payload?.data?.data;
             const obj = {
@@ -561,17 +565,124 @@ const UsersList = () => {
                 });
               });
           } else {
+=======
+          if (resp.meta.requestStatus !== "fulfilled") {
+>>>>>>> Stashed changes
             addToast({
               title: "ERROR",
-              description: resp?.payload || "Something went wrong !.",
+              description:
+                resp?.payload?.message ||
+                resp?.payload ||
+                "Failed to create user in Auth",
               color: "danger",
             });
+            return;
           }
+
+          const temp = resp?.payload?.data?.data;
+
+          if (!temp?.userId) {
+            addToast({
+              title: "ERROR",
+              description: "Auth user created but userId not received",
+              color: "danger",
+            });
+            return;
+          }
+
+          const obj = {
+            id: temp.userId,
+            ...values,
+          };
+
+          dispatch(createUserByHr(obj)).then((info) => {
+            if (info.meta.requestStatus !== "fulfilled") {
+              addToast({
+                title: "ERROR",
+                description:
+                  info?.payload?.message ||
+                  info?.payload ||
+                  "Failed to create user in HR",
+                color: "danger",
+              });
+              return;
+            }
+
+            const userInfo = info?.payload?.data;
+
+            if (!userInfo?.id) {
+              addToast({
+                title: "ERROR",
+                description: "HR user created but user details not received",
+                color: "danger",
+              });
+              return;
+            }
+
+            dispatch(
+              createUserInAccounts({
+                id: userInfo?.id,
+                username: userInfo?.fullName,
+                email: userInfo?.email,
+                designation: userInfo?.userDesignation?.name,
+                department: userInfo?.userDepartment?.name,
+                role: userInfo?.role,
+              }),
+            ).then((acc) => {
+              if (acc.meta.requestStatus !== "fulfilled") {
+                addToast({
+                  title: "ERROR",
+                  description:
+                    acc?.payload?.message ||
+                    acc?.payload ||
+                    "Failed to create user in Accounts",
+                  color: "danger",
+                });
+                return;
+              }
+
+              dispatch(
+                createUsersInOperations({
+                  id: userInfo?.id,
+                  fullName: userInfo?.fullName,
+                  email: userInfo?.email,
+                  contactNo: userInfo?.contactNo,
+                  designationId: Number(values?.designationId),
+                  departmentIds: [Number(values?.departmentId)],
+                  roleIds: temp?.role?.map((role) => role?.id) || [],
+                  managerId: userInfo?.managers?.id || userId,
+                  managerFlag: Boolean(values?.managerFlag),
+                }),
+              ).then((oper) => {
+                if (oper.meta.requestStatus !== "fulfilled") {
+                  addToast({
+                    title: "ERROR",
+                    description:
+                      oper?.payload?.message ||
+                      oper?.payload ||
+                      "Failed to create user in Operations",
+                    color: "danger",
+                  });
+                  return;
+                }
+
+                addToast({
+                  title: "SUCCESS",
+                  description: "User created successfully",
+                  color: "success",
+                });
+
+                onClose();
+                reset(defaultValues);
+                dispatch(getAllUsers(filteration));
+              });
+            });
+          });
         })
-        .catch(() => {
+        .catch((error) => {
           addToast({
             title: "ERROR",
-            description: "Something went wrong !.",
+            description: error?.message || "Something went wrong",
             color: "danger",
           });
         });
@@ -958,7 +1069,15 @@ const UsersList = () => {
           {(onClose) => (
             <>
               <ModalHeader>{rowItem ? "Edit user" : "Add users"}</ModalHeader>
-              <form onSubmit={handleSubmit(onSubmit)}>
+              <form
+                onSubmit={handleSubmit(onSubmit, () => {
+                  addToast({
+                    title: "ERROR",
+                    description: "Please fill all required fields correctly",
+                    color: "danger",
+                  });
+                })}
+              >
                 <ModalBody>
                   <div className="max-h-[60vh] overflow-auto p-4">
                     <div className="grid grid-cols-2 gap-4">
