@@ -344,6 +344,7 @@ const UsersList = () => {
         designationId: Number(values?.designationId),
         departmentId: Number(values?.departmentId),
         role: values?.role,
+        isManager: Boolean(values?.managerFlag),
       };
       dispatch(updateUserData(tempObj))
         .then((response) => {
@@ -367,6 +368,7 @@ const UsersList = () => {
                       designation: res?.payload?.data?.userDesignation?.name,
                       department: res?.payload?.data?.userDepartment?.name,
                       role: res?.payload?.data?.role,
+                      isManager: Boolean(values?.managerFlag),
                     }),
                   ).then((acco) => {
                     console.log("Response   account1", acco);
@@ -462,6 +464,7 @@ const UsersList = () => {
         department: Number(values?.departmentId),
         designationId: Number(values?.designationId),
         departmentId: Number(values?.departmentId),
+        isManager: Boolean(values?.managerFlag),
       };
       dispatch(createNewUserInAuth(authData))
         .then((resp) => {
@@ -469,6 +472,7 @@ const UsersList = () => {
             const temp = resp?.payload?.data?.data;
             const obj = {
               id: temp.userId,
+              isManager: Boolean(values?.managerFlag),
               ...values,
             };
             dispatch(createUserByHr(obj))
@@ -488,6 +492,7 @@ const UsersList = () => {
                       designation: userInfo?.userDesignation?.name,
                       department: userInfo?.userDepartment?.name,
                       role: userInfo?.role,
+                      isManager: Boolean(values?.managerFlag),
                     }),
                   ).then((acc) => {
                     if (acc.meta.requestStatus === "fulfilled") {

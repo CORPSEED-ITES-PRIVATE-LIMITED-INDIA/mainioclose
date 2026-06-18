@@ -35,6 +35,7 @@ import {
   Eye,
   Plus,
   Search,
+  UserPlus,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -80,6 +81,27 @@ const defaultValues = {
   agreementAttachment: "",
 };
 
+const vendorRegistrationDefaultValues = {
+  mappingId: "",
+  productId: "",
+  productName: "",
+  vendorId: "",
+  vendorName: "",
+  email: "",
+  mobile: "",
+  gstNumber: "",
+  panNumber: "",
+  pricePerUnit: "",
+  unit: "Per Application",
+  paymentTerms: "",
+  timelineDays: "",
+  quotationValidityDays: "",
+  vendorBrochureAttachment: "",
+  priceListAttachment: "",
+  agreementAttachment: "",
+  remarks: "",
+};
+
 const getPlainTextLength = (html = "") =>
   String(html || "")
     .replace(/<[^>]*>/g, "")
@@ -100,6 +122,38 @@ const rfqSchema = z.object({
   agreementAttachment: z.any().refine((value) => Boolean(value), {
     message: "Please upload agreement attachment",
   }),
+});
+
+const vendorRegistrationSchema = z.object({
+  mappingId: z.any().optional(),
+  productId: z.any().optional(),
+  productName: z.string().optional(),
+  vendorId: z.any().refine((value) => Boolean(value), {
+    message: "Vendor is required",
+  }),
+  vendorName: z.string().optional(),
+  email: z.string().optional(),
+  mobile: z.string().optional(),
+  gstNumber: z.string().optional(),
+  panNumber: z.string().optional(),
+
+  pricePerUnit: z.string().min(1, "Please enter price per unit"),
+  unit: z.string().min(1, "Please select unit"),
+  paymentTerms: z.string().min(1, "Please enter payment terms"),
+  timelineDays: z.string().min(1, "Please enter timeline"),
+  quotationValidityDays: z.string().optional(),
+
+  vendorBrochureAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload vendor brochure",
+  }),
+  priceListAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload price list",
+  }),
+  agreementAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload agreement attachment",
+  }),
+
+  remarks: z.string().optional(),
 });
 
 const hasHtmlContent = (html = "") => getPlainTextLength(html) > 0;
@@ -131,6 +185,7 @@ const RequestForQuotation = () => {
 
   const rfqModal = useDisclosure();
   const viewModal = useDisclosure();
+  const registerVendorModal = useDisclosure();
 
   const {
     control,
@@ -142,6 +197,16 @@ const RequestForQuotation = () => {
   } = useForm({
     resolver: zodResolver(rfqSchema),
     defaultValues,
+  });
+
+  const {
+    control: registerControl,
+    handleSubmit: handleRegisterVendorSubmit,
+    reset: resetRegisterVendorForm,
+    formState: { errors: registerErrors },
+  } = useForm({
+    resolver: zodResolver(vendorRegistrationSchema),
+    defaultValues: vendorRegistrationDefaultValues,
   });
 
   const [rfqResponse, setRfqResponse] = useState(null);
@@ -267,6 +332,44 @@ const RequestForQuotation = () => {
     viewModal.onOpen();
   };
 
+  const getUploadedFileValue = (value) => {
+    return (
+      value?.filePath ||
+      value?.url ||
+      value?.path ||
+      value?.location ||
+      value ||
+      ""
+    );
+  };
+
+  const handleOpenRegisterVendor = (item) => {
+    setSelectedRfq(item);
+
+    resetRegisterVendorForm({
+      mappingId: item?.mappingId || "",
+      productId: item?.productId || solutionId || "",
+      productName: item?.productName || "",
+      vendorId: item?.vendorId || "",
+      vendorName: item?.vendorName || "",
+      email: item?.email || "",
+      mobile: item?.mobile || "",
+      gstNumber: item?.gstNumber || "",
+      panNumber: item?.panNumber || "",
+      pricePerUnit: "",
+      unit: "Per Application",
+      paymentTerms: "",
+      timelineDays: "",
+      quotationValidityDays: "",
+      vendorBrochureAttachment: "",
+      priceListAttachment: "",
+      agreementAttachment: item?.agreementAttachment || "",
+      remarks: "",
+    });
+
+    registerVendorModal.onOpen();
+  };
+
   const onSubmitRFQ = (values) => {
     if (!solutionId || !userId) {
       addToast({
@@ -322,6 +425,72 @@ const RequestForQuotation = () => {
           color: "danger",
         });
       }
+    });
+  };
+
+  const onSubmitRegisterVendor = (values) => {
+    const payload = {
+      mappingId: Number(values?.mappingId),
+      productId: Number(values?.productId || solutionId),
+      vendorId: Number(values?.vendorId),
+
+      pricePerUnit: Number(values?.pricePerUnit),
+      unit: values?.unit,
+      paymentTerms: values?.paymentTerms,
+      timelineDays: Number(values?.timelineDays),
+      quotationValidityDays: values?.quotationValidityDays
+        ? Number(values.quotationValidityDays)
+        : null,
+
+      vendorBrochureAttachment: getUploadedFileValue(
+        values?.vendorBrochureAttachment,
+      ),
+      priceListAttachment: getUploadedFileValue(values?.priceListAttachment),
+      agreementAttachment: getUploadedFileValue(values?.agreementAttachment),
+
+      remarks: values?.remarks || "",
+    };
+
+    console.log("Register vendor payload", payload);
+
+    /*
+    Replace this with your actual registration API dispatch.
+
+    Example:
+    dispatch(
+      registerVendorForProduct({
+        userId,
+        mappingId: values?.mappingId,
+        data: payload,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Vendor registered successfully.",
+          color: "success",
+        });
+
+        registerVendorModal.onClose();
+        resetRegisterVendorForm(vendorRegistrationDefaultValues);
+        fetchProductVendors();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            "Vendor registration failed.",
+          color: "danger",
+        });
+      }
+    });
+  */
+
+    addToast({
+      title: "INFO",
+      description: "Payload prepared. Connect registration API dispatch here.",
+      color: "primary",
     });
   };
 
@@ -469,6 +638,14 @@ const RequestForQuotation = () => {
               >
                 View
               </DropdownItem>
+
+              <DropdownItem
+                key="registerVendor"
+                startContent={<UserPlus size={15} />}
+                onPress={() => handleOpenRegisterVendor(rowData)}
+              >
+                Register Vendor
+              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
         );
@@ -493,6 +670,13 @@ const RequestForQuotation = () => {
           />
 
           <div className="flex gap-3">
+            <Button
+              color="primary"
+              startContent={<Plus size={17} />}
+              onPress={handleOpenCreateModal}
+            >
+              Add RFQ
+            </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown size={16} />} variant="flat">
@@ -515,14 +699,6 @@ const RequestForQuotation = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-
-            <Button
-              color="primary"
-              startContent={<Plus size={17} />}
-              onPress={handleOpenCreateModal}
-            >
-              Add RFQ
-            </Button>
           </div>
         </div>
 
@@ -926,6 +1102,291 @@ const RequestForQuotation = () => {
               Close
             </Button>
           </ModalFooter>
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={registerVendorModal.isOpen}
+        onOpenChange={registerVendorModal.onOpenChange}
+        size="4xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b">Register Vendor</ModalHeader>
+
+            <form onSubmit={handleRegisterVendorSubmit(onSubmitRegisterVendor)}>
+              <ModalBody>
+                <div className="max-h-[65vh] overflow-auto p-2">
+                  <div className="rounded-xl border bg-gray-50 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Auto Fetched Information
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="vendorName"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Vendor Name"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="productName"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Product / Service"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="email"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input label="Email" value={field.value} isReadOnly />
+                        )}
+                      />
+
+                      <Controller
+                        name="mobile"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Mobile"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="gstNumber"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="GST Number"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="panNumber"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="PAN Number"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Registration Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Controller
+                        name="pricePerUnit"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Price Per Unit"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.pricePerUnit?.message}
+                            isInvalid={!!registerErrors.pricePerUnit}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="unit"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Unit <span className="text-red-500">*</span>
+                            </label>
+
+                            <AntSelect
+                              size="large"
+                              value={field.value}
+                              onChange={(value) => field.onChange(value)}
+                              className="w-full"
+                              options={[
+                                {
+                                  label: "Per Application",
+                                  value: "Per Application",
+                                },
+                                {
+                                  label: "Per Certificate",
+                                  value: "Per Certificate",
+                                },
+                                {
+                                  label: "Per Project",
+                                  value: "Per Project",
+                                },
+                                {
+                                  label: "Per Month",
+                                  value: "Per Month",
+                                },
+                              ]}
+                            />
+
+                            {registerErrors.unit?.message && (
+                              <p className="mt-1 text-xs text-red-500">
+                                {registerErrors.unit.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      />
+
+                      <Controller
+                        name="paymentTerms"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Payment Terms"
+                            isRequired
+                            placeholder="Example: 50% advance, 50% after completion"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.paymentTerms?.message}
+                            isInvalid={!!registerErrors.paymentTerms}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="timelineDays"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Timeline Days"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.timelineDays?.message}
+                            isInvalid={!!registerErrors.timelineDays}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="quotationValidityDays"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Quotation Validity Days"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="remarks"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Remarks"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Attachments
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="vendorBrochureAttachment"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Vendor Brochure"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="priceListAttachment"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Price List"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="agreementAttachment"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Agreement Attachment"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    registerVendorModal.onClose();
+                    resetRegisterVendorForm(vendorRegistrationDefaultValues);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit">
+                  Register Vendor
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
         </ModalContent>
       </Modal>
     </>
