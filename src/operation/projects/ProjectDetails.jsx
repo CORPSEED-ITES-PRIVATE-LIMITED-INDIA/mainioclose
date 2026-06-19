@@ -1505,12 +1505,91 @@ const ProjectDetails = () => {
     );
   };
 
+  const getCompanyDocFileUrl = (doc) => {
+    return (
+      doc?.fileUrl ||
+      doc?.documentUrl ||
+      doc?.attachmentUrl ||
+      doc?.s3Url ||
+      doc?.url ||
+      doc?.path ||
+      ""
+    );
+  };
+
+  const getCompanyDocFileName = (doc) => {
+    return (
+      doc?.fileName ||
+      doc?.originalFileName ||
+      doc?.originalName ||
+      getFileNameFromUrl(getCompanyDocFileUrl(doc))
+    );
+  };
+
   const getCompanyDocFormat = (doc) => {
+    const fileName = getCompanyDocFileName(doc);
+    const fileUrl = getCompanyDocFileUrl(doc);
+    const source = fileName || fileUrl || "";
+
     return (
       doc?.fileFormat ||
-      doc?.fileName?.split(".")?.pop()?.toLowerCase() ||
+      doc?.format ||
+      source?.split("?")[0]?.split(".")?.pop()?.toLowerCase() ||
       "file"
     );
+  };
+
+  const getCompanyDocPermanentValue = (companyDoc, requiredDoc) => {
+    if (companyDoc?.isPermanent !== undefined) {
+      return Boolean(companyDoc.isPermanent);
+    }
+
+    if (companyDoc?.permanent !== undefined) {
+      return Boolean(companyDoc.permanent);
+    }
+
+    if (requiredDoc?.isPermanent !== undefined) {
+      return Boolean(requiredDoc.isPermanent);
+    }
+
+    if (requiredDoc?.permanent !== undefined) {
+      return Boolean(requiredDoc.permanent);
+    }
+
+    return true;
+  };
+
+  const buildCompanyDocDropPayload = (requiredDoc, companyDoc) => {
+    const requiredDocumentId = Number(
+      requiredDoc?.documentId ||
+        requiredDoc?.requiredDocumentId ||
+        requiredDoc?.id,
+    );
+
+    const fileUrl = getCompanyDocFileUrl(companyDoc);
+    const fileName = getCompanyDocFileName(companyDoc);
+    const isPermanentValue = getCompanyDocPermanentValue(
+      companyDoc,
+      requiredDoc,
+    );
+
+    return {
+      projectId: Number(projectId),
+      requiredDocumentId,
+      fileUrl,
+      fileName,
+      uploadedById: Number(userId),
+      createdById: Number(userId),
+      companyDocSourceId: Number(
+        companyDoc?.companyDocSourceId || companyDoc?.id || 0,
+      ),
+      isFromCompanyDoc: true,
+      expiryDate: isPermanentValue ? null : companyDoc?.expiryDate || null,
+      isPermanent: isPermanentValue,
+      fileSizeKb: Number(companyDoc?.fileSizeKb || companyDoc?.fileSize || 0),
+      fileFormat: getCompanyDocFormat(companyDoc),
+      remarks: companyDoc?.remarks || "",
+    };
   };
 
   const openCompanyDocPreview = (companyDoc) => {
@@ -2393,61 +2472,87 @@ const ProjectDetails = () => {
                               }
 
                               try {
-                                const permanentValue =
-                                  draggedDoc?.expired !== undefined
-                                    ? !!draggedDoc.permanent
-                                    : draggedDoc?.isPermanent !== undefined
-                                      ? !!draggedDoc.isPermanent
-                                      : doc?.permanent !== undefined
-                                        ? !!doc.permanent
-                                        : true;
-
-                                const expiryDateValue = permanentValue
-                                  ? null
-                                  : draggedDoc?.expiryDate || null;
-
-                                // if (
-                                //   !draggedDoc?.expired &&
-                                //   !draggedDoc?.expiryDate
-                                // ) {
-                                //   addToast({
-                                //     title: "Expiry date required",
-                                //     description:
-                                //       "This document is not permanent. Please upload it manually with expiry date.",
-                                //     color: "warning",
-                                //   });
-
-                                //   setDraggedDoc(null);
-                                //   return;
-                                // }
-
-                                const requiredDocumentId = Number(
-                                  doc?.documentId ||
-                                    doc?.requiredDocumentId ||
-                                    doc?.id,
+                                const payload = buildCompanyDocDropPayload(
+                                  doc,
+                                  draggedDoc,
                                 );
 
-                                const payload = {
-                                  projectId: Number(projectId),
-                                  requiredDocumentId,
-                                  fileUrl: draggedDoc?.fileUrl,
-                                  fileName: draggedDoc?.fileName,
-                                  uploadedById: Number(userId),
-                                  createdById: Number(userId),
-                                  companyDocSourceId: Number(
-                                    draggedDoc?.companyDocSourceId ||
-                                      draggedDoc?.id ||
-                                      0,
-                                  ),
-                                  isFromCompanyDoc: true,
-                                  expiryDate: expiryDateValue,
-                                  isPermanent: permanentValue,
-                                  fileSizeKb: Number(
-                                    draggedDoc?.fileSizeKb || 0,
-                                  ),
-                                  fileFormat: getCompanyDocFormat(draggedDoc),
-                                  remarks: draggedDoc?.remarks || "",
-                                };
+                                if (!payload.requiredDocumentId) {
+                                  addToast({
+                                    title: "Required document missing",
+                                    description:
+                                      "Required document ID not found.",
+                                    color: "danger",
+                                  });
+
+                                  setDraggedDoc(null);
+                                  return;
+                                }
+
+                                if (!payload.companyDocSourceId) {
+                                  addToast({
+                                    title: "Company document missing",
+                                    description:
+                                      "Company document source ID not found.",
+                                    color: "danger",
+                                  });
+
+                                  setDraggedDoc(null);
+                                  return;
+                                }
+
+                                if (!payload.fileUrl) {
+                                  addToast({
+                                    title: "File URL missing",
+                                    description:
+                                      "Selected company document does not have a valid file URL.",
+                                    color: "danger",
+                                  });
+
+                                  setDraggedDoc(null);
+                                  return;
+                                }
+
+                                if (!payload.fileName) {
+                                  addToast({
+                                    title: "File name missing",
+                                    description:
+                                      "Selected company document does not have a valid file name.",
+                                    color: "danger",
+                                  });
+
+                                  setDraggedDoc(null);
+                                  return;
+                                }
+
+                                if (!payload.fileFormat) {
+                                  addToast({
+                                    title: "File format missing",
+                                    description:
+                                      "Selected company document does not have a valid file format.",
+                                    color: "danger",
+                                  });
+
+                                  setDraggedDoc(null);
+                                  return;
+                                }
+
+                                if (
+                                  !payload.isPermanent &&
+                                  !payload.expiryDate
+                                ) {
+                                  addToast({
+                                    title: "Expiry date required",
+                                    description:
+                                      "This document is not permanent. Please upload it manually with expiry date.",
+                                    color: "warning",
+                                  });
+
+                                  setDraggedDoc(null);
+                                  return;
+                                }
+
+                                console.log("DRAG DROP PAYLOAD:", payload);
 
                                 const resp = await dispatch(
                                   uploadDocumentInProjects({
@@ -2476,12 +2581,15 @@ const ProjectDetails = () => {
                                   addToast({
                                     title: "Upload failed",
                                     description:
+                                      resp?.payload?.message ||
                                       resp?.payload ||
                                       "Something went wrong while uploading.",
                                     color: "danger",
                                   });
                                 }
                               } catch (error) {
+                                console.error("DROP DOCUMENT ERROR:", error);
+
                                 addToast({
                                   title: "Error",
                                   description:
