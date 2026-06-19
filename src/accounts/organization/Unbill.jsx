@@ -86,6 +86,7 @@ export const columns = [
   { name: "RECEIVED AMOUNT", uid: "receivedAmount" },
   { name: "CURR. RECEIVED AMOUNT", uid: "currentReceivedAmount" },
   { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
+  { name: "CANCEL ATTACHEMENT", uid: "cancelAttachment" },
   { name: "PAYMENT PROOF", uid: "paymentProof" },
   { name: "ADDED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
@@ -109,6 +110,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "totalAmount",
   "currentReceivedAmount",
   "outstandingAmount",
+  "cancelAttachment",
   "paymentProof",
   "addedBy",
   "actions",
@@ -741,6 +743,28 @@ const Unbill = () => {
         );
       case "addedBy":
         return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+      case "cancelAttachment":
+        return (
+          <div className="flex items-center gap-2">
+            {rowData?.cancelAttachment ? (
+              <Button
+                size="sm"
+                color="primary"
+                variant="flat"
+                startContent={<Paperclip size={14} />}
+                onPress={() =>
+                  handlePaymentProofPreview(rowData?.cancelAttachment)
+                }
+              >
+                View
+              </Button>
+            ) : (
+              <Chip size="sm" variant="flat" color="default">
+                No attachement
+              </Chip>
+            )}
+          </div>
+        );
       case "paymentProof":
         return (
           <div className="flex items-center gap-2">
@@ -1778,21 +1802,22 @@ const Unbill = () => {
                   />
                 )}
 
-                {updatedStatusData?.approvalRemarks === "CANCELLED" && (
-                  <FileUploader
-                    value={updatedStatusData?.attachment}
-                    onChange={(uploadedUrl) =>
-                      setUpdatedStatusData((prev) => ({
-                        ...prev,
-                        attachment: uploadedUrl,
-                      }))
-                    }
-                    onUploadingChange={setIsCancelAttachmentUploading}
-                    label="Attachment"
-                    placeholder="Upload cancellation attachment"
-                    isRequired
-                  />
-                )}
+                {updatedStatusData?.approvalRemarks === "CANCELLED" &&
+                  !adminRole && (
+                    <FileUploader
+                      value={updatedStatusData?.attachment}
+                      onChange={(uploadedUrl) =>
+                        setUpdatedStatusData((prev) => ({
+                          ...prev,
+                          attachment: uploadedUrl,
+                        }))
+                      }
+                      onUploadingChange={setIsCancelAttachmentUploading}
+                      label="Attachment"
+                      placeholder="Upload cancellation attachment"
+                      isRequired
+                    />
+                  )}
               </ModalBody>
 
               <ModalFooter>
