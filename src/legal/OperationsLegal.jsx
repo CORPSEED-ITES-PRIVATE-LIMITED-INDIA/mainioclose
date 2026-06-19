@@ -34,13 +34,6 @@ import {
   FileText,
   ExternalLink,
 } from "lucide-react";
-import {
-  getAllUnbillCount,
-  getAllUnbillList,
-  searchUnbilledByCompanyNameAndUnbilled,
-  updateStatusForUnbill,
-} from "../../toolkit/slices/organizationSlice";
-import { inrCurrency, statusColorCode } from "../../common";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -48,6 +41,7 @@ import {
   getAllLegalSupportRequestsForFilter,
   updateLegalRequestStatus,
 } from "../toolkit/slices/operationSlice";
+import { statusColorCode } from "../common";
 
 export const columns = [
   { name: "DATE", uid: "createdAt" },
@@ -325,27 +319,11 @@ const OperationsLegal = () => {
       if (value) {
         setFilterValue(value);
         if (searchBy === "companyName") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              companyName: value,
-            }),
-          );
         } else if (searchBy === "unbilledNumber") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              unbilledNumber: value,
-            }),
-          );
         }
         setPage(1);
       } else {
         setFilterValue("");
-        dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
-        dispatch(getAllUnbillCount({ userId, status }));
       }
     },
     [searchBy, rowsPerPage, page, status, userId],
