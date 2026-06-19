@@ -22,13 +22,9 @@ import {
   Textarea,
   addToast,
 } from "@heroui/react";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { ChevronDown, Plus, Search, MoreVertical } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createMileStone,
-  getAllMilestones,
-  importServiceCheckListDocument,
-} from "../../toolkit/slices/operationSlice";
+import { importServiceCheckListDocument } from "../../toolkit/slices/operationSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -42,6 +38,10 @@ import {
 import {
   createDocumentsForProduct,
   getAllDocumentsForProduct,
+
+  // dummy imports - create these in productSlice
+  updateDocumentsForProduct,
+  deleteDocumentsForProduct,
 } from "../../toolkit/slices/productSlice";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
@@ -61,6 +61,7 @@ export const columns = [
   { name: "DESCRIPTION", uid: "description" },
   { name: "REMARKS", uid: "remarks" },
   { name: "CREATED DATE", uid: "createdDate" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 export function capitalize(s) {
@@ -81,6 +82,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "description",
   "remarks",
   "createdDate",
+  "actions",
 ];
 
 const formSchema = z.object({
@@ -90,16 +92,17 @@ const formSchema = z.object({
   country: z.string().min(1, "Country is required"),
   centralName: z.string().min(1, "Central name is required"),
   stateName: z.string().min(1, "State name is required"),
-  expiryType: z.enum(["FIXED", "ROLLING"]),
+  expiryType: z.enum(["FIXED", "EXPIRING", "UNKNOWN"]),
   mandatory: z.boolean(),
   maxValidityYears: z.coerce.number().min(0),
+  expiryTypeDescription: z.string().optional().default(""),
   applicability: z.string().min(1, "Applicability is required"),
   maxFileSizeKb: z.coerce.number().min(0),
   allowedFormats: z.string().min(1, "Allowed formats are required"),
   remarks: z.string().optional().default(""),
-  createdBy: z.number().default(0),
-  updatedBy: z.number().default(0),
-  productIds: z.array(z.number()).optional().default([]),
+  createdBy: z.coerce.number().default(0),
+  updatedBy: z.coerce.number().default(0),
+  active: z.boolean().default(true),
 });
 
 const defaultValues = {
@@ -112,24 +115,30 @@ const defaultValues = {
   expiryType: "FIXED",
   mandatory: false,
   maxValidityYears: 0,
+  expiryTypeDescription: "",
   applicability: "",
   maxFileSizeKb: 0,
   allowedFormats: "",
   createdBy: 0,
   updatedBy: 0,
-  productIds: [],
   remarks: "",
+  active: true,
 };
 
 const Documents = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
+
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const updateModal = useDisclosure();
+  const deleteModal = useDisclosure();
   const uploadModal = useDisclosure();
+
   const data = useSelector((state) => state.product.allDocumentList) || [];
   const count = useSelector((state) => state.product.allDocumentList?.length);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
+
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -141,8 +150,11 @@ const Documents = () => {
     column: "id",
     direction: "ascending",
   });
+
   const [fileUrl, setFileUrl] = React.useState("");
   const [page, setPage] = React.useState(1);
+  const [selectedDocument, setSelectedDocument] = React.useState(null);
+
   const hasSearchFilter = Boolean(filterValue);
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
   const isLarge = useMediaQuery({ minWidth: 1536 });
@@ -150,7 +162,27 @@ const Documents = () => {
   useEffect(() => {
     dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
     dispatch(getAllCountries());
-  }, [dispatch, page, rowsPerPage]);
+  }, [dispatch, page, rowsPerPage, userId]);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
+  const {
+    control: updateControl,
+    handleSubmit: handleUpdateSubmit,
+    formState: { errors: updateErrors },
+    reset: updateReset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -172,7 +204,7 @@ const Documents = () => {
     }
 
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
@@ -193,107 +225,272 @@ const Documents = () => {
     });
   }, [sortDescriptor, items]);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-  });
+  const refreshDocuments = useCallback(() => {
+    dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
+  }, [dispatch, page, rowsPerPage, userId]);
 
   const onSubmit = useCallback(
     (values) => {
       dispatch(
         createDocumentsForProduct({
           ...values,
-          createdBy: userId,
-          updatedBy: userId,
-          productIds: userId,
+          createdBy: Number(userId),
+          updatedBy: Number(userId),
+          productIds: [Number(userId)],
         }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Milestone created successfully !.",
+              title: "Document created successfully!",
               color: "success",
             });
-            dispatch(
-              getAllDocumentsForProduct({ page, size: rowsPerPage, userId }),
-            );
+            refreshDocuments();
             onClose();
             reset(defaultValues);
           } else {
             addToast({
-              title: resp.payload.status,
+              title: resp.payload?.status || "Something went wrong",
               color: "danger",
-              description: resp.payload.message,
+              description: resp.payload?.message,
             });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          addToast({ title: "Something went wrong!", color: "danger" }),
         );
     },
-    [dispatch, onClose, reset, userId],
+    [dispatch, onClose, reset, userId, refreshDocuments],
   );
+
+  const handleOpenUpdateModal = useCallback(
+    (rowData) => {
+      setSelectedDocument(rowData);
+
+      updateReset({
+        name: rowData?.name || "",
+        description: rowData?.description || "",
+        type: rowData?.type || "",
+        country: rowData?.country || "",
+        centralName: rowData?.centralName || "",
+        stateName: rowData?.stateName || "",
+        expiryType: rowData?.expiryType || "FIXED",
+        mandatory: Boolean(rowData?.mandatory),
+        maxValidityYears: rowData?.maxValidityYears || 0,
+        expiryTypeDescription: rowData?.expiryTypeDescription || "",
+        applicability: rowData?.applicability || "",
+        maxFileSizeKb: rowData?.maxFileSizeKb || 0,
+        allowedFormats: rowData?.allowedFormats || "",
+        remarks: rowData?.remarks || "",
+        createdBy: rowData?.createdBy || 0,
+        updatedBy: Number(userId),
+        active: rowData?.active ?? true,
+      });
+
+      if (rowData?.country) {
+        dispatch(getAllStatesByCountryName(rowData.country));
+      }
+
+      updateModal.onOpen();
+    },
+    [updateReset, updateModal, userId, dispatch],
+  );
+
+  const handleUpdateDocument = useCallback(
+    (values) => {
+      if (!selectedDocument?.id) {
+        addToast({
+          title: "Document ID not found",
+          color: "danger",
+        });
+        return;
+      }
+
+      const updateBody = {
+        id: selectedDocument.id,
+        name: values.name,
+        description: values.description,
+        type: values.type,
+        country: values.country,
+        centralName: values.centralName,
+        stateName: values.stateName,
+        expiryType: values.expiryType,
+        maxValidityYears: String(values.maxValidityYears),
+        expiryTypeDescription: values.expiryTypeDescription,
+        allowedFormats: values.allowedFormats,
+        applicability: values.applicability,
+        remarks: values.remarks,
+        createdBy: selectedDocument.createdBy || 0,
+        updatedBy: Number(userId),
+        createdDate: selectedDocument.createdDate || new Date().toISOString(),
+        updatedDate: new Date().toISOString(),
+        maxFileSizeKb: Number(values.maxFileSizeKb),
+        active: values.active,
+        mandatory: values.mandatory,
+      };
+
+      dispatch(
+        updateDocumentsForProduct({
+          id: selectedDocument.id,
+          data: updateBody,
+        }),
+      )
+        .then((resp) => {
+          if (resp.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "Document updated successfully!",
+              color: "success",
+            });
+            updateModal.onClose();
+            setSelectedDocument(null);
+            refreshDocuments();
+          } else {
+            addToast({
+              title: resp.payload?.status || "Update failed",
+              color: "danger",
+              description: resp.payload?.message,
+            });
+          }
+        })
+        .catch(() =>
+          addToast({ title: "Something went wrong!", color: "danger" }),
+        );
+    },
+    [dispatch, selectedDocument, userId, updateModal, refreshDocuments],
+  );
+
+  const handleOpenDeleteModal = useCallback(
+    (rowData) => {
+      setSelectedDocument(rowData);
+      deleteModal.onOpen();
+    },
+    [deleteModal],
+  );
+
+  const handleDeleteDocument = useCallback(() => {
+    if (!selectedDocument?.id) {
+      addToast({
+        title: "Document ID not found",
+        color: "danger",
+      });
+      return;
+    }
+
+    dispatch(deleteDocumentsForProduct(selectedDocument.id))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Document deleted successfully!",
+            color: "success",
+          });
+          deleteModal.onClose();
+          setSelectedDocument(null);
+          refreshDocuments();
+        } else {
+          addToast({
+            title: resp.payload?.status || "Delete failed",
+            color: "danger",
+            description: resp.payload?.message,
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong!", color: "danger" }),
+      );
+  }, [dispatch, selectedDocument, deleteModal, refreshDocuments]);
 
   const handleSubmitUploadDoc = useCallback(() => {
     dispatch(importServiceCheckListDocument({ fileUrl, userId }))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Document uploaded successfully !.",
+            title: "Document uploaded successfully!",
             color: "success",
           });
           setFileUrl("");
-          uploadModal.onOpenChange(false);
-          dispatch(
-            getAllDocumentsForProduct({ page, size: rowsPerPage, userId }),
-          );
+          uploadModal.onClose();
+          refreshDocuments();
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({ title: "Something went wrong!", color: "danger" });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({ title: "Something went wrong!", color: "danger" }),
       );
-  }, [dispatch, fileUrl]);
+  }, [dispatch, fileUrl, userId, uploadModal, refreshDocuments]);
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-    switch (columnKey) {
-      case "name":
-        return <p>{rowData?.name} </p>;
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
 
-      case "type":
-        return (
-          <div>
-            <p>{rowData?.type} </p>
-            {rowData?.maxFileSizeKb && (
-              <span className="text-tiny text-gray-400">
-                Max size : {rowData?.maxFileSizeKb} kb
-              </span>
-            )}
-          </div>
-        );
-      case "description":
-        return (
-          <div className="flex flex-wrap text-tiny">{rowData?.description}</div>
-        );
-      case "maxValidityYears":
-        return <div className="flex">{rowData?.maxValidityYears} yrs</div>;
-      case "createdDate":
-        return (
-          <div className="flex flex-wrap text-tiny">
-            {dayjs(rowData?.createdDate).format("DD-MM-YYYY")}
-          </div>
-        );
-      default:
-        return cellValue;
-    }
-  }, []);
+      switch (columnKey) {
+        case "name":
+          return <p>{rowData?.name}</p>;
+
+        case "type":
+          return (
+            <div>
+              <p>{rowData?.type}</p>
+              {rowData?.maxFileSizeKb && (
+                <span className="text-tiny text-gray-400">
+                  Max size: {rowData?.maxFileSizeKb} kb
+                </span>
+              )}
+            </div>
+          );
+
+        case "description":
+          return (
+            <div className="flex flex-wrap text-tiny">
+              {rowData?.description}
+            </div>
+          );
+
+        case "maxValidityYears":
+          return <div className="flex">{rowData?.maxValidityYears} yrs</div>;
+
+        case "createdDate":
+          return (
+            <div className="flex flex-wrap text-tiny">
+              {rowData?.createdDate
+                ? dayjs(rowData?.createdDate).format("DD-MM-YYYY")
+                : "-"}
+            </div>
+          );
+
+        case "actions":
+          return (
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <MoreVertical size={18} />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu aria-label="Document actions">
+                <DropdownItem
+                  key="update"
+                  onPress={() => handleOpenUpdateModal(rowData)}
+                >
+                  Update
+                </DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  className="text-danger"
+                  onPress={() => handleOpenDeleteModal(rowData)}
+                >
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          );
+
+        default:
+          return cellValue || "-";
+      }
+    },
+    [handleOpenUpdateModal, handleOpenDeleteModal],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -336,13 +533,15 @@ const Documents = () => {
             placeholder="Search..."
             startContent={<Search />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
+
           <div className="flex gap-3">
             <Button variant="flat" onPress={uploadModal.onOpen}>
-              Import document List
+              Import Document List
             </Button>
+
             <Button
               endContent={<Plus />}
               color="primary"
@@ -351,6 +550,7 @@ const Documents = () => {
             >
               Add
             </Button>
+
             <Dropdown>
               <DropdownTrigger>
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -374,10 +574,12 @@ const Documents = () => {
             </Dropdown>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {count} documents
+            Total {count || 0} documents
           </span>
+
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -399,7 +601,11 @@ const Documents = () => {
     onRowsPerPageChange,
     count,
     onSearchChange,
-    hasSearchFilter,
+    onClear,
+    uploadModal,
+    onOpen,
+    isMedium,
+    isLarge,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -408,8 +614,9 @@ const Documents = () => {
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys.size} of ${count || 0} selected`}
         </span>
+
         <Pagination
           isCompact
           showControls
@@ -419,6 +626,7 @@ const Documents = () => {
           total={pages}
           onChange={setPage}
         />
+
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
@@ -428,6 +636,7 @@ const Documents = () => {
           >
             Previous
           </Button>
+
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -439,14 +648,255 @@ const Documents = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, onPreviousPage, onNextPage]);
+
+  const renderDocumentFormFields = (
+    formControl,
+    formErrors,
+    isUpdate = false,
+  ) => (
+    <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
+      <Controller
+        name="name"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            isRequired
+            label="Name"
+            errorMessage={formErrors.name?.message}
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="type"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            isRequired
+            label="Type"
+            errorMessage={formErrors.type?.message}
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="country"
+        control={formControl}
+        render={({ field }) => (
+          <NewSelect
+            data={countryList}
+            isRequired
+            label="Country"
+            labelKey="name"
+            valueKey="name"
+            errorMessage={formErrors.country?.message}
+            {...field}
+            onChange={(value) => {
+              field.onChange(value);
+              dispatch(getAllStatesByCountryName(value));
+            }}
+          />
+        )}
+      />
+
+      <Controller
+        name="stateName"
+        control={formControl}
+        render={({ field }) => (
+          <NewSelect
+            data={statesList}
+            isRequired
+            label="State"
+            labelKey="name"
+            valueKey="name"
+            errorMessage={formErrors.stateName?.message}
+            {...field}
+            onChange={(value) => {
+              field.onChange(value);
+              dispatch(getAllCitiesByStateName(value));
+            }}
+          />
+        )}
+      />
+
+      <Controller
+        name="centralName"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            isRequired
+            label="Central Name"
+            errorMessage={formErrors.centralName?.message}
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="expiryType"
+        control={formControl}
+        render={({ field }) => (
+          <NewSelect
+            label="Expiry Type"
+            isRequired
+            errorMessage={formErrors.expiryType?.message}
+            data={[
+              { label: "FIXED", value: "FIXED" },
+              { label: "EXPIRING", value: "EXPIRING" },
+              { label: "UNKNOWN", value: "UNKNOWN" },
+            ]}
+            labelKey="label"
+            valueKey="value"
+            value={field.value}
+            onChange={(val) => field.onChange(val)}
+          />
+        )}
+      />
+
+      <Controller
+        name="mandatory"
+        control={formControl}
+        render={({ field }) => (
+          <NewSelect
+            isRequired
+            label="Is Mandatory?"
+            labelKey="label"
+            valueKey="value"
+            errorMessage={formErrors.mandatory?.message}
+            data={[
+              { label: "Yes", value: "true" },
+              { label: "No", value: "false" },
+            ]}
+            value={String(field.value)}
+            onChange={(val) => field.onChange(val === "true")}
+          />
+        )}
+      />
+
+      <Controller
+        name="maxValidityYears"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            type="number"
+            isRequired
+            errorMessage={formErrors.maxValidityYears?.message}
+            label="Max Validity (Years)"
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="expiryTypeDescription"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            label="Expiry Type Description"
+            errorMessage={formErrors.expiryTypeDescription?.message}
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="applicability"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            isRequired
+            errorMessage={formErrors.applicability?.message}
+            label="Applicability"
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="maxFileSizeKb"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            type="number"
+            isRequired
+            errorMessage={formErrors.maxFileSizeKb?.message}
+            label="Max File Size (KB)"
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="allowedFormats"
+        control={formControl}
+        render={({ field }) => (
+          <Input
+            isRequired
+            errorMessage={formErrors.allowedFormats?.message}
+            label="Allowed Formats"
+            {...field}
+          />
+        )}
+      />
+
+      {isUpdate && (
+        <Controller
+          name="active"
+          control={formControl}
+          render={({ field }) => (
+            <NewSelect
+              isRequired
+              label="Status"
+              labelKey="label"
+              valueKey="value"
+              errorMessage={formErrors.active?.message}
+              data={[
+                { label: "Active", value: "true" },
+                { label: "Inactive", value: "false" },
+              ]}
+              value={String(field.value)}
+              onChange={(val) => field.onChange(val === "true")}
+            />
+          )}
+        />
+      )}
+
+      <Controller
+        name="description"
+        control={formControl}
+        render={({ field }) => (
+          <Textarea
+            label="Description"
+            errorMessage={formErrors.description?.message}
+            {...field}
+          />
+        )}
+      />
+
+      <Controller
+        name="remarks"
+        control={formControl}
+        render={({ field }) => (
+          <Textarea
+            label="Remarks"
+            errorMessage={formErrors.remarks?.message}
+            {...field}
+          />
+        )}
+      />
+    </div>
+  );
 
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Documents list</h1>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Documents table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -470,6 +920,7 @@ const Documents = () => {
             </TableColumn>
           )}
         </TableHeader>
+
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
@@ -480,6 +931,8 @@ const Documents = () => {
           )}
         </TableBody>
       </Table>
+
+      {/* Add Modal */}
       <Modal
         size="2xl"
         isDismissable={false}
@@ -489,223 +942,15 @@ const Documents = () => {
         placement="top-center"
       >
         <ModalContent>
-          {(onClose) => (
+          {(modalClose) => (
             <>
               <ModalHeader>Add Document</ModalHeader>
               <ModalBody>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto">
-                    {/* name */}
-                    <Controller
-                      name="name"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Name"
-                          errorMessage={errors.name?.message}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    {/* type */}
-                    <Controller
-                      name="type"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Type"
-                          errorMessage={errors.type?.message}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="country"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          data={countryList}
-                          isRequired
-                          label="Country"
-                          labelKey="name"
-                          valueKey="name"
-                          errorMessage={errors.country?.message}
-                          {...field}
-                          onChange={(value) => {
-                            field.onChange(value);
-                            dispatch(getAllStatesByCountryName(value));
-                          }}
-                        />
-                      )}
-                    />
-
-                    {/* stateName */}
-                    <Controller
-                      name="stateName"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          data={statesList}
-                          isRequired
-                          label="State"
-                          labelKey="name"
-                          valueKey="name"
-                          errorMessage={errors.state?.message}
-                          {...field}
-                          onChange={(value) => {
-                            field.onChange(value);
-                            dispatch(getAllCitiesByStateName(value));
-                          }}
-                        />
-                      )}
-                    />
-
-                    {/* centralName */}
-                    <Controller
-                      name="centralName"
-                      isRequired
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          label="Central Name"
-                          errorMessage={errors.centralName?.message}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    {/* expiryType */}
-                    <Controller
-                      name="expiryType"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          label="Expiry Type"
-                          isRequired
-                          errorMessage={errors.expiryType?.message}
-                          data={[
-                            { label: "FIXED", value: "FIXED" },
-                            { label: "EXPIRING", value: "EXPIRING" },
-                            { label: "UNKNOWN", value: "UNKNOWN" },
-                          ]}
-                          labelKey="label"
-                          valueKey="value"
-                          value={field.value}
-                          onChange={(val) => field.onChange(val)}
-                        />
-                      )}
-                    />
-
-                    {/* isMandatory */}
-                    <Controller
-                      name="mandatory"
-                      control={control}
-                      render={({ field }) => (
-                        <NewSelect
-                          isRequired
-                          label="Is Mandatory?"
-                          labelKey="label"
-                          valueKey="value"
-                          errorMessage={errors.mandatory?.message}
-                          data={[
-                            { label: "Yes", value: true },
-                            { label: "No", value: false },
-                          ]}
-                          value={String(field.value)}
-                          onChange={(val) => field.onChange(val === "true")}
-                        />
-                      )}
-                    />
-
-                    {/* maxValidityYears */}
-                    <Controller
-                      name="maxValidityYears"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          type="number"
-                          isRequired
-                          errorMessage={errors.maxValidityYears?.message}
-                          label="Max Validity (Years)"
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="applicability"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          errorMessage={errors.applicability?.message}
-                          label="Applicability"
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    {/* maxFileSizeKb */}
-                    <Controller
-                      name="maxFileSizeKb"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          type="number"
-                          isRequired
-                          errorMessage={errors.maxFileSizeKb?.message}
-                          label="Min File Size (KB)"
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="allowedFormats"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          isRequired
-                          errorMessage={errors.allowedFormats?.message}
-                          label="Allowed Formats (e.g., pdf, jpg, docx)"
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    {/* description */}
-                    <Controller
-                      name="description"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          label="Description"
-                          errorMessage={errors.description?.message}
-                          {...field}
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="remarks"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          label="Remarks"
-                          errorMessage={errors.remarks?.message}
-                          {...field}
-                        />
-                      )}
-                    />
-                  </div>
+                  {renderDocumentFormFields(control, errors)}
 
                   <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
+                    <Button onPress={modalClose}>Cancel</Button>
                     <Button color="primary" type="submit">
                       Submit
                     </Button>
@@ -716,21 +961,101 @@ const Documents = () => {
           )}
         </ModalContent>
       </Modal>
+
+      {/* Update Modal */}
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={updateModal.isOpen}
+        onOpenChange={updateModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader>Update Document</ModalHeader>
+              <ModalBody>
+                <form onSubmit={handleUpdateSubmit(handleUpdateDocument)}>
+                  {renderDocumentFormFields(updateControl, updateErrors, true)}
+
+                  <ModalFooter className="flex justify-end">
+                    <Button
+                      onPress={() => {
+                        setSelectedDocument(null);
+                        modalClose();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button color="primary" type="submit">
+                      Update
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        size="md"
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader>Delete Document</ModalHeader>
+              <ModalBody>
+                <p>
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold">
+                    {selectedDocument?.name || "this document"}
+                  </span>
+                  ?
+                </p>
+
+                <ModalFooter className="flex justify-end gap-2">
+                  <Button
+                    variant="flat"
+                    onPress={() => {
+                      setSelectedDocument(null);
+                      modalClose();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button color="danger" onPress={handleDeleteDocument}>
+                    Delete
+                  </Button>
+                </ModalFooter>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Upload Modal */}
       <Modal
         isOpen={uploadModal.isOpen}
         onOpenChange={uploadModal.onOpenChange}
         size="xl"
       >
         <ModalContent>
-          {(onClose) => (
+          {(modalClose) => (
             <>
-              <ModalHeader>Upload document</ModalHeader>
+              <ModalHeader>Upload Document</ModalHeader>
               <ModalBody className="w-full">
                 <div className="flex flex-col gap-4">
                   <FileUploader
                     value={fileUrl}
                     onChange={(e) => setFileUrl(e)}
                   />
+
                   <div>
                     <a
                       className="text-primary-500"
@@ -740,8 +1065,9 @@ const Documents = () => {
                     </a>
                   </div>
                 </div>
+
                 <ModalFooter className="flex justify-end gap-2 w-full">
-                  <Button onPress={onClose}>Cancel</Button>
+                  <Button onPress={modalClose}>Cancel</Button>
                   <Button
                     color="primary"
                     isDisabled={!fileUrl}

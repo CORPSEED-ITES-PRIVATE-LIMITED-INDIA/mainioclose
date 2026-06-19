@@ -163,6 +163,33 @@ export const createDocumentsForProduct = createAsyncThunk(
     }
   },
 );
+export const updateDocumentsForProduct = createAsyncThunk(
+  "updateDocumentsForProduct",
+  async ({id,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/product-required-documents/${id}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
+export const deleteDocumentsForProduct = createAsyncThunk(
+  "deleteDocumentsForProduct",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/operationService/api/product-required-documents/${id}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
 
 export const getAllDocumentsForProduct = createAsyncThunk(
   "getAllDocumentsForProduct",
