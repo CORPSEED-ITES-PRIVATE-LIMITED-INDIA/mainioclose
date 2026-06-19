@@ -218,6 +218,20 @@ export const navItems = [
     ],
   },
   {
+    title: "Legal",
+    icon: "Scale",
+    url: "/admin",
+    key: "admin",
+    children: [
+      {
+        title: "Operation requests",
+        icon: "",
+        url: "legal/operationsRequests",
+        key: "operationsRequests",
+      },
+    ],
+  },
+  {
     title: "Quality",
     icon: "FlaskConical",
     url: "/quality",
@@ -737,5 +751,14 @@ export const operationEmpItems = [
     icon: "Scale",
     url: "operation/legalRequests",
     key: "legalRequests",
+  },
+];
+
+export const legalNavItems = [
+  {
+    title: "Operation requests",
+    icon: "Scale",
+    url: "legal/operationsRequests",
+    key: "operationsRequests",
   },
 ];

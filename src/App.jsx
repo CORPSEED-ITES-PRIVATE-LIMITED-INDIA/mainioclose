@@ -30,6 +30,7 @@ import VendorPaymentApproval from "./admin/VendorPaymentApproval";
 import DiscountedEstimateApproval from "./admin/DiscountedEstimateApproval";
 import { restoreSession } from "./toolkit/slices/authSlice";
 import UserMailConfig from "./users/UserMailConfig";
+import OperationsLegal from "./legal/OperationsLegal";
 
 function App() {
   const dispatch = useDispatch();
@@ -86,6 +87,11 @@ function App() {
 
             {ProcurementRouting()}
             {ERPSettingRouting()}
+
+            <Route
+              path="legal/operationsRequests"
+              element={<OperationsLegal />}
+            />
           </Route>
         </Route>
 

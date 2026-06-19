@@ -14,6 +14,7 @@ import { ThemeSwitch } from "../components/theme-switch";
 import {
   accountNavItems,
   hrItems,
+  legalNavItems,
   navItems,
   operationEmpItems,
   operationNavItems,
@@ -39,7 +40,7 @@ const getNavItemsByDepartment = (department, admin) => {
     Procurement: procurementItems,
     "Human Resource": hrItems,
     CRT: operationNavItems,
-    Legal: operationNavItems,
+    Legal: legalNavItems,
     Technical: operationNavItems,
     Liaisoning: operationNavItems,
     Operations: operationEmpItems,
