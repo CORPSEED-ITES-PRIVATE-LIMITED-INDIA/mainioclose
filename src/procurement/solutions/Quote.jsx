@@ -36,7 +36,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   ChevronDown,
   Clock,
@@ -242,9 +242,8 @@ const getTotalElements = (response, fallbackLength = 0) => {
   );
 };
 
-const RequestForQuotation = () => {
+const Quote = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { solutionId, userId } = useParams();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
@@ -712,10 +711,6 @@ const RequestForQuotation = () => {
     setChatDrawerOpen(true);
   };
 
-  const handleAddQuote = (rowData) => {
-    navigate(`${rowData?.mappingId}/quotations`);
-  };
-
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "vendorName":
@@ -808,7 +803,6 @@ const RequestForQuotation = () => {
         );
 
       case "actions":
-        console.log("sdkflhlsdjhf", rowData);
         return (
           <div className="flex flex-col items-center justify-center gap-1">
             <Dropdown>
@@ -827,22 +821,20 @@ const RequestForQuotation = () => {
                   View
                 </DropdownItem>
                 <DropdownItem
-                  key="history"
+                  key="view"
                   startContent={<Clock size={15} />}
                   onPress={() => handleOpenChatHistory(rowData)}
                 >
                   History
                 </DropdownItem>
 
-                <DropdownItem
+                {/* <DropdownItem
                   key="addQuote"
                   startContent={<File size={15} />}
-                  // onPress={() => handleOpenRegisterQuote(rowData)}
-                  onPress={() => handleAddQuote(rowData)}
-                  // href={`/${rowData?.mappingId}/quotations`}
+                  onPress={() => handleOpenRegisterQuote(rowData)}
                 >
                   Add Quote
-                </DropdownItem>
+                </DropdownItem> */}
 
                 <DropdownItem
                   key="registerVendor"
@@ -868,7 +860,7 @@ const RequestForQuotation = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search RFQ..."
+            placeholder="Search ..."
             startContent={<Search size={18} />}
             value={filterValue}
             onClear={onClear}
@@ -879,9 +871,10 @@ const RequestForQuotation = () => {
             <Button
               color="primary"
               startContent={<Plus size={17} />}
-              onPress={handleOpenCreateModal}
+              //   onPress={handleOpenCreateModal}
+              onPress={() => handleOpenRegisterQuote()}
             >
-              Add RFQ
+              Add Quote
             </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
@@ -966,9 +959,7 @@ const RequestForQuotation = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <h1 className="mb-1 font-sans text-2xl font-medium">
-          Request For Quotation
-        </h1>
+        <h1 className="mb-1 font-sans text-2xl font-medium">Quote</h1>
 
         <Table
           isHeaderSticky
@@ -2038,4 +2029,4 @@ const RequestForQuotation = () => {
   );
 };
 
-export default RequestForQuotation;
+export default Quote;

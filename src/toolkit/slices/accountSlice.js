@@ -228,7 +228,35 @@ export const cancelUnBilledInvoice = createAsyncThunk(
   async ({ id, userId, reason, cancelAttachment }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/accountService/api/v1/unbilled-invoices/cancel/${userId}/${id}?reason=${reason}&cancelAttachment=${cancelAttachment}`,
+        `/accountService/api/v1/unbilled-invoices/cancel/request/${userId}/${id}?reason=${reason}&cancelAttachment=${cancelAttachment}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const cancelUnBilledInvoiceByAdmin = createAsyncThunk(
+  "cancelUnBilledInvoiceByAdmin",
+  async ({ id, userId, reason, cancelAttachment }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/unbilled-invoices/cancel/reject/${userId}/${id}?reason=${reason}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const approveUnBilledInvoiceByAdmin = createAsyncThunk(
+  "approveUnBilledInvoiceByAdmin",
+  async ({ id, userId, reason, cancelAttachment }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/unbilled-invoices/cancel/approve/${userId}/${id}`,
       );
       return response.data;
     } catch (error) {

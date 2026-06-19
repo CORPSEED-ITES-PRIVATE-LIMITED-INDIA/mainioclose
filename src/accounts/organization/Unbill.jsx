@@ -49,7 +49,9 @@ import {
 import { inrCurrency, splitTextIntoTwoLines } from "../../common";
 import dayjs from "dayjs";
 import {
+  approveUnBilledInvoiceByAdmin,
   cancelUnBilledInvoice,
+  cancelUnBilledInvoiceByAdmin,
   convertUnbillToAdvanceInvoice,
   createCreditNotes,
   getTdsDetailByEstimateId,
@@ -464,6 +466,7 @@ const Unbill = () => {
         }),
       );
   };
+
   const handleCreateCreditNote = async () => {
     if (
       !creditNoteData.refundAmount ||
@@ -958,7 +961,11 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "CANCELLED" && !updatedStatusData?.attachment) {
+    if (
+      selectedStatus === "CANCELLED" &&
+      !updatedStatusData?.attachment &&
+      !adminRole
+    ) {
       addToast({
         title: "Attachment is required",
         description: "Please upload attachment for cancelled status.",
@@ -981,6 +988,116 @@ const Unbill = () => {
             addToast({
               title: "SUCCESS",
               description: "Unbill canceled successfully !.",
+              color: "success",
+            });
+
+            setRowItem(null);
+            setUpdatedStatusData({
+              approverUserId: userId,
+              approvalRemarks: "",
+              rejectionReason: "",
+              attachment: "",
+            });
+
+            dispatch(
+              getAllUnbillList({
+                page,
+                size: rowsPerPage,
+                userId,
+                status,
+              }),
+            );
+            dispatch(getAllUnbillCount({ userId, status }));
+            statusModal.onClose();
+          } else {
+            addToast({
+              title: "ERROR",
+              description:
+                re?.payload?.data?.message ||
+                re?.payload?.message ||
+                "Failed to cancel unbill.",
+              color: "danger",
+            });
+          }
+        })
+        .catch(() =>
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          }),
+        );
+
+      if (adminRole) {
+        dispatch(
+          cancelUnBilledInvoiceByAdmin({
+            id: rowItem?.id,
+            userId,
+            reason: updatedStatusData?.rejectionReason,
+          }),
+        )
+          .then((re) => {
+            if (re.meta.requestStatus === "fulfilled") {
+              addToast({
+                title: "SUCCESS",
+                description: "Unbill canceled successfully by Admin !.",
+                color: "success",
+              });
+
+              setRowItem(null);
+              setUpdatedStatusData({
+                approverUserId: userId,
+                approvalRemarks: "",
+                rejectionReason: "",
+                attachment: "",
+              });
+
+              dispatch(
+                getAllUnbillList({
+                  page,
+                  size: rowsPerPage,
+                  userId,
+                  status,
+                }),
+              );
+              dispatch(getAllUnbillCount({ userId, status }));
+              statusModal.onClose();
+            } else {
+              addToast({
+                title: "ERROR",
+                description:
+                  re?.payload?.data?.message ||
+                  re?.payload?.message ||
+                  "Failed to cancel unbill.",
+                color: "danger",
+              });
+            }
+          })
+          .catch(() =>
+            addToast({
+              title: "ERROR",
+              description: "Something went wrong !.",
+              color: "danger",
+            }),
+          );
+      }
+
+      return;
+    }
+
+    if (selectedStatus === "APPROVED" && adminRole) {
+      dispatch(
+        approveUnBilledInvoiceByAdmin({
+          id: rowItem?.id,
+          userId,
+          reason: updatedStatusData?.rejectionReason,
+        }),
+      )
+        .then((re) => {
+          if (re.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "SUCCESS",
+              description: "Unbill approved successfully by Admin !.",
               color: "success",
             });
 

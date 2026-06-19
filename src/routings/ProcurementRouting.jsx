@@ -14,6 +14,7 @@ import SolutionOverview from "../procurement/solutions/SolutionOverview";
 import ProcuremntSolutionDetailPage from "../procurement/solutions/ProcuremntSolutionDetailPage";
 import RequestForQuotation from "../procurement/solutions/RequestForQuotation";
 import VendorsData from "../procurement/solutions/VendorsData";
+import Quote from "../procurement/solutions/Quote";
 
 const ProcurementRouting = () => {
   return (
@@ -29,6 +30,7 @@ const ProcurementRouting = () => {
         <Route index path="overview" element={<SolutionOverview />} />
         <Route path="vendors-data" element={<VendorsData />} />
         <Route path="rfq" element={<RequestForQuotation />} />
+        <Route path="rfq/:rfqId/quotations" element={<Quote />} />
         <Route />
       </Route>
       <Route path="procurement/vendorList" element={<Vendors />} />
