@@ -65,7 +65,7 @@ export const columns = [
   { name: "NOTES", uid: "notes" },
   { name: "RAISED BY", uid: "raisedBy" },
   { name: "DOCUMENTS", uid: "documents" },
-  { name: "ACTIONS", uid: "actions" },
+  // { name: "ACTIONS", uid: "actions" },
 ];
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
@@ -78,7 +78,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "notes",
   "raisedBy",
   "documents",
-  "actions",
+  // "actions",
 ];
 
 const normalizeFileUrl = (url = "") => {
