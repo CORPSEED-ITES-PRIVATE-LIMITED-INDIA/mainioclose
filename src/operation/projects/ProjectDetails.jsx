@@ -2321,6 +2321,7 @@ const ProjectDetails = () => {
                     label={"Select applicant type"}
                     labelKey={"name"}
                     valueKey={"id"}
+                    value={detailedData?.projectDetails?.applicantId}
                     data={
                       applicantTypeList?.length > 0 ? applicantTypeList : []
                     }

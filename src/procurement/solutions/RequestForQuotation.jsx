@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   addToast,
   Button,
@@ -14,12 +20,15 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { Input as AntInput, Select as AntSelect } from "antd";
@@ -30,12 +39,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
   ChevronDown,
+  Clock,
   EllipsisVertical,
   ExternalLink,
   Eye,
+  File,
+  History,
+  Paperclip,
   Plus,
   Search,
+  Send,
   UserPlus,
+  X,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -46,11 +61,8 @@ import {
   getProductVendorsByProductId,
 } from "../../toolkit/slices/vendorsSlice";
 import FileUploader from "../../components/FileUploader";
-// import {
-//   createVendorAgainstProduct,
-//   getAllVendors,
-//   getProductVendorsByProductId,
-// } from "../../toolkit/slices/operationSlice";
+import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
+import NewSelect from "../../components/NewSelect";
 
 const columns = [
   { name: "VENDOR", uid: "vendorName" },
@@ -79,6 +91,27 @@ const defaultValues = {
   emailSubject: "",
   emailBody: "<p></p>",
   agreementAttachment: "",
+};
+
+const quotationDefaultValues = {
+  mappingId: "",
+  productId: "",
+  productName: "",
+  vendorId: "",
+  vendorName: "",
+  email: "",
+  mobile: "",
+  gstNumber: "",
+  panNumber: "",
+  pricePerUnit: "",
+  unit: "Per Application",
+  paymentTerms: "",
+  timelineDays: "",
+  quotationValidityDays: "",
+  vendorBrochureAttachment: "",
+  priceListAttachment: "",
+  agreementAttachment: "",
+  remarks: "",
 };
 
 const vendorRegistrationDefaultValues = {
@@ -156,6 +189,38 @@ const vendorRegistrationSchema = z.object({
   remarks: z.string().optional(),
 });
 
+const quotationSchema = z.object({
+  mappingId: z.any().optional(),
+  productId: z.any().optional(),
+  productName: z.string().optional(),
+  vendorId: z.any().refine((value) => Boolean(value), {
+    message: "Vendor is required",
+  }),
+  vendorName: z.string().optional(),
+  email: z.string().optional(),
+  mobile: z.string().optional(),
+  gstNumber: z.string().optional(),
+  panNumber: z.string().optional(),
+
+  pricePerUnit: z.string().min(1, "Please enter price per unit"),
+  unit: z.string().min(1, "Please select unit"),
+  paymentTerms: z.string().min(1, "Please enter payment terms"),
+  timelineDays: z.string().min(1, "Please enter timeline"),
+  quotationValidityDays: z.string().optional(),
+
+  vendorBrochureAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload vendor brochure",
+  }),
+  priceListAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload price list",
+  }),
+  agreementAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload agreement attachment",
+  }),
+
+  remarks: z.string().optional(),
+});
+
 const hasHtmlContent = (html = "") => getPlainTextLength(html) > 0;
 
 const normalizePageContent = (response) => {
@@ -182,10 +247,12 @@ const RequestForQuotation = () => {
   const { solutionId, userId } = useParams();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
+  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
 
   const rfqModal = useDisclosure();
   const viewModal = useDisclosure();
   const registerVendorModal = useDisclosure();
+  const quotationModal = useDisclosure();
 
   const {
     control,
@@ -209,6 +276,16 @@ const RequestForQuotation = () => {
     defaultValues: vendorRegistrationDefaultValues,
   });
 
+  const {
+    control: quotationControl,
+    handleSubmit: handleQuotationFormSubmit,
+    reset: resetQuotationForm,
+    formState: { errors: quotationErrors },
+  } = useForm({
+    resolver: zodResolver(quotationSchema),
+    defaultValues: quotationDefaultValues,
+  });
+
   const [rfqResponse, setRfqResponse] = useState(null);
   const [vendorResponse, setVendorResponse] = useState(null);
   const [selectedRfq, setSelectedRfq] = useState(null);
@@ -224,6 +301,40 @@ const RequestForQuotation = () => {
     page: 1,
     size: 10,
   });
+
+  const fileInputRef = useRef(null);
+
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatAttachment, setChatAttachment] = useState(null);
+
+  const [chatList, setChatList] = useState([
+    {
+      id: 1,
+      sender: "vendor",
+      senderName: "Balaji Traders",
+      message: "Quotation request received for 12A Registration.",
+      time: "10:15 AM",
+      attachment: null,
+    },
+    {
+      id: 2,
+      sender: "me",
+      senderName: "Corpseed",
+      message:
+        "Please share quotation with commercials, timeline and payment terms.",
+      time: "10:18 AM",
+      attachment: null,
+    },
+    {
+      id: 3,
+      sender: "vendor",
+      senderName: "Balaji Traders",
+      message: "Sure, we will share the quotation shortly.",
+      time: "10:22 AM",
+      attachment: null,
+    },
+  ]);
 
   const rfqList = useMemo(() => {
     return normalizePageContent(rfqResponse);
@@ -318,6 +429,10 @@ const RequestForQuotation = () => {
     fetchVendors();
   }, [fetchVendors]);
 
+  useEffect(() => {
+    dispatch(getAllPaymentType());
+  }, [dispatch]);
+
   const handleOpenCreateModal = () => {
     setSelectedRfq(null);
     setMailBody("<p></p>");
@@ -341,6 +456,33 @@ const RequestForQuotation = () => {
       value ||
       ""
     );
+  };
+
+  const handleOpenRegisterQuote = (item) => {
+    setSelectedRfq(item);
+
+    resetQuotationForm({
+      mappingId: item?.mappingId || "",
+      productId: item?.productId || solutionId || "",
+      productName: item?.productName || "",
+      vendorId: item?.vendorId || "",
+      vendorName: item?.vendorName || "",
+      email: item?.email || "",
+      mobile: item?.mobile || "",
+      gstNumber: item?.gstNumber || "",
+      panNumber: item?.panNumber || "",
+      pricePerUnit: "",
+      unit: "Per Application",
+      paymentTerms: "",
+      timelineDays: "",
+      quotationValidityDays: "",
+      vendorBrochureAttachment: "",
+      priceListAttachment: "",
+      agreementAttachment: item?.agreementAttachment || "",
+      remarks: "",
+    });
+
+    quotationModal.onOpen();
   };
 
   const handleOpenRegisterVendor = (item) => {
@@ -530,6 +672,45 @@ const RequestForQuotation = () => {
     return "primary";
   };
 
+  const handleSubmitChat = () => {
+    const message = chatMessage.trim();
+
+    if (!message && !chatAttachment) return;
+
+    const attachmentData = chatAttachment
+      ? {
+          name: chatAttachment.name,
+          size: chatAttachment.size,
+          type: chatAttachment.type,
+          url: URL.createObjectURL(chatAttachment),
+        }
+      : null;
+
+    setChatList((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "me",
+        senderName: "Corpseed",
+        message,
+        time: dayjs().format("hh:mm A"),
+        attachment: attachmentData,
+      },
+    ]);
+
+    setChatMessage("");
+    setChatAttachment(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleOpenChatHistory = (rowData) => {
+    setSelectedRfq(rowData);
+    setChatDrawerOpen(true);
+  };
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "vendorName":
@@ -623,31 +804,48 @@ const RequestForQuotation = () => {
 
       case "actions":
         return (
-          <Dropdown>
-            <DropdownTrigger>
-              <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical size={18} />
-              </Button>
-            </DropdownTrigger>
+          <div className="flex flex-col items-center justify-center gap-1">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button size="sm" isIconOnly variant="light">
+                  <EllipsisVertical size={18} />
+                </Button>
+              </DropdownTrigger>
 
-            <DropdownMenu>
-              <DropdownItem
-                key="view"
-                startContent={<Eye size={15} />}
-                onPress={() => handleView(rowData)}
-              >
-                View
-              </DropdownItem>
+              <DropdownMenu>
+                <DropdownItem
+                  key="view"
+                  startContent={<Eye size={15} />}
+                  onPress={() => handleView(rowData)}
+                >
+                  View
+                </DropdownItem>
+                <DropdownItem
+                  key="view"
+                  startContent={<Clock size={15} />}
+                  onPress={() => handleOpenChatHistory(rowData)}
+                >
+                  History
+                </DropdownItem>
 
-              <DropdownItem
-                key="registerVendor"
-                startContent={<UserPlus size={15} />}
-                onPress={() => handleOpenRegisterVendor(rowData)}
-              >
-                Register Vendor
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+                <DropdownItem
+                  key="addQuote"
+                  startContent={<File size={15} />}
+                  onPress={() => handleOpenRegisterQuote(rowData)}
+                >
+                  Add Quote
+                </DropdownItem>
+
+                <DropdownItem
+                  key="registerVendor"
+                  startContent={<UserPlus size={15} />}
+                  onPress={() => handleOpenRegisterVendor(rowData)}
+                >
+                  Register Vendor
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
         );
 
       default:
@@ -1105,6 +1303,280 @@ const RequestForQuotation = () => {
         </ModalContent>
       </Modal>
       <Modal
+        isOpen={quotationModal.isOpen}
+        onOpenChange={quotationModal.onOpenChange}
+        size="4xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b">Add Quote</ModalHeader>
+
+            <form onSubmit={handleQuotationFormSubmit()}>
+              <ModalBody>
+                <div className="max-h-[65vh] overflow-auto p-2">
+                  <div className="rounded-xl border bg-gray-50 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Auto Fetched Information
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="vendorName"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Vendor Name"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="productName"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Product / Service"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="email"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input label="Email" value={field.value} isReadOnly />
+                        )}
+                      />
+
+                      <Controller
+                        name="mobile"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Mobile"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="gstNumber"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="GST Number"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="panNumber"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="PAN Number"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Registration Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Controller
+                        name="pricePerUnit"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Price Per Unit"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.pricePerUnit?.message}
+                            isInvalid={!!registerErrors.pricePerUnit}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="unit"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Select
+                            selectedKeys={
+                              field.value ? new Set([field.value]) : new Set([])
+                            }
+                            onSelectionChange={(keys) =>
+                              field.onChange(Array.from(keys)?.[0] || "")
+                            }
+                            label="Unit"
+                            isRequired
+                            isInvalid={!!registerErrors.unit}
+                            errorMessage={registerErrors.unit?.message}
+                          >
+                            <SelectItem key="1">1</SelectItem>
+                            <SelectItem key="2">2</SelectItem>
+                            <SelectItem key="3">3</SelectItem>
+                            <SelectItem key="4">4</SelectItem>
+                            <SelectItem key="5">5</SelectItem>
+                            <SelectItem key="PER_METRIC_TONNE">
+                              PER_METRIC_TONNE
+                            </SelectItem>
+                            <SelectItem key="PER_KG">PER_KG</SelectItem>
+                          </Select>
+                        )}
+                      />
+
+                      <Controller
+                        name="paymentTerms"
+                        control={quotationControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
+                            isRequired
+                            label="Payment term"
+                            data={paymentTypeList || []}
+                            labelKey="name"
+                            valueKey="id"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e)}
+                            errorMessage={registerErrors.paymentTerms?.message}
+                            isInvalid={!!registerErrors.paymentTerms}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="timelineDays"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Timeline Days"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.timelineDays?.message}
+                            isInvalid={!!registerErrors.timelineDays}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="quotationValidityDays"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Quotation Validity Days"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="remarks"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Remarks"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Attachments
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="vendorBrochureAttachment"
+                        control={quotationControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Vendor Brochure"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="priceListAttachment"
+                        control={quotationControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Price List"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="agreementAttachment"
+                        control={quotationControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Technical Attachment"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    quotationModal.onClose();
+                    resetQuotationForm(quotationDefaultValues);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
         isOpen={registerVendorModal.isOpen}
         onOpenChange={registerVendorModal.onOpenChange}
         size="4xl"
@@ -1112,7 +1584,7 @@ const RequestForQuotation = () => {
       >
         <ModalContent>
           <>
-            <ModalHeader className="border-b">Register Vendor</ModalHeader>
+            <ModalHeader className="border-b">Register vendor</ModalHeader>
 
             <form onSubmit={handleRegisterVendorSubmit(onSubmitRegisterVendor)}>
               <ModalBody>
@@ -1218,55 +1690,43 @@ const RequestForQuotation = () => {
                         name="unit"
                         control={registerControl}
                         render={({ field }) => (
-                          <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
-                              Unit <span className="text-red-500">*</span>
-                            </label>
-
-                            <AntSelect
-                              size="large"
-                              value={field.value}
-                              onChange={(value) => field.onChange(value)}
-                              className="w-full"
-                              options={[
-                                {
-                                  label: "Per Application",
-                                  value: "Per Application",
-                                },
-                                {
-                                  label: "Per Certificate",
-                                  value: "Per Certificate",
-                                },
-                                {
-                                  label: "Per Project",
-                                  value: "Per Project",
-                                },
-                                {
-                                  label: "Per Month",
-                                  value: "Per Month",
-                                },
-                              ]}
-                            />
-
-                            {registerErrors.unit?.message && (
-                              <p className="mt-1 text-xs text-red-500">
-                                {registerErrors.unit.message}
-                              </p>
-                            )}
-                          </div>
+                          <Select
+                            selectedKeys={
+                              field.value ? new Set([field.value]) : new Set([])
+                            }
+                            onSelectionChange={(keys) =>
+                              field.onChange(Array.from(keys)?.[0] || "")
+                            }
+                            label="Unit"
+                            isRequired
+                            isInvalid={!!registerErrors.unit}
+                            errorMessage={registerErrors.unit?.message}
+                          >
+                            <SelectItem key="1">1</SelectItem>
+                            <SelectItem key="2">2</SelectItem>
+                            <SelectItem key="3">3</SelectItem>
+                            <SelectItem key="4">4</SelectItem>
+                            <SelectItem key="5">5</SelectItem>
+                            <SelectItem key="PER_METRIC_TONNE">
+                              PER_METRIC_TONNE
+                            </SelectItem>
+                            <SelectItem key="PER_KG">PER_KG</SelectItem>
+                          </Select>
                         )}
                       />
 
                       <Controller
                         name="paymentTerms"
                         control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Payment Terms"
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
                             isRequired
-                            placeholder="Example: 50% advance, 50% after completion"
+                            label="Payment term"
+                            data={paymentTypeList || []}
+                            labelKey="name"
+                            valueKey="id"
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) => field.onChange(e)}
                             errorMessage={registerErrors.paymentTerms?.message}
                             isInvalid={!!registerErrors.paymentTerms}
                           />
@@ -1341,7 +1801,7 @@ const RequestForQuotation = () => {
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
                             isRequired
-                            label="Price List"
+                            label="Vendor Form"
                             value={field.value}
                             onChange={(value) => field.onChange(value)}
                             errorMessage={error?.message}
@@ -1356,7 +1816,7 @@ const RequestForQuotation = () => {
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
                             isRequired
-                            label="Agreement Attachment"
+                            label="Aggrement Attachment"
                             value={field.value}
                             onChange={(value) => field.onChange(value)}
                             errorMessage={error?.message}
@@ -1382,13 +1842,190 @@ const RequestForQuotation = () => {
                 </Button>
 
                 <Button color="primary" type="submit">
-                  Register Vendor
+                  Submit
                 </Button>
               </ModalFooter>
             </form>
           </>
         </ModalContent>
       </Modal>
+
+      {chatDrawerOpen && (
+        <div className="fixed inset-0 z-[9999] flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setChatDrawerOpen(false)}
+          />
+
+          <div className="relative z-10 flex h-full w-full max-w-[440px] flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b bg-white px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  RFQ Chat History
+                </h2>
+
+                <p className="text-xs text-gray-500">
+                  {selectedRfq?.vendorName
+                    ? `Vendor: ${selectedRfq.vendorName}`
+                    : "Dummy vendor communication timeline"}
+                </p>
+              </div>
+
+              <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                onPress={() => setChatDrawerOpen(false)}
+              >
+                <X size={18} />
+              </Button>
+            </div>
+
+            <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4">
+              {chatList.map((chat) => {
+                const isMine = chat.sender === "me";
+
+                return (
+                  <div
+                    key={chat.id}
+                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
+                        isMine
+                          ? "rounded-br-sm bg-primary text-white"
+                          : "rounded-bl-sm border bg-white text-gray-900"
+                      }`}
+                    >
+                      <p
+                        className={`mb-1 text-[11px] font-semibold ${
+                          isMine ? "text-white/80" : "text-gray-500"
+                        }`}
+                      >
+                        {chat.senderName}
+                      </p>
+
+                      {chat.message && (
+                        <p className="whitespace-pre-wrap text-sm leading-5">
+                          {chat.message}
+                        </p>
+                      )}
+
+                      {chat.attachment && (
+                        <a
+                          href={chat.attachment.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                            isMine
+                              ? "border-white/30 bg-white/10 text-white"
+                              : "border-gray-200 bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          <File size={15} />
+                          <span className="line-clamp-1">
+                            {chat.attachment.name}
+                          </span>
+                        </a>
+                      )}
+
+                      <p
+                        className={`mt-1 text-right text-[10px] ${
+                          isMine ? "text-white/70" : "text-gray-400"
+                        }`}
+                      >
+                        {chat.time}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {chatAttachment && (
+              <div className="border-t bg-white px-4 py-2">
+                <div className="flex items-center justify-between rounded-xl border bg-gray-50 px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <File size={16} className="shrink-0 text-gray-500" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-800">
+                        {chatAttachment.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(chatAttachment.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    color="danger"
+                    onPress={() => {
+                      setChatAttachment(null);
+
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
+                  >
+                    <X size={15} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t bg-white p-3">
+              <div className="flex items-end gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (file) {
+                      setChatAttachment(file);
+                    }
+                  }}
+                />
+
+                <Button
+                  isIconOnly
+                  variant="flat"
+                  type="button"
+                  onPress={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip size={18} />
+                </Button>
+
+                <Input
+                  placeholder="Type a message..."
+                  value={chatMessage}
+                  onValueChange={setChatMessage}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmitChat();
+                    }
+                  }}
+                />
+
+                <Button
+                  isIconOnly
+                  color="primary"
+                  type="button"
+                  onPress={handleSubmitChat}
+                  isDisabled={!chatMessage.trim() && !chatAttachment}
+                >
+                  <Send size={18} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
