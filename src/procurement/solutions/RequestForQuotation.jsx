@@ -67,6 +67,7 @@ import {
   createVendorAgainstProduct,
   getAllVendors,
   getProductVendorsByProductId,
+  getRFQVendorsByRfqId,
   sendRfqToVendors,
 } from "../../toolkit/slices/vendorsSlice";
 import FileUploader from "../../components/FileUploader";
@@ -329,17 +330,15 @@ const getRfqVendors = (rowData) => {
 };
 
 const sendVendorDefaultValues = {
-  to: [],
-  cc: [],
   bcc: [],
   subject: "",
   message: "<p></p>",
 };
 
 const sendVendorSchema = z.object({
-  to: z.array(z.string()).min(1, "Please enter at least one To email"),
-  cc: z.array(z.string()).optional(),
-  bcc: z.array(z.string()).optional(),
+  bcc: z
+    .array(z.string())
+    .min(1, "At least one vendor email is required in BCC"),
   subject: z.string().min(1, "Please enter subject"),
   message: z.string().refine((value) => getPlainTextLength(value) > 0, {
     message: "Please enter message",
@@ -497,7 +496,7 @@ const RequestForQuotation = () => {
   const [selectedRfqDetail, setSelectedRfqDetail] = useState(null);
   const [selectedSendRfq, setSelectedSendRfq] = useState(null);
   const [sendVendorLoading, setSendVendorLoading] = useState(false);
-  const [lockedSendTo, setLockedSendTo] = useState([]);
+  const [lockedSendBcc, setLockedSendBcc] = useState([]);
   const [sendMessageBody, setSendMessageBody] = useState("<p></p>");
   const [status, setStatus] = useState("DRAFT");
 
@@ -706,30 +705,69 @@ const RequestForQuotation = () => {
   }, [dispatch]);
 
   const handleOpenSendToVendor = (rowData) => {
-    setSelectedSendRfq(rowData);
+    if (!rowData?.id) {
+      addToast({
+        title: "ERROR",
+        description: "RFQ ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
 
-    const toEmails =
-      selectedSendRfq?.vendors?.length > 0
-        ? selectedSendRfq.vendors
-            .map((vendor) => vendor?.vendorEmail)
-            .filter(Boolean)
-        : [];
+    setSendVendorLoading(true);
 
-    setLockedSendTo(toEmails);
-    setSendMessageBody("<p></p>");
+    dispatch(getRFQVendorsByRfqId(rowData.id)).then((resp) => {
+      setSendVendorLoading(false);
 
-    resetSendVendorForm({
-      to: toEmails,
-      cc: [],
-      bcc: [],
-      subject:
-        rowData?.title ||
-        rowData?.emailSubject ||
-        `RFQ for ${rowData?.productName || "Service"}`,
-      message: "<p></p>",
+      if (resp.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to fetch RFQ vendors.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const vendors = Array.isArray(resp.payload) ? resp.payload : [];
+
+      const bccEmails = [
+        ...new Set(
+          vendors.map((vendor) => vendor?.vendorEmail).filter(Boolean),
+        ),
+      ];
+
+      if (!bccEmails.length) {
+        addToast({
+          title: "ERROR",
+          description: "No vendor email found for this RFQ.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const updatedRfq = {
+        ...rowData,
+        vendors,
+      };
+
+      setSelectedSendRfq(updatedRfq);
+      setLockedSendBcc(bccEmails);
+      setSendMessageBody("<p></p>");
+
+      resetSendVendorForm({
+        bcc: bccEmails,
+        subject:
+          rowData?.title ||
+          rowData?.emailSubject ||
+          `RFQ for ${rowData?.productName || "Service"}`,
+        message: "<p></p>",
+      });
+
+      sendVendorModal.onOpen();
     });
-
-    sendVendorModal.onOpen();
   };
 
   const handleOpenCreateModal = () => {
@@ -996,15 +1034,25 @@ const RequestForQuotation = () => {
       return;
     }
 
-    const payload = {
-      rfqVendorIds:
-        selectedSendRfq?.vendors?.length > 0
-          ? selectedSendRfq.vendors
-              .map((vendor) => vendor?.rfqVendorId)
-              .filter(Boolean)
-              .map(Number)
-          : [],
+    const rfqVendorIds =
+      selectedSendRfq?.vendors?.length > 0
+        ? selectedSendRfq.vendors
+            .map((vendor) => vendor?.rfqVendorId)
+            .filter(Boolean)
+            .map(Number)
+        : [];
 
+    if (!rfqVendorIds.length) {
+      addToast({
+        title: "ERROR",
+        description: "RFQ vendor IDs are missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      rfqVendorIds,
       subject: values.subject,
       message: values.message,
       cc: values.cc || [],
@@ -1032,7 +1080,7 @@ const RequestForQuotation = () => {
         sendVendorModal.onClose();
         resetSendVendorForm(sendVendorDefaultValues);
         setSelectedSendRfq(null);
-        setLockedSendTo([]);
+        setLockedSendBcc([]);
         setSendMessageBody("<p></p>");
         fetchProductVendors();
       } else {
@@ -2629,67 +2677,19 @@ const RequestForQuotation = () => {
                   <div className="max-h-[60vh] overflow-auto p-4">
                     <div className="grid grid-cols-1 gap-4">
                       <Controller
-                        name="to"
-                        control={sendVendorControl}
-                        render={({ field }) => (
-                          <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
-                              To <span className="text-red-500">*</span>
-                            </label>
-
-                            <TagsInput
-                              value={field.value || []}
-                              onChange={field.onChange}
-                              lockedValues={lockedSendTo}
-                              placeholder="Enter email & press enter"
-                            />
-
-                            {sendVendorErrors.to?.message && (
-                              <p className="mt-1 text-xs text-red-500">
-                                {sendVendorErrors.to.message}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      />
-
-                      <Controller
-                        name="cc"
-                        control={sendVendorControl}
-                        render={({ field }) => (
-                          <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
-                              Cc
-                            </label>
-
-                            <TagsInput
-                              value={field.value || []}
-                              onChange={field.onChange}
-                              placeholder="Enter email & press enter"
-                            />
-
-                            {sendVendorErrors.cc?.message && (
-                              <p className="mt-1 text-xs text-red-500">
-                                {sendVendorErrors.cc.message}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      />
-
-                      <Controller
                         name="bcc"
                         control={sendVendorControl}
                         render={({ field }) => (
                           <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">
-                              Bcc
+                              BCC
                             </label>
 
                             <TagsInput
                               value={field.value || []}
                               onChange={field.onChange}
-                              placeholder="Enter email & press enter"
+                              lockedValues={lockedSendBcc}
+                              placeholder="Vendor emails will appear here"
                             />
 
                             {sendVendorErrors.bcc?.message && (

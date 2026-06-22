@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addToast,
   Button,
@@ -28,42 +22,28 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-  Tooltip,
   useDisclosure,
 } from "@heroui/react";
-import { Input as AntInput, Select as AntSelect } from "antd";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   ChevronDown,
-  Clock,
   EllipsisVertical,
   ExternalLink,
   Eye,
-  File,
-  History,
-  Paperclip,
   Plus,
   Search,
-  Send,
-  UserPlus,
-  X,
 } from "lucide-react";
 import dayjs from "dayjs";
 
-import NewTextEditor from "../../components/NewTextEditor";
-import {
-  createVendorAgainstProduct,
-  getAllQuotations,
-  getAllVendors,
-  getProductVendorsByProductId,
-} from "../../toolkit/slices/vendorsSlice";
 import FileUploader from "../../components/FileUploader";
-import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
-import NewSelect from "../../components/NewSelect";
+import {
+  createQuotation,
+  getAllQuotations,
+} from "../../toolkit/slices/vendorsSlice";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -87,18 +67,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const defaultValues = {
-  vendorId: undefined,
-  emailSubject: "",
-  emailBody: "<p></p>",
-  agreementAttachment: "",
-};
-
 const quotationDefaultValues = {
-  rfqVendorId: "",
-  vendorId: "",
-  quotationNumber: "",
-  quotationDate: "",
   validTill: "",
   currency: "INR",
   deliveryDays: "",
@@ -106,7 +75,6 @@ const quotationDefaultValues = {
   warrantyTerms: "",
   remarks: "",
   quotationAttachmentUrl: "",
-  createdBy: "",
   items: [
     {
       itemType: "MATERIAL",
@@ -121,100 +89,21 @@ const quotationDefaultValues = {
   ],
 };
 
-const vendorRegistrationDefaultValues = {
-  mappingId: "",
-  productId: "",
-  productName: "",
-  vendorId: "",
-  vendorName: "",
-  email: "",
-  mobile: "",
-  gstNumber: "",
-  panNumber: "",
-  pricePerUnit: "",
-  unit: "Per Application",
-  paymentTerms: "",
-  timelineDays: "",
-  quotationValidityDays: "",
-  vendorBrochureAttachment: "",
-  priceListAttachment: "",
-  agreementAttachment: "",
-  remarks: "",
-};
-
-const getPlainTextLength = (html = "") =>
-  String(html || "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim().length;
-
-const rfqSchema = z.object({
-  vendorId: z.any().refine((value) => Boolean(value), {
-    message: "Please select vendor",
-  }),
-
-  emailSubject: z.string().min(1, "Please enter email subject"),
-
-  emailBody: z.string().refine((value) => getPlainTextLength(value) > 0, {
-    message: "Please enter email body",
-  }),
-
-  agreementAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload agreement attachment",
-  }),
-});
-
-const vendorRegistrationSchema = z.object({
-  mappingId: z.any().optional(),
-  productId: z.any().optional(),
-  productName: z.string().optional(),
-  vendorId: z.any().refine((value) => Boolean(value), {
-    message: "Vendor is required",
-  }),
-  vendorName: z.string().optional(),
-  email: z.string().optional(),
-  mobile: z.string().optional(),
-  gstNumber: z.string().optional(),
-  panNumber: z.string().optional(),
-
-  pricePerUnit: z.string().min(1, "Please enter price per unit"),
-  unit: z.string().min(1, "Please select unit"),
-  paymentTerms: z.string().min(1, "Please enter payment terms"),
-  timelineDays: z.string().min(1, "Please enter timeline"),
-  quotationValidityDays: z.string().optional(),
-
-  vendorBrochureAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload vendor brochure",
-  }),
-  priceListAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload price list",
-  }),
-  agreementAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload agreement attachment",
-  }),
-
-  remarks: z.string().optional(),
-});
-
 const quotationSchema = z.object({
-  rfqVendorId: z.any().refine((value) => Boolean(value), {
-    message: "RFQ Vendor is required",
-  }),
-  vendorId: z.any().refine((value) => Boolean(value), {
-    message: "Vendor is required",
-  }),
-  quotationNumber: z.string().min(1, "Please enter quotation number"),
-  quotationDate: z.string().min(1, "Please select quotation date"),
   validTill: z.string().min(1, "Please select valid till date"),
+
   currency: z.string().min(1, "Please enter currency"),
+
   deliveryDays: z.string().min(1, "Please enter delivery days"),
+
   paymentTerms: z.string().min(1, "Please enter payment terms"),
+
   warrantyTerms: z.string().optional(),
+
   remarks: z.string().optional(),
+
   quotationAttachmentUrl: z.any().optional(),
-  createdBy: z.any().refine((value) => Boolean(value), {
-    message: "Created by is required",
-  }),
+
   items: z
     .array(
       z.object({
@@ -230,8 +119,6 @@ const quotationSchema = z.object({
     )
     .min(1, "At least one item is required"),
 });
-
-const hasHtmlContent = (html = "") => getPlainTextLength(html) > 0;
 
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
@@ -254,37 +141,14 @@ const getTotalElements = (response, fallbackLength = 0) => {
 
 const Quote = () => {
   const dispatch = useDispatch();
-  const { solutionId, userId,rfqId } = useParams();
+  const location = useLocation();
+
+  const { userId, rfqId } = useParams();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
-  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
 
-  const rfqModal = useDisclosure();
-  const viewModal = useDisclosure();
-  const registerVendorModal = useDisclosure();
   const quotationModal = useDisclosure();
-
-  const {
-    control,
-    handleSubmit: handleRfqFormSubmit,
-    reset: resetRfqForm,
-    setValue,
-    trigger,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(rfqSchema),
-    defaultValues,
-  });
-
-  const {
-    control: registerControl,
-    handleSubmit: handleRegisterVendorSubmit,
-    reset: resetRegisterVendorForm,
-    formState: { errors: registerErrors },
-  } = useForm({
-    resolver: zodResolver(vendorRegistrationSchema),
-    defaultValues: vendorRegistrationDefaultValues,
-  });
+  const viewModal = useDisclosure();
 
   const {
     control: quotationControl,
@@ -305,69 +169,50 @@ const Quote = () => {
     name: "items",
   });
 
-  const [rfqResponse, setRfqResponse] = useState(null);
-  const [vendorResponse, setVendorResponse] = useState(null);
-  const [selectedRfq, setSelectedRfq] = useState(null);
-  const [mailBody, setMailBody] = useState("<p></p>");
+  const [quotationResponse, setQuotationResponse] = useState(null);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const [filterValue, setFilterValue] = useState("");
+
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
+
   const [filteration, setFilteration] = useState({
     page: 1,
     size: 10,
   });
 
-  const fileInputRef = useRef(null);
+  const queryParams = useMemo(() => {
+    return new URLSearchParams(location.search);
+  }, [location.search]);
 
-  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
-  const [chatMessage, setChatMessage] = useState("");
-  const [chatAttachment, setChatAttachment] = useState(null);
+  const routeRfqVendorId = useMemo(() => {
+    return location.state?.rfqVendorId || queryParams.get("rfqVendorId") || "";
+  }, [location.state, queryParams]);
 
-  const [chatList, setChatList] = useState([
-    {
-      id: 1,
-      sender: "vendor",
-      senderName: "Balaji Traders",
-      message: "Quotation request received for 12A Registration.",
-      time: "10:15 AM",
-      attachment: null,
-    },
-    {
-      id: 2,
-      sender: "me",
-      senderName: "Corpseed",
-      message:
-        "Please share quotation with commercials, timeline and payment terms.",
-      time: "10:18 AM",
-      attachment: null,
-    },
-    {
-      id: 3,
-      sender: "vendor",
-      senderName: "Balaji Traders",
-      message: "Sure, we will share the quotation shortly.",
-      time: "10:22 AM",
-      attachment: null,
-    },
-  ]);
+  const routeVendorId = useMemo(() => {
+    return location.state?.vendorId || queryParams.get("vendorId") || "";
+  }, [location.state, queryParams]);
 
-  const rfqList = useMemo(() => {
-    return normalizePageContent(rfqResponse);
-  }, [rfqResponse]);
+  const routeVendorName = useMemo(() => {
+    return location.state?.vendorName || queryParams.get("vendorName") || "";
+  }, [location.state, queryParams]);
 
-  const vendorList = useMemo(() => {
-    return normalizePageContent(vendorResponse);
-  }, [vendorResponse]);
+  const routeVendorEmail = useMemo(() => {
+    return location.state?.vendorEmail || queryParams.get("vendorEmail") || "";
+  }, [location.state, queryParams]);
+
+  const quotationList = useMemo(() => {
+    return normalizePageContent(quotationResponse);
+  }, [quotationResponse]);
 
   const count = useMemo(() => {
-    return getTotalElements(rfqResponse, rfqList.length);
-  }, [rfqResponse, rfqList.length]);
-
-  const pages = Math.ceil(count / filteration.size) || 1;
+    return getTotalElements(quotationResponse, quotationList.length);
+  }, [quotationResponse, quotationList.length]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -378,12 +223,12 @@ const Quote = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filtered = [...rfqList];
+    let filtered = [...quotationList];
 
     if (filterValue) {
       filtered = filtered.filter((item) =>
-        Object.values(item || {}).some((val) =>
-          String(val || "")
+        Object.values(item || {}).some((value) =>
+          String(value || "")
             .toLowerCase()
             .includes(filterValue.toLowerCase()),
         ),
@@ -391,16 +236,27 @@ const Quote = () => {
     }
 
     return filtered;
-  }, [rfqList, filterValue]);
+  }, [quotationList, filterValue]);
+
+  const pages = Math.ceil(filteredItems.length / filteration.size) || 1;
+
+  const paginatedItems = useMemo(() => {
+    const start = (filteration.page - 1) * filteration.size;
+    const end = start + filteration.size;
+
+    return filteredItems.slice(start, end);
+  }, [filteredItems, filteration.page, filteration.size]);
 
   const fetchQuotations = useCallback(() => {
+    if (!rfqId) return;
+
     setLoading(true);
 
     dispatch(getAllQuotations(rfqId)).then((resp) => {
       setLoading(false);
 
       if (resp.meta.requestStatus === "fulfilled") {
-        setRfqResponse(resp.payload);
+        setQuotationResponse(resp.payload);
       } else {
         addToast({
           title: "ERROR",
@@ -412,50 +268,11 @@ const Quote = () => {
         });
       }
     });
-  }, [dispatch]);
-
-  const fetchVendors = useCallback(() => {
-    if (!userId) return;
-
-    dispatch(
-      getAllVendors({
-        userId,
-        page: 1,
-        size: 1000,
-        search: "",
-      }),
-    ).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        setVendorResponse(resp.payload);
-      }
-    });
-  }, [dispatch, userId]);
+  }, [dispatch, rfqId]);
 
   useEffect(() => {
     fetchQuotations();
   }, [fetchQuotations]);
-
-  useEffect(() => {
-    fetchVendors();
-  }, [fetchVendors]);
-
-  useEffect(() => {
-    dispatch(getAllPaymentType());
-  }, [dispatch]);
-
-  const handleOpenCreateModal = () => {
-    setSelectedRfq(null);
-    setMailBody("<p></p>");
-
-    resetRfqForm(defaultValues);
-
-    rfqModal.onOpen();
-  };
-
-  const handleView = (item) => {
-    setSelectedRfq(item);
-    viewModal.onOpen();
-  };
 
   const getUploadedFileValue = (value) => {
     return (
@@ -468,77 +285,83 @@ const Quote = () => {
     );
   };
 
-  const handleOpenRegisterQuote = (item) => {
-    setSelectedRfq(item);
+  const handleOpenAddQuote = () => {
+    if (!rfqId || !routeRfqVendorId || !routeVendorId) {
+      addToast({
+        title: "ERROR",
+        description:
+          "RFQ Vendor ID or Vendor ID is missing. Please open Add Quote from RFQ vendor action.",
+        color: "danger",
+      });
 
-    resetQuotationForm({
-      mappingId: item?.mappingId || "",
-      productId: item?.productId || solutionId || "",
-      productName: item?.productName || "",
-      vendorId: item?.vendorId || "",
-      vendorName: item?.vendorName || "",
-      email: item?.email || "",
-      mobile: item?.mobile || "",
-      gstNumber: item?.gstNumber || "",
-      panNumber: item?.panNumber || "",
-      pricePerUnit: "",
-      unit: "Per Application",
-      paymentTerms: "",
-      timelineDays: "",
-      quotationValidityDays: "",
-      vendorBrochureAttachment: "",
-      priceListAttachment: "",
-      agreementAttachment: item?.agreementAttachment || "",
-      remarks: "",
-    });
+      return;
+    }
 
+    resetQuotationForm(quotationDefaultValues);
     quotationModal.onOpen();
   };
 
-  const handleOpenRegisterVendor = (item) => {
-    setSelectedRfq(item);
-
-    resetRegisterVendorForm({
-      mappingId: item?.mappingId || "",
-      productId: item?.productId || solutionId || "",
-      productName: item?.productName || "",
-      vendorId: item?.vendorId || "",
-      vendorName: item?.vendorName || "",
-      email: item?.email || "",
-      mobile: item?.mobile || "",
-      gstNumber: item?.gstNumber || "",
-      panNumber: item?.panNumber || "",
-      pricePerUnit: "",
-      unit: "Per Application",
-      paymentTerms: "",
-      timelineDays: "",
-      quotationValidityDays: "",
-      vendorBrochureAttachment: "",
-      priceListAttachment: "",
-      agreementAttachment: item?.agreementAttachment || "",
-      remarks: "",
-    });
-
-    registerVendorModal.onOpen();
-  };
+  const handleView = useCallback(
+    (item) => {
+      setSelectedQuotation(item);
+      viewModal.onOpen();
+    },
+    [viewModal],
+  );
 
   const onSubmitQuotation = (values) => {
+    const resolvedCreatedBy =
+      currentUser?.id ||
+      currentUser?.userId ||
+      currentUser?.employeeId ||
+      userId;
+
+    if (!rfqId || !routeRfqVendorId || !routeVendorId) {
+      addToast({
+        title: "ERROR",
+        description:
+          "RFQ ID, RFQ Vendor ID, or Vendor ID is missing. Please open Add Quote from RFQ vendor action.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    if (!resolvedCreatedBy) {
+      addToast({
+        title: "ERROR",
+        description: "Created By user is missing. Please login again.",
+        color: "danger",
+      });
+
+      return;
+    }
+
     const payload = {
       rfqId: Number(rfqId),
-      // rfqVendorId: Number(rfqVendorId),
-      vendorId: Number(values.vendorId),
-      quotationNumber: values.quotationNumber,
-      quotationDate: new Date(values.quotationDate).toISOString(),
+      rfqVendorId: Number(routeRfqVendorId),
+      vendorId: Number(routeVendorId),
+
+      quotationNumber: `QTN-${rfqId}-${routeVendorId}-${dayjs().format(
+        "YYYYMMDDHHmmss",
+      )}`,
+
+      quotationDate: new Date().toISOString(),
+
       validTill: new Date(values.validTill).toISOString(),
       currency: values.currency,
       deliveryDays: Number(values.deliveryDays),
+
       paymentTerms: values.paymentTerms,
       warrantyTerms: values.warrantyTerms || "",
       remarks: values.remarks || "",
+
       quotationAttachmentUrl: getUploadedFileValue(
         values.quotationAttachmentUrl,
       ),
-      createdBy: Number(values.createdBy),
+
+      createdBy: Number(resolvedCreatedBy),
+
       items: values.items.map((item) => ({
         itemType: item.itemType,
         itemName: item.itemName,
@@ -580,42 +403,22 @@ const Quote = () => {
     });
   };
 
-  const onSubmitRegisterVendor = (values) => {
-    const payload = {
-      mappingId: Number(values?.mappingId),
-      productId: Number(values?.productId || solutionId),
-      vendorId: Number(values?.vendorId),
-
-      pricePerUnit: Number(values?.pricePerUnit),
-      unit: values?.unit,
-      paymentTerms: values?.paymentTerms,
-      timelineDays: Number(values?.timelineDays),
-      quotationValidityDays: values?.quotationValidityDays
-        ? Number(values.quotationValidityDays)
-        : null,
-
-      vendorBrochureAttachment: getUploadedFileValue(
-        values?.vendorBrochureAttachment,
-      ),
-      priceListAttachment: getUploadedFileValue(values?.priceListAttachment),
-      agreementAttachment: getUploadedFileValue(values?.agreementAttachment),
-
-      remarks: values?.remarks || "",
-    };
-
-    addToast({
-      title: "INFO",
-      description: "Payload prepared. Connect registration API dispatch here.",
-      color: "primary",
-    });
-  };
-
   const onSearchChange = useCallback((value) => {
     setFilterValue(value || "");
+
+    setFilteration((prev) => ({
+      ...prev,
+      page: 1,
+    }));
   }, []);
 
   const onClear = useCallback(() => {
     setFilterValue("");
+
+    setFilteration((prev) => ({
+      ...prev,
+      page: 1,
+    }));
   }, []);
 
   const onRowsPerPageChange = useCallback((e) => {
@@ -625,185 +428,135 @@ const Quote = () => {
     });
   }, []);
 
-  const getVendorOptionLabel = (vendor) => {
-    return (
-      vendor?.name ||
-      vendor?.vendorName ||
-      vendor?.fullName ||
-      vendor?.email ||
-      `Vendor ${vendor?.id || vendor?.vendorId}`
-    );
-  };
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "quotationNumber":
+          return (
+            <div className="flex flex-col">
+              <span className="font-semibold text-foreground">
+                {rowData?.quotationNumber || "-"}
+              </span>
 
-  const getStatusColor = (status) => {
-    const value = String(status || "").toUpperCase();
+              <span className="text-xs text-default-500">
+                ID: {rowData?.id || "-"}
+              </span>
+            </div>
+          );
 
-    if (value === "ACTIVE") return "success";
-    if (value === "INACTIVE") return "default";
-    if (value === "BLACKLISTED" || value === "SUSPENDED") return "danger";
-    if (value === "UNDER_REVIEW") return "warning";
+        case "vendorRfq":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                Vendor ID: {rowData?.vendorId || "-"}
+              </span>
 
-    return "primary";
-  };
+              <span className="text-xs text-default-500">
+                RFQ ID: {rowData?.rfqId || "-"}
+              </span>
 
-  const handleSubmitChat = () => {
-    const message = chatMessage.trim();
+              <span className="text-xs text-default-500">
+                RFQ Vendor ID: {rowData?.rfqVendorId || "-"}
+              </span>
+            </div>
+          );
 
-    if (!message && !chatAttachment) return;
+        case "dates":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              <span>
+                Quotation:{" "}
+                {rowData?.quotationDate
+                  ? dayjs(rowData.quotationDate).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
 
-    const attachmentData = chatAttachment
-      ? {
-          name: chatAttachment.name,
-          size: chatAttachment.size,
-          type: chatAttachment.type,
-          url: URL.createObjectURL(chatAttachment),
-        }
-      : null;
+              <span>
+                Valid Till:{" "}
+                {rowData?.validTill
+                  ? dayjs(rowData.validTill).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
 
-    setChatList((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        sender: "me",
-        senderName: "Corpseed",
-        message,
-        time: dayjs().format("hh:mm A"),
-        attachment: attachmentData,
-      },
-    ]);
+              <span>Delivery: {rowData?.deliveryDays ?? "-"} days</span>
+            </div>
+          );
 
-    setChatMessage("");
-    setChatAttachment(null);
+        case "commercials":
+          return (
+            <div className="flex flex-col gap-1">
+              <Chip size="sm" variant="flat">
+                {rowData?.currency || "INR"}
+              </Chip>
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+              <span className="text-xs text-default-500">
+                Items: {rowData?.items?.length || 0}
+              </span>
+            </div>
+          );
 
-  const handleOpenChatHistory = (rowData) => {
-    setSelectedRfq(rowData);
-    setChatDrawerOpen(true);
-  };
+        case "paymentTerms":
+          return (
+            <div className="max-w-[240px]">
+              <p className="truncate text-sm" title={rowData?.paymentTerms}>
+                {rowData?.paymentTerms || "-"}
+              </p>
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "quotationNumber":
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold text-foreground">
-              {rowData?.quotationNumber || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              ID: {rowData?.id || "-"}
-            </span>
-          </div>
-        );
-
-      case "vendorRfq":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">
-              Vendor ID: {rowData?.vendorId || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              RFQ ID: {rowData?.rfqId || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              RFQ Vendor ID: {rowData?.rfqVendorId || "-"}
-            </span>
-          </div>
-        );
-
-      case "dates":
-        return (
-          <div className="flex flex-col gap-1 text-xs">
-            <span>
-              Quotation:{" "}
-              {rowData?.quotationDate
-                ? dayjs(rowData.quotationDate).format("DD-MM-YYYY")
-                : "-"}
-            </span>
-            <span>
-              Valid Till:{" "}
-              {rowData?.validTill
-                ? dayjs(rowData.validTill).format("DD-MM-YYYY")
-                : "-"}
-            </span>
-            <span>Delivery: {rowData?.deliveryDays ?? "-"} days</span>
-          </div>
-        );
-
-      case "commercials":
-        return (
-          <div className="flex flex-col gap-1">
-            <Chip size="sm" variant="flat">
-              {rowData?.currency || "INR"}
-            </Chip>
-            <span className="text-xs text-default-500">
-              Items: {rowData?.items?.length || 0}
-            </span>
-          </div>
-        );
-
-      case "paymentTerms":
-        return (
-          <div className="max-w-[240px]">
-            <p className="truncate text-sm" title={rowData?.paymentTerms}>
-              {rowData?.paymentTerms || "-"}
-            </p>
-            <p
-              className="truncate text-xs text-default-500"
-              title={rowData?.warrantyTerms}
-            >
-              Warranty: {rowData?.warrantyTerms || "-"}
-            </p>
-          </div>
-        );
-
-      case "quotationAttachmentUrl":
-        return rowData?.quotationAttachmentUrl ? (
-          <a
-            href={rowData.quotationAttachmentUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-          >
-            View <ExternalLink size={13} />
-          </a>
-        ) : (
-          <Chip size="sm" variant="flat">
-            Not Attached
-          </Chip>
-        );
-
-      case "createdBy":
-        return <span className="text-sm">{rowData?.createdBy || "-"}</span>;
-
-      case "actions":
-        return (
-          <Dropdown>
-            <DropdownTrigger>
-              <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical size={18} />
-              </Button>
-            </DropdownTrigger>
-
-            <DropdownMenu>
-              <DropdownItem
-                key="view"
-                startContent={<Eye size={15} />}
-                onPress={() => handleView(rowData)}
+              <p
+                className="truncate text-xs text-default-500"
+                title={rowData?.warrantyTerms}
               >
-                View
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        );
+                Warranty: {rowData?.warrantyTerms || "-"}
+              </p>
+            </div>
+          );
 
-      default:
-        return rowData?.[columnKey] || "-";
-    }
-  }, []);
+        case "quotationAttachmentUrl":
+          return rowData?.quotationAttachmentUrl ? (
+            <a
+              href={rowData.quotationAttachmentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+            >
+              View <ExternalLink size={13} />
+            </a>
+          ) : (
+            <Chip size="sm" variant="flat">
+              Not Attached
+            </Chip>
+          );
+
+        case "createdBy":
+          return <span className="text-sm">{rowData?.createdBy || "-"}</span>;
+
+        case "actions":
+          return (
+            <Dropdown>
+              <DropdownTrigger>
+                <Button size="sm" isIconOnly variant="light">
+                  <EllipsisVertical size={18} />
+                </Button>
+              </DropdownTrigger>
+
+              <DropdownMenu>
+                <DropdownItem
+                  key="view"
+                  startContent={<Eye size={15} />}
+                  onPress={() => handleView(rowData)}
+                >
+                  View
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          );
+
+        default:
+          return rowData?.[columnKey] || "-";
+      }
+    },
+    [handleView],
+  );
 
   const topContent = useMemo(() => {
     return (
@@ -812,7 +565,7 @@ const Quote = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
+            placeholder="Search quotation..."
             startContent={<Search size={18} />}
             value={filterValue}
             onClear={onClear}
@@ -823,11 +576,11 @@ const Quote = () => {
             <Button
               color="primary"
               startContent={<Plus size={17} />}
-              //   onPress={handleOpenCreateModal}
-              onPress={() => handleOpenRegisterQuote()}
+              onPress={handleOpenAddQuote}
             >
               Add Quote
             </Button>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown size={16} />} variant="flat">
@@ -855,7 +608,7 @@ const Quote = () => {
 
         <div className="flex items-center justify-between">
           <span className="text-small text-default-400">
-            Total {count} vendors mapped
+            Total {filteredItems.length || count} quotations
           </span>
 
           <label className="flex items-center text-small text-default-400">
@@ -877,11 +630,13 @@ const Quote = () => {
   }, [
     filterValue,
     visibleColumns,
+    filteredItems.length,
     count,
     filteration.size,
     onClear,
     onSearchChange,
     onRowsPerPageChange,
+    handleOpenAddQuote,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -915,7 +670,7 @@ const Quote = () => {
 
         <Table
           isHeaderSticky
-          aria-label="Request for quotation table"
+          aria-label="Quotation table"
           bottomContent={bottomContent}
           bottomContentPlacement="outside"
           topContent={topContent}
@@ -938,11 +693,16 @@ const Quote = () => {
 
           <TableBody
             isLoading={loading}
-            emptyContent={loading ? "Loading..." : "No RFQ found"}
-            items={filteredItems}
+            emptyContent={loading ? "Loading..." : "No quotation found"}
+            items={paginatedItems}
           >
             {(item) => (
-              <TableRow key={item?.mappingId || item?.id || item?.vendorId}>
+              <TableRow
+                key={
+                  item?.id ||
+                  `${item?.rfqId || "rfq"}-${item?.rfqVendorId || "vendor"}`
+                }
+              >
                 {(columnKey) => (
                   <TableCell>{renderCell(item, columnKey)}</TableCell>
                 )}
@@ -959,123 +719,201 @@ const Quote = () => {
         scrollBehavior="inside"
       >
         <ModalContent>
-          <ModalHeader className="border-b">RFQ Details</ModalHeader>
+          <ModalHeader className="border-b">Quotation Details</ModalHeader>
 
           <ModalBody className="bg-gray-50 p-4">
-            {selectedRfq && (
+            {selectedQuotation && (
               <div className="space-y-4">
                 <div className="rounded-xl border bg-white p-4 shadow-sm">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                     <div>
-                      <p className="text-xs text-default-500">Vendor</p>
+                      <p className="text-xs text-default-500">
+                        Quotation Number
+                      </p>
                       <p className="font-semibold">
-                        {selectedRfq?.vendorName || "-"}
+                        {selectedQuotation?.quotationNumber || "-"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-default-500">Product</p>
+                      <p className="text-xs text-default-500">RFQ ID</p>
                       <p className="font-semibold">
-                        {selectedRfq?.productName || "-"}
+                        {selectedQuotation?.rfqId || "-"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-default-500">Email</p>
+                      <p className="text-xs text-default-500">RFQ Vendor ID</p>
                       <p className="font-semibold">
-                        {selectedRfq?.email || "-"}
+                        {selectedQuotation?.rfqVendorId || "-"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-default-500">Status</p>
-                      <Chip
-                        size="sm"
-                        color={getStatusColor(selectedRfq?.status)}
-                        variant="flat"
-                      >
-                        {selectedRfq?.status || "-"}
-                      </Chip>
+                      <p className="text-xs text-default-500">Vendor ID</p>
+                      <p className="font-semibold">
+                        {selectedQuotation?.vendorId || "-"}
+                      </p>
                     </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
                     <div>
-                      <p className="text-xs text-default-500">Mobile</p>
+                      <p className="text-xs text-default-500">Quotation Date</p>
                       <p className="font-medium">
-                        {selectedRfq?.mobile || "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">GST Number</p>
-                      <p className="font-medium">
-                        {selectedRfq?.gstNumber || "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">PAN Number</p>
-                      <p className="font-medium">
-                        {selectedRfq?.panNumber || "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">Created Date</p>
-                      <p className="font-medium">
-                        {selectedRfq?.createdDate
-                          ? dayjs(selectedRfq.createdDate).format(
+                        {selectedQuotation?.quotationDate
+                          ? dayjs(selectedQuotation.quotationDate).format(
                               "DD-MM-YYYY hh:mm A",
                             )
                           : "-"}
                       </p>
                     </div>
+
+                    <div>
+                      <p className="text-xs text-default-500">Valid Till</p>
+                      <p className="font-medium">
+                        {selectedQuotation?.validTill
+                          ? dayjs(selectedQuotation.validTill).format(
+                              "DD-MM-YYYY hh:mm A",
+                            )
+                          : "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-default-500">Delivery Days</p>
+                      <p className="font-medium">
+                        {selectedQuotation?.deliveryDays ?? "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-default-500">Currency</p>
+                      <Chip size="sm" color="primary" variant="flat">
+                        {selectedQuotation?.currency || "INR"}
+                      </Chip>
+                    </div>
                   </div>
                 </div>
 
                 <div className="rounded-xl border bg-white p-4 shadow-sm">
-                  <p className="text-xs text-default-500">Email Subject</p>
-                  <p className="mt-1 font-semibold">
-                    {selectedRfq?.emailSubject || "-"}
-                  </p>
-                </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-default-500">Payment Terms</p>
+                      <p className="font-medium">
+                        {selectedQuotation?.paymentTerms || "-"}
+                      </p>
+                    </div>
 
-                <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-                  <div className="border-b bg-gray-50 px-4 py-3">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Email Body
-                    </p>
-                  </div>
+                    <div>
+                      <p className="text-xs text-default-500">Warranty Terms</p>
+                      <p className="font-medium">
+                        {selectedQuotation?.warrantyTerms || "-"}
+                      </p>
+                    </div>
 
-                  <div className="p-4">
-                    {hasHtmlContent(selectedRfq?.emailBody) ? (
-                      <div
-                        className="proposal-content tiptap-preview force-preview-text"
-                        dangerouslySetInnerHTML={{
-                          __html: selectedRfq?.emailBody,
-                        }}
-                      />
-                    ) : (
-                      <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center text-sm text-default-500">
-                        No email body found.
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs text-default-500">Remarks</p>
+                      <p className="font-medium">
+                        {selectedQuotation?.remarks || "-"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {selectedRfq?.agreementAttachment && (
+                {selectedQuotation?.quotationAttachmentUrl && (
                   <div className="rounded-xl border bg-white p-4 shadow-sm">
                     <a
-                      href={selectedRfq.agreementAttachment}
+                      href={selectedQuotation.quotationAttachmentUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
                     >
-                      View Agreement <ExternalLink size={14} />
+                      View Quotation Attachment <ExternalLink size={14} />
                     </a>
                   </div>
                 )}
+
+                <div className="rounded-xl border bg-white p-4 shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                    Quotation Items
+                  </h3>
+
+                  {selectedQuotation?.items?.length ? (
+                    <div className="space-y-3">
+                      {selectedQuotation.items.map((item, index) => (
+                        <div
+                          key={item?.id || index}
+                          className="rounded-xl border bg-gray-50 p-4"
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-sm font-semibold">
+                              Item #{index + 1}
+                            </p>
+
+                            <Chip size="sm" variant="flat">
+                              {item?.itemType || "-"}
+                            </Chip>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-4">
+                            <div>
+                              <p className="text-xs text-default-500">
+                                Item Name
+                              </p>
+                              <p className="font-medium">
+                                {item?.itemName || "-"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-default-500">
+                                Quantity
+                              </p>
+                              <p className="font-medium">
+                                {item?.quantity ?? "-"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-default-500">Unit</p>
+                              <p className="font-medium">{item?.unit || "-"}</p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-default-500">
+                                Unit Rate
+                              </p>
+                              <p className="font-medium">
+                                {item?.unitRate ?? "-"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-default-500">Tax %</p>
+                              <p className="font-medium">
+                                {item?.taxPercent ?? "-"}
+                              </p>
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <p className="text-xs text-default-500">
+                                Description
+                              </p>
+                              <p className="font-medium">
+                                {item?.description || "-"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center text-sm text-default-500">
+                      No items found.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </ModalBody>
@@ -1087,11 +925,13 @@ const Quote = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
       <Modal
         isOpen={quotationModal.isOpen}
         onOpenChange={quotationModal.onOpenChange}
         size="4xl"
         isDismissable={false}
+        scrollBehavior="inside"
       >
         <ModalContent>
           <>
@@ -1100,78 +940,44 @@ const Quote = () => {
             <form onSubmit={handleQuotationFormSubmit(onSubmitQuotation)}>
               <ModalBody>
                 <div className="max-h-[65vh] overflow-auto p-2">
+                  <div className="mb-4 rounded-xl border bg-blue-50 p-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                      <div>
+                        <p className="text-xs text-default-500">RFQ ID</p>
+                        <p className="font-semibold">{rfqId || "-"}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-default-500">
+                          RFQ Vendor ID
+                        </p>
+                        <p className="font-semibold">
+                          {routeRfqVendorId || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-default-500">Vendor</p>
+                        <p className="font-semibold">
+                          {routeVendorName || routeVendorId || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-default-500">Email</p>
+                        <p className="font-semibold">
+                          {routeVendorEmail || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="rounded-xl border bg-gray-50 p-4">
                     <h3 className="mb-3 text-sm font-semibold text-gray-900">
                       Quotation Basic Details
                     </h3>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          
-                      <Controller
-                        name="rfqVendorId"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="RFQ Vendor ID"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            isInvalid={!!quotationErrors.rfqVendorId}
-                            errorMessage={quotationErrors.rfqVendorId?.message}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="vendorId"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Vendor ID"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            isInvalid={!!quotationErrors.vendorId}
-                            errorMessage={quotationErrors.vendorId?.message}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="quotationNumber"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Quotation Number"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            isInvalid={!!quotationErrors.quotationNumber}
-                            errorMessage={
-                              quotationErrors.quotationNumber?.message
-                            }
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="quotationDate"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Quotation Date"
-                            type="datetime-local"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            isInvalid={!!quotationErrors.quotationDate}
-                            errorMessage={
-                              quotationErrors.quotationDate?.message
-                            }
-                          />
-                        )}
-                      />
-
                       <Controller
                         name="validTill"
                         control={quotationControl}
@@ -1216,21 +1022,6 @@ const Quote = () => {
                             }
                             isInvalid={!!quotationErrors.deliveryDays}
                             errorMessage={quotationErrors.deliveryDays?.message}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="createdBy"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Created By"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            isInvalid={!!quotationErrors.createdBy}
-                            errorMessage={quotationErrors.createdBy?.message}
                           />
                         )}
                       />
@@ -1360,10 +1151,19 @@ const Quote = () => {
                                   label="Item Type"
                                   isRequired
                                   selectedKeys={
-                                    field.value ? [field.value] : []
+                                    field.value
+                                      ? new Set([field.value])
+                                      : new Set([])
                                   }
                                   onSelectionChange={(keys) =>
-                                    field.onChange(Array.from(keys)[0])
+                                    field.onChange(Array.from(keys)?.[0] || "")
+                                  }
+                                  isInvalid={
+                                    !!quotationErrors.items?.[index]?.itemType
+                                  }
+                                  errorMessage={
+                                    quotationErrors.items?.[index]?.itemType
+                                      ?.message
                                   }
                                 >
                                   <SelectItem key="MATERIAL">
@@ -1527,7 +1327,7 @@ const Quote = () => {
                   Cancel
                 </Button>
 
-                <Button color="primary" type="submit">
+                <Button color="primary" type="submit" isLoading={submitLoading}>
                   Submit
                 </Button>
               </ModalFooter>
@@ -1535,457 +1335,6 @@ const Quote = () => {
           </>
         </ModalContent>
       </Modal>
-
-      <Modal
-        isOpen={registerVendorModal.isOpen}
-        onOpenChange={registerVendorModal.onOpenChange}
-        size="4xl"
-        isDismissable={false}
-      >
-        <ModalContent>
-          <>
-            <ModalHeader className="border-b">Register vendor</ModalHeader>
-
-            <form onSubmit={handleRegisterVendorSubmit(onSubmitRegisterVendor)}>
-              <ModalBody>
-                <div className="max-h-[65vh] overflow-auto p-2">
-                  <div className="rounded-xl border bg-gray-50 p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Auto Fetched Information
-                    </h3>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <Controller
-                        name="vendorName"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Vendor Name"
-                            value={field.value}
-                            isReadOnly
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="productName"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Product / Service"
-                            value={field.value}
-                            isReadOnly
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="email"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input label="Email" value={field.value} isReadOnly />
-                        )}
-                      />
-
-                      <Controller
-                        name="mobile"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Mobile"
-                            value={field.value}
-                            isReadOnly
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="gstNumber"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="GST Number"
-                            value={field.value}
-                            isReadOnly
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="panNumber"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="PAN Number"
-                            value={field.value}
-                            isReadOnly
-                          />
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-xl border bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Registration Details
-                    </h3>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <Controller
-                        name="pricePerUnit"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Price Per Unit"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={registerErrors.pricePerUnit?.message}
-                            isInvalid={!!registerErrors.pricePerUnit}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="unit"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Select
-                            selectedKeys={
-                              field.value ? new Set([field.value]) : new Set([])
-                            }
-                            onSelectionChange={(keys) =>
-                              field.onChange(Array.from(keys)?.[0] || "")
-                            }
-                            label="Unit"
-                            isRequired
-                            isInvalid={!!registerErrors.unit}
-                            errorMessage={registerErrors.unit?.message}
-                          >
-                            <SelectItem key="1">1</SelectItem>
-                            <SelectItem key="2">2</SelectItem>
-                            <SelectItem key="3">3</SelectItem>
-                            <SelectItem key="4">4</SelectItem>
-                            <SelectItem key="5">5</SelectItem>
-                            <SelectItem key="PER_METRIC_TONNE">
-                              PER_METRIC_TONNE
-                            </SelectItem>
-                            <SelectItem key="PER_KG">PER_KG</SelectItem>
-                          </Select>
-                        )}
-                      />
-
-                      <Controller
-                        name="paymentTerms"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <NewSelect
-                            isRequired
-                            label="Payment term"
-                            data={paymentTypeList || []}
-                            labelKey="name"
-                            valueKey="id"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e)}
-                            errorMessage={registerErrors.paymentTerms?.message}
-                            isInvalid={!!registerErrors.paymentTerms}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="timelineDays"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Timeline Days"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={registerErrors.timelineDays?.message}
-                            isInvalid={!!registerErrors.timelineDays}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="quotationValidityDays"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Quotation Validity Days"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="remarks"
-                        control={registerControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Remarks"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-xl border bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Attachments
-                    </h3>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <Controller
-                        name="vendorBrochureAttachment"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Vendor Brochure"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="priceListAttachment"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Vendor Form"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="agreementAttachment"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Aggrement Attachment"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </ModalBody>
-
-              <ModalFooter>
-                <Button
-                  variant="flat"
-                  type="button"
-                  onPress={() => {
-                    registerVendorModal.onClose();
-                    resetRegisterVendorForm(vendorRegistrationDefaultValues);
-                  }}
-                >
-                  Cancel
-                </Button>
-
-                <Button color="primary" type="submit" isLoading={submitLoading}>
-                  Submit Quotation
-                </Button>
-              </ModalFooter>
-            </form>
-          </>
-        </ModalContent>
-      </Modal>
-
-      {chatDrawerOpen && (
-        <div className="fixed inset-0 z-[9999] flex justify-end">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setChatDrawerOpen(false)}
-          />
-
-          <div className="relative z-10 flex h-full w-full max-w-[440px] flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b bg-white px-4 py-3">
-              <div>
-                <h2 className="text-base font-semibold text-gray-900">
-                  RFQ Chat History
-                </h2>
-
-                <p className="text-xs text-gray-500">
-                  {selectedRfq?.vendorName
-                    ? `Vendor: ${selectedRfq.vendorName}`
-                    : "Dummy vendor communication timeline"}
-                </p>
-              </div>
-
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                onPress={() => setChatDrawerOpen(false)}
-              >
-                <X size={18} />
-              </Button>
-            </div>
-
-            <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4">
-              {chatList.map((chat) => {
-                const isMine = chat.sender === "me";
-
-                return (
-                  <div
-                    key={chat.id}
-                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
-                        isMine
-                          ? "rounded-br-sm bg-primary text-white"
-                          : "rounded-bl-sm border bg-white text-gray-900"
-                      }`}
-                    >
-                      <p
-                        className={`mb-1 text-[11px] font-semibold ${
-                          isMine ? "text-white/80" : "text-gray-500"
-                        }`}
-                      >
-                        {chat.senderName}
-                      </p>
-
-                      {chat.message && (
-                        <p className="whitespace-pre-wrap text-sm leading-5">
-                          {chat.message}
-                        </p>
-                      )}
-
-                      {chat.attachment && (
-                        <a
-                          href={chat.attachment.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
-                            isMine
-                              ? "border-white/30 bg-white/10 text-white"
-                              : "border-gray-200 bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          <File size={15} />
-                          <span className="line-clamp-1">
-                            {chat.attachment.name}
-                          </span>
-                        </a>
-                      )}
-
-                      <p
-                        className={`mt-1 text-right text-[10px] ${
-                          isMine ? "text-white/70" : "text-gray-400"
-                        }`}
-                      >
-                        {chat.time}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {chatAttachment && (
-              <div className="border-t bg-white px-4 py-2">
-                <div className="flex items-center justify-between rounded-xl border bg-gray-50 px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <File size={16} className="shrink-0 text-gray-500" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-800">
-                        {chatAttachment.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {(chatAttachment.size / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="light"
-                    color="danger"
-                    onPress={() => {
-                      setChatAttachment(null);
-
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                      }
-                    }}
-                  >
-                    <X size={15} />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div className="border-t bg-white p-3">
-              <div className="flex items-end gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-
-                    if (file) {
-                      setChatAttachment(file);
-                    }
-                  }}
-                />
-
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  type="button"
-                  onPress={() => fileInputRef.current?.click()}
-                >
-                  <Paperclip size={18} />
-                </Button>
-
-                <Input
-                  placeholder="Type a message..."
-                  value={chatMessage}
-                  onValueChange={setChatMessage}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmitChat();
-                    }
-                  }}
-                />
-
-                <Button
-                  isIconOnly
-                  color="primary"
-                  type="button"
-                  onPress={handleSubmitChat}
-                  isDisabled={!chatMessage.trim() && !chatAttachment}
-                >
-                  <Send size={18} />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
