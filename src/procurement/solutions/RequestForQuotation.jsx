@@ -9,6 +9,7 @@ import {
   addToast,
   Button,
   Chip,
+  DatePicker,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -28,8 +29,14 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
   Tooltip,
   useDisclosure,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
 } from "@heroui/react";
 import { Input as AntInput, Select as AntSelect } from "antd";
 import { useForm, Controller } from "react-hook-form";
@@ -56,46 +63,228 @@ import dayjs from "dayjs";
 
 import NewTextEditor from "../../components/NewTextEditor";
 import {
+  createRFQ,
   createVendorAgainstProduct,
   getAllVendors,
   getProductVendorsByProductId,
+  sendRfqToVendors,
 } from "../../toolkit/slices/vendorsSlice";
 import FileUploader from "../../components/FileUploader";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 import NewSelect from "../../components/NewSelect";
+import { parseDate } from "@internationalized/date";
+
+const DetailItem = ({ label, value }) => {
+  return (
+    <div>
+      <p className="text-xs text-default-500">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-gray-900">
+        {value || "-"}
+      </p>
+    </div>
+  );
+};
+
+const HtmlPreviewCard = ({ title, description, html, emptyText }) => {
+  return (
+    <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div className="border-b bg-gray-50 px-4 py-3">
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+
+        {description && (
+          <p className="mt-1 text-xs text-default-500">{description}</p>
+        )}
+      </div>
+
+      <div className="p-4">
+        {hasHtmlContent(html) ? (
+          <div
+            className="proposal-content tiptap-preview force-preview-text"
+            dangerouslySetInnerHTML={{
+              __html: html,
+            }}
+          />
+        ) : (
+          <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center text-sm text-default-500">
+            {emptyText}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+
+  return dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  return dayjs(value).isValid()
+    ? dayjs(value).format("DD-MM-YYYY hh:mm A")
+    : "-";
+};
+
+const getStatusColor = (status) => {
+  const value = String(status || "").toUpperCase();
+
+  if (value === "DRAFT") return "warning";
+  if (value === "SENT") return "primary";
+  if (value === "VENDOR_RESPONDED") return "success";
+  if (value === "CANCELLED") return "danger";
+  if (value === "CLOSED") return "default";
+
+  return "primary";
+};
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function TagsInput({
+  value = [],
+  onChange,
+  placeholder = "",
+  lockedValues = [],
+}) {
+  const [inputValue, setInputValue] = useState("");
+
+  const normalizeEmail = (email) =>
+    String(email || "")
+      .trim()
+      .toLowerCase();
+
+  const isLocked = (tag) =>
+    lockedValues.some(
+      (lockedEmail) => normalizeEmail(lockedEmail) === normalizeEmail(tag),
+    );
+
+  const safeOnChange = (nextValue = []) => {
+    const finalValue = [
+      ...lockedValues,
+      ...nextValue.filter((email) => !isLocked(email)),
+    ].filter(Boolean);
+
+    onChange([...new Set(finalValue)]);
+  };
+
+  const addTag = (val) => {
+    const trimmed = val.trim().replace(",", "");
+
+    if (!trimmed) return;
+
+    if (!emailRegex.test(trimmed)) {
+      addToast({
+        title: "Invalid email",
+        description: trimmed,
+        color: "danger",
+      });
+      setInputValue("");
+      return;
+    }
+
+    if (
+      !value.some((email) => normalizeEmail(email) === normalizeEmail(trimmed))
+    ) {
+      safeOnChange([...value, trimmed]);
+    }
+
+    setInputValue("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (["Enter", " ", ","].includes(e.key)) {
+      e.preventDefault();
+      addTag(inputValue);
+    }
+
+    if (e.key === "Backspace" && inputValue === "") {
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <div className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+      {value.map((tag, index) => (
+        <div
+          key={`${tag}-${index}`}
+          className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs ${
+            isLocked(tag)
+              ? "border border-gray-300 bg-gray-100 text-gray-700"
+              : "bg-blue-100 text-blue-800"
+          }`}
+        >
+          {tag}
+
+          {!isLocked(tag) && (
+            <button
+              type="button"
+              onClick={() => safeOnChange(value.filter((_, i) => i !== index))}
+              className="font-semibold text-blue-600 hover:text-red-500"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+
+      <input
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => addTag(inputValue)}
+        placeholder={placeholder}
+        className="min-w-[180px] flex-1 border-none bg-transparent text-sm outline-none placeholder:text-gray-400"
+      />
+    </div>
+  );
+}
 
 const columns = [
-  { name: "VENDOR", uid: "vendorName" },
+  { name: "RFQ NO.", uid: "rfqNumber" },
+  { name: "TITLE", uid: "title" },
+  { name: "PRODUCT", uid: "productName" },
+  { name: "VENDOR", uid: "vendors" },
+  { name: "DATES", uid: "dates" },
   { name: "CONTACT", uid: "contact" },
-  { name: "GST / PAN", uid: "gstPan" },
   { name: "STATUS", uid: "status" },
-  { name: "EMAIL SUBJECT", uid: "emailSubject" },
-  { name: "AGREEMENT", uid: "agreementAttachment" },
+  { name: "ATTACHMENT", uid: "attachmentUrl" },
   { name: "CREATED DATE", uid: "createdDate" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "vendorName",
+  "rfqNumber",
+  "title",
+  "productName",
+  "vendors",
+  "dates",
   "contact",
-  "gstPan",
   "status",
-  "emailSubject",
-  "agreementAttachment",
+  "attachmentUrl",
   "createdDate",
   "actions",
 ];
 
 const defaultValues = {
-  vendorId: undefined,
-  emailSubject: "",
-  emailBody: "<p></p>",
-  agreementAttachment: "",
+  title: "",
+  description: "",
+  scopeOfWork: "<p></p>",
+  termsAndConditions: "<p></p>",
+  deliveryLocation: "",
+  quotationSubmissionDeadline: "",
+  expectedStartDate: "",
+  expectedEndDate: "",
+  contactPersonName: "",
+  contactPersonEmail: "",
+  contactPersonMobile: "",
+  attachmentUrl: "",
+  vendorIds: [],
 };
 
 const quotationDefaultValues = {
   mappingId: "",
-  productId: "",
   productName: "",
   vendorId: "",
   vendorName: "",
@@ -116,7 +305,6 @@ const quotationDefaultValues = {
 
 const vendorRegistrationDefaultValues = {
   mappingId: "",
-  productId: "",
   productName: "",
   vendorId: "",
   vendorName: "",
@@ -135,6 +323,29 @@ const vendorRegistrationDefaultValues = {
   remarks: "",
 };
 
+const getRfqVendors = (rowData) => {
+  if (Array.isArray(rowData?.vendors)) return rowData.vendors;
+  return [];
+};
+
+const sendVendorDefaultValues = {
+  to: [],
+  cc: [],
+  bcc: [],
+  subject: "",
+  message: "<p></p>",
+};
+
+const sendVendorSchema = z.object({
+  to: z.array(z.string()).min(1, "Please enter at least one To email"),
+  cc: z.array(z.string()).optional(),
+  bcc: z.array(z.string()).optional(),
+  subject: z.string().min(1, "Please enter subject"),
+  message: z.string().refine((value) => getPlainTextLength(value) > 0, {
+    message: "Please enter message",
+  }),
+});
+
 const getPlainTextLength = (html = "") =>
   String(html || "")
     .replace(/<[^>]*>/g, "")
@@ -142,24 +353,37 @@ const getPlainTextLength = (html = "") =>
     .trim().length;
 
 const rfqSchema = z.object({
-  vendorId: z.any().refine((value) => Boolean(value), {
-    message: "Please select vendor",
+  title: z.string().min(1, "Please enter RFQ title"),
+  description: z.string().min(1, "Please enter description"),
+  scopeOfWork: z.string().refine((value) => getPlainTextLength(value) > 0, {
+    message: "Please enter scope of work",
   }),
-
-  emailSubject: z.string().min(1, "Please enter email subject"),
-
-  emailBody: z.string().refine((value) => getPlainTextLength(value) > 0, {
-    message: "Please enter email body",
-  }),
-
-  agreementAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload agreement attachment",
-  }),
+  termsAndConditions: z
+    .string()
+    .refine((value) => getPlainTextLength(value) > 0, {
+      message: "Please enter terms and conditions",
+    }),
+  deliveryLocation: z.string().min(1, "Please enter delivery location"),
+  quotationSubmissionDeadline: z
+    .string()
+    .min(1, "Please select quotation submission deadline"),
+  expectedStartDate: z.string().min(1, "Please select expected start date"),
+  expectedEndDate: z.string().min(1, "Please select expected end date"),
+  contactPersonName: z.string().min(1, "Please enter contact person name"),
+  contactPersonEmail: z
+    .string()
+    .min(1, "Please enter contact person email")
+    .email("Please enter valid email"),
+  contactPersonMobile: z
+    .string()
+    .min(10, "Mobile number must be 10 digits")
+    .max(10, "Mobile number must be 10 digits"),
+  attachmentUrl: z.any().optional(),
+  vendorIds: z.array(z.any()).min(1, "Please select at least one vendor"),
 });
 
 const vendorRegistrationSchema = z.object({
   mappingId: z.any().optional(),
-  productId: z.any().optional(),
   productName: z.string().optional(),
   vendorId: z.any().refine((value) => Boolean(value), {
     message: "Vendor is required",
@@ -191,7 +415,6 @@ const vendorRegistrationSchema = z.object({
 
 const quotationSchema = z.object({
   mappingId: z.any().optional(),
-  productId: z.any().optional(),
   productName: z.string().optional(),
   vendorId: z.any().refine((value) => Boolean(value), {
     message: "Vendor is required",
@@ -226,8 +449,8 @@ const hasHtmlContent = (html = "") => getPlainTextLength(html) > 0;
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.content)) return response.content;
-  if (Array.isArray(response?.data)) return response.data;
   if (Array.isArray(response?.data?.content)) return response.data.content;
+  if (Array.isArray(response?.data)) return response.data;
   if (Array.isArray(response?.response)) return response.response;
 
   return [];
@@ -242,6 +465,21 @@ const getTotalElements = (response, fallbackLength = 0) => {
   );
 };
 
+const toDatePickerValue = (value) => {
+  if (!value) return null;
+
+  try {
+    return parseDate(value);
+  } catch {
+    return null;
+  }
+};
+
+const toIsoDateTime = (dateValue) => {
+  if (!dateValue) return "";
+  return new Date(`${dateValue.toString()}T00:00:00`).toISOString();
+};
+
 const RequestForQuotation = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -254,6 +492,26 @@ const RequestForQuotation = () => {
   const viewModal = useDisclosure();
   const registerVendorModal = useDisclosure();
   const quotationModal = useDisclosure();
+  const sendVendorModal = useDisclosure();
+  const rfqDetailDrawer = useDisclosure();
+  const [selectedRfqDetail, setSelectedRfqDetail] = useState(null);
+  const [selectedSendRfq, setSelectedSendRfq] = useState(null);
+  const [sendVendorLoading, setSendVendorLoading] = useState(false);
+  const [lockedSendTo, setLockedSendTo] = useState([]);
+  const [sendMessageBody, setSendMessageBody] = useState("<p></p>");
+  const [status, setStatus] = useState("DRAFT");
+
+  const {
+    control: sendVendorControl,
+    handleSubmit: handleSendVendorSubmit,
+    reset: resetSendVendorForm,
+    setValue: setSendVendorValue,
+    trigger: triggerSendVendor,
+    formState: { errors: sendVendorErrors },
+  } = useForm({
+    resolver: zodResolver(sendVendorSchema),
+    defaultValues: sendVendorDefaultValues,
+  });
 
   const {
     control,
@@ -384,6 +642,7 @@ const RequestForQuotation = () => {
       getProductVendorsByProductId({
         productId: solutionId,
         userId,
+        status,
         page: filteration.page,
         size: filteration.size,
       }),
@@ -403,7 +662,14 @@ const RequestForQuotation = () => {
         });
       }
     });
-  }, [dispatch, solutionId, userId, filteration.page, filteration.size]);
+  }, [
+    dispatch,
+    solutionId,
+    userId,
+    filteration.page,
+    filteration.size,
+    status,
+  ]);
 
   const fetchVendors = useCallback(() => {
     if (!userId) return;
@@ -422,6 +688,11 @@ const RequestForQuotation = () => {
     });
   }, [dispatch, userId]);
 
+  const handleOpenRfqDetail = (rowData) => {
+    setSelectedRfqDetail(rowData);
+    rfqDetailDrawer.onOpen();
+  };
+
   useEffect(() => {
     fetchProductVendors();
   }, [fetchProductVendors]);
@@ -433,6 +704,33 @@ const RequestForQuotation = () => {
   useEffect(() => {
     dispatch(getAllPaymentType());
   }, [dispatch]);
+
+  const handleOpenSendToVendor = (rowData) => {
+    setSelectedSendRfq(rowData);
+
+    const toEmails =
+      selectedSendRfq?.vendors?.length > 0
+        ? selectedSendRfq.vendors
+            .map((vendor) => vendor?.vendorEmail)
+            .filter(Boolean)
+        : [];
+
+    setLockedSendTo(toEmails);
+    setSendMessageBody("<p></p>");
+
+    resetSendVendorForm({
+      to: toEmails,
+      cc: [],
+      bcc: [],
+      subject:
+        rowData?.title ||
+        rowData?.emailSubject ||
+        `RFQ for ${rowData?.productName || "Service"}`,
+      message: "<p></p>",
+    });
+
+    sendVendorModal.onOpen();
+  };
 
   const handleOpenCreateModal = () => {
     setSelectedRfq(null);
@@ -514,32 +812,40 @@ const RequestForQuotation = () => {
   };
 
   const onSubmitRFQ = (values) => {
-    if (!solutionId || !userId) {
+    if (!userId) {
       addToast({
         title: "ERROR",
-        description: "Product ID or User ID is missing.",
+        description: "User ID is missing.",
         color: "danger",
       });
       return;
     }
 
     const payload = {
-      vendorId: Number(values?.vendorId),
-      emailSubject: values?.emailSubject || "",
-      emailBody: values?.emailBody || "<p></p>",
-      agreementAttachment:
-        values?.agreementAttachment?.filePath ||
-        values?.agreementAttachment?.url ||
-        values?.agreementAttachment?.path ||
-        values?.agreementAttachment ||
-        "",
+      title: values.title,
+      description: values.description,
+      productId: Number(solutionId),
+      scopeOfWork: values.scopeOfWork,
+      termsAndConditions: values.termsAndConditions,
+      deliveryLocation: values.deliveryLocation,
+
+      quotationSubmissionDeadline: toIsoDateTime(
+        values.quotationSubmissionDeadline,
+      ),
+      expectedStartDate: toIsoDateTime(values.expectedStartDate),
+      expectedEndDate: toIsoDateTime(values.expectedEndDate),
+
+      contactPersonName: values.contactPersonName,
+      contactPersonEmail: values.contactPersonEmail,
+      contactPersonMobile: values.contactPersonMobile,
+      attachmentUrl: getUploadedFileValue(values.attachmentUrl),
+      vendorIds: values.vendorIds.map(Number),
     };
 
     setSubmitLoading(true);
 
     dispatch(
-      createVendorAgainstProduct({
-        productId: solutionId,
+      createRFQ({
         userId,
         data: payload,
       }),
@@ -549,13 +855,12 @@ const RequestForQuotation = () => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "SUCCESS",
-          description: "Vendor mapped with product successfully.",
+          description: "RFQ created successfully.",
           color: "success",
         });
 
         rfqModal.onClose();
         resetRfqForm(defaultValues);
-        setMailBody("<p></p>");
         fetchProductVendors();
       } else {
         addToast({
@@ -563,8 +868,7 @@ const RequestForQuotation = () => {
           description:
             resp?.payload?.message ||
             resp?.payload?.data?.message ||
-            resp?.payload ||
-            "Something went wrong.",
+            "RFQ creation failed.",
           color: "danger",
         });
       }
@@ -574,7 +878,7 @@ const RequestForQuotation = () => {
   const onSubmitRegisterVendor = (values) => {
     const payload = {
       mappingId: Number(values?.mappingId),
-      productId: Number(values?.productId || solutionId),
+      productId: Number(solutionId),
       vendorId: Number(values?.vendorId),
 
       pricePerUnit: Number(values?.pricePerUnit),
@@ -593,42 +897,6 @@ const RequestForQuotation = () => {
 
       remarks: values?.remarks || "",
     };
-
-    console.log("Register vendor payload", payload);
-
-    /*
-    Replace this with your actual registration API dispatch.
-
-    Example:
-    dispatch(
-      registerVendorForProduct({
-        userId,
-        mappingId: values?.mappingId,
-        data: payload,
-      }),
-    ).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        addToast({
-          title: "SUCCESS",
-          description: "Vendor registered successfully.",
-          color: "success",
-        });
-
-        registerVendorModal.onClose();
-        resetRegisterVendorForm(vendorRegistrationDefaultValues);
-        fetchProductVendors();
-      } else {
-        addToast({
-          title: "ERROR",
-          description:
-            resp?.payload?.message ||
-            resp?.payload?.data?.message ||
-            "Vendor registration failed.",
-          color: "danger",
-        });
-      }
-    });
-  */
 
     addToast({
       title: "INFO",
@@ -713,19 +981,123 @@ const RequestForQuotation = () => {
   };
 
   const handleAddQuote = (rowData) => {
-    navigate(`${rowData?.mappingId}/quotations`);
+    navigate(`${rowData?.id}/vendors`);
+  };
+
+  const onSubmitSendToVendor = (values) => {
+    const rfqId = selectedSendRfq?.rfqId || selectedSendRfq?.id;
+
+    if (!rfqId) {
+      addToast({
+        title: "ERROR",
+        description: "RFQ ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      rfqVendorIds:
+        selectedSendRfq?.vendors?.length > 0
+          ? selectedSendRfq.vendors
+              .map((vendor) => vendor?.rfqVendorId)
+              .filter(Boolean)
+              .map(Number)
+          : [],
+
+      subject: values.subject,
+      message: values.message,
+      cc: values.cc || [],
+      bcc: values.bcc || [],
+    };
+
+    setSendVendorLoading(true);
+
+    dispatch(
+      sendRfqToVendors({
+        rfqId,
+        userId,
+        data: payload,
+      }),
+    ).then((resp) => {
+      setSendVendorLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "RFQ sent to vendor successfully.",
+          color: "success",
+        });
+
+        sendVendorModal.onClose();
+        resetSendVendorForm(sendVendorDefaultValues);
+        setSelectedSendRfq(null);
+        setLockedSendTo([]);
+        setSendMessageBody("<p></p>");
+        fetchProductVendors();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            "Failed to send RFQ.",
+          color: "danger",
+        });
+      }
+    });
   };
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "vendorName":
+      case "rfqNumber":
         return (
           <div className="flex flex-col">
-            <span className="font-medium text-foreground">
-              {rowData?.vendorName || "-"}
+            <span className="text-sm font-semibold text-foreground">
+              {rowData?.rfqNumber || "-"}
             </span>
             <span className="text-xs text-default-500">
-              Product: {rowData?.productName || "-"}
+              ID: {rowData?.id || "-"}
+            </span>
+          </div>
+        );
+
+      case "title":
+        return (
+          <div className="max-w-[260px]">
+            <p className="truncate text-sm font-medium" title={rowData?.title}>
+              {rowData?.title || "-"}
+            </p>
+            <p
+              className="mt-1 line-clamp-1 text-xs text-default-500"
+              title={rowData?.description}
+            >
+              {rowData?.description || "-"}
+            </p>
+          </div>
+        );
+
+      case "productName":
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">
+              {rowData?.productName || "-"}
+            </span>
+            <span className="text-xs text-default-500">
+              Product ID: {rowData?.productId || "-"}
+            </span>
+          </div>
+        );
+
+      case "dates":
+        return (
+          <div className="flex flex-col gap-1 text-xs text-default-600">
+            <span>
+              Deadline: {formatDate(rowData?.quotationSubmissionDeadline)}
+            </span>
+            <span>
+              Start: {formatDate(rowData?.expectedStartDate)} | End:{" "}
+              {formatDate(rowData?.expectedEndDate)}
             </span>
           </div>
         );
@@ -733,62 +1105,36 @@ const RequestForQuotation = () => {
       case "contact":
         return (
           <div className="flex flex-col gap-1">
-            <span className="text-sm">{rowData?.email || "-"}</span>
-            {rowData?.mobile && (
-              <Chip size="sm" variant="flat">
-                {rowData.mobile}
-              </Chip>
-            )}
-          </div>
-        );
-
-      case "gstPan":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-default-500">
-              GST: {rowData?.gstNumber || "-"}
+            <span className="text-sm font-medium">
+              {rowData?.contactPersonName || "-"}
             </span>
             <span className="text-xs text-default-500">
-              PAN: {rowData?.panNumber || "-"}
+              {rowData?.contactPersonEmail || "-"}
             </span>
+            <Chip size="sm" variant="flat">
+              {rowData?.contactPersonMobile || "-"}
+            </Chip>
           </div>
         );
 
       case "status":
         return (
-          <div className="flex flex-col gap-1">
-            <Chip
-              size="sm"
-              color={getStatusColor(rowData?.status)}
-              variant="flat"
-            >
-              {rowData?.status || "-"}
-            </Chip>
-
-            {rowData?.verified && (
-              <Chip size="sm" color="success" variant="flat">
-                Verified
-              </Chip>
-            )}
-          </div>
+          <Chip
+            size="sm"
+            color={getStatusColor(rowData?.status)}
+            variant="flat"
+          >
+            {rowData?.status || "-"}
+          </Chip>
         );
 
-      case "emailSubject":
-        return (
-          <div className="max-w-[260px]">
-            <p className="truncate text-sm" title={rowData?.emailSubject}>
-              {rowData?.emailSubject || "-"}
-            </p>
-          </div>
-        );
-
-      case "agreementAttachment":
-        return rowData?.agreementAttachment ? (
+      case "attachmentUrl":
+        return rowData?.attachmentUrl ? (
           <a
-            href={rowData.agreementAttachment}
+            href={rowData.attachmentUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary"
           >
             View <ExternalLink size={13} />
           </a>
@@ -800,17 +1146,55 @@ const RequestForQuotation = () => {
 
       case "createdDate":
         return (
-          <span className="text-sm">
-            {rowData?.createdDate
-              ? dayjs(rowData.createdDate).format("DD-MM-YYYY hh:mm A")
-              : "-"}
-          </span>
+          <div className="flex flex-col text-xs">
+            <span>{formatDateTime(rowData?.createdDate)}</span>
+            <span className="text-default-500">
+              By: {rowData?.createdBy || "-"}
+            </span>
+          </div>
         );
 
-      case "actions":
-        console.log("sdkflhlsdjhf", rowData);
+      case "vendors": {
+        const vendors = getRfqVendors(rowData);
+
+        if (!vendors.length) {
+          return (
+            <Chip size="sm" variant="flat">
+              No Vendor
+            </Chip>
+          );
+        }
+
+        const firstVendor = vendors[0];
+
         return (
-          <div className="flex flex-col items-center justify-center gap-1">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-foreground">
+              {firstVendor?.vendorName || "-"}
+            </span>
+
+            <span className="text-xs text-default-500">
+              {firstVendor?.vendorEmail || "-"}
+            </span>
+
+            <div className="flex items-center gap-1">
+              <Chip size="sm" color="success" variant="flat">
+                {firstVendor?.vendorStatus || "-"}
+              </Chip>
+
+              {vendors.length > 1 && (
+                <Chip size="sm" variant="flat">
+                  +{vendors.length - 1} more
+                </Chip>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case "actions":
+        return (
+          <div className="flex justify-center">
             <Dropdown>
               <DropdownTrigger>
                 <Button size="sm" isIconOnly variant="light">
@@ -822,10 +1206,19 @@ const RequestForQuotation = () => {
                 <DropdownItem
                   key="view"
                   startContent={<Eye size={15} />}
-                  onPress={() => handleView(rowData)}
+                  onPress={() => handleOpenRfqDetail(rowData)}
                 >
-                  View
+                  View Details
                 </DropdownItem>
+
+                <DropdownItem
+                  key="sendToVendor"
+                  startContent={<Send size={15} />}
+                  onPress={() => handleOpenSendToVendor(rowData)}
+                >
+                  Send To Vendor
+                </DropdownItem>
+
                 <DropdownItem
                   key="history"
                   startContent={<Clock size={15} />}
@@ -837,19 +1230,9 @@ const RequestForQuotation = () => {
                 <DropdownItem
                   key="addQuote"
                   startContent={<File size={15} />}
-                  // onPress={() => handleOpenRegisterQuote(rowData)}
                   onPress={() => handleAddQuote(rowData)}
-                  // href={`/${rowData?.mappingId}/quotations`}
                 >
-                  Add Quote
-                </DropdownItem>
-
-                <DropdownItem
-                  key="registerVendor"
-                  startContent={<UserPlus size={15} />}
-                  onPress={() => handleOpenRegisterVendor(rowData)}
-                >
-                  Register Vendor
+                  Vendors
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -883,6 +1266,43 @@ const RequestForQuotation = () => {
             >
               Add RFQ
             </Button>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  className="capitalize"
+                  variant="flat"
+                  endContent={<ChevronDown />}
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[status]}
+                selectionMode="single"
+                variant="flat"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setStatus(key);
+                }}
+              >
+                <DropdownItem key="DRAFT">DRAFT</DropdownItem>
+                <DropdownItem key="SENT">SENT</DropdownItem>
+                <DropdownItem key="QUOTATION_RECEIVED">
+                  QUOTATION_RECEIVED
+                </DropdownItem>
+                <DropdownItem key="COMPARISON_PENDING">
+                  COMPARISON_PENDING
+                </DropdownItem>
+                <DropdownItem key="VENDOR_SELECTED">
+                  VENDOR_SELECTED
+                </DropdownItem>
+                <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
+                <DropdownItem key="CLOSED">CLOSED</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown size={16} />} variant="flat">
@@ -937,6 +1357,7 @@ const RequestForQuotation = () => {
     onClear,
     onSearchChange,
     onRowsPerPageChange,
+    status,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -999,7 +1420,7 @@ const RequestForQuotation = () => {
             items={filteredItems}
           >
             {(item) => (
-              <TableRow key={item?.mappingId || item?.id || item?.vendorId}>
+              <TableRow key={item?.id}>
                 {(columnKey) => (
                   <TableCell>{renderCell(item, columnKey)}</TableCell>
                 )}
@@ -1012,149 +1433,291 @@ const RequestForQuotation = () => {
       <Modal
         isOpen={rfqModal.isOpen}
         onOpenChange={rfqModal.onOpenChange}
-        size="4xl"
+        size="5xl"
         isDismissable={false}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Create RFQ</ModalHeader>
-              <form onSubmit={handleRfqFormSubmit(onSubmitRFQ)}>
+              <ModalHeader className="border-b">
+                <div>
+                  <h2 className="text-lg font-semibold">Create RFQ</h2>
+                  <p className="text-xs font-normal text-default-500">
+                    Fill RFQ details, scope of work, terms and vendor selection.
+                  </p>
+                </div>
+              </ModalHeader>
+
+              <form
+                onSubmit={handleRfqFormSubmit(onSubmitRFQ, () => {
+                  addToast({
+                    title: "ERROR",
+                    description: "Please fill all required fields correctly",
+                    color: "danger",
+                  });
+                })}
+              >
                 <ModalBody>
-                  <div className="max-h-[60vh] overflow-auto p-2">
+                  <div className="max-h-[60vh] overflow-auto p-4">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <Controller
-                        name="vendorId"
+                        name="title"
                         control={control}
                         render={({ field }) => (
-                          <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
-                              Vendor <span className="text-red-500">*</span>
-                            </label>
-
-                            <AntSelect
-                              size="large"
-                              showSearch
-                              placeholder="Select vendor"
-                              optionFilterProp="label"
-                              value={field.value}
-                              onChange={(value) => field.onChange(value)}
-                              options={vendorList.map((vendor) => ({
-                                label: getVendorOptionLabel(vendor),
-                                value: Number(vendor?.id || vendor?.vendorId),
-                              }))}
-                              className="w-full"
-                            />
-
-                            {errors.vendorId?.message && (
-                              <p className="mt-1 text-xs text-red-500">
-                                {errors.vendorId.message}
-                              </p>
-                            )}
-                          </div>
+                          <Input
+                            label="RFQ Title"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!errors.title}
+                            errorMessage={errors.title?.message}
+                          />
                         )}
                       />
 
                       <Controller
-                        name="agreementAttachment"
+                        name="deliveryLocation"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            label="Delivery Location"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!errors.deliveryLocation}
+                            errorMessage={errors.deliveryLocation?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="quotationSubmissionDeadline"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            label="Quotation Submission Deadline"
+                            isRequired
+                            value={toDatePickerValue(field.value)}
+                            onChange={(value) =>
+                              field.onChange(value ? value.toString() : "")
+                            }
+                            isInvalid={!!errors.quotationSubmissionDeadline}
+                            errorMessage={
+                              errors.quotationSubmissionDeadline?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="expectedStartDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            label="Expected Start Date"
+                            isRequired
+                            value={toDatePickerValue(field.value)}
+                            onChange={(value) =>
+                              field.onChange(value ? value.toString() : "")
+                            }
+                            isInvalid={!!errors.expectedStartDate}
+                            errorMessage={errors.expectedStartDate?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="expectedEndDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            label="Expected End Date"
+                            isRequired
+                            value={toDatePickerValue(field.value)}
+                            onChange={(value) =>
+                              field.onChange(value ? value.toString() : "")
+                            }
+                            isInvalid={!!errors.expectedEndDate}
+                            errorMessage={errors.expectedEndDate?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="contactPersonName"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            label="Contact Person Name"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!errors.contactPersonName}
+                            errorMessage={errors.contactPersonName?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="contactPersonEmail"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            type="email"
+                            label="Contact Person Email"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!errors.contactPersonEmail}
+                            errorMessage={errors.contactPersonEmail?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="contactPersonMobile"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            label="Contact Person Mobile"
+                            isRequired
+                            maxLength={10}
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value.replace(/\D/g, "").slice(0, 10),
+                              )
+                            }
+                            isInvalid={!!errors.contactPersonMobile}
+                            errorMessage={errors.contactPersonMobile?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="vendorIds"
+                        control={control}
+                        render={({ field }) => (
+                          <NewSelect
+                            label="Select Vendors"
+                            isRequired
+                            selectionMode="multiple"
+                            data={vendorList || []}
+                            labelKey={"name"}
+                            valueKey="id"
+                            onChange={(keys) =>
+                              field.onChange(Array.from(keys))
+                            }
+                            value={field?.value}
+                            isInvalid={!!errors.vendorIds}
+                            errorMessage={errors.vendorIds?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="attachmentUrl"
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
                             label="Attachment"
                             value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-
-                              setValue("agreementAttachment", value, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-                            }}
+                            onChange={(value) => field.onChange(value)}
                             errorMessage={error?.message}
                             isInvalid={!!error}
                           />
                         )}
                       />
-                    </div>
-
-                    <Controller
-                      name="emailSubject"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="mt-4">
-                          <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Email Subject{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
-
-                          <AntInput
-                            placeholder="Enter email subject"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-
-                          {errors.emailSubject?.message && (
-                            <p className="mt-1 text-xs text-red-500">
-                              {errors.emailSubject.message}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    />
-
-                    <Controller
-                      name="emailBody"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="mt-4 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                          <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-900">
-                                Email Body{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-
-                              <p className="mt-1 text-xs leading-5 text-gray-500">
-                                Write RFQ email body here. This will be sent in
-                                HTML format.
-                              </p>
-                            </div>
-
-                            <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                              {getPlainTextLength(field.value)} chars
-                            </span>
-                          </div>
-
-                          <div className="bg-white">
-                            <NewTextEditor
-                              data={field.value || "<p></p>"}
-                              onChange={(value) => {
-                                field.onChange(value);
-                                setMailBody(value);
-                                trigger("emailBody");
-                              }}
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="description"
+                          control={control}
+                          render={({ field }) => (
+                            <Textarea
+                              label="Description"
+                              isRequired
+                              minRows={3}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              isInvalid={!!errors.description}
+                              errorMessage={errors.description?.message}
                             />
-                          </div>
-
-                          {errors.emailBody?.message && (
-                            <p className="px-4 pb-3 text-xs text-red-500">
-                              {errors.emailBody.message}
-                            </p>
                           )}
-                        </div>
-                      )}
-                    />
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="scopeOfWork"
+                          control={control}
+                          render={({ field }) => (
+                            <div className="overflow-hidden rounded-xl border bg-white">
+                              <div className="border-b bg-gray-50 px-4 py-3">
+                                <h3 className="text-sm font-semibold text-gray-900">
+                                  Scope of Work{" "}
+                                  <span className="text-red-500">*</span>
+                                </h3>
+                              </div>
+
+                              <NewTextEditor
+                                data={field.value || "<p></p>"}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  trigger("scopeOfWork");
+                                }}
+                              />
+
+                              {errors.scopeOfWork?.message && (
+                                <p className="px-4 pb-3 text-xs text-red-500">
+                                  {errors.scopeOfWork.message}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="termsAndConditions"
+                          control={control}
+                          render={({ field }) => (
+                            <div className="overflow-hidden rounded-xl border bg-white">
+                              <div className="border-b bg-gray-50 px-4 py-3">
+                                <h3 className="text-sm font-semibold text-gray-900">
+                                  Terms and Conditions{" "}
+                                  <span className="text-red-500">*</span>
+                                </h3>
+                              </div>
+
+                              <NewTextEditor
+                                data={field.value || "<p></p>"}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  trigger("termsAndConditions");
+                                }}
+                              />
+
+                              {errors.termsAndConditions?.message && (
+                                <p className="px-4 pb-3 text-xs text-red-500">
+                                  {errors.termsAndConditions.message}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </ModalBody>
 
-                <ModalFooter className="flex w-full justify-end gap-1.5">
+                <ModalFooter>
                   <Button
                     variant="flat"
                     type="button"
                     onPress={() => {
-                      rfqModal.onClose();
+                      onClose();
                       resetRfqForm(defaultValues);
-                      setMailBody("<p></p>");
                     }}
                     isDisabled={submitLoading}
                   >
@@ -1162,11 +1725,11 @@ const RequestForQuotation = () => {
                   </Button>
 
                   <Button
-                    type="submit"
                     color="primary"
+                    type="submit"
                     isLoading={submitLoading}
                   >
-                    Submit RFQ
+                    Create RFQ
                   </Button>
                 </ModalFooter>
               </form>
@@ -2034,6 +2597,383 @@ const RequestForQuotation = () => {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={sendVendorModal.isOpen}
+        onOpenChange={sendVendorModal.onOpenChange}
+        size="4xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="border-b">
+                <div>
+                  <h2 className="text-lg font-semibold">Send RFQ To Vendor</h2>
+                  <p className="text-xs font-normal text-default-500">
+                    Send RFQ mail to selected mapped vendor.
+                  </p>
+                </div>
+              </ModalHeader>
+
+              <form
+                onSubmit={handleSendVendorSubmit(onSubmitSendToVendor, () => {
+                  addToast({
+                    title: "ERROR",
+                    description: "Please fill all required fields correctly",
+                    color: "danger",
+                  });
+                })}
+              >
+                <ModalBody>
+                  <div className="max-h-[60vh] overflow-auto p-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <Controller
+                        name="to"
+                        control={sendVendorControl}
+                        render={({ field }) => (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              To <span className="text-red-500">*</span>
+                            </label>
+
+                            <TagsInput
+                              value={field.value || []}
+                              onChange={field.onChange}
+                              lockedValues={lockedSendTo}
+                              placeholder="Enter email & press enter"
+                            />
+
+                            {sendVendorErrors.to?.message && (
+                              <p className="mt-1 text-xs text-red-500">
+                                {sendVendorErrors.to.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      />
+
+                      <Controller
+                        name="cc"
+                        control={sendVendorControl}
+                        render={({ field }) => (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Cc
+                            </label>
+
+                            <TagsInput
+                              value={field.value || []}
+                              onChange={field.onChange}
+                              placeholder="Enter email & press enter"
+                            />
+
+                            {sendVendorErrors.cc?.message && (
+                              <p className="mt-1 text-xs text-red-500">
+                                {sendVendorErrors.cc.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      />
+
+                      <Controller
+                        name="bcc"
+                        control={sendVendorControl}
+                        render={({ field }) => (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Bcc
+                            </label>
+
+                            <TagsInput
+                              value={field.value || []}
+                              onChange={field.onChange}
+                              placeholder="Enter email & press enter"
+                            />
+
+                            {sendVendorErrors.bcc?.message && (
+                              <p className="mt-1 text-xs text-red-500">
+                                {sendVendorErrors.bcc.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      />
+
+                      <Controller
+                        name="subject"
+                        control={sendVendorControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Subject"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendVendorErrors.subject}
+                            errorMessage={sendVendorErrors.subject?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="message"
+                        control={sendVendorControl}
+                        render={({ field }) => (
+                          <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                            <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900">
+                                  Message{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+
+                                <p className="mt-1 text-xs leading-5 text-gray-500">
+                                  This RFQ message will be sent in HTML format.
+                                </p>
+                              </div>
+
+                              <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                                {getPlainTextLength(field.value)} chars
+                              </span>
+                            </div>
+
+                            <div className="bg-white">
+                              <NewTextEditor
+                                data={field.value || "<p></p>"}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  setSendMessageBody(value);
+
+                                  setSendVendorValue("message", value, {
+                                    shouldValidate: true,
+                                    shouldDirty: true,
+                                  });
+
+                                  triggerSendVendor("message");
+                                }}
+                              />
+                            </div>
+
+                            {sendVendorErrors.message?.message && (
+                              <p className="px-4 pb-3 text-xs text-red-500">
+                                {sendVendorErrors.message.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </ModalBody>
+
+                <ModalFooter>
+                  <Button
+                    variant="flat"
+                    type="button"
+                    onPress={() => {
+                      onClose();
+                      resetSendVendorForm(sendVendorDefaultValues);
+                      setSelectedSendRfq(null);
+                      setLockedSendTo([]);
+                      setSendMessageBody("<p></p>");
+                    }}
+                    isDisabled={sendVendorLoading}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    color="primary"
+                    type="submit"
+                    isLoading={sendVendorLoading}
+                  >
+                    Send
+                  </Button>
+                </ModalFooter>
+              </form>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Drawer
+        isOpen={rfqDetailDrawer.isOpen}
+        onOpenChange={rfqDetailDrawer.onOpenChange}
+        size="2xl"
+        placement="right"
+      >
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="border-b">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    RFQ Details
+                  </h2>
+                  <p className="text-xs font-normal text-default-500">
+                    {selectedRfqDetail?.rfqNumber || "-"} •{" "}
+                    {selectedRfqDetail?.productName || "-"}
+                  </p>
+                </div>
+              </DrawerHeader>
+
+              <DrawerBody className="bg-gray-50 p-4">
+                {selectedRfqDetail && (
+                  <div className="space-y-4">
+                    <div className="rounded-xl border bg-white p-4 shadow-sm">
+                      <div className="mb-4 flex items-start justify-between gap-3 border-b pb-3">
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900">
+                            {selectedRfqDetail?.title || "-"}
+                          </h3>
+                          <p className="mt-1 text-xs text-default-500">
+                            {selectedRfqDetail?.description || "-"}
+                          </p>
+                        </div>
+
+                        <Chip
+                          size="sm"
+                          color={getStatusColor(selectedRfqDetail?.status)}
+                          variant="flat"
+                        >
+                          {selectedRfqDetail?.status || "-"}
+                        </Chip>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <DetailItem
+                          label="RFQ Number"
+                          value={selectedRfqDetail?.rfqNumber}
+                        />
+                        <DetailItem
+                          label="Product"
+                          value={selectedRfqDetail?.productName}
+                        />
+                        <DetailItem
+                          label="Product ID"
+                          value={selectedRfqDetail?.productId}
+                        />
+                        <DetailItem
+                          label="Delivery Location"
+                          value={selectedRfqDetail?.deliveryLocation}
+                        />
+                        <DetailItem
+                          label="Quotation Deadline"
+                          value={formatDate(
+                            selectedRfqDetail?.quotationSubmissionDeadline,
+                          )}
+                        />
+                        <DetailItem
+                          label="Expected Start Date"
+                          value={formatDate(
+                            selectedRfqDetail?.expectedStartDate,
+                          )}
+                        />
+                        <DetailItem
+                          label="Expected End Date"
+                          value={formatDate(selectedRfqDetail?.expectedEndDate)}
+                        />
+                        <DetailItem
+                          label="Created Date"
+                          value={formatDateTime(selectedRfqDetail?.createdDate)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border bg-white p-4 shadow-sm">
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        Contact Person
+                      </h3>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <DetailItem
+                          label="Name"
+                          value={selectedRfqDetail?.contactPersonName}
+                        />
+                        <DetailItem
+                          label="Email"
+                          value={selectedRfqDetail?.contactPersonEmail}
+                        />
+                        <DetailItem
+                          label="Mobile"
+                          value={selectedRfqDetail?.contactPersonMobile}
+                        />
+                      </div>
+                    </div>
+
+                    <HtmlPreviewCard
+                      title="Scope of Work"
+                      description="Scope of work defined for this RFQ."
+                      html={selectedRfqDetail?.scopeOfWork}
+                      emptyText="No scope of work found."
+                    />
+
+                    <HtmlPreviewCard
+                      title="Terms and Conditions"
+                      description="Terms and conditions defined for this RFQ."
+                      html={selectedRfqDetail?.termsAndConditions}
+                      emptyText="No terms and conditions found."
+                    />
+
+                    <div className="rounded-xl border bg-white p-4 shadow-sm">
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        Attachment
+                      </h3>
+
+                      {selectedRfqDetail?.attachmentUrl ? (
+                        <a
+                          href={selectedRfqDetail.attachmentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
+                        >
+                          Open Attachment <ExternalLink size={14} />
+                        </a>
+                      ) : (
+                        <div className="rounded-xl border border-dashed bg-gray-50 py-6 text-center text-sm text-default-500">
+                          No attachment found.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border bg-white p-4 shadow-sm">
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        System Information
+                      </h3>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <DetailItem
+                          label="Created By"
+                          value={selectedRfqDetail?.createdBy}
+                        />
+                        <DetailItem
+                          label="Updated By"
+                          value={selectedRfqDetail?.updatedBy}
+                        />
+                        <DetailItem
+                          label="Updated Date"
+                          value={formatDateTime(selectedRfqDetail?.updatedDate)}
+                        />
+                        <DetailItem
+                          label="Deleted"
+                          value={selectedRfqDetail?.deleted ? "Yes" : "No"}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </DrawerBody>
+
+              <DrawerFooter className="border-t">
+                <Button variant="flat" onPress={onClose}>
+                  Close
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };

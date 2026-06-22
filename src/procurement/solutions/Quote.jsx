@@ -32,7 +32,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { Input as AntInput, Select as AntSelect } from "antd";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
@@ -57,6 +57,7 @@ import dayjs from "dayjs";
 import NewTextEditor from "../../components/NewTextEditor";
 import {
   createVendorAgainstProduct,
+  getAllQuotations,
   getAllVendors,
   getProductVendorsByProductId,
 } from "../../toolkit/slices/vendorsSlice";
@@ -65,24 +66,24 @@ import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 import NewSelect from "../../components/NewSelect";
 
 const columns = [
-  { name: "VENDOR", uid: "vendorName" },
-  { name: "CONTACT", uid: "contact" },
-  { name: "GST / PAN", uid: "gstPan" },
-  { name: "STATUS", uid: "status" },
-  { name: "EMAIL SUBJECT", uid: "emailSubject" },
-  { name: "AGREEMENT", uid: "agreementAttachment" },
-  { name: "CREATED DATE", uid: "createdDate" },
+  { name: "QUOTATION NO.", uid: "quotationNumber" },
+  { name: "VENDOR / RFQ", uid: "vendorRfq" },
+  { name: "DATES", uid: "dates" },
+  { name: "COMMERCIALS", uid: "commercials" },
+  { name: "PAYMENT TERMS", uid: "paymentTerms" },
+  { name: "ATTACHMENT", uid: "quotationAttachmentUrl" },
+  { name: "CREATED BY", uid: "createdBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "vendorName",
-  "contact",
-  "gstPan",
-  "status",
-  "emailSubject",
-  "agreementAttachment",
-  "createdDate",
+  "quotationNumber",
+  "vendorRfq",
+  "dates",
+  "commercials",
+  "paymentTerms",
+  "quotationAttachmentUrl",
+  "createdBy",
   "actions",
 ];
 
@@ -94,24 +95,30 @@ const defaultValues = {
 };
 
 const quotationDefaultValues = {
-  mappingId: "",
-  productId: "",
-  productName: "",
+  rfqVendorId: "",
   vendorId: "",
-  vendorName: "",
-  email: "",
-  mobile: "",
-  gstNumber: "",
-  panNumber: "",
-  pricePerUnit: "",
-  unit: "Per Application",
+  quotationNumber: "",
+  quotationDate: "",
+  validTill: "",
+  currency: "INR",
+  deliveryDays: "",
   paymentTerms: "",
-  timelineDays: "",
-  quotationValidityDays: "",
-  vendorBrochureAttachment: "",
-  priceListAttachment: "",
-  agreementAttachment: "",
+  warrantyTerms: "",
   remarks: "",
+  quotationAttachmentUrl: "",
+  createdBy: "",
+  items: [
+    {
+      itemType: "MATERIAL",
+      itemName: "",
+      description: "",
+      quantity: "",
+      unit: "",
+      unitRate: "",
+      taxPercent: "",
+      remarks: "",
+    },
+  ],
 };
 
 const vendorRegistrationDefaultValues = {
@@ -190,35 +197,38 @@ const vendorRegistrationSchema = z.object({
 });
 
 const quotationSchema = z.object({
-  mappingId: z.any().optional(),
-  productId: z.any().optional(),
-  productName: z.string().optional(),
+  rfqVendorId: z.any().refine((value) => Boolean(value), {
+    message: "RFQ Vendor is required",
+  }),
   vendorId: z.any().refine((value) => Boolean(value), {
     message: "Vendor is required",
   }),
-  vendorName: z.string().optional(),
-  email: z.string().optional(),
-  mobile: z.string().optional(),
-  gstNumber: z.string().optional(),
-  panNumber: z.string().optional(),
-
-  pricePerUnit: z.string().min(1, "Please enter price per unit"),
-  unit: z.string().min(1, "Please select unit"),
+  quotationNumber: z.string().min(1, "Please enter quotation number"),
+  quotationDate: z.string().min(1, "Please select quotation date"),
+  validTill: z.string().min(1, "Please select valid till date"),
+  currency: z.string().min(1, "Please enter currency"),
+  deliveryDays: z.string().min(1, "Please enter delivery days"),
   paymentTerms: z.string().min(1, "Please enter payment terms"),
-  timelineDays: z.string().min(1, "Please enter timeline"),
-  quotationValidityDays: z.string().optional(),
-
-  vendorBrochureAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload vendor brochure",
-  }),
-  priceListAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload price list",
-  }),
-  agreementAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload agreement attachment",
-  }),
-
+  warrantyTerms: z.string().optional(),
   remarks: z.string().optional(),
+  quotationAttachmentUrl: z.any().optional(),
+  createdBy: z.any().refine((value) => Boolean(value), {
+    message: "Created by is required",
+  }),
+  items: z
+    .array(
+      z.object({
+        itemType: z.string().min(1, "Item type is required"),
+        itemName: z.string().min(1, "Item name is required"),
+        description: z.string().optional(),
+        quantity: z.string().min(1, "Quantity is required"),
+        unit: z.string().min(1, "Unit is required"),
+        unitRate: z.string().min(1, "Unit rate is required"),
+        taxPercent: z.string().optional(),
+        remarks: z.string().optional(),
+      }),
+    )
+    .min(1, "At least one item is required"),
 });
 
 const hasHtmlContent = (html = "") => getPlainTextLength(html) > 0;
@@ -244,7 +254,7 @@ const getTotalElements = (response, fallbackLength = 0) => {
 
 const Quote = () => {
   const dispatch = useDispatch();
-  const { solutionId, userId } = useParams();
+  const { solutionId, userId,rfqId } = useParams();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
@@ -284,6 +294,15 @@ const Quote = () => {
   } = useForm({
     resolver: zodResolver(quotationSchema),
     defaultValues: quotationDefaultValues,
+  });
+
+  const {
+    fields: quotationItemFields,
+    append: appendQuotationItem,
+    remove: removeQuotationItem,
+  } = useFieldArray({
+    control: quotationControl,
+    name: "items",
   });
 
   const [rfqResponse, setRfqResponse] = useState(null);
@@ -374,19 +393,10 @@ const Quote = () => {
     return filtered;
   }, [rfqList, filterValue]);
 
-  const fetchProductVendors = useCallback(() => {
-    if (!solutionId || !userId) return;
-
+  const fetchQuotations = useCallback(() => {
     setLoading(true);
 
-    dispatch(
-      getProductVendorsByProductId({
-        productId: solutionId,
-        userId,
-        page: filteration.page,
-        size: filteration.size,
-      }),
-    ).then((resp) => {
+    dispatch(getAllQuotations(rfqId)).then((resp) => {
       setLoading(false);
 
       if (resp.meta.requestStatus === "fulfilled") {
@@ -397,12 +407,12 @@ const Quote = () => {
           description:
             resp?.payload?.message ||
             resp?.payload ||
-            "Failed to fetch mapped vendors.",
+            "Failed to fetch quotations.",
           color: "danger",
         });
       }
     });
-  }, [dispatch, solutionId, userId, filteration.page, filteration.size]);
+  }, [dispatch]);
 
   const fetchVendors = useCallback(() => {
     if (!userId) return;
@@ -422,8 +432,8 @@ const Quote = () => {
   }, [dispatch, userId]);
 
   useEffect(() => {
-    fetchProductVendors();
-  }, [fetchProductVendors]);
+    fetchQuotations();
+  }, [fetchQuotations]);
 
   useEffect(() => {
     fetchVendors();
@@ -512,50 +522,50 @@ const Quote = () => {
     registerVendorModal.onOpen();
   };
 
-  const onSubmitRFQ = (values) => {
-    if (!solutionId || !userId) {
-      addToast({
-        title: "ERROR",
-        description: "Product ID or User ID is missing.",
-        color: "danger",
-      });
-      return;
-    }
-
+  const onSubmitQuotation = (values) => {
     const payload = {
-      vendorId: Number(values?.vendorId),
-      emailSubject: values?.emailSubject || "",
-      emailBody: values?.emailBody || "<p></p>",
-      agreementAttachment:
-        values?.agreementAttachment?.filePath ||
-        values?.agreementAttachment?.url ||
-        values?.agreementAttachment?.path ||
-        values?.agreementAttachment ||
-        "",
+      rfqId: Number(rfqId),
+      // rfqVendorId: Number(rfqVendorId),
+      vendorId: Number(values.vendorId),
+      quotationNumber: values.quotationNumber,
+      quotationDate: new Date(values.quotationDate).toISOString(),
+      validTill: new Date(values.validTill).toISOString(),
+      currency: values.currency,
+      deliveryDays: Number(values.deliveryDays),
+      paymentTerms: values.paymentTerms,
+      warrantyTerms: values.warrantyTerms || "",
+      remarks: values.remarks || "",
+      quotationAttachmentUrl: getUploadedFileValue(
+        values.quotationAttachmentUrl,
+      ),
+      createdBy: Number(values.createdBy),
+      items: values.items.map((item) => ({
+        itemType: item.itemType,
+        itemName: item.itemName,
+        description: item.description || "",
+        quantity: Number(item.quantity),
+        unit: item.unit,
+        unitRate: Number(item.unitRate),
+        taxPercent: Number(item.taxPercent || 0),
+        remarks: item.remarks || "",
+      })),
     };
 
     setSubmitLoading(true);
 
-    dispatch(
-      createVendorAgainstProduct({
-        productId: solutionId,
-        userId,
-        data: payload,
-      }),
-    ).then((resp) => {
+    dispatch(createQuotation(payload)).then((resp) => {
       setSubmitLoading(false);
 
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "SUCCESS",
-          description: "Vendor mapped with product successfully.",
+          description: "Quotation created successfully.",
           color: "success",
         });
 
-        rfqModal.onClose();
-        resetRfqForm(defaultValues);
-        setMailBody("<p></p>");
-        fetchProductVendors();
+        quotationModal.onClose();
+        resetQuotationForm(quotationDefaultValues);
+        fetchQuotations();
       } else {
         addToast({
           title: "ERROR",
@@ -563,7 +573,7 @@ const Quote = () => {
             resp?.payload?.message ||
             resp?.payload?.data?.message ||
             resp?.payload ||
-            "Something went wrong.",
+            "Quotation creation failed.",
           color: "danger",
         });
       }
@@ -592,42 +602,6 @@ const Quote = () => {
 
       remarks: values?.remarks || "",
     };
-
-    console.log("Register vendor payload", payload);
-
-    /*
-    Replace this with your actual registration API dispatch.
-
-    Example:
-    dispatch(
-      registerVendorForProduct({
-        userId,
-        mappingId: values?.mappingId,
-        data: payload,
-      }),
-    ).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        addToast({
-          title: "SUCCESS",
-          description: "Vendor registered successfully.",
-          color: "success",
-        });
-
-        registerVendorModal.onClose();
-        resetRegisterVendorForm(vendorRegistrationDefaultValues);
-        fetchProductVendors();
-      } else {
-        addToast({
-          title: "ERROR",
-          description:
-            resp?.payload?.message ||
-            resp?.payload?.data?.message ||
-            "Vendor registration failed.",
-          color: "danger",
-        });
-      }
-    });
-  */
 
     addToast({
       title: "INFO",
@@ -713,74 +687,83 @@ const Quote = () => {
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
-      case "vendorName":
+      case "quotationNumber":
         return (
           <div className="flex flex-col">
-            <span className="font-medium text-foreground">
-              {rowData?.vendorName || "-"}
+            <span className="font-semibold text-foreground">
+              {rowData?.quotationNumber || "-"}
             </span>
             <span className="text-xs text-default-500">
-              Product: {rowData?.productName || "-"}
+              ID: {rowData?.id || "-"}
             </span>
           </div>
         );
 
-      case "contact":
+      case "vendorRfq":
         return (
-          <div className="flex flex-col gap-1">
-            <span className="text-sm">{rowData?.email || "-"}</span>
-            {rowData?.mobile && (
-              <Chip size="sm" variant="flat">
-                {rowData.mobile}
-              </Chip>
-            )}
-          </div>
-        );
-
-      case "gstPan":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-default-500">
-              GST: {rowData?.gstNumber || "-"}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">
+              Vendor ID: {rowData?.vendorId || "-"}
             </span>
             <span className="text-xs text-default-500">
-              PAN: {rowData?.panNumber || "-"}
+              RFQ ID: {rowData?.rfqId || "-"}
+            </span>
+            <span className="text-xs text-default-500">
+              RFQ Vendor ID: {rowData?.rfqVendorId || "-"}
             </span>
           </div>
         );
 
-      case "status":
+      case "dates":
+        return (
+          <div className="flex flex-col gap-1 text-xs">
+            <span>
+              Quotation:{" "}
+              {rowData?.quotationDate
+                ? dayjs(rowData.quotationDate).format("DD-MM-YYYY")
+                : "-"}
+            </span>
+            <span>
+              Valid Till:{" "}
+              {rowData?.validTill
+                ? dayjs(rowData.validTill).format("DD-MM-YYYY")
+                : "-"}
+            </span>
+            <span>Delivery: {rowData?.deliveryDays ?? "-"} days</span>
+          </div>
+        );
+
+      case "commercials":
         return (
           <div className="flex flex-col gap-1">
-            <Chip
-              size="sm"
-              color={getStatusColor(rowData?.status)}
-              variant="flat"
-            >
-              {rowData?.status || "-"}
+            <Chip size="sm" variant="flat">
+              {rowData?.currency || "INR"}
             </Chip>
-
-            {rowData?.verified && (
-              <Chip size="sm" color="success" variant="flat">
-                Verified
-              </Chip>
-            )}
+            <span className="text-xs text-default-500">
+              Items: {rowData?.items?.length || 0}
+            </span>
           </div>
         );
 
-      case "emailSubject":
+      case "paymentTerms":
         return (
-          <div className="max-w-[260px]">
-            <p className="truncate text-sm" title={rowData?.emailSubject}>
-              {rowData?.emailSubject || "-"}
+          <div className="max-w-[240px]">
+            <p className="truncate text-sm" title={rowData?.paymentTerms}>
+              {rowData?.paymentTerms || "-"}
+            </p>
+            <p
+              className="truncate text-xs text-default-500"
+              title={rowData?.warrantyTerms}
+            >
+              Warranty: {rowData?.warrantyTerms || "-"}
             </p>
           </div>
         );
 
-      case "agreementAttachment":
-        return rowData?.agreementAttachment ? (
+      case "quotationAttachmentUrl":
+        return rowData?.quotationAttachmentUrl ? (
           <a
-            href={rowData.agreementAttachment}
+            href={rowData.quotationAttachmentUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs font-medium text-primary"
@@ -793,59 +776,28 @@ const Quote = () => {
           </Chip>
         );
 
-      case "createdDate":
-        return (
-          <span className="text-sm">
-            {rowData?.createdDate
-              ? dayjs(rowData.createdDate).format("DD-MM-YYYY hh:mm A")
-              : "-"}
-          </span>
-        );
+      case "createdBy":
+        return <span className="text-sm">{rowData?.createdBy || "-"}</span>;
 
       case "actions":
         return (
-          <div className="flex flex-col items-center justify-center gap-1">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button size="sm" isIconOnly variant="light">
-                  <EllipsisVertical size={18} />
-                </Button>
-              </DropdownTrigger>
+          <Dropdown>
+            <DropdownTrigger>
+              <Button size="sm" isIconOnly variant="light">
+                <EllipsisVertical size={18} />
+              </Button>
+            </DropdownTrigger>
 
-              <DropdownMenu>
-                <DropdownItem
-                  key="view"
-                  startContent={<Eye size={15} />}
-                  onPress={() => handleView(rowData)}
-                >
-                  View
-                </DropdownItem>
-                <DropdownItem
-                  key="view"
-                  startContent={<Clock size={15} />}
-                  onPress={() => handleOpenChatHistory(rowData)}
-                >
-                  History
-                </DropdownItem>
-
-                {/* <DropdownItem
-                  key="addQuote"
-                  startContent={<File size={15} />}
-                  onPress={() => handleOpenRegisterQuote(rowData)}
-                >
-                  Add Quote
-                </DropdownItem> */}
-
-                <DropdownItem
-                  key="registerVendor"
-                  startContent={<UserPlus size={15} />}
-                  onPress={() => handleOpenRegisterVendor(rowData)}
-                >
-                  Register Vendor
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
+            <DropdownMenu>
+              <DropdownItem
+                key="view"
+                startContent={<Eye size={15} />}
+                onPress={() => handleView(rowData)}
+              >
+                View
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
         );
 
       default:
@@ -1001,172 +953,6 @@ const Quote = () => {
       </div>
 
       <Modal
-        isOpen={rfqModal.isOpen}
-        onOpenChange={rfqModal.onOpenChange}
-        size="4xl"
-        isDismissable={false}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Create RFQ</ModalHeader>
-              <form onSubmit={handleRfqFormSubmit(onSubmitRFQ)}>
-                <ModalBody>
-                  <div className="max-h-[60vh] overflow-auto p-2">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <Controller
-                        name="vendorId"
-                        control={control}
-                        render={({ field }) => (
-                          <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
-                              Vendor <span className="text-red-500">*</span>
-                            </label>
-
-                            <AntSelect
-                              size="large"
-                              showSearch
-                              placeholder="Select vendor"
-                              optionFilterProp="label"
-                              value={field.value}
-                              onChange={(value) => field.onChange(value)}
-                              options={vendorList.map((vendor) => ({
-                                label: getVendorOptionLabel(vendor),
-                                value: Number(vendor?.id || vendor?.vendorId),
-                              }))}
-                              className="w-full"
-                            />
-
-                            {errors.vendorId?.message && (
-                              <p className="mt-1 text-xs text-red-500">
-                                {errors.vendorId.message}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      />
-
-                      <Controller
-                        name="agreementAttachment"
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            label="Attachment"
-                            value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-
-                              setValue("agreementAttachment", value, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-                            }}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    <Controller
-                      name="emailSubject"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="mt-4">
-                          <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Email Subject{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
-
-                          <AntInput
-                            placeholder="Enter email subject"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-
-                          {errors.emailSubject?.message && (
-                            <p className="mt-1 text-xs text-red-500">
-                              {errors.emailSubject.message}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    />
-
-                    <Controller
-                      name="emailBody"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="mt-4 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                          <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-900">
-                                Email Body{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-
-                              <p className="mt-1 text-xs leading-5 text-gray-500">
-                                Write RFQ email body here. This will be sent in
-                                HTML format.
-                              </p>
-                            </div>
-
-                            <span className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                              {getPlainTextLength(field.value)} chars
-                            </span>
-                          </div>
-
-                          <div className="bg-white">
-                            <NewTextEditor
-                              data={field.value || "<p></p>"}
-                              onChange={(value) => {
-                                field.onChange(value);
-                                setMailBody(value);
-                                trigger("emailBody");
-                              }}
-                            />
-                          </div>
-
-                          {errors.emailBody?.message && (
-                            <p className="px-4 pb-3 text-xs text-red-500">
-                              {errors.emailBody.message}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    />
-                  </div>
-                </ModalBody>
-
-                <ModalFooter className="flex w-full justify-end gap-1.5">
-                  <Button
-                    variant="flat"
-                    type="button"
-                    onPress={() => {
-                      rfqModal.onClose();
-                      resetRfqForm(defaultValues);
-                      setMailBody("<p></p>");
-                    }}
-                    isDisabled={submitLoading}
-                  >
-                    Cancel
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    color="primary"
-                    isLoading={submitLoading}
-                  >
-                    Submit RFQ
-                  </Button>
-                </ModalFooter>
-              </form>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-
-      <Modal
         isOpen={viewModal.isOpen}
         onOpenChange={viewModal.onOpenChange}
         size="4xl"
@@ -1311,79 +1097,140 @@ const Quote = () => {
           <>
             <ModalHeader className="border-b">Add Quote</ModalHeader>
 
-            <form onSubmit={handleQuotationFormSubmit()}>
+            <form onSubmit={handleQuotationFormSubmit(onSubmitQuotation)}>
               <ModalBody>
                 <div className="max-h-[65vh] overflow-auto p-2">
                   <div className="rounded-xl border bg-gray-50 p-4">
                     <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Auto Fetched Information
+                      Quotation Basic Details
                     </h3>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          
                       <Controller
-                        name="vendorName"
+                        name="rfqVendorId"
                         control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="Vendor Name"
+                            label="RFQ Vendor ID"
+                            isRequired
                             value={field.value}
-                            isReadOnly
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.rfqVendorId}
+                            errorMessage={quotationErrors.rfqVendorId?.message}
                           />
                         )}
                       />
 
                       <Controller
-                        name="productName"
+                        name="vendorId"
                         control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="Product / Service"
+                            label="Vendor ID"
+                            isRequired
                             value={field.value}
-                            isReadOnly
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.vendorId}
+                            errorMessage={quotationErrors.vendorId?.message}
                           />
                         )}
                       />
 
                       <Controller
-                        name="email"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input label="Email" value={field.value} isReadOnly />
-                        )}
-                      />
-
-                      <Controller
-                        name="mobile"
+                        name="quotationNumber"
                         control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="Mobile"
+                            label="Quotation Number"
+                            isRequired
                             value={field.value}
-                            isReadOnly
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.quotationNumber}
+                            errorMessage={
+                              quotationErrors.quotationNumber?.message
+                            }
                           />
                         )}
                       />
 
                       <Controller
-                        name="gstNumber"
+                        name="quotationDate"
                         control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="GST Number"
+                            label="Quotation Date"
+                            type="datetime-local"
+                            isRequired
                             value={field.value}
-                            isReadOnly
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.quotationDate}
+                            errorMessage={
+                              quotationErrors.quotationDate?.message
+                            }
                           />
                         )}
                       />
 
                       <Controller
-                        name="panNumber"
+                        name="validTill"
                         control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="PAN Number"
+                            label="Valid Till"
+                            type="datetime-local"
+                            isRequired
                             value={field.value}
-                            isReadOnly
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.validTill}
+                            errorMessage={quotationErrors.validTill?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="currency"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Currency"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.currency}
+                            errorMessage={quotationErrors.currency?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="deliveryDays"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Delivery Days"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(e.target.value.replace(/\D/g, ""))
+                            }
+                            isInvalid={!!quotationErrors.deliveryDays}
+                            errorMessage={quotationErrors.deliveryDays?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="createdBy"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Created By"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!quotationErrors.createdBy}
+                            errorMessage={quotationErrors.createdBy?.message}
                           />
                         )}
                       />
@@ -1392,93 +1239,31 @@ const Quote = () => {
 
                   <div className="mt-4 rounded-xl border bg-white p-4">
                     <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Registration Details
+                      Terms
                     </h3>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <Controller
-                        name="pricePerUnit"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Price Per Unit"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={registerErrors.pricePerUnit?.message}
-                            isInvalid={!!registerErrors.pricePerUnit}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="unit"
-                        control={quotationControl}
-                        render={({ field }) => (
-                          <Select
-                            selectedKeys={
-                              field.value ? new Set([field.value]) : new Set([])
-                            }
-                            onSelectionChange={(keys) =>
-                              field.onChange(Array.from(keys)?.[0] || "")
-                            }
-                            label="Unit"
-                            isRequired
-                            isInvalid={!!registerErrors.unit}
-                            errorMessage={registerErrors.unit?.message}
-                          >
-                            <SelectItem key="1">1</SelectItem>
-                            <SelectItem key="2">2</SelectItem>
-                            <SelectItem key="3">3</SelectItem>
-                            <SelectItem key="4">4</SelectItem>
-                            <SelectItem key="5">5</SelectItem>
-                            <SelectItem key="PER_METRIC_TONNE">
-                              PER_METRIC_TONNE
-                            </SelectItem>
-                            <SelectItem key="PER_KG">PER_KG</SelectItem>
-                          </Select>
-                        )}
-                      />
-
-                      <Controller
                         name="paymentTerms"
                         control={quotationControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <NewSelect
-                            isRequired
-                            label="Payment term"
-                            data={paymentTypeList || []}
-                            labelKey="name"
-                            valueKey="id"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e)}
-                            errorMessage={registerErrors.paymentTerms?.message}
-                            isInvalid={!!registerErrors.paymentTerms}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="timelineDays"
-                        control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="Timeline Days"
+                            label="Payment Terms"
                             isRequired
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={registerErrors.timelineDays?.message}
-                            isInvalid={!!registerErrors.timelineDays}
+                            isInvalid={!!quotationErrors.paymentTerms}
+                            errorMessage={quotationErrors.paymentTerms?.message}
                           />
                         )}
                       />
 
                       <Controller
-                        name="quotationValidityDays"
+                        name="warrantyTerms"
                         control={quotationControl}
                         render={({ field }) => (
                           <Input
-                            label="Quotation Validity Days"
+                            label="Warranty Terms"
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                           />
@@ -1496,59 +1281,235 @@ const Quote = () => {
                           />
                         )}
                       />
+
+                      <Controller
+                        name="quotationAttachmentUrl"
+                        control={quotationControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            label="Quotation Attachment"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
                     </div>
                   </div>
 
                   <div className="mt-4 rounded-xl border bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Attachments
-                    </h3>
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Quotation Items
+                      </h3>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <Controller
-                        name="vendorBrochureAttachment"
-                        control={quotationControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Vendor Brochure"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
+                      <Button
+                        size="sm"
+                        color="primary"
+                        variant="flat"
+                        startContent={<Plus size={15} />}
+                        type="button"
+                        onPress={() =>
+                          appendQuotationItem({
+                            itemType: "MATERIAL",
+                            itemName: "",
+                            description: "",
+                            quantity: "",
+                            unit: "",
+                            unitRate: "",
+                            taxPercent: "",
+                            remarks: "",
+                          })
+                        }
+                      >
+                        Add Item
+                      </Button>
+                    </div>
 
-                      <Controller
-                        name="priceListAttachment"
-                        control={quotationControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Price List"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
+                    <div className="space-y-4">
+                      {quotationItemFields.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="rounded-xl border bg-gray-50 p-4"
+                        >
+                          <div className="mb-3 flex items-center justify-between">
+                            <p className="text-sm font-semibold text-gray-800">
+                              Item #{index + 1}
+                            </p>
 
-                      <Controller
-                        name="agreementAttachment"
-                        control={quotationControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Technical Attachment"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
+                            {quotationItemFields.length > 1 && (
+                              <Button
+                                size="sm"
+                                color="danger"
+                                variant="flat"
+                                type="button"
+                                onPress={() => removeQuotationItem(index)}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <Controller
+                              name={`items.${index}.itemType`}
+                              control={quotationControl}
+                              render={({ field }) => (
+                                <Select
+                                  label="Item Type"
+                                  isRequired
+                                  selectedKeys={
+                                    field.value ? [field.value] : []
+                                  }
+                                  onSelectionChange={(keys) =>
+                                    field.onChange(Array.from(keys)[0])
+                                  }
+                                >
+                                  <SelectItem key="MATERIAL">
+                                    MATERIAL
+                                  </SelectItem>
+                                  <SelectItem key="SERVICE">SERVICE</SelectItem>
+                                </Select>
+                              )}
+                            />
+
+                            <Controller
+                              name={`items.${index}.itemName`}
+                              control={quotationControl}
+                              render={({ field }) => (
+                                <Input
+                                  label="Item Name"
+                                  isRequired
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                  isInvalid={
+                                    !!quotationErrors.items?.[index]?.itemName
+                                  }
+                                  errorMessage={
+                                    quotationErrors.items?.[index]?.itemName
+                                      ?.message
+                                  }
+                                />
+                              )}
+                            />
+
+                            <Controller
+                              name={`items.${index}.quantity`}
+                              control={quotationControl}
+                              render={({ field }) => (
+                                <Input
+                                  label="Quantity"
+                                  isRequired
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                  isInvalid={
+                                    !!quotationErrors.items?.[index]?.quantity
+                                  }
+                                  errorMessage={
+                                    quotationErrors.items?.[index]?.quantity
+                                      ?.message
+                                  }
+                                />
+                              )}
+                            />
+
+                            <Controller
+                              name={`items.${index}.unit`}
+                              control={quotationControl}
+                              render={({ field }) => (
+                                <Input
+                                  label="Unit"
+                                  isRequired
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                  isInvalid={
+                                    !!quotationErrors.items?.[index]?.unit
+                                  }
+                                  errorMessage={
+                                    quotationErrors.items?.[index]?.unit
+                                      ?.message
+                                  }
+                                />
+                              )}
+                            />
+
+                            <Controller
+                              name={`items.${index}.unitRate`}
+                              control={quotationControl}
+                              render={({ field }) => (
+                                <Input
+                                  label="Unit Rate"
+                                  isRequired
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                  isInvalid={
+                                    !!quotationErrors.items?.[index]?.unitRate
+                                  }
+                                  errorMessage={
+                                    quotationErrors.items?.[index]?.unitRate
+                                      ?.message
+                                  }
+                                />
+                              )}
+                            />
+
+                            <Controller
+                              name={`items.${index}.taxPercent`}
+                              control={quotationControl}
+                              render={({ field }) => (
+                                <Input
+                                  label="Tax %"
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                />
+                              )}
+                            />
+
+                            <div className="md:col-span-3">
+                              <Controller
+                                name={`items.${index}.description`}
+                                control={quotationControl}
+                                render={({ field }) => (
+                                  <Input
+                                    label="Description"
+                                    value={field.value}
+                                    onChange={(e) =>
+                                      field.onChange(e.target.value)
+                                    }
+                                  />
+                                )}
+                              />
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <Controller
+                                name={`items.${index}.remarks`}
+                                control={quotationControl}
+                                render={({ field }) => (
+                                  <Input
+                                    label="Remarks"
+                                    value={field.value}
+                                    onChange={(e) =>
+                                      field.onChange(e.target.value)
+                                    }
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1840,8 +1801,8 @@ const Quote = () => {
                   Cancel
                 </Button>
 
-                <Button color="primary" type="submit">
-                  Submit
+                <Button color="primary" type="submit" isLoading={submitLoading}>
+                  Submit Quotation
                 </Button>
               </ModalFooter>
             </form>

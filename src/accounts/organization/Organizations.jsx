@@ -40,7 +40,7 @@ const Organizations = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* {adminRole && (
+      {adminRole && (
         <div className="flex justify-between max-w-full overflow-auto">
           <Tabs
             aria-label="Tabs variants"
@@ -52,14 +52,14 @@ const Organizations = () => {
             <Tab key="group" title="Group" />
             <Tab key="ledger" title="Ledger" />
             <Tab key="voucher" title="Voucher" />
-            <Tab key="dayBook" title="Day book" />
-            <Tab key="profitLoss" title="Profit/Loss" />
-            <Tab key="cashflow" title="Cashflow" />
-            <Tab key="balanceSheet" title="Balance sheet" />
-            <Tab key="trailBalance" title="Trail balance" />
-            <Tab key="tds" title="TDS" />
-            <Tab key="gst" title="GST" />
-            <Tab key="salesReport" title="Sales report" />
+            {/* <Tab key="dayBook" title="Day book" /> */}
+            {/* <Tab key="profitLoss" title="Profit/Loss" /> */}
+            {/* <Tab key="cashflow" title="Cashflow" /> */}
+            {/* <Tab key="balanceSheet" title="Balance sheet" /> */}
+            {/* <Tab key="trailBalance" title="Trail balance" /> */}
+            {/* <Tab key="tds" title="TDS" /> */}
+            {/* <Tab key="gst" title="GST" /> */}
+            {/* <Tab key="salesReport" title="Sales report" /> */}
           </Tabs>
           <Dropdown>
             <DropdownTrigger>
@@ -79,7 +79,7 @@ const Organizations = () => {
             </DropdownMenu>
           </Dropdown>
         </div>
-      )} */}
+      )}
 
       <div>
         <Outlet />

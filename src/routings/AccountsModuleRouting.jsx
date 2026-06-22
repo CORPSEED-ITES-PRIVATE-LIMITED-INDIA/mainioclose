@@ -6,7 +6,6 @@ import Organizations from "../accounts/organization/Organizations";
 import OrganizationDetail from "../accounts/organization/OrganizationDetail";
 import Group from "../accounts/organization/Group";
 import GroupLedger from "../accounts/organization/GroupLedger";
-import Ledger from "../accounts/organization/Ledger";
 import LedgerDetail from "../accounts/organization/LedgerDetail";
 import Voucher from "../accounts/organization/Voucher";
 import DailyBook from "../accounts/organization/DailyBook";
@@ -34,6 +33,8 @@ import CreditNote from "../accounts/CreditNote";
 import ProcurementPaymentRequest from "../accounts/ProcurementPaymentRequest";
 import PurchaseOrder from "../accounts/PurchaseOrder";
 import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
+import Ledger from "../accounts/ledgers/Ledger";
+import LedgerEntriesPage from "../accounts/ledgers/LedgerEntriesPage";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -77,6 +78,10 @@ export const AccountsModuleRouting = () => {
         <Route path="group/:groupId/groupLedger" element={<GroupLedger />} />
         <Route path="ledger" element={<Ledger />} />
         <Route
+          path="ledger/:ledgerId/entries"
+          element={<LedgerEntriesPage />}
+        />
+        <Route
           path="ledger/:ledgerId/ledgerDetail"
           element={<LedgerDetail />}
         />
@@ -119,6 +124,7 @@ export const accountLoginModuleRouting = () => {
         element={<GroupLedger />}
       />
       <Route path="accounts/organizations/ledger" element={<Ledger />} />
+      <Route path="ledger/:ledgerId/entries" element={<LedgerEntriesPage />} />
       <Route
         path="accounts/organizations/ledger/:ledgerId/ledgerDetail"
         element={<LedgerDetail />}

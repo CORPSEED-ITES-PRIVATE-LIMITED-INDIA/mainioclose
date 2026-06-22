@@ -345,23 +345,27 @@ export const getVendorDetailInProject = createAsyncThunk(
 
 export const getProductVendorsByProductId = createAsyncThunk(
   "operation/getProductVendorsByProductId",
-  async ({ productId, userId, page = 1, size = 10 }, { rejectWithValue }) => {
+  async (
+    { productId, userId, status, page = 1, size = 10 },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await api.get(
-        `/operationService/api/products/${productId}/vendors`,
-        {
-          params: {
-            userId,
-            page,
-            size,
-          },
+      const response = await api.get("/operationService/api/rfq", {
+        params: {
+          productId,
+          userId,
+          status,
+          page,
+          size,
         },
-      );
+      });
 
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || error?.message || "Failed to fetch vendors",
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
       );
     }
   },
@@ -390,6 +394,87 @@ export const createVendorAgainstProduct = createAsyncThunk(
   },
 );
 
+export const createRFQ = createAsyncThunk(
+  "createRFQ",
+  async ({ userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/rfq?userId=${userId}`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const sendRfqToVendors = createAsyncThunk(
+  "sendRfqToVendors",
+  async ({ rfqId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/rfq/${rfqId}/send-to-vendors?userId=${userId}`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const createQuotation = createAsyncThunk(
+  "operation/createQuotation",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/operationService/api/quotation", data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || error?.message || "Failed to create quotation",
+      );
+    }
+  },
+);
+
+export const getAllQuotations = createAsyncThunk(
+  "operation/getAllQuotations",
+  async (rfqId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/quotation/rfq/${rfqId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || error?.message || "Failed to fetch quotations",
+      );
+    }
+  },
+);
+
+export const getRFQVendorsByRfqId = createAsyncThunk(
+  "operation/getRFQVendorsByRfqId",
+  async (rfqId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/rfq/${rfqId}/vendors`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -410,6 +495,9 @@ const VendorsSlice = createSlice({
     vendorDetail: {},
     vendorList: [],
     vendorDetailInProject: {},
+    rfqVendors: [],
+    rfqVendorsLoading: false,
+    rfqVendorsError: null,
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -613,6 +701,23 @@ const VendorsSlice = createSlice({
       state.loading = "rejected";
       state.vendorDetailInProject = {};
     });
+
+    builder
+      .addCase(getRFQVendorsByRfqId.pending, (state) => {
+        state.rfqVendorsLoading = true;
+        state.rfqVendorsError = null;
+      })
+
+      .addCase(getRFQVendorsByRfqId.fulfilled, (state, action) => {
+        state.rfqVendorsLoading = false;
+        state.rfqVendors = Array.isArray(action.payload) ? action.payload : [];
+      })
+
+      .addCase(getRFQVendorsByRfqId.rejected, (state, action) => {
+        state.rfqVendorsLoading = false;
+        state.rfqVendors = [];
+        state.rfqVendorsError = action.payload;
+      });
   },
 });
 
