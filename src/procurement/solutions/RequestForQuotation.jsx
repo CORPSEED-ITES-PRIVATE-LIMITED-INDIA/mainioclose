@@ -330,13 +330,13 @@ const getRfqVendors = (rowData) => {
 };
 
 const sendVendorDefaultValues = {
-  bcc: [],
+  to: [],
   subject: "",
   message: "<p></p>",
 };
 
 const sendVendorSchema = z.object({
-  bcc: z
+  to: z
     .array(z.string())
     .min(1, "At least one vendor email is required in BCC"),
   subject: z.string().min(1, "Please enter subject"),
@@ -758,7 +758,7 @@ const RequestForQuotation = () => {
       setSendMessageBody("<p></p>");
 
       resetSendVendorForm({
-        bcc: bccEmails,
+        to: bccEmails,
         subject:
           rowData?.title ||
           rowData?.emailSubject ||
@@ -1055,8 +1055,7 @@ const RequestForQuotation = () => {
       rfqVendorIds,
       subject: values.subject,
       message: values.message,
-      cc: values.cc || [],
-      bcc: values.bcc || [],
+      to: values.to || [],
     };
 
     setSendVendorLoading(true);
@@ -2677,7 +2676,7 @@ const RequestForQuotation = () => {
                   <div className="max-h-[60vh] overflow-auto p-4">
                     <div className="grid grid-cols-1 gap-4">
                       <Controller
-                        name="bcc"
+                        name="to"
                         control={sendVendorControl}
                         render={({ field }) => (
                           <div>
@@ -2692,9 +2691,9 @@ const RequestForQuotation = () => {
                               placeholder="Vendor emails will appear here"
                             />
 
-                            {sendVendorErrors.bcc?.message && (
+                            {sendVendorErrors.to?.message && (
                               <p className="mt-1 text-xs text-red-500">
-                                {sendVendorErrors.bcc.message}
+                                {sendVendorErrors.to.message}
                               </p>
                             )}
                           </div>
