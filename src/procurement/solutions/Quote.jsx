@@ -23,7 +23,9 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  DatePicker,
 } from "@heroui/react";
+import { parseDate } from "@internationalized/date";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -34,6 +36,7 @@ import {
   EllipsisVertical,
   ExternalLink,
   Eye,
+  FilePlusIcon,
   Plus,
   Search,
 } from "lucide-react";
@@ -43,7 +46,11 @@ import FileUploader from "../../components/FileUploader";
 import {
   createQuotation,
   getAllQuotations,
+  getRFQById,
+  getVendorsByVendorIdandRFQId,
 } from "../../toolkit/slices/vendorsSlice";
+import NewSelect from "../../components/NewSelect";
+import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -91,19 +98,12 @@ const quotationDefaultValues = {
 
 const quotationSchema = z.object({
   validTill: z.string().min(1, "Please select valid till date"),
-
   currency: z.string().min(1, "Please enter currency"),
-
   deliveryDays: z.string().min(1, "Please enter delivery days"),
-
   paymentTerms: z.string().min(1, "Please enter payment terms"),
-
   warrantyTerms: z.string().optional(),
-
   remarks: z.string().optional(),
-
   quotationAttachmentUrl: z.any().optional(),
-
   items: z
     .array(
       z.object({
@@ -118,6 +118,57 @@ const quotationSchema = z.object({
       }),
     )
     .min(1, "At least one item is required"),
+});
+
+const vendorRegistrationDefaultValues = {
+  mappingId: "",
+  productName: "",
+  vendorId: "",
+  vendorName: "",
+  email: "",
+  mobile: "",
+  gstNumber: "",
+  panNumber: "",
+  pricePerUnit: "",
+  unit: "Per Application",
+  paymentTerms: "",
+  timelineDays: "",
+  quotationValidityDays: "",
+  vendorBrochureAttachment: "",
+  priceListAttachment: "",
+  agreementAttachment: "",
+  remarks: "",
+};
+
+const vendorRegistrationSchema = z.object({
+  mappingId: z.any().optional(),
+  productName: z.string().optional(),
+  vendorId: z.any().refine((value) => Boolean(value), {
+    message: "Vendor is required",
+  }),
+  vendorName: z.string().optional(),
+  email: z.string().optional(),
+  mobile: z.string().optional(),
+  gstNumber: z.string().optional(),
+  panNumber: z.string().optional(),
+
+  pricePerUnit: z.string().min(1, "Please enter price per unit"),
+  unit: z.string().min(1, "Please select unit"),
+  paymentTerms: z.string().min(1, "Please enter payment terms"),
+  timelineDays: z.string().min(1, "Please enter timeline"),
+  quotationValidityDays: z.string().optional(),
+
+  vendorBrochureAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload vendor brochure",
+  }),
+  priceListAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload price list",
+  }),
+  agreementAttachment: z.any().refine((value) => Boolean(value), {
+    message: "Please upload agreement attachment",
+  }),
+
+  remarks: z.string().optional(),
 });
 
 const normalizePageContent = (response) => {
@@ -143,12 +194,14 @@ const Quote = () => {
   const dispatch = useDispatch();
   const location = useLocation();
 
-  const { userId, rfqId } = useParams();
+  const { userId, rfqId, solutionId } = useParams();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
+  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
 
   const quotationModal = useDisclosure();
   const viewModal = useDisclosure();
+  const registerVendorModal = useDisclosure();
 
   const {
     control: quotationControl,
@@ -169,8 +222,22 @@ const Quote = () => {
     name: "items",
   });
 
+  const {
+    control: registerControl,
+    handleSubmit: handleRegisterVendorSubmit,
+    reset: resetRegisterVendorForm,
+    formState: { errors: registerErrors },
+  } = useForm({
+    resolver: zodResolver(vendorRegistrationSchema),
+    defaultValues: vendorRegistrationDefaultValues,
+  });
+
   const [quotationResponse, setQuotationResponse] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [selectedquote, setSelectedQuote] = useState(null);
+
+  const [rfqDetails, setRfqDetails] = useState(null);
+  const [rfqVendorDetails, setRfqVendorDetails] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -190,20 +257,8 @@ const Quote = () => {
     return new URLSearchParams(location.search);
   }, [location.search]);
 
-  const routeRfqVendorId = useMemo(() => {
-    return location.state?.rfqVendorId || queryParams.get("rfqVendorId") || "";
-  }, [location.state, queryParams]);
-
   const routeVendorId = useMemo(() => {
     return location.state?.vendorId || queryParams.get("vendorId") || "";
-  }, [location.state, queryParams]);
-
-  const routeVendorName = useMemo(() => {
-    return location.state?.vendorName || queryParams.get("vendorName") || "";
-  }, [location.state, queryParams]);
-
-  const routeVendorEmail = useMemo(() => {
-    return location.state?.vendorEmail || queryParams.get("vendorEmail") || "";
   }, [location.state, queryParams]);
 
   const quotationList = useMemo(() => {
@@ -247,6 +302,10 @@ const Quote = () => {
     return filteredItems.slice(start, end);
   }, [filteredItems, filteration.page, filteration.size]);
 
+  useEffect(() => {
+    dispatch(getAllPaymentType());
+  }, [dispatch]);
+
   const fetchQuotations = useCallback(() => {
     if (!rfqId) return;
 
@@ -270,9 +329,45 @@ const Quote = () => {
     });
   }, [dispatch, rfqId]);
 
+  const fetchRFQDetails = useCallback(() => {
+    if (!rfqId) return;
+
+    dispatch(getRFQById(rfqId)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        setRfqDetails(resp.payload);
+      }
+    });
+  }, [dispatch, rfqId]);
+
+  const fetchRFQVendorDetails = useCallback(() => {
+    if (!rfqId || !routeVendorId) return;
+
+    dispatch(
+      getVendorsByVendorIdandRFQId({
+        rfqId: Number(rfqId),
+        vendorId: Number(routeVendorId),
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        setRfqVendorDetails(resp.payload);
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to fetch RFQ vendor details.",
+          color: "danger",
+        });
+      }
+    });
+  }, [dispatch, rfqId, routeVendorId]);
+
   useEffect(() => {
     fetchQuotations();
-  }, [fetchQuotations]);
+    fetchRFQDetails();
+    fetchRFQVendorDetails();
+  }, [fetchQuotations, fetchRFQDetails, fetchRFQVendorDetails]);
 
   const getUploadedFileValue = (value) => {
     return (
@@ -286,11 +381,21 @@ const Quote = () => {
   };
 
   const handleOpenAddQuote = () => {
-    if (!rfqId || !routeRfqVendorId || !routeVendorId) {
+    if (!rfqId || !routeVendorId) {
       addToast({
         title: "ERROR",
         description:
-          "RFQ Vendor ID or Vendor ID is missing. Please open Add Quote from RFQ vendor action.",
+          "Vendor ID is missing. Please open Add Quote from RFQ vendor action.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    if (!rfqVendorDetails?.rfqVendorId || !rfqVendorDetails?.vendorId) {
+      addToast({
+        title: "ERROR",
+        description: "RFQ vendor details are not loaded yet. Please try again.",
         color: "danger",
       });
 
@@ -316,7 +421,11 @@ const Quote = () => {
       currentUser?.employeeId ||
       userId;
 
-    if (!rfqId || !routeRfqVendorId || !routeVendorId) {
+    if (
+      !rfqId ||
+      !rfqVendorDetails?.rfqVendorId ||
+      !rfqVendorDetails?.vendorId
+    ) {
       addToast({
         title: "ERROR",
         description:
@@ -339,27 +448,24 @@ const Quote = () => {
 
     const payload = {
       rfqId: Number(rfqId),
-      rfqVendorId: Number(routeRfqVendorId),
-      vendorId: Number(routeVendorId),
+      rfqVendorId: Number(rfqVendorDetails.rfqVendorId),
+      vendorId: Number(rfqVendorDetails.vendorId),
 
-      quotationNumber: `QTN-${rfqId}-${routeVendorId}-${dayjs().format(
+      quotationNumber: `QTN-${rfqId}-${rfqVendorDetails.vendorId}-${dayjs().format(
         "YYYYMMDDHHmmss",
       )}`,
 
       quotationDate: new Date().toISOString(),
-
       validTill: new Date(values.validTill).toISOString(),
+
       currency: values.currency,
       deliveryDays: Number(values.deliveryDays),
-
       paymentTerms: values.paymentTerms,
       warrantyTerms: values.warrantyTerms || "",
       remarks: values.remarks || "",
-
       quotationAttachmentUrl: getUploadedFileValue(
         values.quotationAttachmentUrl,
       ),
-
       createdBy: Number(resolvedCreatedBy),
 
       items: values.items.map((item) => ({
@@ -428,6 +534,63 @@ const Quote = () => {
     });
   }, []);
 
+  const handleOpenRegisterVendor = (item) => {
+    setSelectedQuote(item);
+
+    resetRegisterVendorForm({
+      mappingId: item?.mappingId || "",
+      productId: item?.productId || solutionId || "",
+      productName: item?.productName || "",
+      vendorId: item?.vendorId || "",
+      vendorName: item?.vendorName || "",
+      email: item?.email || "",
+      mobile: item?.mobile || "",
+      gstNumber: item?.gstNumber || "",
+      panNumber: item?.panNumber || "",
+      pricePerUnit: "",
+      unit: "Per Application",
+      paymentTerms: "",
+      timelineDays: "",
+      quotationValidityDays: "",
+      vendorBrochureAttachment: "",
+      priceListAttachment: "",
+      agreementAttachment: item?.agreementAttachment || "",
+      remarks: "",
+    });
+
+    registerVendorModal.onOpen();
+  };
+
+  const onSubmitRegisterVendor = (values) => {
+    const payload = {
+      mappingId: Number(values?.mappingId),
+      productId: Number(solutionId),
+      vendorId: Number(values?.vendorId),
+
+      pricePerUnit: Number(values?.pricePerUnit),
+      unit: values?.unit,
+      paymentTerms: values?.paymentTerms,
+      timelineDays: Number(values?.timelineDays),
+      quotationValidityDays: values?.quotationValidityDays
+        ? Number(values.quotationValidityDays)
+        : null,
+
+      vendorBrochureAttachment: getUploadedFileValue(
+        values?.vendorBrochureAttachment,
+      ),
+      priceListAttachment: getUploadedFileValue(values?.priceListAttachment),
+      agreementAttachment: getUploadedFileValue(values?.agreementAttachment),
+
+      remarks: values?.remarks || "",
+    };
+
+    addToast({
+      title: "INFO",
+      description: "Payload prepared. Connect registration API dispatch here.",
+      color: "primary",
+    });
+  };
+
   const renderCell = useCallback(
     (rowData, columnKey) => {
       switch (columnKey) {
@@ -490,7 +653,7 @@ const Quote = () => {
               </Chip>
 
               <span className="text-xs text-default-500">
-                Items: {rowData?.items?.length || 0}
+                Total: {rowData?.grandTotal ?? "-"}
               </span>
             </div>
           );
@@ -546,6 +709,13 @@ const Quote = () => {
                   onPress={() => handleView(rowData)}
                 >
                   View
+                </DropdownItem>
+                <DropdownItem
+                  key="view"
+                  startContent={<FilePlusIcon size={15} />}
+                  onPress={() => handleOpenRegisterVendor(rowData)}
+                >
+                  Register Vendor
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -611,7 +781,7 @@ const Quote = () => {
             Total {filteredItems.length || count} quotations
           </span>
 
-          <label className="flex items-center text-small text-default-400">
+          <label className="flex items-center gap-2 text-small text-default-400">
             Rows per page:
             <select
               className="bg-transparent text-small text-default-400 outline-none"
@@ -756,163 +926,6 @@ const Quote = () => {
                       </p>
                     </div>
                   </div>
-
-                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
-                    <div>
-                      <p className="text-xs text-default-500">Quotation Date</p>
-                      <p className="font-medium">
-                        {selectedQuotation?.quotationDate
-                          ? dayjs(selectedQuotation.quotationDate).format(
-                              "DD-MM-YYYY hh:mm A",
-                            )
-                          : "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">Valid Till</p>
-                      <p className="font-medium">
-                        {selectedQuotation?.validTill
-                          ? dayjs(selectedQuotation.validTill).format(
-                              "DD-MM-YYYY hh:mm A",
-                            )
-                          : "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">Delivery Days</p>
-                      <p className="font-medium">
-                        {selectedQuotation?.deliveryDays ?? "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">Currency</p>
-                      <Chip size="sm" color="primary" variant="flat">
-                        {selectedQuotation?.currency || "INR"}
-                      </Chip>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border bg-white p-4 shadow-sm">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                      <p className="text-xs text-default-500">Payment Terms</p>
-                      <p className="font-medium">
-                        {selectedQuotation?.paymentTerms || "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">Warranty Terms</p>
-                      <p className="font-medium">
-                        {selectedQuotation?.warrantyTerms || "-"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500">Remarks</p>
-                      <p className="font-medium">
-                        {selectedQuotation?.remarks || "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedQuotation?.quotationAttachmentUrl && (
-                  <div className="rounded-xl border bg-white p-4 shadow-sm">
-                    <a
-                      href={selectedQuotation.quotationAttachmentUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
-                    >
-                      View Quotation Attachment <ExternalLink size={14} />
-                    </a>
-                  </div>
-                )}
-
-                <div className="rounded-xl border bg-white p-4 shadow-sm">
-                  <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                    Quotation Items
-                  </h3>
-
-                  {selectedQuotation?.items?.length ? (
-                    <div className="space-y-3">
-                      {selectedQuotation.items.map((item, index) => (
-                        <div
-                          key={item?.id || index}
-                          className="rounded-xl border bg-gray-50 p-4"
-                        >
-                          <div className="mb-2 flex items-center justify-between">
-                            <p className="text-sm font-semibold">
-                              Item #{index + 1}
-                            </p>
-
-                            <Chip size="sm" variant="flat">
-                              {item?.itemType || "-"}
-                            </Chip>
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-4">
-                            <div>
-                              <p className="text-xs text-default-500">
-                                Item Name
-                              </p>
-                              <p className="font-medium">
-                                {item?.itemName || "-"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-default-500">
-                                Quantity
-                              </p>
-                              <p className="font-medium">
-                                {item?.quantity ?? "-"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-default-500">Unit</p>
-                              <p className="font-medium">{item?.unit || "-"}</p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-default-500">
-                                Unit Rate
-                              </p>
-                              <p className="font-medium">
-                                {item?.unitRate ?? "-"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-default-500">Tax %</p>
-                              <p className="font-medium">
-                                {item?.taxPercent ?? "-"}
-                              </p>
-                            </div>
-
-                            <div className="md:col-span-3">
-                              <p className="text-xs text-default-500">
-                                Description
-                              </p>
-                              <p className="font-medium">
-                                {item?.description || "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center text-sm text-default-500">
-                      No items found.
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -931,63 +944,88 @@ const Quote = () => {
         onOpenChange={quotationModal.onOpenChange}
         size="4xl"
         isDismissable={false}
-        scrollBehavior="inside"
       >
         <ModalContent>
           <>
-            <ModalHeader className="border-b">Add Quote</ModalHeader>
+            <ModalHeader className="border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Add Quote
+                </h2>
+                <p className="mt-1 text-xs font-normal text-default-500">
+                  Add vendor quotation details and item-wise pricing.
+                </p>
+              </div>
+            </ModalHeader>
 
             <form onSubmit={handleQuotationFormSubmit(onSubmitQuotation)}>
-              <ModalBody>
-                <div className="max-h-[65vh] overflow-auto p-2">
-                  <div className="mb-4 rounded-xl border bg-blue-50 p-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                      <div>
-                        <p className="text-xs text-default-500">RFQ ID</p>
-                        <p className="font-semibold">{rfqId || "-"}</p>
+              <ModalBody className="px-6 py-5">
+                <div className="max-h-[65vh] space-y-5 overflow-y-auto overflow-x-hidden pr-1">
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          RFQ
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {rfqDetails?.rfqNumber || rfqId || "-"}
+                        </p>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-default-500">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-default-500">
                           RFQ Vendor ID
                         </p>
-                        <p className="font-semibold">
-                          {routeRfqVendorId || "-"}
+                        <p className="text-sm font-semibold text-gray-900">
+                          {rfqVendorDetails?.rfqVendorId || "-"}
                         </p>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-default-500">Vendor</p>
-                        <p className="font-semibold">
-                          {routeVendorName || routeVendorId || "-"}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          Vendor
+                        </p>
+                        <p className="break-words text-sm font-semibold text-gray-900">
+                          {rfqVendorDetails?.vendorName || "-"}
                         </p>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-default-500">Email</p>
-                        <p className="font-semibold">
-                          {routeVendorEmail || "-"}
+                      <div className="min-w-0 space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          Email
+                        </p>
+                        <p
+                          className="max-w-full truncate break-all text-sm font-semibold text-gray-900"
+                          title={rfqVendorDetails?.vendorEmail || "-"}
+                        >
+                          {rfqVendorDetails?.vendorEmail || "-"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border bg-gray-50 p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Quotation Basic Details
-                    </h3>
+                  <div className="rounded-2xl border bg-gray-50/70 p-5">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Quotation Basic Details
+                      </h3>
+                      <p className="mt-1 text-xs text-default-500">
+                        Add validity, currency and delivery timeline.
+                      </p>
+                    </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                       <Controller
                         name="validTill"
                         control={quotationControl}
                         render={({ field }) => (
-                          <Input
+                          <DatePicker
                             label="Valid Till"
-                            type="datetime-local"
                             isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            value={field.value ? parseDate(field.value) : null}
+                            onChange={(date) =>
+                              field.onChange(date ? date.toString() : "")
+                            }
                             isInvalid={!!quotationErrors.validTill}
                             errorMessage={quotationErrors.validTill?.message}
                           />
@@ -1028,21 +1066,29 @@ const Quote = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-xl border bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Terms
-                    </h3>
+                  <div className="rounded-2xl border bg-white p-5">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Terms
+                      </h3>
+                      <p className="mt-1 text-xs text-default-500">
+                        Define commercial terms and upload quotation attachment.
+                      </p>
+                    </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <Controller
                         name="paymentTerms"
                         control={quotationControl}
-                        render={({ field }) => (
-                          <Input
-                            label="Payment Terms"
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
                             isRequired
+                            label="Payment term"
+                            data={paymentTypeList || []}
+                            labelKey="name"
+                            valueKey="id"
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) => field.onChange(e)}
                             isInvalid={!!quotationErrors.paymentTerms}
                             errorMessage={quotationErrors.paymentTerms?.message}
                           />
@@ -1089,11 +1135,16 @@ const Quote = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-xl border bg-white p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        Quotation Items
-                      </h3>
+                  <div className="rounded-2xl border bg-white p-5">
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          Quotation Items
+                        </h3>
+                        <p className="mt-1 text-xs text-default-500">
+                          Add material or service-wise quoted pricing.
+                        </p>
+                      </div>
 
                       <Button
                         size="sm"
@@ -1118,13 +1169,13 @@ const Quote = () => {
                       </Button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {quotationItemFields.map((item, index) => (
                         <div
                           key={item.id}
-                          className="rounded-xl border bg-gray-50 p-4"
+                          className="rounded-2xl border bg-gray-50/70 p-5"
                         >
-                          <div className="mb-3 flex items-center justify-between">
+                          <div className="mb-4 flex items-center justify-between gap-3">
                             <p className="text-sm font-semibold text-gray-800">
                               Item #{index + 1}
                             </p>
@@ -1142,7 +1193,7 @@ const Quote = () => {
                             )}
                           </div>
 
-                          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                             <Controller
                               name={`items.${index}.itemType`}
                               control={quotationControl}
@@ -1315,7 +1366,7 @@ const Quote = () => {
                 </div>
               </ModalBody>
 
-              <ModalFooter>
+              <ModalFooter className="border-t px-6 py-4">
                 <Button
                   variant="flat"
                   type="button"
@@ -1328,6 +1379,280 @@ const Quote = () => {
                 </Button>
 
                 <Button color="primary" type="submit" isLoading={submitLoading}>
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={registerVendorModal.isOpen}
+        onOpenChange={registerVendorModal.onOpenChange}
+        size="4xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b">Register vendor</ModalHeader>
+
+            <form onSubmit={handleRegisterVendorSubmit(onSubmitRegisterVendor)}>
+              <ModalBody>
+                <div className="max-h-[65vh] overflow-auto p-2">
+                  <div className="rounded-xl border bg-gray-50 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Auto Fetched Information
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="vendorName"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Vendor Name"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="productName"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Product / Service"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="email"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input label="Email" value={field.value} isReadOnly />
+                        )}
+                      />
+
+                      <Controller
+                        name="mobile"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Mobile"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="gstNumber"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="GST Number"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="panNumber"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="PAN Number"
+                            value={field.value}
+                            isReadOnly
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Registration Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Controller
+                        name="pricePerUnit"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Price Per Unit"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.pricePerUnit?.message}
+                            isInvalid={!!registerErrors.pricePerUnit}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="unit"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Select
+                            selectedKeys={
+                              field.value ? new Set([field.value]) : new Set([])
+                            }
+                            onSelectionChange={(keys) =>
+                              field.onChange(Array.from(keys)?.[0] || "")
+                            }
+                            label="Unit"
+                            isRequired
+                            isInvalid={!!registerErrors.unit}
+                            errorMessage={registerErrors.unit?.message}
+                          >
+                            <SelectItem key="1">1</SelectItem>
+                            <SelectItem key="2">2</SelectItem>
+                            <SelectItem key="3">3</SelectItem>
+                            <SelectItem key="4">4</SelectItem>
+                            <SelectItem key="5">5</SelectItem>
+                            <SelectItem key="PER_METRIC_TONNE">
+                              PER_METRIC_TONNE
+                            </SelectItem>
+                            <SelectItem key="PER_KG">PER_KG</SelectItem>
+                          </Select>
+                        )}
+                      />
+
+                      <Controller
+                        name="paymentTerms"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
+                            isRequired
+                            label="Payment term"
+                            data={paymentTypeList || []}
+                            labelKey="name"
+                            valueKey="id"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e)}
+                            errorMessage={registerErrors.paymentTerms?.message}
+                            isInvalid={!!registerErrors.paymentTerms}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="timelineDays"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Timeline Days"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            errorMessage={registerErrors.timelineDays?.message}
+                            isInvalid={!!registerErrors.timelineDays}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="quotationValidityDays"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Quotation Validity Days"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="remarks"
+                        control={registerControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Remarks"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      Attachments
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="vendorBrochureAttachment"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Vendor Brochure"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="priceListAttachment"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Vendor Form"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="agreementAttachment"
+                        control={registerControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Aggrement Attachment"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    registerVendorModal.onClose();
+                    resetRegisterVendorForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit">
                   Submit
                 </Button>
               </ModalFooter>
