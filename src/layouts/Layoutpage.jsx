@@ -55,6 +55,7 @@ const Layoutpage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const user = useSelector((state) => state.auth.currentUser);
   const automationStatus = useSelector((state) => state.auth.automationStatus);
   const { userId } = useParams();
 
@@ -68,7 +69,7 @@ const Layoutpage = () => {
   const afterUserId = segments.slice(userIndex + 2);
   const [collapsed, setCollapsed] = useState(false);
 
-  console.log("users ----->    ", userRole, department);
+  console.log("users ----->    ", userRole, department, user);
 
   // useEffect(() => {
   //   dispatch(getAutomationStatus());
