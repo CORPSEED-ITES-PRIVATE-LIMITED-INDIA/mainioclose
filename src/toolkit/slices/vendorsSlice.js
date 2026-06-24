@@ -582,6 +582,23 @@ export const getVendorFinalizationByRfqId = createAsyncThunk(
     }
   },
 );
+export const createLegalRequest = createAsyncThunk(
+  "createLegalRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/vendor-quotation-legal-requests`,data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
 
 const VendorsSlice = createSlice({
   name: "vendors",

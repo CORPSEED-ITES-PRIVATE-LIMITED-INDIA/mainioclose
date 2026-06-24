@@ -52,6 +52,7 @@ import {
   createVendorFinalization,
   getVendorFinalizationByRfqId,
   sendVendorOnboardingForm,
+  createLegalRequest,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -91,6 +92,7 @@ const quotationStatusOptions = [
 ];
 
 const quotationDefaultValues = {
+  validFrom: "",
   validTill: "",
   currency: "INR",
   deliveryDays: "",
@@ -113,6 +115,7 @@ const quotationDefaultValues = {
 };
 
 const quotationSchema = z.object({
+  validFrom: z.string().min(1, "Please select valid from date"),
   validTill: z.string().min(1, "Please select valid till date"),
   currency: z.string().min(1, "Please enter currency"),
   deliveryDays: z.string().min(1, "Please enter delivery days"),
@@ -211,6 +214,20 @@ const onboardingSchema = z.object({
   signedAgreement: z.any().optional(),
 });
 
+const legalRequestDefaultValues = {
+  legalRequestTitle: "",
+  notes: "",
+  statusReason: "",
+  assignedToLegal: "",
+};
+
+const legalRequestSchema = z.object({
+  legalRequestTitle: z.string().min(1, "Please enter legal request title"),
+  notes: z.string().min(1, "Please enter notes"),
+  statusReason: z.string().optional(),
+  assignedToLegal: z.string().min(1, "Please enter assigned legal user id"),
+});
+
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.content)) return response.content;
@@ -243,6 +260,7 @@ const Quote = () => {
   const viewModal = useDisclosure();
   const registerVendorModal = useDisclosure();
   const onboardingModal = useDisclosure();
+  const legalRequestModal = useDisclosure();
 
   const {
     control: quotationControl,
@@ -281,6 +299,16 @@ const Quote = () => {
   } = useForm({
     resolver: zodResolver(onboardingSchema),
     defaultValues: onboardingDefaultValues,
+  });
+
+  const {
+    control: legalRequestControl,
+    handleSubmit: handleLegalRequestSubmit,
+    reset: resetLegalRequestForm,
+    formState: { errors: legalRequestErrors },
+  } = useForm({
+    resolver: zodResolver(legalRequestSchema),
+    defaultValues: legalRequestDefaultValues,
   });
 
   const [quotationResponse, setQuotationResponse] = useState(null);
@@ -571,6 +599,7 @@ const Quote = () => {
       )}`,
 
       quotationDate: new Date().toISOString(),
+      validFrom: new Date(values.validFrom).toISOString(),
       validTill: new Date(values.validTill).toISOString(),
 
       currency: values.currency,
@@ -909,6 +938,84 @@ const Quote = () => {
     });
   };
 
+  const handleOpenLegalRequest = (quotation) => {
+    if (!quotation?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Vendor quotation ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setSelectedQuotation(quotation);
+    resetLegalRequestForm(legalRequestDefaultValues);
+    legalRequestModal.onOpen();
+  };
+
+  const onSubmitLegalRequest = (values) => {
+    const resolvedCreatedBy =
+      currentUser?.id ||
+      currentUser?.userId ||
+      currentUser?.employeeId ||
+      userId;
+
+    if (!selectedQuotation?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Vendor quotation ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedCreatedBy) {
+      addToast({
+        title: "ERROR",
+        description: "Created By user is missing. Please login again.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      vendorQuotationId: Number(selectedQuotation.id),
+      legalRequestTitle: values.legalRequestTitle,
+      notes: values.notes,
+      statusReason: values.statusReason || "",
+      assignedToLegal: Number(values.assignedToLegal),
+      createdBy: Number(resolvedCreatedBy),
+    };
+
+    setSubmitLoading(true);
+
+    dispatch(createLegalRequest(payload)).then((resp) => {
+      setSubmitLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Legal request created successfully.",
+          color: "success",
+        });
+
+        legalRequestModal.onClose();
+        resetLegalRequestForm(legalRequestDefaultValues);
+        setSelectedQuotation(null);
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Legal request creation failed.",
+          color: "danger",
+        });
+      }
+    });
+  };
+
   const renderCell = useCallback(
     (rowData, columnKey) => {
       switch (columnKey) {
@@ -952,6 +1059,12 @@ const Quote = () => {
                   : "-"}
               </span>
 
+              <span>
+                Valid From:{" "}
+                {rowData?.validFrom
+                  ? dayjs(rowData.validFrom).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
               <span>
                 Valid Till:{" "}
                 {rowData?.validTill
@@ -1033,6 +1146,14 @@ const Quote = () => {
                   View
                 </DropdownItem>
 
+                <DropdownItem
+                  key="legalRequest"
+                  startContent={<FileText size={15} />}
+                  onPress={() => handleOpenLegalRequest(rowData)}
+                >
+                  Legal Request
+                </DropdownItem>
+
                 {!finalization ? (
                   <DropdownItem
                     key="registerVendor"
@@ -1061,7 +1182,7 @@ const Quote = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [getFinalizationForQuotation, handleView],
+    [getFinalizationForQuotation, handleView, handleOpenLegalRequest],
   );
 
   const topContent = useMemo(() => {
@@ -1380,6 +1501,22 @@ const Quote = () => {
                     </div>
 
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                      <Controller
+                        name="validFrom"
+                        control={quotationControl}
+                        render={({ field }) => (
+                          <DatePicker
+                            label="Valid From"
+                            isRequired
+                            value={field.value ? parseDate(field.value) : null}
+                            onChange={(date) =>
+                              field.onChange(date ? date.toString() : "")
+                            }
+                            isInvalid={!!quotationErrors.validFrom}
+                            errorMessage={quotationErrors.validFrom?.message}
+                          />
+                        )}
+                      />
                       <Controller
                         name="validTill"
                         control={quotationControl}
@@ -2018,6 +2155,117 @@ const Quote = () => {
                 </Button>
 
                 <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={legalRequestModal.isOpen}
+        onOpenChange={legalRequestModal.onOpenChange}
+        size="2xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Create Legal Request
+                </h2>
+                <p className="mt-1 text-xs font-normal text-default-500">
+                  Raise a legal request for the selected vendor quotation.
+                </p>
+              </div>
+            </ModalHeader>
+
+            <form onSubmit={handleLegalRequestSubmit(onSubmitLegalRequest)}>
+              <ModalBody className="space-y-4 px-6 py-5">
+                <Input
+                  label="Quotation"
+                  value={selectedQuotation?.quotationNumber || "-"}
+                  isReadOnly
+                />
+
+                <Controller
+                  name="legalRequestTitle"
+                  control={legalRequestControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Legal Request Title"
+                      isRequired
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      isInvalid={!!legalRequestErrors.legalRequestTitle}
+                      errorMessage={
+                        legalRequestErrors.legalRequestTitle?.message
+                      }
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="assignedToLegal"
+                  control={legalRequestControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Assigned Legal User ID"
+                      isRequired
+                      value={field.value}
+                      onChange={(e) =>
+                        field.onChange(e.target.value.replace(/\D/g, ""))
+                      }
+                      isInvalid={!!legalRequestErrors.assignedToLegal}
+                      errorMessage={legalRequestErrors.assignedToLegal?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="statusReason"
+                  control={legalRequestControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Status Reason"
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="notes"
+                  control={legalRequestControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Notes"
+                      isRequired
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      isInvalid={!!legalRequestErrors.notes}
+                      errorMessage={legalRequestErrors.notes?.message}
+                    />
+                  )}
+                />
+              </ModalBody>
+
+              <ModalFooter className="border-t px-6 py-4">
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    legalRequestModal.onClose();
+                    resetLegalRequestForm(legalRequestDefaultValues);
+                    setSelectedQuotation(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit" isLoading={submitLoading}>
                   Submit
                 </Button>
               </ModalFooter>

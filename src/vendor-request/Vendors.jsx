@@ -776,7 +776,7 @@ const Vendors = () => {
                     />
 
                     <Input
-                      isRequired
+                      // isRequired
                       label="GST Number"
                       name="gstNumber"
                       placeholder="Enter GST number"
