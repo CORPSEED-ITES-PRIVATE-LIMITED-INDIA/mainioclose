@@ -511,6 +511,25 @@ export const getVendorsByVendorIdandRFQId = createAsyncThunk(
     }
   },
 );
+export const createVendorFinalization = createAsyncThunk(
+  "getVendorsByVendorIdandRFQId",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/vendor-finalizations`,
+        data
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
 
 const VendorsSlice = createSlice({
   name: "vendors",

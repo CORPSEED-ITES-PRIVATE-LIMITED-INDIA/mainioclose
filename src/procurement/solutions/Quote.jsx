@@ -48,6 +48,7 @@ import {
   getAllQuotations,
   getRFQById,
   getVendorsByVendorIdandRFQId,
+  createVendorFinalization,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -72,6 +73,18 @@ const INITIAL_VISIBLE_COLUMNS = [
   "quotationAttachmentUrl",
   "createdBy",
   "actions",
+];
+
+const quotationStatusOptions = [
+  "ALL",
+  "DRAFT",
+  "SUBMITTED",
+  "REVISED",
+  "UNDER_COMPARISON",
+  "ACCEPTED",
+  "PARTIALLY_ACCEPTED",
+  "REJECTED",
+  "CANCELLED",
 ];
 
 const quotationDefaultValues = {
@@ -243,6 +256,7 @@ const Quote = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
@@ -280,6 +294,10 @@ const Quote = () => {
   const filteredItems = useMemo(() => {
     let filtered = [...quotationList];
 
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter((item) => item?.status === statusFilter);
+    }
+
     if (filterValue) {
       filtered = filtered.filter((item) =>
         Object.values(item || {}).some((value) =>
@@ -291,7 +309,7 @@ const Quote = () => {
     }
 
     return filtered;
-  }, [quotationList, filterValue]);
+  }, [quotationList, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / filteration.size) || 1;
 
@@ -562,32 +580,103 @@ const Quote = () => {
   };
 
   const onSubmitRegisterVendor = (values) => {
+    const resolvedCreatedBy =
+      currentUser?.id ||
+      currentUser?.userId ||
+      currentUser?.employeeId ||
+      userId;
+
+    const firstQuotationItem =
+      selectedquote?.items?.[0] ||
+      selectedquote?.quotationItems?.[0] ||
+      selectedquote?.item;
+
+    if (
+      !rfqId ||
+      !selectedquote?.id ||
+      !selectedquote?.rfqVendorId ||
+      !selectedquote?.vendorId
+    ) {
+      addToast({
+        title: "ERROR",
+        description:
+          "RFQ, quotation, RFQ vendor, or vendor details are missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!firstQuotationItem?.id) {
+      addToast({
+        title: "ERROR",
+        description:
+          "Quotation item is missing. Please fetch quotation details with items before finalizing vendor.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedCreatedBy) {
+      addToast({
+        title: "ERROR",
+        description: "Created By user is missing. Please login again.",
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
-      mappingId: Number(values?.mappingId),
-      productId: Number(solutionId),
-      vendorId: Number(values?.vendorId),
+      quotationId: selectedquote.id,
+      quotationItemId: selectedquote.items[0].id,
+      rfqId: selectedquote.rfqId,
+      rfqVendorId: selectedquote.rfqVendorId,
+      vendorId: selectedquote.vendorId,
 
-      pricePerUnit: Number(values?.pricePerUnit),
-      unit: values?.unit,
-      paymentTerms: values?.paymentTerms,
-      timelineDays: Number(values?.timelineDays),
-      quotationValidityDays: values?.quotationValidityDays
-        ? Number(values.quotationValidityDays)
-        : null,
+      description:
+        firstQuotationItem.description ||
+        selectedquote.remarks ||
+        "Vendor finalized for quoted work",
 
-      vendorBrochureAttachment: getUploadedFileValue(
-        values?.vendorBrochureAttachment,
+      finalizedQuantity: Number(firstQuotationItem.quantity || 1),
+      unit: firstQuotationItem.unit || values.unit,
+      finalizedUnitRate: Number(
+        firstQuotationItem.unitRate || values.pricePerUnit || 0,
       ),
-      priceListAttachment: getUploadedFileValue(values?.priceListAttachment),
-      agreementAttachment: getUploadedFileValue(values?.agreementAttachment),
+      taxPercent: Number(firstQuotationItem.taxPercent || 0),
 
-      remarks: values?.remarks || "",
+      finalizationReason:
+        values.remarks || "Vendor finalized after quotation comparison",
+      remarks: values.remarks || "",
+
+      createdBy: Number(resolvedCreatedBy),
     };
 
-    addToast({
-      title: "INFO",
-      description: "Payload prepared. Connect registration API dispatch here.",
-      color: "primary",
+    setSubmitLoading(true);
+
+    dispatch(createVendorFinalization(payload)).then((resp) => {
+      setSubmitLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Vendor finalized successfully.",
+          color: "success",
+        });
+
+        registerVendorModal.onClose();
+        resetRegisterVendorForm(vendorRegistrationDefaultValues);
+        fetchQuotations();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Vendor finalization failed.",
+          color: "danger",
+        });
+      }
     });
   };
 
@@ -618,9 +707,9 @@ const Quote = () => {
                 RFQ ID: {rowData?.rfqId || "-"}
               </span>
 
-              <span className="text-xs text-default-500">
+              {/* <span className="text-xs text-default-500">
                 RFQ Vendor ID: {rowData?.rfqVendorId || "-"}
-              </span>
+              </span> */}
             </div>
           );
 
@@ -742,7 +831,7 @@ const Quote = () => {
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             <Button
               color="primary"
               startContent={<Plus size={17} />}
@@ -750,6 +839,34 @@ const Quote = () => {
             >
               Add Quote
             </Button>
+
+            <Dropdown>
+              <DropdownTrigger>
+                <Button endContent={<ChevronDown size={16} />} variant="flat">
+                  {statusFilter === "ALL" ? "All" : statusFilter}
+                </Button>
+              </DropdownTrigger>
+
+              <DropdownMenu
+                aria-label="Quotation Status Filter"
+                selectedKeys={new Set([statusFilter])}
+                selectionMode="single"
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)?.[0] || "ALL";
+                  setStatusFilter(selected);
+                  setFilteration((prev) => ({
+                    ...prev,
+                    page: 1,
+                  }));
+                }}
+              >
+                {quotationStatusOptions.map((status) => (
+                  <DropdownItem key={status}>
+                    {status === "ALL" ? "All Status" : status}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
@@ -799,6 +916,7 @@ const Quote = () => {
     );
   }, [
     filterValue,
+    statusFilter,
     visibleColumns,
     filteredItems.length,
     count,

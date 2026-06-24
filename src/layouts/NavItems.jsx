@@ -675,10 +675,22 @@ export const qualityNavItems = [
 
 export const procurementItems = [
   {
-    title: "Solutions",
+    title: "Research",
+    icon: "User2",
+    url: "procurement/vendors-requests",
+    key: "vendors-requests",
+  },
+  {
+    title: "Vendor's Data",
+    icon: "User2",
+    url: "procurement/vendorList",
+    key: "vendorList",
+  },
+  {
+    title: "Vendor Quotations",
     icon: "FileText",
-    url: "procurement/solutions",
-    key: "solutions",
+    url: "procurement/vendor-quotations",
+    key: "vendor-quotations",
   },
   {
     title: "Projects",
@@ -687,30 +699,17 @@ export const procurementItems = [
     key: "projects",
   },
   {
-    title: "Vendor list",
-    icon: "User2",
-    url: "procurement/vendorList",
-    key: "vendorList",
-  },
-
-  {
     title: "Payments",
     icon: "HandCoins",
     url: "procurement/vendors-payments",
     key: "vendors-payments",
   },
-  {
-    title: "Vendor requests",
-    icon: "User2",
-    url: "procurement/vendors-requests",
-    key: "vendors-requests",
-  },
-  {
-    title: "Estimate",
-    icon: "FileText",
-    url: "procurement/vendors-estimates",
-    key: "vendors-estimates",
-  },
+  // {
+  //   title: "Estimate",
+  //   icon: "FileText",
+  //   url: "procurement/vendors-estimates",
+  //   key: "vendors-estimates",
+  // },
 ];
 
 export const hrItems = [

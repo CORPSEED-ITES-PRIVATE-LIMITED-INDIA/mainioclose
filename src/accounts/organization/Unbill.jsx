@@ -998,7 +998,7 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "CANCELLED" && !adminRole) {
+    if (selectedStatus === "CANCELLED") {
       dispatch(
         cancelUnBilledInvoice({
           id: rowItem?.id,
@@ -1110,60 +1110,61 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "CANCEL" && adminRole) {
-      dispatch(
-        approveUnBilledInvoiceByAdmin({
-          id: rowItem?.id,
-          userId,
-          reason: updatedStatusData?.rejectionReason,
-        }),
-      )
-        .then((re) => {
-          if (re.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "SUCCESS",
-              description: "Unbill approved successfully by Admin !.",
-              color: "success",
-            });
+    // if (selectedStatus === "APPROVED" && adminRole) {
+    //   dispatch(
+    //     approveUnBilledInvoiceByAdmin({
+    //       id: rowItem?.id,
+    //       userId,
+    //       reason: updatedStatusData?.rejectionReason,
+    //     }),
+    //   )
+    //     .then((re) => {
+    //       if (re.meta.requestStatus === "fulfilled") {
+    //         addToast({
+    //           title: "SUCCESS",
+    //           description: "Unbill approved successfully by Admin !.",
+    //           color: "success",
+    //         });
 
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              rejectionReason: "",
-              attachment: "",
-            });
+    //         setRowItem(null);
+    //         setUpdatedStatusData({
+    //           approverUserId: userId,
+    //           approvalRemarks: "",
+    //           rejectionReason: "",
+    //           attachment: "",
+    //         });
 
-            dispatch(
-              getAllUnbillList({
-                page,
-                size: rowsPerPage,
-                userId,
-                status,
-              }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            statusModal.onClose();
-          } else {
-            addToast({
-              title: "ERROR",
-              description:
-                re?.payload?.data?.message ||
-                re?.payload?.message ||
-                "Failed to cancel unbill.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() =>
-          addToast({
-            title: "ERROR",
-            description: "Something went wrong !.",
-            color: "danger",
-          }),
-        );
-      return;
-    }
+    //         dispatch(
+    //           getAllUnbillList({
+    //             page,
+    //             size: rowsPerPage,
+    //             userId,
+    //             status,
+    //           }),
+    //         );
+    //         dispatch(getAllUnbillCount({ userId, status }));
+    //         statusModal.onClose();
+    //       } else {
+    //         addToast({
+    //           title: "ERROR",
+    //           description:
+    //             re?.payload?.data?.message ||
+    //             re?.payload?.message ||
+    //             "Failed to cancel unbill.",
+    //           color: "danger",
+    //         });
+    //       }
+    //     })
+    //     .catch(() =>
+    //       addToast({
+    //         title: "ERROR",
+    //         description: "Something went wrong !.",
+    //         color: "danger",
+    //       }),
+    //     );
+
+    //   return;
+    // }
 
     const payload = {
       approverUserId: updatedStatusData?.approverUserId,
