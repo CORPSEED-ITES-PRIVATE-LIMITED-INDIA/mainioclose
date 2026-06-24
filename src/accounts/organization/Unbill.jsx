@@ -998,7 +998,7 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "CANCELLED") {
+    if (selectedStatus === "CANCELLED" && !adminRole) {
       dispatch(
         cancelUnBilledInvoice({
           id: rowItem?.id,
