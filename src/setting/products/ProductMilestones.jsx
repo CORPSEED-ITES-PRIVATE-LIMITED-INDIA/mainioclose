@@ -44,7 +44,7 @@ import { useParams } from "react-router-dom";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "NAME", uid: "milestoneName", sortable: true },
+  { name: "NAME", uid: "milestoneName" },
   { name: "ORDER", uid: "order" },
   { name: "TAT", uid: "tatInDays" },
   { name: "ROLLBACK TAT", uid: "rollbackTatInDays" },
@@ -152,13 +152,7 @@ const ProductMilestones = ({ details }) => {
   }, [data, filterValue]);
 
   const sortedItems = React.useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...filteredItems];
   }, [sortDescriptor, filteredItems]);
 
   const {

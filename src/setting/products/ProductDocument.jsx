@@ -279,7 +279,7 @@ const ProductDocument = () => {
             },
             {
               key: "documentName",
-              label: "DOCUMENT name",
+              label: "DOCUMENT NAME",
             },
             {
               key: "applicantTypeName",
