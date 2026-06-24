@@ -220,8 +220,8 @@ export const navItems = [
   {
     title: "Legal",
     icon: "Scale",
-    url: "/admin",
-    key: "admin",
+    url: "/legal",
+    key: "legal",
     children: [
       {
         title: "Operation requests",
