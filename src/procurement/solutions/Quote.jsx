@@ -56,6 +56,7 @@ import {
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
+import { getUsersByDepartment } from "../../toolkit/slices/operationSlice";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -255,6 +256,9 @@ const Quote = () => {
 
   const currentUser = useSelector((state) => state.auth.currentUser);
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+  const legalDepartmentUsers = useSelector(
+    (state) => state.common.departmentUsers || [],
+  );
 
   const quotationModal = useDisclosure();
   const viewModal = useDisclosure();
@@ -391,6 +395,10 @@ const Quote = () => {
 
   useEffect(() => {
     dispatch(getAllPaymentType());
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(getUsersByDepartment({ id: 17 }));
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
@@ -2211,16 +2219,27 @@ const Quote = () => {
                   name="assignedToLegal"
                   control={legalRequestControl}
                   render={({ field }) => (
-                    <Input
-                      label="Assigned Legal User ID"
+                    <Select
+                      label="Assign To Legal"
                       isRequired
-                      value={field.value}
-                      onChange={(e) =>
-                        field.onChange(e.target.value.replace(/\D/g, ""))
+                      selectedKeys={
+                        field.value
+                          ? new Set([String(field.value)])
+                          : new Set([])
                       }
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)?.[0] || "";
+                        field.onChange(value);
+                      }}
                       isInvalid={!!legalRequestErrors.assignedToLegal}
                       errorMessage={legalRequestErrors.assignedToLegal?.message}
-                    />
+                    >
+                      {legalDepartmentUsers?.map((user) => (
+                        <SelectItem key={String(user.id)}>
+                          {user.fullName} - {user.email}
+                        </SelectItem>
+                      ))}
+                    </Select>
                   )}
                 />
 
@@ -2229,7 +2248,7 @@ const Quote = () => {
                   control={legalRequestControl}
                   render={({ field }) => (
                     <Input
-                      label="Status Reason"
+                      label="Description"
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                     />
@@ -2241,7 +2260,7 @@ const Quote = () => {
                   control={legalRequestControl}
                   render={({ field }) => (
                     <Input
-                      label="Notes"
+                      label="Special Condition"
                       isRequired
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}

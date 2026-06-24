@@ -1080,6 +1080,19 @@ export const getAllCompanyDocumentsByCompanyIdAndUnitId = createAsyncThunk(
     }
   },
 );
+export const getUsersByDepartment = createAsyncThunk(
+  "getUsersByDepartment",
+  async ({ id }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/departments/${id}/users`,
+      );
+      return response.data;
+    } catch (err) {
+      return err;
+    }
+  },
+);
 
 export const OperationSlice = createSlice({
   name: "operation",
@@ -1108,6 +1121,7 @@ export const OperationSlice = createSlice({
     procurementOrderByPurchaseIdError: null,
     paymentRequestByPoId: {},
     compnyDocumentListByCompanyIdAndUnitId: [],
+    departmentUsers: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1481,6 +1495,25 @@ export const OperationSlice = createSlice({
     );
     builder.addCase(
       getAllCompanyDocumentsByCompanyIdAndUnitId.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      getUsersByDepartment.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getUsersByDepartment.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.departmentUsers = action.payload;
+      },
+    );
+    builder.addCase(
+      getUsersByDepartment.rejected,
       (state, action) => {
         state.loading = "rejected";
       },
