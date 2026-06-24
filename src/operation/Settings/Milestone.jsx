@@ -39,7 +39,7 @@ import NewSelect from "../../components/NewSelect";
 
 export const columns = [
   { name: "ID", uid: "id" },
-  { name: "NAME", uid: "name", sortable: true },
+  { name: "NAME", uid: "name" },
   { name: "DEPARTMENTS", uid: "departments" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -145,13 +145,7 @@ const Milestone = () => {
   }, [page, filteredItems, rowsPerPage]);
 
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
+    return [...items];
   }, [sortDescriptor, items]);
 
   const {
