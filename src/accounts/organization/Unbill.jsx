@@ -1162,8 +1162,6 @@ const Unbill = () => {
             color: "danger",
           }),
         );
-
-      return;
     }
 
     const payload = {
