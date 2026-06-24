@@ -60,16 +60,16 @@ const formSchema = z
     const isCertification =
       values.name?.trim().toLowerCase() === "certification";
 
-    if (
-      !isCertification &&
-      (!values.departmentIds || values.departmentIds.length === 0)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please select department",
-        path: ["departmentIds"],
-      });
-    }
+    // if (
+    //   !isCertification &&
+    //   (!values.departmentIds || values.departmentIds.length === 0)
+    // ) {
+    //   ctx.addIssue({
+    //     code: z.ZodIssueCode.custom,
+    //     message: "Please select department",
+    //     path: ["departmentIds"],
+    //   });
+    // }
   });
 
 const defaultValues = {
@@ -223,13 +223,13 @@ const Milestone = () => {
     (values) => {
       const isCertification =
         values.name?.trim().toLowerCase() === "certification";
-
       const payload = {
         name: values.name,
         description: values.description,
-        departmentIds: isCertification
-          ? null
-          : values.departmentIds.map(Number),
+        // departmentIds: isCertification
+        //   ? null
+        //   : values.departmentIds.map(Number),
+        departmentIds: values.departmentIds.map(Number),
       };
       const action = isEditMode
         ? updateMileStone({ id: selectedMilestone.id, payload })
