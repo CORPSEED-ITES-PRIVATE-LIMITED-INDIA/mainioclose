@@ -1110,7 +1110,7 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "APPROVED" && adminRole) {
+    if (selectedStatus === "CANCEL" && adminRole) {
       dispatch(
         approveUnBilledInvoiceByAdmin({
           id: rowItem?.id,
@@ -1162,6 +1162,7 @@ const Unbill = () => {
             color: "danger",
           }),
         );
+      return;
     }
 
     const payload = {
