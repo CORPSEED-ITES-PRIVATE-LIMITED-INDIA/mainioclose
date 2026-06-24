@@ -490,6 +490,68 @@ export const addClientLogInCredentialForPortal = createAsyncThunk(
   },
 );
 
+export const approveOrRejectClientPortalDetails = createAsyncThunk(
+  "operation/approveOrRejectClientPortalDetails",
+  async ({ projectId, detailId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/${projectId}/portal-details/${detailId}/approve`,
+        data,
+        {
+          params: { userId },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to update portal status",
+      );
+    }
+  },
+);
+
+export const updateClientPortalLoginDetails = createAsyncThunk(
+  "operation/updateClientPortalLoginDetails",
+  async ({ projectId, detailId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/${projectId}/portal-details/${detailId}`,
+        data,
+        {
+          params: { userId },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to update portal login details",
+      );
+    }
+  },
+);
+
+export const deleteClientPortalLoginDetails = createAsyncThunk(
+  "operation/deleteClientPortalLoginDetails",
+  async ({ projectId, detailId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/operationService/api/projects/${projectId}/portal-details/${detailId}`,
+        {
+          params: { userId },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to delete portal login details",
+      );
+    }
+  },
+);
+
 export const getClientLogInCredentialDetailForPortal = createAsyncThunk(
   "getClientLogInCredentialDetailForPortal",
   async ({ projectId, userId }) => {
@@ -993,9 +1055,12 @@ export const deleteUserProductMapping = createAsyncThunk(
 );
 export const addVendorQuotation = createAsyncThunk(
   "addVendorQuotation",
-  async ({procurementAssignmentId, body}, { rejectWithValue }) => {
+  async ({ procurementAssignmentId, body }, { rejectWithValue }) => {
     try {
-      await api.post(`/operationService/api/procurement-assignments/${procurementAssignmentId}/vendor-quotations`,body);
+      await api.post(
+        `/operationService/api/procurement-assignments/${procurementAssignmentId}/vendor-quotations`,
+        body,
+      );
     } catch (error) {
       return rejectWithValue(error?.response?.data || error.message);
     }

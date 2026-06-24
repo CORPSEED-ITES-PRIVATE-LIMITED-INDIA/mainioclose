@@ -52,6 +52,9 @@ import {
   uploadDocumentInProjects,
   replaceDocumentInProjects,
   getAllCompanyDocumentsByCompanyIdAndUnitId,
+  approveOrRejectClientPortalDetails,
+  updateClientPortalLoginDetails,
+  deleteClientPortalLoginDetails,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -66,6 +69,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  Trash2,
   User2,
   X,
 } from "lucide-react";
@@ -463,6 +467,9 @@ const ProjectDetails = () => {
   const assigneeModal = useDisclosure();
   const statusModal = useDisclosure();
   const clientModal = useDisclosure();
+  const editPortalModal = useDisclosure();
+  const deletePortalModal = useDisclosure();
+  const portalStatusModal = useDisclosure();
   const docModal = useDisclosure();
   const verifyModal = useDisclosure();
   const expenseModal = useDisclosure();
@@ -548,6 +555,20 @@ const ProjectDetails = () => {
     username: "",
     password: "",
     remarks: "",
+  });
+  const [selectedPortalDetail, setSelectedPortalDetail] = useState(null);
+
+  const [editPortalData, setEditPortalData] = useState({
+    portalName: "",
+    portalUrl: "",
+    username: "",
+    password: "",
+    remarks: "",
+  });
+
+  const [portalStatusData, setPortalStatusData] = useState({
+    status: "",
+    approvalRemarks: "",
   });
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyDocId, setVerifyDocId] = useState(null);
@@ -727,9 +748,254 @@ const ProjectDetails = () => {
       });
   };
 
+  const getPortalDetailId = (portal) => {
+    return portal?.detailId || portal?.portalDetailId || portal?.id;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCredentials((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const openPortalStatusModal = (portal) => {
+    setSelectedPortalDetail(portal);
+
+    setPortalStatusData({
+      status: portal?.status === "REJECTED" ? "REJECTED" : "",
+      approvalRemarks: portal?.approvalRemarks || "",
+    });
+
+    portalStatusModal.onOpen();
+  };
+
+  const handlePortalStatusChange = (e) => {
+    const { name, value } = e.target;
+
+    setPortalStatusData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdatePortalStatus = (e) => {
+    e.preventDefault();
+
+    const detailId =
+      selectedPortalDetail?.detailId ||
+      selectedPortalDetail?.portalDetailId ||
+      selectedPortalDetail?.id;
+
+    if (!detailId) {
+      addToast({
+        title: "Detail ID missing",
+        description: "Portal detail ID not found.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!portalStatusData.status) {
+      addToast({
+        title: "Status required",
+        description: "Please select approve or reject status.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!portalStatusData.approvalRemarks?.trim()) {
+      addToast({
+        title: "Remarks required",
+        description: "Please enter approval remarks.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const data = {
+      status: portalStatusData.status,
+      approvalRemarks: portalStatusData.approvalRemarks.trim(),
+    };
+
+    dispatch(
+      approveOrRejectClientPortalDetails({
+        projectId,
+        detailId,
+        userId,
+        data,
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Portal status updated successfully!",
+            color: "success",
+          });
+
+          portalStatusModal.onClose();
+
+          setSelectedPortalDetail(null);
+          setPortalStatusData({
+            status: "",
+            approvalRemarks: "",
+          });
+
+          dispatch(
+            getClientLogInCredentialDetailForPortal({ projectId, userId }),
+          );
+        } else {
+          addToast({
+            title: resp?.payload?.status || "Failed",
+            description:
+              resp?.payload?.message ||
+              resp?.payload ||
+              "Failed to update portal status.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Something went wrong!",
+          color: "danger",
+        });
+      });
+  };
+
+  const openEditPortalModal = (portal) => {
+    setSelectedPortalDetail(portal);
+
+    setEditPortalData({
+      portalName: portal?.portalName || "",
+      portalUrl: portal?.portalUrl || "",
+      username: portal?.username || "",
+      password: portal?.password || "",
+      remarks: portal?.remarks || "",
+    });
+
+    editPortalModal.onOpen();
+  };
+
+  const handleEditPortalChange = (e) => {
+    const { name, value } = e.target;
+
+    setEditPortalData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const openDeletePortalModal = (portal) => {
+    setSelectedPortalDetail(portal);
+    deletePortalModal.onOpen();
+  };
+
+  const handleDeletePortalDetails = () => {
+    const detailId = getPortalDetailId(selectedPortalDetail);
+
+    if (!detailId) {
+      addToast({
+        title: "Detail ID missing",
+        description: "Portal detail ID not found.",
+        color: "danger",
+      });
+      return;
+    }
+
+    dispatch(
+      deleteClientPortalLoginDetails({
+        projectId,
+        detailId,
+        userId,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Portal details deleted successfully!",
+          color: "success",
+        });
+
+        deletePortalModal.onClose();
+        setSelectedPortalDetail(null);
+
+        dispatch(
+          getClientLogInCredentialDetailForPortal({ projectId, userId }),
+        );
+      } else {
+        addToast({
+          title: resp?.payload?.status || "Failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to delete portal details.",
+          color: "danger",
+        });
+      }
+    });
+  };
+
+  const handleUpdatePortalDetails = (e) => {
+    e.preventDefault();
+
+    const detailId = getPortalDetailId(selectedPortalDetail);
+
+    if (!detailId) {
+      addToast({
+        title: "Detail ID missing",
+        description: "Portal detail ID not found.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const data = {
+      portalName: editPortalData.portalName,
+      portalUrl: editPortalData.portalUrl,
+      username: editPortalData.username,
+      password: editPortalData.password,
+      remarks: editPortalData.remarks,
+    };
+
+    dispatch(
+      updateClientPortalLoginDetails({
+        projectId,
+        detailId,
+        userId,
+        data,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Portal details updated successfully!",
+          color: "success",
+        });
+
+        editPortalModal.onClose();
+
+        setSelectedPortalDetail(null);
+
+        setEditPortalData({
+          portalName: "",
+          portalUrl: "",
+          username: "",
+          password: "",
+          remarks: "",
+        });
+
+        dispatch(
+          getClientLogInCredentialDetailForPortal({ projectId, userId }),
+        );
+      } else {
+        addToast({
+          title: resp?.payload?.status || "Failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to update portal details.",
+          color: "danger",
+        });
+      }
+    });
   };
 
   const onSubmit = (e) => {
@@ -3102,195 +3368,516 @@ const ProjectDetails = () => {
       </Modal>
 
       <Modal
-        size="3xl"
+        size="4xl"
+        scrollBehavior="inside"
         isOpen={clientModal.isOpen}
         onOpenChange={clientModal.onOpenChange}
         hideCloseButton
+        classNames={{
+          base: "max-h-[92vh]",
+          body: "py-4",
+        }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex justify-between items-center gap-1">
+              <ModalHeader className="flex items-start justify-between gap-3 border-b border-default-200">
                 <div>
-                  {isCredentials
-                    ? "Add client portal login credentials"
-                    : "Client portal login credentials"}
+                  <p className="text-base font-semibold">
+                    {isCredentials
+                      ? "Add client portal login credentials"
+                      : "Client portal login credentials"}
+                  </p>
+                  <p className="text-xs font-normal text-default-500">
+                    {isCredentials
+                      ? "Add portal URL, username and password for client login."
+                      : "View and approve/reject client portal login details."}
+                  </p>
                 </div>
-                {isCredentials ? (
+
+                <div className="flex items-center gap-2">
+                  {isCredentials ? (
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      onPress={() => setIsCredentials(false)}
+                    >
+                      Back
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      color="primary"
+                      variant="flat"
+                      startContent={<Plus className="w-4 h-4" />}
+                      onPress={() => setIsCredentials(true)}
+                    >
+                      Add Credentials
+                    </Button>
+                  )}
+
                   <Button
                     isIconOnly
                     size="sm"
                     variant="light"
-                    onPress={() => setIsCredentials(false)}
+                    radius="full"
+                    onPress={onClose}
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                ) : (
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="light"
-                    onPress={() => setIsCredentials(true)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                )}
+                </div>
               </ModalHeader>
-              <ModalBody className="max-h-[90vh] overflow-auto">
+
+              <ModalBody>
                 {isCredentials ? (
                   <Form className="w-full" onSubmit={onSubmit}>
-                    <div className="w-full grid grid-cols-2 gap-2">
+                    <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
                       <Input
                         label="Portal name"
                         name="portalName"
                         isRequired
-                        errorMessage="please ebter portal name"
+                        errorMessage="Please enter portal name"
                         value={credentials?.portalName}
                         onChange={handleChange}
                       />
+
                       <Input
                         label="Portal URL"
                         name="portalUrl"
                         isRequired
-                        errorMessage="please ebter portal URL"
+                        errorMessage="Please enter portal URL"
                         value={credentials?.portalUrl}
                         onChange={handleChange}
                       />
+
                       <Input
                         label="Username"
                         name="username"
                         isRequired
-                        errorMessage="please enter username"
+                        errorMessage="Please enter username"
                         value={credentials?.username}
                         onChange={handleChange}
                       />
+
                       <Input
                         label="Password"
                         name="password"
                         isRequired
-                        errorMessage="please enter password"
+                        errorMessage="Please enter password"
                         value={credentials?.password}
                         onChange={handleChange}
                       />
+
                       <Textarea
                         label="Remarks"
                         name="remarks"
                         isRequired
-                        errorMessage="please enter remark"
+                        minRows={3}
+                        errorMessage="Please enter remark"
                         value={credentials?.remarks}
                         onChange={handleChange}
+                        className="md:col-span-2"
                       />
                     </div>
-                    <ModalFooter className="w-full flex justify-end gap-2">
+
+                    <ModalFooter className="w-full px-0">
                       <Button
                         variant="flat"
                         onPress={() => setIsCredentials(false)}
                       >
                         Cancel
                       </Button>
-                      <Button
-                        color="primary"
-                        isDisabled={!isCredentials}
-                        type="submit"
-                      >
+
+                      <Button color="primary" type="submit">
                         Submit
                       </Button>
                     </ModalFooter>
                   </Form>
                 ) : (
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <p className="font-medium">
-                          {clientLoginPortalCredentials?.companyName}
-                        </p>{" "}
-                        <span className="text-sm text-default-400">
-                          {clientLoginPortalCredentials?.projectNo}
-                        </span>
-                      </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="rounded-xl border border-default-200 bg-default-50 px-4 py-3">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {clientLoginPortalCredentials?.companyName || "-"}
+                      </p>
+
+                      <p className="mt-1 text-xs text-default-500">
+                        Project No:{" "}
+                        {clientLoginPortalCredentials?.projectNo || "-"}
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {clientLoginPortalCredentials?.portals?.map(
-                        (item, idx) => (
-                          <Card className="" key={idx}>
-                            <CardHeader>
-                              <div className="flex justify-between items-center w-full">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">
-                                    {item?.portalName}
-                                  </h3>
-                                  <Chip
-                                    size="sm"
-                                    color={statusColorCode[item?.status]}
-                                  >
-                                    {item?.status}
-                                  </Chip>
+
+                    {clientLoginPortalCredentials?.portals?.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                        {clientLoginPortalCredentials?.portals?.map(
+                          (item, idx) => (
+                            <Card
+                              key={item?.id || item?.detailId || idx}
+                              className="border border-default-200 shadow-none"
+                            >
+                              <CardHeader className="border-b border-default-100 px-4 py-3">
+                                <div className="flex w-full items-start justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                      <h3 className="max-w-full truncate text-sm font-semibold text-foreground">
+                                        {item?.portalName || "-"}
+                                      </h3>
+
+                                      <Chip
+                                        size="sm"
+                                        variant="flat"
+                                        color={
+                                          statusColorCode[item?.status] ||
+                                          "default"
+                                        }
+                                        className="shrink-0"
+                                      >
+                                        {item?.status || "-"}
+                                      </Chip>
+                                    </div>
+
+                                    <p className="mt-1 break-all text-xs text-default-500">
+                                      {item?.portalUrl || "-"}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <Button
+                                      size="sm"
+                                      color="primary"
+                                      variant="flat"
+                                      className="shrink-0"
+                                      onPress={() =>
+                                        openPortalStatusModal(item)
+                                      }
+                                    >
+                                      Update Status
+                                    </Button>
+
+                                    <Button
+                                      size="sm"
+                                      isIconOnly
+                                      variant="flat"
+                                      className="shrink-0"
+                                      onPress={() => openEditPortalModal(item)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+
+                                    <Button
+                                      size="sm"
+                                      isIconOnly
+                                      color="danger"
+                                      variant="flat"
+                                      className="shrink-0"
+                                      onPress={() =>
+                                        openDeletePortalModal(item)
+                                      }
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  isIconOnly
-                                  variant="light"
-                                  className="w-6 h-6 rounded-full bg-none"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </CardHeader>
-                            <CardBody>
-                              <div className="flex gap-1.5 items-center">
-                                <span className="text-default-400 text-tiny">
-                                  Portal URL
-                                </span>{" "}
-                                :{" "}
-                                <div className="text-tiny flex flex-wrap">
-                                  {item?.portalUrl}
+                              </CardHeader>
+
+                              <CardBody className="gap-3 px-4 py-3">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                  <div className="min-w-0 rounded-lg bg-default-50 px-3 py-2">
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                                      Username
+                                    </p>
+                                    <p className="mt-1 break-all text-xs font-semibold text-foreground">
+                                      {item?.username || "-"}
+                                    </p>
+                                  </div>
+
+                                  <div className="min-w-0 rounded-lg bg-default-50 px-3 py-2">
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                                      Password
+                                    </p>
+                                    <p className="mt-1 break-all text-xs font-semibold text-foreground">
+                                      {item?.password || "-"}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="flex gap-1.5 items-center">
-                                  <span className="text-default-400 text-tiny">
-                                    User name
-                                  </span>{" "}
-                                  :{" "}
-                                  <span className="text-tiny">
-                                    {item?.username}
-                                  </span>
-                                </div>
-                                <div className="flex gap-1.5 items-center">
-                                  <span className="text-default-400 text-tiny">
-                                    Password
-                                  </span>{" "}
-                                  :{" "}
-                                  <span className="text-tiny">
-                                    {item?.password}
-                                  </span>
-                                </div>
-                                <div className="flex gap-1.5 items-center">
-                                  <span className="text-default-400 text-tiny">
+
+                                <div className="min-w-0 rounded-lg bg-default-50 px-3 py-2">
+                                  <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
                                     Remarks
-                                  </span>{" "}
-                                  :{" "}
-                                  <span className="text-tiny">
-                                    {item?.remarks}
-                                  </span>
+                                  </p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground">
+                                    {item?.remarks || "-"}
+                                  </p>
                                 </div>
-                              </div>
-                            </CardBody>
-                          </Card>
-                        ),
-                      )}
-                    </div>
+
+                                {item?.approvalRemarks && (
+                                  <div className="min-w-0 rounded-lg bg-primary-50 px-3 py-2">
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-primary">
+                                      Approval Remarks
+                                    </p>
+                                    <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground">
+                                      {item?.approvalRemarks}
+                                    </p>
+                                  </div>
+                                )}
+                              </CardBody>
+                            </Card>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-default-300 py-10 text-center">
+                        <p className="text-sm font-semibold text-foreground">
+                          No portal credentials found
+                        </p>
+                        <p className="mt-1 text-xs text-default-500">
+                          Click Add Credentials to create client portal login
+                          details.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </ModalBody>
-              {/* <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="lg"
+        isOpen={portalStatusModal.isOpen}
+        onOpenChange={portalStatusModal.onOpenChange}
+        hideCloseButton
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form onSubmit={handleUpdatePortalStatus}>
+              <ModalHeader className="flex items-start justify-between gap-3 border-b border-default-200 w-full">
+                <div>
+                  <p className="text-base font-semibold">
+                    Update portal status
+                  </p>
+                  <p className="text-xs font-normal text-default-500">
+                    Approve or reject client portal login details with remarks.
+                  </p>
+                </div>
+
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  radius="full"
+                  onPress={onClose}
+                >
+                  <X className="w-4 h-4" />
                 </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
+              </ModalHeader>
+
+              <ModalBody className="w-full gap-4">
+                <div className="rounded-xl border border-default-200 bg-default-50 px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-default-400">
+                    Portal
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">
+                    {selectedPortalDetail?.portalName || "-"}
+                  </p>
+
+                  <p className="mt-1 break-all text-xs text-default-500">
+                    {selectedPortalDetail?.portalUrl || "-"}
+                  </p>
+                </div>
+
+                <Select
+                  label="Status"
+                  name="status"
+                  isRequired
+                  selectedKeys={
+                    portalStatusData.status ? [portalStatusData.status] : []
+                  }
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0];
+
+                    setPortalStatusData((prev) => ({
+                      ...prev,
+                      status: value,
+                    }));
+                  }}
+                >
+                  <SelectItem key="APPROVED">APPROVED</SelectItem>
+                  <SelectItem key="REJECTED">REJECTED</SelectItem>
+                </Select>
+
+                <Textarea
+                  label="Approval remarks"
+                  name="approvalRemarks"
+                  isRequired
+                  minRows={4}
+                  placeholder="Enter approval/rejection remarks..."
+                  value={portalStatusData.approvalRemarks}
+                  onChange={handlePortalStatusChange}
+                />
+              </ModalBody>
+
+              <ModalFooter className="border-t border-default-200">
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
                 </Button>
-              </ModalFooter> */}
+
+                <Button color="primary" type="submit">
+                  Submit
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="3xl"
+        scrollBehavior="inside"
+        isOpen={editPortalModal.isOpen}
+        onOpenChange={editPortalModal.onOpenChange}
+        hideCloseButton
+      >
+        <ModalContent>
+          {(onClose) => (
+            <Form onSubmit={handleUpdatePortalDetails}>
+              <ModalHeader className="flex items-start justify-between gap-3 border-b border-default-200 w-full">
+                <div>
+                  <p className="text-base font-semibold">
+                    Update portal login details
+                  </p>
+                  <p className="text-xs font-normal text-default-500">
+                    Update portal name, URL, username, password and remarks.
+                  </p>
+                </div>
+
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  radius="full"
+                  onPress={onClose}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </ModalHeader>
+
+              <ModalBody className="w-full gap-4">
+                <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
+                  <Input
+                    label="Portal name"
+                    name="portalName"
+                    isRequired
+                    value={editPortalData.portalName}
+                    onChange={handleEditPortalChange}
+                  />
+
+                  <Input
+                    label="Portal URL"
+                    name="portalUrl"
+                    isRequired
+                    value={editPortalData.portalUrl}
+                    onChange={handleEditPortalChange}
+                  />
+
+                  <Input
+                    label="Username"
+                    name="username"
+                    isRequired
+                    value={editPortalData.username}
+                    onChange={handleEditPortalChange}
+                  />
+
+                  <Input
+                    label="Password"
+                    name="password"
+                    isRequired
+                    value={editPortalData.password}
+                    onChange={handleEditPortalChange}
+                  />
+
+                  <Textarea
+                    label="Remarks"
+                    name="remarks"
+                    isRequired
+                    minRows={3}
+                    value={editPortalData.remarks}
+                    onChange={handleEditPortalChange}
+                    className="md:col-span-2"
+                  />
+                </div>
+              </ModalBody>
+
+              <ModalFooter className="border-t border-default-200">
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit">
+                  Update
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="md"
+        isOpen={deletePortalModal.isOpen}
+        onOpenChange={deletePortalModal.onOpenChange}
+        hideCloseButton
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex items-start justify-between gap-3 border-b border-default-200">
+                <div>
+                  <p className="text-base font-semibold text-danger">
+                    Delete portal details
+                  </p>
+                  <p className="text-xs font-normal text-default-500">
+                    This will soft delete the selected portal login details.
+                  </p>
+                </div>
+
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  radius="full"
+                  onPress={onClose}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="rounded-xl border border-danger-200 bg-danger-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    {selectedPortalDetail?.portalName || "-"}
+                  </p>
+
+                  <p className="mt-1 break-all text-xs text-default-600">
+                    {selectedPortalDetail?.portalUrl || "-"}
+                  </p>
+                </div>
+
+                <p className="text-sm text-default-600">
+                  Are you sure you want to delete this portal login detail?
+                </p>
+              </ModalBody>
+
+              <ModalFooter className="border-t border-default-200">
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+
+                <Button color="danger" onPress={handleDeletePortalDetails}>
+                  Delete
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>
