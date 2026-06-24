@@ -37,6 +37,7 @@ import {
   ExternalLink,
   Eye,
   FilePlusIcon,
+  FileText,
   Plus,
   Search,
 } from "lucide-react";
@@ -49,6 +50,8 @@ import {
   getRFQById,
   getVendorsByVendorIdandRFQId,
   createVendorFinalization,
+  getVendorFinalizationByRfqId,
+  sendVendorOnboardingForm,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -184,6 +187,30 @@ const vendorRegistrationSchema = z.object({
   remarks: z.string().optional(),
 });
 
+const onboardingDefaultValues = {
+  subject: "Vendor Onboarding Documents Required",
+  message: "Please fill and submit the shared onboarding documents.",
+  serviceCategory: "",
+  onboardedFor: "",
+  remarks: "",
+  vendorRegistrationForm: "",
+  signedNda: "",
+  signedAgreement: "",
+};
+
+const onboardingSchema = z.object({
+  subject: z.string().min(1, "Please enter subject"),
+  message: z.string().min(1, "Please enter message"),
+  serviceCategory: z.string().optional(),
+  onboardedFor: z.string().optional(),
+  remarks: z.string().optional(),
+  vendorRegistrationForm: z.any().refine((value) => Boolean(value), {
+    message: "Please upload vendor registration form",
+  }),
+  signedNda: z.any().optional(),
+  signedAgreement: z.any().optional(),
+});
+
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.content)) return response.content;
@@ -215,6 +242,7 @@ const Quote = () => {
   const quotationModal = useDisclosure();
   const viewModal = useDisclosure();
   const registerVendorModal = useDisclosure();
+  const onboardingModal = useDisclosure();
 
   const {
     control: quotationControl,
@@ -245,12 +273,25 @@ const Quote = () => {
     defaultValues: vendorRegistrationDefaultValues,
   });
 
+  const {
+    control: onboardingControl,
+    handleSubmit: handleOnboardingSubmit,
+    reset: resetOnboardingForm,
+    formState: { errors: onboardingErrors },
+  } = useForm({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: onboardingDefaultValues,
+  });
+
   const [quotationResponse, setQuotationResponse] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [selectedquote, setSelectedQuote] = useState(null);
+  const [selectedVendorFinalization, setSelectedVendorFinalization] =
+    useState(null);
 
   const [rfqDetails, setRfqDetails] = useState(null);
   const [rfqVendorDetails, setRfqVendorDetails] = useState(null);
+  const [vendorFinalizations, setVendorFinalizations] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -381,11 +422,33 @@ const Quote = () => {
     });
   }, [dispatch, rfqId, routeVendorId]);
 
+  const fetchVendorFinalizations = useCallback(() => {
+    if (!rfqId) return;
+
+    dispatch(
+      getVendorFinalizationByRfqId({
+        rfqId: Number(rfqId),
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        setVendorFinalizations(Array.isArray(resp.payload) ? resp.payload : []);
+      } else {
+        setVendorFinalizations([]);
+      }
+    });
+  }, [dispatch, rfqId]);
+
   useEffect(() => {
     fetchQuotations();
     fetchRFQDetails();
     fetchRFQVendorDetails();
-  }, [fetchQuotations, fetchRFQDetails, fetchRFQVendorDetails]);
+    fetchVendorFinalizations();
+  }, [
+    fetchQuotations,
+    fetchRFQDetails,
+    fetchRFQVendorDetails,
+    fetchVendorFinalizations,
+  ]);
 
   const getUploadedFileValue = (value) => {
     return (
@@ -396,6 +459,40 @@ const Quote = () => {
       value ||
       ""
     );
+  };
+
+  const getFinalizationForQuotation = useCallback(
+    (quotation) => {
+      if (!quotation) return null;
+
+      return vendorFinalizations.find(
+        (finalization) =>
+          Number(finalization?.quotationId) === Number(quotation?.id) &&
+          Number(finalization?.rfqVendorId) ===
+            Number(quotation?.rfqVendorId) &&
+          Number(finalization?.vendorId) === Number(quotation?.vendorId),
+      );
+    },
+    [vendorFinalizations],
+  );
+
+  const buildDocumentPayload = (documentType, fileValue, fallbackFileName) => {
+    const fileUrl = getUploadedFileValue(fileValue);
+
+    if (!fileUrl) {
+      return null;
+    }
+
+    return {
+      documentType,
+      fileName:
+        fileValue?.fileName ||
+        fileValue?.name ||
+        fallbackFileName ||
+        documentType,
+      fileUrl,
+      remarks: "",
+    };
   };
 
   const handleOpenAddQuote = () => {
@@ -666,6 +763,7 @@ const Quote = () => {
         registerVendorModal.onClose();
         resetRegisterVendorForm(vendorRegistrationDefaultValues);
         fetchQuotations();
+        fetchVendorFinalizations();
       } else {
         addToast({
           title: "ERROR",
@@ -674,6 +772,137 @@ const Quote = () => {
             resp?.payload?.data?.message ||
             resp?.payload ||
             "Vendor finalization failed.",
+          color: "danger",
+        });
+      }
+    });
+  };
+
+  const handleOpenOnboardingForm = (quotation) => {
+    const finalization = getFinalizationForQuotation(quotation);
+
+    if (!finalization?.id) {
+      addToast({
+        title: "ERROR",
+        description:
+          "Vendor finalization ID is missing. Please finalize vendor first.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    setSelectedQuote(quotation);
+    setSelectedVendorFinalization(finalization);
+
+    resetOnboardingForm({
+      ...onboardingDefaultValues,
+      serviceCategory: rfqDetails?.productName || "",
+      onboardedFor:
+        finalization?.description ||
+        quotation?.items?.[0]?.description ||
+        quotation?.remarks ||
+        "",
+      remarks: finalization?.remarks || "",
+    });
+
+    onboardingModal.onOpen();
+  };
+
+  const onSubmitOnboardingForm = (values) => {
+    const resolvedCreatedBy =
+      currentUser?.id ||
+      currentUser?.userId ||
+      currentUser?.employeeId ||
+      userId;
+
+    if (!selectedVendorFinalization?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Vendor finalization ID is missing.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    if (!resolvedCreatedBy) {
+      addToast({
+        title: "ERROR",
+        description: "Created By user is missing. Please login again.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    const documents = [
+      buildDocumentPayload(
+        "VENDOR_REGISTRATION_FORM",
+        values.vendorRegistrationForm,
+        "Vendor Registration Form",
+      ),
+      buildDocumentPayload("SIGNED_NDA", values.signedNda, "Signed NDA"),
+      buildDocumentPayload(
+        "SIGNED_AGREEMENT",
+        values.signedAgreement,
+        "Signed Agreement",
+      ),
+    ].filter(Boolean);
+
+    if (documents.length === 0) {
+      addToast({
+        title: "ERROR",
+        description: "Please upload at least one onboarding document.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    const payload = {
+      createdBy: Number(resolvedCreatedBy),
+      serviceCategory: values.serviceCategory || rfqDetails?.productName || "",
+      onboardedFor:
+        values.onboardedFor ||
+        selectedVendorFinalization?.description ||
+        selectedquote?.remarks ||
+        "",
+      remarks: values.remarks || "",
+      subject: values.subject,
+      message: values.message,
+      documents,
+    };
+
+    setSubmitLoading(true);
+
+    dispatch(
+      sendVendorOnboardingForm({
+        vendorFinalizationId: selectedVendorFinalization.id,
+        data: payload,
+      }),
+    ).then((resp) => {
+      setSubmitLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Vendor onboarding form sent successfully.",
+          color: "success",
+        });
+
+        onboardingModal.onClose();
+        setSelectedVendorFinalization(null);
+        resetOnboardingForm(onboardingDefaultValues);
+        fetchVendorFinalizations();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Vendor onboarding form sending failed.",
           color: "danger",
         });
       }
@@ -782,7 +1011,11 @@ const Quote = () => {
         case "createdBy":
           return <span className="text-sm">{rowData?.createdBy || "-"}</span>;
 
-        case "actions":
+        case "actions": {
+          const finalization = getFinalizationForQuotation(rowData);
+          const onboardingStarted =
+            finalization?.status === "ONBOARDING_STARTED";
+
           return (
             <Dropdown>
               <DropdownTrigger>
@@ -799,22 +1032,36 @@ const Quote = () => {
                 >
                   View
                 </DropdownItem>
-                <DropdownItem
-                  key="view"
-                  startContent={<FilePlusIcon size={15} />}
-                  onPress={() => handleOpenRegisterVendor(rowData)}
-                >
-                  Register Vendor
-                </DropdownItem>
+
+                {!finalization ? (
+                  <DropdownItem
+                    key="registerVendor"
+                    startContent={<FilePlusIcon size={15} />}
+                    onPress={() => handleOpenRegisterVendor(rowData)}
+                  >
+                    Register Vendor
+                  </DropdownItem>
+                ) : (
+                  <DropdownItem
+                    key="onboardingForm"
+                    startContent={<FileText size={15} />}
+                    onPress={() => handleOpenOnboardingForm(rowData)}
+                  >
+                    {onboardingStarted
+                      ? "Resend Onboarding Form"
+                      : "Onboarding Form"}
+                  </DropdownItem>
+                )}
               </DropdownMenu>
             </Dropdown>
           );
+        }
 
         default:
           return rowData?.[columnKey] || "-";
       }
     },
-    [handleView],
+    [getFinalizationForQuotation, handleView],
   );
 
   const topContent = useMemo(() => {
@@ -1772,6 +2019,249 @@ const Quote = () => {
 
                 <Button color="primary" type="submit">
                   Submit
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={onboardingModal.isOpen}
+        onOpenChange={onboardingModal.onOpenChange}
+        size="4xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Send Onboarding Form
+                </h2>
+                <p className="mt-1 text-xs font-normal text-default-500">
+                  Send vendor registration form, NDA and agreement after
+                  finalization.
+                </p>
+              </div>
+            </ModalHeader>
+
+            <form onSubmit={handleOnboardingSubmit(onSubmitOnboardingForm)}>
+              <ModalBody className="px-6 py-5">
+                <div className="max-h-[65vh] space-y-5 overflow-y-auto overflow-x-hidden pr-1">
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          Finalization ID
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {selectedVendorFinalization?.id || "-"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          RFQ
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {selectedVendorFinalization?.rfqNumber ||
+                            rfqDetails?.rfqNumber ||
+                            rfqId ||
+                            "-"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          Vendor
+                        </p>
+                        <p className="break-words text-sm font-semibold text-gray-900">
+                          {selectedVendorFinalization?.vendorName ||
+                            selectedquote?.vendorName ||
+                            "-"}
+                        </p>
+                      </div>
+
+                      <div className="min-w-0 space-y-1">
+                        <p className="text-xs font-medium text-default-500">
+                          Email
+                        </p>
+                        <p
+                          className="max-w-full truncate break-all text-sm font-semibold text-gray-900"
+                          title={
+                            selectedVendorFinalization?.vendorEmail ||
+                            selectedquote?.vendorEmail ||
+                            "-"
+                          }
+                        >
+                          {selectedVendorFinalization?.vendorEmail ||
+                            selectedquote?.vendorEmail ||
+                            "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-white p-5">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Email Details
+                      </h3>
+                      <p className="mt-1 text-xs text-default-500">
+                        This email will be sent to RFQ vendor email or vendor
+                        master email.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <Controller
+                        name="subject"
+                        control={onboardingControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Subject"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!onboardingErrors.subject}
+                            errorMessage={onboardingErrors.subject?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="serviceCategory"
+                        control={onboardingControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Service Category"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          />
+                        )}
+                      />
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="onboardedFor"
+                          control={onboardingControl}
+                          render={({ field }) => (
+                            <Input
+                              label="Onboarded For"
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="message"
+                          control={onboardingControl}
+                          render={({ field }) => (
+                            <Input
+                              label="Message"
+                              isRequired
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              isInvalid={!!onboardingErrors.message}
+                              errorMessage={onboardingErrors.message?.message}
+                            />
+                          )}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="remarks"
+                          control={onboardingControl}
+                          render={({ field }) => (
+                            <Input
+                              label="Remarks"
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-white p-5">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Onboarding Documents
+                      </h3>
+                      <p className="mt-1 text-xs text-default-500">
+                        Vendor registration form is required. NDA and agreement
+                        are optional here.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                      <Controller
+                        name="vendorRegistrationForm"
+                        control={onboardingControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Vendor Registration Form"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="signedNda"
+                        control={onboardingControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            label="Signed NDA"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="signedAgreement"
+                        control={onboardingControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            label="Signed Agreement"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter className="border-t px-6 py-4">
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    onboardingModal.onClose();
+                    setSelectedVendorFinalization(null);
+                    resetOnboardingForm(onboardingDefaultValues);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit" isLoading={submitLoading}>
+                  Send Form
                 </Button>
               </ModalFooter>
             </form>

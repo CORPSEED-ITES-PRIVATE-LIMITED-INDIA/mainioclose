@@ -1266,6 +1266,7 @@ export const OperationSlice = createSlice({
 
     builder.addCase(getHistoryByMileStoneIdAndProjectId.pending, (state) => {
       state.loading = "pending";
+      state.mileStoneEventHistory = {};
     });
     builder.addCase(
       getHistoryByMileStoneIdAndProjectId.fulfilled,

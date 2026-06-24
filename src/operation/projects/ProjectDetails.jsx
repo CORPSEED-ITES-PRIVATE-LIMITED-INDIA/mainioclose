@@ -591,12 +591,12 @@ const ProjectDetails = () => {
   const isCertificationMilestone =
     selectedMilestone?.milestoneName?.toLowerCase() === "certification";
 
-  useEffect(() => {
-    dispatch(getOperationProjectDetailById({ projectId, userId }));
-    dispatch(getAllMilestoneStatusesForOperations());
-    dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
-    dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
-  }, [projectId]);
+  // useEffect(() => {
+  //   dispatch(getOperationProjectDetailById({ projectId, userId }));
+  //   dispatch(getAllMilestoneStatusesForOperations());
+  //   dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
+  //   dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
+  // }, [projectId]);
 
   useEffect(() => {
     if (procurementAssignmentId) {
@@ -628,25 +628,44 @@ const ProjectDetails = () => {
     );
   };
 
+  // useEffect(() => {
+  //   const first = detailedData?.milestones?.[0];
+
+  //   if (!first?.milestoneId || !first?.projectId) return;
+
+  //   setSelectedMilestone((prev) => {
+  //     if (prev?.milestoneId === first.milestoneId) {
+  //       return prev;
+  //     }
+
+  //     return first;
+  //   });
+
+  //   fetchMilestoneHistory(first);
+  // }, [
+  //   detailedData?.projectDetails?.id,
+  //   detailedData?.milestones?.[0]?.milestoneId,
+  //   userId,
+  // ]);
   useEffect(() => {
-    const first = detailedData?.milestones?.[0];
+    setSelectedMilestone(null);
+    lastHistoryRequestRef.current = null;
 
-    if (!first?.milestoneId || !first?.projectId) return;
+    dispatch(getOperationProjectDetailById({ projectId, userId })).then(
+      (resp) => {
+        const firstMilestone = resp?.payload?.milestones?.[0];
 
-    setSelectedMilestone((prev) => {
-      if (prev?.milestoneId === first.milestoneId) {
-        return prev;
-      }
+        if (firstMilestone?.milestoneId && firstMilestone?.projectId) {
+          setSelectedMilestone(firstMilestone);
+          fetchMilestoneHistory(firstMilestone, true);
+        }
+      },
+    );
 
-      return first;
-    });
-
-    fetchMilestoneHistory(first);
-  }, [
-    detailedData?.projectDetails?.id,
-    detailedData?.milestones?.[0]?.milestoneId,
-    userId,
-  ]);
+    dispatch(getAllMilestoneStatusesForOperations());
+    dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
+    dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
+  }, [dispatch, projectId, userId]);
 
   const handleChangeAssignee = () => {
     dispatch(updateAssigneeForMileStone(assigneeObj))

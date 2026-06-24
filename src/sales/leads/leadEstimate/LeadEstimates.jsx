@@ -1040,56 +1040,81 @@ const LeadEstimates = () => {
               {/* )} */}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Form.Item
-                  label="Order Date"
-                  name="estimateDate"
-                  rules={[
-                    { required: true, message: "Please select order date" },
-                  ]}
-                  className="mb-0"
+                <Form
+                  initialValues={{
+                    estimateDate: dayjs(),
+                  }}
+                  className="flex flex-col"
                 >
-                  <DtPicker
-                    className="w-full"
-                    disabledDate={(current) =>
-                      current && current > dayjs().endOf("day")
-                    }
-                    format="YYYY-MM-DD"
-                  />
-                </Form.Item>
+                  <Form.Item
+                    label="Order Date"
+                    name="estimateDate"
+                    rules={[
+                      { required: true, message: "Please select order date" },
+                    ]}
+                    className="mb-0"
+                  >
+                    <DtPicker
+                      className="w-full"
+                      disabledDate={(current) =>
+                        current && current > dayjs().endOf("day")
+                      }
+                      format="YYYY-MM-DD"
+                    />
+                  </Form.Item>
+                </Form>
 
-                <Form.Item
-                  label="Valid till date"
-                  name="validUntil"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please select valid till date",
-                    },
-                  ]}
-                  className="mb-0"
+                <Form
+                  initialValues={{
+                    validUntil: dayjs().add(7, "day"),
+                  }}
                 >
-                  <DtPicker
-                    className="w-full"
-                    disabledDate={(current) =>
-                      current && current < dayjs().startOf("day")
-                    }
-                    format="YYYY-MM-DD"
-                  />
-                </Form.Item>
+                  <Form.Item
+                    label="Valid till date"
+                    name="validUntil"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select valid till date",
+                      },
+                    ]}
+                    className="mb-0"
+                  >
+                    <DtPicker
+                      className="w-full"
+                      disabledDate={(current) =>
+                        current && current < dayjs().startOf("day")
+                      }
+                      format="YYYY-MM-DD"
+                    />
+                  </Form.Item>
+                </Form>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Form.Item label="Notes" name="customerNotes" className="mb-0">
-                  <AntInput.TextArea rows={3} placeholder="Notes" />
-                </Form.Item>
-
-                <Form.Item
-                  label="Remarks"
-                  name="internalRemarks"
-                  className="mb-0"
+              <div>
+                <Form
+                  initialValues={{
+                    customerNotes: "Thank you for your business.",
+                    internalRemarks: "Created from ERP.",
+                  }}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-3"
                 >
-                  <AntInput.TextArea rows={3} placeholder="Remarks" />
-                </Form.Item>
+                  <Form.Item
+                    label="Notes"
+                    name="customerNotes"
+                    className="mb-0"
+                  >
+                    <AntInput.TextArea rows={3} placeholder="Notes" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label="Remarks"
+                    name="internalRemarks"
+                    className="mb-0"
+                  >
+                    <AntInput.TextArea rows={3} placeholder="Remarks" />
+                  </Form.Item>
+                </Form>
               </div>
             </CardBody>
           </Card>

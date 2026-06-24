@@ -530,6 +530,58 @@ export const createVendorFinalization = createAsyncThunk(
     }
   },
 );
+export const sendVendorOnboardingForm = createAsyncThunk(
+  "sendVendorOnboardingForm",
+  async ({data,vendorFinalizationId}, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/vendor-onboarding/send-form/${vendorFinalizationId}`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
+export const getVendorFinalizationById = createAsyncThunk(
+  "getVendorFinalizationById",
+  async ({data,vendorFinalizationId}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/vendor-finalizations/${vendorFinalizationId}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
+export const getVendorFinalizationByRfqId = createAsyncThunk(
+  "getVendorFinalizationByRfqId",
+  async ({data,rfqId}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/vendor-finalizations/rfq/${rfqId}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
 
 const VendorsSlice = createSlice({
   name: "vendors",
