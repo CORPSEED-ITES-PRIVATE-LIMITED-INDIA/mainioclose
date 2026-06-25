@@ -106,7 +106,7 @@ const quotationDefaultValues = {
   paymentTerms: "",
   warrantyTerms: "",
   remarks: "",
-  quotationAttachmentUrl: "",
+  quotationAttachmentUrl: [],
   items: [
     {
       itemType: "MATERIAL",
@@ -129,7 +129,7 @@ const quotationSchema = z.object({
   paymentTerms: z.string().min(1, "Please enter payment terms"),
   warrantyTerms: z.string().optional(),
   remarks: z.string().optional(),
-  quotationAttachmentUrl: z.any().optional(),
+  quotationAttachmentUrl: z.array(z.string()).optional(),
   items: z
     .array(
       z.object({
@@ -674,9 +674,7 @@ const Quote = () => {
       paymentTerms: values.paymentTerms,
       warrantyTerms: values.warrantyTerms || "",
       remarks: values.remarks || "",
-      quotationAttachmentUrl: getUploadedFileValue(
-        values.quotationAttachmentUrl,
-      ),
+      quotationAttachmentUrl: values.quotationAttachmentUrl || [],
       createdBy: Number(resolvedCreatedBy),
 
       items: values.items.map((item) => ({
@@ -1356,17 +1354,24 @@ const Quote = () => {
         case "attachments":
           return (
             <div className="flex flex-col gap-1 text-xs">
-              {rowData?.quotationAttachmentUrl ? (
-                <a
-                  href={rowData.quotationAttachmentUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-medium text-primary"
-                >
-                  Quotation PDF <ExternalLink size={13} />
-                </a>
+              {Array.isArray(rowData?.quotationAttachmentUrl) &&
+              rowData.quotationAttachmentUrl.length > 0 ? (
+                <div className="flex flex-col gap-1">
+                  {rowData.quotationAttachmentUrl.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary text-xs"
+                    >
+                      Attachment {index + 1}
+                      <ExternalLink size={12} />
+                    </a>
+                  ))}
+                </div>
               ) : (
-                <span className="text-default-400">Quotation PDF: -</span>
+                <span className="text-default-400">No Attachment</span>
               )}
 
               {rowData?.agreementFileUrl ? (
@@ -1709,20 +1714,28 @@ const Quote = () => {
                   </p>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    {selectedQuotation?.quotationAttachmentUrl ? (
-                      <Button
-                        as="a"
-                        href={selectedQuotation.quotationAttachmentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        color="primary"
-                        variant="flat"
-                        endContent={<ExternalLink size={14} />}
-                      >
-                        View Quotation PDF
-                      </Button>
+                    {Array.isArray(selectedQuotation?.quotationAttachmentUrl) &&
+                    selectedQuotation.quotationAttachmentUrl.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        {selectedQuotation.quotationAttachmentUrl.map(
+                          (url, index) => (
+                            <Button
+                              key={index}
+                              as="a"
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              color="primary"
+                              variant="flat"
+                              endContent={<ExternalLink size={14} />}
+                            >
+                              View Attachment {index + 1}
+                            </Button>
+                          ),
+                        )}
+                      </div>
                     ) : (
-                      <Chip variant="flat">Quotation PDF Not Attached</Chip>
+                      <Chip variant="flat">No Quotation Attachment</Chip>
                     )}
 
                     {selectedQuotation?.agreementFileUrl ? (
@@ -1955,11 +1968,11 @@ const Quote = () => {
                         control={quotationControl}
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
-                            label="Quotation Attachment"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
+                            label="Quotation Attachments"
+                            value={field.value || []}
+                            onChange={field.onChange}
+                            uploadingType="multiple"
                             errorMessage={error?.message}
-                            isInvalid={!!error}
                           />
                         )}
                       />
