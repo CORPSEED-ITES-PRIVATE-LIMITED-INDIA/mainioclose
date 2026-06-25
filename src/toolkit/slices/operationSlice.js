@@ -1210,10 +1210,11 @@ export const getSalesProjectStatusDashboard = createAsyncThunk(
 
 export const sendAgreementToVendor = createAsyncThunk(
   "sendAgreementToVendor",
-  async ({ quotationId, userId }, { rejectWithValue }) => {
+  async ({body, quotationId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.post(
         `/operationService/api/quotation/${quotationId}/send-agreement-to-vendor?userId=${userId}`,
+        body
       );
 
       return response.data;

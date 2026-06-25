@@ -235,6 +235,22 @@ const legalRequestSchema = z.object({
   assignedToLegal: z.string().min(1, "Please enter assigned legal user id"),
 });
 
+const vendorAgreementDefaultValues = {
+  subject: "",
+  message: "Please review the attached final agreement.",
+  attachmentUrl: "",
+  remarks: "",
+};
+
+const vendorAgreementSchema = z.object({
+  subject: z.string().optional(),
+  message: z.string().optional(),
+  attachmentUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload final agreement attachment",
+  }),
+  remarks: z.string().optional(),
+});
+
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.content)) return response.content;
@@ -274,6 +290,7 @@ const Quote = () => {
   const registerVendorModal = useDisclosure();
   const onboardingModal = useDisclosure();
   const legalRequestModal = useDisclosure();
+  const sendAgreementModal = useDisclosure();
 
   const {
     control: quotationControl,
@@ -322,6 +339,16 @@ const Quote = () => {
   } = useForm({
     resolver: zodResolver(legalRequestSchema),
     defaultValues: legalRequestDefaultValues,
+  });
+
+  const {
+    control: vendorAgreementControl,
+    handleSubmit: handleVendorAgreementSubmit,
+    reset: resetVendorAgreementForm,
+    formState: { errors: vendorAgreementErrors },
+  } = useForm({
+    resolver: zodResolver(vendorAgreementSchema),
+    defaultValues: vendorAgreementDefaultValues,
   });
 
   const [quotationResponse, setQuotationResponse] = useState(null);
@@ -1100,14 +1127,8 @@ const Quote = () => {
     });
   };
 
-  const handleSendAgreementToVendor = useCallback(
+  const handleOpenSendAgreementToVendor = useCallback(
     (quotation) => {
-      const resolvedUserId =
-        currentUser?.id ||
-        currentUser?.userId ||
-        currentUser?.employeeId ||
-        userId;
-
       if (!quotation?.id) {
         addToast({
           title: "ERROR",
@@ -1127,48 +1148,100 @@ const Quote = () => {
         return;
       }
 
-      if (!resolvedUserId) {
+      setSelectedQuotation(quotation);
+
+      resetVendorAgreementForm({
+        subject: quotation?.quotationNumber
+          ? `Final Service Agreement - ${quotation.quotationNumber}`
+          : "Final Service Agreement",
+        message: "Please review the attached final agreement.",
+        attachmentUrl: "",
+        remarks: "",
+      });
+
+      sendAgreementModal.onOpen();
+    },
+    [resetVendorAgreementForm, sendAgreementModal],
+  );
+
+  const onSubmitSendAgreementToVendor = (values) => {
+    const resolvedUserId =
+      currentUser?.id ||
+      currentUser?.userId ||
+      currentUser?.employeeId ||
+      userId;
+
+    if (!selectedQuotation?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Quotation ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "ERROR",
+        description: "User ID is missing. Please login again.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const attachmentUrl = getUploadedFileValue(values.attachmentUrl);
+
+    if (!attachmentUrl) {
+      addToast({
+        title: "ERROR",
+        description: "Please upload final agreement attachment.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const body = {
+      attachmentUrl,
+      remarks: values.remarks || "",
+      subject: values.subject || "",
+      message: values.message || "",
+    };
+
+    setSubmitLoading(true);
+
+    dispatch(
+      sendAgreementToVendor({
+        quotationId: Number(selectedQuotation.id),
+        userId: Number(resolvedUserId),
+        body,
+      }),
+    ).then((resp) => {
+      setSubmitLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Agreement sent to vendor successfully.",
+          color: "success",
+        });
+
+        sendAgreementModal.onClose();
+        resetVendorAgreementForm(vendorAgreementDefaultValues);
+        setSelectedQuotation(null);
+        fetchQuotations();
+      } else {
         addToast({
           title: "ERROR",
-          description: "User ID is missing. Please login again.",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Failed to send agreement to vendor.",
           color: "danger",
         });
-        return;
       }
-
-      setSubmitLoading(true);
-
-      dispatch(
-        sendAgreementToVendor({
-          quotationId: Number(quotation.id),
-          userId: Number(resolvedUserId),
-        }),
-      ).then((resp) => {
-        setSubmitLoading(false);
-
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "SUCCESS",
-            description: "Agreement sent to vendor successfully.",
-            color: "success",
-          });
-
-          fetchQuotations();
-        } else {
-          addToast({
-            title: "ERROR",
-            description:
-              resp?.payload?.message ||
-              resp?.payload?.data?.message ||
-              resp?.payload ||
-              "Failed to send agreement to vendor.",
-            color: "danger",
-          });
-        }
-      });
-    },
-    [currentUser, dispatch, fetchQuotations, userId],
-  );
+    });
+  };
 
   const renderCell = useCallback(
     (rowData, columnKey) => {
@@ -1342,7 +1415,7 @@ const Quote = () => {
                     <DropdownItem
                       key="sendAgreementToVendor"
                       startContent={<FileText size={15} />}
-                      onPress={() => handleSendAgreementToVendor(rowData)}
+                      onPress={() => handleOpenSendAgreementToVendor(rowData)}
                     >
                       Send Agreement To Vendor
                     </DropdownItem>
@@ -1397,7 +1470,7 @@ const Quote = () => {
       getLegalRequestForQuotation,
       handleView,
       handleOpenLegalRequest,
-      handleSendAgreementToVendor,
+      handleOpenSendAgreementToVendor,
     ],
   );
 
@@ -2541,6 +2614,123 @@ const Quote = () => {
 
                 <Button color="primary" type="submit" isLoading={submitLoading}>
                   Submit
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={sendAgreementModal.isOpen}
+        onOpenChange={(open) => {
+          sendAgreementModal.onOpenChange(open);
+
+          if (!open) {
+            resetVendorAgreementForm(vendorAgreementDefaultValues);
+          }
+        }}
+        size="2xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Send Agreement To Vendor
+                </h2>
+                <p className="mt-1 text-xs font-normal text-default-500">
+                  Upload the final agreement manually and send it to vendor by
+                  mail.
+                </p>
+              </div>
+            </ModalHeader>
+
+            <form
+              onSubmit={handleVendorAgreementSubmit(
+                onSubmitSendAgreementToVendor,
+              )}
+            >
+              <ModalBody className="space-y-4 px-6 py-5">
+                <Input
+                  label="Quotation"
+                  value={selectedQuotation?.quotationNumber || "-"}
+                  isReadOnly
+                />
+
+                <Controller
+                  name="subject"
+                  control={vendorAgreementControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Mail Subject"
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      isInvalid={!!vendorAgreementErrors.subject}
+                      errorMessage={vendorAgreementErrors.subject?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="message"
+                  control={vendorAgreementControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Mail Message"
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      isInvalid={!!vendorAgreementErrors.message}
+                      errorMessage={vendorAgreementErrors.message?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="attachmentUrl"
+                  control={vendorAgreementControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <FileUploader
+                      isRequired
+                      label="Final Agreement Attachment"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="remarks"
+                  control={vendorAgreementControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Remarks"
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      isInvalid={!!vendorAgreementErrors.remarks}
+                      errorMessage={vendorAgreementErrors.remarks?.message}
+                    />
+                  )}
+                />
+              </ModalBody>
+
+              <ModalFooter className="border-t px-6 py-4">
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    sendAgreementModal.onClose();
+                    resetVendorAgreementForm(vendorAgreementDefaultValues);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit" isLoading={submitLoading}>
+                  Send To Vendor
                 </Button>
               </ModalFooter>
             </form>
