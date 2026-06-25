@@ -57,6 +57,8 @@ import {
   deleteClientPortalLoginDetails,
   checkDocumentExpiryByUrl,
   sendBackToPreviousMilestone,
+  createProjectReopenRequest,
+  getProjectMilestoneAssignmentOptions,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -481,6 +483,7 @@ const ProjectDetails = () => {
   const vendorMapModal = useDisclosure();
   const vendorDrawer = useDisclosure();
   const activityDrawer = useDisclosure();
+  const reopenModal = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -609,7 +612,20 @@ const ProjectDetails = () => {
     remarks: "",
   });
 
+  const [reopenData, setReopenData] = useState({
+    projectId: null,
+    detectedAtAssignmentId: null,
+    responsibleAssignmentId: "",
+    reason: "",
+  });
+
   const [isPoModalOpen, setIsPoModalOpen] = useState(false);
+
+  const [responsibleMilestoneOptions, setResponsibleMilestoneOptions] =
+    useState([]);
+
+  const [responsibleMilestoneLoading, setResponsibleMilestoneLoading] =
+    useState(false);
 
   const procurementAssignmentId =
     detailedData?.projectDetails?.procurementMilestoneAssignmentId;
@@ -2321,6 +2337,142 @@ const ProjectDetails = () => {
     window.open(href, "_blank", "noopener,noreferrer");
   };
 
+  const handleOpenReopenModal = () => {
+    if (!projectId) {
+      addToast({
+        title: "Project missing",
+        description: "Project ID not found.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!selectedMilestone?.id) {
+      addToast({
+        title: "Milestone missing",
+        description: "Please select milestone first.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setReopenData({
+      projectId: Number(projectId),
+
+      // This is the assignment from where reopen is being raised
+      detectedAtAssignmentId: Number(selectedMilestone.id),
+
+      // User will select this from API dropdown
+      responsibleAssignmentId: "",
+      reason: "",
+    });
+
+    setResponsibleMilestoneOptions([]);
+    setResponsibleMilestoneLoading(true);
+
+    dispatch(getProjectMilestoneAssignmentOptions(projectId)).then((resp) => {
+      setResponsibleMilestoneLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        setResponsibleMilestoneOptions(
+          Array.isArray(resp.payload) ? resp.payload : [],
+        );
+      } else {
+        addToast({
+          title: "Failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to fetch responsible milestone options.",
+          color: "danger",
+        });
+      }
+    });
+
+    reopenModal.onOpen();
+  };
+
+  const handleCreateReopenRequest = () => {
+    if (!reopenData.detectedAtAssignmentId) {
+      addToast({
+        title: "Detected milestone missing",
+        description: "Detected at assignment ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!reopenData.responsibleAssignmentId) {
+      addToast({
+        title: "Responsible milestone required",
+        description: "Please select responsible milestone.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!reopenData.reason?.trim()) {
+      addToast({
+        title: "Reason required",
+        description: "Please enter reopen reason.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      projectId: Number(projectId),
+
+      // current selected milestone assignment id
+      detectedAtAssignmentId: Number(reopenData.detectedAtAssignmentId),
+
+      // selected from API dropdown
+      responsibleAssignmentId: Number(reopenData.responsibleAssignmentId),
+
+      reason: reopenData.reason.trim(),
+    };
+
+    dispatch(createProjectReopenRequest(payload)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "Reopen request created successfully!",
+          color: "success",
+        });
+
+        reopenModal.onClose();
+
+        setReopenData({
+          projectId: null,
+          detectedAtAssignmentId: null,
+          responsibleAssignmentId: "",
+          reason: "",
+        });
+
+        dispatch(getOperationProjectDetailById({ projectId, userId })).then(
+          (res) => {
+            const updatedMilestone = res?.payload?.milestones?.find(
+              (mile) => Number(mile.id) === Number(selectedMilestone?.id),
+            );
+
+            if (updatedMilestone) {
+              setSelectedMilestone(updatedMilestone);
+              fetchMilestoneHistory(updatedMilestone, true);
+            }
+          },
+        );
+      } else {
+        addToast({
+          title: resp?.payload?.status || "Failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to create reopen request.",
+          color: "danger",
+        });
+      }
+    });
+  };
+
   return (
     <div className="h-[calc(100vh-80px)] w-full overflow-y-auto overflow-x-hidden bg-background px-3 py-3">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-3 pb-6">
@@ -2664,34 +2816,47 @@ const ProjectDetails = () => {
                         <Chip color="primary" variant="flat" size="sm">
                           Active Milestone
                         </Chip>
-                        <Chip
-                          size="sm"
-                          color={
-                            statusColors[selectedMilestone?.status] || "default"
-                          }
-                          className="cursor-pointer"
-                          onClick={() => {
-                            statusModal.onOpen();
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Chip
+                            size="sm"
+                            color={
+                              statusColors[selectedMilestone?.status] ||
+                              "default"
+                            }
+                            className="cursor-pointer"
+                            onClick={() => {
+                              statusModal.onOpen();
 
-                            dispatch(
-                              getRequiredDocumentsByProductId({
-                                userId,
-                                projectId,
-                              }),
-                            );
+                              dispatch(
+                                getRequiredDocumentsByProductId({
+                                  userId,
+                                  projectId,
+                                }),
+                              );
 
-                            setStatusObj((prev) => ({
-                              ...prev,
-                              newStatusName: selectedMilestone?.status,
-                              assignmentId: selectedMilestone?.id,
-                              changedById: userId,
-                              reworkDocuments: [],
-                              additionalReworkDocuments: [],
-                            }));
-                          }}
-                        >
-                          {selectedMilestone?.status || "-"}
-                        </Chip>
+                              setStatusObj((prev) => ({
+                                ...prev,
+                                newStatusName: selectedMilestone?.status,
+                                assignmentId: selectedMilestone?.id,
+                                changedById: userId,
+                                reworkDocuments: [],
+                                additionalReworkDocuments: [],
+                              }));
+                            }}
+                          >
+                            {selectedMilestone?.status || "-"}
+                          </Chip>
+
+                          <Button
+                            size="sm"
+                            color="warning"
+                            variant="flat"
+                            radius="full"
+                            onPress={handleOpenReopenModal}
+                          >
+                            Reopen
+                          </Button>
+                        </div>
                       </div>
 
                       <h2 className="truncate text-lg font-semibold text-foreground">
@@ -5398,6 +5563,135 @@ const ProjectDetails = () => {
           )}
         </DrawerContent>
       </Drawer>
+
+      <Modal
+        isOpen={reopenModal.isOpen}
+        onOpenChange={reopenModal.onOpenChange}
+        size="lg"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Reopen Project Request
+                <span className="text-xs font-normal text-default-500">
+                  Raise reopen request from current milestone and select
+                  responsible milestone.
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="space-y-4">
+                <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                  <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-medium text-default-400">
+                        Project
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {detailedData?.projectDetails?.name || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium text-default-400">
+                        Project No.
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {detailedData?.projectDetails?.projectNo || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium text-default-400">
+                        Detected At Milestone
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {selectedMilestone?.milestoneName || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium text-default-400">
+                        Detected Assignment ID
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {reopenData.detectedAtAssignmentId ||
+                          selectedMilestone?.id ||
+                          "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Select
+                  label="Responsible Milestone"
+                  placeholder={
+                    responsibleMilestoneLoading
+                      ? "Loading milestones..."
+                      : "Select responsible milestone"
+                  }
+                  isRequired
+                  isDisabled={responsibleMilestoneLoading}
+                  selectedKeys={
+                    reopenData.responsibleAssignmentId
+                      ? new Set([String(reopenData.responsibleAssignmentId)])
+                      : new Set([])
+                  }
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)?.[0];
+
+                    setReopenData((prev) => ({
+                      ...prev,
+                      responsibleAssignmentId: selected ? String(selected) : "",
+                    }));
+                  }}
+                >
+                  {(responsibleMilestoneOptions || []).map((mile) => (
+                    <SelectItem
+                      key={String(mile.assignmentId)}
+                      textValue={`${mile.milestoneName} ${mile.assignmentId}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {mile.milestoneName || "-"}
+                        </span>
+                        <span className="text-xs text-default-500">
+                          Assignment ID: {mile.assignmentId || "-"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </Select>
+
+                <Textarea
+                  label="Reason"
+                  isRequired
+                  minRows={4}
+                  placeholder="Enter reason for reopening this project..."
+                  value={reopenData.reason}
+                  onChange={(e) =>
+                    setReopenData((prev) => ({
+                      ...prev,
+                      reason: e.target.value,
+                    }))
+                  }
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="light" onPress={onClose}>
+                  Cancel
+                </Button>
+
+                <Button color="warning" onPress={handleCreateReopenRequest}>
+                  Submit Reopen Request
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

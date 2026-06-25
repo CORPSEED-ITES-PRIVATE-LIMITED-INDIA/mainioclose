@@ -1226,6 +1226,78 @@ export const sendAgreementToVendor = createAsyncThunk(
   },
 );
 
+export const createProjectReopenRequest = createAsyncThunk(
+  "operation/createProjectReopenRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/operationService/api/project-reopen-requests",
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to create project reopen request",
+      );
+    }
+  },
+);
+
+export const getProjectMilestoneAssignmentOptions = createAsyncThunk(
+  "operation/getProjectMilestoneAssignmentOptions",
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/${projectId}/milestone-assignment-options`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to fetch milestone assignment options",
+      );
+    }
+  },
+);
+
+export const getPendingResponsibleManagerReopenRequests = createAsyncThunk(
+  "operation/getPendingResponsibleManagerReopenRequests",
+  async (managerId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/project-reopen-requests/pending/responsible-manager/${managerId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          "Failed to fetch responsible manager reopen requests",
+      );
+    }
+  },
+);
+
+export const updateResponsibleManagerReopenDecision = createAsyncThunk(
+  "operation/updateResponsibleManagerReopenDecision",
+  async ({ requestId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/project-reopen-requests/${requestId}/responsible-manager-decision`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          "Failed to update responsible manager decision",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

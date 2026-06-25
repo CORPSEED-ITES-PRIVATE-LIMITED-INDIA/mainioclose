@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   addToast,
   Button,
@@ -24,6 +30,7 @@ import {
   TableRow,
   useDisclosure,
   DatePicker,
+  Avatar,
 } from "@heroui/react";
 import { parseDate } from "@internationalized/date";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
@@ -33,13 +40,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
 import {
   ChevronDown,
+  Clock,
   EllipsisVertical,
   ExternalLink,
   Eye,
   FilePlusIcon,
   FileText,
+  Paperclip,
   Plus,
   Search,
+  Send,
+  X,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -83,6 +94,35 @@ const INITIAL_VISIBLE_COLUMNS = [
   "createdBy",
   "actions",
 ];
+
+const dummyLegalChatUsers = [
+  {
+    id: 101,
+    fullName: "Shaurya Legal",
+    email: "shaurya.legal@corpseed.com",
+  },
+  {
+    id: 102,
+    fullName: "Legal Manager",
+    email: "legal.manager@corpseed.com",
+  },
+  {
+    id: 103,
+    fullName: "Agreement Team",
+    email: "agreement.team@corpseed.com",
+  },
+];
+
+const getInitials = (name = "") => {
+  return String(name)
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+};
 
 const quotationStatusOptions = [
   "ALL",
@@ -375,6 +415,69 @@ const Quote = () => {
     page: 1,
     size: 10,
   });
+
+  const fileInputRef = useRef(null);
+
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatAttachment, setChatAttachment] = useState(null);
+  const [selectedQuoteItem, setSelectedQuoteItem] = useState(null);
+  const [chatList, setChatList] = useState([
+    {
+      id: 1,
+      sender: "vendor",
+      senderName: "Balaji Traders",
+      message: "Quotation request received for 12A Registration.",
+      time: "10:15 AM",
+      attachment: null,
+    },
+    {
+      id: 2,
+      sender: "me",
+      senderName: "Corpseed",
+      message:
+        "Please share quotation with commercials, timeline and payment terms.",
+      time: "10:18 AM",
+      attachment: null,
+    },
+    {
+      id: 3,
+      sender: "vendor",
+      senderName: "Balaji Traders",
+      message: "Sure, we will share the quotation shortly.",
+      time: "10:22 AM",
+      attachment: null,
+    },
+  ]);
+  const [selectedChatPersonId, setSelectedChatPersonId] = useState("101");
+
+  const legalChatUsers = useMemo(() => {
+    const apiUsers = Array.isArray(legalDepartmentUsers)
+      ? legalDepartmentUsers
+      : [];
+
+    return apiUsers.length > 0 ? apiUsers : dummyLegalChatUsers;
+  }, [legalDepartmentUsers]);
+
+  const selectedChatPerson = useMemo(() => {
+    return (
+      legalChatUsers.find(
+        (user) => String(user.id) === String(selectedChatPersonId),
+      ) || legalChatUsers[0]
+    );
+  }, [legalChatUsers, selectedChatPersonId]);
+
+  useEffect(() => {
+    if (!legalChatUsers.length) return;
+
+    const exists = legalChatUsers.some(
+      (user) => String(user.id) === String(selectedChatPersonId),
+    );
+
+    if (!exists) {
+      setSelectedChatPersonId(String(legalChatUsers[0].id));
+    }
+  }, [legalChatUsers, selectedChatPersonId]);
 
   const queryParams = useMemo(() => {
     return new URLSearchParams(location.search);
@@ -742,6 +845,48 @@ const Quote = () => {
       size: Number(e.target.value),
     });
   }, []);
+
+  const handleOpenChatHistory = (rowData) => {
+    setSelectedQuoteItem(rowData);
+    setChatDrawerOpen(true);
+  };
+
+  const handleSubmitChat = () => {
+    const message = chatMessage.trim();
+
+    if (!message && !chatAttachment) return;
+
+    const attachmentData = chatAttachment
+      ? {
+          name: chatAttachment.name,
+          size: chatAttachment.size,
+          type: chatAttachment.type,
+          url: URL.createObjectURL(chatAttachment),
+        }
+      : null;
+
+    setChatList((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "me",
+        senderName: "Corpseed",
+        receiverId: selectedChatPerson?.id || null,
+        receiverName: selectedChatPerson?.fullName || "Legal User",
+        receiverEmail: selectedChatPerson?.email || "",
+        message,
+        time: dayjs().format("hh:mm A"),
+        attachment: attachmentData,
+      },
+    ]);
+
+    setChatMessage("");
+    setChatAttachment(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleOpenRegisterVendor = (item) => {
     setSelectedQuote(item);
@@ -1413,6 +1558,13 @@ const Quote = () => {
                   onPress={() => handleView(rowData)}
                 >
                   View
+                </DropdownItem>
+                <DropdownItem
+                  key="history"
+                  startContent={<Clock size={15} />}
+                  onPress={() => handleOpenChatHistory(rowData)}
+                >
+                  Chat with Leagal
                 </DropdownItem>
 
                 {rowData?.agreementFileUrl &&
@@ -2993,6 +3145,253 @@ const Quote = () => {
           </>
         </ModalContent>
       </Modal>
+
+      {chatDrawerOpen && (
+        <div className="fixed inset-0 z-[9999] flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setChatDrawerOpen(false)}
+          />
+
+          <div className="relative z-10 flex h-full w-full max-w-[620px] flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b bg-white px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Chat with Legal
+                </h2>
+
+                <p className="text-xs text-gray-500">
+                  {selectedQuoteItem?.vendorName
+                    ? `Vendor: ${selectedQuoteItem.vendorName}`
+                    : "Dummy vendor communication timeline"}
+                </p>
+              </div>
+
+              <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                onPress={() => setChatDrawerOpen(false)}
+              >
+                <X size={18} />
+              </Button>
+            </div>
+
+            <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4">
+              {chatList.map((chat) => {
+                const isMine = chat.sender === "me";
+
+                return (
+                  <div
+                    key={chat.id}
+                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
+                        isMine
+                          ? "rounded-br-sm bg-primary text-white"
+                          : "rounded-bl-sm border bg-white text-gray-900"
+                      }`}
+                    >
+                      <p
+                        className={`mb-1 text-[11px] font-semibold ${
+                          isMine ? "text-white/80" : "text-gray-500"
+                        }`}
+                      >
+                        {chat.senderName}
+                      </p>
+
+                      {isMine && chat.receiverName && (
+                        <p className="mb-1 text-[10px] text-white/70">
+                          To: {chat.receiverName}
+                        </p>
+                      )}
+
+                      {chat.message && (
+                        <p className="whitespace-pre-wrap text-sm leading-5">
+                          {chat.message}
+                        </p>
+                      )}
+
+                      {chat.attachment && (
+                        <a
+                          href={chat.attachment.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                            isMine
+                              ? "border-white/30 bg-white/10 text-white"
+                              : "border-gray-200 bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          <File size={15} />
+                          <span className="line-clamp-1">
+                            {chat.attachment.name}
+                          </span>
+                        </a>
+                      )}
+
+                      <p
+                        className={`mt-1 text-right text-[10px] ${
+                          isMine ? "text-white/70" : "text-gray-400"
+                        }`}
+                      >
+                        {chat.time}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {chatAttachment && (
+              <div className="border-t bg-white px-4 py-2">
+                <div className="flex items-center justify-between rounded-xl border bg-gray-50 px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <File size={16} className="shrink-0 text-gray-500" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-800">
+                        {chatAttachment.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(chatAttachment.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    color="danger"
+                    onPress={() => {
+                      setChatAttachment(null);
+
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
+                  >
+                    <X size={15} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t bg-white px-4 py-3">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (file) {
+                      setChatAttachment(file);
+                    }
+                  }}
+                />
+
+                <Button
+                  isIconOnly
+                  variant="flat"
+                  type="button"
+                  className="h-11 w-11 shrink-0"
+                  onPress={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip size={19} />
+                </Button>
+
+                <Dropdown placement="top-start">
+                  <DropdownTrigger>
+                    <button
+                      type="button"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-default-200 bg-default-50 transition hover:bg-default-100"
+                      title={
+                        selectedChatPerson?.fullName || "Select legal person"
+                      }
+                    >
+                      <Avatar
+                        size="sm"
+                        name={getInitials(
+                          selectedChatPerson?.fullName || "Legal",
+                        )}
+                        className="bg-primary-100 text-primary"
+                      />
+                    </button>
+                  </DropdownTrigger>
+
+                  <DropdownMenu
+                    aria-label="Select legal person"
+                    selectionMode="single"
+                    selectedKeys={
+                      selectedChatPersonId
+                        ? new Set([String(selectedChatPersonId)])
+                        : new Set([])
+                    }
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)?.[0];
+                      setSelectedChatPersonId(selected ? String(selected) : "");
+                    }}
+                  >
+                    {(legalChatUsers || []).map((user) => (
+                      <DropdownItem
+                        key={String(user.id)}
+                        textValue={user.fullName}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            size="sm"
+                            name={getInitials(user.fullName || "Legal")}
+                            className="bg-primary-100 text-primary"
+                          />
+
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {user.fullName || "Legal User"}
+                            </p>
+                            <p className="truncate text-xs text-default-500">
+                              {user.email || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </DropdownItem>
+                    ))}
+                  </DropdownMenu>
+                </Dropdown>
+
+                <Input
+                  placeholder={`Message ${selectedChatPerson?.fullName || "Legal"}...`}
+                  value={chatMessage}
+                  onValueChange={setChatMessage}
+                  className="min-w-0 flex-1"
+                  classNames={{
+                    inputWrapper: "h-11",
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmitChat();
+                    }
+                  }}
+                />
+
+                <Button
+                  isIconOnly
+                  color="primary"
+                  type="button"
+                  className="h-11 w-11 shrink-0"
+                  onPress={handleSubmitChat}
+                  isDisabled={!chatMessage.trim() && !chatAttachment}
+                >
+                  <Send size={19} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

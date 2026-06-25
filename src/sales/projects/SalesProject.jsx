@@ -463,7 +463,7 @@ const SalesProject = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
-            placeholder="Search project, company, contact..."
+            placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
             onClear={onClear}
@@ -623,9 +623,6 @@ const SalesProject = () => {
       <div>
         <div className="mb-4">
           <h1 className="font-sans text-2xl font-medium">Sales Projects</h1>
-          <p className="mt-1 text-sm text-default-500">
-            Project status and milestone tracking for sales person.
-          </p>
         </div>
 
         <Table

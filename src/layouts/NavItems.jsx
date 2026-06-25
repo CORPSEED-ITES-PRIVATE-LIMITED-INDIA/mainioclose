@@ -271,6 +271,12 @@ export const navItems = [
         key: "legalRequests",
       },
       {
+        title: "Approvals",
+        icon: "",
+        url: "operation/approvals",
+        key: "approvals",
+      },
+      {
         title: "Settings",
         icon: "",
         url: "operation/settings",
@@ -756,6 +762,12 @@ export const operationEmpItems = [
     icon: "Scale",
     url: "operation/legalRequests",
     key: "legalRequests",
+  },
+  {
+    title: "Approvals",
+    icon: "FileText",
+    url: "operation/approvals",
+    key: "approvals",
   },
 ];
 
