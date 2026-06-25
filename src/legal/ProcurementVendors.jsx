@@ -381,53 +381,6 @@ const ProcurementVendors = () => {
               >
                 View
               </DropdownItem>
-
-              <DropdownItem
-                key="prepareAgreement"
-                startContent={<Upload size={15} />}
-                onPress={() => handleOpenPrepareAgreement(rowData)}
-                isDisabled={!canPrepareAgreement(status)}
-              >
-                Prepare Agreement
-              </DropdownItem>
-
-              <DropdownItem
-                key="sendToOperation"
-                startContent={<Send size={15} />}
-                onPress={() => handleSendToOperation(rowData)}
-                isDisabled={!canSendToOperation(status)}
-              >
-                Send To Operation
-              </DropdownItem>
-
-              <DropdownItem
-                key="sendToVendor"
-                startContent={<Send size={15} />}
-                onPress={() => handleSendToVendor(rowData)}
-                isDisabled={!canSendToVendor(status)}
-              >
-                Send To Vendor
-              </DropdownItem>
-
-              <DropdownItem
-                key="agreed"
-                startContent={<CheckCircle size={15} />}
-                onPress={() => handleOpenDecision(rowData, "AGREED")}
-                isDisabled={!canTakeDecision(status)}
-              >
-                Mark Agreed
-              </DropdownItem>
-
-              <DropdownItem
-                key="disagreed"
-                startContent={<XCircle size={15} />}
-                onPress={() => handleOpenDecision(rowData, "DISAGREED")}
-                isDisabled={!canTakeDecision(status)}
-                className="text-danger"
-                color="danger"
-              >
-                Mark Disagreed
-              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
         );
