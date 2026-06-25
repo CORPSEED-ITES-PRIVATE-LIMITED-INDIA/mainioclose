@@ -11,14 +11,14 @@ import { ChevronRight, X } from "lucide-react";
 const Departments = () => {
   const dispatch = useDispatch();
   const { departmentsList, departmentAutoConfig, loading } = useSelector(
-    (state) => state.operation
+    (state) => state.operation,
   );
 
   const [selectedDept, setSelectedDept] = useState(null);
   const [localConfig, setLocalConfig] = useState(null);
 
   useEffect(() => {
-    dispatch(getDepartments({ page: 0, size: 10 }));
+    dispatch(getDepartments({ page: 0, size: 100 }));
   }, [dispatch]);
 
   const handleDepartmentClick = (dept) => {
@@ -114,7 +114,7 @@ const Departments = () => {
     const deptId = selectedDept.id || selectedDept.departmentId;
 
     const result = await dispatch(
-      updateDepartmentAutoConfig({ id: deptId, data: payload })
+      updateDepartmentAutoConfig({ id: deptId, data: payload }),
     );
 
     if (updateDepartmentAutoConfig.fulfilled.match(result)) {
@@ -150,90 +150,86 @@ const Departments = () => {
   const handleCut = () => setSelectedDept(null);
 
   return (
-   <>
-   <h1 className="font-sans text-2xl font-medium mb-1">Department list</h1>
-    <div className="flex gap-6 p-6">
-    
-      {/* Departments List */}
-      <Card className="p-4 rounded-2xl shadow-md w-[350px] h-[70%]">
-        <h1 className="text-xl font-semibold mb-3 grey-500">Departments</h1>
-        <CardBody className="gap-[1.5]">
-          
-          {departmentsList?.map((dept) => (
-            <div
-              key={dept.id}
-              className={`cursor-pointer flex justify-between items-center 
+    <>
+      <h1 className="font-sans text-2xl font-medium mb-1">Department list</h1>
+      <div className="flex gap-6 p-6">
+        {/* Departments List */}
+        <Card className="p-4 rounded-2xl shadow-md w-[350px] h-[70%]">
+          <h1 className="text-xl font-semibold mb-3 grey-500">Departments</h1>
+          <CardBody className="gap-[1.5]">
+            {departmentsList?.map((dept) => (
+              <div
+                key={dept.id}
+                className={`cursor-pointer flex justify-between items-center 
                 ${selectedDept?.id === dept.id ? "bg-gray-100" : "hover:bg-gray-100"} 
                 transition-colors duration-150 py-2 px-3 rounded`}
-              onClick={() => handleDepartmentClick(dept)}
-            >                       
-              <p className="font-sm">{dept.name}</p>
-              <ChevronRight size={18} />
-            </div>
-          ))}
-        </CardBody>
-      </Card>
-
-      {/* Selected Department Auto-Config */}
-      {selectedDept && localConfig && (
-        <Card className="flex-1 p-4 rounded-2xl shadow-md relative h-[70%]">
-          <h2 className="text-xl font-semibold mb-3">{selectedDept.name}</h2>
-          <Button
-            size="sm"
-            variant="light"
-            color="danger"
-            className="absolute top-2 right-2 z-20"
-            onPress={handleCut}
-          >
-            <X size={16} />
-          </Button>
-
-          <CardBody>
-            
-
-            {loading === "pending" && <p>Loading auto config...</p>}
-
-            <div className="mt-1   space-y-3">
-              {Object.entries(localConfig)
-                .filter(([key, val]) => typeof val === "boolean")
-                .map(([key, val]) => (
-                  <div
-                    key={key}
-                    className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-100 transition-colors duration-150"
-                  >
-                    <span className="capitalize text-sm">
-                      {key
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())}
-                    </span>
-
-                    <Switch
-                      size="sm"
-                      isSelected={val}
-                      onChange={(e) => handleToggle(key, e.target.checked)}
-                    />
-                  </div>
-                ))}
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <Button
-                color="primary"
-                onPress={handleUpdate}
-                disabled={!isChanged || loading === "pending"}
+                onClick={() => handleDepartmentClick(dept)}
               >
-                Update
-              </Button>
-
-              <Button color="danger" variant="light" onPress={handleCancel}>
-                Cancel
-              </Button>
-            </div>
+                <p className="font-sm">{dept.name}</p>
+                <ChevronRight size={18} />
+              </div>
+            ))}
           </CardBody>
         </Card>
-      )}
-    </div>
-   </>
+
+        {/* Selected Department Auto-Config */}
+        {selectedDept && localConfig && (
+          <Card className="flex-1 p-4 rounded-2xl shadow-md relative h-[70%]">
+            <h2 className="text-xl font-semibold mb-3">{selectedDept.name}</h2>
+            <Button
+              size="sm"
+              variant="light"
+              color="danger"
+              className="absolute top-2 right-2 z-20"
+              onPress={handleCut}
+            >
+              <X size={16} />
+            </Button>
+
+            <CardBody>
+              {loading === "pending" && <p>Loading auto config...</p>}
+
+              <div className="mt-1   space-y-3">
+                {Object.entries(localConfig)
+                  .filter(([key, val]) => typeof val === "boolean")
+                  .map(([key, val]) => (
+                    <div
+                      key={key}
+                      className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-100 transition-colors duration-150"
+                    >
+                      <span className="capitalize text-sm">
+                        {key
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())}
+                      </span>
+
+                      <Switch
+                        size="sm"
+                        isSelected={val}
+                        onChange={(e) => handleToggle(key, e.target.checked)}
+                      />
+                    </div>
+                  ))}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  color="primary"
+                  onPress={handleUpdate}
+                  disabled={!isChanged || loading === "pending"}
+                >
+                  Update
+                </Button>
+
+                <Button color="danger" variant="light" onPress={handleCancel}>
+                  Cancel
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+      </div>
+    </>
   );
 };
 
