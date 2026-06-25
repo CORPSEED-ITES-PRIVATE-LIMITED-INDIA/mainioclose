@@ -27,16 +27,18 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   EllipsisVertical,
   Eye,
-  FileText,
   Send,
   CheckCircle,
   XCircle,
-  Upload,
   Search,
 } from "lucide-react";
 import dayjs from "dayjs";
 import FileUploader from "../components/FileUploader.jsx";
-import { getAllVendorQuotationLegalRequests } from "../toolkit/slices/operationSlice.js";
+import {
+  getAllVendorQuotationLegalRequests,
+  sendAgreementToProcurement,
+  agreementDecisionForVendorLegalRequest,
+} from "../toolkit/slices/operationSlice.js";
 
 const columns = [
   { name: "REQUEST", uid: "request" },
@@ -44,15 +46,13 @@ const columns = [
   { name: "LEGAL", uid: "legal" },
   { name: "STATUS", uid: "status" },
   { name: "DATES", uid: "dates" },
-  { name: "AGREEMENT", uid: "agreement" },
+  { name: "ATTACHMENTS", uid: "attachments" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 const statusColorMap = {
   SERVICE_AGREEMENT_REQUESTED: "warning",
-  AGREEMENT_PREPARED_BY_LEGAL: "primary",
-  AGREEMENT_SENT_TO_OPERATION: "secondary",
-  AGREEMENT_SENT_TO_VENDOR: "primary",
+  AGREEMENT_SENT_TO_PROCUREMENT: "primary",
   AGREEMENT_AGREED: "success",
   AGREEMENT_DISAGREED: "danger",
   CANCELLED: "default",
@@ -67,6 +67,18 @@ const normalizeList = (response) => {
   return [];
 };
 
+const getUploadedFileValue = (value) => {
+  return (
+    value?.filePath ||
+    value?.fileUrl ||
+    value?.url ||
+    value?.path ||
+    value?.location ||
+    value ||
+    ""
+  );
+};
+
 const ProcurementVendors = () => {
   const dispatch = useDispatch();
 
@@ -74,22 +86,23 @@ const ProcurementVendors = () => {
     (state) => state.operation.vendorLegalRequests,
   );
 
-  const loading = useSelector((state) => state.vendors.loading);
+  const loading = useSelector((state) => state.operation.loading);
+  const currentUser = useSelector((state) => state.auth.currentUser);
 
   const viewModal = useDisclosure();
-  const prepareAgreementModal = useDisclosure();
+  const sendToProcurementModal = useDisclosure();
   const decisionModal = useDisclosure();
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [searchValue, setSearchValue] = useState("");
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [filteration, setFilteration] = useState({
     page: 1,
     size: 10,
   });
 
-  const [prepareAgreementData, setPrepareAgreementData] = useState({
+  const [sendToProcurementData, setSendToProcurementData] = useState({
     agreementFileUrl: "",
-    preparedBy: "",
     remarks: "",
   });
 
@@ -99,9 +112,16 @@ const ProcurementVendors = () => {
     remarks: "",
   });
 
-  useEffect(() => {
+  const resolvedUserId =
+    currentUser?.id || currentUser?.userId || currentUser?.employeeId || "";
+
+  const fetchLegalRequests = useCallback(() => {
     dispatch(getAllVendorQuotationLegalRequests());
   }, [dispatch]);
+
+  useEffect(() => {
+    fetchLegalRequests();
+  }, [fetchLegalRequests]);
 
   const legalRequests = useMemo(() => {
     return normalizeList(legalRequestsResponse);
@@ -136,17 +156,16 @@ const ProcurementVendors = () => {
     viewModal.onOpen();
   };
 
-  const handleOpenPrepareAgreement = (rowData) => {
+  const handleOpenSendToProcurement = (rowData) => {
     setSelectedRequest(rowData);
-    setPrepareAgreementData({
+    setSendToProcurementData({
       agreementFileUrl: rowData?.agreementFileUrl || "",
-      preparedBy: "",
-      remarks: "",
+      remarks: rowData?.statusReason || "",
     });
-    prepareAgreementModal.onOpen();
+    sendToProcurementModal.onOpen();
   };
 
-  const handlePrepareAgreementSubmit = () => {
+  const handleSendToProcurementSubmit = () => {
     if (!selectedRequest?.id) {
       addToast({
         title: "Missing request",
@@ -156,63 +175,63 @@ const ProcurementVendors = () => {
       return;
     }
 
-    if (!prepareAgreementData.agreementFileUrl) {
+    if (!resolvedUserId) {
+      addToast({
+        title: "Missing user",
+        description: "User ID is missing. Please login again.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!sendToProcurementData.agreementFileUrl) {
       addToast({
         title: "Agreement required",
-        description: "Please upload agreement file.",
+        description:
+          "Please upload agreement PDF before sending to procurement.",
         color: "danger",
       });
       return;
     }
 
-    if (!prepareAgreementData.preparedBy) {
-      addToast({
-        title: "Prepared by required",
-        description: "Please enter prepared by user ID.",
-        color: "danger",
-      });
-      return;
-    }
+    const payload = {
+      agreementFileUrl: sendToProcurementData.agreementFileUrl,
+      remarks: sendToProcurementData.remarks || "",
+    };
 
-    console.log("CALL API: prepare agreement", {
-      id: selectedRequest.id,
-      data: {
-        agreementFileUrl: prepareAgreementData.agreementFileUrl,
-        preparedBy: Number(prepareAgreementData.preparedBy),
-        remarks: prepareAgreementData.remarks,
-      },
-    });
+    setSubmitLoading(true);
 
-    addToast({
-      title: "TODO",
-      description: "Prepare agreement API will be integrated here.",
-      color: "warning",
-    });
+    dispatch(
+      sendAgreementToProcurement({
+        id: selectedRequest.id,
+        userId: Number(resolvedUserId),
+        data: payload,
+      }),
+    ).then((resp) => {
+      setSubmitLoading(false);
 
-    prepareAgreementModal.onClose();
-  };
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Agreement sent to procurement successfully.",
+          color: "success",
+        });
 
-  const handleSendToOperation = (rowData) => {
-    console.log("CALL API: send agreement to operation", {
-      id: rowData.id,
-    });
-
-    addToast({
-      title: "TODO",
-      description: "Send to Operation API will be integrated here.",
-      color: "warning",
-    });
-  };
-
-  const handleSendToVendor = (rowData) => {
-    console.log("CALL API: send agreement to vendor", {
-      id: rowData.id,
-    });
-
-    addToast({
-      title: "TODO",
-      description: "Send to Vendor API will be integrated here.",
-      color: "warning",
+        sendToProcurementModal.onClose();
+        setSelectedRequest(null);
+        setSendToProcurementData({ agreementFileUrl: "", remarks: "" });
+        fetchLegalRequests();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Failed to send agreement to procurement.",
+          color: "danger",
+        });
+      }
     });
   };
 
@@ -220,7 +239,7 @@ const ProcurementVendors = () => {
     setSelectedRequest(rowData);
     setDecisionData({
       decision,
-      decisionBy: "",
+      decisionBy: resolvedUserId ? String(resolvedUserId) : "",
       remarks: "",
     });
     decisionModal.onOpen();
@@ -245,197 +264,218 @@ const ProcurementVendors = () => {
       return;
     }
 
-    console.log("CALL API: agreement decision", {
-      id: selectedRequest.id,
-      data: {
-        decision: decisionData.decision,
-        decisionBy: Number(decisionData.decisionBy),
-        remarks: decisionData.remarks,
-      },
-    });
+    const payload = {
+      decision: decisionData.decision,
+      decisionBy: Number(decisionData.decisionBy),
+      remarks: decisionData.remarks || "",
+    };
 
-    addToast({
-      title: "TODO",
-      description: "Agreement decision API will be integrated here.",
-      color: "warning",
-    });
+    setSubmitLoading(true);
 
-    decisionModal.onClose();
+    dispatch(
+      agreementDecisionForVendorLegalRequest({
+        id: selectedRequest.id,
+        data: payload,
+      }),
+    ).then((resp) => {
+      setSubmitLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: `Agreement marked as ${decisionData.decision}.`,
+          color: decisionData.decision === "AGREED" ? "success" : "danger",
+        });
+
+        decisionModal.onClose();
+        setSelectedRequest(null);
+        setDecisionData({ decision: "", decisionBy: "", remarks: "" });
+        fetchLegalRequests();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Failed to update agreement decision.",
+          color: "danger",
+        });
+      }
+    });
   };
 
-  const canPrepareAgreement = (status) =>
+  const canSendToProcurement = (status) =>
     status === "SERVICE_AGREEMENT_REQUESTED" || status === "PENDING";
 
-  const canSendToOperation = (status) =>
-    status === "AGREEMENT_PREPARED_BY_LEGAL";
+  const canTakeDecision = (status) =>
+    status === "AGREEMENT_SENT_TO_PROCUREMENT";
 
-  const canSendToVendor = (status) => status === "AGREEMENT_SENT_TO_OPERATION";
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      const status = rowData?.status;
 
-  const canTakeDecision = (status) => status === "AGREEMENT_SENT_TO_VENDOR";
-
-  const renderCell = useCallback((rowData, columnKey) => {
-    const status = rowData?.status;
-
-    switch (columnKey) {
-      case "request":
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold text-foreground">
-              {rowData?.legalRequestTitle || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              ID: {rowData?.id || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              {rowData?.notes || "-"}
-            </span>
-          </div>
-        );
-
-      case "quotationVendor":
-        return (
-          <div className="flex flex-col gap-1 text-xs">
-            <span>
-              Quotation:{" "}
-              <span className="font-semibold">
-                {rowData?.quotationNumber || rowData?.vendorQuotationId || "-"}
+      switch (columnKey) {
+        case "request":
+          return (
+            <div className="flex flex-col">
+              <span className="font-semibold text-foreground">
+                {rowData?.legalRequestTitle || "-"}
               </span>
-            </span>
-            <span>
-              Vendor:{" "}
-              <span className="font-semibold">
-                {rowData?.vendorName || rowData?.vendorId || "-"}
+              <span className="text-xs text-default-500">
+                ID: {rowData?.id || "-"}
               </span>
-            </span>
-          </div>
-        );
+              <span className="text-xs text-default-500">
+                {rowData?.notes || "-"}
+              </span>
+            </div>
+          );
 
-      case "legal":
-        return (
-          <div className="flex flex-col gap-1 text-xs">
-            <span>Assigned To: {rowData?.assignedToLegal || "-"}</span>
-            <span>Created By: {rowData?.createdBy || "-"}</span>
-            <span>Updated By: {rowData?.updatedBy || "-"}</span>
-          </div>
-        );
+        case "quotationVendor":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              <span>
+                Quotation:{" "}
+                <span className="font-semibold">
+                  {rowData?.quotationNumber ||
+                    rowData?.vendorQuotationId ||
+                    "-"}
+                </span>
+              </span>
+              <span>
+                Vendor:{" "}
+                <span className="font-semibold">
+                  {rowData?.vendorName || rowData?.vendorId || "-"}
+                </span>
+              </span>
+            </div>
+          );
 
-      case "status":
-        return (
-          <Chip
-            size="sm"
-            color={statusColorMap[status] || "default"}
-            variant="flat"
-          >
-            {status || "-"}
-          </Chip>
-        );
+        case "legal":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              <span>Assigned To: {rowData?.assignedToLegal || "-"}</span>
+              <span>Created By: {rowData?.createdBy || "-"}</span>
+              <span>Updated By: {rowData?.updatedBy || "-"}</span>
+            </div>
+          );
 
-      case "dates":
-        return (
-          <div className="flex flex-col gap-1 text-xs">
-            <span>
-              Created:{" "}
-              {rowData?.createdDate
-                ? dayjs(rowData.createdDate).format("DD-MM-YYYY HH:mm")
-                : "-"}
-            </span>
-            <span>
-              Updated:{" "}
-              {rowData?.updatedDate
-                ? dayjs(rowData.updatedDate).format("DD-MM-YYYY HH:mm")
-                : "-"}
-            </span>
-          </div>
-        );
+        case "status":
+          return (
+            <Chip
+              size="sm"
+              color={statusColorMap[status] || "default"}
+              variant="flat"
+            >
+              {status || "-"}
+            </Chip>
+          );
 
-      case "agreement":
-        return rowData?.agreementFileUrl ? (
-          <a
-            href={rowData.agreementFileUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-medium text-primary"
-          >
-            View Agreement
-          </a>
-        ) : (
-          <Chip size="sm" variant="flat">
-            Not Prepared
-          </Chip>
-        );
+        case "dates":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              <span>
+                Created:{" "}
+                {rowData?.createdDate
+                  ? dayjs(rowData.createdDate).format("DD-MM-YYYY HH:mm")
+                  : "-"}
+              </span>
+              <span>
+                Updated:{" "}
+                {rowData?.updatedDate
+                  ? dayjs(rowData.updatedDate).format("DD-MM-YYYY HH:mm")
+                  : "-"}
+              </span>
+            </div>
+          );
 
-      case "actions":
-        return (
-          <Dropdown>
-            <DropdownTrigger>
-              <Button isIconOnly size="sm" variant="light">
-                <EllipsisVertical size={18} />
-              </Button>
-            </DropdownTrigger>
+        case "attachments":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              {rowData?.quotationAttachmentUrl ? (
+                <a
+                  href={rowData.quotationAttachmentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-primary"
+                >
+                  View Quotation PDF
+                </a>
+              ) : (
+                <span className="text-default-400">Quotation PDF: -</span>
+              )}
 
-            <DropdownMenu aria-label="Legal request actions">
-              <DropdownItem
-                key="view"
-                startContent={<Eye size={15} />}
-                onPress={() => handleView(rowData)}
-              >
-                View
-              </DropdownItem>
+              {rowData?.agreementFileUrl ? (
+                <a
+                  href={rowData.agreementFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-primary"
+                >
+                  View Agreement PDF
+                </a>
+              ) : (
+                <span className="text-default-400">Agreement PDF: -</span>
+              )}
+            </div>
+          );
 
-              <DropdownItem
-                key="prepareAgreement"
-                startContent={<Upload size={15} />}
-                onPress={() => handleOpenPrepareAgreement(rowData)}
-                isDisabled={!canPrepareAgreement(status)}
-              >
-                Prepare Agreement
-              </DropdownItem>
+        case "actions":
+          return (
+            <Dropdown>
+              <DropdownTrigger>
+                <Button isIconOnly size="sm" variant="light">
+                  <EllipsisVertical size={18} />
+                </Button>
+              </DropdownTrigger>
 
-              <DropdownItem
-                key="sendToOperation"
-                startContent={<Send size={15} />}
-                onPress={() => handleSendToOperation(rowData)}
-                isDisabled={!canSendToOperation(status)}
-              >
-                Send To Operation
-              </DropdownItem>
+              <DropdownMenu aria-label="Legal request actions">
+                <DropdownItem
+                  key="view"
+                  startContent={<Eye size={15} />}
+                  onPress={() => handleView(rowData)}
+                >
+                  View
+                </DropdownItem>
 
-              <DropdownItem
-                key="sendToVendor"
-                startContent={<Send size={15} />}
-                onPress={() => handleSendToVendor(rowData)}
-                isDisabled={!canSendToVendor(status)}
-              >
-                Send To Vendor
-              </DropdownItem>
+                <DropdownItem
+                  key="sendToProcurement"
+                  startContent={<Send size={15} />}
+                  onPress={() => handleOpenSendToProcurement(rowData)}
+                  isDisabled={!canSendToProcurement(status)}
+                >
+                  Send To Procurement
+                </DropdownItem>
 
-              <DropdownItem
-                key="agreed"
-                startContent={<CheckCircle size={15} />}
-                onPress={() => handleOpenDecision(rowData, "AGREED")}
-                isDisabled={!canTakeDecision(status)}
-              >
-                Mark Agreed
-              </DropdownItem>
+                <DropdownItem
+                  key="agreed"
+                  startContent={<CheckCircle size={15} />}
+                  onPress={() => handleOpenDecision(rowData, "AGREED")}
+                  isDisabled={!canTakeDecision(status)}
+                >
+                  Mark Agreed
+                </DropdownItem>
 
-              <DropdownItem
-                key="disagreed"
-                startContent={<XCircle size={15} />}
-                onPress={() => handleOpenDecision(rowData, "DISAGREED")}
-                isDisabled={!canTakeDecision(status)}
-                className="text-danger"
-                color="danger"
-              >
-                Mark Disagreed
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        );
+                <DropdownItem
+                  key="disagreed"
+                  startContent={<XCircle size={15} />}
+                  onPress={() => handleOpenDecision(rowData, "DISAGREED")}
+                  isDisabled={!canTakeDecision(status)}
+                  className="text-danger"
+                  color="danger"
+                >
+                  Mark Disagreed
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          );
 
-      default:
-        return rowData?.[columnKey] || "-";
-    }
-  }, []);
+        default:
+          return rowData?.[columnKey] || "-";
+      }
+    },
+    [handleOpenSendToProcurement],
+  );
 
   const topContent = (
     <div className="flex flex-col gap-4">
@@ -445,7 +485,7 @@ const ProcurementVendors = () => {
             Vendor Legal Requests
           </h1>
           <p className="text-sm text-default-500">
-            Service agreement preparation requests from procurement/onboarding.
+            Service agreement requests sent from procurement/onboarding.
           </p>
         </div>
 
@@ -588,16 +628,33 @@ const ProcurementVendors = () => {
                 isReadOnly
               />
 
-              {selectedRequest?.agreementFileUrl && (
-                <a
-                  href={selectedRequest.agreementFileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium text-primary"
-                >
-                  View Agreement
-                </a>
-              )}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {selectedRequest?.quotationAttachmentUrl && (
+                  <Button
+                    as="a"
+                    href={selectedRequest.quotationAttachmentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    variant="flat"
+                    color="primary"
+                  >
+                    View Quotation PDF
+                  </Button>
+                )}
+
+                {selectedRequest?.agreementFileUrl && (
+                  <Button
+                    as="a"
+                    href={selectedRequest.agreementFileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    variant="flat"
+                    color="primary"
+                  >
+                    View Agreement PDF
+                  </Button>
+                )}
+              </div>
             </ModalBody>
 
             <ModalFooter>
@@ -610,14 +667,16 @@ const ProcurementVendors = () => {
       </Modal>
 
       <Modal
-        isOpen={prepareAgreementModal.isOpen}
-        onOpenChange={prepareAgreementModal.onOpenChange}
+        isOpen={sendToProcurementModal.isOpen}
+        onOpenChange={sendToProcurementModal.onOpenChange}
         size="2xl"
         isDismissable={false}
       >
         <ModalContent>
           <>
-            <ModalHeader className="border-b">Prepare Agreement</ModalHeader>
+            <ModalHeader className="border-b">
+              Send Agreement To Procurement
+            </ModalHeader>
 
             <ModalBody className="space-y-4 py-5">
               <Input
@@ -626,35 +685,36 @@ const ProcurementVendors = () => {
                 isReadOnly
               />
 
+              {selectedRequest?.quotationAttachmentUrl && (
+                <Button
+                  as="a"
+                  href={selectedRequest.quotationAttachmentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="flat"
+                  color="primary"
+                >
+                  View Quotation PDF
+                </Button>
+              )}
+
               <FileUploader
                 isRequired
-                label="Agreement File"
-                value={prepareAgreementData.agreementFileUrl}
+                label="Agreement PDF"
+                value={sendToProcurementData.agreementFileUrl}
                 onChange={(value) =>
-                  setPrepareAgreementData((prev) => ({
+                  setSendToProcurementData((prev) => ({
                     ...prev,
-                    agreementFileUrl: value?.filePath || value?.url || value,
-                  }))
-                }
-              />
-
-              <Input
-                label="Prepared By User ID"
-                isRequired
-                value={prepareAgreementData.preparedBy}
-                onChange={(e) =>
-                  setPrepareAgreementData((prev) => ({
-                    ...prev,
-                    preparedBy: e.target.value.replace(/\D/g, ""),
+                    agreementFileUrl: getUploadedFileValue(value),
                   }))
                 }
               />
 
               <Textarea
                 label="Remarks"
-                value={prepareAgreementData.remarks}
+                value={sendToProcurementData.remarks}
                 onChange={(e) =>
-                  setPrepareAgreementData((prev) => ({
+                  setSendToProcurementData((prev) => ({
                     ...prev,
                     remarks: e.target.value,
                   }))
@@ -666,15 +726,23 @@ const ProcurementVendors = () => {
               <Button
                 variant="flat"
                 onPress={() => {
-                  prepareAgreementModal.onClose();
+                  sendToProcurementModal.onClose();
                   setSelectedRequest(null);
+                  setSendToProcurementData({
+                    agreementFileUrl: "",
+                    remarks: "",
+                  });
                 }}
               >
                 Cancel
               </Button>
 
-              <Button color="primary" onPress={handlePrepareAgreementSubmit}>
-                Submit
+              <Button
+                color="primary"
+                isLoading={submitLoading}
+                onPress={handleSendToProcurementSubmit}
+              >
+                Send To Procurement
               </Button>
             </ModalFooter>
           </>
@@ -701,6 +769,19 @@ const ProcurementVendors = () => {
                 value={selectedRequest?.legalRequestTitle || "-"}
                 isReadOnly
               />
+
+              {selectedRequest?.agreementFileUrl && (
+                <Button
+                  as="a"
+                  href={selectedRequest.agreementFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="flat"
+                  color="primary"
+                >
+                  View Agreement PDF
+                </Button>
+              )}
 
               <Input
                 label="Decision"
@@ -738,6 +819,11 @@ const ProcurementVendors = () => {
                 onPress={() => {
                   decisionModal.onClose();
                   setSelectedRequest(null);
+                  setDecisionData({
+                    decision: "",
+                    decisionBy: "",
+                    remarks: "",
+                  });
                 }}
               >
                 Cancel
@@ -747,6 +833,7 @@ const ProcurementVendors = () => {
                 color={
                   decisionData.decision === "AGREED" ? "success" : "danger"
                 }
+                isLoading={submitLoading}
                 onPress={handleDecisionSubmit}
               >
                 Submit
