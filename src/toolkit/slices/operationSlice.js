@@ -1131,39 +1131,38 @@ export const checkDocumentExpiryByUrl = createAsyncThunk(
 );
 export const sendAgreementToProcurement = createAsyncThunk(
   "sendAgreementToProcurement",
-  async ({ id,userId,body }, { rejectWithValue }) => {
+  async ({ id, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/operationService/api/vendor-quotation-legal-requests/${id}/send-to-procurement?userId=${userId}`,
-        body
+        data,
       );
 
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || "Failed to check document expiry date",
+        error?.response?.data || "Failed to send agreement to procurement",
       );
     }
   },
 );
 export const agreementDecisionForVendorLegalRequest = createAsyncThunk(
   "agreementDecisionForVendorLegalRequest",
-  async ({ id,body }, { rejectWithValue }) => {
+  async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/operationService/api/vendor-quotation-legal-requests/${id}/decision`,
-        body
+        data,
       );
 
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || "Failed to check document expiry date",
+        error?.response?.data || "Failed to update agreement decision",
       );
     }
   },
 );
-
 
 export const OperationSlice = createSlice({
   name: "operation",
