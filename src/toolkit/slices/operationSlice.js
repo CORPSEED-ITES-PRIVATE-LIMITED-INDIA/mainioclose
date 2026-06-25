@@ -1208,6 +1208,23 @@ export const getSalesProjectStatusDashboard = createAsyncThunk(
   },
 );
 
+export const sendAgreementToVendor = createAsyncThunk(
+  "sendAgreementToVendor",
+  async ({ quotationId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/quotation/${quotationId}/send-agreement-to-vendor?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to send agreement to vendor",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

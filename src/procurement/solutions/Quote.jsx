@@ -53,6 +53,7 @@ import {
   getVendorFinalizationByRfqId,
   sendVendorOnboardingForm,
   createLegalRequest,
+  sendAgreementToVendor,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -64,7 +65,7 @@ const columns = [
   { name: "DATES", uid: "dates" },
   { name: "COMMERCIALS", uid: "commercials" },
   { name: "PAYMENT TERMS", uid: "paymentTerms" },
-  { name: "ATTACHMENT", uid: "quotationAttachmentUrl" },
+  { name: "ATTACHMENTS", uid: "attachments" },
   { name: "CREATED BY", uid: "createdBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -75,7 +76,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "dates",
   "commercials",
   "paymentTerms",
-  "quotationAttachmentUrl",
+  "attachments",
   "createdBy",
   "actions",
 ];
@@ -86,6 +87,8 @@ const quotationStatusOptions = [
   "SUBMITTED",
   "REVISED",
   "UNDER_COMPARISON",
+  "AGREEMENT_SENT_TO_PROCUREMENT",
+  "AGREEMENT_SENT_TO_VENDOR",
   "ACCEPTED",
   "PARTIALLY_ACCEPTED",
   "REJECTED",
@@ -1056,6 +1059,76 @@ const Quote = () => {
     });
   };
 
+  const handleSendAgreementToVendor = useCallback(
+    (quotation) => {
+      const resolvedUserId =
+        currentUser?.id ||
+        currentUser?.userId ||
+        currentUser?.employeeId ||
+        userId;
+
+      if (!quotation?.id) {
+        addToast({
+          title: "ERROR",
+          description: "Quotation ID is missing.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!quotation?.agreementFileUrl) {
+        addToast({
+          title: "ERROR",
+          description:
+            "Agreement file is missing. Please wait for legal agreement first.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!resolvedUserId) {
+        addToast({
+          title: "ERROR",
+          description: "User ID is missing. Please login again.",
+          color: "danger",
+        });
+        return;
+      }
+
+      setSubmitLoading(true);
+
+      dispatch(
+        sendAgreementToVendor({
+          quotationId: Number(quotation.id),
+          userId: Number(resolvedUserId),
+        }),
+      ).then((resp) => {
+        setSubmitLoading(false);
+
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Agreement sent to vendor successfully.",
+            color: "success",
+          });
+
+          fetchQuotations();
+        } else {
+          addToast({
+            title: "ERROR",
+            description:
+              resp?.payload?.message ||
+              resp?.payload?.data?.message ||
+              resp?.payload ||
+              "Failed to send agreement to vendor.",
+            color: "danger",
+          });
+        }
+      });
+    },
+    [currentUser, dispatch, fetchQuotations, userId],
+  );
+
   const renderCell = useCallback(
     (rowData, columnKey) => {
       switch (columnKey) {
@@ -1069,6 +1142,27 @@ const Quote = () => {
               <span className="text-xs text-default-500">
                 ID: {rowData?.id || "-"}
               </span>
+
+              {rowData?.status && (
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={
+                    rowData.status === "AGREEMENT_SENT_TO_PROCUREMENT"
+                      ? "primary"
+                      : rowData.status === "AGREEMENT_SENT_TO_VENDOR"
+                        ? "success"
+                        : rowData.status === "ACCEPTED"
+                          ? "success"
+                          : rowData.status === "REJECTED"
+                            ? "danger"
+                            : "default"
+                  }
+                  className="mt-1 w-fit"
+                >
+                  {rowData.status}
+                </Chip>
+              )}
             </div>
           );
 
@@ -1145,20 +1239,35 @@ const Quote = () => {
             </div>
           );
 
-        case "quotationAttachmentUrl":
-          return rowData?.quotationAttachmentUrl ? (
-            <a
-              href={rowData.quotationAttachmentUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-            >
-              View <ExternalLink size={13} />
-            </a>
-          ) : (
-            <Chip size="sm" variant="flat">
-              Not Attached
-            </Chip>
+        case "attachments":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              {rowData?.quotationAttachmentUrl ? (
+                <a
+                  href={rowData.quotationAttachmentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-primary"
+                >
+                  Quotation PDF <ExternalLink size={13} />
+                </a>
+              ) : (
+                <span className="text-default-400">Quotation PDF: -</span>
+              )}
+
+              {rowData?.agreementFileUrl ? (
+                <a
+                  href={rowData.agreementFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-primary"
+                >
+                  Agreement PDF <ExternalLink size={13} />
+                </a>
+              ) : (
+                <span className="text-default-400">Agreement PDF: -</span>
+              )}
+            </div>
           );
 
         case "createdBy":
@@ -1185,6 +1294,17 @@ const Quote = () => {
                 >
                   View
                 </DropdownItem>
+
+                {rowData?.agreementFileUrl &&
+                  rowData?.status !== "AGREEMENT_SENT_TO_VENDOR" && (
+                    <DropdownItem
+                      key="sendAgreementToVendor"
+                      startContent={<FileText size={15} />}
+                      onPress={() => handleSendAgreementToVendor(rowData)}
+                    >
+                      Send Agreement To Vendor
+                    </DropdownItem>
+                  )}
 
                 {!finalization ? (
                   <DropdownItem
@@ -1220,7 +1340,12 @@ const Quote = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [getFinalizationForQuotation, handleView, handleOpenLegalRequest],
+    [
+      getFinalizationForQuotation,
+      handleView,
+      handleOpenLegalRequest,
+      handleSendAgreementToVendor,
+    ],
   );
 
   const topContent = useMemo(() => {
@@ -1449,6 +1574,46 @@ const Quote = () => {
                         {selectedQuotation?.vendorId || "-"}
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-white p-4 shadow-sm">
+                  <p className="mb-3 text-sm font-semibold text-gray-900">
+                    Attachments
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {selectedQuotation?.quotationAttachmentUrl ? (
+                      <Button
+                        as="a"
+                        href={selectedQuotation.quotationAttachmentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        color="primary"
+                        variant="flat"
+                        endContent={<ExternalLink size={14} />}
+                      >
+                        View Quotation PDF
+                      </Button>
+                    ) : (
+                      <Chip variant="flat">Quotation PDF Not Attached</Chip>
+                    )}
+
+                    {selectedQuotation?.agreementFileUrl ? (
+                      <Button
+                        as="a"
+                        href={selectedQuotation.agreementFileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        color="primary"
+                        variant="flat"
+                        endContent={<ExternalLink size={14} />}
+                      >
+                        View Agreement PDF
+                      </Button>
+                    ) : (
+                      <Chip variant="flat">Agreement PDF Not Attached</Chip>
+                    )}
                   </div>
                 </div>
               </div>
