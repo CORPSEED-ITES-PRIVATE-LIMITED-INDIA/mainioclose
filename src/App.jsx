@@ -31,6 +31,7 @@ import DiscountedEstimateApproval from "./admin/DiscountedEstimateApproval";
 import { restoreSession } from "./toolkit/slices/authSlice";
 import UserMailConfig from "./users/UserMailConfig";
 import OperationsLegal from "./legal/OperationsLegal";
+import ProcurementVendors from "./legal/ProcurementVendors";
 
 function App() {
   const dispatch = useDispatch();
@@ -92,6 +93,7 @@ function App() {
               path="legal/operationsRequests"
               element={<OperationsLegal />}
             />
+            <Route path="legal/vendors" element={<ProcurementVendors />} />
           </Route>
         </Route>
 

@@ -55,6 +55,7 @@ import {
   approveOrRejectClientPortalDetails,
   updateClientPortalLoginDetails,
   deleteClientPortalLoginDetails,
+  checkDocumentExpiryByUrl,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -573,6 +574,8 @@ const ProjectDetails = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyDocId, setVerifyDocId] = useState(null);
   const [isPermanent, setIsPermanent] = useState(false);
+  const [expiryCheckResult, setExpiryCheckResult] = useState(null);
+  const [isCheckingExpiry, setIsCheckingExpiry] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [noteText, setNoteText] = useState("");
   const [replyParentId, setReplyParentId] = useState(null);
@@ -1225,6 +1228,72 @@ const ProjectDetails = () => {
         });
       }
     });
+  };
+
+  const handleCheckDocumentExpiry = async (uploadedFileUrl) => {
+    if (!uploadedFileUrl) return;
+
+    setIsCheckingExpiry(true);
+    setExpiryCheckResult(null);
+
+    try {
+      const resp = await dispatch(
+        checkDocumentExpiryByUrl({
+          fileUrl: uploadedFileUrl,
+        }),
+      );
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        const result = resp.payload;
+
+        setExpiryCheckResult(result);
+
+        if (result?.expiryDate) {
+          setValue("isPermanent", false, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+
+          setIsPermanent(false);
+
+          setValue("expiryDate", result.expiryDate, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+
+          addToast({
+            title: "Expiry date detected",
+            description: `Expiry date set as ${result.expiryDate}`,
+            color: "success",
+          });
+        } else {
+          addToast({
+            title: "Expiry date not detected",
+            description:
+              result?.message ||
+              "Please select expiry date manually if required.",
+            color: "warning",
+          });
+        }
+      } else {
+        addToast({
+          title: "Expiry check failed",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Could not check document expiry date.",
+          color: "warning",
+        });
+      }
+    } catch (error) {
+      addToast({
+        title: "Expiry check failed",
+        description: "Something went wrong while checking expiry date.",
+        color: "warning",
+      });
+    } finally {
+      setIsCheckingExpiry(false);
+    }
   };
 
   const onDocumentSubmit = async (data) => {
@@ -3182,6 +3251,9 @@ const ProjectDetails = () => {
           if (!open) {
             setSelectedDoc(null);
             setIsPermanent(true);
+            setExpiryCheckResult(null);
+            setIsCheckingExpiry(false);
+
             reset({
               fileUrl: "",
               fileName: "",
@@ -3229,7 +3301,7 @@ const ProjectDetails = () => {
                           onChange={(uploadedUrl) => {
                             field.onChange(uploadedUrl);
                           }}
-                          onUploadSuccess={(fileMeta) => {
+                          onUploadSuccess={async (fileMeta) => {
                             const uploadedFileUrl = fileMeta?.filePath || "";
                             const uploadedFileName = fileMeta?.fileName || "";
                             const fileSizeKb = fileMeta?.fileSize
@@ -3257,10 +3329,91 @@ const ProjectDetails = () => {
                               shouldValidate: true,
                               shouldDirty: true,
                             });
+
+                            await handleCheckDocumentExpiry(uploadedFileUrl);
                           }}
                         />
                       )}
                     />
+
+                    {isCheckingExpiry && (
+                      <div className="col-span-2 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3">
+                        <p className="text-sm font-semibold text-primary">
+                          Checking document expiry date...
+                        </p>
+                        <p className="mt-1 text-xs text-default-500">
+                          Please wait while the system scans the uploaded
+                          document.
+                        </p>
+                      </div>
+                    )}
+
+                    {expiryCheckResult && (
+                      <div
+                        className={`col-span-2 rounded-xl border px-4 py-3 ${
+                          expiryCheckResult?.status === "VALID"
+                            ? "border-success-200 bg-success-50"
+                            : expiryCheckResult?.manualReviewRequired
+                              ? "border-warning-200 bg-warning-50"
+                              : "border-default-200 bg-default-50"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              Expiry check result
+                            </p>
+
+                            <p className="mt-1 text-xs text-default-500">
+                              {expiryCheckResult?.message || "-"}
+                            </p>
+                          </div>
+
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={
+                              expiryCheckResult?.status === "VALID"
+                                ? "success"
+                                : expiryCheckResult?.manualReviewRequired
+                                  ? "warning"
+                                  : "default"
+                            }
+                          >
+                            {expiryCheckResult?.status || "CHECKED"}
+                          </Chip>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+                          <div>
+                            <span className="text-default-400">
+                              File Name:{" "}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {expiryCheckResult?.fileName || "-"}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-default-400">
+                              Expiry Date:{" "}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {expiryCheckResult?.expiryDate || "-"}
+                            </span>
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <span className="text-default-400">
+                              Matched Text:{" "}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {expiryCheckResult?.matchedText || "-"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <Controller
@@ -3361,6 +3514,9 @@ const ProjectDetails = () => {
                   variant="light"
                   onPress={() => {
                     setIsPermanent(true);
+                    setExpiryCheckResult(null);
+                    setIsCheckingExpiry(false);
+
                     reset({
                       fileUrl: "",
                       fileName: "",
@@ -3371,6 +3527,7 @@ const ProjectDetails = () => {
                       isFromCompanyDoc: false,
                       isPermanent: true,
                     });
+
                     onClose();
                   }}
                 >

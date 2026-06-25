@@ -229,6 +229,12 @@ export const navItems = [
         url: "legal/operationsRequests",
         key: "operationsRequests",
       },
+      {
+        title: "Vendor",
+        icon: "",
+        url: "legal/vendors",
+        key: "vendors",
+      },
     ],
   },
   {
@@ -759,5 +765,11 @@ export const legalNavItems = [
     icon: "Scale",
     url: "legal/operationsRequests",
     key: "operationsRequests",
+  },
+  {
+    title: "Vendor",
+    icon: "User",
+    url: "legal/vendors",
+    key: "vendors",
   },
 ];

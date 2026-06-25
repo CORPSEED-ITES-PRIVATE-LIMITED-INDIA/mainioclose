@@ -1094,6 +1094,30 @@ export const getUsersByDepartment = createAsyncThunk(
   },
 );
 
+
+
+export const checkDocumentExpiryByUrl = createAsyncThunk(
+  "operation/checkDocumentExpiryByUrl",
+  async ({ fileUrl }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/document-expiry/check-url`,
+        null,
+        {
+          params: { fileUrl },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to check document expiry date",
+      );
+    }
+  },
+);
+
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
