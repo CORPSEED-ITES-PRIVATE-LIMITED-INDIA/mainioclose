@@ -53,11 +53,14 @@ import {
   getVendorFinalizationByRfqId,
   sendVendorOnboardingForm,
   createLegalRequest,
-  sendAgreementToVendor,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
-import { getUsersByDepartment } from "../../toolkit/slices/operationSlice";
+import {
+  getUsersByDepartment,
+  sendAgreementToVendor,
+  getAllVendorQuotationLegalRequests,
+} from "../../toolkit/slices/operationSlice";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -262,6 +265,9 @@ const Quote = () => {
   const legalDepartmentUsers = useSelector(
     (state) => state.operation.departmentUsers || [],
   );
+  const vendorLegalRequestsResponse = useSelector(
+    (state) => state.operation.vendorLegalRequests,
+  );
 
   const quotationModal = useDisclosure();
   const viewModal = useDisclosure();
@@ -355,6 +361,10 @@ const Quote = () => {
     return normalizePageContent(quotationResponse);
   }, [quotationResponse]);
 
+  const vendorLegalRequests = useMemo(() => {
+    return normalizePageContent(vendorLegalRequestsResponse);
+  }, [vendorLegalRequestsResponse]);
+
   const count = useMemo(() => {
     return getTotalElements(quotationResponse, quotationList.length);
   }, [quotationResponse, quotationList.length]);
@@ -402,7 +412,6 @@ const Quote = () => {
 
   useEffect(() => {
     dispatch(getUsersByDepartment({ id: 17 }));
-    console.log();
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
@@ -478,16 +487,22 @@ const Quote = () => {
     });
   }, [dispatch, rfqId]);
 
+  const fetchVendorLegalRequests = useCallback(() => {
+    dispatch(getAllVendorQuotationLegalRequests());
+  }, [dispatch]);
+
   useEffect(() => {
     fetchQuotations();
     fetchRFQDetails();
     fetchRFQVendorDetails();
     fetchVendorFinalizations();
+    fetchVendorLegalRequests();
   }, [
     fetchQuotations,
     fetchRFQDetails,
     fetchRFQVendorDetails,
     fetchVendorFinalizations,
+    fetchVendorLegalRequests,
   ]);
 
   const getUploadedFileValue = (value) => {
@@ -514,6 +529,19 @@ const Quote = () => {
       );
     },
     [vendorFinalizations],
+  );
+
+  const getLegalRequestForQuotation = useCallback(
+    (quotation) => {
+      if (!quotation?.id) return null;
+
+      return vendorLegalRequests.find(
+        (request) =>
+          Number(request?.vendorQuotationId) === Number(quotation.id) &&
+          !request?.deleted,
+      );
+    },
+    [vendorLegalRequests],
   );
 
   const buildDocumentPayload = (documentType, fileValue, fallbackFileName) => {
@@ -960,6 +988,17 @@ const Quote = () => {
       return;
     }
 
+    const existingLegalRequest = getLegalRequestForQuotation(quotation);
+
+    if (existingLegalRequest?.id) {
+      addToast({
+        title: "Legal request already sent",
+        description: `Service agreement request already exists with status ${existingLegalRequest.status || "-"}.`,
+        color: "warning",
+      });
+      return;
+    }
+
     const finalization = getFinalizationForQuotation(quotation);
 
     if (!finalization?.id) {
@@ -1045,6 +1084,8 @@ const Quote = () => {
         legalRequestModal.onClose();
         resetLegalRequestForm(legalRequestDefaultValues);
         setSelectedQuotation(null);
+        fetchVendorLegalRequests();
+        fetchQuotations();
       } else {
         addToast({
           title: "ERROR",
@@ -1275,6 +1316,7 @@ const Quote = () => {
 
         case "actions": {
           const finalization = getFinalizationForQuotation(rowData);
+          const existingLegalRequest = getLegalRequestForQuotation(rowData);
           const onboardingStarted =
             finalization?.status === "ONBOARDING_STARTED";
 
@@ -1315,13 +1357,23 @@ const Quote = () => {
                     Register Vendor
                   </DropdownItem>
                 ) : onboardingStarted ? (
-                  <DropdownItem
-                    key="legalRequest"
-                    startContent={<FileText size={15} />}
-                    onPress={() => handleOpenLegalRequest(rowData)}
-                  >
-                    Service Agreement Request
-                  </DropdownItem>
+                  existingLegalRequest?.id ? (
+                    <DropdownItem
+                      key="legalRequestSent"
+                      startContent={<FileText size={15} />}
+                      isDisabled
+                    >
+                      Legal Request Sent
+                    </DropdownItem>
+                  ) : (
+                    <DropdownItem
+                      key="legalRequest"
+                      startContent={<FileText size={15} />}
+                      onPress={() => handleOpenLegalRequest(rowData)}
+                    >
+                      Service Agreement Request
+                    </DropdownItem>
+                  )
                 ) : (
                   <DropdownItem
                     key="onboardingForm"
@@ -1342,6 +1394,7 @@ const Quote = () => {
     },
     [
       getFinalizationForQuotation,
+      getLegalRequestForQuotation,
       handleView,
       handleOpenLegalRequest,
       handleSendAgreementToVendor,
