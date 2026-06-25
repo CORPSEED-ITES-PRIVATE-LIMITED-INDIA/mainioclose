@@ -956,8 +956,39 @@ const Quote = () => {
       return;
     }
 
+    const finalization = getFinalizationForQuotation(quotation);
+
+    if (!finalization?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Please finalize vendor before sending legal request.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (finalization?.status !== "ONBOARDING_STARTED") {
+      addToast({
+        title: "ERROR",
+        description:
+          "Please start onboarding before sending service agreement request to legal team.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setSelectedVendorFinalization(finalization);
     setSelectedQuotation(quotation);
-    resetLegalRequestForm(legalRequestDefaultValues);
+    resetLegalRequestForm({
+      legalRequestTitle: "Service Agreement Preparation Request",
+      notes:
+        finalization?.description ||
+        quotation?.items?.[0]?.description ||
+        quotation?.remarks ||
+        "Please prepare service agreement for finalized vendor.",
+      statusReason: "Service agreement required after onboarding started.",
+      assignedToLegal: "",
+    });
     legalRequestModal.onOpen();
   };
 
@@ -1154,14 +1185,6 @@ const Quote = () => {
                   View
                 </DropdownItem>
 
-                <DropdownItem
-                  key="legalRequest"
-                  startContent={<FileText size={15} />}
-                  onPress={() => handleOpenLegalRequest(rowData)}
-                >
-                  Legal Request
-                </DropdownItem>
-
                 {!finalization ? (
                   <DropdownItem
                     key="registerVendor"
@@ -1170,15 +1193,21 @@ const Quote = () => {
                   >
                     Register Vendor
                   </DropdownItem>
+                ) : onboardingStarted ? (
+                  <DropdownItem
+                    key="legalRequest"
+                    startContent={<FileText size={15} />}
+                    onPress={() => handleOpenLegalRequest(rowData)}
+                  >
+                    Service Agreement Request
+                  </DropdownItem>
                 ) : (
                   <DropdownItem
                     key="onboardingForm"
                     startContent={<FileText size={15} />}
                     onPress={() => handleOpenOnboardingForm(rowData)}
                   >
-                    {onboardingStarted
-                      ? "Resend Onboarding Form"
-                      : "Onboarding Form"}
+                    Start Onboarding
                   </DropdownItem>
                 )}
               </DropdownMenu>
@@ -1843,7 +1872,7 @@ const Quote = () => {
                                 control={quotationControl}
                                 render={({ field }) => (
                                   <Input
-                                    label="Description"
+                                    label="Agreement Description"
                                     value={field.value}
                                     onChange={(e) =>
                                       field.onChange(e.target.value)
@@ -2182,10 +2211,11 @@ const Quote = () => {
             <ModalHeader className="border-b px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Create Legal Request
+                  Service Agreement Legal Request
                 </h2>
                 <p className="mt-1 text-xs font-normal text-default-500">
-                  Raise a legal request for the selected vendor quotation.
+                  Send service agreement preparation request to legal team after
+                  onboarding.
                 </p>
               </div>
             </ModalHeader>
@@ -2203,7 +2233,7 @@ const Quote = () => {
                   control={legalRequestControl}
                   render={({ field }) => (
                     <Input
-                      label="Legal Request Title"
+                      label="Agreement Request Title"
                       isRequired
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
@@ -2248,7 +2278,7 @@ const Quote = () => {
                   control={legalRequestControl}
                   render={({ field }) => (
                     <Input
-                      label="Description"
+                      label="Agreement Description"
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                     />
@@ -2260,7 +2290,7 @@ const Quote = () => {
                   control={legalRequestControl}
                   render={({ field }) => (
                     <Input
-                      label="Special Condition"
+                      label="Special Conditions / Notes"
                       isRequired
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}

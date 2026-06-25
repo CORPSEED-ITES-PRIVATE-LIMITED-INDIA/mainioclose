@@ -1093,6 +1093,19 @@ export const getUsersByDepartment = createAsyncThunk(
     }
   },
 );
+export const getAllVendorQuotationLegalRequests = createAsyncThunk(
+  "getAllVendorQuotationLegalRequests",
+  async () => {
+    try {
+      const response = await api.get(
+        `/operationService/api/vendor-quotation-legal-requests`,
+      );
+      return response.data;
+    } catch (err) {
+      return err;
+    }
+  },
+);
 
 
 
@@ -1146,6 +1159,7 @@ export const OperationSlice = createSlice({
     paymentRequestByPoId: {},
     compnyDocumentListByCompanyIdAndUnitId: [],
     departmentUsers: [],
+    vendorLegalRequests: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1538,6 +1552,25 @@ export const OperationSlice = createSlice({
     );
     builder.addCase(
       getUsersByDepartment.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      getAllVendorQuotationLegalRequests.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getAllVendorQuotationLegalRequests.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.vendorLegalRequests = action.payload;
+      },
+    );
+    builder.addCase(
+      getAllVendorQuotationLegalRequests.rejected,
       (state, action) => {
         state.loading = "rejected";
       },
