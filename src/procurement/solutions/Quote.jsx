@@ -1427,7 +1427,7 @@ const Quote = () => {
                     startContent={<FilePlusIcon size={15} />}
                     onPress={() => handleOpenRegisterVendor(rowData)}
                   >
-                    Register Vendor
+                    Initiate Agreement
                   </DropdownItem>
                 ) : onboardingStarted ? (
                   existingLegalRequest?.id ? (
@@ -2226,7 +2226,7 @@ const Quote = () => {
       >
         <ModalContent>
           <>
-            <ModalHeader className="border-b">Register vendor</ModalHeader>
+            <ModalHeader className="border-b">Initiate Agreement</ModalHeader>
 
             <form onSubmit={handleRegisterVendorSubmit(onSubmitRegisterVendor)}>
               <ModalBody>
