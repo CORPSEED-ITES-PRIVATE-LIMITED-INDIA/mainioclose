@@ -257,7 +257,7 @@ const Quote = () => {
   const currentUser = useSelector((state) => state.auth.currentUser);
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
   const legalDepartmentUsers = useSelector(
-    (state) => state.common.departmentUsers || [],
+    (state) => state.operation.departmentUsers || [],
   );
 
   const quotationModal = useDisclosure();
@@ -399,6 +399,7 @@ const Quote = () => {
 
   useEffect(() => {
     dispatch(getUsersByDepartment({ id: 17 }));
+    console.log();
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
@@ -2258,14 +2259,20 @@ const Quote = () => {
                           : new Set([])
                       }
                       onSelectionChange={(keys) => {
-                        const value = Array.from(keys)?.[0] || "";
-                        field.onChange(value);
+                        const selectedValue = Array.from(keys)?.[0];
+
+                        field.onChange(
+                          selectedValue ? String(selectedValue) : "",
+                        );
                       }}
                       isInvalid={!!legalRequestErrors.assignedToLegal}
                       errorMessage={legalRequestErrors.assignedToLegal?.message}
                     >
-                      {legalDepartmentUsers?.map((user) => (
-                        <SelectItem key={String(user.id)}>
+                      {(legalDepartmentUsers || []).map((user) => (
+                        <SelectItem
+                          key={String(user.id)}
+                          textValue={`${user.fullName || ""} ${user.email || ""}`}
+                        >
                           {user.fullName} - {user.email}
                         </SelectItem>
                       ))}
