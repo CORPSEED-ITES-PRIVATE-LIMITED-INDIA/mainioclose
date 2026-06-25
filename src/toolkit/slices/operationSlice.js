@@ -1107,8 +1107,6 @@ export const getAllVendorQuotationLegalRequests = createAsyncThunk(
   },
 );
 
-
-
 export const checkDocumentExpiryByUrl = createAsyncThunk(
   "operation/checkDocumentExpiryByUrl",
   async ({ fileUrl }, { rejectWithValue }) => {
@@ -1158,7 +1156,53 @@ export const agreementDecisionForVendorLegalRequest = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || "Failed to update agreement decision",
+        error?.response?.data || "Failed to send milestone back for rework",
+      );
+    }
+  },
+);
+
+export const sendBackToPreviousMilestone = createAsyncThunk(
+  "operation/sendBackToPreviousMilestone",
+  async ({ assignmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/milestone-assignments/${assignmentId}/send-back-to-previous`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to send milestone back for rework",
+      );
+    }
+  },
+);
+
+export const getSalesProjectStatusDashboard = createAsyncThunk(
+  "operation/getSalesProjectStatusDashboard",
+  async (params, { rejectWithValue }) => {
+    try {
+      const queryParams = {
+        userId: params.userId,
+        salesPersonId: params.salesPersonId,
+        status:
+          params.status && params.status !== "ALL" ? params.status : undefined,
+        search: params.search?.trim() || undefined,
+        page: params.page || 1,
+        size: params.size || 10,
+      };
+
+      const response = await api.get(
+        "/operationService/api/projects/sales-status-dashboard",
+        { params: queryParams },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to fetch sales projects",
       );
     }
   },
@@ -1570,31 +1614,19 @@ export const OperationSlice = createSlice({
         state.loading = "rejected";
       },
     );
-    builder.addCase(
-      getUsersByDepartment.pending,
-      (state) => {
-        state.loading = "pending";
-      },
-    );
-    builder.addCase(
-      getUsersByDepartment.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.departmentUsers = action.payload;
-      },
-    );
-    builder.addCase(
-      getUsersByDepartment.rejected,
-      (state, action) => {
-        state.loading = "rejected";
-      },
-    );
-    builder.addCase(
-      getAllVendorQuotationLegalRequests.pending,
-      (state) => {
-        state.loading = "pending";
-      },
-    );
+    builder.addCase(getUsersByDepartment.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getUsersByDepartment.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.departmentUsers = action.payload;
+    });
+    builder.addCase(getUsersByDepartment.rejected, (state, action) => {
+      state.loading = "rejected";
+    });
+    builder.addCase(getAllVendorQuotationLegalRequests.pending, (state) => {
+      state.loading = "pending";
+    });
     builder.addCase(
       getAllVendorQuotationLegalRequests.fulfilled,
       (state, action) => {

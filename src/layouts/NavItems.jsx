@@ -50,7 +50,7 @@ export const navItems = [
       //   url: "sales/automationReport",
       //   key: "automationReport",
       // },
-      // { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
+      { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
       // {
       //   title: "Serving Companies",
       //   icon: "",
@@ -637,12 +637,12 @@ export const salesNavItems = [
   //   url: "sales/discountedEstimate",
   //   key: "discountedEstimate",
   // },
-  // {
-  //   title: "Projects",
-  //   icon: "FolderKanban",
-  //   url: "sales/projects",
-  //   key: "projects",
-  // },
+  {
+    title: "Projects",
+    icon: "FolderKanban",
+    url: "sales/projects",
+    key: "projects",
+  },
   // {
   //   title: "Serving Companies",
   //   icon: "University",

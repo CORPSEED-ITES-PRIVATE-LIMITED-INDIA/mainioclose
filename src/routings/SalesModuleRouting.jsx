@@ -33,6 +33,7 @@ import AllInvoice from "../accounts/organization/AllInvoice";
 import ServicePaymentTerm from "../sales/leads/ServicePaymentTerm";
 import SalesUnbill from "../sales/unbill/SalesUnbill";
 import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
+import SalesProject from "../sales/projects/SalesProject";
 
 const SalesModuleRouting = () => {
   return (
@@ -187,7 +188,7 @@ const SalesModuleRouting = () => {
         <Route path="leadHistory" element={<LeadHistory />} />
         <Route path="paymentTerm" element={<ServicePaymentTerm />} />
       </Route>
-      <Route path="sales/projects" element={<Projects />} />
+      <Route path="sales/projects" element={<SalesProject />} />
       <Route path="sales/servingCompanies" element={<ServingCompanies />} />
     </>
   );

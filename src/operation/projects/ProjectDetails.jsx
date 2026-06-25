@@ -56,6 +56,7 @@ import {
   updateClientPortalLoginDetails,
   deleteClientPortalLoginDetails,
   checkDocumentExpiryByUrl,
+  sendBackToPreviousMilestone,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -547,6 +548,10 @@ const ProjectDetails = () => {
     newStatusName: "",
     statusReason: "",
     changedById: null,
+
+    // For REWORK
+    reworkDocuments: [],
+    additionalReworkDocuments: [],
   });
 
   const [isCredentials, setIsCredentials] = useState(false);
@@ -621,6 +626,275 @@ const ProjectDetails = () => {
   //   dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
   //   dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   // }, [projectId]);
+
+  const normalizeReworkAttachment = (fileMeta) => {
+    if (!fileMeta) return null;
+
+    const meta = fileMeta?.data || fileMeta?.response || fileMeta;
+
+    if (typeof meta === "string") {
+      const fileUrl = meta;
+      const fileName = getFileNameFromUrl(fileUrl);
+
+      return {
+        fileName,
+        fileUrl,
+        fileType: getFileTypeFromNameOrUrl(fileName, fileUrl),
+        fileSize: 0,
+        uploadedAt: new Date().toISOString(),
+      };
+    }
+
+    const fileUrl =
+      meta?.fileUrl ||
+      meta?.filePath ||
+      meta?.url ||
+      meta?.location ||
+      meta?.secureUrl ||
+      meta?.path ||
+      "";
+
+    if (!fileUrl) return null;
+
+    const fileName =
+      meta?.fileName ||
+      meta?.name ||
+      meta?.originalName ||
+      getFileNameFromUrl(fileUrl);
+
+    return {
+      fileName,
+      fileUrl,
+      fileType:
+        meta?.fileType ||
+        meta?.contentType ||
+        meta?.mimeType ||
+        getFileTypeFromNameOrUrl(fileName, fileUrl),
+      fileSize: Number(meta?.fileSize || meta?.size || 0),
+      uploadedAt: meta?.uploadedAt || new Date().toISOString(),
+    };
+  };
+
+  const handleSelectedReworkAttachmentChange = (
+    requiredDocumentId,
+    uploadedFiles,
+  ) => {
+    const files = Array.isArray(uploadedFiles)
+      ? uploadedFiles
+      : uploadedFiles
+        ? [uploadedFiles]
+        : [];
+
+    const attachments = files
+      .map((file) => normalizeReworkAttachment(file))
+      .filter(Boolean);
+
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      reworkDocuments: (prev.reworkDocuments || []).map((doc) =>
+        Number(doc.requiredDocumentId) === Number(requiredDocumentId)
+          ? {
+              ...doc,
+              attachmentFiles: files,
+              attachments,
+            }
+          : doc,
+      ),
+    }));
+  };
+
+  const handleSelectedReworkAttachmentSuccess = (
+    requiredDocumentId,
+    fileMeta,
+  ) => {
+    const attachment = normalizeReworkAttachment(fileMeta);
+    if (!attachment) return;
+
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      reworkDocuments: (prev.reworkDocuments || []).map((doc) => {
+        if (Number(doc.requiredDocumentId) !== Number(requiredDocumentId)) {
+          return doc;
+        }
+
+        const oldAttachments = doc.attachments || [];
+
+        const alreadyExists = oldAttachments.some(
+          (item) => item.fileUrl === attachment.fileUrl,
+        );
+
+        return {
+          ...doc,
+          attachments: alreadyExists
+            ? oldAttachments
+            : [...oldAttachments, attachment],
+        };
+      }),
+    }));
+  };
+
+  const handleAdditionalReworkAttachmentChange = (tempId, uploadedFiles) => {
+    const files = Array.isArray(uploadedFiles)
+      ? uploadedFiles
+      : uploadedFiles
+        ? [uploadedFiles]
+        : [];
+
+    const attachments = files
+      .map((file) => normalizeReworkAttachment(file))
+      .filter(Boolean);
+
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      additionalReworkDocuments: (prev.additionalReworkDocuments || []).map(
+        (doc) =>
+          doc.tempId === tempId
+            ? {
+                ...doc,
+                attachmentFiles: files,
+                attachments,
+              }
+            : doc,
+      ),
+    }));
+  };
+
+  const handleAdditionalReworkAttachmentSuccess = (tempId, fileMeta) => {
+    const attachment = normalizeReworkAttachment(fileMeta);
+    if (!attachment) return;
+
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      additionalReworkDocuments: (prev.additionalReworkDocuments || []).map(
+        (doc) => {
+          if (doc.tempId !== tempId) return doc;
+
+          const oldAttachments = doc.attachments || [];
+
+          const alreadyExists = oldAttachments.some(
+            (item) => item.fileUrl === attachment.fileUrl,
+          );
+
+          return {
+            ...doc,
+            attachments: alreadyExists
+              ? oldAttachments
+              : [...oldAttachments, attachment],
+          };
+        },
+      ),
+    }));
+  };
+
+  const documentChecklist = useMemo(() => {
+    if (Array.isArray(requiredDocsList)) return requiredDocsList;
+    if (Array.isArray(requiredDocsList?.content))
+      return requiredDocsList.content;
+    return [];
+  }, [requiredDocsList]);
+
+  const isReworkSelected = statusObj?.newStatusName === "REWORK";
+
+  const getRequiredDocId = (doc) => {
+    return doc?.documentId || doc?.requiredDocumentId || doc?.id;
+  };
+
+  const getRequiredDocName = (doc) => {
+    return (
+      doc?.documentName || doc?.requiredDocumentName || doc?.name || "Document"
+    );
+  };
+
+  const handleReworkDocSelectionChange = (keys) => {
+    const selectedKeys =
+      keys === "all"
+        ? documentChecklist
+            .map((doc) => String(getRequiredDocId(doc)))
+            .filter(Boolean)
+        : Array.from(keys || []).map(String);
+
+    setStatusObj((prev) => {
+      const oldReasonMap = new Map(
+        (prev.reworkDocuments || []).map((item) => [
+          String(item.requiredDocumentId),
+          item.reason || "",
+        ]),
+      );
+
+      const selectedDocs = selectedKeys
+        .map((docId) => {
+          const doc = documentChecklist.find(
+            (item) => String(getRequiredDocId(item)) === String(docId),
+          );
+
+          if (!doc) return null;
+
+          return {
+            requiredDocumentId: Number(docId),
+            documentName: getRequiredDocName(doc),
+            reason: oldReasonMap.get(String(docId)) || "",
+          };
+        })
+        .filter(Boolean);
+
+      return {
+        ...prev,
+        reworkDocuments: selectedDocs,
+        changedById: userId,
+      };
+    });
+  };
+
+  const handleReworkDocReasonChange = (requiredDocumentId, reason) => {
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      reworkDocuments: (prev.reworkDocuments || []).map((doc) =>
+        Number(doc.requiredDocumentId) === Number(requiredDocumentId)
+          ? { ...doc, reason }
+          : doc,
+      ),
+    }));
+  };
+
+  const handleAddAdditionalReworkDocument = () => {
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      additionalReworkDocuments: [
+        ...(prev.additionalReworkDocuments || []),
+        {
+          tempId: `${Date.now()}-${Math.random()}`,
+          documentName: "",
+          reason: "",
+        },
+      ],
+    }));
+  };
+
+  const handleAdditionalReworkDocumentChange = (tempId, field, value) => {
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      additionalReworkDocuments: (prev.additionalReworkDocuments || []).map(
+        (doc) => (doc.tempId === tempId ? { ...doc, [field]: value } : doc),
+      ),
+    }));
+  };
+
+  const handleRemoveAdditionalReworkDocument = (tempId) => {
+    setStatusObj((prev) => ({
+      ...prev,
+      changedById: userId,
+      additionalReworkDocuments: (prev.additionalReworkDocuments || []).filter(
+        (doc) => doc.tempId !== tempId,
+      ),
+    }));
+  };
 
   useEffect(() => {
     if (procurementAssignmentId) {
@@ -720,27 +994,97 @@ const ProjectDetails = () => {
       });
   };
 
+  const REWORK_STATUS_NAME = "REWORK";
+
   const handleStatusChange = () => {
-    dispatch(updateAssignmentStatusForMileStone(statusObj))
+    if (!statusObj?.newStatusName) {
+      addToast({
+        title: "Status required",
+        description: "Please select status.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!statusObj?.statusReason?.trim()) {
+      addToast({
+        title: "Reason required",
+        description: "Please enter reason.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const isReworkStatus = statusObj.newStatusName === REWORK_STATUS_NAME;
+
+    let requestAction;
+
+    if (isReworkStatus) {
+      const selectedReworkDocs = statusObj.reworkDocuments || [];
+
+      if (selectedReworkDocs.length === 0) {
+        addToast({
+          title: "Document required",
+          description: "Please select at least one document for rework.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const docWithoutReason = selectedReworkDocs.find(
+        (doc) => !doc.reason?.trim(),
+      );
+
+      if (docWithoutReason) {
+        addToast({
+          title: "Document reason required",
+          description: `Please enter reason for ${docWithoutReason.documentName}.`,
+          color: "danger",
+        });
+        return;
+      }
+
+      const reworkPayload = {
+        currentAssignmentId: Number(statusObj.assignmentId),
+        changedById: Number(userId),
+        reason: statusObj.statusReason.trim(),
+        rejectedDocumentIds: selectedReworkDocs.map((doc) =>
+          Number(doc.requiredDocumentId),
+        ),
+      };
+
+      requestAction = sendBackToPreviousMilestone({
+        assignmentId: Number(statusObj.assignmentId),
+        data: reworkPayload,
+      });
+    } else {
+      const normalPayload = {
+        assignmentId: Number(statusObj.assignmentId),
+        newStatusName: statusObj.newStatusName,
+        statusReason: statusObj.statusReason.trim(),
+        changedById: Number(userId),
+      };
+
+      requestAction = updateAssignmentStatusForMileStone(normalPayload);
+    }
+
+    dispatch(requestAction)
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Status updated successfully !.",
+            title: isReworkStatus
+              ? "Milestone sent back for rework successfully!"
+              : "Status updated successfully!",
             color: "success",
           });
-
-          const updatedStatus = statusObj.newStatusName;
-
-          setSelectedMilestone((prev) => ({
-            ...prev,
-            status: updatedStatus,
-          }));
 
           setStatusObj({
             assignmentId: null,
             newStatusName: "",
             statusReason: "",
             changedById: null,
+            reworkDocuments: [],
+            additionalReworkDocuments: [],
           });
 
           statusModal.onClose();
@@ -759,14 +1103,20 @@ const ProjectDetails = () => {
           );
         } else {
           addToast({
-            title: resp?.payload?.status,
+            title: resp?.payload?.status || "Failed",
             color: "danger",
-            description: resp?.payload?.message,
+            description:
+              resp?.payload?.message ||
+              resp?.payload ||
+              "Failed to update status.",
           });
         }
       })
-      .catch((error) => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+      .catch(() => {
+        addToast({
+          title: "Something went wrong!",
+          color: "danger",
+        });
       });
   };
 
@@ -2322,11 +2672,21 @@ const ProjectDetails = () => {
                           className="cursor-pointer"
                           onClick={() => {
                             statusModal.onOpen();
+
+                            dispatch(
+                              getRequiredDocumentsByProductId({
+                                userId,
+                                projectId,
+                              }),
+                            );
+
                             setStatusObj((prev) => ({
                               ...prev,
                               newStatusName: selectedMilestone?.status,
                               assignmentId: selectedMilestone?.id,
                               changedById: userId,
+                              reworkDocuments: [],
+                              additionalReworkDocuments: [],
                             }));
                           }}
                         >
@@ -3191,6 +3551,8 @@ const ProjectDetails = () => {
       <Modal
         isOpen={statusModal.isOpen}
         onOpenChange={statusModal.onOpenChange}
+        size="2xl"
+        scrollBehavior="inside"
       >
         <ModalContent>
           {(onClose) => (
@@ -3198,7 +3560,8 @@ const ProjectDetails = () => {
               <ModalHeader className="flex flex-col gap-1">
                 Update status
               </ModalHeader>
-              <ModalBody className="max-h-[90vh] overflow-auto">
+
+              <ModalBody className="max-h-[75vh] overflow-auto">
                 <NewSelect
                   isRequired={true}
                   errorMessage={"please select status"}
@@ -3212,9 +3575,25 @@ const ProjectDetails = () => {
                       ...prev,
                       newStatusName: e,
                       changedById: userId,
+
+                      // Clear REWORK data when another status is selected
+                      reworkDocuments:
+                        e === "REWORK" ? prev.reworkDocuments : [],
+                      additionalReworkDocuments:
+                        e === "REWORK" ? prev.additionalReworkDocuments : [],
                     }));
+
+                    if (e === "REWORK") {
+                      dispatch(
+                        getRequiredDocumentsByProductId({
+                          userId,
+                          projectId,
+                        }),
+                      );
+                    }
                   }}
                 />
+
                 <Textarea
                   label={"Reason"}
                   isRequired
@@ -3228,11 +3607,208 @@ const ProjectDetails = () => {
                     }));
                   }}
                 />
+
+                {isReworkSelected && (
+                  <div className="space-y-4 rounded-xl border border-warning-200 bg-warning-50/40 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        Rework documents
+                      </p>
+                      <p className="text-xs text-default-500">
+                        Select checklist documents for which rework is required.
+                      </p>
+                    </div>
+
+                    <Select
+                      label="Select documents from checklist"
+                      placeholder="Select one or more documents"
+                      selectionMode="multiple"
+                      selectedKeys={
+                        new Set(
+                          (statusObj.reworkDocuments || []).map((doc) =>
+                            String(doc.requiredDocumentId),
+                          ),
+                        )
+                      }
+                      onSelectionChange={handleReworkDocSelectionChange}
+                      className="w-full"
+                    >
+                      {documentChecklist.map((doc) => {
+                        const docId = getRequiredDocId(doc);
+                        const docName = getRequiredDocName(doc);
+
+                        return (
+                          <SelectItem key={String(docId)} textValue={docName}>
+                            {docName}
+                          </SelectItem>
+                        );
+                      })}
+                    </Select>
+
+                    {(statusObj.reworkDocuments || []).length > 0 && (
+                      <div className="space-y-3">
+                        {(statusObj.reworkDocuments || []).map((doc) => (
+                          <div
+                            key={doc.requiredDocumentId}
+                            className="rounded-lg border border-default-200 bg-content1 p-3"
+                          >
+                            <p className="mb-2 text-sm font-medium text-foreground">
+                              {doc.documentName}
+                            </p>
+
+                            <Textarea
+                              size="sm"
+                              label="Small description / reason"
+                              placeholder="Example: Document is blurred, expired, wrong format..."
+                              value={doc.reason}
+                              onChange={(e) =>
+                                handleReworkDocReasonChange(
+                                  doc.requiredDocumentId,
+                                  e.target.value,
+                                )
+                              }
+                            />
+
+                            <div className="mt-3 rounded-lg border border-dashed border-default-300 p-3">
+                              <FileUploader
+                                label="Attachment optional"
+                                placeholder={`Upload attachment for ${doc.documentName}`}
+                                uploadingType="multiple"
+                                value={doc.attachmentFiles || []}
+                                onChange={(uploadedFiles) =>
+                                  handleSelectedReworkAttachmentChange(
+                                    doc.requiredDocumentId,
+                                    uploadedFiles,
+                                  )
+                                }
+                                onUploadSuccess={(fileMeta) =>
+                                  handleSelectedReworkAttachmentSuccess(
+                                    doc.requiredDocumentId,
+                                    fileMeta,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <Divider />
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Additional documents
+                          </p>
+                          <p className="text-xs text-default-500">
+                            Add documents which are not available in checklist.
+                          </p>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          color="primary"
+                          variant="flat"
+                          startContent={<Plus className="h-4 w-4" />}
+                          onPress={handleAddAdditionalReworkDocument}
+                        >
+                          Add Document
+                        </Button>
+                      </div>
+
+                      {(statusObj.additionalReworkDocuments || []).map(
+                        (doc) => (
+                          <div
+                            key={doc.tempId}
+                            className="rounded-lg border border-default-200 bg-content1 p-3"
+                          >
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-foreground">
+                                Additional document
+                              </p>
+
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                variant="light"
+                                color="danger"
+                                onPress={() =>
+                                  handleRemoveAdditionalReworkDocument(
+                                    doc.tempId,
+                                  )
+                                }
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <Input
+                                label="Document name"
+                                placeholder="Enter document name"
+                                value={doc.documentName}
+                                onChange={(e) =>
+                                  handleAdditionalReworkDocumentChange(
+                                    doc.tempId,
+                                    "documentName",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+
+                              <Textarea
+                                label="Small description / reason"
+                                placeholder="Enter why this document is required"
+                                value={doc.reason}
+                                onChange={(e) =>
+                                  handleAdditionalReworkDocumentChange(
+                                    doc.tempId,
+                                    "reason",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div className="mt-3 rounded-lg border border-dashed border-default-300 p-3">
+                              <FileUploader
+                                label="Attachment optional"
+                                placeholder={
+                                  doc.documentName
+                                    ? `Upload attachment for ${doc.documentName}`
+                                    : "Upload attachment for this document"
+                                }
+                                uploadingType="multiple"
+                                value={doc.attachmentFiles || []}
+                                onChange={(uploadedFiles) =>
+                                  handleAdditionalReworkAttachmentChange(
+                                    doc.tempId,
+                                    uploadedFiles,
+                                  )
+                                }
+                                onUploadSuccess={(fileMeta) =>
+                                  handleAdditionalReworkAttachmentSuccess(
+                                    doc.tempId,
+                                    fileMeta,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                )}
               </ModalBody>
+
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>
                   Cancel
                 </Button>
+
                 <Button color="primary" onPress={handleStatusChange}>
                   Submit
                 </Button>
