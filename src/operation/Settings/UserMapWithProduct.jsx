@@ -1097,7 +1097,10 @@ const UserMapWithProduct = () => {
           items={sortedItems}
         >
           {(item) => (
-            <TableRow key={getRowKey(item, sortedItems.indexOf(item))}>
+            <TableRow
+              key={getRowKey(item, sortedItems.indexOf(item))}
+              className="border-y-1 border-gray-100"
+            >
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
