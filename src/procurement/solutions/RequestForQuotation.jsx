@@ -43,6 +43,7 @@ import {
   Eye,
   File,
   Pencil,
+  Lock,
   Plus,
   Search,
   Send,
@@ -1107,8 +1108,10 @@ const RequestForQuotation = () => {
             </div>
           );
         }
+        case "actions": {
+          const rfqStatus = String(rowData?.status || "").toUpperCase();
+          const canOpenVendors = rfqStatus === "SENT";
 
-        case "actions":
           return (
             <div className="flex justify-center">
               <Dropdown>
@@ -1118,7 +1121,9 @@ const RequestForQuotation = () => {
                   </Button>
                 </DropdownTrigger>
 
-                <DropdownMenu>
+                <DropdownMenu
+                  disabledKeys={!canOpenVendors ? ["addQuote"] : []}
+                >
                   <DropdownItem
                     key="view"
                     startContent={<Eye size={15} />}
@@ -1133,6 +1138,7 @@ const RequestForQuotation = () => {
                   >
                     Edit RFQ
                   </DropdownItem>
+
                   <DropdownItem
                     key="sendToVendor"
                     startContent={<Send size={15} />}
@@ -1140,10 +1146,19 @@ const RequestForQuotation = () => {
                   >
                     Send To Vendor
                   </DropdownItem>
+
                   <DropdownItem
                     key="addQuote"
-                    startContent={<File size={15} />}
-                    onPress={() => handleAddQuote(rowData)}
+                    startContent={
+                      canOpenVendors ? <File size={15} /> : <Lock size={15} />
+                    }
+                    description={
+                      !canOpenVendors ? "Send RFQ to vendor first" : undefined
+                    }
+                    onPress={() => {
+                      if (!canOpenVendors) return;
+                      handleAddQuote(rowData);
+                    }}
                   >
                     Vendors
                   </DropdownItem>
@@ -1151,6 +1166,7 @@ const RequestForQuotation = () => {
               </Dropdown>
             </div>
           );
+        }
 
         default:
           return rowData?.[columnKey] || "-";
