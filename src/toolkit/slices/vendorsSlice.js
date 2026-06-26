@@ -599,6 +599,25 @@ export const createLegalRequest = createAsyncThunk(
     }
   },
 );
+export const updateRFQVendorMapping = createAsyncThunk(
+  "updateRFQVendorMapping",
+  async ({rfqId,userId,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/rfq/${rfqId}?userId=${userId}`,data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch RFQ vendors",
+      );
+    }
+  },
+);
+
+
 
 const VendorsSlice = createSlice({
   name: "vendors",

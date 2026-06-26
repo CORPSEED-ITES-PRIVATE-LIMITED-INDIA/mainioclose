@@ -42,6 +42,7 @@ import {
   ExternalLink,
   Eye,
   File,
+  Pencil,
   Plus,
   Search,
   Send,
@@ -55,6 +56,7 @@ import {
   getProductVendorsByProductId,
   getRFQVendorsByRfqId,
   sendRfqToVendors,
+  updateRFQVendorMapping,
 } from "../../toolkit/slices/vendorsSlice";
 import FileUploader from "../../components/FileUploader";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -404,8 +406,13 @@ const getTotalElements = (response, fallbackLength = 0) => {
 
 const toDatePickerValue = (value) => {
   if (!value) return null;
+
   try {
-    return parseDate(value);
+    const normalized = dayjs(value).isValid()
+      ? dayjs(value).format("YYYY-MM-DD")
+      : String(value).slice(0, 10);
+
+    return parseDate(normalized);
   } catch {
     return null;
   }
@@ -660,6 +667,47 @@ const RequestForQuotation = () => {
     rfqModal.onOpen();
   };
 
+  const handleOpenEditRfq = (rowData) => {
+    if (!rowData?.id) {
+      addToast({
+        title: "ERROR",
+        description: "RFQ ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setSelectedRfq(rowData);
+    setMailBody(rowData?.emailBody || "<p></p>");
+
+    resetRfqForm({
+      title: rowData?.title || "",
+      description: rowData?.description || "",
+      scopeOfWork: rowData?.scopeOfWork || "<p></p>",
+      termsAndConditions: rowData?.termsAndConditions || "<p></p>",
+      deliveryLocation: rowData?.deliveryLocation || "",
+      quotationSubmissionDeadline: rowData?.quotationSubmissionDeadline
+        ? dayjs(rowData.quotationSubmissionDeadline).format("YYYY-MM-DD")
+        : "",
+      expectedStartDate: rowData?.expectedStartDate
+        ? dayjs(rowData.expectedStartDate).format("YYYY-MM-DD")
+        : "",
+      expectedEndDate: rowData?.expectedEndDate
+        ? dayjs(rowData.expectedEndDate).format("YYYY-MM-DD")
+        : "",
+      contactPersonName: rowData?.contactPersonName || "",
+      contactPersonEmail: rowData?.contactPersonEmail || "",
+      contactPersonMobile: rowData?.contactPersonMobile || "",
+      attachmentUrl: rowData?.attachmentUrl || "",
+      vendorIds: getRfqVendors(rowData)
+        .map((vendor) => vendor?.vendorId)
+        .filter(Boolean)
+        .map(String),
+    });
+
+    rfqModal.onOpen();
+  };
+
   const handleView = (item) => {
     setSelectedRfq(item);
     viewModal.onOpen();
@@ -755,16 +803,35 @@ const RequestForQuotation = () => {
       vendorIds: values.vendorIds.map(Number),
     };
 
+    const isEditMode = Boolean(selectedRfq?.id);
+
     setSubmitLoading(true);
-    dispatch(createRFQ({ userId, data: payload })).then((resp) => {
+
+    const action = isEditMode
+      ? updateRFQVendorMapping({
+          rfqId: selectedRfq.id,
+          userId,
+          data: payload,
+        })
+      : createRFQ({
+          userId,
+          data: payload,
+        });
+
+    dispatch(action).then((resp) => {
       setSubmitLoading(false);
+
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "SUCCESS",
-          description: "RFQ created successfully.",
+          description: isEditMode
+            ? "RFQ updated successfully."
+            : "RFQ created successfully.",
           color: "success",
         });
+
         rfqModal.onClose();
+        setSelectedRfq(null);
         resetRfqForm(defaultValues);
         fetchProductVendors();
       } else {
@@ -773,7 +840,8 @@ const RequestForQuotation = () => {
           description:
             resp?.payload?.message ||
             resp?.payload?.data?.message ||
-            "RFQ creation failed.",
+            resp?.payload ||
+            (isEditMode ? "RFQ update failed." : "RFQ creation failed."),
           color: "danger",
         });
       }
@@ -808,18 +876,25 @@ const RequestForQuotation = () => {
     });
   };
 
+  const handleAddQuote = (rowData) => {
+    navigate(`${rowData?.id}/vendors`);
+  };
   const onSearchChange = useCallback(
     (value) => setFilterValue(value || ""),
     [],
   );
   const onClear = useCallback(() => setFilterValue(""), []);
-  const onRowsPerPageChange = useCallback((e) => {
-    setFilteration({ page: 1, size: Number(e.target.value) });
-  }, []);
-
-  const handleAddQuote = (rowData) => {
-    navigate(`${rowData?.id}/vendors`);
-  };
+  const onRowsPerPageChange = useCallback(
+    (e) => {
+      setFilteration({ page: 1, size: Number(e.target.value) });
+    },
+    [
+      handleAddQuote,
+      handleOpenEditRfq,
+      handleOpenRfqDetail,
+      handleOpenSendToVendor,
+    ],
+  );
 
   const onSubmitSendToVendor = (values) => {
     const rfqId = selectedSendRfq?.rfqId || selectedSendRfq?.id;
@@ -887,189 +962,207 @@ const RequestForQuotation = () => {
     );
   };
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "rfqNumber":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">
-              {rowData?.rfqNumber || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              ID: {rowData?.id || "-"}
-            </span>
-          </div>
-        );
-
-      case "title":
-        return (
-          <div className="max-w-[260px]">
-            <p className="truncate text-sm font-medium" title={rowData?.title}>
-              {rowData?.title || "-"}
-            </p>
-            <p
-              className="mt-1 line-clamp-1 text-xs text-default-500"
-              title={rowData?.description}
-            >
-              {rowData?.description || "-"}
-            </p>
-          </div>
-        );
-
-      case "productName":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">
-              {rowData?.productName || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              Product ID: {rowData?.productId || "-"}
-            </span>
-          </div>
-        );
-
-      case "dates":
-        return (
-          <div className="flex flex-col gap-1 text-xs text-default-600">
-            <span>
-              Deadline: {formatDate(rowData?.quotationSubmissionDeadline)}
-            </span>
-            <span>
-              Start: {formatDate(rowData?.expectedStartDate)} | End:{" "}
-              {formatDate(rowData?.expectedEndDate)}
-            </span>
-          </div>
-        );
-
-      case "contact":
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              {rowData?.contactPersonName || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              {rowData?.contactPersonEmail || "-"}
-            </span>
-            <Chip size="sm" variant="flat">
-              {rowData?.contactPersonMobile || "-"}
-            </Chip>
-          </div>
-        );
-
-      case "status":
-        return (
-          <Chip
-            size="sm"
-            color={getStatusColor(rowData?.status)}
-            variant="flat"
-          >
-            {rowData?.status || "-"}
-          </Chip>
-        );
-
-      case "attachmentUrl":
-        return rowData?.attachmentUrl ? (
-          <a
-            href={rowData.attachmentUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-primary"
-          >
-            View <ExternalLink size={13} />
-          </a>
-        ) : (
-          <Chip size="sm" variant="flat">
-            Not Attached
-          </Chip>
-        );
-
-      case "createdDate":
-        return (
-          <div className="flex flex-col text-xs">
-            <span>{formatDateTime(rowData?.createdDate)}</span>
-            <span className="text-default-500">
-              By: {rowData?.createdBy || "-"}
-            </span>
-          </div>
-        );
-
-      case "vendors": {
-        const vendors = getRfqVendors(rowData);
-        if (!vendors.length)
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "rfqNumber":
           return (
-            <Chip size="sm" variant="flat">
-              No Vendor
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-foreground">
+                {rowData?.rfqNumber || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                ID: {rowData?.id || "-"}
+              </span>
+            </div>
+          );
+
+        case "title":
+          return (
+            <div className="max-w-[260px]">
+              <p
+                className="truncate text-sm font-medium"
+                title={rowData?.title}
+              >
+                {rowData?.title || "-"}
+              </p>
+              <p
+                className="mt-1 line-clamp-1 text-xs text-default-500"
+                title={rowData?.description}
+              >
+                {rowData?.description || "-"}
+              </p>
+            </div>
+          );
+
+        case "productName":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {rowData?.productName || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                Product ID: {rowData?.productId || "-"}
+              </span>
+            </div>
+          );
+
+        case "dates":
+          return (
+            <div className="flex flex-col gap-1 text-xs text-default-600">
+              <span>
+                Deadline: {formatDate(rowData?.quotationSubmissionDeadline)}
+              </span>
+              <span>
+                Start: {formatDate(rowData?.expectedStartDate)} | End:{" "}
+                {formatDate(rowData?.expectedEndDate)}
+              </span>
+            </div>
+          );
+
+        case "contact":
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">
+                {rowData?.contactPersonName || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                {rowData?.contactPersonEmail || "-"}
+              </span>
+              <Chip size="sm" variant="flat">
+                {rowData?.contactPersonMobile || "-"}
+              </Chip>
+            </div>
+          );
+
+        case "status":
+          return (
+            <Chip
+              size="sm"
+              color={getStatusColor(rowData?.status)}
+              variant="flat"
+            >
+              {rowData?.status || "-"}
             </Chip>
           );
 
-        const firstVendor = vendors[0];
-        return (
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-foreground">
-              {firstVendor?.vendorName || "-"}
-            </span>
-            <span className="text-xs text-default-500">
-              {firstVendor?.vendorEmail || "-"}
-            </span>
-            <div className="flex items-center gap-1">
-              <Chip
-                size="sm"
-                color={getStatusColor(firstVendor?.vendorStatus)}
-                variant="flat"
-              >
-                {firstVendor?.vendorStatus || "-"}
-              </Chip>
-              {vendors.length > 1 && (
-                <Chip size="sm" variant="flat">
-                  +{vendors.length - 1} more
-                </Chip>
-              )}
+        case "attachmentUrl":
+          return rowData?.attachmentUrl ? (
+            <a
+              href={rowData.attachmentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary"
+            >
+              View <ExternalLink size={13} />
+            </a>
+          ) : (
+            <Chip size="sm" variant="flat">
+              Not Attached
+            </Chip>
+          );
+
+        case "createdDate":
+          return (
+            <div className="flex flex-col text-xs">
+              <span>{formatDateTime(rowData?.createdDate)}</span>
+              <span className="text-default-500">
+                By: {rowData?.createdBy || "-"}
+              </span>
             </div>
-          </div>
-        );
+          );
+
+        case "vendors": {
+          const vendors = getRfqVendors(rowData);
+          if (!vendors.length)
+            return (
+              <Chip size="sm" variant="flat">
+                No Vendor
+              </Chip>
+            );
+
+          const firstVendor = vendors[0];
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-foreground">
+                {firstVendor?.vendorName || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                {firstVendor?.vendorEmail || "-"}
+              </span>
+              <div className="flex items-center gap-1">
+                <Chip
+                  size="sm"
+                  color={getStatusColor(firstVendor?.vendorStatus)}
+                  variant="flat"
+                >
+                  {firstVendor?.vendorStatus || "-"}
+                </Chip>
+                {vendors.length > 1 && (
+                  <Chip size="sm" variant="flat">
+                    +{vendors.length - 1} more
+                  </Chip>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        case "actions":
+          return (
+            <div className="flex justify-center">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button size="sm" isIconOnly variant="light">
+                    <EllipsisVertical size={18} />
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu>
+                  <DropdownItem
+                    key="view"
+                    startContent={<Eye size={15} />}
+                    onPress={() => handleOpenRfqDetail(rowData)}
+                  >
+                    View Details
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit"
+                    startContent={<Pencil size={15} />}
+                    onPress={() => handleOpenEditRfq(rowData)}
+                  >
+                    Edit RFQ
+                  </DropdownItem>
+                  <DropdownItem
+                    key="sendToVendor"
+                    startContent={<Send size={15} />}
+                    onPress={() => handleOpenSendToVendor(rowData)}
+                  >
+                    Send To Vendor
+                  </DropdownItem>
+                  <DropdownItem
+                    key="addQuote"
+                    startContent={<File size={15} />}
+                    onPress={() => handleAddQuote(rowData)}
+                  >
+                    Vendors
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return rowData?.[columnKey] || "-";
       }
-
-      case "actions":
-        return (
-          <div className="flex justify-center">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button size="sm" isIconOnly variant="light">
-                  <EllipsisVertical size={18} />
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu>
-                <DropdownItem
-                  key="view"
-                  startContent={<Eye size={15} />}
-                  onPress={() => handleOpenRfqDetail(rowData)}
-                >
-                  View Details
-                </DropdownItem>
-                <DropdownItem
-                  key="sendToVendor"
-                  startContent={<Send size={15} />}
-                  onPress={() => handleOpenSendToVendor(rowData)}
-                >
-                  Send To Vendor
-                </DropdownItem>
-                <DropdownItem
-                  key="addQuote"
-                  startContent={<File size={15} />}
-                  onPress={() => handleAddQuote(rowData)}
-                >
-                  Vendors
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-
-      default:
-        return rowData?.[columnKey] || "-";
-    }
-  }, []);
+    },
+    [
+      handleAddQuote,
+      handleOpenEditRfq,
+      handleOpenRfqDetail,
+      handleOpenSendToVendor,
+    ],
+  );
 
   const topContent = useMemo(() => {
     return (
@@ -1250,9 +1343,13 @@ const RequestForQuotation = () => {
             <>
               <ModalHeader className="border-b">
                 <div>
-                  <h2 className="text-lg font-semibold">Create RFQ</h2>
+                  <h2 className="text-lg font-semibold">
+                    {selectedRfq?.id ? "Update RFQ" : "Create RFQ"}
+                  </h2>
                   <p className="text-xs font-normal text-default-500">
-                    Fill RFQ details, scope of work, terms and vendor selection.
+                    {selectedRfq?.id
+                      ? "Update RFQ details, scope of work, terms and vendor selection."
+                      : "Fill RFQ details, scope of work, terms and vendor selection."}
                   </p>
                 </div>
               </ModalHeader>
@@ -1523,6 +1620,7 @@ const RequestForQuotation = () => {
                     type="button"
                     onPress={() => {
                       onClose();
+                      setSelectedRfq(null);
                       resetRfqForm(defaultValues);
                     }}
                     isDisabled={submitLoading}
@@ -1534,7 +1632,7 @@ const RequestForQuotation = () => {
                     type="submit"
                     isLoading={submitLoading}
                   >
-                    Create RFQ
+                    {selectedRfq?.id ? "Update RFQ" : "Create RFQ"}
                   </Button>
                 </ModalFooter>
               </form>
