@@ -62,12 +62,13 @@ import NewSelect from "../../components/NewSelect";
 import { parseDate } from "@internationalized/date";
 
 const RFQ_VENDOR_STATUSES = [
-  "ADDED",
+  "DRAFT",
   "SENT",
-  "QUOTATION_RECEIVED",
-  "SHORTLISTED",
-  "REJECTED",
-  "SELECTED",
+  "UNDER_COMPARISON",
+  "VENDOR_FINALIZED",
+  "ONBOARDING_STARTED",
+  "CLOSED",
+  "CANCELLED",
 ];
 
 const DetailItem = ({ label, value }) => {
@@ -130,7 +131,6 @@ const formatDateTime = (value) => {
 const getStatusColor = (status) => {
   const value = String(status || "").toUpperCase();
 
-  if (value === "ADDED") return "default";
   if (value === "SENT") return "primary";
   if (value === "QUOTATION_RECEIVED") return "success";
   if (value === "SHORTLISTED") return "warning";
@@ -435,7 +435,7 @@ const RequestForQuotation = () => {
   const [sendVendorLoading, setSendVendorLoading] = useState(false);
   const [lockedSendBcc, setLockedSendBcc] = useState([]);
   const [sendMessageBody, setSendMessageBody] = useState("<p></p>");
-  const [status, setStatus] = useState("ADDED");
+  const [status, setStatus] = useState("DRAFT");
 
   const {
     control: sendVendorControl,
