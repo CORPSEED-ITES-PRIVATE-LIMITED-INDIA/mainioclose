@@ -146,7 +146,7 @@ const quotationDefaultValues = {
   paymentTerms: "",
   warrantyTerms: "",
   remarks: "",
-  quotationAttachmentUrl: [],
+  documents: [],
   items: [
     {
       itemType: "MATERIAL",
@@ -169,7 +169,7 @@ const quotationSchema = z.object({
   paymentTerms: z.string().min(1, "Please enter payment terms"),
   warrantyTerms: z.string().optional(),
   remarks: z.string().optional(),
-  quotationAttachmentUrl: z.array(z.string()).optional(),
+  documents: z.array(z.any()).optional(),
   items: z
     .array(
       z.object({
@@ -646,6 +646,75 @@ const Quote = () => {
     );
   };
 
+  const getFileNameFromUrl = (url = "") => {
+    try {
+      const cleanUrl = String(url).split("?")[0];
+      return decodeURIComponent(
+        cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1) || "document",
+      );
+    } catch {
+      return "document";
+    }
+  };
+
+  const getFileTypeFromNameOrUrl = (fileName = "", fileUrl = "") => {
+    const source = fileName || fileUrl || "";
+    const extension = source.split("?")[0].split(".").pop()?.toLowerCase();
+    return extension || "file";
+  };
+
+  const normalizeQuotationDocument = (file) => {
+    if (!file) return null;
+
+    if (typeof file === "string") {
+      return {
+        fileName: getFileNameFromUrl(file),
+        fileUrl: file,
+        fileType: getFileTypeFromNameOrUrl("", file),
+        fileSizeKb: 0,
+      };
+    }
+
+    const fileUrl = getUploadedFileValue(file);
+
+    if (!fileUrl) return null;
+
+    const fileName =
+      file?.fileName ||
+      file?.name ||
+      file?.originalName ||
+      getFileNameFromUrl(fileUrl);
+
+    return {
+      fileName,
+      fileUrl,
+      fileType:
+        file?.fileType ||
+        file?.contentType ||
+        file?.mimeType ||
+        getFileTypeFromNameOrUrl(fileName, fileUrl),
+      fileSizeKb: file?.fileSize
+        ? Math.ceil(Number(file.fileSize) / 1024)
+        : file?.size
+          ? Math.ceil(Number(file.size) / 1024)
+          : Number(file?.fileSizeKb || 0),
+    };
+  };
+
+  const getQuotationDocuments = (quotation) => {
+    if (Array.isArray(quotation?.documents)) {
+      return quotation.documents;
+    }
+
+    if (Array.isArray(quotation?.quotationAttachmentUrl)) {
+      return quotation.quotationAttachmentUrl
+        .map((url) => normalizeQuotationDocument(url))
+        .filter(Boolean);
+    }
+
+    return [];
+  };
+
   const getFinalizationForQuotation = useCallback(
     (quotation) => {
       if (!quotation) return null;
@@ -777,7 +846,9 @@ const Quote = () => {
       paymentTerms: values.paymentTerms,
       warrantyTerms: values.warrantyTerms || "",
       remarks: values.remarks || "",
-      quotationAttachmentUrl: values.quotationAttachmentUrl || [],
+      documents: (values.documents || [])
+        .map((file) => normalizeQuotationDocument(file))
+        .filter(Boolean),
       createdBy: Number(resolvedCreatedBy),
 
       items: values.items.map((item) => ({
@@ -1499,18 +1570,17 @@ const Quote = () => {
         case "attachments":
           return (
             <div className="flex flex-col gap-1 text-xs">
-              {Array.isArray(rowData?.quotationAttachmentUrl) &&
-              rowData.quotationAttachmentUrl.length > 0 ? (
+              {getQuotationDocuments(rowData).length > 0 ? (
                 <div className="flex flex-col gap-1">
-                  {rowData.quotationAttachmentUrl.map((url, index) => (
+                  {getQuotationDocuments(rowData).map((doc, index) => (
                     <a
-                      key={index}
-                      href={url}
+                      key={doc.id || doc.fileUrl || index}
+                      href={doc.fileUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 text-primary text-xs"
                     >
-                      Attachment {index + 1}
+                      {doc.fileName || `Attachment ${index + 1}`}
                       <ExternalLink size={12} />
                     </a>
                   ))}
@@ -1869,19 +1939,19 @@ const Quote = () => {
                     {Array.isArray(selectedQuotation?.quotationAttachmentUrl) &&
                     selectedQuotation.quotationAttachmentUrl.length > 0 ? (
                       <div className="flex flex-col gap-2">
-                        {selectedQuotation.quotationAttachmentUrl.map(
-                          (url, index) => (
+                        {getQuotationDocuments(selectedQuotation).map(
+                          (doc, index) => (
                             <Button
-                              key={index}
+                              key={doc.id || doc.fileUrl || index}
                               as="a"
-                              href={url}
+                              href={doc.fileUrl}
                               target="_blank"
                               rel="noreferrer"
                               color="primary"
                               variant="flat"
                               endContent={<ExternalLink size={14} />}
                             >
-                              View Attachment {index + 1}
+                              {doc.fileName || `View Attachment ${index + 1}`}
                             </Button>
                           ),
                         )}
@@ -2116,7 +2186,7 @@ const Quote = () => {
                       />
 
                       <Controller
-                        name="quotationAttachmentUrl"
+                        name="documents"
                         control={quotationControl}
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
@@ -2125,6 +2195,7 @@ const Quote = () => {
                             onChange={field.onChange}
                             uploadingType="multiple"
                             errorMessage={error?.message}
+                            isInvalid={!!error}
                           />
                         )}
                       />
