@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addToast,
   Button,
-  Card,
-  CardBody,
   Chip,
   Dropdown,
   DropdownItem,
@@ -29,7 +27,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   CheckCircle,
-  Download,
   EllipsisVertical,
   Eye,
   ExternalLink,
@@ -41,9 +38,9 @@ import {
 import dayjs from "dayjs";
 import FileUploader from "../components/FileUploader.jsx";
 import {
+  agreementDecisionForVendorLegalRequest,
   getAllVendorQuotationLegalRequests,
   sendAgreementToProcurement,
-  agreementDecisionForVendorLegalRequest,
 } from "../toolkit/slices/operationSlice.js";
 
 const columns = [
@@ -94,10 +91,8 @@ const getFileExtension = (fileName = "", fileUrl = "") => {
 
 const formatFileSize = (sizeKb) => {
   const kb = Number(sizeKb || 0);
-
-  if (!kb) return "Size not available";
+  if (!kb) return "";
   if (kb < 1024) return `${kb} KB`;
-
   return `${(kb / 1024).toFixed(2)} MB`;
 };
 
@@ -111,87 +106,76 @@ const getQuotationDocuments = (rowData) => {
   return [];
 };
 
-const DocumentCard = ({ document, index, compact = false }) => {
-  const fileName = document?.fileName || `Document ${index + 1}`;
-  const fileType =
-    document?.fileType || getFileExtension(fileName, document?.fileUrl);
-
+const getAgreementUrl = (rowData) => {
   return (
-    <Card className="border border-default-200 bg-white shadow-sm">
-      <CardBody className={compact ? "p-3" : "p-4"}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary">
-              <FileText size={20} />
-            </div>
-
-            <div className="min-w-0">
-              <Tooltip content={fileName}>
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {fileName}
-                </p>
-              </Tooltip>
-
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <Chip size="sm" variant="flat" color="primary">
-                  {String(fileType).toUpperCase()}
-                </Chip>
-
-                <span className="text-xs text-default-500">
-                  {formatFileSize(document?.fileSizeKb)}
-                </span>
-              </div>
-
-              {document?.createdDate && !compact && (
-                <p className="mt-1 text-xs text-default-400">
-                  Uploaded:{" "}
-                  {dayjs(document.createdDate).format("DD-MM-YYYY HH:mm")}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Button
-            as="a"
-            href={document?.fileUrl}
-            target="_blank"
-            rel="noreferrer"
-            size="sm"
-            color="primary"
-            variant="flat"
-            isIconOnly={compact}
-            endContent={!compact ? <ExternalLink size={14} /> : null}
-          >
-            {compact ? <ExternalLink size={15} /> : "View"}
-          </Button>
-        </div>
-      </CardBody>
-    </Card>
+    rowData?.agreementFileUrl ||
+    rowData?.agreementUrl ||
+    rowData?.agreementAttachmentUrl ||
+    rowData?.agreementAttachment ||
+    ""
   );
 };
 
-const DocumentList = ({
-  documents = [],
-  emptyText = "No documents found.",
-}) => {
+const fileLinkClassMap = {
+  primary: "border-primary-100 bg-primary-50 text-primary hover:bg-primary-100",
+  success: "border-success-100 bg-success-50 text-success hover:bg-success-100",
+};
+
+const FileLink = ({ href, label, meta, color = "primary" }) => {
+  if (!href) return null;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={`inline-flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium ${
+        fileLinkClassMap[color] || fileLinkClassMap.primary
+      }`}
+    >
+      <FileText size={15} className="shrink-0" />
+      <span className="min-w-0 truncate">{label}</span>
+      {meta ? <span className="shrink-0 text-default-500">{meta}</span> : null}
+      <ExternalLink size={13} className="shrink-0" />
+    </a>
+  );
+};
+
+const QuotationDocumentLinks = ({ documents = [], compact = false }) => {
   if (!documents.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-default-300 bg-default-50 px-4 py-8 text-center">
-        <FileText className="mx-auto h-8 w-8 text-default-300" />
-        <p className="mt-2 text-sm font-medium text-default-500">{emptyText}</p>
+      <div className="rounded-xl border border-dashed border-default-300 bg-default-50 px-3 py-3 text-center text-xs text-default-500">
+        No quotation documents
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {documents.map((document, index) => (
-        <DocumentCard
-          key={document?.id || document?.fileUrl || index}
-          document={document}
-          index={index}
-        />
-      ))}
+    <div
+      className={
+        compact
+          ? "flex flex-col gap-1.5"
+          : "grid grid-cols-1 gap-2 sm:grid-cols-2"
+      }
+    >
+      {documents.map((doc, index) => {
+        const fileName = doc?.fileName || `Quotation Document ${index + 1}`;
+        const fileType =
+          doc?.fileType || getFileExtension(fileName, doc?.fileUrl);
+        const size = formatFileSize(doc?.fileSizeKb);
+
+        return (
+          <FileLink
+            key={doc?.id || doc?.fileUrl || index}
+            href={doc?.fileUrl}
+            label={fileName}
+            meta={[String(fileType).toUpperCase(), size]
+              .filter(Boolean)
+              .join(" • ")}
+            color="primary"
+          />
+        );
+      })}
     </div>
   );
 };
@@ -202,7 +186,6 @@ const ProcurementVendors = () => {
   const legalRequestsResponse = useSelector(
     (state) => state.operation.vendorLegalRequests,
   );
-
   const loading = useSelector((state) => state.operation.loading);
   const currentUser = useSelector((state) => state.auth.currentUser);
 
@@ -248,14 +231,16 @@ const ProcurementVendors = () => {
     let list = [...legalRequests];
 
     if (searchValue) {
+      const search = searchValue.toLowerCase();
+
       list = list.filter((item) => {
-        const documentsText = getQuotationDocuments(item)
+        const documentText = getQuotationDocuments(item)
           .map((doc) => `${doc?.fileName || ""} ${doc?.fileType || ""}`)
           .join(" ");
 
-        return `${Object.values(item || {}).join(" ")} ${documentsText}`
+        return `${Object.values(item || {}).join(" ")} ${documentText}`
           .toLowerCase()
-          .includes(searchValue.toLowerCase());
+          .includes(search);
       });
     }
 
@@ -270,19 +255,30 @@ const ProcurementVendors = () => {
     return filteredItems.slice(start, end);
   }, [filteredItems, filteration.page, filteration.size]);
 
-  const handleView = (rowData) => {
-    setSelectedRequest(rowData);
-    viewModal.onOpen();
-  };
+  const selectedQuotationDocuments = getQuotationDocuments(selectedRequest);
+  const selectedAgreementUrl = getAgreementUrl(selectedRequest);
 
-  const handleOpenSendToProcurement = (rowData) => {
-    setSelectedRequest(rowData);
-    setSendToProcurementData({
-      agreementFileUrl: rowData?.agreementFileUrl || "",
-      remarks: rowData?.statusReason || "",
-    });
-    sendToProcurementModal.onOpen();
-  };
+  const handleView = useCallback(
+    (rowData) => {
+      setSelectedRequest(rowData);
+      viewModal.onOpen();
+    },
+    [viewModal],
+  );
+
+  const handleOpenSendToProcurement = useCallback(
+    (rowData) => {
+      const agreementUrl = getAgreementUrl(rowData);
+
+      setSelectedRequest(rowData);
+      setSendToProcurementData({
+        agreementFileUrl: agreementUrl,
+        remarks: rowData?.statusReason || "",
+      });
+      sendToProcurementModal.onOpen();
+    },
+    [sendToProcurementModal],
+  );
 
   const handleSendToProcurementSubmit = () => {
     if (!selectedRequest?.id) {
@@ -434,6 +430,7 @@ const ProcurementVendors = () => {
     (rowData, columnKey) => {
       const status = rowData?.status;
       const quotationDocuments = getQuotationDocuments(rowData);
+      const agreementUrl = getAgreementUrl(rowData);
 
       switch (columnKey) {
         case "request":
@@ -511,30 +508,50 @@ const ProcurementVendors = () => {
 
         case "attachments":
           return (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5 text-xs">
               {quotationDocuments.length > 0 ? (
                 <Tooltip
                   content={quotationDocuments
                     .map((doc) => doc?.fileName || "Document")
                     .join(", ")}
                 >
-                  <Chip size="sm" color="primary" variant="flat">
+                  <Chip
+                    size="sm"
+                    color="primary"
+                    variant="flat"
+                    className="w-fit"
+                  >
                     {quotationDocuments.length} Quotation File
                     {quotationDocuments.length > 1 ? "s" : ""}
                   </Chip>
                 </Tooltip>
               ) : (
-                <Chip size="sm" color="default" variant="flat">
+                <Chip
+                  size="sm"
+                  color="default"
+                  variant="flat"
+                  className="w-fit"
+                >
                   No Quotation Files
                 </Chip>
               )}
 
-              {rowData?.agreementFileUrl ? (
-                <Chip size="sm" color="success" variant="flat">
-                  Agreement Uploaded
-                </Chip>
+              {agreementUrl ? (
+                <a
+                  href={agreementUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-success"
+                >
+                  View Agreement <ExternalLink size={12} />
+                </a>
               ) : (
-                <Chip size="sm" color="default" variant="flat">
+                <Chip
+                  size="sm"
+                  color="default"
+                  variant="flat"
+                  className="w-fit"
+                >
                   No Agreement
                 </Chip>
               )}
@@ -595,7 +612,7 @@ const ProcurementVendors = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [handleOpenSendToProcurement],
+    [handleOpenSendToProcurement, handleView],
   );
 
   const topContent = (
@@ -675,8 +692,6 @@ const ProcurementVendors = () => {
     </div>
   );
 
-  const selectedQuotationDocuments = getQuotationDocuments(selectedRequest);
-
   return (
     <>
       <Table
@@ -721,113 +736,79 @@ const ProcurementVendors = () => {
       <Modal
         isOpen={viewModal.isOpen}
         onOpenChange={viewModal.onOpenChange}
-        size="4xl"
-        scrollBehavior="inside"
+        size="3xl"
       >
         <ModalContent>
           <>
             <ModalHeader className="border-b">
-              <div>
-                <p className="text-lg font-semibold">Legal Request Details</p>
-                <p className="text-xs font-normal text-default-500">
-                  View request, quotation files and agreement PDF.
-                </p>
-              </div>
+              Legal Request Details
             </ModalHeader>
 
-            <ModalBody className="space-y-5 bg-default-50 py-5">
-              <Card className="border border-default-200 bg-white shadow-sm">
-                <CardBody className="space-y-4 p-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Input
-                      label="Title"
-                      value={selectedRequest?.legalRequestTitle || "-"}
-                      isReadOnly
-                    />
-                    <Input
-                      label="Status"
-                      value={selectedRequest?.status || "-"}
-                      isReadOnly
-                    />
-                    <Input
-                      label="Quotation Number"
-                      value={selectedRequest?.quotationNumber || "-"}
-                      isReadOnly
-                    />
-                    <Input
-                      label="Vendor"
-                      value={selectedRequest?.vendorName || "-"}
-                      isReadOnly
-                    />
-                  </div>
+            <ModalBody className="max-h-[72vh] space-y-4 overflow-y-auto py-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Input
+                  label="Title"
+                  value={selectedRequest?.legalRequestTitle || "-"}
+                  isReadOnly
+                />
+                <Input
+                  label="Status"
+                  value={selectedRequest?.status || "-"}
+                  isReadOnly
+                />
+                <Input
+                  label="Quotation"
+                  value={selectedRequest?.quotationNumber || "-"}
+                  isReadOnly
+                />
+                <Input
+                  label="Vendor"
+                  value={selectedRequest?.vendorName || "-"}
+                  isReadOnly
+                />
+              </div>
 
-                  <Textarea
-                    label="Notes"
-                    value={selectedRequest?.notes || "-"}
-                    isReadOnly
+              <Textarea
+                label="Notes"
+                value={selectedRequest?.notes || "-"}
+                isReadOnly
+              />
+              <Textarea
+                label="Description"
+                value={selectedRequest?.statusReason || "-"}
+                isReadOnly
+              />
+
+              <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    Quotation Documents
+                  </p>
+                  <Chip size="sm" color="primary" variant="flat">
+                    {selectedQuotationDocuments.length} Files
+                  </Chip>
+                </div>
+                <QuotationDocumentLinks
+                  documents={selectedQuotationDocuments}
+                />
+              </div>
+
+              <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+                <p className="mb-3 text-sm font-semibold text-foreground">
+                  Agreement Document
+                </p>
+                {selectedAgreementUrl ? (
+                  <FileLink
+                    href={selectedAgreementUrl}
+                    label="View Agreement PDF"
+                    color="success"
                   />
-                  <Textarea
-                    label="Description"
-                    value={selectedRequest?.statusReason || "-"}
-                    isReadOnly
-                  />
-                </CardBody>
-              </Card>
-
-              <Card className="border border-default-200 bg-white shadow-sm">
-                <CardBody className="p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        Quotation Documents
-                      </p>
-                      <p className="text-xs text-default-500">
-                        Files attached with vendor quotation.
-                      </p>
-                    </div>
-                    <Chip size="sm" color="primary" variant="flat">
-                      {selectedQuotationDocuments.length} Files
-                    </Chip>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-default-300 bg-white px-3 py-3 text-center text-xs text-default-500">
+                    Agreement PDF not uploaded yet.
                   </div>
-
-                  <DocumentList
-                    documents={selectedQuotationDocuments}
-                    emptyText="No quotation documents uploaded."
-                  />
-                </CardBody>
-              </Card>
-
-              <Card className="border border-default-200 bg-white shadow-sm">
-                <CardBody className="p-4">
-                  <div className="mb-3">
-                    <p className="text-sm font-semibold text-foreground">
-                      Agreement Document
-                    </p>
-                    <p className="text-xs text-default-500">
-                      Agreement prepared by legal team.
-                    </p>
-                  </div>
-
-                  {selectedRequest?.agreementFileUrl ? (
-                    <Button
-                      as="a"
-                      href={selectedRequest.agreementFileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      variant="flat"
-                      color="success"
-                      startContent={<FileText size={16} />}
-                      endContent={<ExternalLink size={14} />}
-                    >
-                      View Agreement PDF
-                    </Button>
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-default-300 bg-default-50 px-4 py-6 text-center text-sm text-default-500">
-                      Agreement PDF not uploaded yet.
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
+                )}
+              </div>
             </ModalBody>
 
             <ModalFooter>
@@ -842,93 +823,71 @@ const ProcurementVendors = () => {
       <Modal
         isOpen={sendToProcurementModal.isOpen}
         onOpenChange={sendToProcurementModal.onOpenChange}
-        size="4xl"
-        scrollBehavior="inside"
+        size="3xl"
         isDismissable={false}
       >
         <ModalContent>
           <>
             <ModalHeader className="border-b">
-              <div>
-                <p className="text-lg font-semibold">
-                  Send Agreement To Procurement
-                </p>
-                <p className="text-xs font-normal text-default-500">
-                  Review quotation files, upload agreement and send it back to
-                  procurement.
-                </p>
-              </div>
+              Send Agreement To Procurement
             </ModalHeader>
 
-            <ModalBody className="space-y-5 bg-default-50 py-5">
-              <Card className="border border-default-200 bg-white shadow-sm">
-                <CardBody className="p-4">
-                  <Input
-                    label="Legal Request"
-                    value={selectedRequest?.legalRequestTitle || "-"}
-                    isReadOnly
+            <ModalBody className="max-h-[72vh] space-y-4 overflow-y-auto py-5">
+              <Input
+                label="Legal Request"
+                value={selectedRequest?.legalRequestTitle || "-"}
+                isReadOnly
+              />
+
+              <div className="rounded-2xl border border-default-200 bg-default-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    Quotation Documents
+                  </p>
+                  <Chip size="sm" color="primary" variant="flat">
+                    {selectedQuotationDocuments.length} Files
+                  </Chip>
+                </div>
+                <QuotationDocumentLinks
+                  documents={selectedQuotationDocuments}
+                />
+              </div>
+
+              {sendToProcurementData.agreementFileUrl ? (
+                <div className="rounded-2xl border border-success-200 bg-success-50 p-4">
+                  <p className="mb-2 text-sm font-semibold text-foreground">
+                    Current Agreement
+                  </p>
+                  <FileLink
+                    href={sendToProcurementData.agreementFileUrl}
+                    label="View Existing Agreement PDF"
+                    color="success"
                   />
-                </CardBody>
-              </Card>
+                </div>
+              ) : null}
 
-              <Card className="border border-default-200 bg-white shadow-sm">
-                <CardBody className="p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        Quotation Documents
-                      </p>
-                      <p className="text-xs text-default-500">
-                        Legal team can refer these vendor quotation files.
-                      </p>
-                    </div>
-                    <Chip size="sm" color="primary" variant="flat">
-                      {selectedQuotationDocuments.length} Files
-                    </Chip>
-                  </div>
+              <FileUploader
+                isRequired
+                label="Agreement PDF"
+                value={sendToProcurementData.agreementFileUrl}
+                onChange={(value) =>
+                  setSendToProcurementData((prev) => ({
+                    ...prev,
+                    agreementFileUrl: getUploadedFileValue(value),
+                  }))
+                }
+              />
 
-                  <DocumentList
-                    documents={selectedQuotationDocuments}
-                    emptyText="No quotation documents uploaded."
-                  />
-                </CardBody>
-              </Card>
-
-              <Card className="border border-default-200 bg-white shadow-sm">
-                <CardBody className="space-y-4 p-4">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      Agreement Upload
-                    </p>
-                    <p className="text-xs text-default-500">
-                      Upload prepared agreement PDF to send it to procurement.
-                    </p>
-                  </div>
-
-                  <FileUploader
-                    isRequired
-                    label="Agreement PDF"
-                    value={sendToProcurementData.agreementFileUrl}
-                    onChange={(value) =>
-                      setSendToProcurementData((prev) => ({
-                        ...prev,
-                        agreementFileUrl: getUploadedFileValue(value),
-                      }))
-                    }
-                  />
-
-                  <Textarea
-                    label="Remarks"
-                    value={sendToProcurementData.remarks}
-                    onChange={(e) =>
-                      setSendToProcurementData((prev) => ({
-                        ...prev,
-                        remarks: e.target.value,
-                      }))
-                    }
-                  />
-                </CardBody>
-              </Card>
+              <Textarea
+                label="Remarks"
+                value={sendToProcurementData.remarks}
+                onChange={(e) =>
+                  setSendToProcurementData((prev) => ({
+                    ...prev,
+                    remarks: e.target.value,
+                  }))
+                }
+              />
             </ModalBody>
 
             <ModalFooter className="border-t">
@@ -979,19 +938,14 @@ const ProcurementVendors = () => {
                 isReadOnly
               />
 
-              {selectedRequest?.agreementFileUrl && (
-                <Button
-                  as="a"
-                  href={selectedRequest.agreementFileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  variant="flat"
-                  color="primary"
-                  startContent={<FileText size={16} />}
-                  endContent={<ExternalLink size={14} />}
-                >
-                  View Agreement PDF
-                </Button>
+              {selectedAgreementUrl ? (
+                <FileLink
+                  href={selectedAgreementUrl}
+                  label="View Agreement PDF"
+                  color="success"
+                />
+              ) : (
+                <Chip variant="flat">No Agreement PDF</Chip>
               )}
 
               <Input
