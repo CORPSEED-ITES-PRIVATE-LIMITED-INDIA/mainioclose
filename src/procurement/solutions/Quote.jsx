@@ -200,9 +200,6 @@ const vendorRegistrationDefaultValues = {
   paymentTerms: "",
   timelineDays: "",
   quotationValidityDays: "",
-  vendorBrochureAttachment: "",
-  priceListAttachment: "",
-  agreementAttachment: "",
   remarks: "",
 };
 
@@ -224,16 +221,6 @@ const vendorRegistrationSchema = z.object({
   timelineDays: z.string().min(1, "Please enter timeline"),
   quotationValidityDays: z.string().optional(),
 
-  vendorBrochureAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload vendor brochure",
-  }),
-  priceListAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload price list",
-  }),
-  agreementAttachment: z.any().refine((value) => Boolean(value), {
-    message: "Please upload agreement attachment",
-  }),
-
   remarks: z.string().optional(),
 });
 
@@ -245,7 +232,6 @@ const onboardingDefaultValues = {
   remarks: "",
   vendorRegistrationForm: "",
   signedNda: "",
-  signedAgreement: "",
 };
 
 const onboardingSchema = z.object({
@@ -258,7 +244,6 @@ const onboardingSchema = z.object({
     message: "Please upload vendor registration form",
   }),
   signedNda: z.any().optional(),
-  signedAgreement: z.any().optional(),
 });
 
 const legalRequestDefaultValues = {
@@ -977,9 +962,6 @@ const Quote = () => {
       paymentTerms: "",
       timelineDays: "",
       quotationValidityDays: "",
-      vendorBrochureAttachment: "",
-      priceListAttachment: "",
-      agreementAttachment: item?.agreementAttachment || "",
       remarks: "",
     });
 
@@ -1066,7 +1048,7 @@ const Quote = () => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "SUCCESS",
-          description: "Vendor finalized successfully.",
+          description: "Vendor Initiation Successful",
           color: "success",
         });
 
@@ -1153,11 +1135,6 @@ const Quote = () => {
         "Vendor Registration Form",
       ),
       buildDocumentPayload("SIGNED_NDA", values.signedNda, "Signed NDA"),
-      buildDocumentPayload(
-        "SIGNED_AGREEMENT",
-        values.signedAgreement,
-        "Signed Agreement",
-      ),
     ].filter(Boolean);
 
     if (documents.length === 0) {
@@ -1634,7 +1611,7 @@ const Quote = () => {
                   startContent={<Clock size={15} />}
                   onPress={() => handleOpenChatHistory(rowData)}
                 >
-                  Chat with Leagal
+                  Chat with Legal
                 </DropdownItem>
 
                 {rowData?.agreementFileUrl &&
@@ -2651,59 +2628,6 @@ const Quote = () => {
                       />
                     </div>
                   </div>
-
-                  <div className="mt-4 rounded-xl border bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Attachments
-                    </h3>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <Controller
-                        name="vendorBrochureAttachment"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Vendor Brochure"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="priceListAttachment"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Vendor Form"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="agreementAttachment"
-                        control={registerControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            isRequired
-                            label="Aggrement Attachment"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-                    </div>
-                  </div>
                 </div>
               </ModalBody>
 
@@ -3148,7 +3072,7 @@ const Quote = () => {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <Controller
                         name="vendorRegistrationForm"
                         control={onboardingControl}
@@ -3170,20 +3094,6 @@ const Quote = () => {
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
                             label="Signed NDA"
-                            value={field.value}
-                            onChange={(value) => field.onChange(value)}
-                            errorMessage={error?.message}
-                            isInvalid={!!error}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="signedAgreement"
-                        control={onboardingControl}
-                        render={({ field, fieldState: { error } }) => (
-                          <FileUploader
-                            label="Signed Agreement"
                             value={field.value}
                             onChange={(value) => field.onChange(value)}
                             errorMessage={error?.message}
