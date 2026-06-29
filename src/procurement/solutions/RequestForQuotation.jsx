@@ -248,7 +248,7 @@ const columns = [
   { name: "RFQ NO.", uid: "rfqNumber" },
   { name: "TITLE", uid: "title" },
   { name: "PRODUCT", uid: "productName" },
-  { name: "VENDOR", uid: "vendors" },
+  // { name: "VENDOR", uid: "vendors" },
   { name: "DATES", uid: "dates" },
   { name: "CONTACT", uid: "contact" },
   { name: "STATUS", uid: "status" },

@@ -542,6 +542,17 @@ export const getInvoicesByUnbilledId = createAsyncThunk(
   },
 );
 
+export const confirmEInvoice = createAsyncThunk(
+  "confirmEInvoice",
+  async ({ invoiceId,data }) => {
+    const response = await api.post(
+      `/accountService/api/v1/invoices/${invoiceId}/confirm-e-invoice`, 
+      data
+    );
+    return response.data;
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

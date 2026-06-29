@@ -34,9 +34,13 @@ import {
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { inrCurrency } from "../../common";
-import { getInvoiceDetailById } from "../../toolkit/slices/accountSlice";
+import {
+  getInvoiceDetailById,
+  confirmEInvoice,
+} from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
+import FileUploader from "../../components/FileUploader";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -71,8 +75,10 @@ const INITIAL_VISIBLE_COLUMNS = [
 const AllInvoice = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
+
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const viewModal = useDisclosure();
+  const confirmEInvoiceModal = useDisclosure();
 
   const data = useSelector((state) => state.organization.allInvoiceList);
   const count = useSelector(
@@ -100,10 +106,111 @@ const AllInvoice = () => {
   const [estimateDetail, setEstimateDetail] = useState(null);
   const [viewType, setViewType] = useState("ESTIMATE");
 
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
+
+  const [confirmEInvoiceForm, setConfirmEInvoiceForm] = useState({
+    remarks: "",
+    einvoiceAttachmentUrl: "",
+    einvoiceAckDate: "",
+    einvoiceIrn: "",
+    einvoiceAckNo: "",
+  });
+
   useEffect(() => {
     dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
     dispatch(getAllInvoiceCount({ userId, status }));
-  }, [dispatch, userId, status]);
+  }, [dispatch, userId, page, rowsPerPage, status]);
+
+  const handleConfirmFormChange = (field, value) => {
+    setConfirmEInvoiceForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const openConfirmEInvoiceModal = (rowData) => {
+    setSelectedInvoice(rowData);
+    setIsAttachmentUploading(false);
+
+    setConfirmEInvoiceForm({
+      remarks: "",
+      einvoiceAttachmentUrl: "",
+      einvoiceAckDate: dayjs().format("YYYY-MM-DDTHH:mm"),
+      einvoiceIrn: "",
+      einvoiceAckNo: "",
+    });
+
+    confirmEInvoiceModal.onOpen();
+  };
+
+  const handleSubmitConfirmEInvoice = async () => {
+    if (!selectedInvoice?.id) {
+      addToast({
+        title: "Invoice not selected",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (isAttachmentUploading) {
+      addToast({
+        title: "Please wait, attachment is uploading",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (
+      !confirmEInvoiceForm.einvoiceAttachmentUrl ||
+      !confirmEInvoiceForm.einvoiceAckDate ||
+      !confirmEInvoiceForm.einvoiceIrn ||
+      !confirmEInvoiceForm.einvoiceAckNo
+    ) {
+      addToast({
+        title: "Please fill all required E-Invoice fields",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      userId: Number(userId),
+      remarks: confirmEInvoiceForm.remarks,
+      einvoiceAttachmentUrl: confirmEInvoiceForm.einvoiceAttachmentUrl,
+      einvoiceAckDate: new Date(
+        confirmEInvoiceForm.einvoiceAckDate,
+      ).toISOString(),
+      einvoiceIrn: confirmEInvoiceForm.einvoiceIrn,
+      einvoiceAckNo: confirmEInvoiceForm.einvoiceAckNo,
+    };
+
+    try {
+      await dispatch(
+        confirmEInvoice({
+          invoiceId: selectedInvoice.id,
+          data: payload,
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "E-Invoice confirmed successfully",
+        color: "success",
+      });
+
+      confirmEInvoiceModal.onClose();
+      setSelectedInvoice(null);
+      setIsAttachmentUploading(false);
+
+      dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+      dispatch(getAllInvoiceCount({ userId, status }));
+    } catch (error) {
+      addToast({
+        title: "Failed to confirm E-Invoice",
+        color: "danger",
+      });
+    }
+  };
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -125,7 +232,7 @@ const AllInvoice = () => {
     }
 
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / rowsPerPage) || 1;
 
@@ -213,99 +320,114 @@ const AllInvoice = () => {
     viewModal.onOpen();
   };
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
 
-    switch (columnKey) {
-      case "date":
-        return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
-          </p>
-        );
-
-      case "invoiceNo":
-        return (
-          <div className="flex flex-col gap-1">
-            <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
-              onClick={() => handleViewTaxInvoice(rowData)}
-            >
-              {rowData?.invoiceNumber}
-            </p>
-          </div>
-        );
-
-      case "estimateNumber":
-        return (
-          <div>
-            <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
-              onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
-            >
-              {rowData?.estimateNumber || "NA"}
-            </p>
-          </div>
-        );
-
-      case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
-
-      case "clientName":
-        return <p className="text-sm capitalize">{rowData?.contactName}</p>;
-
-      case "companyName":
-        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
-
-      case "txnAmount":
-        return (
-          <div className="flex flex-col gap-1">
+      switch (columnKey) {
+        case "date":
+          return (
             <p className="text-sm capitalize">
-              {inrCurrency(rowData?.grandTotal)}
+              {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
             </p>
-            <div className="flex gap-1.5">
-              <span className="text-gray-500 text-tiny">GST</span>
-              <span className="text-gray-500 text-tiny">:</span>
-              <span className="text-gray-500 text-tiny">
-                {inrCurrency(rowData?.totalGstAmount)}
-              </span>
-            </div>
-          </div>
-        );
+          );
 
-      case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
-
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                selectionMode="single"
-                onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
-
-                  if (key == "viewEstimate") {
-                    handleViewEstimate(rowData, "ESTIMATE");
-                  }
-                }}
+        case "invoiceNo":
+          return (
+            <div className="flex flex-col gap-1">
+              <p
+                className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+                onClick={() => handleViewTaxInvoice(rowData)}
               >
-                <DropdownItem key="viewEstimate">Tax invoice</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+                {rowData?.invoiceNumber}
+              </p>
+            </div>
+          );
 
-      default:
-        return cellValue;
-    }
-  }, []);
+        case "estimateNumber":
+          return (
+            <div>
+              <p
+                className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+                onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+              >
+                {rowData?.estimateNumber || "NA"}
+              </p>
+            </div>
+          );
+
+        case "service":
+          return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
+
+        case "clientName":
+          return <p className="text-sm capitalize">{rowData?.contactName}</p>;
+
+        case "companyName":
+          return <p className="text-sm capitalize">{rowData?.companyName}</p>;
+
+        case "txnAmount":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm capitalize">
+                {inrCurrency(rowData?.grandTotal)}
+              </p>
+              <div className="flex gap-1.5">
+                <span className="text-gray-500 text-tiny">GST</span>
+                <span className="text-gray-500 text-tiny">:</span>
+                <span className="text-gray-500 text-tiny">
+                  {inrCurrency(rowData?.totalGstAmount)}
+                </span>
+              </div>
+            </div>
+          );
+
+        case "addedBy":
+          return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu
+                  selectionMode="single"
+                  onSelectionChange={(e) => {
+                    let key = Array.from(e)[0];
+
+                    if (key === "viewTaxInvoice") {
+                      handleViewTaxInvoice(rowData);
+                    }
+
+                    if (key === "viewEstimate") {
+                      handleViewEstimate(rowData, "ESTIMATE");
+                    }
+
+                    if (key === "confirmEInvoice") {
+                      openConfirmEInvoiceModal(rowData);
+                    }
+                  }}
+                >
+                  <DropdownItem key="viewTaxInvoice">Tax Invoice</DropdownItem>
+                  <DropdownItem key="viewEstimate">Estimate</DropdownItem>
+                  <DropdownItem key="confirmEInvoice">
+                    Confirm E Invoice
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return cellValue;
+      }
+    },
+    [userId],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -329,14 +451,16 @@ const AllInvoice = () => {
       if (value) {
         setFilterValue(value);
         setPage(1);
+
         dispatch(
           searchInvoiceByCompanyNameAndInvoice({
             ...searchFilters,
             searchText: value,
-            page,
+            page: 1,
             size: rowsPerPage,
           }),
         );
+
         dispatch(
           searchInvoiceCountByCompanyNameAndInvoice({
             ...searchFilters,
@@ -345,19 +469,22 @@ const AllInvoice = () => {
         );
       } else {
         setFilterValue("");
-        dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+        setPage(1);
+
+        dispatch(getAllInvoice({ userId, page: 1, size: rowsPerPage, status }));
         dispatch(getAllInvoiceCount({ userId, status }));
       }
     },
-    [searchFilters, page, rowsPerPage],
+    [dispatch, searchFilters, rowsPerPage, userId, status],
   );
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
     setPage(1);
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
+
+    dispatch(getAllInvoice({ userId, page: 1, size: rowsPerPage, status }));
     dispatch(getAllInvoiceCount({ userId, status }));
-  }, []);
+  }, [dispatch, userId, rowsPerPage, status]);
 
   const topContent = React.useMemo(() => {
     return (
@@ -409,6 +536,7 @@ const AllInvoice = () => {
                 onSelectionChange={(e) => {
                   let key = Array.from(e)[0];
                   setStatus(key);
+                  setPage(1);
                 }}
               >
                 <DropdownItem key="GENERATED">GENERATED</DropdownItem>
@@ -418,6 +546,9 @@ const AllInvoice = () => {
                 <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
                 <DropdownItem key="CREDIT_NOTED">CREDIT_NOTED</DropdownItem>
+                <DropdownItem key="E_INVOICE_CONFIRMED">
+                  E_INVOICE_CONFIRMED
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
 
@@ -472,7 +603,7 @@ const AllInvoice = () => {
     onRowsPerPageChange,
     count,
     onSearchChange,
-    hasSearchFilter,
+    onClear,
     status,
     searchFilters,
   ]);
@@ -517,7 +648,7 @@ const AllInvoice = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, onPreviousPage, onNextPage]);
 
   return (
     <>
@@ -597,6 +728,109 @@ const AllInvoice = () => {
 
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={confirmEInvoiceModal.isOpen}
+        onOpenChange={confirmEInvoiceModal.onOpenChange}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Confirm E Invoice</ModalHeader>
+
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Invoice Number"
+                    value={selectedInvoice?.invoiceNumber || ""}
+                    isReadOnly
+                  />
+
+                  <Input
+                    label="User ID"
+                    value={String(userId || "")}
+                    isReadOnly
+                  />
+
+                  <Input
+                    label="E-Invoice ACK Date"
+                    type="datetime-local"
+                    isRequired
+                    value={confirmEInvoiceForm.einvoiceAckDate}
+                    onValueChange={(value) =>
+                      handleConfirmFormChange("einvoiceAckDate", value)
+                    }
+                  />
+
+                  <Input
+                    label="E-Invoice ACK No"
+                    isRequired
+                    value={confirmEInvoiceForm.einvoiceAckNo}
+                    onValueChange={(value) =>
+                      handleConfirmFormChange("einvoiceAckNo", value)
+                    }
+                  />
+
+                  <Input
+                    label="E-Invoice IRN"
+                    isRequired
+                    className="md:col-span-2"
+                    value={confirmEInvoiceForm.einvoiceIrn}
+                    onValueChange={(value) =>
+                      handleConfirmFormChange("einvoiceIrn", value)
+                    }
+                  />
+
+                  <div className="md:col-span-2">
+                    <FileUploader
+                      label="E-Invoice Attachment"
+                      isRequired
+                      value={confirmEInvoiceForm.einvoiceAttachmentUrl}
+                      uploadingType="single"
+                      placeholder="Upload E-Invoice attachment"
+                      onUploadingChange={setIsAttachmentUploading}
+                      onChange={(uploadedUrl) =>
+                        handleConfirmFormChange(
+                          "einvoiceAttachmentUrl",
+                          uploadedUrl,
+                        )
+                      }
+                    />
+                  </div>
+
+                  <Input
+                    label="Remarks"
+                    className="md:col-span-2"
+                    value={confirmEInvoiceForm.remarks}
+                    onValueChange={(value) =>
+                      handleConfirmFormChange("remarks", value)
+                    }
+                  />
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+
+                <Button
+                  color="primary"
+                  isDisabled={isAttachmentUploading}
+                  onPress={handleSubmitConfirmEInvoice}
+                >
+                  {isAttachmentUploading ? "Uploading..." : "Confirm E Invoice"}
+                </Button>
               </ModalFooter>
             </>
           )}
