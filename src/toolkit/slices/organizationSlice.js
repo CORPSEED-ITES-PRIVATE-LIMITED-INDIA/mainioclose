@@ -947,6 +947,74 @@ export const deleteLedger = createAsyncThunk(
   },
 );
 
+export const getAccountingVouchers = createAsyncThunk(
+  "accountingVoucher/getAccountingVouchers",
+  async (
+    {
+      voucherType = "",
+      sourceType = "",
+      status = "",
+      fromDate = "",
+      toDate = "",
+      page = 1,
+      size = 20,
+    } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        page,
+        size,
+      };
+
+      if (voucherType) {
+        params.voucherType = voucherType;
+      }
+
+      if (sourceType) {
+        params.sourceType = sourceType;
+      }
+
+      if (status) {
+        params.status = status;
+      }
+
+      if (fromDate) {
+        params.fromDate = fromDate;
+      }
+
+      if (toDate) {
+        params.toDate = toDate;
+      }
+
+      const response = await api.get(
+        "/accountService/api/v1/accounting-vouchers",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const createAccountingVoucher = createAsyncThunk(
+  "accountingVoucher/createAccountingVoucher",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/accountService/api/v1/accounting-vouchers",
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -1026,6 +1094,21 @@ const OrganizationSlice = createSlice({
     saving: false,
     deletingId: null,
     error: "",
+
+    accountingVoucherList: [],
+    accountingVoucherPage: {},
+    accountingVoucherTotalElements: 0,
+    accountingVoucherTotalPages: 0,
+    accountingVoucherPageNumber: 0,
+    accountingVoucherPageSize: 20,
+    accountingVoucherNumberOfElements: 0,
+    accountingVoucherFirst: true,
+    accountingVoucherLast: true,
+    accountingVoucherEmpty: true,
+
+    accountingVoucherLoading: "",
+    createAccountingVoucherLoading: "",
+    accountingVoucherError: "",
   },
   reducers: {
     setSelectedLedgerId: (state, action) => {
@@ -1793,6 +1876,51 @@ const OrganizationSlice = createSlice({
         state.deletingId = null;
         state.error = action.payload || "Failed to delete ledger";
       });
+
+    builder.addCase(getAccountingVouchers.pending, (state) => {
+      state.accountingVoucherLoading = "pending";
+      state.accountingVoucherError = "";
+    });
+
+    builder.addCase(getAccountingVouchers.fulfilled, (state, action) => {
+      const data = action.payload || {};
+
+      state.accountingVoucherLoading = "success";
+      state.accountingVoucherList = Array.isArray(data.content)
+        ? data.content
+        : [];
+
+      state.accountingVoucherPage = data.pageable || {};
+      state.accountingVoucherTotalElements = data.totalElements || 0;
+      state.accountingVoucherTotalPages = data.totalPages || 0;
+      state.accountingVoucherPageNumber = data.number || 0;
+      state.accountingVoucherPageSize = data.size || 20;
+      state.accountingVoucherNumberOfElements = data.numberOfElements || 0;
+      state.accountingVoucherFirst = data.first ?? true;
+      state.accountingVoucherLast = data.last ?? true;
+      state.accountingVoucherEmpty = data.empty ?? true;
+    });
+
+    builder.addCase(getAccountingVouchers.rejected, (state, action) => {
+      state.accountingVoucherLoading = "failed";
+      state.accountingVoucherError =
+        action.payload || "Failed to fetch accounting vouchers";
+    });
+
+    builder.addCase(createAccountingVoucher.pending, (state) => {
+      state.createAccountingVoucherLoading = "pending";
+      state.accountingVoucherError = "";
+    });
+
+    builder.addCase(createAccountingVoucher.fulfilled, (state) => {
+      state.createAccountingVoucherLoading = "success";
+    });
+
+    builder.addCase(createAccountingVoucher.rejected, (state, action) => {
+      state.createAccountingVoucherLoading = "failed";
+      state.accountingVoucherError =
+        action.payload || "Failed to create accounting voucher";
+    });
   },
 });
 

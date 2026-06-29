@@ -165,7 +165,7 @@ const CreditNote = () => {
     direction: "descending",
   });
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("PENDING");
+  const [status, setStatus] = useState("PENDING_ACCOUNT_REVIEW");
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const [rejectModal, setRejectModal] = useState({

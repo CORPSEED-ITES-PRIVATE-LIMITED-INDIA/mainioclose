@@ -129,6 +129,12 @@ export const navItems = [
         url: "accounts/procurementPurchaseOrders",
         key: "procurementPurchaseOrders",
       },
+      {
+        title: "Vendor details",
+        url: "accounts/vendorDetails",
+        key: "vendorDetails",
+        icon: "User",
+      },
 
       // {
       //   title: "Estimate",
@@ -501,6 +507,12 @@ export const accountNavItems = [
     url: "accounts/creditNote",
     key: "creditnote",
     icon: "FileText",
+  },
+  {
+    title: "Vendor details",
+    url: "accounts/vendorDetails",
+    key: "vendorDetails",
+    icon: "User",
   },
 
   // {

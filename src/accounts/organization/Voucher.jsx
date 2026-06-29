@@ -22,6 +22,7 @@ import {
   ModalFooter,
   Select,
   SelectItem,
+  Chip,
 } from "@heroui/react";
 import {
   ChevronDown,
@@ -29,31 +30,26 @@ import {
   IndianRupee,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createVoucher,
-  deleteVoucherById,
-  getAllLedger,
-  getAllLedgerType,
-  getAllVoucher,
-  getAllVoucherType,
-  getLedgerById,
-  getLedgerTypeById,
+  createAccountingVoucher,
+  getAccountingVouchers,
+  fetchLedgers,
 } from "../../toolkit/slices/organizationSlice";
 import NewSelect from "../../components/NewSelect";
 import { inrCurrency, safeNum } from "../../common";
 
 export const columns = [
-  { name: "ID", uid: "id" },
-  { name: "LEDGER", uid: "ledgerName", sortable: true },
+  { name: "VOUCHER NO", uid: "voucherNumber", sortable: true },
   { name: "VOUCHER TYPE", uid: "voucherType" },
+  { name: "SOURCE", uid: "sourceType" },
+  { name: "DATE", uid: "voucherDate", sortable: true },
+  { name: "STATUS", uid: "status" },
   { name: "AMOUNT", uid: "amount" },
-  { name: "CREDIT GST", uid: "creditGst" },
-  { name: "DEBIT GST", uid: "debitGst" },
-  { name: "TOTAL AMOUNT", uid: "totalAmount" },
-  { name: "PAYMENT TYPE", uid: "paymentType" },
-  { name: "PRODUCT", uid: "product" },
+  { name: "ENTRIES", uid: "entries" },
+  { name: "NARRATION", uid: "narration" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -62,76 +58,179 @@ export function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "ledgerName",
+  "voucherNumber",
   "voucherType",
+  "sourceType",
+  "voucherDate",
+  "status",
   "amount",
-  "creditGst",
-  "debitGst",
-  "totalAmount",
-  "paymentType",
+  "entries",
   "actions",
 ];
+
+const voucherTypeOptions = [
+  "RECEIPT",
+  "SALES_INVOICE",
+  "ADVANCE_ADJUSTMENT",
+  "CREDIT_NOTE",
+  "REFUND",
+  "JOURNAL",
+  "CONTRA",
+  "PAYMENT",
+];
+
+const sourceTypeOptions = [
+  "PAYMENT_RECEIPT",
+  "INVOICE",
+  "UNBILLED_INVOICE",
+  "CREDIT_NOTE",
+  "REFUND",
+  "MANUAL",
+];
+
+const statusOptions = ["DRAFT", "POSTED", "CANCELLED", "REVERSED"];
+
+const defaultVoucherData = {
+  voucherType: "RECEIPT",
+  voucherDate: new Date().toISOString().slice(0, 10),
+  sourceType: "MANUAL",
+  sourceId: "",
+  narration: "",
+};
+
+const defaultEntries = [
+  {
+    ledgerId: "",
+    debitAmount: "",
+    creditAmount: "",
+    narration: "",
+  },
+  {
+    ledgerId: "",
+    debitAmount: "",
+    creditAmount: "",
+    narration: "",
+  },
+];
+
+const getApiErrorMessage = (error) => {
+  return (
+    error?.message ||
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    "Something went wrong"
+  );
+};
 
 const Voucher = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const deleteModal = useDisclosure();
-  const data = useSelector((state) => state.organization.voucherList);
-  const count = useSelector((state) => state.organization.voucherList)?.length;
-  const ledgerList = useSelector((state) => state.organization.ledgerList);
-  const voucherTypeList = useSelector(
-    (state) => state.organization.voucherTypeList,
+
+  const accountingVoucherList = useSelector(
+    (state) => state.organization.accountingVoucherList,
   );
-  const ledgerDetail = useSelector((state) => state.organization.ledgerDetail);
-  const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
-  const [visibleColumns, setVisibleColumns] = React.useState(
+  const accountingVoucherTotalElements = useSelector(
+    (state) => state.organization.accountingVoucherTotalElements,
+  );
+  const accountingVoucherTotalPages = useSelector(
+    (state) => state.organization.accountingVoucherTotalPages,
+  );
+  const accountingVoucherLoading = useSelector(
+    (state) => state.organization.accountingVoucherLoading,
+  );
+  const accountingVoucherSaving = useSelector(
+    (state) => state.organization.accountingVoucherSaving,
+  );
+  const ledgerApiList = useSelector((state) => state.organization.ledgers);
+  const legacyLedgerList = useSelector(
+    (state) => state.organization.ledgerList,
+  );
+
+  const [filterValue, setFilterValue] = useState("");
+  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
-  const [rowsPerPage, setRowsPerPage] = React.useState(50);
-  const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
-    direction: "ascending",
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "voucherDate",
+    direction: "descending",
   });
-  const [renderedGSTData, setRenderedGstData] = useState([]);
-  const [voucherData, setVoucherData] = useState({
-    companyName: "",
-    ledgerId: null,
-    ledgerTypeId: null,
-    voucherTypeId: null,
-    productId: null,
-    creditAmount: "",
-    debitAmount: "",
-    createDate: "",
-    paymentType: null,
-    igst: "",
-    cgst: "",
-    sgst: "",
-    cgstsgst: false,
-    creditDebit: true,
-  });
+
+  const [voucherTypeFilter, setVoucherTypeFilter] = useState("");
+  const [sourceTypeFilter, setSourceTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const [voucherData, setVoucherData] = useState(defaultVoucherData);
+  const [entries, setEntries] = useState(defaultEntries);
   const [editData, setEditData] = useState(null);
-  const [itemId, setItemId] = useState(null);
-  const [page, setPage] = React.useState(1);
-  const hasSearchFilter = Boolean(filterValue);
+  const [page, setPage] = useState(1);
+
+  const data = Array.isArray(accountingVoucherList)
+    ? accountingVoucherList
+    : [];
+  const count = Number(accountingVoucherTotalElements || data.length || 0);
+  const pages = Number(accountingVoucherTotalPages || 1);
+
+  const ledgerListOption = useMemo(() => {
+    const list = Array.isArray(ledgerApiList)
+      ? ledgerApiList
+      : Array.isArray(legacyLedgerList)
+        ? legacyLedgerList
+        : [];
+
+    return list.map((ledger) => ({
+      ...ledger,
+      displayName: `${ledger.ledgerName || ledger.name || "-"}${
+        ledger.ledgerCode ? ` (${ledger.ledgerCode})` : ""
+      }`,
+    }));
+  }, [ledgerApiList, legacyLedgerList]);
+
+  const totalDebit = useMemo(() => {
+    return entries.reduce((sum, entry) => sum + safeNum(entry.debitAmount), 0);
+  }, [entries]);
+
+  const totalCredit = useMemo(() => {
+    return entries.reduce((sum, entry) => sum + safeNum(entry.creditAmount), 0);
+  }, [entries]);
+
+  const difference = totalDebit - totalCredit;
+
+  const fetchVoucherList = useCallback(() => {
+    dispatch(
+      getAccountingVouchers({
+        voucherType: voucherTypeFilter,
+        sourceType: sourceTypeFilter,
+        status: statusFilter,
+        fromDate,
+        toDate,
+        page,
+        size: rowsPerPage,
+      }),
+    );
+  }, [
+    dispatch,
+    voucherTypeFilter,
+    sourceTypeFilter,
+    statusFilter,
+    fromDate,
+    toDate,
+    page,
+    rowsPerPage,
+  ]);
 
   useEffect(() => {
-    dispatch(getAllVoucher());
-  }, [dispatch]);
+    fetchVoucherList();
+  }, [fetchVoucherList]);
 
   useEffect(() => {
-    dispatch(getAllLedgerType());
-    dispatch(getAllVoucherType());
-    dispatch(getAllLedger({ page: 1, size: 500 }));
+    dispatch(fetchLedgers({ page: 1, size: 500, active: "true" }));
   }, [dispatch]);
 
-  const ledgerListOption = useMemo(() => ledgerList, [ledgerList]);
-  const voucherTypeListOption = useMemo(
-    () => voucherTypeList,
-    [voucherTypeList],
-  );
-
-  const headerColumns = React.useMemo(() => {
+  const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
@@ -139,359 +238,258 @@ const Voucher = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...data];
+  const filteredItems = useMemo(() => {
+    const list = [...data];
 
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-        ),
+    if (!filterValue.trim()) return list;
+
+    const keyword = filterValue.toLowerCase();
+
+    return list.filter((item) => {
+      return (
+        item.voucherNumber?.toLowerCase().includes(keyword) ||
+        item.voucherType?.toLowerCase().includes(keyword) ||
+        item.sourceType?.toLowerCase().includes(keyword) ||
+        item.status?.toLowerCase().includes(keyword) ||
+        item.narration?.toLowerCase().includes(keyword) ||
+        item.entries?.some((entry) =>
+          String(entry.ledgerName || "")
+            .toLowerCase()
+            .includes(keyword),
+        )
       );
-    }
-
-    return filteredUsers;
+    });
   }, [data, filterValue]);
 
-  const pages = Math.ceil(count / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
+  const sortedItems = useMemo(() => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
-  const handlePressEnter = (e) => {
-    const creditCgstAmount =
-      (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.cgst)) / 100;
-    const creditSgstAmount =
-      (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.sgst)) / 100;
-    const creditIgstAmount =
-      (safeNum(voucherData?.creditAmount) * safeNum(ledgerDetail?.igst)) / 100;
-    const debitCgstAmount =
-      (safeNum(voucherData?.debitAmount) * safeNum(ledgerDetail?.cgst)) / 100;
-    const debitSgstAmount =
-      (safeNum(voucherData?.debitAmount) * safeNum(ledgerDetail?.sgst)) / 100;
-    const debitIgstAmount =
-      (safeNum(voucherData?.debitAmount) * safeNum(ledgerDetail?.igst)) / 100;
-    if (ledgerDetail?.cgstSgstPresent) {
-      setRenderedGstData([
-        {
-          idx: 2,
-          perticulars: "CGST",
-          rate: ledgerDetail?.cgst,
-          debitAmount: debitCgstAmount,
-          creditAmount: creditCgstAmount,
-        },
-        {
-          idx: 3,
-          perticulars: "SGST",
-          rate: ledgerDetail?.sgst,
-          debitAmount: debitSgstAmount,
-          creditAmount: creditSgstAmount,
-        },
-        {
-          idx: "",
-          perticulars: "Total amount",
-          rate: "",
-          debitAmount:
-            safeNum(debitCgstAmount) +
-            safeNum(debitSgstAmount) +
-            safeNum(voucherData?.debitAmount),
-          creditAmount:
-            safeNum(creditCgstAmount) +
-            safeNum(creditSgstAmount) +
-            safeNum(voucherData?.creditAmount),
-        },
-      ]);
-    }
-    if (ledgerDetail?.igstPresent) {
-      setRenderedGstData([
-        {
-          idx: 2,
-          perticulars: "IGST",
-          rate: ledgerDetail?.igst,
-          debitAmount: debitIgstAmount,
-          creditAmount: creditIgstAmount,
-        },
-        {
-          idx: "",
-          perticulars: "Total amount",
-          rate: "",
-          debitAmount:
-            safeNum(debitIgstAmount) + safeNum(voucherData?.debitAmount),
-          creditAmount:
-            safeNum(creditIgstAmount) + safeNum(voucherData?.creditAmount),
-        },
-      ]);
-    }
-    setVoucherData((prev) => ({
-      ...prev,
-      companyName: ledgerDetail?.name,
-      igst: ledgerDetail?.igst,
-      sgst: ledgerDetail?.sgst,
-      cgst: ledgerDetail?.sgst,
-    }));
+  const resetVoucherForm = () => {
+    setVoucherData(defaultVoucherData);
+    setEntries(defaultEntries);
+    setEditData(null);
   };
 
-  const handleSetGst = (ledgerDetail, voucherData) => {
-    const creditCgstAmount =
-      (Number(voucherData?.creditAmount) * Number(ledgerDetail?.cgst)) / 100;
-    const creditSgstAmount =
-      (Number(voucherData?.creditAmount) * Number(ledgerDetail?.sgst)) / 100;
-    const creditIgstAmount =
-      (Number(voucherData?.creditAmount) * Number(ledgerDetail?.igst)) / 100;
-    const debitCgstAmount =
-      (Number(voucherData?.debitAmount) * Number(ledgerDetail?.cgst)) / 100;
-    const debitSgstAmount =
-      (Number(voucherData?.debitAmount) * Number(ledgerDetail?.sgst)) / 100;
-    const debitIgstAmount =
-      (Number(voucherData?.debitAmount) * Number(ledgerDetail?.igst)) / 100;
-    if (ledgerDetail?.cgstSgstPresent) {
-      setRenderedGstData([
-        {
-          idx: 2,
-          perticulars: "CGST",
-          rate: ledgerDetail?.cgst,
-          debitAmount: debitCgstAmount,
-          creditAmount: creditCgstAmount,
-        },
-        {
-          idx: 3,
-          perticulars: "SGST",
-          rate: ledgerDetail?.sgst,
-          debitAmount: debitSgstAmount,
-          creditAmount: creditSgstAmount,
-        },
-        {
-          idx: "",
-          perticulars: "Total amount",
-          rate: "",
-          debitAmount:
-            debitCgstAmount +
-            debitSgstAmount +
-            Number(voucherData?.debitAmount),
-          creditAmount:
-            creditCgstAmount +
-            creditSgstAmount +
-            Number(voucherData?.creditAmount),
-        },
-      ]);
-    }
-    if (ledgerDetail?.igstPresent) {
-      setRenderedGstData([
-        {
-          idx: 2,
-          perticulars: "IGST",
-          rate: ledgerDetail?.igst,
-          debitAmount: debitIgstAmount,
-          creditAmount: creditIgstAmount,
-        },
-        {
-          idx: "",
-          perticulars: "Total amount",
-          rate: "",
-          debitAmount: debitIgstAmount + Number(voucherData?.debitAmount),
-          creditAmount: creditIgstAmount + Number(voucherData?.creditAmount),
-        },
-      ]);
-    }
-    setVoucherData((prev) => ({
-      ...prev,
-      companyName: ledgerDetail?.name,
-      igst: ledgerDetail?.igst,
-      sgst: ledgerDetail?.sgst,
-      cgst: ledgerDetail?.sgst,
-    }));
+  const handleOpenCreate = () => {
+    resetVoucherForm();
+    onOpen();
   };
 
-  const openDeleteModal = (id) => {
-    setItemId(id);
-    deleteModal.onOpen();
+  const updateEntry = (index, key, value) => {
+    setEntries((previousEntries) =>
+      previousEntries.map((entry, entryIndex) =>
+        entryIndex === index
+          ? {
+              ...entry,
+              [key]: value,
+            }
+          : entry,
+      ),
+    );
   };
 
-  const handleDeleteVoucher = useCallback(() => {
-    dispatch(deleteVoucherById(itemId))
-      .then((response) => {
-        if (response.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Voucher deleted successfully !.",
-            color: "success",
-          });
-          dispatch(getAllVoucher());
-          deleteModal.onClose();
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+  const addEntryRow = () => {
+    setEntries((previousEntries) => [
+      ...previousEntries,
+      {
+        ledgerId: "",
+        debitAmount: "",
+        creditAmount: "",
+        narration: "",
+      },
+    ]);
+  };
+
+  const removeEntryRow = (index) => {
+    if (entries.length <= 2) {
+      addToast({
+        title: "Minimum 2 entries are required",
+        color: "danger",
       });
-  }, [dispatch, itemId]);
+      return;
+    }
 
-  const handleEdit = (value) => {
-    setEditData(value);
-    onOpen(true);
-    dispatch(getLedgerById(value?.productId)).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        handleSetGst(resp.payload, { ...voucherData, ...value });
-      }
-    });
-    setVoucherData((prev) => ({ ...prev, ...value }));
+    setEntries((previousEntries) =>
+      previousEntries.filter((_, entryIndex) => entryIndex !== index),
+    );
   };
 
-  const handleSubmit = useCallback(() => {
-    dispatch(
-      createVoucher({
-        ...voucherData,
-        igstCreditAmount:
-          renderedGSTData?.[0]?.perticulars === "IGST"
-            ? renderedGSTData?.[0]?.creditAmount
-            : 0,
-        igstDebitAmount:
-          renderedGSTData?.[0]?.perticulars === "IGST"
-            ? renderedGSTData?.[0]?.debitAmount
-            : 0,
-        cgstCreditAmount:
-          renderedGSTData?.[0]?.perticulars === "CGST"
-            ? renderedGSTData?.[0]?.creditAmount
-            : 0,
-        cgstDebitAmount:
-          renderedGSTData?.[0]?.perticulars === "CGST"
-            ? renderedGSTData?.[0]?.debitAmount
-            : 0,
-        sgstCreditAmount:
-          renderedGSTData?.[1]?.perticulars === "SGST"
-            ? renderedGSTData?.[1]?.creditAmount
-            : 0,
-        sgstDebitAmount:
-          renderedGSTData?.[1]?.perticulars === "SGST"
-            ? renderedGSTData?.[1]?.debitAmount
-            : 0,
-        totalAmount:
-          renderedGSTData?.[1]?.perticulars === "Total amount"
-            ? renderedGSTData?.[1]?.creditAmount -
-              renderedGSTData?.[1]?.debitAmount
-            : 0 || renderedGSTData?.[2]?.perticulars === "Total amount"
-              ? renderedGSTData?.[2]?.creditAmount -
-                renderedGSTData?.[2]?.debitAmount
-              : 0,
-      }),
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Voucher created successfully !.",
-            color: "success",
-          });
-          dispatch(getAllVoucher());
-          onClose();
-          setRenderedGstData([]);
-          setVoucherData({
-            companyName: "",
-            ledgerId: null,
-            ledgerTypeId: null,
-            voucherTypeId: null,
-            productId: null,
-            creditAmount: "",
-            debitAmount: "",
-            createDate: "",
-            paymentType: null,
-            igst: "",
-            cgst: "",
-            sgst: "",
-            cgstsgst: false,
-            creditDebit: true,
-          });
-        } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
-      );
-  }, [dispatch, voucherData, renderedGSTData]);
+  const buildPayload = () => {
+    return {
+      voucherType: voucherData.voucherType,
+      voucherDate: voucherData.voucherDate,
+      sourceType: voucherData.sourceType,
+      sourceId: voucherData.sourceId ? Number(voucherData.sourceId) : 0,
+      narration: voucherData.narration || "",
+      entries: entries.map((entry) => ({
+        ledgerId: Number(entry.ledgerId),
+        debitAmount: safeNum(entry.debitAmount),
+        creditAmount: safeNum(entry.creditAmount),
+        narration: entry.narration || "",
+      })),
+    };
+  };
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
+  const validateVoucher = () => {
+    if (!voucherData.voucherType) return "Voucher type is required";
+    if (!voucherData.voucherDate) return "Voucher date is required";
+    if (!voucherData.sourceType) return "Source type is required";
+
+    if (entries.length < 2) {
+      return "At least 2 voucher entries are required";
+    }
+
+    const invalidEntry = entries.find((entry) => {
+      const debitAmount = safeNum(entry.debitAmount);
+      const creditAmount = safeNum(entry.creditAmount);
+
+      return (
+        !entry.ledgerId ||
+        (debitAmount <= 0 && creditAmount <= 0) ||
+        (debitAmount > 0 && creditAmount > 0)
+      );
+    });
+
+    if (invalidEntry) {
+      return "Each row must have ledger and either debit or credit amount";
+    }
+
+    if (totalDebit <= 0 || totalCredit <= 0) {
+      return "Voucher must have both debit and credit entries";
+    }
+
+    if (Number(difference.toFixed(2)) !== 0) {
+      return "Total debit and total credit must be equal";
+    }
+
+    return "";
+  };
+
+  const handleSubmit = useCallback(async () => {
+    const validationError = validateVoucher();
+
+    if (validationError) {
+      addToast({ title: validationError, color: "danger" });
+      return;
+    }
+
+    try {
+      const payload = buildPayload();
+
+      await dispatch(createAccountingVoucher(payload)).unwrap();
+
+      addToast({
+        title: "Voucher created successfully!",
+        color: "success",
+      });
+
+      fetchVoucherList();
+      resetVoucherForm();
+      onClose();
+    } catch (error) {
+      addToast({
+        title: getApiErrorMessage(error),
+        color: "danger",
+      });
+    }
+  }, [
+    dispatch,
+    voucherData,
+    entries,
+    totalDebit,
+    totalCredit,
+    difference,
+    fetchVoucherList,
+    onClose,
+  ]);
+
+  const renderCell = useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
+
     switch (columnKey) {
-      case "ledgerName":
+      case "voucherNumber":
         return (
-          <span className="text-sm font-medium capitalize">
-            {rowData?.ledgerName}
+          <span className="text-sm font-medium">
+            {rowData?.voucherNumber || "-"}
           </span>
         );
+
       case "voucherType":
+        return <p className="text-sm">{rowData?.voucherType || "-"}</p>;
+
+      case "sourceType":
         return (
-          <p className="text-sm capitalize">
-            {rowData?.voucherType?.name || "-"}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">{rowData?.sourceType || "-"}</p>
+            <p className="text-xs text-default-400">
+              Source ID: {rowData?.sourceId ?? "-"}
+            </p>
+          </div>
         );
+
+      case "voucherDate":
+        return <p className="text-sm">{rowData?.voucherDate || "-"}</p>;
+
+      case "status":
+        return (
+          <Chip
+            size="sm"
+            color={rowData?.status === "POSTED" ? "success" : "default"}
+            variant="flat"
+          >
+            {rowData?.status || "-"}
+          </Chip>
+        );
+
       case "amount":
         return (
           <div className="flex flex-col gap-1">
             <p className="text-sm">
-              Credit : {inrCurrency(rowData?.creditAmount) || "-"}
+              Debit: {inrCurrency(rowData?.totalDebit) || "-"}
             </p>
             <p className="text-sm">
-              Debit : {inrCurrency(rowData?.debitAmount) || "-"}
+              Credit: {inrCurrency(rowData?.totalCredit) || "-"}
             </p>
           </div>
         );
-      case "creditGst":
+
+      case "entries":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm">
-              SGST : {inrCurrency(rowData?.sgstCreditAmount) || "-"}
-            </p>
-            <p className="text-sm">
-              CGST : {inrCurrency(rowData?.cgstCreditAmount) || "-"}
-            </p>
-            <p className="text-sm">
-              IGST : {inrCurrency(rowData?.igstCreditAmount) || "-"}
-            </p>
+            {(rowData?.entries || []).slice(0, 3).map((entry) => (
+              <p
+                key={entry.id || `${entry.ledgerId}-${entry.displayOrder}`}
+                className="text-xs"
+              >
+                {entry.debitAmount > 0 ? "Dr" : "Cr"} {entry.ledgerName || "-"}{" "}
+                - {inrCurrency(entry.debitAmount || entry.creditAmount)}
+              </p>
+            ))}
+            {(rowData?.entries || []).length > 3 && (
+              <p className="text-xs text-default-400">
+                +{rowData.entries.length - 3} more
+              </p>
+            )}
           </div>
         );
-      case "debitGst":
+
+      case "narration":
         return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">
-              SGST : {inrCurrency(rowData?.sgstDebitAmount) || "-"}
-            </p>
-            <p className="text-sm">
-              CGST : {inrCurrency(rowData?.cgstDebitAmount) || "-"}
-            </p>
-            <p className="text-sm">
-              IGST : {inrCurrency(rowData?.igstDebitAmount) || "-"}
-            </p>
-          </div>
-        );
-      case "totalAmount":
-        return (
-          <p className="text-sm capitalize">
-            {inrCurrency(rowData?.totalAmount) || "-"}
+          <p className="max-w-[250px] truncate text-sm">
+            {rowData?.narration || "-"}
           </p>
         );
-      case "paymentType":
-        return (
-          <p className="text-sm capitalize">{rowData?.paymentType || "-"}</p>
-        );
-      case "product":
-        return <p className="text-sm capitalize">{rowData?.product || "-"}</p>;
+
       case "actions":
         return (
-          <div className="relative flex justify-center items-center gap-2">
+          <div className="relative flex items-center justify-center gap-2">
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
@@ -500,70 +498,67 @@ const Voucher = () => {
               </DropdownTrigger>
               <DropdownMenu
                 selectionMode="single"
-                onSelectionChange={(e) => {
-                  if (Array.from(e)[0] == "edit") {
-                    handleEdit(rowData);
-                  }
-                  if (Array.from(e)[0] == "delete") {
-                    openDeleteModal(rowData?.id);
+                onSelectionChange={(keys) => {
+                  const selectedAction = Array.from(keys)[0];
+
+                  if (selectedAction === "view") {
+                    addToast({
+                      title: "Voucher entries are shown in the Entries column",
+                      color: "primary",
+                    });
                   }
                 }}
               >
-                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
-                <DropdownItem key="delete" color="danger">
-                  Delete
-                </DropdownItem>
+                <DropdownItem key="view">View Entries</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
         );
+
       default:
-        return cellValue;
+        return cellValue || "-";
     }
   }, []);
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) {
-      setPage(page + 1);
-    }
+  const onNextPage = useCallback(() => {
+    if (page < pages) setPage(page + 1);
   }, [page, pages]);
 
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
+  const onPreviousPage = useCallback(() => {
+    if (page > 1) setPage(page - 1);
   }, [page]);
 
-  const onRowsPerPageChange = React.useCallback((e) => {
+  const onRowsPerPageChange = useCallback((e) => {
     setRowsPerPage(Number(e.target.value));
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value) => {
+    setFilterValue(value || "");
+    setPage(1);
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const handleFilterChange = (setter) => (value) => {
+    setter(value);
+    setPage(1);
+  };
+
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+        <div className="flex items-end justify-between gap-3">
           <Input
             isClearable
             className="w-full sm:max-w-[35%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -594,28 +589,86 @@ const Voucher = () => {
             <Button
               color="primary"
               endContent={<Plus />}
-              onPress={() => {
-                onOpen();
-                setEditData(null);
-                setItemId(null);
-              }}
+              onPress={handleOpenCreate}
             >
               Add voucher
             </Button>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+          <Select
+            label="Voucher type"
+            size="sm"
+            selectedKeys={[voucherTypeFilter]}
+            onSelectionChange={(keys) =>
+              handleFilterChange(setVoucherTypeFilter)(Array.from(keys)[0])
+            }
+          >
+            <SelectItem key="ALL">All</SelectItem>
+            {voucherTypeOptions.map((type) => (
+              <SelectItem key={type}>{type}</SelectItem>
+            ))}
+          </Select>
+
+          <Select
+            label="Source type"
+            size="sm"
+            selectedKeys={[sourceTypeFilter]}
+            onSelectionChange={(keys) =>
+              handleFilterChange(setSourceTypeFilter)(Array.from(keys)[0])
+            }
+          >
+            <SelectItem key="ALL">All</SelectItem>
+            {sourceTypeOptions.map((type) => (
+              <SelectItem key={type}>{type}</SelectItem>
+            ))}
+          </Select>
+
+          <Select
+            label="Status"
+            size="sm"
+            selectedKeys={[statusFilter]}
+            onSelectionChange={(keys) =>
+              handleFilterChange(setStatusFilter)(Array.from(keys)[0])
+            }
+          >
+            <SelectItem key="ALL">All</SelectItem>
+            {statusOptions.map((status) => (
+              <SelectItem key={status}>{status}</SelectItem>
+            ))}
+          </Select>
+
+          <Input
+            label="From date"
+            size="sm"
+            type="date"
+            value={fromDate}
+            onValueChange={handleFilterChange(setFromDate)}
+          />
+
+          <Input
+            label="To date"
+            size="sm"
+            type="date"
+            value={toDate}
+            onValueChange={handleFilterChange(setToDate)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-small text-default-400">
             Total {count} vouchers
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center text-small text-default-400">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent text-small text-default-400 outline-hidden"
               value={rowsPerPage}
               onChange={onRowsPerPageChange}
             >
               <option value="15">15</option>
+              <option value="20">20</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
@@ -626,15 +679,21 @@ const Voucher = () => {
   }, [
     filterValue,
     visibleColumns,
-    onRowsPerPageChange,
+    voucherTypeFilter,
+    sourceTypeFilter,
+    statusFilter,
+    fromDate,
+    toDate,
+    rowsPerPage,
     count,
+    onRowsPerPageChange,
     onSearchChange,
-    hasSearchFilter,
+    onClear,
   ]);
 
-  const bottomContent = React.useMemo(() => {
+  const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
+      <div className="flex items-center justify-between px-2 py-2">
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
@@ -649,7 +708,7 @@ const Voucher = () => {
           total={pages}
           onChange={setPage}
         />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -669,72 +728,85 @@ const Voucher = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, count, page, pages, onPreviousPage, onNextPage]);
 
-  const tableTopContent = React.useMemo(() => {
+  const tableTopContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-start gap-3">
-          <NewSelect
-            label={"Select voucher type"}
-            data={voucherTypeListOption}
-            labelKey={"name"}
-            valueKey={"id"}
-            value={String(voucherData?.voucherTypeId)}
-            onChange={(e) =>
-              setVoucherData((prev) => ({ ...prev, voucherTypeId: e }))
-            }
-          />
-          <NewSelect
-            label={"Select ledger"}
-            data={ledgerListOption}
-            labelKey={"name"}
-            valueKey={"id"}
-            value={String(voucherData?.ledgerId)}
-            onChange={(e) => {
-              dispatch(getLedgerById(e));
-              setVoucherData((prev) => ({ ...prev, ledgerId: e }));
-            }}
-          />
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
           <Select
-            className="max-w-xs"
-            items={[
-              { label: "Cash", key: "Cash" },
-              { label: "UPI", key: "UPI" },
-              { label: "NetBanking", key: "NetBanking" },
-            ]}
-            label="Payment type"
-            selectionMode="single"
-            selectedKeys={[voucherData?.paymentType]}
-            onSelectionChange={(e) => {
-              let key = Array.from(e)[0];
-              setVoucherData((prev) => ({ ...prev, paymentType: key }));
+            label="Voucher type"
+            selectedKeys={
+              voucherData.voucherType ? [voucherData.voucherType] : []
+            }
+            onSelectionChange={(keys) => {
+              const key = Array.from(keys)[0];
+              setVoucherData((prev) => ({ ...prev, voucherType: key }));
             }}
           >
-            {(item) => <SelectItem>{item.label}</SelectItem>}
+            {voucherTypeOptions.map((type) => (
+              <SelectItem key={type}>{type}</SelectItem>
+            ))}
           </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground ">Party A/C holder name</span>
-          <span>:</span>
-          <span className="font-medium">{ledgerDetail?.accountHolderName}</span>
+
+          <Input
+            label="Voucher date"
+            type="date"
+            value={voucherData.voucherDate}
+            onValueChange={(value) =>
+              setVoucherData((prev) => ({ ...prev, voucherDate: value }))
+            }
+          />
+
+          <Select
+            label="Source type"
+            selectedKeys={
+              voucherData.sourceType ? [voucherData.sourceType] : []
+            }
+            onSelectionChange={(keys) => {
+              const key = Array.from(keys)[0];
+              setVoucherData((prev) => ({ ...prev, sourceType: key }));
+            }}
+          >
+            {sourceTypeOptions.map((type) => (
+              <SelectItem key={type}>{type}</SelectItem>
+            ))}
+          </Select>
+
+          <Input
+            label="Source ID"
+            type="number"
+            value={voucherData.sourceId}
+            onValueChange={(value) =>
+              setVoucherData((prev) => ({ ...prev, sourceId: value }))
+            }
+          />
+
+          <Input
+            label="Narration"
+            value={voucherData.narration}
+            onValueChange={(value) =>
+              setVoucherData((prev) => ({ ...prev, narration: value }))
+            }
+          />
         </div>
       </div>
     );
-  }, [voucherTypeListOption, ledgerDetail, voucherData]);
+  }, [voucherData]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vouchers list</h1>
+      <h1 className="mb-1 font-sans text-2xl font-medium">Vouchers list</h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Accounting vouchers table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] w-full overflow-auto",
           table: "w-full",
         }}
+        isLoading={accountingVoucherLoading}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
@@ -752,7 +824,7 @@ const Voucher = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+        <TableBody emptyContent="No data found" items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -762,6 +834,7 @@ const Voucher = () => {
           )}
         </TableBody>
       </Table>
+
       <Modal
         size="full"
         isDismissable={false}
@@ -771,141 +844,124 @@ const Voucher = () => {
         placement="top-center"
       >
         <ModalContent>
-          {(onClose) => (
+          {(modalClose) => (
             <>
               <ModalHeader>
                 {editData ? "Update voucher" : "Add voucher"}
               </ModalHeader>
               <ModalBody className="max-h-[70vh] overflow-auto">
                 <Table
-                  aria-label="Example static collection table"
+                  aria-label="Create accounting voucher table"
                   topContent={tableTopContent}
                 >
                   <TableHeader>
-                    <TableColumn width={100}>S.No</TableColumn>
-                    <TableColumn>PERTICULARS</TableColumn>
-                    <TableColumn width={100}>RATE %</TableColumn>
-                    <TableColumn width={230}>CREDIT AMOUNT</TableColumn>
+                    <TableColumn width={80}>S.No</TableColumn>
+                    <TableColumn>LEDGER</TableColumn>
+                    <TableColumn>NARRATION</TableColumn>
                     <TableColumn width={230}>DEBIT AMOUNT</TableColumn>
+                    <TableColumn width={230}>CREDIT AMOUNT</TableColumn>
+                    <TableColumn width={80}>ACTION</TableColumn>
                   </TableHeader>
                   <TableBody>
-                    <TableRow key="1">
-                      <TableCell>1.</TableCell>
-                      <TableCell>
-                        <NewSelect
-                          label={"Select product"}
-                          data={ledgerListOption}
-                          labelKey={"name"}
-                          valueKey={"id"}
-                          value={voucherData?.productId}
-                          onChange={(e) => {
-                            setVoucherData((prev) => ({
-                              ...prev,
-                              productId: e,
-                            }));
-                          }}
-                        />
+                    {entries.map((entry, index) => (
+                      <TableRow key={`entry-${index}`}>
+                        <TableCell>{index + 1}.</TableCell>
+                        <TableCell>
+                          <NewSelect
+                            label="Select ledger"
+                            data={ledgerListOption}
+                            labelKey="displayName"
+                            valueKey="id"
+                            value={String(entry.ledgerId || "")}
+                            onChange={(value) =>
+                              updateEntry(index, "ledgerId", value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            placeholder="Entry narration"
+                            value={entry.narration}
+                            onValueChange={(value) =>
+                              updateEntry(index, "narration", value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            startContent={<IndianRupee className="h-4 w-4" />}
+                            type="number"
+                            value={entry.debitAmount}
+                            onValueChange={(value) => {
+                              updateEntry(index, "debitAmount", value);
+                              if (safeNum(value) > 0) {
+                                updateEntry(index, "creditAmount", "");
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            startContent={<IndianRupee className="h-4 w-4" />}
+                            type="number"
+                            value={entry.creditAmount}
+                            onValueChange={(value) => {
+                              updateEntry(index, "creditAmount", value);
+                              if (safeNum(value) > 0) {
+                                updateEntry(index, "debitAmount", "");
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            isIconOnly
+                            color="danger"
+                            size="sm"
+                            variant="light"
+                            onPress={() => removeEntryRow(index)}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow key="total-row">
+                      <TableCell></TableCell>
+                      <TableCell className="font-medium">Total</TableCell>
+                      <TableCell
+                        className={
+                          difference === 0 ? "text-success" : "text-danger"
+                        }
+                      >
+                        Difference: {inrCurrency(Math.abs(difference))}
+                      </TableCell>
+                      <TableCell className="font-medium pl-6">
+                        {inrCurrency(totalDebit)}
+                      </TableCell>
+                      <TableCell className="font-medium pl-6">
+                        {inrCurrency(totalCredit)}
                       </TableCell>
                       <TableCell></TableCell>
-                      <TableCell>
-                        <Input
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          type="number"
-                          value={voucherData?.creditAmount}
-                          onChange={(e) => {
-                            setVoucherData((prev) => ({
-                              ...prev,
-                              creditAmount: e.target.value,
-                            }));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handlePressEnter();
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          startContent={<IndianRupee className="h-4 w-4" />}
-                          type="number"
-                          value={voucherData?.debitAmount}
-                          onChange={(e) =>
-                            setVoucherData((prev) => ({
-                              ...prev,
-                              debitAmount: e.target.value,
-                            }))
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handlePressEnter();
-                            }
-                          }}
-                        />
-                      </TableCell>
                     </TableRow>
-                    {renderedGSTData?.map((item, idx) => {
-                      return renderedGSTData?.length - 1 === idx ? (
-                        <TableRow className="border" key={`${idx + 2}`}>
-                          <TableCell>{idx + 2}</TableCell>
-                          <TableCell className="font-medium">
-                            {item?.perticulars}
-                          </TableCell>
-                          <TableCell>{item?.rate}</TableCell>
-                          <TableCell className="font-medium pl-6">
-                            {inrCurrency(item?.creditAmount)}
-                          </TableCell>
-                          <TableCell className="font-medium pl-6">
-                            {inrCurrency(item?.debitAmount)}
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        <TableRow key={`${idx + 2}`}>
-                          <TableCell>{idx + 2}</TableCell>
-                          <TableCell>{item?.perticulars}</TableCell>
-                          <TableCell className="pl-6">{item?.rate}</TableCell>
-                          <TableCell className="pl-6">
-                            {inrCurrency(item?.creditAmount)}
-                          </TableCell>
-                          <TableCell className="pl-6">
-                            {inrCurrency(item?.debitAmount)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
                   </TableBody>
                 </Table>
-                <ModalFooter className="flex justify-end items-center gap-2">
-                  <Button onPress={onClose}>Cancel</Button>
-                  <Button onPress={handleSubmit} color="primary">
-                    Submit
+                <ModalFooter className="flex items-center justify-between gap-2">
+                  <Button variant="flat" onPress={addEntryRow}>
+                    Add Entry Row
                   </Button>
+                  <div className="flex items-center gap-2">
+                    <Button onPress={modalClose}>Cancel</Button>
+                    <Button
+                      onPress={handleSubmit}
+                      color="primary"
+                      isLoading={accountingVoucherSaving}
+                    >
+                      Submit
+                    </Button>
+                  </div>
                 </ModalFooter>
               </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      <Modal
-        isOpen={deleteModal.isOpen}
-        onOpenChange={deleteModal.onOpenChange}
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-              <ModalBody>
-                <p>Are you sure to delete this item ?</p>
-              </ModalBody>
-              <ModalFooter>
-                <Button onPress={onClose}>No</Button>
-                <Button color="primary" onPress={handleDeleteVoucher}>
-                  Yes
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>

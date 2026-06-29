@@ -35,6 +35,7 @@ import PurchaseOrder from "../accounts/PurchaseOrder";
 import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
 import Ledger from "../accounts/ledgers/Ledger";
 import LedgerEntriesPage from "../accounts/ledgers/LedgerEntriesPage";
+import VendorDetails from "../accounts/vendorDetails/VendorDetails";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -45,6 +46,7 @@ export const AccountsModuleRouting = () => {
         path="accounts/companyApprovals/:companyId/units"
         element={<CompanyUnitsInAccount />}
       />
+      <Route path="accounts/vendorDetails" element={<VendorDetails />} />
       <Route path="accounts/creditNote" element={<CreditNote />} />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
