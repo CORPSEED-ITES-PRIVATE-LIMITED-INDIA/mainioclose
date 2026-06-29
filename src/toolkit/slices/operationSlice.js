@@ -1297,6 +1297,24 @@ export const updateResponsibleManagerReopenDecision = createAsyncThunk(
     }
   },
 );
+export const sendVendorDetailsToAccounts = createAsyncThunk(
+  "sendVendorDetailsToAccounts",
+  async ({ finalizationId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/vendor-finalizations/${finalizationId}/send-to-accounts`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          "Failed to Send Vendor Details to Accounts",
+      );
+    }
+  },
+);
 
 export const OperationSlice = createSlice({
   name: "operation",

@@ -552,6 +552,14 @@ export const confirmEInvoice = createAsyncThunk(
     return response.data;
   },
 );
+export const getAllVendorDetails = createAsyncThunk(
+  "getAllVendorDetails",
+  async () => {
+    const response = await api.get(
+      `/operationService/api/vendor-finalizations/accounts`);
+    return response.data;
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -576,6 +584,7 @@ const AccountSlice = createSlice({
     procurementPurchaseOrderList: [],
     procurementPaymentRequestList: [],
     invoicesByUnbilled: [],
+    vendorsDetails: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -827,6 +836,16 @@ const AccountSlice = createSlice({
     builder.addCase(getInvoicesByUnbilledId.rejected, (state) => {
       state.loading = "rejected";
       state.invoicesByUnbilled = [];
+    });
+    builder.addCase(getAllVendorDetails.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllVendorDetails.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorsDetails = action.payload || [];
+    });
+    builder.addCase(getAllVendorDetails.rejected, (state) => {
+      state.loading = "rejected";
     });
   },
 });

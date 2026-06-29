@@ -71,6 +71,7 @@ import {
   getUsersByDepartment,
   sendAgreementToVendor,
   getAllVendorQuotationLegalRequests,
+  sendVendorDetailsToAccounts,
 } from "../../toolkit/slices/operationSlice";
 
 const columns = [
@@ -276,6 +277,18 @@ const vendorAgreementSchema = z.object({
   remarks: z.string().optional(),
 });
 
+const sendToAccountsDefaultValues = {
+  finalVendorAttachmentUrl: "",
+  finalVendorRemarks: "",
+};
+
+const sendToAccountsSchema = z.object({
+  finalVendorAttachmentUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload final vendor form / attachment",
+  }),
+  finalVendorRemarks: z.string().optional(),
+});
+
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.content)) return response.content;
@@ -316,6 +329,7 @@ const Quote = () => {
   const onboardingModal = useDisclosure();
   const legalRequestModal = useDisclosure();
   const sendAgreementModal = useDisclosure();
+  const sendToAccountsModal = useDisclosure();
 
   const {
     control: quotationControl,
@@ -374,6 +388,16 @@ const Quote = () => {
   } = useForm({
     resolver: zodResolver(vendorAgreementSchema),
     defaultValues: vendorAgreementDefaultValues,
+  });
+
+  const {
+    control: sendToAccountsControl,
+    handleSubmit: handleSendToAccountsSubmit,
+    reset: resetSendToAccountsForm,
+    formState: { errors: sendToAccountsErrors },
+  } = useForm({
+    resolver: zodResolver(sendToAccountsSchema),
+    defaultValues: sendToAccountsDefaultValues,
   });
 
   const [quotationResponse, setQuotationResponse] = useState(null);
@@ -1016,7 +1040,7 @@ const Quote = () => {
 
     const payload = {
       quotationId: selectedquote.id,
-      quotationItemId: selectedquote.items[0].id,
+      quotationItemId: firstQuotationItem.id,
       rfqId: selectedquote.rfqId,
       rfqVendorId: selectedquote.rfqVendorId,
       vendorId: selectedquote.vendorId,
@@ -1434,6 +1458,137 @@ const Quote = () => {
     });
   };
 
+  const handleOpenSendToAccounts = useCallback(
+    (quotation) => {
+      if (!quotation?.id) {
+        addToast({
+          title: "ERROR",
+          description: "Quotation ID is missing.",
+          color: "danger",
+        });
+        return;
+      }
+
+      const finalization = getFinalizationForQuotation(quotation);
+
+      if (!finalization?.id) {
+        addToast({
+          title: "ERROR",
+          description:
+            "Vendor finalization ID is missing. Please initiate agreement first.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (quotation?.status !== "AGREEMENT_SENT_TO_VENDOR") {
+        addToast({
+          title: "ERROR",
+          description:
+            "Send agreement to vendor before sending final vendor details to accounts.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (finalization?.sentToAccounts) {
+        addToast({
+          title: "Already sent",
+          description: "Final vendor details are already sent to accounts.",
+          color: "warning",
+        });
+        return;
+      }
+
+      setSelectedQuotation(quotation);
+      setSelectedVendorFinalization(finalization);
+      resetSendToAccountsForm(sendToAccountsDefaultValues);
+      sendToAccountsModal.onOpen();
+    },
+    [getFinalizationForQuotation, resetSendToAccountsForm, sendToAccountsModal],
+  );
+
+  const onSubmitSendToAccounts = (values) => {
+    const resolvedUserId =
+      currentUser?.id ||
+      currentUser?.userId ||
+      currentUser?.employeeId ||
+      userId;
+
+    if (!selectedVendorFinalization?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Vendor finalization ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "ERROR",
+        description: "User ID is missing. Please login again.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const finalVendorAttachmentUrl = getUploadedFileValue(
+      values.finalVendorAttachmentUrl,
+    );
+
+    if (!finalVendorAttachmentUrl) {
+      addToast({
+        title: "ERROR",
+        description: "Please upload final vendor form / attachment.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const body = {
+      finalVendorAttachmentUrl,
+      finalVendorRemarks: values.finalVendorRemarks || "",
+      userId: Number(resolvedUserId),
+    };
+
+    setSubmitLoading(true);
+
+    dispatch(
+      sendVendorDetailsToAccounts({
+        finalizationId: Number(selectedVendorFinalization.id),
+        data: body,
+      }),
+    ).then((resp) => {
+      setSubmitLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Final vendor details sent to accounts successfully.",
+          color: "success",
+        });
+
+        sendToAccountsModal.onClose();
+        resetSendToAccountsForm(sendToAccountsDefaultValues);
+        setSelectedQuotation(null);
+        setSelectedVendorFinalization(null);
+        fetchVendorFinalizations();
+        fetchQuotations();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            "Failed to send final vendor details to accounts.",
+          color: "danger",
+        });
+      }
+    });
+  };
+
   const renderCell = useCallback(
     (rowData, columnKey) => {
       switch (columnKey) {
@@ -1589,6 +1744,10 @@ const Quote = () => {
           const existingLegalRequest = getLegalRequestForQuotation(rowData);
           const onboardingStarted =
             finalization?.status === "ONBOARDING_STARTED";
+          const canSendToAccounts =
+            rowData?.status === "AGREEMENT_SENT_TO_VENDOR" &&
+            finalization?.id &&
+            !finalization?.sentToAccounts;
 
           return (
             <Dropdown>
@@ -1624,6 +1783,27 @@ const Quote = () => {
                       Send Agreement To Vendor
                     </DropdownItem>
                   )}
+
+                {rowData?.status === "AGREEMENT_SENT_TO_VENDOR" &&
+                  finalization?.sentToAccounts && (
+                    <DropdownItem
+                      key="sentToAccounts"
+                      startContent={<FileText size={15} />}
+                      isDisabled
+                    >
+                      Sent To Accounts
+                    </DropdownItem>
+                  )}
+
+                {canSendToAccounts && (
+                  <DropdownItem
+                    key="sendToAccounts"
+                    startContent={<Send size={15} />}
+                    onPress={() => handleOpenSendToAccounts(rowData)}
+                  >
+                    Send To Accounts
+                  </DropdownItem>
+                )}
 
                 {!finalization ? (
                   <DropdownItem
@@ -1675,6 +1855,7 @@ const Quote = () => {
       handleView,
       handleOpenLegalRequest,
       handleOpenSendAgreementToVendor,
+      handleOpenSendToAccounts,
     ],
   );
 
@@ -1913,8 +2094,7 @@ const Quote = () => {
                   </p>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    {Array.isArray(selectedQuotation?.quotationAttachmentUrl) &&
-                    selectedQuotation.quotationAttachmentUrl.length > 0 ? (
+                    {getQuotationDocuments(selectedQuotation).length > 0 ? (
                       <div className="flex flex-col gap-2">
                         {getQuotationDocuments(selectedQuotation).map(
                           (doc, index) => (
@@ -2891,6 +3071,103 @@ const Quote = () => {
 
                 <Button color="primary" type="submit" isLoading={submitLoading}>
                   Send To Vendor
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={sendToAccountsModal.isOpen}
+        onOpenChange={(open) => {
+          sendToAccountsModal.onOpenChange(open);
+
+          if (!open) {
+            resetSendToAccountsForm(sendToAccountsDefaultValues);
+          }
+        }}
+        size="2xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Send To Accounts
+                </h2>
+                <p className="mt-1 text-xs font-normal text-default-500">
+                  Upload final vendor form and remarks for accounts team.
+                </p>
+              </div>
+            </ModalHeader>
+
+            <form onSubmit={handleSendToAccountsSubmit(onSubmitSendToAccounts)}>
+              <ModalBody className="space-y-4 px-6 py-5">
+                <Input
+                  label="Quotation"
+                  value={selectedQuotation?.quotationNumber || "-"}
+                  isReadOnly
+                />
+
+                <Input
+                  label="Vendor"
+                  value={
+                    selectedVendorFinalization?.vendorName ||
+                    selectedQuotation?.vendorName ||
+                    "-"
+                  }
+                  isReadOnly
+                />
+
+                <Controller
+                  name="finalVendorAttachmentUrl"
+                  control={sendToAccountsControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <FileUploader
+                      isRequired
+                      label="Final Vendor Form / Attachment"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="finalVendorRemarks"
+                  control={sendToAccountsControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Remarks For Accounts"
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      isInvalid={!!sendToAccountsErrors.finalVendorRemarks}
+                      errorMessage={
+                        sendToAccountsErrors.finalVendorRemarks?.message
+                      }
+                    />
+                  )}
+                />
+              </ModalBody>
+
+              <ModalFooter className="border-t px-6 py-4">
+                <Button
+                  variant="flat"
+                  type="button"
+                  onPress={() => {
+                    sendToAccountsModal.onClose();
+                    resetSendToAccountsForm(sendToAccountsDefaultValues);
+                    setSelectedVendorFinalization(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button color="primary" type="submit" isLoading={submitLoading}>
+                  Send To Accounts
                 </Button>
               </ModalFooter>
             </form>
