@@ -3356,7 +3356,7 @@ const Quote = () => {
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
                             isRequired
-                            label="Vendor Registration Form"
+                            label="Vendor Agreement"
                             value={field.value}
                             onChange={(value) => field.onChange(value)}
                             errorMessage={error?.message}
@@ -3370,7 +3370,7 @@ const Quote = () => {
                         control={onboardingControl}
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
-                            label="Signed NDA"
+                            label=" NDA"
                             value={field.value}
                             onChange={(value) => field.onChange(value)}
                             errorMessage={error?.message}
