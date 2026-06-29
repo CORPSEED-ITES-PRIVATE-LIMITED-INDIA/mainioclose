@@ -44,6 +44,7 @@ import {
   EllipsisVertical,
   ExternalLink,
   Eye,
+  File,
   FilePlusIcon,
   FileText,
   Paperclip,
@@ -72,7 +73,11 @@ import {
   sendAgreementToVendor,
   getAllVendorQuotationLegalRequests,
   sendVendorDetailsToAccounts,
+  startOperationChat,
+  sendOperationChatMessage,
+  getOperationChatMessages,
 } from "../../toolkit/slices/operationSlice";
+import { getAllUsers } from "../../toolkit/slices/commonSlice";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -98,17 +103,17 @@ const INITIAL_VISIBLE_COLUMNS = [
 
 const dummyLegalChatUsers = [
   {
-    id: 101,
+    id: 5,
     fullName: "Shaurya Legal",
     email: "shaurya.legal@corpseed.com",
   },
   {
-    id: 102,
+    id: 6,
     fullName: "Legal Manager",
     email: "legal.manager@corpseed.com",
   },
   {
-    id: 103,
+    id: 7,
     fullName: "Agreement Team",
     email: "agreement.team@corpseed.com",
   },
@@ -308,6 +313,63 @@ const getTotalElements = (response, fallbackLength = 0) => {
   );
 };
 
+const LEGAL_CHAT_CONTEXT_TYPE = "LEGAL_REQUEST";
+const LEGAL_CHAT_REFERENCE_ID = 1; // for now, as required
+
+const normalizeChatMessages = (response) => {
+  const content = Array.isArray(response?.content)
+    ? response.content
+    : Array.isArray(response)
+      ? response
+      : [];
+
+  // Backend returns latest first. Chat UI needs oldest first.
+  return [...content].reverse();
+};
+
+const getResolvedUserId = (currentUser, routeUserId) => {
+  return (
+    currentUser?.id ||
+    currentUser?.userId ||
+    currentUser?.employeeId ||
+    routeUserId ||
+    ""
+  );
+};
+
+const getResolvedUserName = (currentUser) => {
+  return (
+    currentUser?.fullName ||
+    currentUser?.name ||
+    currentUser?.employeeName ||
+    "Corpseed"
+  );
+};
+
+const getChatAttachmentUrl = (file) => {
+  return (
+    file?.fileUrl ||
+    file?.filePath ||
+    file?.url ||
+    file?.path ||
+    file?.location ||
+    ""
+  );
+};
+
+const normalizeChatAttachmentPayload = (file) => {
+  if (!file) return null;
+
+  const fileUrl = getChatAttachmentUrl(file);
+
+  return {
+    fileUrl,
+    fileName: file?.fileName || file?.name || "attachment",
+    fileType: file?.fileType || file?.type || "file",
+    fileSize: Number(file?.fileSize || file?.size || 0),
+  };
+};
+
 const Quote = () => {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -316,6 +378,7 @@ const Quote = () => {
 
   const currentUser = useSelector((state) => state.auth.currentUser);
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+  const userList = useSelector((state) => state.common.usersList);
   const legalDepartmentUsers = useSelector(
     (state) => state.operation.departmentUsers || [],
   );
@@ -428,45 +491,22 @@ const Quote = () => {
   const fileInputRef = useRef(null);
 
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [chatConversationId, setChatConversationId] = useState(null);
   const [chatMessage, setChatMessage] = useState("");
   const [chatAttachment, setChatAttachment] = useState(null);
   const [selectedQuoteItem, setSelectedQuoteItem] = useState(null);
-  const [chatList, setChatList] = useState([
-    {
-      id: 1,
-      sender: "vendor",
-      senderName: "Balaji Traders",
-      message: "Quotation request received for 12A Registration.",
-      time: "10:15 AM",
-      attachment: null,
-    },
-    {
-      id: 2,
-      sender: "me",
-      senderName: "Corpseed",
-      message:
-        "Please share quotation with commercials, timeline and payment terms.",
-      time: "10:18 AM",
-      attachment: null,
-    },
-    {
-      id: 3,
-      sender: "vendor",
-      senderName: "Balaji Traders",
-      message: "Sure, we will share the quotation shortly.",
-      time: "10:22 AM",
-      attachment: null,
-    },
-  ]);
-  const [selectedChatPersonId, setSelectedChatPersonId] = useState("101");
+  const [chatList, setChatList] = useState([]);
+  const [selectedChatPersonId, setSelectedChatPersonId] = useState("5");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
 
   const legalChatUsers = useMemo(() => {
     const apiUsers = Array.isArray(legalDepartmentUsers)
       ? legalDepartmentUsers
       : [];
 
-    return apiUsers.length > 0 ? apiUsers : dummyLegalChatUsers;
-  }, [legalDepartmentUsers]);
+    return apiUsers.length > 0 ? apiUsers : userList;
+  }, [legalDepartmentUsers, userList]);
 
   const selectedChatPerson = useMemo(() => {
     return (
@@ -547,6 +587,7 @@ const Quote = () => {
 
   useEffect(() => {
     dispatch(getAllPaymentType());
+    dispatch(getAllUsers());
   }, [dispatch]);
 
   useEffect(() => {
@@ -926,45 +967,167 @@ const Quote = () => {
     });
   }, []);
 
+  const fetchChatMessages = useCallback(
+    async (conversationId) => {
+      const resolvedUserId = getResolvedUserId(currentUser, userId);
+
+      if (!conversationId || !resolvedUserId) return;
+
+      try {
+        setChatLoading(true);
+
+        const resp = await dispatch(
+          getOperationChatMessages({
+            conversationId: Number(conversationId),
+            userId: Number(resolvedUserId),
+            page: 0,
+            size: 30,
+          }),
+        ).unwrap();
+
+        setChatList(normalizeChatMessages(resp));
+      } catch (error) {
+        addToast({
+          title: "Failed to fetch chat messages",
+          description: error?.message || error || "Please try again.",
+          color: "danger",
+        });
+      } finally {
+        setChatLoading(false);
+      }
+    },
+    [currentUser, dispatch, userId],
+  );
+
   const handleOpenChatHistory = (rowData) => {
     setSelectedQuoteItem(rowData);
+    setChatConversationId(null);
+    setChatList([]);
+    setChatMessage("");
+    setChatAttachment(null);
     setChatDrawerOpen(true);
   };
 
-  const handleSubmitChat = () => {
+  const handleStartLegalChat = async () => {
+    const resolvedUserId = getResolvedUserId(currentUser, userId);
+    const receiverId = selectedChatPersonId || selectedChatPerson?.id;
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "Created by user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!receiverId) {
+      addToast({
+        title: "Please select legal person",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+
+      const resp = await dispatch(
+        startOperationChat({
+          contextType: LEGAL_CHAT_CONTEXT_TYPE,
+          referenceId: LEGAL_CHAT_REFERENCE_ID,
+          createdBy: Number(resolvedUserId),
+          receiverId: Number(receiverId),
+        }),
+      ).unwrap();
+
+      const conversationId = resp?.id;
+
+      if (!conversationId) {
+        throw new Error("Conversation ID not received from start chat API");
+      }
+
+      setChatConversationId(conversationId);
+      await fetchChatMessages(conversationId);
+    } catch (error) {
+      addToast({
+        title: "Failed to start legal chat",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleSubmitChat = async () => {
     const message = chatMessage.trim();
+    const resolvedUserId = getResolvedUserId(currentUser, userId);
 
     if (!message && !chatAttachment) return;
 
-    const attachmentData = chatAttachment
-      ? {
-          name: chatAttachment.name,
-          size: chatAttachment.size,
-          type: chatAttachment.type,
-          url: URL.createObjectURL(chatAttachment),
-        }
-      : null;
+    if (!chatConversationId) {
+      addToast({
+        title: "Please start chat first",
+        color: "warning",
+      });
+      return;
+    }
 
-    setChatList((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        sender: "me",
-        senderName: "Corpseed",
-        receiverId: selectedChatPerson?.id || null,
-        receiverName: selectedChatPerson?.fullName || "Legal User",
-        receiverEmail: selectedChatPerson?.email || "",
-        message,
-        time: dayjs().format("hh:mm A"),
-        attachment: attachmentData,
-      },
-    ]);
+    if (!resolvedUserId) {
+      addToast({
+        title: "Sender user is missing",
+        color: "danger",
+      });
+      return;
+    }
 
-    setChatMessage("");
-    setChatAttachment(null);
+    const attachmentPayload = normalizeChatAttachmentPayload(chatAttachment);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (chatAttachment && !attachmentPayload?.fileUrl) {
+      addToast({
+        title: "Please upload the file first",
+        description:
+          "Chat attachment API requires fileUrl. Use FileUploader/S3 URL before sending attachment.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      senderId: Number(resolvedUserId),
+      senderName: getResolvedUserName(currentUser),
+      messageType: attachmentPayload ? "TEXT_WITH_ATTACHMENT" : "TEXT",
+      message,
+      replyToMessageId: 0,
+      attachments: attachmentPayload ? [attachmentPayload] : [],
+    };
+
+    try {
+      setChatSending(true);
+
+      await dispatch(
+        sendOperationChatMessage({
+          conversationId: Number(chatConversationId),
+          data: payload,
+        }),
+      ).unwrap();
+
+      setChatMessage("");
+      setChatAttachment(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      await fetchChatMessages(chatConversationId);
+    } catch (error) {
+      addToast({
+        title: "Message sending failed",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatSending(false);
     }
   };
 
@@ -3419,9 +3582,9 @@ const Quote = () => {
                 </h2>
 
                 <p className="text-xs text-gray-500">
-                  {selectedQuoteItem?.vendorName
-                    ? `Vendor: ${selectedQuoteItem.vendorName}`
-                    : "Dummy vendor communication timeline"}
+                  {chatConversationId
+                    ? `Conversation ID: ${chatConversationId}`
+                    : `Reference: ${LEGAL_CHAT_CONTEXT_TYPE}-${LEGAL_CHAT_REFERENCE_ID}`}
                 </p>
               </div>
 
@@ -3435,218 +3598,249 @@ const Quote = () => {
               </Button>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4">
-              {chatList.map((chat) => {
-                const isMine = chat.sender === "me";
+            {!chatConversationId ? (
+              <div className="flex flex-1 items-center justify-center bg-gray-50 p-5">
+                <div className="w-full max-w-md rounded-2xl border bg-white p-5 shadow-sm">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    Start legal chat
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select a legal user first. The start API will return the
+                    conversation ID.
+                  </p>
 
-                return (
-                  <div
-                    key={chat.id}
-                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
-                        isMine
-                          ? "rounded-br-sm bg-primary text-white"
-                          : "rounded-bl-sm border bg-white text-gray-900"
-                      }`}
+                  <div className="mt-4">
+                    <Select
+                      label="Select legal person"
+                      selectedKeys={
+                        selectedChatPersonId
+                          ? new Set([String(selectedChatPersonId)])
+                          : new Set([])
+                      }
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)?.[0];
+                        setSelectedChatPersonId(
+                          selected ? String(selected) : "",
+                        );
+                      }}
                     >
-                      <p
-                        className={`mb-1 text-[11px] font-semibold ${
-                          isMine ? "text-white/80" : "text-gray-500"
-                        }`}
-                      >
-                        {chat.senderName}
-                      </p>
-
-                      {isMine && chat.receiverName && (
-                        <p className="mb-1 text-[10px] text-white/70">
-                          To: {chat.receiverName}
-                        </p>
-                      )}
-
-                      {chat.message && (
-                        <p className="whitespace-pre-wrap text-sm leading-5">
-                          {chat.message}
-                        </p>
-                      )}
-
-                      {chat.attachment && (
-                        <a
-                          href={chat.attachment.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
-                            isMine
-                              ? "border-white/30 bg-white/10 text-white"
-                              : "border-gray-200 bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          <File size={15} />
-                          <span className="line-clamp-1">
-                            {chat.attachment.name}
-                          </span>
-                        </a>
-                      )}
-
-                      <p
-                        className={`mt-1 text-right text-[10px] ${
-                          isMine ? "text-white/70" : "text-gray-400"
-                        }`}
-                      >
-                        {chat.time}
-                      </p>
-                    </div>
+                      {(legalChatUsers || []).map((user) => (
+                        <SelectItem key={String(user.id)}>
+                          {user.fullName || user.name || `User ${user.id}`}
+                        </SelectItem>
+                      ))}
+                    </Select>
                   </div>
-                );
-              })}
-            </div>
 
-            {chatAttachment && (
-              <div className="border-t bg-white px-4 py-2">
-                <div className="flex items-center justify-between rounded-xl border bg-gray-50 px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <File size={16} className="shrink-0 text-gray-500" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-800">
-                        {chatAttachment.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {(chatAttachment.size / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
+                  <div className="mt-4 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+                    <p>Context Type: {LEGAL_CHAT_CONTEXT_TYPE}</p>
+                    <p>Reference ID: {LEGAL_CHAT_REFERENCE_ID}</p>
+                    <p>Receiver ID: {selectedChatPersonId || "-"}</p>
                   </div>
 
                   <Button
-                    isIconOnly
-                    size="sm"
-                    variant="light"
-                    color="danger"
-                    onPress={() => {
-                      setChatAttachment(null);
-
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                      }
-                    }}
+                    className="mt-4 w-full"
+                    color="primary"
+                    isLoading={chatLoading}
+                    onPress={handleStartLegalChat}
                   >
-                    <X size={15} />
+                    Start Chat
                   </Button>
                 </div>
               </div>
-            )}
+            ) : (
+              <>
+                <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4">
+                  {chatLoading ? (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      Loading messages...
+                    </div>
+                  ) : chatList.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      No messages yet. Start the conversation.
+                    </div>
+                  ) : (
+                    chatList.map((chat) => {
+                      const resolvedUserId = getResolvedUserId(
+                        currentUser,
+                        userId,
+                      );
+                      const isMine =
+                        Number(chat.senderId) === Number(resolvedUserId);
+                      const attachments = Array.isArray(chat.attachments)
+                        ? chat.attachments
+                        : chat.attachment
+                          ? [chat.attachment]
+                          : [];
 
-            <div className="border-t bg-white px-4 py-3">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-
-                    if (file) {
-                      setChatAttachment(file);
-                    }
-                  }}
-                />
-
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  type="button"
-                  className="h-11 w-11 shrink-0"
-                  onPress={() => fileInputRef.current?.click()}
-                >
-                  <Paperclip size={19} />
-                </Button>
-
-                <Dropdown placement="top-start">
-                  <DropdownTrigger>
-                    <button
-                      type="button"
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-default-200 bg-default-50 transition hover:bg-default-100"
-                      title={
-                        selectedChatPerson?.fullName || "Select legal person"
-                      }
-                    >
-                      <Avatar
-                        size="sm"
-                        name={getInitials(
-                          selectedChatPerson?.fullName || "Legal",
-                        )}
-                        className="bg-primary-100 text-primary"
-                      />
-                    </button>
-                  </DropdownTrigger>
-
-                  <DropdownMenu
-                    aria-label="Select legal person"
-                    selectionMode="single"
-                    selectedKeys={
-                      selectedChatPersonId
-                        ? new Set([String(selectedChatPersonId)])
-                        : new Set([])
-                    }
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)?.[0];
-                      setSelectedChatPersonId(selected ? String(selected) : "");
-                    }}
-                  >
-                    {(legalChatUsers || []).map((user) => (
-                      <DropdownItem
-                        key={String(user.id)}
-                        textValue={user.fullName}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            size="sm"
-                            name={getInitials(user.fullName || "Legal")}
-                            className="bg-primary-100 text-primary"
-                          />
-
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground">
-                              {user.fullName || "Legal User"}
+                      return (
+                        <div
+                          key={chat.id}
+                          className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
+                              isMine
+                                ? "rounded-br-sm bg-primary text-white"
+                                : "rounded-bl-sm border bg-white text-gray-900"
+                            }`}
+                          >
+                            <p
+                              className={`mb-1 text-[11px] font-semibold ${
+                                isMine ? "text-white/80" : "text-gray-500"
+                              }`}
+                            >
+                              {chat.senderName || "-"}
                             </p>
-                            <p className="truncate text-xs text-default-500">
-                              {user.email || "-"}
+
+                            {chat.message && (
+                              <p className="whitespace-pre-wrap text-sm leading-5">
+                                {chat.message}
+                              </p>
+                            )}
+
+                            {attachments.map((attachment, index) => {
+                              const fileUrl =
+                                attachment.fileUrl || attachment.url || "#";
+                              const fileName =
+                                attachment.fileName ||
+                                attachment.name ||
+                                `Attachment ${index + 1}`;
+
+                              return (
+                                <a
+                                  key={attachment.id || fileName}
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                                    isMine
+                                      ? "border-white/30 bg-white/10 text-white"
+                                      : "border-gray-200 bg-gray-50 text-gray-700"
+                                  }`}
+                                >
+                                  <File size={15} />
+                                  <span className="line-clamp-1">
+                                    {fileName}
+                                  </span>
+                                </a>
+                              );
+                            })}
+
+                            <p
+                              className={`mt-1 text-right text-[10px] ${
+                                isMine ? "text-white/70" : "text-gray-400"
+                              }`}
+                            >
+                              {chat.createdAt
+                                ? dayjs(chat.createdAt).format(
+                                    "DD MMM, hh:mm A",
+                                  )
+                                : "-"}
                             </p>
                           </div>
                         </div>
-                      </DropdownItem>
-                    ))}
-                  </DropdownMenu>
-                </Dropdown>
+                      );
+                    })
+                  )}
+                </div>
 
-                <Input
-                  placeholder={`Message ${selectedChatPerson?.fullName || "Legal"}...`}
-                  value={chatMessage}
-                  onValueChange={setChatMessage}
-                  className="min-w-0 flex-1"
-                  classNames={{
-                    inputWrapper: "h-11",
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmitChat();
-                    }
-                  }}
-                />
+                {chatAttachment && (
+                  <div className="border-t bg-white px-4 py-2">
+                    <div className="flex items-center justify-between rounded-xl border bg-gray-50 px-3 py-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <File size={16} className="shrink-0 text-gray-500" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-800">
+                            {chatAttachment.fileName || chatAttachment.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {Number(
+                              chatAttachment.fileSize ||
+                                chatAttachment.size ||
+                                0,
+                            ) > 0
+                              ? `${(Number(chatAttachment.fileSize || chatAttachment.size) / 1024).toFixed(1)} KB`
+                              : "Attachment"}
+                          </p>
+                        </div>
+                      </div>
 
-                <Button
-                  isIconOnly
-                  color="primary"
-                  type="button"
-                  className="h-11 w-11 shrink-0"
-                  onPress={handleSubmitChat}
-                  isDisabled={!chatMessage.trim() && !chatAttachment}
-                >
-                  <Send size={19} />
-                </Button>
-              </div>
-            </div>
+                      <Button
+                        isIconOnly
+                        size="sm"
+                        variant="light"
+                        color="danger"
+                        onPress={() => {
+                          setChatAttachment(null);
+
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                          }
+                        }}
+                      >
+                        <X size={15} />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t bg-white px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+
+                        if (file) {
+                          setChatAttachment(file);
+                        }
+                      }}
+                    />
+
+                    <Button
+                      isIconOnly
+                      variant="flat"
+                      type="button"
+                      className="h-11 w-11 shrink-0"
+                      onPress={() => fileInputRef.current?.click()}
+                    >
+                      <Paperclip size={19} />
+                    </Button>
+
+                    <Input
+                      placeholder={`Message ${selectedChatPerson?.fullName || "Legal"}...`}
+                      value={chatMessage}
+                      onValueChange={setChatMessage}
+                      className="min-w-0 flex-1"
+                      classNames={{
+                        inputWrapper: "h-11",
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmitChat();
+                        }
+                      }}
+                    />
+
+                    <Button
+                      isIconOnly
+                      color="primary"
+                      type="button"
+                      className="h-11 w-11 shrink-0"
+                      onPress={handleSubmitChat}
+                      isLoading={chatSending}
+                      isDisabled={!chatMessage.trim() && !chatAttachment}
+                    >
+                      <Send size={19} />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

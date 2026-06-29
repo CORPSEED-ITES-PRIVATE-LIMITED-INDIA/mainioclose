@@ -1061,7 +1061,10 @@ const CreditNote = () => {
                   ) : null}
 
                   <DropdownItem key="CREDIT_LEDGER">
-                    Add Credit Ledger
+                    Send Credit Note Approval
+                  </DropdownItem>
+                  <DropdownItem key="GST_CREDIT_NOTE">
+                    Upload GST Credit Note
                   </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
@@ -1600,43 +1603,6 @@ const CreditNote = () => {
                         }
                       />
 
-                      <Input
-                        size="sm"
-                        label="Reference Number"
-                        placeholder="Enter reference number"
-                        isRequired
-                        value={creditLedgerData.referenceNumber}
-                        onChange={(e) =>
-                          setCreditLedgerData((prev) => ({
-                            ...prev,
-                            referenceNumber: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-default-200 p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-default-700">
-                      Narration / Attachment
-                    </h3>
-
-                    <div className="grid grid-cols-1 gap-3">
-                      <Textarea
-                        size="sm"
-                        label="Narration"
-                        placeholder="Enter narration for ledger entry"
-                        isRequired
-                        minRows={3}
-                        value={creditLedgerData.narration}
-                        onChange={(e) =>
-                          setCreditLedgerData((prev) => ({
-                            ...prev,
-                            narration: e.target.value,
-                          }))
-                        }
-                      />
-
                       <FileUploader
                         label="Supporting Attachment"
                         value={creditLedgerData.attachment}
@@ -1654,6 +1620,29 @@ const CreditNote = () => {
                           }))
                         }
                         onUploadingChange={setIsCreditLedgerAttachmentUploading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-default-200 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-default-700">
+                      Narration / Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <Textarea
+                        size="sm"
+                        label="Narration"
+                        placeholder="Enter narration for ledger entry"
+                        isRequired
+                        minRows={3}
+                        value={creditLedgerData.narration}
+                        onChange={(e) =>
+                          setCreditLedgerData((prev) => ({
+                            ...prev,
+                            narration: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                   </div>

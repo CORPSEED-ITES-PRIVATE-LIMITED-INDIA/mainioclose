@@ -1210,11 +1210,11 @@ export const getSalesProjectStatusDashboard = createAsyncThunk(
 
 export const sendAgreementToVendor = createAsyncThunk(
   "sendAgreementToVendor",
-  async ({body, quotationId, userId }, { rejectWithValue }) => {
+  async ({ body, quotationId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.post(
         `/operationService/api/quotation/${quotationId}/send-agreement-to-vendor?userId=${userId}`,
-        body
+        body,
       );
 
       return response.data;
@@ -1311,6 +1311,75 @@ export const sendVendorDetailsToAccounts = createAsyncThunk(
       return rejectWithValue(
         error?.response?.data ||
           "Failed to Send Vendor Details to Accounts",
+      );
+    }
+  },
+);
+
+export const startOperationChat = createAsyncThunk(
+  "operationChat/startOperationChat",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/operationService/api/chats/start",
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to start chat",
+      );
+    }
+  },
+);
+
+export const sendOperationChatMessage = createAsyncThunk(
+  "operationChat/sendOperationChatMessage",
+  async ({ conversationId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/chats/${conversationId}/messages`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to send chat message",
+      );
+    }
+  },
+);
+
+export const getOperationChatMessages = createAsyncThunk(
+  "operationChat/getOperationChatMessages",
+  async (
+    { conversationId, userId, page = 0, size = 30 },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/chats/${conversationId}/messages`,
+        {
+          params: {
+            userId,
+            page,
+            size,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to fetch chat messages",
       );
     }
   },

@@ -11,15 +11,12 @@ import {
   AlertCircle,
   Banknote,
   CalendarDays,
-  CheckCircle2,
   ChevronDown,
   Clock3,
-  CreditCard,
   FileCheck2,
-  FileText,
   Filter,
-  IndianRupee,
   ReceiptIndianRupee,
+  ShieldCheck,
   TrendingDown,
   TrendingUp,
   WalletCards,
@@ -30,38 +27,34 @@ const stats = [
     title: "Total Billed",
     value: "₹ 48.75L",
     icon: ReceiptIndianRupee,
-    bg: "bg-blue-50",
-    iconColor: "text-blue-600",
+    tone: "blue",
     change: "↑ 14%",
-    changeColor: "text-green-600",
+    changeColor: "text-emerald-600",
     suffix: "vs last month",
   },
   {
     title: "Payment Received",
     value: "₹ 36.20L",
     icon: Banknote,
-    bg: "bg-green-50",
-    iconColor: "text-green-600",
+    tone: "emerald",
     change: "↑ 18%",
-    changeColor: "text-green-600",
+    changeColor: "text-emerald-600",
     suffix: "vs last month",
   },
   {
     title: "Outstanding",
     value: "₹ 12.55L",
     icon: WalletCards,
-    bg: "bg-yellow-50",
-    iconColor: "text-yellow-600",
+    tone: "amber",
     change: "↓ 8%",
-    changeColor: "text-red-600",
+    changeColor: "text-rose-600",
     suffix: "vs last month",
   },
   {
     title: "Pending Approvals",
     value: "18",
     icon: Clock3,
-    bg: "bg-purple-50",
-    iconColor: "text-purple-600",
+    tone: "violet",
     change: "6 urgent",
     changeColor: "text-orange-600",
     suffix: "today",
@@ -70,19 +63,18 @@ const stats = [
     title: "TDS Pending",
     value: "₹ 2.40L",
     icon: FileCheck2,
-    bg: "bg-red-50",
-    iconColor: "text-red-600",
+    tone: "rose",
     change: "12 cases",
-    changeColor: "text-red-600",
+    changeColor: "text-rose-600",
     suffix: "pending",
   },
 ];
 
 const invoiceStatus = [
   { label: "Generated", value: 42, percent: 45, color: "bg-blue-600" },
-  { label: "Paid", value: 31, percent: 33, color: "bg-green-500" },
-  { label: "Partially Paid", value: 14, percent: 15, color: "bg-yellow-400" },
-  { label: "Overdue", value: 7, percent: 7, color: "bg-red-500" },
+  { label: "Paid", value: 31, percent: 33, color: "bg-emerald-500" },
+  { label: "Partially Paid", value: 14, percent: 15, color: "bg-amber-400" },
+  { label: "Overdue", value: 7, percent: 7, color: "bg-rose-500" },
 ];
 
 const approvalQueue = [
@@ -168,36 +160,99 @@ const accountSummary = [
     amount: "₹ 9.80L",
     bg: "bg-blue-50",
   },
-  { title: "Tax Invoices", value: "54", amount: "₹ 48.75L", bg: "bg-green-50" },
+  {
+    title: "Tax Invoices",
+    value: "54",
+    amount: "₹ 48.75L",
+    bg: "bg-emerald-50",
+  },
   {
     title: "Advance Payments",
     value: "12",
     amount: "₹ 5.35L",
-    bg: "bg-purple-50",
+    bg: "bg-violet-50",
   },
   {
     title: "Cancelled Invoices",
     value: "4",
     amount: "₹ 1.10L",
-    bg: "bg-red-50",
+    bg: "bg-rose-50",
   },
 ];
 
+const gstClientVendor = [
+  {
+    title: "GST Client / Output GST",
+    subtitle: "Collected from clients",
+    taxable: "₹ 42.10L",
+    gstAmount: "₹ 7.58L",
+    pending: "₹ 1.25L",
+    filed: "84%",
+    color: "primary",
+    bg: "bg-blue-50",
+    iconColor: "text-blue-600",
+  },
+  {
+    title: "GST Vendor / Input GST",
+    subtitle: "Claimable from vendor bills",
+    taxable: "₹ 18.75L",
+    gstAmount: "₹ 3.38L",
+    pending: "₹ 82,000",
+    filed: "71%",
+    color: "success",
+    bg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+  },
+];
+
+const tdsClientVendor = [
+  {
+    title: "TDS Client Receivable",
+    subtitle: "Deducted by clients",
+    amount: "₹ 2.40L",
+    pendingCases: "12",
+    claimed: "₹ 1.65L",
+    pending: "₹ 75,000",
+    color: "warning",
+    bg: "bg-amber-50",
+    iconColor: "text-amber-600",
+  },
+  {
+    title: "TDS Vendor Payable",
+    subtitle: "Deducted on vendor payments",
+    amount: "₹ 1.10L",
+    pendingCases: "7",
+    claimed: "₹ 70,000",
+    pending: "₹ 40,000",
+    color: "secondary",
+    bg: "bg-violet-50",
+    iconColor: "text-violet-600",
+  },
+];
+
+const toneClass = {
+  blue: "bg-blue-50 text-blue-600 ring-blue-100",
+  emerald: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+  amber: "bg-amber-50 text-amber-600 ring-amber-100",
+  violet: "bg-violet-50 text-violet-600 ring-violet-100",
+  rose: "bg-rose-50 text-rose-600 ring-rose-100",
+};
+
 function SectionTitle({ title, subtitle }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-start justify-between gap-2">
       <div className="min-w-0">
-        <h3 className="truncate text-sm font-semibold text-slate-950 lg:text-[15px]">
+        <h3 className="truncate text-[13px] font-semibold leading-5 text-slate-950 sm:text-sm">
           {title}
         </h3>
         {subtitle && (
-          <p className="mt-0.5 text-[11px] text-slate-500 lg:text-xs">
+          <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">
             {subtitle}
           </p>
         )}
       </div>
 
-      <button className="shrink-0 text-[11px] font-medium text-blue-600 hover:text-blue-700 lg:text-xs">
+      <button className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-700">
         View All
       </button>
     </div>
@@ -208,25 +263,28 @@ function StatCard({ item }) {
   const Icon = item.icon;
 
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardBody className="p-4 lg:p-5">
-        <div className="flex items-center gap-3 lg:gap-4">
+    <Card
+      shadow="none"
+      className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
+    >
+      <CardBody className="p-3">
+        <div className="flex items-center gap-3">
           <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full lg:h-14 lg:w-14 ${item.bg}`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${toneClass[item.tone]}`}
           >
-            <Icon size={24} className={item.iconColor} strokeWidth={2.2} />
+            <Icon size={18} strokeWidth={2.2} />
           </div>
 
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-600 lg:text-sm">
+            <p className="truncate text-[11px] font-medium leading-4 text-slate-500">
               {item.title}
             </p>
 
-            <h2 className="mt-1 truncate text-xl font-bold text-slate-950 lg:text-2xl">
+            <h2 className="mt-0.5 truncate text-[20px] font-bold leading-7 tracking-tight text-slate-950">
               {item.value}
             </h2>
 
-            <p className="mt-1 text-[11px] lg:text-xs">
+            <p className="mt-0.5 truncate text-[11px] leading-4">
               <span className={`font-semibold ${item.changeColor}`}>
                 {item.change}
               </span>{" "}
@@ -241,13 +299,13 @@ function StatCard({ item }) {
 
 function DashboardToolbar() {
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-lg font-bold text-slate-950 lg:text-xl">
+        <h1 className="text-lg font-bold leading-6 text-slate-950">
           Accounts Dashboard
         </h1>
-        <p className="text-xs text-slate-500 lg:text-sm">
-          Billing, payments, outstanding, approvals and TDS overview.
+        <p className="mt-0.5 text-xs leading-5 text-slate-500">
+          Billing, payments, GST, TDS, outstanding and approvals overview.
         </p>
       </div>
 
@@ -255,8 +313,8 @@ function DashboardToolbar() {
         <Button
           size="sm"
           variant="bordered"
-          className="rounded-xl border-slate-200 text-xs"
-          startContent={<CalendarDays size={15} />}
+          className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-medium"
+          startContent={<CalendarDays size={14} />}
         >
           May 2025
         </Button>
@@ -264,8 +322,8 @@ function DashboardToolbar() {
         <Button
           size="sm"
           variant="bordered"
-          className="rounded-xl border-slate-200 text-xs"
-          startContent={<Filter size={15} />}
+          className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-medium"
+          startContent={<Filter size={14} />}
         >
           Filter
         </Button>
@@ -274,16 +332,27 @@ function DashboardToolbar() {
   );
 }
 
+function DashboardCard({ children, className = "" }) {
+  return (
+    <Card
+      shadow="none"
+      className={`rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${className}`}
+    >
+      {children}
+    </Card>
+  );
+}
+
 function RevenueCollectionChart() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
-        <div className="flex w-full items-center justify-between gap-3">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
+        <div className="flex w-full items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-950 lg:text-[15px]">
+            <h3 className="text-[13px] font-semibold leading-5 text-slate-950 sm:text-sm">
               Billing vs Collection
             </h3>
-            <p className="text-[11px] text-slate-500 lg:text-xs">
+            <p className="text-[11px] leading-4 text-slate-500">
               Dec 2024 - May 2025
             </p>
           </div>
@@ -291,21 +360,21 @@ function RevenueCollectionChart() {
           <Button
             size="sm"
             variant="bordered"
-            className="h-8 rounded-lg border-slate-200 text-xs"
-            endContent={<ChevronDown size={14} />}
+            className="h-7 rounded-lg border-slate-200 px-2 text-[11px]"
+            endContent={<ChevronDown size={13} />}
           >
             Monthly
           </Button>
         </div>
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
-        <div className="relative h-[240px] w-full">
-          <svg viewBox="0 0 650 240" className="h-full w-full">
-            {[35, 80, 125, 170].map((y) => (
+      <CardBody className="px-3 pb-3 pt-2">
+        <div className="relative h-[176px] w-full sm:h-[190px]">
+          <svg viewBox="0 0 650 220" className="h-full w-full">
+            {[35, 78, 121, 164].map((y) => (
               <line
                 key={y}
-                x1="35"
+                x1="36"
                 y1={y}
                 x2="630"
                 y2={y}
@@ -314,16 +383,16 @@ function RevenueCollectionChart() {
               />
             ))}
 
-            <text x="0" y="38" fontSize="11" fill="#475569">
+            <text x="0" y="39" fontSize="10" fill="#64748b">
               ₹60L
             </text>
-            <text x="0" y="83" fontSize="11" fill="#475569">
+            <text x="0" y="82" fontSize="10" fill="#64748b">
               ₹45L
             </text>
-            <text x="0" y="128" fontSize="11" fill="#475569">
+            <text x="0" y="125" fontSize="10" fill="#64748b">
               ₹30L
             </text>
-            <text x="0" y="173" fontSize="11" fill="#475569">
+            <text x="0" y="168" fontSize="10" fill="#64748b">
               ₹15L
             </text>
 
@@ -331,7 +400,7 @@ function RevenueCollectionChart() {
               d="M70 130 C120 125, 145 112, 180 100 C225 85, 245 76, 290 72 C340 68, 365 55, 410 64 C460 76, 485 88, 525 70 C565 50, 590 40, 615 36"
               fill="none"
               stroke="#2563eb"
-              strokeWidth="4"
+              strokeWidth="3.5"
               strokeLinecap="round"
             />
 
@@ -339,7 +408,7 @@ function RevenueCollectionChart() {
               d="M70 155 C115 150, 145 135, 180 125 C225 115, 245 98, 290 96 C340 90, 365 82, 410 90 C460 100, 485 112, 525 95 C565 75, 590 68, 615 60"
               fill="none"
               stroke="#22c55e"
-              strokeWidth="4"
+              strokeWidth="3.5"
               strokeLinecap="round"
             />
 
@@ -352,7 +421,7 @@ function RevenueCollectionChart() {
                   <circle
                     cx={x}
                     cy={billed}
-                    r="5"
+                    r="4"
                     fill="#2563eb"
                     stroke="#fff"
                     strokeWidth="2"
@@ -360,7 +429,7 @@ function RevenueCollectionChart() {
                   <circle
                     cx={x}
                     cy={received}
-                    r="5"
+                    r="4"
                     fill="#22c55e"
                     stroke="#fff"
                     strokeWidth="2"
@@ -373,9 +442,9 @@ function RevenueCollectionChart() {
               <text
                 key={month}
                 x={70 + index * 109}
-                y="215"
-                fontSize="11"
-                fill="#475569"
+                y="202"
+                fontSize="10"
+                fill="#64748b"
                 textAnchor="middle"
               >
                 {month}
@@ -384,49 +453,49 @@ function RevenueCollectionChart() {
           </svg>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+        <div className="mt-1 flex flex-wrap items-center gap-4 text-[11px]">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-blue-600" />
             <span className="text-slate-600">Billed</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
             <span className="text-slate-600">Received</span>
           </div>
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 function InvoiceStatusOverview() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle title="Invoice Status Overview" subtitle="This Month" />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
-        <div className="flex min-h-[240px] flex-col justify-center gap-5 sm:flex-row sm:items-center">
+      <CardBody className="px-3 pb-3 pt-2">
+        <div className="flex min-h-[215px] flex-col justify-center gap-4 sm:flex-row sm:items-center">
           <div
-            className="relative mx-auto h-36 w-36 shrink-0 rounded-full lg:h-40 lg:w-40"
+            className="relative mx-auto h-32 w-32 shrink-0 rounded-full"
             style={{
               background:
                 "conic-gradient(#2563eb 0deg 162deg, #22c55e 162deg 281deg, #facc15 281deg 335deg, #ef4444 335deg 360deg)",
             }}
           >
-            <div className="absolute inset-6 rounded-full bg-white flex flex-col items-center justify-center">
-              <p className="text-xl font-bold text-slate-950 lg:text-2xl">94</p>
-              <p className="text-[11px] text-slate-500 lg:text-xs">Invoices</p>
+            <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
+              <p className="text-xl font-bold leading-6 text-slate-950">94</p>
+              <p className="text-[11px] text-slate-500">Invoices</p>
             </div>
           </div>
 
-          <div className="w-full space-y-3">
+          <div className="w-full space-y-2.5">
             {invoiceStatus.map((item) => (
               <div
                 key={item.label}
-                className="flex items-center justify-between gap-4 text-xs lg:text-sm"
+                className="flex items-center justify-between gap-3 text-xs"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span
@@ -435,7 +504,7 @@ function InvoiceStatusOverview() {
                   <span className="truncate text-slate-700">{item.label}</span>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5">
                   <span className="font-bold text-slate-950">{item.value}</span>
                   <span className="text-slate-500">({item.percent}%)</span>
                 </div>
@@ -444,33 +513,33 @@ function InvoiceStatusOverview() {
           </div>
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 function ApprovalQueue() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Approval Queue"
           subtitle="Unbilled, cancellation and receipt approvals"
         />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
+      <CardBody className="px-3 pb-3 pt-2">
         <div className="space-y-2">
           {approvalQueue.map((item) => (
             <div
               key={item.title}
-              className="rounded-xl border border-slate-100 p-3 hover:bg-slate-50"
+              className="rounded-xl border border-slate-100 bg-white p-2.5 transition hover:bg-slate-50"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-950 lg:text-sm">
+                  <p className="truncate text-xs font-semibold leading-5 text-slate-950">
                     {item.title}
                   </p>
-                  <p className="mt-1 truncate text-[11px] text-slate-500 lg:text-xs">
+                  <p className="truncate text-[11px] leading-4 text-slate-500">
                     {item.company}
                   </p>
                 </div>
@@ -480,36 +549,36 @@ function ApprovalQueue() {
                 </Chip>
               </div>
 
-              <p className="mt-2 text-xs font-bold text-slate-950 lg:text-sm">
+              <p className="mt-1.5 text-xs font-bold leading-5 text-slate-950">
                 {item.amount}
               </p>
             </div>
           ))}
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 function ReceivableAging() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Receivable Aging"
           subtitle="Outstanding by due period"
         />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
-        <div className="space-y-5">
+      <CardBody className="px-3 pb-3 pt-3">
+        <div className="space-y-3.5">
           {receivableAging.map((item) => (
             <div key={item.label}>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold text-slate-900 lg:text-sm">
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-slate-900">
                   {item.label}
                 </p>
-                <p className="whitespace-nowrap text-xs font-bold text-slate-950 lg:text-sm">
+                <p className="whitespace-nowrap text-xs font-bold text-slate-950">
                   {item.amount}
                 </p>
               </div>
@@ -522,47 +591,48 @@ function ReceivableAging() {
                 radius="full"
                 classNames={{
                   track: "bg-slate-100",
+                  indicator: "h-1.5",
                 }}
               />
             </div>
           ))}
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 function RecentPayments() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Recent Payments"
           subtitle="Latest receipts and collection status"
         />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
+      <CardBody className="px-3 pb-3 pt-2">
         <div className="space-y-2">
           {recentPayments.map((item) => (
             <div
               key={`${item.company}-${item.date}`}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-[minmax(0,1fr)_110px_100px_auto]"
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-slate-100 bg-white p-2.5 sm:grid-cols-[minmax(0,1fr)_95px_90px_auto]"
             >
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-slate-950 lg:text-sm">
+                <p className="truncate text-xs font-semibold leading-5 text-slate-950">
                   {item.company}
                 </p>
-                <p className="truncate text-[11px] text-slate-500 lg:text-xs">
+                <p className="truncate text-[11px] leading-4 text-slate-500">
                   {item.mode}
                 </p>
               </div>
 
-              <p className="whitespace-nowrap text-xs font-bold text-slate-950 lg:text-sm">
+              <p className="whitespace-nowrap text-xs font-bold leading-5 text-slate-950">
                 {item.amount}
               </p>
 
-              <p className="hidden whitespace-nowrap text-[11px] text-slate-500 sm:block lg:text-xs">
+              <p className="hidden whitespace-nowrap text-[11px] leading-5 text-slate-500 sm:block">
                 {item.date}
               </p>
 
@@ -577,78 +647,232 @@ function RecentPayments() {
           ))}
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 function TopOutstandingCompanies() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Top Outstanding Companies"
           subtitle="Highest pending receivables"
         />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
-        <div className="space-y-2">
+      <CardBody className="px-3 pb-3 pt-2">
+        <div className="divide-y divide-slate-100">
           {topOutstandingCompanies.map((item) => (
             <div
               key={item.company}
-              className="flex items-center justify-between gap-3 rounded-xl py-2.5"
+              className="flex items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
             >
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-slate-950 lg:text-sm">
+                <p className="truncate text-xs font-semibold leading-5 text-slate-950">
                   {item.company}
                 </p>
-                <p className="text-[11px] text-red-500 lg:text-xs">
+                <p className="text-[11px] leading-4 text-rose-500">
                   Overdue: {item.days}
                 </p>
               </div>
 
-              <p className="whitespace-nowrap text-xs font-bold text-slate-950 lg:text-sm">
+              <p className="whitespace-nowrap text-xs font-bold text-slate-950">
                 {item.due}
               </p>
             </div>
           ))}
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 function AccountSummary() {
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Account Summary"
           subtitle="Invoices and payment objects"
         />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <CardBody className="px-3 pb-3 pt-3">
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           {accountSummary.map((item) => (
             <div
               key={item.title}
-              className={`${item.bg} rounded-xl p-4 text-center`}
+              className={`${item.bg} rounded-xl p-3 text-center ring-1 ring-slate-100`}
             >
-              <p className="text-lg font-bold text-slate-950 lg:text-xl">
+              <p className="text-lg font-bold leading-6 text-slate-950">
                 {item.value}
               </p>
-              <p className="mt-1 text-[11px] text-slate-500 lg:text-xs">
+              <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">
                 {item.title}
               </p>
-              <p className="mt-2 whitespace-nowrap text-xs font-bold text-slate-950 lg:text-sm">
+              <p className="mt-1.5 whitespace-nowrap text-xs font-bold text-slate-950">
                 {item.amount}
               </p>
             </div>
           ))}
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
+  );
+}
+
+function GstClientVendorSection() {
+  return (
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
+        <SectionTitle
+          title="GST Client & Vendor"
+          subtitle="Output GST, input GST and pending claim summary"
+        />
+      </CardHeader>
+
+      <CardBody className="px-3 pb-3 pt-3">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          {gstClientVendor.map((item) => (
+            <div
+              key={item.title}
+              className={`${item.bg} rounded-xl p-3 ring-1 ring-slate-100`}
+            >
+              <div className="mb-2.5 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold leading-5 text-slate-950">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-[11px] leading-4 text-slate-500">
+                    {item.subtitle}
+                  </p>
+                </div>
+
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+                  <ShieldCheck size={15} className={item.iconColor} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Taxable
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-950">
+                    {item.taxable}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                    GST
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-950">
+                    {item.gstAmount}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Pending
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-950">
+                    {item.pending}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-2.5">
+                <div className="mb-1 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500">Filed / Reconciled</span>
+                  <span className="font-bold text-slate-950">{item.filed}</span>
+                </div>
+                <Progress
+                  aria-label={item.title}
+                  value={Number(item.filed.replace("%", ""))}
+                  color={item.color}
+                  size="sm"
+                  radius="full"
+                  classNames={{
+                    track: "bg-white/70",
+                    indicator: "h-1.5",
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardBody>
+    </DashboardCard>
+  );
+}
+
+function TdsClientVendorSection() {
+  return (
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
+        <SectionTitle
+          title="TDS Client & Vendor"
+          subtitle="TDS receivable, payable, claim and pending cases"
+        />
+      </CardHeader>
+
+      <CardBody className="px-3 pb-3 pt-3">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          {tdsClientVendor.map((item) => (
+            <div
+              key={item.title}
+              className={`${item.bg} rounded-xl p-3 ring-1 ring-slate-100`}
+            >
+              <div className="mb-2.5 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold leading-5 text-slate-950">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-[11px] leading-4 text-slate-500">
+                    {item.subtitle}
+                  </p>
+                </div>
+
+                <Chip size="sm" color={item.color} variant="flat">
+                  {item.pendingCases} Cases
+                </Chip>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Amount
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-950">
+                    {item.amount}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Claimed
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-emerald-700">
+                    {item.claimed}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Pending
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-rose-600">
+                    {item.pending}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardBody>
+    </DashboardCard>
   );
 }
 
@@ -658,15 +882,15 @@ function CashFlowCards() {
       title: "Collection Rate",
       value: "74.25%",
       icon: TrendingUp,
-      bg: "bg-green-50",
-      iconColor: "text-green-600",
+      bg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
     },
     {
       title: "Overdue Rate",
       value: "18.50%",
       icon: TrendingDown,
-      bg: "bg-red-50",
-      iconColor: "text-red-600",
+      bg: "bg-rose-50",
+      iconColor: "text-rose-600",
     },
     {
       title: "Avg. Collection Days",
@@ -685,29 +909,32 @@ function CashFlowCards() {
   ];
 
   return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-0 lg:px-5">
+    <DashboardCard>
+      <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Cash Flow Health"
           subtitle="Collection performance"
         />
       </CardHeader>
 
-      <CardBody className="px-4 pb-4 lg:px-5">
-        <div className="grid grid-cols-2 gap-3">
+      <CardBody className="px-3 pb-3 pt-3">
+        <div className="grid grid-cols-2 gap-2.5">
           {data.map((item) => {
             const Icon = item.icon;
 
             return (
-              <div key={item.title} className={`${item.bg} rounded-xl p-4`}>
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-white">
-                  <Icon size={17} className={item.iconColor} />
+              <div
+                key={item.title}
+                className={`${item.bg} rounded-xl p-3 ring-1 ring-slate-100`}
+              >
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm">
+                  <Icon size={15} className={item.iconColor} />
                 </div>
 
-                <p className="text-base font-bold text-slate-950 lg:text-lg">
+                <p className="text-base font-bold leading-6 text-slate-950">
                   {item.value}
                 </p>
-                <p className="mt-1 text-[11px] text-slate-500 lg:text-xs">
+                <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
                   {item.title}
                 </p>
               </div>
@@ -715,23 +942,23 @@ function CashFlowCards() {
           })}
         </div>
       </CardBody>
-    </Card>
+    </DashboardCard>
   );
 }
 
 export default function AccountsDashboard() {
   return (
-    <div className="overflow-x-hidden bg-slate-50 text-slate-900 max-h-[85vh] overflow-auto">
-      <div className="w-full p-3 sm:p-4 lg:p-5 xl:p-6">
+    <div className="h-full max-h-[calc(100vh-76px)] overflow-auto bg-slate-50 text-slate-900">
+      <div className="w-full p-2.5 sm:p-3 lg:p-4">
         <DashboardToolbar />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {stats.map((item) => (
             <StatCard key={item.title} item={item} />
           ))}
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-[1.35fr_0.9fr_1fr]">
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1.25fr_0.85fr_0.95fr]">
           <RevenueCollectionChart />
           <InvoiceStatusOverview />
           <div className="xl:col-span-2 2xl:col-span-1">
@@ -739,13 +966,18 @@ export default function AccountsDashboard() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-[1fr_1.15fr_1fr]">
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[0.95fr_1.1fr_0.95fr]">
           <ReceivableAging />
           <RecentPayments />
           <TopOutstandingCompanies />
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <GstClientVendorSection />
+          <TdsClientVendorSection />
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_0.65fr]">
           <AccountSummary />
           <CashFlowCards />
         </div>

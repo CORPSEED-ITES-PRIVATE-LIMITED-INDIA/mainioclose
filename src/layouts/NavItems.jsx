@@ -512,7 +512,7 @@ export const accountNavItems = [
     title: "Vendor details",
     url: "accounts/vendorDetails",
     key: "vendorDetails",
-    icon: "User",
+    icon: "User2",
   },
 
   // {
