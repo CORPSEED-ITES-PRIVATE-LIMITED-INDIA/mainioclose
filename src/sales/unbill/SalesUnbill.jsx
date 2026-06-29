@@ -182,10 +182,23 @@ const SalesUnbill = () => {
     reason: "",
     attachment: "",
     invoiceIds: [],
+
+    bankName: "",
+    bankAccountNumber: "",
+    confirmBankAccountNumber: "",
+    ifscCode: "",
+    swiftCode: "",
+    accountHolderName: "",
+    cancelledChequeAttachment: "",
   };
   const [creditNoteData, setCreditNoteData] = useState(initialCreditNoteData);
   const [creditNoteRow, setCreditNoteRow] = useState(null);
   const [selectedPaymentProof, setSelectedPaymentProof] = useState("");
+  const [isCreditNoteAttachmentUploading, setIsCreditNoteAttachmentUploading] =
+    useState(false);
+
+  const [isCancelledChequeUploading, setIsCancelledChequeUploading] =
+    useState(false);
 
   useEffect(() => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
@@ -305,6 +318,139 @@ const SalesUnbill = () => {
       return;
     }
 
+    if (!creditNoteData.invoiceIds?.length) {
+      addToast({
+        title: "Invoice is required",
+        description: "Please select at least one invoice.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (isCreditNoteAttachmentUploading) {
+      addToast({
+        title: "Credit note attachment upload in progress",
+        description: "Please wait until upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!creditNoteData.attachment) {
+      addToast({
+        title: "Credit note attachment is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!creditNoteData.bankName?.trim()) {
+      addToast({
+        title: "Bank name is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!creditNoteData.accountHolderName?.trim()) {
+      addToast({
+        title: "Account holder name is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!creditNoteData.bankAccountNumber?.trim()) {
+      addToast({
+        title: "Bank account number is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!/^[0-9]{9,18}$/.test(creditNoteData.bankAccountNumber.trim())) {
+      addToast({
+        title: "Invalid bank account number",
+        description: "Bank account number must be 9 to 18 digits.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!creditNoteData.confirmBankAccountNumber?.trim()) {
+      addToast({
+        title: "Confirm bank account number is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      creditNoteData.bankAccountNumber.trim() !==
+      creditNoteData.confirmBankAccountNumber.trim()
+    ) {
+      addToast({
+        title: "Bank account number mismatch",
+        description:
+          "Bank account number and confirm account number must match.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!creditNoteData.ifscCode?.trim()) {
+      addToast({
+        title: "IFSC code is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(
+        creditNoteData.ifscCode.trim().toUpperCase(),
+      )
+    ) {
+      addToast({
+        title: "Invalid IFSC code",
+        description: "Please enter valid IFSC code. Example: HDFC0001234",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      creditNoteData.swiftCode?.trim() &&
+      !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(
+        creditNoteData.swiftCode.trim().toUpperCase(),
+      )
+    ) {
+      addToast({
+        title: "Invalid SWIFT code",
+        description: "SWIFT code must be 8 or 11 characters.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (isCancelledChequeUploading) {
+      addToast({
+        title: "Cancelled cheque upload in progress",
+        description: "Please wait until upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!creditNoteData.cancelledChequeAttachment) {
+      addToast({
+        title: "Cancelled cheque is required",
+        description: "Please upload cancelled cheque attachment.",
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
       unbilledId: creditNoteRow?.id,
       estimateNumber: creditNoteRow?.estimateNumber,
@@ -313,6 +459,15 @@ const SalesUnbill = () => {
       reason: creditNoteData.reason.trim(),
       attachment: creditNoteData.attachment,
       invoiceIds: creditNoteData.invoiceIds || [],
+
+      bankName: creditNoteData.bankName.trim(),
+      bankAccountNumber: creditNoteData.bankAccountNumber.trim(),
+      ifscCode: creditNoteData.ifscCode.trim().toUpperCase(),
+      swiftCode: creditNoteData.swiftCode?.trim()
+        ? creditNoteData.swiftCode.trim().toUpperCase()
+        : null,
+      accountHolderName: creditNoteData.accountHolderName.trim(),
+      cancelledChequeAttachment: creditNoteData.cancelledChequeAttachment,
     };
 
     try {
@@ -1412,6 +1567,7 @@ const SalesUnbill = () => {
         onOpenChange={creditNoteModal.onOpenChange}
         placement="top-center"
         backdrop="blur"
+        size="4xl"
       >
         <ModalContent>
           {(onClose) => (
@@ -1425,63 +1581,196 @@ const SalesUnbill = () => {
                 </span>
               </ModalHeader>
 
-              <ModalBody className="max-h-[85vh] overflow-auto">
-                <Input
-                  type="number"
-                  label="Refund Amount"
-                  placeholder="Enter refund amount"
-                  isRequired
-                  min={0}
-                  value={creditNoteData.refundAmount}
-                  onChange={(e) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      refundAmount: e.target.value,
-                    }))
-                  }
-                />
+              <ModalBody className="max-h-[65vh] overflow-auto">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Input
+                    type="number"
+                    label="Refund Amount (Excluding Taxes)"
+                    placeholder="Enter refund amount"
+                    isRequired
+                    min={0}
+                    value={creditNoteData.refundAmount}
+                    onChange={(e) =>
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        refundAmount: e.target.value,
+                      }))
+                    }
+                  />
 
-                <FileUploader
-                  value={creditNoteData.attachment}
-                  onChange={(value) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      attachment: value,
-                    }))
-                  }
-                />
+                  <NewSelect
+                    data={invoices || []}
+                    labelKey="invoiceNumber"
+                    label="Invoice Ids"
+                    placeholder="Select Invoice Ids"
+                    isRequired
+                    selectionMode="multiple"
+                    valueKey="id"
+                    value={creditNoteData.invoiceIds}
+                    onChange={(value) =>
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        invoiceIds: Array.isArray(value)
+                          ? value.map(Number)
+                          : value
+                            ? [Number(value)]
+                            : [],
+                      }))
+                    }
+                  />
 
-                <NewSelect
-                  data={invoices || []}
-                  labelKey="invoiceNumber"
-                  label={"Invoice Ids"}
-                  placeholder="Select Invoice Ids"
-                  isRequired
-                  selectionMode="multiple"
-                  valueKey="id"
-                  onChange={(value) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      invoiceIds: Array.isArray(value)
-                        ? value.map(Number)
-                        : [Number(value)],
-                    }))
-                  }
-                />
+                  <Input
+                    label="Bank Name"
+                    placeholder="Enter client bank name"
+                    isRequired
+                    value={creditNoteData.bankName}
+                    onChange={(e) =>
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        bankName: e.target.value,
+                      }))
+                    }
+                  />
 
-                <Textarea
-                  label="Reason"
-                  placeholder="Enter reason for credit note"
-                  isRequired
-                  minRows={4}
-                  value={creditNoteData.reason}
-                  onChange={(e) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                />
+                  <Input
+                    label="Account Holder Name"
+                    placeholder="Enter account holder name"
+                    isRequired
+                    value={creditNoteData.accountHolderName}
+                    onChange={(e) =>
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        accountHolderName: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    type="text"
+                    label="Bank Account Number"
+                    placeholder="Enter bank account number"
+                    isRequired
+                    value={creditNoteData.bankAccountNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        bankAccountNumber: value,
+                      }));
+                    }}
+                  />
+
+                  <Input
+                    type="text"
+                    label="Confirm Bank Account Number"
+                    placeholder="Re-enter bank account number"
+                    isRequired
+                    value={creditNoteData.confirmBankAccountNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        confirmBankAccountNumber: value,
+                      }));
+                    }}
+                    color={
+                      creditNoteData.confirmBankAccountNumber &&
+                      creditNoteData.bankAccountNumber !==
+                        creditNoteData.confirmBankAccountNumber
+                        ? "danger"
+                        : "default"
+                    }
+                    errorMessage={
+                      creditNoteData.confirmBankAccountNumber &&
+                      creditNoteData.bankAccountNumber !==
+                        creditNoteData.confirmBankAccountNumber
+                        ? "Account number does not match"
+                        : ""
+                    }
+                    isInvalid={
+                      Boolean(creditNoteData.confirmBankAccountNumber) &&
+                      creditNoteData.bankAccountNumber !==
+                        creditNoteData.confirmBankAccountNumber
+                    }
+                  />
+
+                  <Input
+                    label="IFSC Code"
+                    placeholder="Example: HDFC0001234"
+                    isRequired
+                    maxLength={11}
+                    value={creditNoteData.ifscCode}
+                    onChange={(e) =>
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        ifscCode: e.target.value.toUpperCase(),
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="SWIFT Code"
+                    placeholder="Optional"
+                    maxLength={11}
+                    value={creditNoteData.swiftCode}
+                    onChange={(e) =>
+                      setCreditNoteData((prev) => ({
+                        ...prev,
+                        swiftCode: e.target.value.toUpperCase(),
+                      }))
+                    }
+                  />
+
+                  <div className="md:col-span-2">
+                    <Textarea
+                      label="Reason"
+                      placeholder="Enter reason for credit note"
+                      isRequired
+                      minRows={4}
+                      value={creditNoteData.reason}
+                      onChange={(e) =>
+                        setCreditNoteData((prev) => ({
+                          ...prev,
+                          reason: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <FileUploader
+                      value={creditNoteData.attachment}
+                      onChange={(value) =>
+                        setCreditNoteData((prev) => ({
+                          ...prev,
+                          attachment: value,
+                        }))
+                      }
+                      onUploadingChange={setIsCreditNoteAttachmentUploading}
+                      label="Escalation Team Approval Attachment"
+                      placeholder="Upload credit note attachment"
+                      isRequired
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <FileUploader
+                      value={creditNoteData.cancelledChequeAttachment}
+                      onChange={(value) =>
+                        setCreditNoteData((prev) => ({
+                          ...prev,
+                          cancelledChequeAttachment: value,
+                        }))
+                      }
+                      onUploadingChange={setIsCancelledChequeUploading}
+                      label="Cancelled Cheque Attachment"
+                      placeholder="Upload cancelled cheque"
+                      isRequired
+                    />
+                  </div>
+                </div>
               </ModalBody>
 
               <ModalFooter>
@@ -1491,16 +1780,20 @@ const SalesUnbill = () => {
                   onPress={() => {
                     onClose();
                     setCreditNoteRow(null);
-                    setCreditNoteData({
-                      refundAmount: "",
-                      reason: "",
-                    });
+                    setCreditNoteData(initialCreditNoteData);
                   }}
                 >
                   Close
                 </Button>
 
-                <Button color="primary" onPress={handleCreateCreditNote}>
+                <Button
+                  color="primary"
+                  onPress={handleCreateCreditNote}
+                  isDisabled={
+                    isCreditNoteAttachmentUploading ||
+                    isCancelledChequeUploading
+                  }
+                >
                   Submit
                 </Button>
               </ModalFooter>

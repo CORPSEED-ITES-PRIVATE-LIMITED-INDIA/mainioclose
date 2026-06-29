@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -13,46 +13,142 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Chip,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Select,
+  SelectItem,
+  Textarea,
+  Switch,
+  addToast,
+  useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
-import { getAllGroups } from "../../toolkit/slices/organizationSlice";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  RefreshCw,
+} from "lucide-react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createLedgerGroup,
+  deleteLedgerGroup,
+  getLedgerGroups,
+  updateLedgerGroup,
+} from "../../toolkit/slices/organizationSlice";
 
-export const columns = [
+const groupTypeOptions = [
+  { label: "Sundry Debtors", value: "SUNDRY_DEBTORS" },
+  { label: "Sundry Creditors", value: "SUNDRY_CREDITORS" },
+  { label: "Bank Accounts", value: "BANK_ACCOUNTS" },
+  { label: "Cash In Hand", value: "CASH_IN_HAND" },
+  { label: "Sales Accounts", value: "SALES_ACCOUNTS" },
+  { label: "Duties And Taxes", value: "DUTIES_AND_TAXES" },
+  { label: "Current Assets", value: "CURRENT_ASSETS" },
+  { label: "Current Liabilities", value: "CURRENT_LIABILITIES" },
+  { label: "Indirect Expenses", value: "INDIRECT_EXPENSES" },
+  { label: "Direct Expenses", value: "DIRECT_EXPENSES" },
+  { label: "Indirect Income", value: "INDIRECT_INCOME" },
+  { label: "Direct Income", value: "DIRECT_INCOME" },
+];
+
+const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "name", sortable: true },
+  { name: "GROUP TYPE", uid: "groupType" },
+  { name: "DESCRIPTION", uid: "description" },
+  { name: "SYSTEM", uid: "systemDefault" },
+  { name: "STATUS", uid: "active" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
-export function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "groupType",
+  "description",
+  "systemDefault",
+  "active",
+  "actions",
+];
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "actions"];
+const emptyForm = {
+  name: "",
+  groupType: "SUNDRY_DEBTORS",
+  description: "",
+  systemDefault: false,
+  active: true,
+};
+
+const getGroupLabel = (value) => {
+  return groupTypeOptions.find((item) => item.value === value)?.label || value;
+};
 
 const Group = () => {
   const dispatch = useDispatch();
-  const data = useSelector((state) => state.organization.groupList);
-  const count = useSelector((state) => state.organization.groupList?.length);
-  const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
-  const [visibleColumns, setVisibleColumns] = React.useState(
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  const {
+    ledgerGroupList,
+    ledgerGroupTotalElements,
+    ledgerGroupTotalPages,
+    ledgerGroupLoading,
+    createLedgerGroupLoading,
+    updateLedgerGroupLoading,
+    deleteLedgerGroupLoading,
+  } = useSelector((state) => state.organization);
+
+  const [filterValue, setFilterValue] = useState("");
+  const [groupTypeFilter, setGroupTypeFilter] = useState("");
+  const [activeFilter, setActiveFilter] = useState("");
+
+  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
-  const [rowsPerPage, setRowsPerPage] = React.useState(50);
-  const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
+
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [page, setPage] = useState(1);
+
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "id",
     direction: "ascending",
   });
-  const [page, setPage] = React.useState(1);
-  const hasSearchFilter = Boolean(filterValue);
+
+  const [formData, setFormData] = useState(emptyForm);
+  const [editData, setEditData] = useState(null);
+
+  const fetchLedgerGroups = useCallback(() => {
+    dispatch(
+      getLedgerGroups({
+        search: filterValue,
+        groupType: groupTypeFilter,
+        active: activeFilter,
+        page,
+        size: rowsPerPage,
+      }),
+    );
+  }, [dispatch, filterValue, groupTypeFilter, activeFilter, page, rowsPerPage]);
 
   useEffect(() => {
-    dispatch(getAllGroups());
-  }, [dispatch]);
+    fetchLedgerGroups();
+  }, [fetchLedgerGroups]);
 
-  const headerColumns = React.useMemo(() => {
+  const isLoading = ledgerGroupLoading === "pending";
+  const isSaving =
+    createLedgerGroupLoading === "pending" ||
+    updateLedgerGroupLoading === "pending";
+
+  const isDeleting = deleteLedgerGroupLoading === "pending";
+
+  const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
@@ -60,127 +156,302 @@ const Group = () => {
     );
   }, [visibleColumns]);
 
-  const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...data];
+  const sortedItems = useMemo(() => {
+    return [...(ledgerGroupList || [])].sort((a, b) => {
+      const first = String(a?.[sortDescriptor.column] ?? "").toLowerCase();
+      const second = String(b?.[sortDescriptor.column] ?? "").toLowerCase();
 
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-        ),
-      );
-    }
-
-    return filteredUsers;
-  }, [data, filterValue]);
-
-  const pages = Math.ceil(count / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [ledgerGroupList, sortDescriptor]);
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
+  const resetForm = () => {
+    setFormData(emptyForm);
+    setEditData(null);
+  };
+
+  const handleOpenCreate = () => {
+    resetForm();
+    onOpen();
+  };
+
+  const handleOpenEdit = (row) => {
+    setEditData(row);
+    setFormData({
+      name: row?.name || "",
+      groupType: row?.groupType || "SUNDRY_DEBTORS",
+      description: row?.description || "",
+      systemDefault: Boolean(row?.systemDefault),
+      active: row?.active !== false,
+    });
+    onOpen();
+  };
+
+  const handleSave = async () => {
+    try {
+      if (!formData.name?.trim()) {
+        addToast({
+          title: "Group name is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!formData.groupType) {
+        addToast({
+          title: "Group type is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      const payload = {
+        name: formData.name.trim(),
+        groupType: formData.groupType,
+        description: formData.description?.trim() || "",
+        systemDefault: Boolean(formData.systemDefault),
+        active: Boolean(formData.active),
+      };
+
+      if (editData?.id) {
+        await dispatch(
+          updateLedgerGroup({
+            id: editData.id,
+            data: payload,
+          }),
+        ).unwrap();
+
+        addToast({
+          title: "Ledger group updated successfully",
+          color: "success",
+        });
+      } else {
+        await dispatch(createLedgerGroup(payload)).unwrap();
+
+        addToast({
+          title: "Ledger group created successfully",
+          color: "success",
+        });
+      }
+
+      resetForm();
+      onClose();
+      fetchLedgerGroups();
+    } catch (error) {
+      addToast({
+        title: error || "Failed to save ledger group",
+        color: "danger",
+      });
+    }
+  };
+
+  const handleDelete = async (row) => {
+    try {
+      const confirmed = window.confirm(
+        `Are you sure you want to delete "${row?.name}"?`,
+      );
+
+      if (!confirmed) return;
+
+      await dispatch(deleteLedgerGroup(row.id)).unwrap();
+
+      addToast({
+        title: "Ledger group deleted successfully",
+        color: "success",
+      });
+
+      fetchLedgerGroups();
+    } catch (error) {
+      addToast({
+        title: error || "Failed to delete ledger group",
+        color: "danger",
+      });
+    }
+  };
+
+  const renderCell = (rowData, columnKey) => {
     const cellValue = rowData[columnKey];
+
     switch (columnKey) {
       case "name":
         return (
           <Link
             to={`${rowData?.id}/groupLedger`}
-            className="text-sm font-medium capitalize text-blue-500"
+            className="text-sm font-semibold capitalize text-blue-600 hover:text-blue-700"
           >
-            {rowData?.name}
+            {rowData?.name || "-"}
           </Link>
         );
+
+      case "groupType":
+        return (
+          <Chip size="sm" variant="flat" color="primary">
+            {getGroupLabel(rowData?.groupType)}
+          </Chip>
+        );
+
+      case "description":
+        return (
+          <span className="line-clamp-1 max-w-[280px] text-sm text-slate-600">
+            {rowData?.description || "-"}
+          </span>
+        );
+
+      case "systemDefault":
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={rowData?.systemDefault ? "secondary" : "default"}
+          >
+            {rowData?.systemDefault ? "Yes" : "No"}
+          </Chip>
+        );
+
+      case "active":
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={rowData?.active ? "success" : "danger"}
+          >
+            {rowData?.active ? "Active" : "Inactive"}
+          </Chip>
+        );
+
       case "actions":
         return (
-          <div className="relative flex justify-center items-center gap-2">
+          <div className="relative flex items-center justify-center gap-2">
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
+                  <EllipsisVertical size={17} className="text-default-500" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
-                {/* <DropdownItem key="edit" >
+
+              <DropdownMenu
+                aria-label="Ledger group actions"
+                onAction={(key) => {
+                  if (key === "edit") handleOpenEdit(rowData);
+                  if (key === "delete") handleDelete(rowData);
+                }}
+              >
+                <DropdownItem key="edit" startContent={<Pencil size={15} />}>
                   Edit
-                </DropdownItem> */}
+                </DropdownItem>
+
+                <DropdownItem
+                  key="delete"
+                  className="text-danger"
+                  color="danger"
+                  startContent={<Trash2 size={15} />}
+                >
+                  Delete
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
         );
+
       default:
-        return cellValue;
+        return cellValue ?? "-";
     }
-  }, []);
+  };
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) {
-      setPage(page + 1);
-    }
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback((e) => {
+  const onRowsPerPageChange = useCallback((e) => {
     setRowsPerPage(Number(e.target.value));
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value) => {
+    setFilterValue(value || "");
+    setPage(1);
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const resetFilters = () => {
+    setFilterValue("");
+    setGroupTypeFilter("");
+    setActiveFilter("");
+    setPage(1);
+  };
+
+  const paginationTotal = Math.max(ledgerGroupTotalPages || 1, 1);
+
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
+            size="sm"
+            className="w-full lg:max-w-[320px]"
+            placeholder="Search ledger group..."
+            startContent={<Search size={16} />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              size="sm"
+              label="Group Type"
+              className="w-[210px]"
+              selectedKeys={
+                groupTypeFilter ? new Set([groupTypeFilter]) : new Set(["ALL"])
+              }
+              onSelectionChange={(keys) => {
+                const selectedValue = Array.from(keys)?.[0];
+
+                setGroupTypeFilter(
+                  selectedValue === "ALL" ? "" : selectedValue,
+                );
+                setPage(1);
+              }}
+            >
+              <SelectItem key="ALL">All</SelectItem>
+              {groupTypeOptions.map((item) => (
+                <SelectItem key={item.value}>{item.label}</SelectItem>
+              ))}
+            </Select>
+
+            <Select
+              size="sm"
+              label="Active"
+              className="w-[140px]"
+              selectedKeys={
+                activeFilter ? new Set([activeFilter]) : new Set(["ALL"])
+              }
+              onSelectionChange={(keys) => {
+                const selectedValue = Array.from(keys)?.[0];
+
+                setActiveFilter(selectedValue === "ALL" ? "" : selectedValue);
+                setPage(1);
+              }}
+            >
+              <SelectItem key="ALL">All</SelectItem>
+              <SelectItem key="true">Active</SelectItem>
+              <SelectItem key="false">Inactive</SelectItem>
+            </Select>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown className="text-small" />}
+                  size="sm"
+                  endContent={<ChevronDown size={16} />}
                   variant="flat"
                 >
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -190,26 +461,49 @@ const Group = () => {
                 onSelectionChange={setVisibleColumns}
               >
                 {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
+                  <DropdownItem key={column.uid}>{column.name}</DropdownItem>
                 ))}
               </DropdownMenu>
             </Dropdown>
+
+            <Button size="sm" variant="flat" onPress={resetFilters}>
+              Reset
+            </Button>
+
+            <Button
+              size="sm"
+              variant="flat"
+              startContent={<RefreshCw size={15} />}
+              onPress={fetchLedgerGroups}
+            >
+              Refresh
+            </Button>
+
+            <Button
+              size="sm"
+              className="bg-emerald-700 font-semibold text-white"
+              startContent={<Plus size={16} />}
+              onPress={handleOpenCreate}
+            >
+              Create Group
+            </Button>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {data.length} status
+
+        <div className="flex items-center justify-between">
+          <span className="text-small text-default-400">
+            Total {ledgerGroupTotalElements} ledger groups
           </span>
-          <label className="flex items-center text-default-400 text-small">
+
+          <label className="flex items-center text-small text-default-400">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent text-small text-default-400 outline-none"
+              value={rowsPerPage}
               onChange={onRowsPerPageChange}
             >
               <option value="15">15</option>
-              <option value="25">25</option>
+              <option value="20">20</option>
               <option value="50">50</option>
             </select>
           </label>
@@ -218,64 +512,85 @@ const Group = () => {
     );
   }, [
     filterValue,
+    groupTypeFilter,
+    activeFilter,
     visibleColumns,
-    onRowsPerPageChange,
-    data.length,
+    rowsPerPage,
+    onClear,
     onSearchChange,
-    hasSearchFilter,
+    onRowsPerPageChange,
+    fetchLedgerGroups,
   ]);
 
-  const bottomContent = React.useMemo(() => {
+  const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
+      <div className="flex items-center justify-between px-2 py-2">
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+            : `${selectedKeys.size} selected`}
         </span>
+
         <Pagination
           isCompact
           showControls
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={paginationTotal}
           onChange={setPage}
         />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+
+        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page <= 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage((prev) => Math.max(prev - 1, 1))}
           >
             Previous
           </Button>
+
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page >= paginationTotal}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() =>
+              setPage((prev) => Math.min(prev + 1, paginationTotal))
+            }
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [selectedKeys, page, paginationTotal]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Group list</h1>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="font-sans text-2xl font-semibold">
+            Ledger Group List
+          </h1>
+          <p className="text-sm text-slate-500">
+            Create, update, filter and manage accounting ledger groups.
+          </p>
+        </div>
+      </div>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Ledger group table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] w-full",
+          wrapper: "max-h-[58vh] w-full",
           table: "w-full",
+          th: "text-xs",
+          td: "text-sm",
         }}
+        selectedKeys={selectedKeys}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
@@ -293,7 +608,13 @@ const Group = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+
+        <TableBody
+          isLoading={isLoading || isDeleting}
+          loadingContent="Loading ledger groups..."
+          emptyContent="No ledger groups found"
+          items={sortedItems}
+        >
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -303,6 +624,137 @@ const Group = () => {
           )}
         </TableBody>
       </Table>
+
+      <Modal
+        size="2xl"
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="top-center"
+        scrollBehavior="inside"
+        isDismissable={false}
+      >
+        <ModalContent>
+          {(close) => (
+            <>
+              <ModalHeader>
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    {editData ? "Update Ledger Group" : "Create Ledger Group"}
+                  </h2>
+                  <p className="text-xs font-normal text-slate-500">
+                    Fill ledger group details as per account master.
+                  </p>
+                </div>
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Input
+                    size="sm"
+                    label="Name"
+                    placeholder="Enter group name"
+                    isRequired
+                    value={formData.name}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, name: value }))
+                    }
+                  />
+
+                  <Select
+                    size="sm"
+                    label="Group Type"
+                    isRequired
+                    selectedKeys={
+                      formData.groupType
+                        ? new Set([formData.groupType])
+                        : new Set([])
+                    }
+                    onSelectionChange={(keys) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        groupType: Array.from(keys)?.[0] || "",
+                      }));
+                    }}
+                  >
+                    {groupTypeOptions.map((item) => (
+                      <SelectItem key={item.value}>{item.label}</SelectItem>
+                    ))}
+                  </Select>
+
+                  <div className="md:col-span-2">
+                    <Textarea
+                      size="sm"
+                      label="Description"
+                      placeholder="Enter description"
+                      minRows={3}
+                      value={formData.description}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <Switch
+                      size="sm"
+                      isSelected={formData.systemDefault}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          systemDefault: value,
+                        }))
+                      }
+                    >
+                      System Default
+                    </Switch>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Enable only for default accounting groups.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <Switch
+                      size="sm"
+                      isSelected={formData.active}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, active: value }))
+                      }
+                    >
+                      Active
+                    </Switch>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Inactive groups will not be used while creating ledger.
+                    </p>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    resetForm();
+                    close();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  className="bg-emerald-700 font-semibold text-white"
+                  isLoading={isSaving}
+                  onPress={handleSave}
+                >
+                  {editData ? "Update Group" : "Create Group"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </>
   );
 };

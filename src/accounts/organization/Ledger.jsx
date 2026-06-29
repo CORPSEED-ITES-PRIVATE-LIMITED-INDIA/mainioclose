@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Chip,
@@ -12,18 +12,17 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Pagination,
+  Spinner,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
-  Textarea,
   useDisclosure,
 } from "@heroui/react";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   BarChart3,
   Bell,
   BookOpen,
@@ -35,232 +34,70 @@ import {
   Home,
   IdCard,
   Landmark,
-  Mail,
-  MapPin,
   Menu,
   Pencil,
-  Phone,
   Plus,
   Receipt,
   Search,
   Settings,
   ShieldCheck,
-  UserCircle,
+  Trash2,
   Users,
   Wallet,
 } from "lucide-react";
+import { useDispatch } from "react-redux";
+import {
+  clearLedgerError,
+  createLedger,
+  deleteLedger,
+  fetchLedgers,
+  setActiveFilter,
+  setLedgerGroupIdFilter,
+  setLedgerPage,
+  setLedgerSearch,
+  setLedgerTypeFilter,
+  setSelectedLedgerId,
+} from "../../toolkit/slices/organizationSlice";
 
-const dummyLedgers = [
-  {
-    id: 1,
-    ledgerCode: "LED-0001",
-    name: "Corpseed ITES Pvt. Ltd.",
-    alias: "Corpseed",
-    ledgerType: "Company Ledger",
-    ledgerCategory: "COMPANY",
-    partyType: "CUSTOMER",
-    groupName: "Sundry Debtors",
-    openingBalance: 0,
-    openingBalanceType: "DR",
-    currentBalance: 245000,
-    currentBalanceType: "DR",
-    totalDebit: 890000,
-    totalCredit: 645000,
-    currency: "INR",
-    effectiveFrom: "01-Apr-2026",
-    gstRegistered: true,
-    gstStatus: "Registered",
-    gstin: "07ABCDE1234F1Z5",
-    panNumber: "ABCDE1234F",
-    email: "accounts@corpseed.com",
-    mobile: "9876543210",
-    billingAddress: "A-154A, Sector 63, Noida, Uttar Pradesh - 201301",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "05-Apr-26",
-        voucherNo: "INV-001",
-        particulars: "Sales Invoice - Project Service",
-        debit: 250000,
-        credit: null,
-        balance: "₹2,50,000 Dr",
-      },
-      {
-        id: 2,
-        date: "12-Apr-26",
-        voucherNo: "RCPT-001",
-        particulars: "Payment Received",
-        debit: null,
-        credit: 100000,
-        balance: "₹1,50,000 Dr",
-      },
-    ],
-  },
-  {
-    id: 2,
-    ledgerCode: "LED-0002",
-    name: "Balaji Traders",
-    alias: "Balaji",
-    ledgerType: "Vendor Ledger",
-    ledgerCategory: "VENDOR",
-    partyType: "SUPPLIER",
-    groupName: "Sundry Creditors",
-    openingBalance: 50000,
-    openingBalanceType: "CR",
-    currentBalance: 185000,
-    currentBalanceType: "CR",
-    totalDebit: 315000,
-    totalCredit: 500000,
-    currency: "INR",
-    effectiveFrom: "01-Apr-2026",
-    gstRegistered: true,
-    gstStatus: "Registered",
-    gstin: "09AAFCB1234K1Z2",
-    panNumber: "AAFCB1234K",
-    email: "balaji.traders@gmail.com",
-    mobile: "9876543211",
-    billingAddress:
-      "Plot 42, Industrial Area, Ghaziabad, Uttar Pradesh - 201001",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "08-Apr-26",
-        voucherNo: "PUR-001",
-        particulars: "Purchase - Cement Material",
-        debit: null,
-        credit: 300000,
-        balance: "₹3,00,000 Cr",
-      },
-      {
-        id: 2,
-        date: "15-Apr-26",
-        voucherNo: "PAY-001",
-        particulars: "Vendor Payment",
-        debit: 115000,
-        credit: null,
-        balance: "₹1,85,000 Cr",
-      },
-    ],
-  },
-  {
-    id: 3,
-    ledgerCode: "LED-0003",
-    name: "HDFC Bank",
-    alias: "HDFC",
-    ledgerType: "Bank Ledger",
-    ledgerCategory: "BANK",
-    partyType: "NA",
-    groupName: "Bank Accounts",
-    openingBalance: 1000000,
-    openingBalanceType: "DR",
-    currentBalance: 1525000,
-    currentBalanceType: "DR",
-    totalDebit: 2250000,
-    totalCredit: 725000,
-    currency: "INR",
-    effectiveFrom: "01-Apr-2026",
-    gstRegistered: false,
-    gstStatus: "Not Applicable",
-    gstin: "-",
-    panNumber: "-",
-    email: "banking@corpseed.com",
-    mobile: "9876543212",
-    billingAddress: "HDFC Bank, Sector 63 Branch, Noida",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "03-Apr-26",
-        voucherNo: "RCPT-002",
-        particulars: "Client Receipt",
-        debit: 750000,
-        credit: null,
-        balance: "₹17,50,000 Dr",
-      },
-      {
-        id: 2,
-        date: "10-Apr-26",
-        voucherNo: "PAY-002",
-        particulars: "Vendor Payment",
-        debit: null,
-        credit: 225000,
-        balance: "₹15,25,000 Dr",
-      },
-    ],
-  },
-  {
-    id: 4,
-    ledgerCode: "LED-0004",
-    name: "Sales Account",
-    alias: "Sales",
-    ledgerType: "Income Ledger",
-    ledgerCategory: "INCOME",
-    partyType: "NA",
-    groupName: "Sales Accounts",
-    openingBalance: 0,
-    openingBalanceType: "CR",
-    currentBalance: 890000,
-    currentBalanceType: "CR",
-    totalDebit: 0,
-    totalCredit: 890000,
-    currency: "INR",
-    effectiveFrom: "01-Apr-2026",
-    gstRegistered: false,
-    gstStatus: "Not Applicable",
-    gstin: "-",
-    panNumber: "-",
-    email: "accounts@corpseed.com",
-    mobile: "9876543213",
-    billingAddress: "Primary Company Ledger",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "05-Apr-26",
-        voucherNo: "INV-001",
-        particulars: "Sales Invoice - Project Service",
-        debit: null,
-        credit: 250000,
-        balance: "₹2,50,000 Cr",
-      },
-      {
-        id: 2,
-        date: "20-Apr-26",
-        voucherNo: "INV-002",
-        particulars: "Sales Invoice - Consultancy",
-        debit: null,
-        credit: 640000,
-        balance: "₹8,90,000 Cr",
-      },
-    ],
-  },
+const ledgerTypeOptions = [
+  "CUSTOMER",
+  "CUSTOMER_ADVANCE",
+  "VENDOR",
+  "VENDOR_PAYABLE",
+  "BANK",
+  "CASH",
+  "PAYMENT_GATEWAY",
+  "SALES",
+  "SERVICE_INCOME",
+  "OUTPUT_IGST",
+  "OUTPUT_CGST",
+  "OUTPUT_SGST",
+  "TDS_RECEIVABLE",
+  "CREDIT_NOTE",
+  "REFUND_PAYABLE",
+  "ROUND_OFF",
+  "EXPENSE",
+  "LIABILITY",
+  "ASSET",
 ];
 
 const initialForm = {
-  name: "",
-  alias: "",
-  ledgerType: "Company Ledger",
-  ledgerCategory: "COMPANY",
-  partyType: "CUSTOMER",
-  groupName: "Sundry Debtors",
-  openingBalance: "",
-  openingBalanceType: "DR",
-  currentBalance: "",
-  currentBalanceType: "DR",
-  totalDebit: "",
-  totalCredit: "",
-  currency: "INR",
-  effectiveFrom: "01-Apr-2026",
-  gstRegistered: true,
-  gstStatus: "Registered",
-  gstin: "",
-  panNumber: "",
-  email: "",
-  mobile: "",
-  billingAddress: "",
-  active: true,
+  ledgerName: "",
+  ledgerType: "CUSTOMER",
+  ledgerGroupId: "",
+  companyId: "",
+  unitId: "",
+  contactId: "",
+  gstNo: "",
+  panNo: "",
+  bankName: "",
+  accountHolderName: "",
+  accountNumber: "",
+  ifscCode: "",
+  branchName: "",
+  openingBalance: "0",
+  openingBalanceType: "DEBIT",
+  active: "true",
 };
 
 const menuItems = [
@@ -275,138 +112,324 @@ const menuItems = [
 const formatCurrency = (amount) => {
   if (amount === null || amount === undefined || amount === "") return "-";
 
-  return `₹${Number(amount).toLocaleString("en-IN")}`;
+  const numericAmount = Number(amount);
+
+  if (Number.isNaN(numericAmount)) return amount;
+
+  return `₹${numericAmount.toLocaleString("en-IN")}`;
 };
 
-const getGroupBadgeClass = (category) => {
-  switch (category) {
-    case "COMPANY":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "VENDOR":
-      return "bg-orange-50 text-orange-700 border-orange-200";
-    case "BANK":
-      return "bg-blue-50 text-blue-700 border-blue-200";
-    case "INCOME":
-      return "bg-purple-50 text-purple-700 border-purple-200";
-    default:
-      return "bg-default-50 text-default-700 border-default-200";
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const balanceTypeLabel = (value) => {
+  if (value === "DEBIT") return "Dr";
+  if (value === "CREDIT") return "Cr";
+  return value || "";
+};
+
+const getLedgerIcon = (ledgerType = "") => {
+  if (["BANK", "CASH", "PAYMENT_GATEWAY"].includes(ledgerType)) {
+    return Landmark;
   }
+
+  if (["VENDOR", "VENDOR_PAYABLE"].includes(ledgerType)) {
+    return Users;
+  }
+
+  if (
+    ["SALES", "SERVICE_INCOME", "CREDIT_NOTE", "REFUND_PAYABLE"].includes(
+      ledgerType,
+    )
+  ) {
+    return Receipt;
+  }
+
+  return Building2;
+};
+
+const getGroupBadgeClass = (ledgerType = "") => {
+  if (ledgerType.includes("CUSTOMER")) {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+
+  if (ledgerType.includes("VENDOR")) {
+    return "bg-orange-50 text-orange-700 border-orange-200";
+  }
+
+  if (["BANK", "CASH", "PAYMENT_GATEWAY"].includes(ledgerType)) {
+    return "bg-blue-50 text-blue-700 border-blue-200";
+  }
+
+  if (["SALES", "SERVICE_INCOME"].includes(ledgerType)) {
+    return "bg-purple-50 text-purple-700 border-purple-200";
+  }
+
+  if (
+    ledgerType.includes("OUTPUT") ||
+    ledgerType.includes("TDS") ||
+    ledgerType.includes("TAX")
+  ) {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+
+  return "bg-default-50 text-default-700 border-default-200";
+};
+
+const extractApiError = (error) => {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Something went wrong"
+  );
+};
+
+const toNumber = (value) => {
+  if (value === "" || value === null || value === undefined) return 0;
+
+  const numericValue = Number(value);
+
+  return Number.isNaN(numericValue) ? 0 : numericValue;
 };
 
 const Ledger = () => {
+  const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    ledgers,
+    selectedLedgerId,
+    search,
+    ledgerTypeFilter,
+    ledgerGroupIdFilter,
+    activeFilter,
+    page,
+    size,
+    totalPages,
+    totalElements,
+    loading,
+    saving,
+    deletingId,
+    error,
+  } = useSelector((state) => state.organization);
 
-  const [ledgers, setLedgers] = useState(dummyLedgers);
-  const [selectedLedgerId, setSelectedLedgerId] = useState(1);
+  const [ledgers, setLedgers] = useState([]);
+
   const [search, setSearch] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [size] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
   const [editData, setEditData] = useState(null);
   const [formData, setFormData] = useState(initialForm);
+  const [formError, setFormError] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [apiError, setApiError] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      dispatch(
+        fetchLedgers({
+          search,
+          ledgerType: ledgerTypeFilter,
+          ledgerGroupId: ledgerGroupIdFilter,
+          active: activeFilter,
+          page,
+          size,
+        }),
+      );
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    dispatch,
+    search,
+    ledgerTypeFilter,
+    ledgerGroupIdFilter,
+    activeFilter,
+    page,
+    size,
+  ]);
 
   const selectedLedger = useMemo(() => {
     return (
-      ledgers.find((ledger) => ledger.id === selectedLedgerId) || ledgers[0]
+      ledgers.find((ledger) => ledger.id === selectedLedgerId) ||
+      ledgers[0] ||
+      null
     );
   }, [ledgers, selectedLedgerId]);
-
-  const filteredLedgers = useMemo(() => {
-    if (!search.trim()) return ledgers;
-
-    const keyword = search.toLowerCase();
-
-    return ledgers.filter((ledger) => {
-      return (
-        ledger.name.toLowerCase().includes(keyword) ||
-        ledger.groupName.toLowerCase().includes(keyword) ||
-        ledger.ledgerType.toLowerCase().includes(keyword) ||
-        ledger.ledgerCategory.toLowerCase().includes(keyword)
-      );
-    });
-  }, [ledgers, search]);
 
   const openAddModal = () => {
     setEditData(null);
     setFormData(initialForm);
+    setApiError("");
     onOpen();
   };
 
   const openEditModal = (ledger) => {
     setEditData(ledger);
+    setApiError("");
+
     setFormData({
-      name: ledger.name || "",
-      alias: ledger.alias || "",
-      ledgerType: ledger.ledgerType || "Company Ledger",
-      ledgerCategory: ledger.ledgerCategory || "COMPANY",
-      partyType: ledger.partyType || "CUSTOMER",
-      groupName: ledger.groupName || "Sundry Debtors",
-      openingBalance: ledger.openingBalance ?? "",
-      openingBalanceType: ledger.openingBalanceType || "DR",
-      currentBalance: ledger.currentBalance ?? "",
-      currentBalanceType: ledger.currentBalanceType || "DR",
-      totalDebit: ledger.totalDebit ?? "",
-      totalCredit: ledger.totalCredit ?? "",
-      currency: ledger.currency || "INR",
-      effectiveFrom: ledger.effectiveFrom || "01-Apr-2026",
-      gstRegistered: ledger.gstRegistered ?? true,
-      gstStatus: ledger.gstStatus || "Registered",
-      gstin: ledger.gstin || "",
-      panNumber: ledger.panNumber || "",
-      email: ledger.email || "",
-      mobile: ledger.mobile || "",
-      billingAddress: ledger.billingAddress || "",
-      active: ledger.active ?? true,
+      ledgerName: ledger.ledgerName || "",
+      ledgerType: ledger.ledgerType || "CUSTOMER",
+      ledgerGroupId: ledger.ledgerGroupId ?? "",
+      companyId: ledger.companyId ?? "",
+      unitId: ledger.unitId ?? "",
+      contactId: ledger.contactId ?? "",
+      gstNo: ledger.gstNo || "",
+      panNo: ledger.panNo || "",
+      bankName: ledger.bankName || "",
+      accountHolderName: ledger.accountHolderName || "",
+      accountNumber: ledger.accountNumber || "",
+      ifscCode: ledger.ifscCode || "",
+      branchName: ledger.branchName || "",
+      openingBalance: ledger.openingBalance ?? "0",
+      openingBalanceType: ledger.openingBalanceType || "DEBIT",
+      active: String(ledger.active ?? true),
     });
+
     onOpen();
   };
 
   const handleChange = (key, value) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previousData) => ({
+      ...previousData,
       [key]: value,
     }));
   };
 
-  const handleSaveLedger = (e) => {
-    e.preventDefault();
-
-    const payload = {
-      ...formData,
-      openingBalance: Number(formData.openingBalance || 0),
-      currentBalance: Number(formData.currentBalance || 0),
-      totalDebit: Number(formData.totalDebit || 0),
-      totalCredit: Number(formData.totalCredit || 0),
-      gstRegistered:
-        formData.gstRegistered === true || formData.gstRegistered === "true",
-      active: formData.active === true || formData.active === "true",
+  const buildLedgerPayload = () => {
+    return {
+      ledgerName: formData.ledgerName.trim(),
+      ledgerType: formData.ledgerType,
+      ledgerGroupId: toNumber(formData.ledgerGroupId),
+      companyId: toNumber(formData.companyId),
+      unitId: toNumber(formData.unitId),
+      contactId: toNumber(formData.contactId),
+      gstNo: formData.gstNo.trim(),
+      panNo: formData.panNo.trim(),
+      bankName: formData.bankName.trim(),
+      accountHolderName: formData.accountHolderName.trim(),
+      accountNumber: formData.accountNumber.trim(),
+      ifscCode: formData.ifscCode.trim(),
+      branchName: formData.branchName.trim(),
+      openingBalance: toNumber(formData.openingBalance),
+      openingBalanceType: formData.openingBalanceType,
+      active: formData.active === "true" || formData.active === true,
     };
+  };
 
-    if (editData) {
-      setLedgers((prev) =>
-        prev.map((ledger) =>
-          ledger.id === editData.id
-            ? {
-                ...ledger,
-                ...payload,
-              }
-            : ledger,
-        ),
-      );
-    } else {
-      const newId = Math.max(...ledgers.map((ledger) => ledger.id)) + 1;
-
-      const newLedger = {
-        id: newId,
-        ledgerCode: `LED-${String(newId).padStart(4, "0")}`,
-        ...payload,
-        entries: [],
-      };
-
-      setLedgers((prev) => [newLedger, ...prev]);
-      setSelectedLedgerId(newId);
+  const validateLedgerForm = () => {
+    if (!formData.ledgerName.trim()) {
+      return "Ledger name is required";
     }
 
-    setEditData(null);
-    setFormData(initialForm);
-    onOpenChange(false);
+    if (!formData.ledgerType) {
+      return "Ledger type is required";
+    }
+
+    if (!formData.ledgerGroupId) {
+      return "Ledger group ID is required";
+    }
+
+    return "";
+  };
+
+  const handleSaveLedger = async (event) => {
+    event.preventDefault();
+
+    const validationError = validateLedgerForm();
+
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    try {
+      setFormError("");
+      dispatch(clearLedgerError());
+
+      const payload = buildLedgerPayload();
+
+      if (editData) {
+        await dispatch(
+          updateLedger({
+            id: editData.id,
+            payload,
+          }),
+        ).unwrap();
+      } else {
+        await dispatch(createLedger(payload)).unwrap();
+        dispatch(setLedgerPage(1));
+      }
+
+      await dispatch(
+        fetchLedgers({
+          search,
+          ledgerType: ledgerTypeFilter,
+          ledgerGroupId: ledgerGroupIdFilter,
+          active: activeFilter,
+          page: editData ? page : 1,
+          size,
+        }),
+      );
+
+      setEditData(null);
+      setFormData(initialForm);
+      onOpenChange(false);
+    } catch (err) {
+      setFormError(err || "Failed to save ledger");
+    }
+  };
+
+  const handleDeleteLedger = async (ledger) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ledger "${ledger.ledgerName}"?`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      dispatch(clearLedgerError());
+
+      await dispatch(deleteLedger(ledger.id)).unwrap();
+
+      const nextPage = ledgers.length === 1 && page > 1 ? page - 1 : page;
+
+      dispatch(setLedgerPage(nextPage));
+
+      await dispatch(
+        fetchLedgers({
+          search,
+          ledgerType: ledgerTypeFilter,
+          ledgerGroupId: ledgerGroupIdFilter,
+          active: activeFilter,
+          page: nextPage,
+          size,
+        }),
+      );
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -511,7 +534,7 @@ const Ledger = () => {
                 <span>Ledger Master</span>
                 <ChevronDown size={15} className="-rotate-90" />
                 <span className="font-medium text-slate-700">
-                  Company Ledger
+                  {selectedLedger?.ledgerName || "Ledger"}
                 </span>
               </div>
 
@@ -530,7 +553,13 @@ const Ledger = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[360px_1fr]">
+          {apiError && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {apiError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[390px_1fr]">
             {/* Ledger List */}
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
@@ -539,7 +568,7 @@ const Ledger = () => {
                     All Ledgers
                   </h3>
                   <p className="text-sm text-slate-500">
-                    Total {ledgers.length} ledgers
+                    Total {totalElements} ledgers
                   </p>
                 </div>
 
@@ -548,7 +577,7 @@ const Ledger = () => {
                   variant="flat"
                   className="bg-emerald-50 text-emerald-700"
                 >
-                  Dummy Data
+                  Live API
                 </Chip>
               </div>
 
@@ -556,124 +585,209 @@ const Ledger = () => {
                 isClearable
                 placeholder="Search ledger..."
                 value={search}
-                onValueChange={setSearch}
-                onClear={() => setSearch("")}
+                onValueChange={(value) => dispatch(setLedgerSearch(value))}
+                onClear={() => dispatch(setLedgerSearch(""))}
                 startContent={<Search size={17} className="text-slate-400" />}
-                className="mb-4"
+                className="mb-3"
               />
 
+              <div className="mb-4 grid grid-cols-1 gap-3">
+                <SelectBox
+                  label="Ledger Type"
+                  value={ledgerTypeFilter}
+                  onChange={(value) => dispatch(setLedgerTypeFilter(value))}
+                  options={[
+                    { label: "All Ledger Types", value: "ALL" },
+                    ...ledgerTypeOptions.map((type) => ({
+                      label: type,
+                      value: type,
+                    })),
+                  ]}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Ledger Group ID"
+                    type="number"
+                    value={ledgerGroupIdFilter}
+                    onValueChange={(value) =>
+                      dispatch(setLedgerGroupIdFilter(value))
+                    }
+                  />
+                  <SelectBox
+                    label="Status"
+                    value={activeFilter}
+                    onChange={(value) => dispatch(setActiveFilter(value))}
+                    options={[
+                      { label: "All", value: "ALL" },
+                      { label: "Active", value: "true" },
+                      { label: "Inactive", value: "false" },
+                    ]}
+                  />
+                </div>
+              </div>
+
               <div className="max-h-[650px] space-y-3 overflow-auto pr-1">
-                {filteredLedgers.map((ledger) => (
-                  <button
-                    key={ledger.id}
-                    type="button"
-                    onClick={() => setSelectedLedgerId(ledger.id)}
-                    className={`w-full rounded-2xl border p-4 text-left transition ${
-                      selectedLedger?.id === ledger.id
-                        ? "border-emerald-300 bg-emerald-50/80 shadow-sm"
-                        : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
-                    }`}
-                  >
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                          {ledger.ledgerCategory === "BANK" ? (
-                            <Landmark size={20} />
-                          ) : ledger.ledgerCategory === "VENDOR" ? (
-                            <Users size={20} />
-                          ) : (
-                            <Building2 size={20} />
-                          )}
+                {loading ? (
+                  <div className="flex h-56 items-center justify-center">
+                    <Spinner label="Loading ledgers..." />
+                  </div>
+                ) : ledgers.length > 0 ? (
+                  ledgers.map((ledger) => {
+                    const LedgerIcon = getLedgerIcon(ledger.ledgerType);
+
+                    return (
+                      <div
+                        key={ledger.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => dispatch(setSelectedLedgerId(ledger.id))}
+                        className={`w-full cursor-pointer rounded-2xl border p-4 text-left transition ${
+                          selectedLedger?.id === ledger.id
+                            ? "border-emerald-300 bg-emerald-50/80 shadow-sm"
+                            : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
+                        }`}
+                      >
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                              <LedgerIcon size={20} />
+                            </div>
+
+                            <div>
+                              <p className="line-clamp-1 font-semibold text-slate-900">
+                                {ledger.ledgerName || "-"}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {ledger.ledgerCode || "-"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div onClick={(event) => event.stopPropagation()}>
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                  isLoading={deletingId === ledger.id}
+                                >
+                                  <EllipsisVertical size={18} />
+                                </Button>
+                              </DropdownTrigger>
+
+                              <DropdownMenu
+                                aria-label="Ledger actions"
+                                onAction={(key) => {
+                                  if (key === "edit") openEditModal(ledger);
+                                  if (key === "delete")
+                                    handleDeleteLedger(ledger);
+                                }}
+                              >
+                                <DropdownItem
+                                  key="edit"
+                                  startContent={<Pencil size={16} />}
+                                >
+                                  Edit
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="delete"
+                                  color="danger"
+                                  className="text-danger"
+                                  startContent={<Trash2 size={16} />}
+                                >
+                                  Delete
+                                </DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
+                          </div>
                         </div>
 
-                        <div>
-                          <p className="line-clamp-1 font-semibold text-slate-900">
-                            {ledger.name}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {ledger.ledgerCode}
-                          </p>
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          <span
+                            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getGroupBadgeClass(
+                              ledger.ledgerType,
+                            )}`}
+                          >
+                            {ledger.ledgerType || "-"}
+                          </span>
+
+                          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+                            {ledger.ledgerGroupName ||
+                              `Group ID ${ledger.ledgerGroupId}`}
+                          </span>
+
+                          <span
+                            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                              ledger.active
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-red-200 bg-red-50 text-red-700"
+                            }`}
+                          >
+                            {ledger.active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                          <span className="text-xs text-slate-500">
+                            Current Balance
+                          </span>
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(ledger.currentBalance)}{" "}
+                            {balanceTypeLabel(ledger.currentBalanceType)}
+                          </span>
                         </div>
                       </div>
-
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            onPress={(e) => e?.continuePropagation?.()}
-                          >
-                            <EllipsisVertical size={18} />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu
-                          aria-label="Ledger actions"
-                          onAction={(key) => {
-                            if (key === "edit") openEditModal(ledger);
-                          }}
-                        >
-                          <DropdownItem key="edit">Edit</DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
-                    </div>
-
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getGroupBadgeClass(
-                          ledger.ledgerCategory,
-                        )}`}
-                      >
-                        {ledger.ledgerType}
-                      </span>
-
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
-                        {ledger.groupName}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                      <span className="text-xs text-slate-500">
-                        Current Balance
-                      </span>
-                      <span className="font-semibold text-slate-900">
-                        {formatCurrency(ledger.currentBalance)}{" "}
-                        {ledger.currentBalanceType}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                    );
+                  })
+                ) : (
+                  <div className="flex h-56 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-500">
+                    No ledgers found
+                  </div>
+                )}
               </div>
+
+              {totalPages > 1 && (
+                <div className="mt-4 flex justify-center">
+                  <Pagination
+                    showControls
+                    page={page}
+                    total={totalPages}
+                    onChange={(value) => dispatch(setLedgerPage(value))}
+                    color="success"
+                  />
+                </div>
+              )}
             </section>
 
             {/* Ledger Detail */}
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               {selectedLedger ? (
                 <>
-                  {/* Detail Header */}
                   <div className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                        {selectedLedger.ledgerCategory === "BANK" ? (
-                          <Landmark size={28} />
-                        ) : selectedLedger.ledgerCategory === "VENDOR" ? (
-                          <Users size={28} />
-                        ) : (
-                          <Building2 size={28} />
+                        {React.createElement(
+                          getLedgerIcon(selectedLedger.ledgerType),
+                          { size: 28 },
                         )}
                       </div>
 
                       <div>
                         <h3 className="text-2xl font-bold text-slate-950">
-                          {selectedLedger.name}
+                          {selectedLedger.ledgerName || "-"}
                         </h3>
 
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                          <span>{selectedLedger.ledgerType}</span>
+                          <span>{selectedLedger.ledgerType || "-"}</span>
                           <span className="h-1 w-1 rounded-full bg-emerald-500" />
-                          <span>{selectedLedger.groupName}</span>
+                          <span>
+                            {selectedLedger.ledgerGroupName ||
+                              `Group ID ${selectedLedger.ledgerGroupId}`}
+                          </span>
                           <span className="h-1 w-1 rounded-full bg-emerald-500" />
-                          <span>{selectedLedger.ledgerCode}</span>
+                          <span>{selectedLedger.ledgerCode || "-"}</span>
                         </div>
                       </div>
                     </div>
@@ -694,10 +808,19 @@ const Ledger = () => {
                       >
                         Edit
                       </Button>
+
+                      <Button
+                        color="danger"
+                        variant="flat"
+                        startContent={<Trash2 size={17} />}
+                        isLoading={deletingId === selectedLedger.id}
+                        onPress={() => handleDeleteLedger(selectedLedger)}
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Basic Info */}
                   <div className="mb-6">
                     <h4 className="mb-4 text-lg font-semibold text-emerald-900">
                       Basic Information
@@ -707,7 +830,11 @@ const Ledger = () => {
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <InfoItem
                           label="Ledger Name"
-                          value={selectedLedger.name}
+                          value={selectedLedger.ledgerName}
+                        />
+                        <InfoItem
+                          label="Ledger Code"
+                          value={selectedLedger.ledgerCode}
                         />
                         <InfoItem
                           label="Ledger Type"
@@ -715,46 +842,57 @@ const Ledger = () => {
                         />
                         <InfoItem
                           label="Under Group"
-                          value={selectedLedger.groupName}
+                          value={
+                            selectedLedger.ledgerGroupName ||
+                            `Group ID ${selectedLedger.ledgerGroupId}`
+                          }
                         />
                         <InfoItem
-                          label="Opening Balance"
-                          value={`${formatCurrency(
-                            selectedLedger.openingBalance,
-                          )} ${selectedLedger.openingBalanceType}`}
+                          label="Company"
+                          value={selectedLedger.companyName}
                         />
                         <InfoItem
-                          label="Currency"
-                          value={selectedLedger.currency}
+                          label="Unit"
+                          value={selectedLedger.unitName}
                         />
                         <InfoItem
-                          label="Effective From"
-                          value={selectedLedger.effectiveFrom}
+                          label="Contact"
+                          value={selectedLedger.contactName}
+                        />
+                        <InfoItem
+                          label="System Created"
+                          value={selectedLedger.systemCreated ? "Yes" : "No"}
                         />
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
                         <SummaryCard
-                          label="Current Balance"
+                          label="Opening Balance"
                           value={`${formatCurrency(
-                            selectedLedger.currentBalance,
-                          )} ${selectedLedger.currentBalanceType}`}
+                            selectedLedger.openingBalance,
+                          )} ${balanceTypeLabel(
+                            selectedLedger.openingBalanceType,
+                          )}`}
                           icon={Wallet}
                         />
                         <SummaryCard
-                          label="Total Debit"
-                          value={formatCurrency(selectedLedger.totalDebit)}
-                          icon={ArrowUpRight}
-                        />
-                        <SummaryCard
-                          label="Total Credit"
-                          value={formatCurrency(selectedLedger.totalCredit)}
-                          icon={ArrowDownRight}
+                          label="Current Balance"
+                          value={`${formatCurrency(
+                            selectedLedger.currentBalance,
+                          )} ${balanceTypeLabel(
+                            selectedLedger.currentBalanceType,
+                          )}`}
+                          icon={Wallet}
                         />
                         <SummaryCard
                           label="GST Status"
-                          value={selectedLedger.gstStatus}
+                          value={selectedLedger.gstNo ? "Registered" : "N/A"}
                           icon={ShieldCheck}
+                        />
+                        <SummaryCard
+                          label="Created At"
+                          value={formatDateTime(selectedLedger.createdAt)}
+                          icon={BookOpen}
                         />
                       </div>
                     </div>
@@ -762,46 +900,62 @@ const Ledger = () => {
 
                   <div className="my-6 border-t border-slate-200" />
 
-                  {/* Tax Contact Address */}
                   <div className="mb-6">
                     <h4 className="mb-4 text-lg font-semibold text-emerald-900">
-                      Tax / Contact / Address
+                      Tax / Bank / Party Information
                     </h4>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                       <ContactItem
                         icon={FileText}
-                        label="GSTIN"
-                        value={selectedLedger.gstin}
+                        label="GST No."
+                        value={selectedLedger.gstNo}
                       />
                       <ContactItem
                         icon={IdCard}
-                        label="PAN"
-                        value={selectedLedger.panNumber}
+                        label="PAN No."
+                        value={selectedLedger.panNo}
                       />
                       <ContactItem
-                        icon={Mail}
-                        label="Email"
-                        value={selectedLedger.email}
+                        icon={Landmark}
+                        label="Bank Name"
+                        value={selectedLedger.bankName}
                       />
                       <ContactItem
-                        icon={Phone}
-                        label="Mobile"
-                        value={selectedLedger.mobile}
+                        icon={Users}
+                        label="Account Holder Name"
+                        value={selectedLedger.accountHolderName}
                       />
-                      <div className="md:col-span-2">
-                        <ContactItem
-                          icon={MapPin}
-                          label="Billing Address"
-                          value={selectedLedger.billingAddress}
-                        />
-                      </div>
+                      <ContactItem
+                        icon={Wallet}
+                        label="Account Number"
+                        value={selectedLedger.accountNumber}
+                      />
+                      <ContactItem
+                        icon={ShieldCheck}
+                        label="IFSC Code"
+                        value={selectedLedger.ifscCode}
+                      />
+                      <ContactItem
+                        icon={Landmark}
+                        label="Branch Name"
+                        value={selectedLedger.branchName}
+                      />
+                      <ContactItem
+                        icon={Building2}
+                        label="Company ID"
+                        value={selectedLedger.companyId}
+                      />
+                      <ContactItem
+                        icon={Building2}
+                        label="Unit ID"
+                        value={selectedLedger.unitId}
+                      />
                     </div>
                   </div>
 
                   <div className="my-6 border-t border-slate-200" />
 
-                  {/* Recent Entries */}
                   <div>
                     <div className="mb-4 flex items-center justify-between">
                       <h4 className="text-lg font-semibold text-emerald-900">
@@ -836,7 +990,7 @@ const Ledger = () => {
                       </TableHeader>
 
                       <TableBody
-                        emptyContent="No ledger entries found"
+                        emptyContent="No ledger entries found from API"
                         items={selectedLedger.entries || []}
                       >
                         {(entry) => (
@@ -859,7 +1013,11 @@ const Ledger = () => {
                 </>
               ) : (
                 <div className="flex h-96 items-center justify-center text-slate-500">
-                  No ledger selected
+                  {loading ? (
+                    <Spinner label="Loading ledger..." />
+                  ) : (
+                    "No ledger selected"
+                  )}
                 </div>
               )}
             </section>
@@ -881,76 +1039,71 @@ const Ledger = () => {
               <ModalHeader className="flex flex-col gap-1">
                 {editData ? "Update Ledger" : "Create Ledger"}
                 <p className="text-sm font-normal text-slate-500">
-                  Tally-style ledger master information
+                  Ledger master information from Account Service API
                 </p>
               </ModalHeader>
 
               <ModalBody>
+                {apiError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                    {apiError}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <Input
                     isRequired
                     label="Ledger Name"
-                    value={formData.name}
-                    onValueChange={(value) => handleChange("name", value)}
-                  />
-
-                  <Input
-                    label="Alias"
-                    value={formData.alias}
-                    onValueChange={(value) => handleChange("alias", value)}
+                    value={formData.ledgerName}
+                    onValueChange={(value) => handleChange("ledgerName", value)}
                   />
 
                   <SelectBox
                     label="Ledger Type"
                     value={formData.ledgerType}
                     onChange={(value) => handleChange("ledgerType", value)}
-                    options={[
-                      "Company Ledger",
-                      "Vendor Ledger",
-                      "Bank Ledger",
-                      "Income Ledger",
-                      "Expense Ledger",
-                      "Tax Ledger",
-                    ]}
+                    options={ledgerTypeOptions}
+                  />
+
+                  <Input
+                    isRequired
+                    label="Ledger Group ID"
+                    type="number"
+                    value={String(formData.ledgerGroupId)}
+                    onValueChange={(value) =>
+                      handleChange("ledgerGroupId", value)
+                    }
                   />
 
                   <SelectBox
-                    label="Ledger Category"
-                    value={formData.ledgerCategory}
-                    onChange={(value) => handleChange("ledgerCategory", value)}
+                    label="Status"
+                    value={String(formData.active)}
+                    onChange={(value) => handleChange("active", value)}
                     options={[
-                      "COMPANY",
-                      "VENDOR",
-                      "BANK",
-                      "CASH",
-                      "TAX",
-                      "EXPENSE",
-                      "INCOME",
+                      { label: "Active", value: "true" },
+                      { label: "Inactive", value: "false" },
                     ]}
                   />
 
-                  <SelectBox
-                    label="Party Type"
-                    value={formData.partyType}
-                    onChange={(value) => handleChange("partyType", value)}
-                    options={["CUSTOMER", "SUPPLIER", "BOTH", "NA"]}
+                  <Input
+                    label="Company ID"
+                    type="number"
+                    value={String(formData.companyId)}
+                    onValueChange={(value) => handleChange("companyId", value)}
                   />
 
-                  <SelectBox
-                    label="Under Group"
-                    value={formData.groupName}
-                    onChange={(value) => handleChange("groupName", value)}
-                    options={[
-                      "Sundry Debtors",
-                      "Sundry Creditors",
-                      "Bank Accounts",
-                      "Cash-in-Hand",
-                      "Sales Accounts",
-                      "Purchase Accounts",
-                      "Duties & Taxes",
-                      "Indirect Expenses",
-                      "Direct Expenses",
-                    ]}
+                  <Input
+                    label="Unit ID"
+                    type="number"
+                    value={String(formData.unitId)}
+                    onValueChange={(value) => handleChange("unitId", value)}
+                  />
+
+                  <Input
+                    label="Contact ID"
+                    type="number"
+                    value={String(formData.contactId)}
+                    onValueChange={(value) => handleChange("contactId", value)}
                   />
 
                   <Input
@@ -968,115 +1121,69 @@ const Ledger = () => {
                     onChange={(value) =>
                       handleChange("openingBalanceType", value)
                     }
-                    options={["DR", "CR"]}
+                    options={[
+                      { label: "Debit", value: "DEBIT" },
+                      { label: "Credit", value: "CREDIT" },
+                    ]}
                   />
 
                   <Input
-                    label="Current Balance"
-                    type="number"
-                    value={String(formData.currentBalance)}
+                    label="GST No."
+                    value={formData.gstNo}
+                    onValueChange={(value) => handleChange("gstNo", value)}
+                  />
+
+                  <Input
+                    label="PAN No."
+                    value={formData.panNo}
+                    onValueChange={(value) => handleChange("panNo", value)}
+                  />
+
+                  <Input
+                    label="Bank Name"
+                    value={formData.bankName}
+                    onValueChange={(value) => handleChange("bankName", value)}
+                  />
+
+                  <Input
+                    label="Account Holder Name"
+                    value={formData.accountHolderName}
                     onValueChange={(value) =>
-                      handleChange("currentBalance", value)
+                      handleChange("accountHolderName", value)
                     }
                   />
 
-                  <SelectBox
-                    label="Current Balance Type"
-                    value={formData.currentBalanceType}
-                    onChange={(value) =>
-                      handleChange("currentBalanceType", value)
-                    }
-                    options={["DR", "CR"]}
-                  />
-
                   <Input
-                    label="Total Debit"
-                    type="number"
-                    value={String(formData.totalDebit)}
-                    onValueChange={(value) => handleChange("totalDebit", value)}
-                  />
-
-                  <Input
-                    label="Total Credit"
-                    type="number"
-                    value={String(formData.totalCredit)}
+                    label="Account Number"
+                    value={formData.accountNumber}
                     onValueChange={(value) =>
-                      handleChange("totalCredit", value)
+                      handleChange("accountNumber", value)
                     }
                   />
 
                   <Input
-                    label="Currency"
-                    value={formData.currency}
-                    onValueChange={(value) => handleChange("currency", value)}
+                    label="IFSC Code"
+                    value={formData.ifscCode}
+                    onValueChange={(value) => handleChange("ifscCode", value)}
                   />
 
                   <Input
-                    label="Effective From"
-                    value={formData.effectiveFrom}
-                    onValueChange={(value) =>
-                      handleChange("effectiveFrom", value)
-                    }
+                    label="Branch Name"
+                    value={formData.branchName}
+                    onValueChange={(value) => handleChange("branchName", value)}
                   />
-
-                  <SelectBox
-                    label="GST Registered"
-                    value={String(formData.gstRegistered)}
-                    onChange={(value) => handleChange("gstRegistered", value)}
-                    options={["true", "false"]}
-                  />
-
-                  <Input
-                    label="GSTIN"
-                    value={formData.gstin}
-                    onValueChange={(value) => handleChange("gstin", value)}
-                  />
-
-                  <Input
-                    label="PAN Number"
-                    value={formData.panNumber}
-                    onValueChange={(value) => handleChange("panNumber", value)}
-                  />
-
-                  <Input
-                    label="Email"
-                    type="email"
-                    value={formData.email}
-                    onValueChange={(value) => handleChange("email", value)}
-                  />
-
-                  <Input
-                    label="Mobile"
-                    value={formData.mobile}
-                    onValueChange={(value) => handleChange("mobile", value)}
-                  />
-
-                  <SelectBox
-                    label="Status"
-                    value={String(formData.active)}
-                    onChange={(value) => handleChange("active", value)}
-                    options={["true", "false"]}
-                  />
-
-                  <div className="md:col-span-2">
-                    <Textarea
-                      label="Billing Address"
-                      value={formData.billingAddress}
-                      onValueChange={(value) =>
-                        handleChange("billingAddress", value)
-                      }
-                    />
-                  </div>
                 </div>
               </ModalBody>
 
               <ModalFooter>
-                <Button variant="flat" onPress={onClose}>
+                <Button variant="flat" onPress={onClose} isDisabled={saving}>
                   Cancel
                 </Button>
+
                 <Button
                   type="submit"
                   color="success"
+                  isLoading={saving}
                   className="bg-emerald-700 font-semibold text-white"
                 >
                   {editData ? "Update Ledger" : "Create Ledger"}
@@ -1091,23 +1198,33 @@ const Ledger = () => {
 };
 
 const InfoItem = ({ label, value }) => {
+  const displayValue =
+    value === null || value === undefined || value === "" ? "-" : value;
+
   return (
     <div className="border-b border-slate-200 pb-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
         {label}
       </p>
-      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900">
+        {displayValue}
+      </p>
     </div>
   );
 };
 
 const SummaryCard = ({ label, value, icon: Icon }) => {
+  const displayValue =
+    value === null || value === undefined || value === "" ? "-" : value;
+
   return (
     <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm text-slate-600">{label}</p>
-          <p className="mt-2 text-xl font-bold text-slate-950">{value}</p>
+          <p className="mt-2 text-xl font-bold text-slate-950">
+            {displayValue}
+          </p>
         </div>
 
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
@@ -1119,6 +1236,9 @@ const SummaryCard = ({ label, value, icon: Icon }) => {
 };
 
 const ContactItem = ({ icon: Icon, label, value }) => {
+  const displayValue =
+    value === null || value === undefined || value === "" ? "-" : value;
+
   return (
     <div className="flex gap-3 border-b border-slate-200 pb-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700">
@@ -1127,7 +1247,9 @@ const ContactItem = ({ icon: Icon, label, value }) => {
 
       <div>
         <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-1 text-sm font-medium text-slate-900">{value}</p>
+        <p className="mt-1 text-sm font-medium text-slate-900">
+          {displayValue}
+        </p>
       </div>
     </div>
   );
@@ -1140,14 +1262,21 @@ const SelectBox = ({ label, value, onChange, options = [] }) => {
 
       <select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         className="h-12 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
       >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+        {options.map((option) => {
+          const optionValue =
+            typeof option === "string" ? option : option.value;
+          const optionLabel =
+            typeof option === "string" ? option : option.label;
+
+          return (
+            <option key={optionValue} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
     </label>
   );

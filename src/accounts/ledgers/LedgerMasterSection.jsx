@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -15,7 +15,9 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Pagination,
   ScrollShadow,
+  Spinner,
   Select,
   SelectItem,
   Table,
@@ -27,6 +29,11 @@ import {
   Textarea,
   addToast,
   useDisclosure,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
 } from "@heroui/react";
 import {
   ArrowDownRight,
@@ -48,198 +55,29 @@ import {
   Wallet,
 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-
-const dummyLedgers = [
-  {
-    id: 1,
-    ledgerCode: "LED-0001",
-    name: "Corpseed ITES Pvt. Ltd.",
-    alias: "Corpseed",
-    ledgerType: "Company Ledger",
-    ledgerCategory: "COMPANY",
-    partyType: "CUSTOMER",
-    groupName: "Sundry Debtors",
-    openingBalance: 0,
-    openingBalanceType: "DR",
-    currentBalance: 245000,
-    currentBalanceType: "DR",
-    totalDebit: 890000,
-    totalCredit: 645000,
-    currency: "INR",
-    effectiveFrom: "2026-04-01",
-    gstStatus: "Registered",
-    gstin: "07ABCDE1234F1Z5",
-    panNumber: "ABCDE1234F",
-    email: "accounts@corpseed.com",
-    mobile: "9876543210",
-    billingAddress: "A-154A, Sector 63, Noida, Uttar Pradesh - 201301",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "05-Apr-26",
-        voucherNo: "INV-001",
-        particulars: "Sales Invoice - Project Service",
-        debit: 250000,
-        credit: null,
-        balance: "₹2,50,000 DR",
-      },
-      {
-        id: 2,
-        date: "12-Apr-26",
-        voucherNo: "RCPT-001",
-        particulars: "Payment Received",
-        debit: null,
-        credit: 100000,
-        balance: "₹1,50,000 DR",
-      },
-    ],
-  },
-  {
-    id: 2,
-    ledgerCode: "LED-0002",
-    name: "Balaji Traders",
-    alias: "Balaji",
-    ledgerType: "Vendor Ledger",
-    ledgerCategory: "VENDOR",
-    partyType: "SUPPLIER",
-    groupName: "Sundry Creditors",
-    openingBalance: 50000,
-    openingBalanceType: "CR",
-    currentBalance: 185000,
-    currentBalanceType: "CR",
-    totalDebit: 315000,
-    totalCredit: 500000,
-    currency: "INR",
-    effectiveFrom: "2026-04-01",
-    gstStatus: "Registered",
-    gstin: "09AAFCB1234K1Z2",
-    panNumber: "AAFCB1234K",
-    email: "balaji.traders@gmail.com",
-    mobile: "9876543211",
-    billingAddress: "Industrial Area, Ghaziabad, Uttar Pradesh - 201001",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "08-Apr-26",
-        voucherNo: "PUR-001",
-        particulars: "Purchase - Cement Material",
-        debit: null,
-        credit: 300000,
-        balance: "₹3,00,000 CR",
-      },
-      {
-        id: 2,
-        date: "15-Apr-26",
-        voucherNo: "PAY-001",
-        particulars: "Vendor Payment",
-        debit: 115000,
-        credit: null,
-        balance: "₹1,85,000 CR",
-      },
-    ],
-  },
-  {
-    id: 3,
-    ledgerCode: "LED-0003",
-    name: "HDFC Bank",
-    alias: "HDFC",
-    ledgerType: "Bank Ledger",
-    ledgerCategory: "BANK",
-    partyType: "NA",
-    groupName: "Bank Accounts",
-    openingBalance: 1000000,
-    openingBalanceType: "DR",
-    currentBalance: 1525000,
-    currentBalanceType: "DR",
-    totalDebit: 2250000,
-    totalCredit: 725000,
-    currency: "INR",
-    effectiveFrom: "2026-04-01",
-    gstStatus: "Not Applicable",
-    gstin: "-",
-    panNumber: "-",
-    email: "banking@corpseed.com",
-    mobile: "9876543212",
-    billingAddress: "HDFC Bank, Sector 63 Branch, Noida",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "03-Apr-26",
-        voucherNo: "RCPT-002",
-        particulars: "Client Receipt",
-        debit: 750000,
-        credit: null,
-        balance: "₹17,50,000 DR",
-      },
-      {
-        id: 2,
-        date: "10-Apr-26",
-        voucherNo: "PAY-002",
-        particulars: "Vendor Payment",
-        debit: null,
-        credit: 225000,
-        balance: "₹15,25,000 DR",
-      },
-    ],
-  },
-  {
-    id: 4,
-    ledgerCode: "LED-0004",
-    name: "Sales Account",
-    alias: "Sales",
-    ledgerType: "Income Ledger",
-    ledgerCategory: "INCOME",
-    partyType: "NA",
-    groupName: "Sales Accounts",
-    openingBalance: 0,
-    openingBalanceType: "CR",
-    currentBalance: 890000,
-    currentBalanceType: "CR",
-    totalDebit: 0,
-    totalCredit: 890000,
-    currency: "INR",
-    effectiveFrom: "2026-04-01",
-    gstStatus: "Not Applicable",
-    gstin: "-",
-    panNumber: "-",
-    email: "accounts@corpseed.com",
-    mobile: "9876543213",
-    billingAddress: "Primary Company Ledger",
-    active: true,
-    entries: [
-      {
-        id: 1,
-        date: "05-Apr-26",
-        voucherNo: "INV-001",
-        particulars: "Sales Invoice - Project Service",
-        debit: null,
-        credit: 250000,
-        balance: "₹2,50,000 CR",
-      },
-      {
-        id: 2,
-        date: "20-Apr-26",
-        voucherNo: "INV-002",
-        particulars: "Sales Invoice - Consultancy",
-        debit: null,
-        credit: 640000,
-        balance: "₹8,90,000 CR",
-      },
-    ],
-  },
-];
+import {
+  clearLedgerError,
+  createLedger,
+  fetchLedgers,
+  getLedgerGroups,
+  setActiveFilter,
+  setLedgerGroupIdFilter,
+  setLedgerPage,
+  setLedgerSearch,
+  setLedgerTypeFilter,
+  setSelectedLedgerId,
+  updateLedger,
+} from "../../toolkit/slices/organizationSlice";
 
 const defaultValues = {
   name: "",
   alias: "",
-  ledgerType: "Company Ledger",
-  ledgerCategory: "COMPANY",
+  ledgerType: "CUSTOMER",
+  ledgerCategory: "CUSTOMER",
   partyType: "CUSTOMER",
-  groupName: "Sundry Debtors",
+  groupName: "",
   openingBalance: "0",
   openingBalanceType: "DR",
   currentBalance: "0",
@@ -247,8 +85,8 @@ const defaultValues = {
   totalDebit: "0",
   totalCredit: "0",
   currency: "INR",
-  effectiveFrom: "2026-04-01",
-  gstStatus: "Registered",
+  effectiveFrom: new Date().toISOString().slice(0, 10),
+  gstStatus: "Not Applicable",
   gstin: "",
   panNumber: "",
   email: "",
@@ -258,12 +96,25 @@ const defaultValues = {
 };
 
 const ledgerTypeOptions = [
-  "Company Ledger",
-  "Vendor Ledger",
-  "Bank Ledger",
-  "Income Ledger",
-  "Expense Ledger",
-  "Tax Ledger",
+  "CUSTOMER",
+  "CUSTOMER_ADVANCE",
+  "VENDOR",
+  "VENDOR_PAYABLE",
+  "BANK",
+  "CASH",
+  "PAYMENT_GATEWAY",
+  "SALES",
+  "SERVICE_INCOME",
+  "OUTPUT_IGST",
+  "OUTPUT_CGST",
+  "OUTPUT_SGST",
+  "TDS_RECEIVABLE",
+  "CREDIT_NOTE",
+  "REFUND_PAYABLE",
+  "ROUND_OFF",
+  "EXPENSE",
+  "LIABILITY",
+  "ASSET",
 ];
 
 const ledgerCategoryOptions = [
@@ -290,17 +141,262 @@ const groupOptions = [
   "Direct Expenses",
 ];
 
+const gstFieldAllowedGroups = [
+  "Sundry Debtors",
+  "Sundry Creditors",
+  "Bank Accounts",
+  "Loans and Liabilities",
+];
+
 const balanceTypeOptions = ["DR", "CR"];
 const gstStatusOptions = ["Registered", "Unregistered", "Not Applicable"];
 
+const deriveLedgerCategory = (ledgerType = "") => {
+  if (["BANK", "CASH", "PAYMENT_GATEWAY"].includes(ledgerType)) return "BANK";
+  if (["VENDOR", "VENDOR_PAYABLE"].includes(ledgerType)) return "VENDOR";
+  if (
+    [
+      "SALES",
+      "SERVICE_INCOME",
+      "OUTPUT_IGST",
+      "OUTPUT_CGST",
+      "OUTPUT_SGST",
+      "TDS_RECEIVABLE",
+      "CREDIT_NOTE",
+      "REFUND_PAYABLE",
+      "ROUND_OFF",
+    ].includes(ledgerType)
+  ) {
+    return "INCOME";
+  }
+
+  return "COMPANY";
+};
+
+const derivePartyType = (ledgerType = "") => {
+  if (ledgerType.includes("CUSTOMER")) return "CUSTOMER";
+  if (ledgerType.includes("VENDOR")) return "SUPPLIER";
+  return "NA";
+};
+
+const toUiBalanceType = (value) => {
+  if (value === "DEBIT") return "DR";
+  if (value === "CREDIT") return "CR";
+  return value || "DR";
+};
+
+const toApiBalanceType = (value) => {
+  if (value === "DR") return "DEBIT";
+  if (value === "CR") return "CREDIT";
+  return value || "DEBIT";
+};
+
+const toNumber = (value) => {
+  if (value === "" || value === null || value === undefined) return 0;
+
+  const numericValue = Number(value);
+
+  return Number.isNaN(numericValue) ? 0 : numericValue;
+};
+
+const getApiErrorMessage = (error) => {
+  if (typeof error === "string") return error;
+
+  return (
+    error?.message ||
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    "Something went wrong"
+  );
+};
+
+const normalizeLedger = (ledger = {}) => {
+  const ledgerCategory = deriveLedgerCategory(ledger.ledgerType);
+  const partyType = derivePartyType(ledger.ledgerType);
+  const gstStatus = ledger.gstNo ? "Registered" : "Not Applicable";
+
+  return {
+    ...ledger,
+    raw: ledger,
+    name: ledger.ledgerName || "",
+    alias: ledger.alias || "",
+    ledgerCategory,
+    partyType,
+    groupName:
+      ledger.ledgerGroupName ||
+      (ledger.ledgerGroupId ? `Group ID ${ledger.ledgerGroupId}` : "-"),
+    openingBalanceType: toUiBalanceType(ledger.openingBalanceType),
+    currentBalanceType: toUiBalanceType(ledger.currentBalanceType),
+    totalDebit: ledger.totalDebit ?? 0,
+    totalCredit: ledger.totalCredit ?? 0,
+    currency: ledger.currency || "INR",
+    effectiveFrom: ledger.createdAt || "",
+    gstStatus,
+    gstin: ledger.gstNo || "-",
+    panNumber: ledger.panNo || "-",
+    email: ledger.email || "-",
+    mobile: ledger.mobile || "-",
+    billingAddress:
+      ledger.billingAddress ||
+      [ledger.companyName, ledger.unitName, ledger.contactName]
+        .filter(Boolean)
+        .join(" / ") ||
+      "-",
+    entries: Array.isArray(ledger.entries) ? ledger.entries : [],
+  };
+};
+
+const getVoucherDetails = (entry, ledger) => {
+  if (!entry || !ledger) return null;
+
+  const voucherNo = entry.voucherNo || "-";
+
+  const voucherType = voucherNo.startsWith("INV")
+    ? "Sales Invoice"
+    : voucherNo.startsWith("PUR")
+      ? "Purchase Voucher"
+      : voucherNo.startsWith("PAY")
+        ? "Payment Voucher"
+        : voucherNo.startsWith("RCPT")
+          ? "Receipt Voucher"
+          : "Accounting Voucher";
+
+  const amount = Number(entry.debit || entry.credit || 0);
+  const isBankLedger = ledger.ledgerCategory === "BANK";
+
+  // Dummy service logic for now.
+  // Later replace this with API response fields.
+  const serviceName = voucherNo.startsWith("INV")
+    ? "12A Registration"
+    : voucherNo.startsWith("PUR")
+      ? "Vendor Compliance Service"
+      : voucherNo.startsWith("RCPT")
+        ? "Client Payment Collection"
+        : voucherNo.startsWith("PAY")
+          ? "Vendor Payment Service"
+          : "Accounting Service";
+
+  const serviceCode = voucherNo.startsWith("INV")
+    ? "SVC-12A-REG"
+    : voucherNo.startsWith("PUR")
+      ? "SVC-VENDOR-COMP"
+      : voucherNo.startsWith("RCPT")
+        ? "SVC-PAYMENT-COLLECTION"
+        : voucherNo.startsWith("PAY")
+          ? "SVC-VENDOR-PAYMENT"
+          : "SVC-ACCOUNTING";
+
+  const sacCode = voucherNo.startsWith("INV") ? "998399" : "998599";
+
+  const taxableAmount = amount;
+  const gstRate =
+    voucherNo.startsWith("INV") || voucherNo.startsWith("PUR") ? 18 : 0;
+  const gstAmount = Math.round((taxableAmount * gstRate) / 100);
+
+  const cgstRate = gstRate ? gstRate / 2 : 0;
+  const sgstRate = gstRate ? gstRate / 2 : 0;
+  const igstRate = 0;
+
+  const cgstAmount = Math.round((taxableAmount * cgstRate) / 100);
+  const sgstAmount = Math.round((taxableAmount * sgstRate) / 100);
+  const igstAmount = 0;
+
+  const tdsApplicable =
+    voucherNo.startsWith("INV") || voucherNo.startsWith("RCPT");
+
+  const tdsRate = tdsApplicable ? 10 : 0;
+  const tdsAmount = Math.round((taxableAmount * tdsRate) / 100);
+
+  const grossAmount = taxableAmount + gstAmount;
+  const netAmount = grossAmount - tdsAmount;
+
+  return {
+    voucherNo,
+    voucherType,
+    date: entry.date || "-",
+    particulars: entry.particulars || "-",
+    debit: entry.debit,
+    credit: entry.credit,
+    balance: entry.balance || "-",
+    amount,
+
+    ledgerName: ledger.name || "-",
+    ledgerCode: ledger.ledgerCode || "-",
+    ledgerType: ledger.ledgerType || "-",
+    groupName: ledger.groupName || "-",
+    partyType: ledger.partyType || "-",
+
+    address: ledger.billingAddress || "-",
+    gstin: ledger.gstin || "-",
+    panNumber: ledger.panNumber || "-",
+    email: ledger.email || "-",
+    mobile: ledger.mobile || "-",
+
+    serviceName,
+    serviceCode,
+    sacCode,
+    taxableAmount,
+    gstRate,
+    gstAmount,
+    cgstRate,
+    sgstRate,
+    igstRate,
+    cgstAmount,
+    sgstAmount,
+    igstAmount,
+    tdsApplicable,
+    tdsRate,
+    tdsAmount,
+    grossAmount,
+    netAmount,
+
+    bankName: isBankLedger ? ledger.name : "HDFC Bank",
+    bankAccountNumber: isBankLedger ? "50100012345678" : "50100098765432",
+    ifscCode: isBankLedger ? "HDFC0000911" : "HDFC0001234",
+    branchName: isBankLedger ? "Sector 63, Noida" : "Corpseed Main Account",
+    paymentMode: voucherNo.startsWith("RCPT")
+      ? "Bank Transfer / UPI"
+      : voucherNo.startsWith("PAY")
+        ? "NEFT"
+        : "Adjustment Entry",
+    transactionReference: `${voucherNo}-${ledger.ledgerCode || "LED"}`,
+
+    createdBy: "ERP Test",
+    createdAt: entry.date || "-",
+    remarks: `Voucher entry posted in ${ledger.name || "selected ledger"}.`,
+  };
+};
+
 const LedgerMasterSection = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
+  const {
+    isOpen: isVoucherDrawerOpen,
+    onOpen: onVoucherDrawerOpen,
+    onClose: onVoucherDrawerClose,
+    onOpenChange: onVoucherDrawerOpenChange,
+  } = useDisclosure();
 
-  const [ledgers, setLedgers] = useState(dummyLedgers);
-  const [selectedLedgerId, setSelectedLedgerId] = useState(1);
-  const [search, setSearch] = useState("");
+  const [selectedVoucherEntry, setSelectedVoucherEntry] = useState(null);
   const [editData, setEditData] = useState(null);
+
+  const {
+    ledgers = [],
+    selectedLedgerId,
+    search = "",
+    ledgerTypeFilter = "ALL",
+    ledgerGroupIdFilter = "",
+    activeFilter = "ALL",
+    page = 1,
+    size = 20,
+    totalPages = 0,
+    totalElements = 0,
+    loading = false,
+    saving = false,
+    error = "",
+    ledgerGroupList = [],
+  } = useSelector((state) => state.organization || {});
 
   const {
     control,
@@ -314,25 +410,101 @@ const LedgerMasterSection = () => {
   });
 
   const gstStatus = watch("gstStatus");
+  const selectedGroupValue = watch("groupName");
+
+  const normalizedLedgers = useMemo(() => {
+    return Array.isArray(ledgers) ? ledgers.map(normalizeLedger) : [];
+  }, [ledgers]);
+
+  const ledgerGroupOptions = useMemo(() => {
+    const groupsFromApi = Array.isArray(ledgerGroupList)
+      ? ledgerGroupList.map((group) => ({
+          label:
+            group.groupName ||
+            group.ledgerGroupName ||
+            group.name ||
+            `Group ID ${group.id}`,
+          value: String(group.id),
+        }))
+      : [];
+
+    if (groupsFromApi.length > 0) return groupsFromApi;
+
+    const groupsFromLedgerList = normalizedLedgers
+      .filter((ledger) => ledger.ledgerGroupId)
+      .map((ledger) => ({
+        label: ledger.groupName || `Group ID ${ledger.ledgerGroupId}`,
+        value: String(ledger.ledgerGroupId),
+      }));
+
+    return Array.from(
+      new Map(groupsFromLedgerList.map((item) => [item.value, item])).values(),
+    );
+  }, [ledgerGroupList, normalizedLedgers]);
+
+  const selectedGroupName =
+    ledgerGroupOptions.find((item) => item.value === String(selectedGroupValue))
+      ?.label || "";
+
+  const shouldShowGstFields = gstFieldAllowedGroups.includes(selectedGroupName);
+
+  useEffect(() => {
+    dispatch(getLedgerGroups({ active: true, page: 1, size: 100 }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      dispatch(
+        fetchLedgers({
+          search,
+          ledgerType: ledgerTypeFilter,
+          ledgerGroupId: ledgerGroupIdFilter,
+          active: activeFilter,
+          page,
+          size,
+        }),
+      );
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    activeFilter,
+    dispatch,
+    ledgerGroupIdFilter,
+    ledgerTypeFilter,
+    page,
+    search,
+    size,
+  ]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    addToast({
+      title: getApiErrorMessage(error),
+      color: "danger",
+    });
+  }, [error]);
 
   const selectedLedger = useMemo(() => {
-    return ledgers.find((item) => item.id === selectedLedgerId) || ledgers[0];
-  }, [ledgers, selectedLedgerId]);
+    return (
+      normalizedLedgers.find((item) => item.id === selectedLedgerId) ||
+      normalizedLedgers[0] ||
+      normalizeLedger({})
+    );
+  }, [normalizedLedgers, selectedLedgerId]);
 
-  const filteredLedgers = useMemo(() => {
-    if (!search.trim()) return ledgers;
+  const filteredLedgers = normalizedLedgers;
 
-    const keyword = search.toLowerCase();
+  const handleOpenVoucherDrawer = (entry) => {
+    setSelectedVoucherEntry(entry);
+    onVoucherDrawerOpen();
+  };
 
-    return ledgers.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(keyword) ||
-        item.ledgerCode.toLowerCase().includes(keyword) ||
-        item.ledgerType.toLowerCase().includes(keyword) ||
-        item.groupName.toLowerCase().includes(keyword)
-      );
-    });
-  }, [ledgers, search]);
+  const handleCloseVoucherDrawer = () => {
+    setSelectedVoucherEntry(null);
+    onVoucherDrawerClose();
+  };
 
   const handleOpenCreate = () => {
     setEditData(null);
@@ -346,10 +518,10 @@ const LedgerMasterSection = () => {
     reset({
       name: ledger.name || "",
       alias: ledger.alias || "",
-      ledgerType: ledger.ledgerType || "Company Ledger",
+      ledgerType: ledger.ledgerType || "CUSTOMER",
       ledgerCategory: ledger.ledgerCategory || "COMPANY",
       partyType: ledger.partyType || "CUSTOMER",
-      groupName: ledger.groupName || "Sundry Debtors",
+      groupName: ledger.ledgerGroupId ? String(ledger.ledgerGroupId) : "",
       openingBalance: String(ledger.openingBalance ?? 0),
       openingBalanceType: ledger.openingBalanceType || "DR",
       currentBalance: String(ledger.currentBalance ?? 0),
@@ -357,65 +529,90 @@ const LedgerMasterSection = () => {
       totalDebit: String(ledger.totalDebit ?? 0),
       totalCredit: String(ledger.totalCredit ?? 0),
       currency: ledger.currency || "INR",
-      effectiveFrom: ledger.effectiveFrom || "2026-04-01",
-      gstStatus: ledger.gstStatus || "Registered",
-      gstin: ledger.gstin || "",
-      panNumber: ledger.panNumber || "",
-      email: ledger.email || "",
-      mobile: ledger.mobile || "",
-      billingAddress: ledger.billingAddress || "",
+      effectiveFrom:
+        ledger.effectiveFrom?.slice?.(0, 10) ||
+        new Date().toISOString().slice(0, 10),
+      gstStatus: ledger.gstStatus || "Not Applicable",
+      gstin: ledger.raw?.gstNo || "",
+      panNumber: ledger.raw?.panNo || "",
+      email: ledger.email === "-" ? "" : ledger.email || "",
+      mobile: ledger.mobile === "-" ? "" : ledger.mobile || "",
+      billingAddress:
+        ledger.billingAddress === "-" ? "" : ledger.billingAddress || "",
       active: String(ledger.active ?? true),
     });
 
     onOpen();
   };
 
-  const onSubmit = (values) => {
-    const payload = {
-      ...values,
-      openingBalance: Number(values.openingBalance || 0),
-      currentBalance: Number(values.currentBalance || 0),
-      totalDebit: Number(values.totalDebit || 0),
-      totalCredit: Number(values.totalCredit || 0),
-      active: values.active === "true",
-      entries: editData?.entries || [],
-    };
+  const onSubmit = async (values) => {
+    try {
+      dispatch(clearLedgerError());
 
-    if (editData) {
-      setLedgers((prev) =>
-        prev.map((item) =>
-          item.id === editData.id
-            ? {
-                ...item,
-                ...payload,
-              }
-            : item,
-        ),
-      );
-      setSelectedLedgerId(editData.id);
-    } else {
-      const newId = Math.max(...ledgers.map((item) => item.id)) + 1;
-
-      const newLedger = {
-        id: newId,
-        ledgerCode: `LED-${String(newId).padStart(4, "0")}`,
-        ...payload,
+      const payload = {
+        ledgerName: values.name?.trim(),
+        ledgerType: values.ledgerType,
+        ledgerGroupId: toNumber(values.groupName),
+        companyId: toNumber(editData?.raw?.companyId),
+        unitId: toNumber(editData?.raw?.unitId),
+        contactId: toNumber(editData?.raw?.contactId),
+        gstNo: values.gstin?.trim() || "",
+        panNo: values.panNumber?.trim() || "",
+        bankName: editData?.raw?.bankName || "",
+        accountHolderName: editData?.raw?.accountHolderName || "",
+        accountNumber: editData?.raw?.accountNumber || "",
+        ifscCode: editData?.raw?.ifscCode || "",
+        branchName: editData?.raw?.branchName || "",
+        openingBalance: toNumber(values.openingBalance),
+        openingBalanceType: toApiBalanceType(values.openingBalanceType),
+        active: values.active === "true",
       };
 
-      setLedgers((prev) => [newLedger, ...prev]);
-      setSelectedLedgerId(newId);
+      let savedLedger = null;
+
+      if (editData) {
+        savedLedger = await dispatch(
+          updateLedger({
+            id: editData.id,
+            payload,
+          }),
+        ).unwrap();
+      } else {
+        savedLedger = await dispatch(createLedger(payload)).unwrap();
+        dispatch(setLedgerPage(1));
+      }
+
+      await dispatch(
+        fetchLedgers({
+          search,
+          ledgerType: ledgerTypeFilter,
+          ledgerGroupId: ledgerGroupIdFilter,
+          active: activeFilter,
+          page: editData ? page : 1,
+          size,
+        }),
+      ).unwrap();
+
+      if (savedLedger?.id) {
+        dispatch(setSelectedLedgerId(savedLedger.id));
+      }
+
+      addToast({
+        title: editData
+          ? "Ledger updated successfully"
+          : "Ledger created successfully",
+        color: "success",
+      });
+
+      reset(defaultValues);
+      setEditData(null);
+      onClose();
+    } catch (error) {
+      addToast({
+        title: getApiErrorMessage(error),
+        color: "danger",
+      });
     }
-
-    addToast({
-      title: editData
-        ? "Ledger updated successfully"
-        : "Ledger created successfully",
-      color: "success",
-    });
-
-    reset(defaultValues);
-    setEditData(null);
-    onClose();
   };
 
   const onInvalid = () => {
@@ -427,16 +624,8 @@ const LedgerMasterSection = () => {
 
   return (
     <div className="w-full max-w-full overflow-hidden text-sm">
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-2 flex items-center justify-between gap-4">
         <div>
-          <div className="mb-1 flex items-center gap-1 text-xs text-slate-500">
-            <span>Accounts</span>
-            <ChevronDown size={13} className="-rotate-90" />
-            <span>Ledger Master</span>
-            <ChevronDown size={13} className="-rotate-90" />
-            <span className="font-medium text-slate-700">Company Ledger</span>
-          </div>
-
           <h1 className="text-xl font-semibold text-slate-950">
             Ledger Master
           </h1>
@@ -461,7 +650,7 @@ const LedgerMasterSection = () => {
                   All Ledgers
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Total {ledgers.length} ledgers
+                  Total {totalElements} ledgers
                 </p>
               </div>
 
@@ -470,7 +659,7 @@ const LedgerMasterSection = () => {
                 variant="flat"
                 className="bg-emerald-50 text-xs text-emerald-700"
               >
-                Dummy Data
+                Live API
               </Chip>
             </div>
 
@@ -479,101 +668,178 @@ const LedgerMasterSection = () => {
               size="sm"
               placeholder="Search ledger..."
               value={search}
-              onValueChange={setSearch}
-              onClear={() => setSearch("")}
+              onValueChange={(value) => dispatch(setLedgerSearch(value))}
+              onClear={() => dispatch(setLedgerSearch(""))}
               startContent={<Search size={15} className="text-slate-400" />}
               className="mb-3"
             />
 
+            <div className="mb-3 grid grid-cols-1 gap-2">
+              <Select
+                size="sm"
+                label="Ledger Type"
+                selectedKeys={[ledgerTypeFilter]}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] || "ALL";
+                  dispatch(setLedgerTypeFilter(value));
+                }}
+              >
+                <SelectItem key="ALL">All Ledger Types</SelectItem>
+                {ledgerTypeOptions.map((type) => (
+                  <SelectItem key={type}>{type}</SelectItem>
+                ))}
+              </Select>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  size="sm"
+                  label="Under Group"
+                  selectedKeys={
+                    ledgerGroupIdFilter
+                      ? [String(ledgerGroupIdFilter)]
+                      : ["ALL"]
+                  }
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] || "ALL";
+                    dispatch(
+                      setLedgerGroupIdFilter(value === "ALL" ? "" : value),
+                    );
+                  }}
+                >
+                  <SelectItem key="ALL">All Groups</SelectItem>
+                  {ledgerGroupOptions.map((group) => (
+                    <SelectItem key={group.value}>{group.label}</SelectItem>
+                  ))}
+                </Select>
+
+                <Select
+                  size="sm"
+                  label="Status"
+                  selectedKeys={[activeFilter]}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] || "ALL";
+                    dispatch(setActiveFilter(value));
+                  }}
+                >
+                  <SelectItem key="ALL">All</SelectItem>
+                  <SelectItem key="true">Active</SelectItem>
+                  <SelectItem key="false">Inactive</SelectItem>
+                </Select>
+              </div>
+            </div>
+
             <ScrollShadow className="min-h-0 flex-1 overflow-y-auto pr-1">
               <div className="space-y-3">
-                {filteredLedgers.map((ledger) => (
-                  <Card
-                    key={ledger.id}
-                    isPressable
-                    shadow="none"
-                    onPress={() => setSelectedLedgerId(ledger.id)}
-                    className={`w-full border transition ${
-                      selectedLedger?.id === ledger.id
-                        ? "border-emerald-300 bg-emerald-50"
-                        : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
-                    }`}
-                  >
-                    <CardBody className="p-3">
-                      <div className="mb-3 flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 gap-3">
-                          <LedgerIcon
-                            category={ledger.ledgerCategory}
-                            size="sm"
-                          />
+                {loading ? (
+                  <div className="flex h-40 items-center justify-center">
+                    <Spinner size="sm" label="Loading ledgers..." />
+                  </div>
+                ) : filteredLedgers.length > 0 ? (
+                  filteredLedgers.map((ledger) => (
+                    <Card
+                      key={ledger.id}
+                      isPressable
+                      shadow="none"
+                      onPress={() => dispatch(setSelectedLedgerId(ledger.id))}
+                      className={`w-full border transition ${
+                        selectedLedger?.id === ledger.id
+                          ? "border-emerald-300 bg-emerald-50"
+                          : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
+                      }`}
+                    >
+                      <CardBody className="p-3">
+                        <div className="mb-3 flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 gap-3">
+                            <LedgerIcon
+                              category={ledger.ledgerCategory}
+                              size="sm"
+                            />
 
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-950">
-                              {ledger.name}
-                            </p>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              {ledger.ledgerCode}
-                            </p>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-950">
+                                {ledger.name}
+                              </p>
+                              <p className="mt-0.5 text-xs text-slate-500">
+                                {ledger.ledgerCode}
+                              </p>
+                            </div>
                           </div>
+
+                          <Dropdown>
+                            <DropdownTrigger>
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                variant="light"
+                                onPress={(e) => e?.continuePropagation?.()}
+                              >
+                                <EllipsisVertical size={16} />
+                              </Button>
+                            </DropdownTrigger>
+
+                            <DropdownMenu
+                              aria-label="Ledger actions"
+                              onAction={(key) => {
+                                if (key === "edit") handleOpenEdit(ledger);
+                              }}
+                            >
+                              <DropdownItem key="edit">Edit</DropdownItem>
+                            </DropdownMenu>
+                          </Dropdown>
                         </div>
 
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              onPress={(e) => e?.continuePropagation?.()}
-                            >
-                              <EllipsisVertical size={16} />
-                            </Button>
-                          </DropdownTrigger>
-
-                          <DropdownMenu
-                            aria-label="Ledger actions"
-                            onAction={(key) => {
-                              if (key === "edit") handleOpenEdit(ledger);
-                            }}
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            className="bg-emerald-50 text-xs text-emerald-700"
                           >
-                            <DropdownItem key="edit">Edit</DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
-                      </div>
+                            {ledger.ledgerType}
+                          </Chip>
 
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          className="bg-emerald-50 text-xs text-emerald-700"
-                        >
-                          {ledger.ledgerType}
-                        </Chip>
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            className="bg-slate-100 text-xs text-slate-600"
+                          >
+                            {ledger.groupName}
+                          </Chip>
+                        </div>
 
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          className="bg-slate-100 text-xs text-slate-600"
-                        >
-                          {ledger.groupName}
-                        </Chip>
-                      </div>
+                        <Divider />
 
-                      <Divider />
-
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-500">
-                          Current Balance
-                        </span>
-                        <span className="text-sm font-semibold text-slate-950">
-                          {formatCurrency(ledger.currentBalance)}{" "}
-                          {ledger.currentBalanceType}
-                        </span>
-                      </div>
-                    </CardBody>
-                  </Card>
-                ))}
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <span className="text-xs text-slate-500">
+                            Current Balance
+                          </span>
+                          <span className="text-sm font-semibold text-slate-950">
+                            {formatCurrency(ledger.currentBalance)}{" "}
+                            {ledger.currentBalanceType}
+                          </span>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-500">
+                    No ledgers found
+                  </div>
+                )}
               </div>
             </ScrollShadow>
+
+            {totalPages > 1 && (
+              <div className="mt-3 flex justify-center">
+                <Pagination
+                  size="sm"
+                  showControls
+                  page={page}
+                  total={totalPages}
+                  onChange={(value) => dispatch(setLedgerPage(value))}
+                  color="success"
+                />
+              </div>
+            )}
           </CardBody>
         </Card>
 
@@ -781,7 +1047,16 @@ const LedgerMasterSection = () => {
                     {(entry) => (
                       <TableRow key={entry.id}>
                         <TableCell>{entry.date}</TableCell>
-                        <TableCell>{entry.voucherNo}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="light"
+                            className="h-auto min-w-0 px-0 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                            onPress={() => handleOpenVoucherDrawer(entry)}
+                          >
+                            {entry.voucherNo}
+                          </Button>
+                        </TableCell>
                         <TableCell>{entry.particulars}</TableCell>
                         <TableCell>{formatCurrency(entry.debit)}</TableCell>
                         <TableCell>{formatCurrency(entry.credit)}</TableCell>
@@ -805,12 +1080,24 @@ const LedgerMasterSection = () => {
         control={control}
         errors={errors}
         gstStatus={gstStatus}
+        selectedGroupName={selectedGroupName}
+        shouldShowGstFields={shouldShowGstFields}
+        ledgerGroupOptions={ledgerGroupOptions}
+        saving={saving}
         onSubmit={handleSubmit(onSubmit, onInvalid)}
         onCancel={() => {
           reset(defaultValues);
           setEditData(null);
           onClose();
         }}
+      />
+
+      <VoucherDetailsDrawer
+        isOpen={isVoucherDrawerOpen}
+        onOpenChange={onVoucherDrawerOpenChange}
+        onClose={handleCloseVoucherDrawer}
+        entry={selectedVoucherEntry}
+        ledger={selectedLedger}
       />
     </div>
   );
@@ -822,6 +1109,10 @@ const LedgerModal = ({
   editData,
   control,
   gstStatus,
+  selectedGroupName,
+  shouldShowGstFields,
+  ledgerGroupOptions,
+  saving,
   onSubmit,
   onCancel,
 }) => {
@@ -904,7 +1195,7 @@ const LedgerModal = ({
                     name="groupName"
                     label="Under Group"
                     control={control}
-                    options={groupOptions}
+                    options={ledgerGroupOptions}
                     rules={{ required: "Under group is required" }}
                     isRequired
                   />
@@ -1004,80 +1295,6 @@ const LedgerModal = ({
                     isRequired
                   />
 
-                  <RHFSelect
-                    name="gstStatus"
-                    label="GST Status"
-                    control={control}
-                    options={gstStatusOptions}
-                    rules={{ required: "GST status is required" }}
-                    isRequired
-                  />
-
-                  <RHFInput
-                    name="gstin"
-                    label="GSTIN"
-                    control={control}
-                    maxLength={15}
-                    rules={{
-                      validate: (value) => {
-                        if (gstStatus !== "Registered") return true;
-                        if (!value || value.trim() === "") {
-                          return "GSTIN is required for registered ledger";
-                        }
-                        if (value.length !== 15) {
-                          return "GSTIN must be 15 characters";
-                        }
-                        return true;
-                      },
-                    }}
-                  />
-
-                  <RHFInput
-                    name="panNumber"
-                    label="PAN Number"
-                    control={control}
-                    maxLength={10}
-                    rules={{
-                      validate: (value) => {
-                        if (!value || value === "-") return true;
-                        if (value.length !== 10) {
-                          return "PAN must be 10 characters";
-                        }
-                        return true;
-                      },
-                    }}
-                  />
-
-                  <RHFInput
-                    name="email"
-                    label="Email"
-                    type="email"
-                    control={control}
-                    rules={{
-                      required: "Email is required",
-                      pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: "Enter a valid email address",
-                      },
-                    }}
-                    isRequired
-                  />
-
-                  <RHFInput
-                    name="mobile"
-                    label="Mobile"
-                    control={control}
-                    maxLength={10}
-                    rules={{
-                      required: "Mobile number is required",
-                      pattern: {
-                        value: /^[0-9]{10}$/,
-                        message: "Mobile number must be 10 digits",
-                      },
-                    }}
-                    isRequired
-                  />
-
                   <Controller
                     name="active"
                     control={control}
@@ -1087,7 +1304,7 @@ const LedgerModal = ({
                         size="sm"
                         label="Status"
                         isRequired
-                        selectedKeys={field.value ? [field.value] : []}
+                        selectedKeys={field.value ? [String(field.value)] : []}
                         onSelectionChange={(keys) =>
                           field.onChange(Array.from(keys)[0])
                         }
@@ -1100,32 +1317,127 @@ const LedgerModal = ({
                     )}
                   />
 
-                  <div className="md:col-span-2">
-                    <Controller
-                      name="billingAddress"
-                      control={control}
-                      rules={{
-                        required: "Billing address is required",
-                        minLength: {
-                          value: 5,
-                          message:
-                            "Billing address must be at least 5 characters",
-                        },
-                      }}
-                      render={({ field, fieldState }) => (
-                        <Textarea
-                          {...field}
-                          size="sm"
-                          label="Billing Address"
-                          placeholder="Enter billing address"
-                          minRows={3}
-                          isRequired
-                          isInvalid={!!fieldState.error}
-                          errorMessage={fieldState.error?.message}
+                  {shouldShowGstFields && (
+                    <>
+                      <div className="md:col-span-2 mt-2">
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-emerald-800">
+                            GST / Contact Details
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-emerald-700">
+                            These fields are shown because selected group is{" "}
+                            {selectedGroupName}.
+                          </p>
+                        </div>
+                      </div>
+
+                      <RHFSelect
+                        name="gstStatus"
+                        label="GST Status"
+                        control={control}
+                        options={gstStatusOptions}
+                        rules={{ required: "GST status is required" }}
+                        isRequired
+                      />
+
+                      <RHFInput
+                        name="gstin"
+                        label="GSTIN"
+                        control={control}
+                        maxLength={15}
+                        rules={{
+                          validate: (value) => {
+                            if (gstStatus !== "Registered") return true;
+
+                            if (!value || value.trim() === "") {
+                              return "GSTIN is required for registered ledger";
+                            }
+
+                            if (value.length !== 15) {
+                              return "GSTIN must be 15 characters";
+                            }
+
+                            return true;
+                          },
+                        }}
+                      />
+
+                      <RHFInput
+                        name="panNumber"
+                        label="PAN Number"
+                        control={control}
+                        maxLength={10}
+                        rules={{
+                          validate: (value) => {
+                            if (!value || value === "-") return true;
+
+                            if (value.length !== 10) {
+                              return "PAN must be 10 characters";
+                            }
+
+                            return true;
+                          },
+                        }}
+                      />
+
+                      <RHFInput
+                        name="email"
+                        label="Email"
+                        type="email"
+                        control={control}
+                        rules={{
+                          required: "Email is required",
+                          pattern: {
+                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                            message: "Enter a valid email address",
+                          },
+                        }}
+                        isRequired
+                      />
+
+                      <RHFInput
+                        name="mobile"
+                        label="Mobile"
+                        control={control}
+                        maxLength={10}
+                        rules={{
+                          required: "Mobile number is required",
+                          pattern: {
+                            value: /^[0-9]{10}$/,
+                            message: "Mobile number must be 10 digits",
+                          },
+                        }}
+                        isRequired
+                      />
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="billingAddress"
+                          control={control}
+                          rules={{
+                            required: "Billing address is required",
+                            minLength: {
+                              value: 5,
+                              message:
+                                "Billing address must be at least 5 characters",
+                            },
+                          }}
+                          render={({ field, fieldState }) => (
+                            <Textarea
+                              {...field}
+                              size="sm"
+                              label="Billing Address"
+                              placeholder="Enter billing address"
+                              minRows={3}
+                              isRequired
+                              isInvalid={!!fieldState.error}
+                              errorMessage={fieldState.error?.message}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </ScrollShadow>
             </ModalBody>
@@ -1137,6 +1449,8 @@ const LedgerModal = ({
 
               <Button
                 type="submit"
+                isLoading={saving}
+                isDisabled={saving}
                 className="bg-emerald-700 font-semibold text-white"
               >
                 {editData ? "Update Ledger" : "Create Ledger"}
@@ -1146,6 +1460,224 @@ const LedgerModal = ({
         )}
       </ModalContent>
     </Modal>
+  );
+};
+
+const VoucherDetailsDrawer = ({
+  isOpen,
+  onOpenChange,
+  onClose,
+  entry,
+  ledger,
+}) => {
+  const details = useMemo(() => {
+    return getVoucherDetails(entry, ledger);
+  }, [entry, ledger]);
+
+  if (!details) return null;
+
+  return (
+    <Drawer
+      size="lg"
+      placement="right"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      scrollBehavior="inside"
+      classNames={{
+        base: "max-w-[560px]",
+        header: "border-b border-slate-200",
+        footer: "border-t border-slate-200",
+      }}
+    >
+      <DrawerContent>
+        {(close) => (
+          <>
+            <DrawerHeader>
+              <div className="flex w-full items-start justify-between gap-3">
+                <div>
+                  <p className="text-lg font-semibold text-slate-950">
+                    Voucher Details
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Detailed information for voucher entry.
+                  </p>
+                </div>
+
+                <Chip size="sm" color="primary" variant="flat">
+                  {details.voucherType}
+                </Chip>
+              </div>
+            </DrawerHeader>
+
+            <DrawerBody>
+              <div className="space-y-5">
+                <Card
+                  shadow="none"
+                  className="border border-emerald-100 bg-emerald-50"
+                >
+                  <CardBody className="p-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <VoucherInfoItem
+                        label="Voucher No."
+                        value={details.voucherNo}
+                      />
+                      <VoucherInfoItem
+                        label="Voucher Date"
+                        value={details.date}
+                      />
+                      <VoucherInfoItem
+                        label="Amount"
+                        value={formatCurrency(details.amount)}
+                      />
+                    </div>
+                  </CardBody>
+                </Card>
+
+                <section>
+                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                    Ledger / Party Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <VoucherInfoItem
+                      label="Ledger Name"
+                      value={details.ledgerName}
+                    />
+                    <VoucherInfoItem
+                      label="Ledger Code"
+                      value={details.ledgerCode}
+                    />
+                    <VoucherInfoItem
+                      label="Ledger Type"
+                      value={details.ledgerType}
+                    />
+                    <VoucherInfoItem
+                      label="Under Group"
+                      value={details.groupName}
+                    />
+                    <VoucherInfoItem
+                      label="Party Type"
+                      value={details.partyType}
+                    />
+                    <VoucherInfoItem label="Balance" value={details.balance} />
+                  </div>
+                </section>
+
+                <Divider />
+
+                <section>
+                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                    Tax / Contact / Address
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <VoucherInfoItem label="GSTIN" value={details.gstin} />
+                    <VoucherInfoItem
+                      label="PAN Number"
+                      value={details.panNumber}
+                    />
+                    <VoucherInfoItem label="Email" value={details.email} />
+                    <VoucherInfoItem label="Mobile" value={details.mobile} />
+
+                    <div className="sm:col-span-2">
+                      <VoucherInfoItem
+                        label="Billing Address"
+                        value={details.address}
+                        multiline
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <Divider />
+
+                <section>
+                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                    Bank / Transaction Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <VoucherInfoItem
+                      label="Bank Name"
+                      value={details.bankName}
+                    />
+                    <VoucherInfoItem
+                      label="Bank Account No."
+                      value={details.bankAccountNumber}
+                    />
+                    <VoucherInfoItem
+                      label="IFSC Code"
+                      value={details.ifscCode}
+                    />
+                    <VoucherInfoItem
+                      label="Branch"
+                      value={details.branchName}
+                    />
+                    <VoucherInfoItem
+                      label="Payment Mode"
+                      value={details.paymentMode}
+                    />
+                    <VoucherInfoItem
+                      label="Transaction Ref."
+                      value={details.transactionReference}
+                    />
+                  </div>
+                </section>
+
+                <Divider />
+
+                <section>
+                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                    Entry Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <VoucherInfoItem
+                      label="Particulars"
+                      value={details.particulars}
+                      multiline
+                    />
+                    <VoucherInfoItem
+                      label="Created By"
+                      value={details.createdBy}
+                    />
+                    <VoucherInfoItem
+                      label="Created At"
+                      value={details.createdAt}
+                    />
+                    <VoucherInfoItem
+                      label="Debit"
+                      value={formatCurrency(details.debit)}
+                    />
+                    <VoucherInfoItem
+                      label="Credit"
+                      value={formatCurrency(details.credit)}
+                    />
+                    <VoucherInfoItem
+                      label="Remarks"
+                      value={details.remarks}
+                      multiline
+                    />
+                  </div>
+                </section>
+              </div>
+            </DrawerBody>
+
+            <DrawerFooter>
+              <Button
+                variant="flat"
+                onPress={() => {
+                  onClose?.();
+                  close();
+                }}
+              >
+                Close
+              </Button>
+            </DrawerFooter>
+          </>
+        )}
+      </DrawerContent>
+    </Drawer>
   );
 };
 
@@ -1197,14 +1729,19 @@ const RHFSelect = ({
           size="sm"
           label={label}
           isRequired={isRequired}
-          selectedKeys={field.value ? [field.value] : []}
+          selectedKeys={field.value ? [String(field.value)] : []}
           onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
           isInvalid={!!fieldState.error}
           errorMessage={fieldState.error?.message}
         >
-          {options.map((item) => (
-            <SelectItem key={item}>{item}</SelectItem>
-          ))}
+          {options.map((item) => {
+            const itemKey =
+              typeof item === "string" ? item : String(item.value ?? item.key);
+            const itemLabel =
+              typeof item === "string" ? item : item.label || item.name;
+
+            return <SelectItem key={itemKey}>{itemLabel}</SelectItem>;
+          })}
         </Select>
       )}
     />
@@ -1236,6 +1773,24 @@ const InfoItem = ({ label, value }) => {
       </p>
 
       <p className="mt-1 truncate text-sm font-semibold text-slate-950">
+        {value || "-"}
+      </p>
+    </div>
+  );
+};
+
+const VoucherInfoItem = ({ label, value, multiline = false }) => {
+  return (
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+
+      <p
+        className={`mt-1 text-sm font-semibold text-slate-950 ${
+          multiline ? "whitespace-normal break-words" : "truncate"
+        }`}
+      >
         {value || "-"}
       </p>
     </div>

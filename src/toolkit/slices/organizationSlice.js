@@ -1,6 +1,15 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../httpRequest";
 
+const getErrorMessage = (error) => {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Something went wrong"
+  );
+};
+
 export const getOrganizationByName = createAsyncThunk(
   "getOrganizationByName",
   async () => {
@@ -109,22 +118,6 @@ export const getAllLedgerType = createAsyncThunk(
     return response.data;
   },
 );
-
-export const createLedger = createAsyncThunk("createLedger", async (data) => {
-  const response = await api.post(
-    `/accountService/api/v1/ledger/createLedger`,
-    data,
-  );
-  return response.data;
-});
-
-export const updateLedger = createAsyncThunk("updateLedger", async (data) => {
-  const response = await api.put(
-    `/accountService/api/v1/ledger/updateLedger`,
-    data,
-  );
-  return response.data;
-});
 
 export const getLedgerTypeById = createAsyncThunk(
   "getLedgerTypeById",
@@ -790,6 +783,170 @@ export const getInvoiceReport = createAsyncThunk(
   },
 );
 
+export const getLedgerGroups = createAsyncThunk(
+  "ledgerGroup/getLedgerGroups",
+  async (
+    { search = "", groupType = "", active = "", page = 1, size = 20 } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        page: Math.max(Number(page) - 1, 0), // UI page 1 => backend page 0
+        size: Number(size) || 20,
+      };
+
+      if (search?.trim()) {
+        params.search = search.trim();
+      }
+
+      if (groupType) {
+        params.groupType = groupType;
+      }
+
+      if (active !== "" && active !== null && active !== undefined) {
+        params.active = active;
+      }
+
+      const response = await api.get(`/accountService/api/v1/ledger-groups`, {
+        params,
+      });
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const createLedgerGroup = createAsyncThunk(
+  "ledgerGroup/createLedgerGroup",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/ledger-groups`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const updateLedgerGroup = createAsyncThunk(
+  "ledgerGroup/updateLedgerGroup",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/ledger-groups/${id}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const deleteLedgerGroup = createAsyncThunk(
+  "ledgerGroup/deleteLedgerGroup",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/accountService/api/v1/ledger-groups/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const fetchLedgers = createAsyncThunk(
+  "ledger/fetchLedgers",
+  async (
+    {
+      search = "",
+      ledgerType = "ALL",
+      ledgerGroupId = "",
+      active = "ALL",
+      page = 1,
+      size = 20,
+    } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        page,
+        size,
+      };
+
+      if (search?.trim()) {
+        params.search = search.trim();
+      }
+
+      if (ledgerType && ledgerType !== "ALL") {
+        params.ledgerType = ledgerType;
+      }
+
+      if (ledgerGroupId !== "" && ledgerGroupId !== null) {
+        params.ledgerGroupId = ledgerGroupId;
+      }
+
+      if (active !== "ALL") {
+        params.active = active === true || active === "true";
+      }
+
+      const response = await api.get(`/accountService/api/v1/ledgers`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const createLedger = createAsyncThunk(
+  "ledger/createLedger",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/v1/ledgers`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const updateLedger = createAsyncThunk(
+  "ledger/updateLedger",
+  async ({ id, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/ledgers/${id}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const deleteLedger = createAsyncThunk(
+  "ledger/deleteLedger",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/accountService/api/v1/ledgers/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -835,7 +992,75 @@ const OrganizationSlice = createSlice({
     salesReportList: [],
     salesReportExportedData: [],
     salesReportCount: 0,
+    ledgerGroupList: [],
+    ledgerGroupPage: {},
+    ledgerGroupTotalElements: 0,
+    ledgerGroupTotalPages: 0,
+    ledgerGroupPageNumber: 0,
+    ledgerGroupPageSize: 20,
+    ledgerGroupNumberOfElements: 0,
+    ledgerGroupFirst: true,
+    ledgerGroupLast: true,
+    ledgerGroupEmpty: true,
+
+    ledgerGroupLoading: "",
+    createLedgerGroupLoading: "",
+    updateLedgerGroupLoading: "",
+    deleteLedgerGroupLoading: "",
+    ledgerGroupError: "",
+
+    ledgers: [],
+    selectedLedgerId: null,
+
+    search: "",
+    ledgerTypeFilter: "ALL",
+    ledgerGroupIdFilter: "",
+    activeFilter: "ALL",
+
+    page: 1,
+    size: 20,
+    totalPages: 0,
+    totalElements: 0,
+
+    loading: false,
+    saving: false,
+    deletingId: null,
+    error: "",
   },
+  reducers: {
+    setSelectedLedgerId: (state, action) => {
+      state.selectedLedgerId = action.payload;
+    },
+
+    setLedgerSearch: (state, action) => {
+      state.search = action.payload;
+      state.page = 1;
+    },
+
+    setLedgerTypeFilter: (state, action) => {
+      state.ledgerTypeFilter = action.payload;
+      state.page = 1;
+    },
+
+    setLedgerGroupIdFilter: (state, action) => {
+      state.ledgerGroupIdFilter = action.payload;
+      state.page = 1;
+    },
+
+    setActiveFilter: (state, action) => {
+      state.activeFilter = action.payload;
+      state.page = 1;
+    },
+
+    setLedgerPage: (state, action) => {
+      state.page = action.payload;
+    },
+
+    clearLedgerError: (state) => {
+      state.error = "";
+    },
+  },
+
   extraReducers: (builder) => {
     builder.addCase(getOrganizationByName.pending, (state) => {
       state.loading = "pending";
@@ -1392,7 +1617,193 @@ const OrganizationSlice = createSlice({
         state.unBillList = [];
       },
     );
+
+    // GET LEDGER GROUPS
+    builder.addCase(getLedgerGroups.pending, (state) => {
+      state.ledgerGroupLoading = "pending";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(getLedgerGroups.fulfilled, (state, action) => {
+      const payload = action.payload || {};
+
+      state.ledgerGroupLoading = "success";
+      state.ledgerGroupPage = payload;
+
+      state.ledgerGroupList = Array.isArray(payload.content)
+        ? payload.content
+        : [];
+
+      state.ledgerGroupTotalElements = payload.totalElements ?? 0;
+      state.ledgerGroupTotalPages = payload.totalPages ?? 0;
+      state.ledgerGroupPageNumber = payload.number ?? 0;
+      state.ledgerGroupPageSize = payload.size ?? 20;
+      state.ledgerGroupNumberOfElements = payload.numberOfElements ?? 0;
+      state.ledgerGroupFirst = payload.first ?? true;
+      state.ledgerGroupLast = payload.last ?? true;
+      state.ledgerGroupEmpty = payload.empty ?? true;
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(getLedgerGroups.rejected, (state, action) => {
+      state.ledgerGroupLoading = "error";
+      state.ledgerGroupList = [];
+      state.ledgerGroupPage = {};
+      state.ledgerGroupTotalElements = 0;
+      state.ledgerGroupTotalPages = 0;
+      state.ledgerGroupNumberOfElements = 0;
+      state.ledgerGroupEmpty = true;
+      state.ledgerGroupError =
+        action.payload || "Failed to fetch ledger groups";
+    });
+
+    // CREATE LEDGER GROUP
+    builder.addCase(createLedgerGroup.pending, (state) => {
+      state.createLedgerGroupLoading = "pending";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(createLedgerGroup.fulfilled, (state) => {
+      state.createLedgerGroupLoading = "success";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(createLedgerGroup.rejected, (state, action) => {
+      state.createLedgerGroupLoading = "error";
+      state.ledgerGroupError =
+        action.payload || "Failed to create ledger group";
+    });
+
+    // UPDATE LEDGER GROUP
+    builder.addCase(updateLedgerGroup.pending, (state) => {
+      state.updateLedgerGroupLoading = "pending";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(updateLedgerGroup.fulfilled, (state) => {
+      state.updateLedgerGroupLoading = "success";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(updateLedgerGroup.rejected, (state, action) => {
+      state.updateLedgerGroupLoading = "error";
+      state.ledgerGroupError =
+        action.payload || "Failed to update ledger group";
+    });
+
+    // DELETE LEDGER GROUP
+    builder.addCase(deleteLedgerGroup.pending, (state) => {
+      state.deleteLedgerGroupLoading = "pending";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(deleteLedgerGroup.fulfilled, (state) => {
+      state.deleteLedgerGroupLoading = "success";
+      state.ledgerGroupError = "";
+    });
+
+    builder.addCase(deleteLedgerGroup.rejected, (state, action) => {
+      state.deleteLedgerGroupLoading = "error";
+      state.ledgerGroupError =
+        action.payload || "Failed to delete ledger group";
+    });
+
+    builder
+      .addCase(fetchLedgers.pending, (state) => {
+        state.loading = true;
+        state.error = "";
+      })
+      .addCase(fetchLedgers.fulfilled, (state, action) => {
+        const data = action.payload || {};
+        const content = Array.isArray(data.content) ? data.content : [];
+
+        state.loading = false;
+        state.ledgers = content;
+        state.totalPages = data.totalPages || 0;
+        state.totalElements = data.totalElements || 0;
+
+        const selectedExists = content.some(
+          (ledger) => ledger.id === state.selectedLedgerId,
+        );
+
+        if (!selectedExists) {
+          state.selectedLedgerId = content[0]?.id || null;
+        }
+      })
+      .addCase(fetchLedgers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch ledgers";
+      })
+
+      .addCase(createLedger.pending, (state) => {
+        state.saving = true;
+        state.error = "";
+      })
+      .addCase(createLedger.fulfilled, (state, action) => {
+        state.saving = false;
+
+        if (action.payload?.id) {
+          state.selectedLedgerId = action.payload.id;
+        }
+      })
+      .addCase(createLedger.rejected, (state, action) => {
+        state.saving = false;
+        state.error = action.payload || "Failed to create ledger";
+      })
+
+      .addCase(updateLedger.pending, (state) => {
+        state.saving = true;
+        state.error = "";
+      })
+      .addCase(updateLedger.fulfilled, (state, action) => {
+        state.saving = false;
+
+        const updatedLedger = action.payload;
+
+        if (updatedLedger?.id) {
+          state.ledgers = state.ledgers.map((ledger) =>
+            ledger.id === updatedLedger.id ? updatedLedger : ledger,
+          );
+          state.selectedLedgerId = updatedLedger.id;
+        }
+      })
+      .addCase(updateLedger.rejected, (state, action) => {
+        state.saving = false;
+        state.error = action.payload || "Failed to update ledger";
+      })
+
+      .addCase(deleteLedger.pending, (state, action) => {
+        state.deletingId = action.meta.arg;
+        state.error = "";
+      })
+      .addCase(deleteLedger.fulfilled, (state, action) => {
+        const deletedId = action.payload;
+
+        state.deletingId = null;
+        state.ledgers = state.ledgers.filter(
+          (ledger) => ledger.id !== deletedId,
+        );
+        state.totalElements = Math.max(0, state.totalElements - 1);
+
+        if (state.selectedLedgerId === deletedId) {
+          state.selectedLedgerId = state.ledgers[0]?.id || null;
+        }
+      })
+      .addCase(deleteLedger.rejected, (state, action) => {
+        state.deletingId = null;
+        state.error = action.payload || "Failed to delete ledger";
+      });
   },
 });
+
+export const {
+  setSelectedLedgerId,
+  setLedgerSearch,
+  setLedgerTypeFilter,
+  setLedgerGroupIdFilter,
+  setActiveFilter,
+  setLedgerPage,
+  clearLedgerError,
+} = OrganizationSlice.actions;
 
 export default OrganizationSlice.reducer;

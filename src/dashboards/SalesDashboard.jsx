@@ -25,16 +25,16 @@ const SalesDashboard = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const totalLeadCount = useSelector(
-    (state) => state.dashboard.totalLeadCountForGraph
+    (state) => state.dashboard.totalLeadCountForGraph,
   );
   const totalProjectCount = useSelector(
-    (state) => state.dashboard.totalProjectCountForGraph
+    (state) => state.dashboard.totalProjectCountForGraph,
   );
   const userCount = useSelector(
-    (state) => state.dashboard.totalUserCountForGraph
+    (state) => state.dashboard.totalUserCountForGraph,
   );
   const companyCount = useSelector(
-    (state) => state.dashboard.totalCompanyForGraph
+    (state) => state.dashboard.totalCompanyForGraph,
   );
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const SalesDashboard = () => {
     dispatch(getTotalProjectCounts(userId));
     dispatch(totalUserCount(userId));
     dispatch(totalCompanyForGraph(userId));
-  }, [dispatch,userId]);
+  }, [dispatch, userId]);
 
   useEffect(() => {
     dispatch(getDashboardUsersByHeirarchy(userId));
@@ -97,13 +97,13 @@ const SalesDashboard = () => {
         </Card>
       </div>
       <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
-        <UserLeadStatus/>
+        <UserLeadStatus />
         <LeadStatusChart />
         <TopSellLeads />
         <ProjectsDataChart />
         {/* <ConversionStatus /> */}
         {/* <ConvertedLeadsDataChart /> */}
-        <RevenueChart/>
+        <RevenueChart />
       </div>
     </div>
   );

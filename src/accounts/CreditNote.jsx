@@ -21,6 +21,8 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Textarea,
+  useDisclosure,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -74,6 +76,77 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+const CREDIT_NOTE_GST_RATE = 18;
+
+const parseAmount = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+
+  const cleanedValue = String(value)
+    .replace(/[₹,\s]/g, "")
+    .trim();
+
+  return Number(cleanedValue) || 0;
+};
+
+const getCreditNoteAmountBreakup = (refundAmount) => {
+  const grossAmount = parseAmount(refundAmount);
+
+  // Refund amount is treated as GST-inclusive amount.
+  // Example: 500 => taxable 423.73, GST 76.27
+  const gstAmount =
+    grossAmount > 0
+      ? Number(
+          (
+            (grossAmount * CREDIT_NOTE_GST_RATE) /
+            (100 + CREDIT_NOTE_GST_RATE)
+          ).toFixed(2),
+        )
+      : 0;
+
+  const taxableAmount =
+    grossAmount > 0 ? Number((grossAmount - gstAmount).toFixed(2)) : 0;
+
+  return {
+    grossAmount,
+    taxableAmount,
+    gstRate: CREDIT_NOTE_GST_RATE,
+    gstAmount,
+  };
+};
+
+const getInitialCreditLedgerData = (rowData = null) => {
+  const refundAmount = Number(rowData?.refundAmount || 0);
+  const amountBreakup = getCreditNoteAmountBreakup(refundAmount);
+
+  return {
+    voucherDate: dayjs().format("YYYY-MM-DD"),
+
+    creditNoteId: rowData?.id || "",
+    creditNoteNumber: rowData?.creditNoteNumber || "",
+    unbilledNumber: rowData?.unbilledNumber || "",
+    estimateNumber: rowData?.estimateNumber || "",
+
+    companyName: rowData?.companyName || "",
+    contactName: rowData?.contactName || "",
+    partyLedger: rowData?.companyName || "",
+
+    refundAmount: String(rowData?.refundAmount ?? ""),
+    creditAmount: String(rowData?.creditAmount ?? rowData?.refundAmount ?? ""),
+
+    taxableAmount: String(amountBreakup.taxableAmount),
+    gstRate: String(amountBreakup.gstRate),
+    gstAmount: String(amountBreakup.gstAmount),
+
+    // Backend default ledgers
+    debitLedger: "SALES_RETURN",
+    creditLedger: "SUNDRY_DEBTORS",
+
+    referenceNumber: "",
+    narration: rowData?.reason || "",
+    attachment: "",
+  };
+};
+
 const CreditNote = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
@@ -112,6 +185,17 @@ const CreditNote = () => {
     rowData: null,
   });
 
+  const creditLedgerModal = useDisclosure();
+
+  const [creditLedgerRow, setCreditLedgerRow] = useState(null);
+  const [creditLedgerData, setCreditLedgerData] = useState(
+    getInitialCreditLedgerData(),
+  );
+  const [
+    isCreditLedgerAttachmentUploading,
+    setIsCreditLedgerAttachmentUploading,
+  ] = useState(false);
+
   const [approvalRemarks, setApprovalRemarks] = useState("");
   const [approvalAttachment, setApprovalAttachment] = useState("");
   const [approvalAttachmentError, setApprovalAttachmentError] = useState("");
@@ -119,6 +203,11 @@ const CreditNote = () => {
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
     type: "creditNoteNumber",
+  });
+
+  const [creditNotePreviewModal, setCreditNotePreviewModal] = useState({
+    isOpen: false,
+    data: null,
   });
 
   const hasSearchFilter = Boolean(filterValue);
@@ -475,12 +564,213 @@ const CreditNote = () => {
     }
   };
 
+  const openCreditLedgerModal = React.useCallback(
+    (rowData) => {
+      setCreditLedgerRow(rowData);
+      setCreditLedgerData(getInitialCreditLedgerData(rowData));
+      creditLedgerModal.onOpen();
+    },
+    [creditLedgerModal],
+  );
+
+  const closeCreditLedgerModal = React.useCallback(() => {
+    setCreditLedgerRow(null);
+    setCreditLedgerData(getInitialCreditLedgerData());
+    creditLedgerModal.onClose();
+  }, [creditLedgerModal]);
+
+  const buildCreditNotePreviewData = (payload, rowData) => {
+    const taxableAmount = Number(payload?.taxableAmount || 0);
+    const gstAmount = Number(payload?.gstAmount || 0);
+    const totalAmount = Number(payload?.ledgerAmount || 0);
+
+    return {
+      irn: "bd3cbff014e6909d9634d10ec5e307a1774b9ca12d2-d947049850b6a7589890d",
+      ackNo: "142518923640227",
+      ackDate: dayjs().format("DD-MMM-YY"),
+
+      company: {
+        name: "Corpseed Ites Private Limited",
+        address:
+          "2nd Floor A-154/A Sector-63 Noida, Gautam Budh Nagar, Uttar Pradesh 201301",
+        gstin: "09AAHCC4539J1ZC",
+        state: "Uttar Pradesh",
+        stateCode: "09",
+        email: "praveen.kumar@corpseed.com",
+      },
+
+      buyer: {
+        name:
+          rowData?.companyName ||
+          payload?.companyName ||
+          "Motorola Solutions India Private Limited",
+        address:
+          rowData?.companyAddress ||
+          "415/2 Mehrauli Gurgaon Road, 6th And 7th Floor, Sector 14 Gurgaon",
+        gstin: rowData?.buyerGstin || "06AAACM9343D1ZO",
+        state: rowData?.buyerState || "Haryana",
+        stateCode: rowData?.buyerStateCode || "06",
+      },
+
+      creditNoteNumber: payload?.creditNoteNumber || "-",
+      creditNoteDate: payload?.voucherDate
+        ? dayjs(payload.voucherDate).format("DD-MMM-YY")
+        : dayjs().format("DD-MMM-YY"),
+
+      referenceNumber: payload?.referenceNumber || "-",
+      originalInvoiceNo: rowData?.invoiceNumber || "-",
+      buyerOrderNo: rowData?.buyerOrderNo || "NP31004203",
+      buyerOrderDate: "20-Nov-25",
+
+      serviceName: rowData?.solutionName || "DGFT License",
+      hsnSac: rowData?.hsnSac || "998312",
+      gstRate: Number(payload?.gstRate || 18),
+      taxableAmount,
+      gstAmount,
+      totalAmount,
+
+      amountInWords: "Indian Rupees Five Hundred Only",
+
+      bank: {
+        accountHolderName: "Corpseed Ites Pvt Ltd",
+        bankName: "IDFC FIRST Bank",
+        accountNumber: "10052624515",
+        branch: "Noida, Sector 63 Branch",
+        ifsc: "IDFB0021331",
+      },
+    };
+  };
+
+  const handleSubmitCreditLedger = React.useCallback(
+    async (e) => {
+      e?.preventDefault?.();
+
+      if (!creditLedgerData.voucherDate) {
+        addToast({
+          title: "Voucher date is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!creditLedgerData.referenceNumber?.trim()) {
+        addToast({
+          title: "Reference number is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!creditLedgerData.partyLedger?.trim()) {
+        addToast({
+          title: "Party ledger is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      const refundAmount = Number(creditLedgerData.refundAmount || 0);
+
+      if (refundAmount <= 0) {
+        addToast({
+          title: "Refund amount is missing",
+          description:
+            "Credit ledger amount will be created from refund amount.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!creditLedgerData.narration?.trim()) {
+        addToast({
+          title: "Narration is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (isCreditLedgerAttachmentUploading) {
+        addToast({
+          title: "Attachment upload in progress",
+          description: "Please wait until upload is completed.",
+          color: "warning",
+        });
+        return;
+      }
+
+      const amountBreakup = getCreditNoteAmountBreakup(refundAmount);
+
+      const payload = {
+        creditNoteId: Number(creditLedgerData.creditNoteId),
+        creditNoteNumber: creditLedgerData.creditNoteNumber,
+        unbilledNumber: creditLedgerData.unbilledNumber,
+        estimateNumber: creditLedgerData.estimateNumber,
+
+        voucherDate: creditLedgerData.voucherDate,
+        createdByUserId: Number(userId),
+
+        companyName: creditLedgerData.companyName,
+        contactName: creditLedgerData.contactName,
+        partyLedger: creditLedgerData.partyLedger.trim(),
+
+        // Default backend ledgers
+        debitLedger: "SALES_RETURN",
+        creditLedger: "SUNDRY_DEBTORS",
+
+        // Ledger amount comes from refund amount
+        ledgerAmount: refundAmount,
+        refundAmount,
+        creditAmount: Number(creditLedgerData.creditAmount || refundAmount),
+
+        gstRate: amountBreakup.gstRate,
+        taxableAmount: amountBreakup.taxableAmount,
+        gstAmount: amountBreakup.gstAmount,
+
+        referenceNumber: creditLedgerData.referenceNumber.trim(),
+        narration: creditLedgerData.narration.trim(),
+        attachment: creditLedgerData.attachment,
+      };
+
+      console.log("Credit Ledger Payload:", payload);
+
+      const previewData = buildCreditNotePreviewData(payload, creditLedgerRow);
+
+      addToast({
+        title: "Credit ledger entry prepared successfully",
+        description: "Credit note preview generated.",
+        color: "success",
+      });
+
+      closeCreditLedgerModal();
+
+      setCreditNotePreviewModal({
+        isOpen: true,
+        data: previewData,
+      });
+
+      // When backend API is ready:
+      // const resp = await dispatch(createCreditLedgerEntry(payload));
+      // if (resp.meta.requestStatus === "fulfilled") fetchCreditNotes();
+    },
+    [
+      creditLedgerData,
+      userId,
+      isCreditLedgerAttachmentUploading,
+      closeCreditLedgerModal,
+    ],
+  );
+
   const handleActionsClick = React.useCallback(
     (key, rowData) => {
       const actionKey = String(key);
 
       if (actionKey === "viewCreditNote") {
         console.log("View Credit Note:", rowData);
+        return;
+      }
+
+      if (actionKey === "CREDIT_LEDGER") {
+        openCreditLedgerModal(rowData);
         return;
       }
 
@@ -523,7 +813,12 @@ const CreditNote = () => {
         openRejectModal(rowData);
       }
     },
-    [handleApproveCreditNote, openRejectModal, getCreditNoteAttachment],
+    [
+      handleApproveCreditNote,
+      openRejectModal,
+      getCreditNoteAttachment,
+      openCreditLedgerModal,
+    ],
   );
 
   const renderCell = React.useCallback(
@@ -764,6 +1059,10 @@ const CreditNote = () => {
                       Reject
                     </DropdownItem>
                   ) : null}
+
+                  <DropdownItem key="CREDIT_LEDGER">
+                    Add Credit Ledger
+                  </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -859,7 +1158,6 @@ const CreditNote = () => {
                   setPage(1);
                 }}
               >
-                <DropdownItem key="PENDING">PENDING</DropdownItem>
                 <DropdownItem key="APPROVED">APPROVED</DropdownItem>
                 <DropdownItem key="REJECTED">REJECTED</DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
@@ -1118,7 +1416,7 @@ const CreditNote = () => {
               />
 
               <FileUploader
-                label="GST Portal Credit Note"
+                label="Approval attachement"
                 value={approvalAttachment}
                 isRequired
                 errorMessage={approvalAttachmentError}
@@ -1164,7 +1462,522 @@ const CreditNote = () => {
           </form>
         </ModalContent>
       </Modal>
+
+      <Modal
+        size="4xl"
+        // isDismissable={false}
+        // isKeyboardDismissDisabled={true}
+        isOpen={creditLedgerModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeCreditLedgerModal();
+          }
+        }}
+        placement="top-center"
+        // scrollBehavior="inside"
+      >
+        <ModalContent>
+          {() => (
+            <form onSubmit={handleSubmitCreditLedger}>
+              <ModalHeader className="flex flex-col gap-1">
+                Add Credit Ledger
+                <span className="text-xs font-normal text-default-500">
+                  Tally-style ledger entry for accounts team
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="max-h-[75vh] overflow-auto">
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-default-700">
+                      Credit Note Reference
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                      <Input
+                        size="sm"
+                        label="Credit Note No."
+                        value={creditLedgerData.creditNoteNumber}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Unbilled No."
+                        value={creditLedgerData.unbilledNumber}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Estimate No."
+                        value={creditLedgerData.estimateNumber}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Company"
+                        value={creditLedgerData.companyName}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Contact"
+                        value={creditLedgerData.contactName}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Refund / Ledger Amount"
+                        value={inrCurrency(creditLedgerData.refundAmount || 0)}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Taxable Amount"
+                        value={inrCurrency(creditLedgerData.taxableAmount || 0)}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="GST Rate"
+                        value={`${creditLedgerData.gstRate || 0}%`}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Calculated GST"
+                        value={inrCurrency(creditLedgerData.gstAmount || 0)}
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Debit Ledger"
+                        value="Sales Return"
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Credit Ledger"
+                        value="Sundry Debtors"
+                        isReadOnly
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Party Ledger"
+                        value={creditLedgerData.partyLedger || "-"}
+                        isReadOnly
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-default-200 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-default-700">
+                      Ledger Entry Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <Input
+                        size="sm"
+                        type="date"
+                        label="Voucher Date"
+                        isRequired
+                        value={creditLedgerData.voucherDate}
+                        onChange={(e) =>
+                          setCreditLedgerData((prev) => ({
+                            ...prev,
+                            voucherDate: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <Input
+                        size="sm"
+                        label="Reference Number"
+                        placeholder="Enter reference number"
+                        isRequired
+                        value={creditLedgerData.referenceNumber}
+                        onChange={(e) =>
+                          setCreditLedgerData((prev) => ({
+                            ...prev,
+                            referenceNumber: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-default-200 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-default-700">
+                      Narration / Attachment
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <Textarea
+                        size="sm"
+                        label="Narration"
+                        placeholder="Enter narration for ledger entry"
+                        isRequired
+                        minRows={3}
+                        value={creditLedgerData.narration}
+                        onChange={(e) =>
+                          setCreditLedgerData((prev) => ({
+                            ...prev,
+                            narration: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <FileUploader
+                        label="Supporting Attachment"
+                        value={creditLedgerData.attachment}
+                        placeholder="Upload ledger supporting document"
+                        onChange={(url) =>
+                          setCreditLedgerData((prev) => ({
+                            ...prev,
+                            attachment: url,
+                          }))
+                        }
+                        onUploadSuccess={(file) =>
+                          setCreditLedgerData((prev) => ({
+                            ...prev,
+                            attachment: file?.filePath || "",
+                          }))
+                        }
+                        onUploadingChange={setIsCreditLedgerAttachmentUploading}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={closeCreditLedgerModal}
+                  isDisabled={isCreditLedgerAttachmentUploading}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isCreditLedgerAttachmentUploading}
+                >
+                  Save Credit Ledger
+                </Button>
+              </ModalFooter>
+            </form>
+          )}
+        </ModalContent>
+      </Modal>
+      <CreditNotePreviewModal
+        isOpen={creditNotePreviewModal.isOpen}
+        data={creditNotePreviewModal.data}
+        onClose={() =>
+          setCreditNotePreviewModal({
+            isOpen: false,
+            data: null,
+          })
+        }
+      />
     </>
+  );
+};
+
+const CreditNotePreviewModal = ({ isOpen, data, onClose }) => {
+  if (!data) return null;
+
+  return (
+    <Modal
+      size="5xl"
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      placement="top-center"
+      scrollBehavior="inside"
+      classNames={{
+        base: "max-h-[92vh]",
+      }}
+    >
+      <ModalContent>
+        <ModalHeader className="border-b border-default-200">
+          <div className="flex w-full items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold uppercase tracking-wide">
+                Credit Note Preview
+              </h2>
+              <p className="text-xs font-normal text-default-500">
+                Tally-style preview generated after credit ledger submission
+              </p>
+            </div>
+          </div>
+        </ModalHeader>
+
+        <ModalBody className="bg-white p-5">
+          <div className="mx-auto max-w-[900px] border border-black bg-white p-0 text-black">
+            <div className="grid grid-cols-[1fr_220px] border-b border-black">
+              <div className="p-4">
+                <h1 className="mb-6 text-center text-2xl font-bold">
+                  CREDIT NOTE
+                </h1>
+
+                <div className="space-y-1 text-sm">
+                  <p>
+                    <span className="inline-block w-[90px]">IRN</span>
+                    <span className="font-semibold">: {data.irn}</span>
+                  </p>
+                  <p>
+                    <span className="inline-block w-[90px]">Ack No.</span>
+                    <span className="font-semibold">: {data.ackNo}</span>
+                  </p>
+                  <p>
+                    <span className="inline-block w-[90px]">Ack Date</span>
+                    <span className="font-semibold">: {data.ackDate}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center justify-center border-l border-black p-4">
+                <p className="mb-2 text-sm font-semibold">e-Invoice</p>
+                <div className="grid h-[140px] w-[140px] grid-cols-6 grid-rows-6 gap-[2px] bg-white p-1">
+                  {Array.from({ length: 36 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className={
+                        index % 2 === 0 || index % 5 === 0
+                          ? "bg-black"
+                          : "bg-white"
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[1.2fr_1fr] border-b border-black">
+              <div className="border-r border-black">
+                <div className="border-b border-black p-3">
+                  <p className="text-base font-bold">{data.company.name}</p>
+                  <p className="text-sm">{data.company.address}</p>
+                  <p className="text-sm">GSTIN/UIN: {data.company.gstin}</p>
+                  <p className="text-sm">
+                    State Name: {data.company.state}, Code:{" "}
+                    {data.company.stateCode}
+                  </p>
+                  <p className="text-sm">E-Mail: {data.company.email}</p>
+                </div>
+
+                <div className="border-b border-black p-3">
+                  <p className="text-sm">Consignee (Ship to)</p>
+                  <p className="text-base font-bold">{data.buyer.name}</p>
+                  <p className="text-sm">{data.buyer.address}</p>
+                  <p className="text-sm">GSTIN/UIN: {data.buyer.gstin}</p>
+                  <p className="text-sm">
+                    State Name: {data.buyer.state}, Code: {data.buyer.stateCode}
+                  </p>
+                </div>
+
+                <div className="p-3">
+                  <p className="text-sm">Buyer (Bill to)</p>
+                  <p className="text-base font-bold">{data.buyer.name}</p>
+                  <p className="text-sm">{data.buyer.address}</p>
+                  <p className="text-sm">GSTIN/UIN: {data.buyer.gstin}</p>
+                  <p className="text-sm">
+                    State Name: {data.buyer.state}, Code: {data.buyer.stateCode}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="grid grid-cols-2 border-b border-black">
+                  <div className="border-r border-black p-3">
+                    <p className="text-sm">Credit Note No.</p>
+                    <p className="font-bold">{data.creditNoteNumber}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm">Dated</p>
+                    <p className="font-bold">{data.creditNoteDate}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 border-b border-black">
+                  <div className="border-r border-black p-3">
+                    <p className="text-sm">Original Invoice No. & Date</p>
+                    <p className="font-semibold">{data.originalInvoiceNo}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm">Other References</p>
+                    <p className="font-semibold">{data.referenceNumber}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 border-b border-black">
+                  <div className="border-r border-black p-3">
+                    <p className="text-sm">Buyer’s Order No.</p>
+                    <p className="font-bold">{data.buyerOrderNo}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm">Dated</p>
+                    <p className="font-bold">{data.buyerOrderDate}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 border-b border-black">
+                  <div className="border-r border-black p-3">
+                    <p className="text-sm">Dispatch Doc No.</p>
+                    <p className="font-semibold">-</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm">Destination</p>
+                    <p className="font-semibold">-</p>
+                  </div>
+                </div>
+
+                <div className="min-h-[120px] p-3">
+                  <p className="text-sm">Terms of Delivery</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[50px_1fr_110px_110px_110px_80px_140px] border-b border-black text-sm">
+              <div className="border-r border-black p-2 font-semibold">
+                Sl No.
+              </div>
+              <div className="border-r border-black p-2 text-center font-semibold">
+                Particulars
+              </div>
+              <div className="border-r border-black p-2 text-center font-semibold">
+                HSN/SAC
+              </div>
+              <div className="border-r border-black p-2 text-center font-semibold">
+                Quantity
+              </div>
+              <div className="border-r border-black p-2 text-center font-semibold">
+                Rate
+              </div>
+              <div className="border-r border-black p-2 text-center font-semibold">
+                per
+              </div>
+              <div className="p-2 text-center font-semibold">Amount</div>
+            </div>
+
+            <div className="grid min-h-[210px] grid-cols-[50px_1fr_110px_110px_110px_80px_140px] border-b border-black text-sm">
+              <div className="border-r border-black p-2">1</div>
+
+              <div className="border-r border-black p-2">
+                <p className="text-center text-base font-bold">
+                  {data.serviceName}
+                </p>
+                <p className="mt-3 text-right font-bold">IGST</p>
+
+                <div className="mt-8">
+                  <p className="font-semibold underline">Bill Details:</p>
+                  <div className="mt-2 flex justify-between">
+                    <span>On Account</span>
+                    <span>
+                      {inrCurrency(data.totalAmount)} <b>Cr</b>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-r border-black p-2 text-center">
+                {data.hsnSac}
+              </div>
+
+              <div className="border-r border-black p-2 text-center"></div>
+
+              <div className="border-r border-black p-2 text-right">
+                <p className="mt-12">{data.gstRate}</p>
+              </div>
+
+              <div className="border-r border-black p-2 text-center">
+                <p className="mt-12">%</p>
+              </div>
+
+              <div className="p-2 text-right font-bold">
+                <p>{inrCurrency(data.taxableAmount)}</p>
+                <p>{inrCurrency(data.gstAmount)}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[1fr_140px] border-b border-black">
+              <div className="p-2 text-right font-semibold">Total</div>
+              <div className="border-l border-black p-2 text-right text-lg font-bold">
+                {inrCurrency(data.totalAmount)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2">
+              <div className="border-r border-black p-3">
+                <p className="text-sm">Amount Chargeable (in words)</p>
+                <p className="mt-2 font-bold">{data.amountInWords}</p>
+              </div>
+
+              <div className="p-3">
+                <p className="text-base font-semibold">
+                  Company’s Bank Details
+                </p>
+
+                <div className="mt-2 space-y-1 text-sm">
+                  <p>
+                    A/c Holder’s Name :{" "}
+                    <span className="font-bold">
+                      {data.bank.accountHolderName}
+                    </span>
+                  </p>
+                  <p>
+                    Bank Name :{" "}
+                    <span className="font-bold">{data.bank.bankName}</span>
+                  </p>
+                  <p>
+                    A/c No. :{" "}
+                    <span className="font-bold">{data.bank.accountNumber}</span>
+                  </p>
+                  <p>
+                    Branch & IFS Code :{" "}
+                    <span className="font-bold">
+                      {data.bank.branch} & {data.bank.ifsc}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="mt-8 border-t border-black pt-2 text-right">
+                  <p className="font-bold">for Corpseed Ites Private Limited</p>
+                  <p className="mt-12">Authorised Signatory</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-black p-2 text-center text-sm">
+              This is a Computer Generated Document
+            </div>
+          </div>
+        </ModalBody>
+
+        <ModalFooter className="border-t border-default-200">
+          <Button variant="flat" onPress={onClose}>
+            Close
+          </Button>
+
+          <Button color="primary" onPress={() => window.print()}>
+            Print
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 };
 

@@ -1,7 +1,8 @@
 import { Route } from "react-router-dom";
 import AdminDashboards from "../dashboards/AdminDashboards";
 import LeadDashboardDetail from "../dashboards/LeadDashboardDetail";
-import SalesDashboard from "../dashboards/SalesDashboard";
+import AccountsDashboard from "../dashboards/accounts/AccountsDashboard";
+import SalesDashboard from "../dashboards/sales/SalesDashboard";
 
 const DashboardRouting = () => {
   return (
@@ -21,7 +22,7 @@ const DashboardRouting = () => {
       />
 
       {/* Account dashboard */}
-      <Route path="accounts/dashboard" element={<AdminDashboards />} />
+      <Route path="accounts/dashboard" element={<AccountsDashboard />} />
 
       {/* Quality dashboard */}
       <Route path="quality/dashboard" element={<AdminDashboards />} />

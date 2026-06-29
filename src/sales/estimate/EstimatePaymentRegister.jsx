@@ -38,6 +38,17 @@ const paymentTenureOptions = [
   { label: "NET 90", value: "NET 90", days: 90 },
 ];
 
+const bankOptions = [
+  { label: "HDFC Bank", value: "HDFC Bank" },
+  { label: "ICICI Bank", value: "ICICI Bank" },
+  { label: "Axis Bank", value: "Axis Bank" },
+  { label: "State Bank of India", value: "State Bank of India" },
+  { label: "Kotak Mahindra Bank", value: "Kotak Mahindra Bank" },
+  { label: "Yes Bank", value: "Yes Bank" },
+];
+
+const bankRequiredPaymentModes = ["UPI", "CHEQUE", "BANK_TRANSFER", "CARD"];
+
 const preventNegativeNumberInput = (e) => {
   if (["-", "+", "e", "E"].includes(e.key)) {
     e.preventDefault();
@@ -60,6 +71,7 @@ const paymentRegisterSchema = z
     paymentMode: z.string().min(1, "Payment mode is required"),
     transactionReference: z.string().optional(),
     remarks: z.string().optional(),
+    bankName: z.string().optional(),
 
     paymentTypeId: numberLike("Payment type").refine(
       (v) => v > 0,
@@ -152,6 +164,17 @@ const paymentRegisterSchema = z
         });
       }
     }
+
+    if (
+      bankRequiredPaymentModes.includes(data.paymentMode) &&
+      !data.bankName?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["bankName"],
+        message: "Bank name is required",
+      });
+    }
   });
 
 const EstimatePaymentRegister = ({
@@ -186,6 +209,7 @@ const EstimatePaymentRegister = ({
       amount: "",
       paymentDate: "",
       paymentMode: "",
+      bankName: "",
       transactionReference: "",
       remarks: "",
       paymentTypeId: "",
@@ -213,6 +237,9 @@ const EstimatePaymentRegister = ({
   const governmentFeeActive = watch("governmentFeeActive");
   const selectedPaymentTypeId = watch("paymentTypeId");
   const tdsActive = watch("tdsActive");
+  const paymentMode = watch("paymentMode");
+
+  const shouldShowBankName = bankRequiredPaymentModes.includes(paymentMode);
 
   const selectedPaymentType = (paymentTypeList || []).find(
     (item) => String(item?.id) === String(selectedPaymentTypeId),
@@ -226,6 +253,12 @@ const EstimatePaymentRegister = ({
 
   const shouldShowPaymentTenure =
     selectedPaymentTypeName === "Purchase Order Payment";
+
+  useEffect(() => {
+    if (!shouldShowBankName) {
+      setValue("bankName", "");
+    }
+  }, [shouldShowBankName, setValue]);
 
   useEffect(() => {
     if (
@@ -318,6 +351,7 @@ const EstimatePaymentRegister = ({
         amount: Number(values.amount),
         paymentTypeId: Number(values.paymentTypeId),
         paymentDate: values.paymentDate,
+        bankName: shouldShowBankName ? values.bankName : null,
 
         paymentTerms: shouldShowPaymentTenure ? values.paymentTerms : null,
         paymentTermsDays: shouldShowPaymentTenure
@@ -501,6 +535,34 @@ const EstimatePaymentRegister = ({
                       </Select>
                     )}
                   />
+
+                  {shouldShowBankName && (
+                    <Controller
+                      name="bankName"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <Select
+                          label="Bank Name"
+                          placeholder="Select bank"
+                          isRequired
+                          selectedKeys={
+                            field.value ? new Set([field.value]) : new Set([])
+                          }
+                          onSelectionChange={(keys) => {
+                            field.onChange(Array.from(keys)?.[0] || "");
+                          }}
+                          isInvalid={!!error}
+                          errorMessage={error?.message}
+                        >
+                          {bankOptions.map((bank) => (
+                            <SelectItem key={bank.value}>
+                              {bank.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                  )}
 
                   <Controller
                     name="paymentTypeId"

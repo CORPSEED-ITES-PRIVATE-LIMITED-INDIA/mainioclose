@@ -56,6 +56,8 @@ import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 
+const bankRequiredPaymentModes = ["UPI", "ONLINE", "BANK_TRANSFER"];
+
 const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "ESTIMATE NO./ PI NO.", uid: "estimateNumber" },

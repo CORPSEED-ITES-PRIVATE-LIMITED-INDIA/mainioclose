@@ -21,6 +21,7 @@ import ProjectsDataChart from "./charts/ProjectsDataChart";
 import ConversionStatus from "./charts/ConversionStatus";
 import TopSellLeads from "./charts/TopSellLeads";
 import RevenueChart from "./charts/RevenueChart";
+import SalesDashboard from "./sales/SalesDashboard";
 
 const AdminDashboards = () => {
   const dispatch = useDispatch();
@@ -50,63 +51,64 @@ const AdminDashboards = () => {
   }, [dispatch]);
 
   return (
-    <div className="max-h-[87vh] overflow-auto p-1">
-      <div className="grid grid-cols-4 gap-4 mb-1">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
-              Total leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <h1 className="font-medium text-2xl m-0">{totalLeadCount}</h1>
-            <MonitorDown />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
-              Total users
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <h1 className="font-medium text-2xl m-0">{userCount}</h1>
-            <Users />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
-              Total projects
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <h1 className="font-medium text-2xl m-0">{totalProjectCount}</h1>
-            <SquareChartGantt />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
-              Total company
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <h1 className="font-medium text-2xl m-0">{companyCount}</h1>
-            <Building2 />
-          </CardContent>
-        </Card>
+    <>
+      <div className="max-h-[87vh] overflow-auto p-1">
+        <div className="grid grid-cols-4 gap-4 mb-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+                Total leads
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <h1 className="font-medium text-2xl m-0">{totalLeadCount}</h1>
+              <MonitorDown />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+                Total users
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <h1 className="font-medium text-2xl m-0">{userCount}</h1>
+              <Users />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+                Total projects
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <h1 className="font-medium text-2xl m-0">{totalProjectCount}</h1>
+              <SquareChartGantt />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center w-full text-muted-foreground">
+                Total company
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <h1 className="font-medium text-2xl m-0">{companyCount}</h1>
+              <Building2 />
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid 2xl:grid-cols-3 lg:grid-cols-2 gap-4">
+          <LeadDataChart />
+          <LeadStatusChart />
+          <TopSellLeads />
+          <ProjectsDataChart />
+          <ConversionStatus />
+          <RevenueChart />
+        </div>
       </div>
-      <div className="grid 2xl:grid-cols-3 lg:grid-cols-2 gap-4">
-        <LeadDataChart />
-        <LeadStatusChart />
-        <TopSellLeads />
-        <ProjectsDataChart />
-        <ConversionStatus />
-        {/* <ConvertedLeadsDataChart /> */}
-        <RevenueChart />
-      </div>
-    </div>
+    </>
   );
 };
 
