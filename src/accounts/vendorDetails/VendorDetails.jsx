@@ -1049,20 +1049,6 @@ const VendorDetails = () => {
               onChange={(event) => setAccountsRemark(event.target.value)}
               isRequired={decisionType === "REJECT"}
             />
-
-            <div className="rounded-xl border bg-white p-3 text-xs text-default-500">
-              Payload sent:
-              <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 p-2 text-[11px] text-gray-700">
-                {JSON.stringify(
-                  {
-                    userId: Number(resolvedUserId || 0),
-                    accountsRemark: accountsRemark.trim(),
-                  },
-                  null,
-                  2,
-                )}
-              </pre>
-            </div>
           </ModalBody>
 
           <ModalFooter className="border-t">

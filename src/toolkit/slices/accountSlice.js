@@ -564,7 +564,7 @@ export const getAllVendorDetails = createAsyncThunk(
     "rejectVendorSubmission",
     async ({ submissionId, data }, { rejectWithValue }) => {
       try {
-        const response = await api.post(
+        const response = await api.put(
           `/operationService/api/vendor-finalizations/accounts/${submissionId}/reject`,
           data,
         );
@@ -583,7 +583,7 @@ export const getAllVendorDetails = createAsyncThunk(
     "approveVendorSubmission",
     async ({ submissionId, data }, { rejectWithValue }) => {
       try {
-        const response = await api.post(
+        const response = await api.put(
           `/operationService/api/vendor-finalizations/accounts/${submissionId}/approve`,
           data,
         );
