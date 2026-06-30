@@ -287,6 +287,10 @@ const sendToAccountsDefaultValues = {
   number: "",
   email: "",
   aadhar: "",
+  authorizedSignatoryName: "",
+  authorizedSignatoryNumber: "",
+  authorizedSignatoryEmail: "",
+  authorizedSignatoryAadhar: "",
   accountHolderName: "",
   accountNumber: "",
   ifsc: "",
@@ -311,6 +315,15 @@ const sendToAccountsSchema = z.object({
     .min(1, "Please enter vendor email")
     .email("Please enter valid email"),
   aadhar: z.string().optional(),
+  authorizedSignatoryName: z.string().optional(),
+  authorizedSignatoryNumber: z.string().optional(),
+  authorizedSignatoryEmail: z
+    .string()
+    .optional()
+    .refine((value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
+      message: "Please enter valid authorized signatory email",
+    }),
+  authorizedSignatoryAadhar: z.string().optional(),
   accountHolderName: z.string().min(1, "Please enter account holder name"),
   accountNumber: z.string().min(1, "Please enter account number"),
   ifsc: z.string().min(1, "Please enter IFSC"),
@@ -325,18 +338,12 @@ const sendToAccountsSchema = z.object({
   cancelChequeUrl: z.any().refine((value) => Boolean(value), {
     message: "Please upload cancel cheque",
   }),
-  itrLastFinancialYearUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload ITR document",
-  }),
+  itrLastFinancialYearUrl: z.any().optional(),
   panDetailsUrl: z.any().refine((value) => Boolean(value), {
     message: "Please upload PAN details",
   }),
-  partnershipOrCoiUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload Partnership/COI document",
-  }),
-  deedOrMsmeUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload Deed/MSME document",
-  }),
+  partnershipOrCoiUrl: z.any().optional(),
+  deedOrMsmeUrl: z.any().optional(),
   balanceSheetUrl: z.any().optional(),
   remarks: z.string().optional(),
 });
@@ -1783,6 +1790,10 @@ const Quote = () => {
       number: values.number,
       email: values.email,
       aadhar: values.aadhar || "",
+      authorizedSignatoryName: values.authorizedSignatoryName || "",
+      authorizedSignatoryNumber: values.authorizedSignatoryNumber || "",
+      authorizedSignatoryEmail: values.authorizedSignatoryEmail || "",
+      authorizedSignatoryAadhar: values.authorizedSignatoryAadhar || "",
       accountHolderName: values.accountHolderName,
       accountNumber: values.accountNumber,
       ifsc: values.ifsc,
@@ -3397,10 +3408,10 @@ const Quote = () => {
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
                             <h3 className="text-sm font-semibold text-gray-900">
-                              Vendor & Bank Details
+                              Normal Details
                             </h3>
                             <p className="text-xs text-default-500">
-                              Basic contact and bank information required by
+                              Vendor contact and bank information required by
                               Accounts.
                             </p>
                           </div>
@@ -3600,14 +3611,127 @@ const Quote = () => {
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
                             <h3 className="text-sm font-semibold text-gray-900">
-                              Mandatory Documents
+                              Authorized Signatory Details
                             </h3>
                             <p className="text-xs text-default-500">
-                              Upload all required documents before submitting.
+                              Add authorized signatory contact and identity
+                              information.
+                            </p>
+                          </div>
+                          <Chip size="sm" color="secondary" variant="flat">
+                            Optional
+                          </Chip>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                          <Controller
+                            name="authorizedSignatoryName"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Input
+                                size="sm"
+                                label="Signatory Name"
+                                value={field.value}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                isInvalid={
+                                  !!sendToAccountsErrors.authorizedSignatoryName
+                                }
+                                errorMessage={
+                                  sendToAccountsErrors.authorizedSignatoryName
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="authorizedSignatoryNumber"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Input
+                                size="sm"
+                                label="Signatory Number"
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.target.value
+                                      .replace(/\D/g, "")
+                                      .slice(0, 15),
+                                  )
+                                }
+                                isInvalid={
+                                  !!sendToAccountsErrors.authorizedSignatoryNumber
+                                }
+                                errorMessage={
+                                  sendToAccountsErrors.authorizedSignatoryNumber
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="authorizedSignatoryEmail"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Input
+                                size="sm"
+                                type="email"
+                                label="Signatory Email"
+                                value={field.value}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                isInvalid={
+                                  !!sendToAccountsErrors.authorizedSignatoryEmail
+                                }
+                                errorMessage={
+                                  sendToAccountsErrors.authorizedSignatoryEmail
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="authorizedSignatoryAadhar"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Input
+                                size="sm"
+                                label="Signatory Aadhar"
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.target.value
+                                      .replace(/\D/g, "")
+                                      .slice(0, 12),
+                                  )
+                                }
+                                isInvalid={
+                                  !!sendToAccountsErrors.authorizedSignatoryAadhar
+                                }
+                                errorMessage={
+                                  sendToAccountsErrors.authorizedSignatoryAadhar
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
+                        </div>
+                      </section>
+
+                      <section className="rounded-2xl border bg-white p-4 shadow-sm">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900">
+                              KYC Documents
+                            </h3>
+                            <p className="text-xs text-default-500">
+                              GST, vendor setup form, cancel cheque and PAN are
+                              required.
                             </p>
                           </div>
                           <Chip size="sm" color="danger" variant="flat">
-                            7 Required
+                            4 Required
                           </Chip>
                         </div>
 
@@ -3662,8 +3786,7 @@ const Quote = () => {
                             control={sendToAccountsControl}
                             render={({ field, fieldState: { error } }) => (
                               <FileUploader
-                                isRequired
-                                label="ITR Last FY"
+                                label="ITR Last FY (Optional)"
                                 value={field.value}
                                 onChange={(value) => field.onChange(value)}
                                 errorMessage={error?.message}
@@ -3692,8 +3815,7 @@ const Quote = () => {
                             control={sendToAccountsControl}
                             render={({ field, fieldState: { error } }) => (
                               <FileUploader
-                                isRequired
-                                label="Partnership / COI"
+                                label="Partnership / COI (Optional)"
                                 value={field.value}
                                 onChange={(value) => field.onChange(value)}
                                 errorMessage={error?.message}
@@ -3707,8 +3829,7 @@ const Quote = () => {
                             control={sendToAccountsControl}
                             render={({ field, fieldState: { error } }) => (
                               <FileUploader
-                                isRequired
-                                label="Deed / MSME"
+                                label="Deed / MSME (Optional)"
                                 value={field.value}
                                 onChange={(value) => field.onChange(value)}
                                 errorMessage={error?.message}
@@ -3735,7 +3856,7 @@ const Quote = () => {
                             control={sendToAccountsControl}
                             render={({ field, fieldState: { error } }) => (
                               <FileUploader
-                                label="Balance Sheet"
+                                label="Balance Sheet (Optional)"
                                 value={field.value}
                                 onChange={(value) => field.onChange(value)}
                                 errorMessage={error?.message}

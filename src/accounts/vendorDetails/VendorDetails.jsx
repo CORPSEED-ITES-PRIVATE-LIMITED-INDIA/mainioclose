@@ -69,10 +69,10 @@ const documentConfig = [
   { key: "gstDetailsUrl", label: "GST Details", mandatory: true },
   { key: "vendorSetupFormUrl", label: "Vendor Setup Form", mandatory: true },
   { key: "cancelChequeUrl", label: "Cancel Cheque", mandatory: true },
-  { key: "itrLastFinancialYearUrl", label: "ITR Last FY", mandatory: true },
   { key: "panDetailsUrl", label: "PAN Details", mandatory: true },
-  { key: "partnershipOrCoiUrl", label: "Partnership / COI", mandatory: true },
-  { key: "deedOrMsmeUrl", label: "Deed / MSME", mandatory: true },
+  { key: "itrLastFinancialYearUrl", label: "ITR Last FY", mandatory: false },
+  { key: "partnershipOrCoiUrl", label: "Partnership / COI", mandatory: false },
+  { key: "deedOrMsmeUrl", label: "Deed / MSME", mandatory: false },
   { key: "balanceSheetUrl", label: "Balance Sheet", mandatory: false },
 ];
 
@@ -218,6 +218,10 @@ const VendorDetails = () => {
           item?.number,
           item?.email,
           item?.aadhar,
+          item?.authorizedSignatoryName,
+          item?.authorizedSignatoryNumber,
+          item?.authorizedSignatoryEmail,
+          item?.authorizedSignatoryAadhar,
           item?.accountHolderName,
           item?.accountNumber,
           item?.ifsc,
@@ -443,6 +447,15 @@ const VendorDetails = () => {
               <span className="text-xs text-default-500">
                 {rowData?.vendorMobile || rowData?.number || "-"}
               </span>
+
+              {(rowData?.authorizedSignatoryName ||
+                rowData?.authorizedSignatoryEmail) && (
+                <span className="line-clamp-1 text-xs text-default-500">
+                  Auth:{" "}
+                  {rowData?.authorizedSignatoryName ||
+                    rowData?.authorizedSignatoryEmail}
+                </span>
+              )}
             </div>
           );
 
@@ -496,7 +509,7 @@ const VendorDetails = () => {
                 variant="flat"
                 className="w-fit"
               >
-                {uploadedDocs.length}/8 Uploaded
+                {uploadedDocs.length}/{documentConfig.length} Uploaded
               </Chip>
 
               <div className="mt-1 flex flex-wrap gap-1">
@@ -879,6 +892,31 @@ const VendorDetails = () => {
 
                 <div className="rounded-xl border bg-white p-4 shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                    Authorized Signatory Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <DetailItem
+                      label="Name"
+                      value={selectedRecord?.authorizedSignatoryName}
+                    />
+                    <DetailItem
+                      label="Number"
+                      value={selectedRecord?.authorizedSignatoryNumber}
+                    />
+                    <DetailItem
+                      label="Email"
+                      value={selectedRecord?.authorizedSignatoryEmail}
+                    />
+                    <DetailItem
+                      label="Aadhar"
+                      value={selectedRecord?.authorizedSignatoryAadhar}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-white p-4 shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-gray-900">
                     Bank Details
                   </h3>
 
@@ -911,7 +949,7 @@ const VendorDetails = () => {
                       Documents
                     </h3>
                     <Chip size="sm" variant="flat">
-                      Mandatory + Optional
+                      4 Mandatory + Optional
                     </Chip>
                   </div>
 
