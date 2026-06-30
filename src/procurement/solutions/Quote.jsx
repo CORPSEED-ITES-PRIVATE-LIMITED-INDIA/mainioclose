@@ -283,15 +283,62 @@ const vendorAgreementSchema = z.object({
 });
 
 const sendToAccountsDefaultValues = {
-  finalVendorAttachmentUrl: "",
-  finalVendorRemarks: "",
+  name: "",
+  number: "",
+  email: "",
+  aadhar: "",
+  accountHolderName: "",
+  accountNumber: "",
+  ifsc: "",
+  swiftCode: "",
+  branchAddress: "",
+  gstDetailsUrl: "",
+  vendorSetupFormUrl: "",
+  cancelChequeUrl: "",
+  itrLastFinancialYearUrl: "",
+  panDetailsUrl: "",
+  partnershipOrCoiUrl: "",
+  deedOrMsmeUrl: "",
+  balanceSheetUrl: "",
+  remarks: "",
 };
 
 const sendToAccountsSchema = z.object({
-  finalVendorAttachmentUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload final vendor form / attachment",
+  name: z.string().min(1, "Please enter vendor name"),
+  number: z.string().min(1, "Please enter vendor number"),
+  email: z
+    .string()
+    .min(1, "Please enter vendor email")
+    .email("Please enter valid email"),
+  aadhar: z.string().optional(),
+  accountHolderName: z.string().min(1, "Please enter account holder name"),
+  accountNumber: z.string().min(1, "Please enter account number"),
+  ifsc: z.string().min(1, "Please enter IFSC"),
+  swiftCode: z.string().optional(),
+  branchAddress: z.string().min(1, "Please enter branch address"),
+  gstDetailsUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload GST details",
   }),
-  finalVendorRemarks: z.string().optional(),
+  vendorSetupFormUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload vendor setup form",
+  }),
+  cancelChequeUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload cancel cheque",
+  }),
+  itrLastFinancialYearUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload ITR document",
+  }),
+  panDetailsUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload PAN details",
+  }),
+  partnershipOrCoiUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload Partnership/COI document",
+  }),
+  deedOrMsmeUrl: z.any().refine((value) => Boolean(value), {
+    message: "Please upload Deed/MSME document",
+  }),
+  balanceSheetUrl: z.any().optional(),
+  remarks: z.string().optional(),
 });
 
 const normalizePageContent = (response) => {
@@ -1665,7 +1712,29 @@ const Quote = () => {
 
       setSelectedQuotation(quotation);
       setSelectedVendorFinalization(finalization);
-      resetSendToAccountsForm(sendToAccountsDefaultValues);
+      resetSendToAccountsForm({
+        ...sendToAccountsDefaultValues,
+        name:
+          finalization?.vendorName ||
+          quotation?.vendorName ||
+          rfqVendorDetails?.vendorName ||
+          "",
+        number:
+          finalization?.vendorMobile ||
+          quotation?.vendorMobile ||
+          rfqVendorDetails?.vendorMobile ||
+          "",
+        email:
+          finalization?.vendorEmail ||
+          quotation?.vendorEmail ||
+          rfqVendorDetails?.vendorEmail ||
+          "",
+        accountHolderName:
+          finalization?.vendorName ||
+          quotation?.vendorName ||
+          rfqVendorDetails?.vendorName ||
+          "",
+      });
       sendToAccountsModal.onOpen();
     },
     [getFinalizationForQuotation, resetSendToAccountsForm, sendToAccountsModal],
@@ -1696,23 +1765,39 @@ const Quote = () => {
       return;
     }
 
-    const finalVendorAttachmentUrl = getUploadedFileValue(
-      values.finalVendorAttachmentUrl,
+    const gstDetailsUrl = getUploadedFileValue(values.gstDetailsUrl);
+    const vendorSetupFormUrl = getUploadedFileValue(values.vendorSetupFormUrl);
+    const cancelChequeUrl = getUploadedFileValue(values.cancelChequeUrl);
+    const itrLastFinancialYearUrl = getUploadedFileValue(
+      values.itrLastFinancialYearUrl,
     );
-
-    if (!finalVendorAttachmentUrl) {
-      addToast({
-        title: "ERROR",
-        description: "Please upload final vendor form / attachment.",
-        color: "danger",
-      });
-      return;
-    }
+    const panDetailsUrl = getUploadedFileValue(values.panDetailsUrl);
+    const partnershipOrCoiUrl = getUploadedFileValue(
+      values.partnershipOrCoiUrl,
+    );
+    const deedOrMsmeUrl = getUploadedFileValue(values.deedOrMsmeUrl);
+    const balanceSheetUrl = getUploadedFileValue(values.balanceSheetUrl);
 
     const body = {
-      finalVendorAttachmentUrl,
-      finalVendorRemarks: values.finalVendorRemarks || "",
-      userId: Number(resolvedUserId),
+      name: values.name,
+      number: values.number,
+      email: values.email,
+      aadhar: values.aadhar || "",
+      accountHolderName: values.accountHolderName,
+      accountNumber: values.accountNumber,
+      ifsc: values.ifsc,
+      swiftCode: values.swiftCode || "",
+      branchAddress: values.branchAddress,
+      gstDetailsUrl,
+      vendorSetupFormUrl,
+      cancelChequeUrl,
+      itrLastFinancialYearUrl,
+      panDetailsUrl,
+      partnershipOrCoiUrl,
+      deedOrMsmeUrl,
+      balanceSheetUrl,
+      remarks: values.remarks || "",
+      sentToAccountsBy: Number(resolvedUserId),
     };
 
     setSubmitLoading(true);
@@ -1728,7 +1813,7 @@ const Quote = () => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "SUCCESS",
-          description: "Final vendor details sent to accounts successfully.",
+          description: "Vendor accounts submission sent successfully.",
           color: "success",
         });
 
@@ -3250,7 +3335,8 @@ const Quote = () => {
             resetSendToAccountsForm(sendToAccountsDefaultValues);
           }
         }}
-        size="2xl"
+        size="5xl"
+        scrollBehavior="inside"
         isDismissable={false}
       >
         <ModalContent>
@@ -3261,59 +3347,362 @@ const Quote = () => {
                   Send To Accounts
                 </h2>
                 <p className="mt-1 text-xs font-normal text-default-500">
-                  Upload final vendor form and remarks for accounts team.
+                  Add vendor KYC, bank details, and mandatory accounts
+                  documents.
                 </p>
               </div>
             </ModalHeader>
 
             <form onSubmit={handleSendToAccountsSubmit(onSubmitSendToAccounts)}>
-              <ModalBody className="space-y-4 px-6 py-5">
-                <Input
-                  label="Quotation"
-                  value={selectedQuotation?.quotationNumber || "-"}
-                  isReadOnly
-                />
+              <ModalBody className="px-6 py-5">
+                <div className="space-y-5">
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Input
+                        label="Quotation"
+                        value={selectedQuotation?.quotationNumber || "-"}
+                        isReadOnly
+                      />
 
-                <Input
-                  label="Vendor"
-                  value={
-                    selectedVendorFinalization?.vendorName ||
-                    selectedQuotation?.vendorName ||
-                    "-"
-                  }
-                  isReadOnly
-                />
+                      <Input
+                        label="Vendor"
+                        value={
+                          selectedVendorFinalization?.vendorName ||
+                          selectedQuotation?.vendorName ||
+                          "-"
+                        }
+                        isReadOnly
+                      />
 
-                <Controller
-                  name="finalVendorAttachmentUrl"
-                  control={sendToAccountsControl}
-                  render={({ field, fieldState: { error } }) => (
-                    <FileUploader
-                      isRequired
-                      label="Final Vendor Form / Attachment"
-                      value={field.value}
-                      onChange={(value) => field.onChange(value)}
-                      errorMessage={error?.message}
-                      isInvalid={!!error}
-                    />
-                  )}
-                />
+                      <Input
+                        label="Finalization ID"
+                        value={selectedVendorFinalization?.id || "-"}
+                        isReadOnly
+                      />
+                    </div>
+                  </div>
 
-                <Controller
-                  name="finalVendorRemarks"
-                  control={sendToAccountsControl}
-                  render={({ field }) => (
-                    <Input
-                      label="Remarks For Accounts"
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      isInvalid={!!sendToAccountsErrors.finalVendorRemarks}
-                      errorMessage={
-                        sendToAccountsErrors.finalVendorRemarks?.message
-                      }
-                    />
-                  )}
-                />
+                  <div className="rounded-2xl border bg-white p-4">
+                    <h3 className="mb-4 text-sm font-semibold text-gray-900">
+                      Vendor Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="name"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Name"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendToAccountsErrors.name}
+                            errorMessage={sendToAccountsErrors.name?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="number"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Number"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendToAccountsErrors.number}
+                            errorMessage={sendToAccountsErrors.number?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="email"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            type="email"
+                            label="Email"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendToAccountsErrors.email}
+                            errorMessage={sendToAccountsErrors.email?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="aadhar"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Aadhar"
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value.replace(/\D/g, "").slice(0, 12),
+                              )
+                            }
+                            isInvalid={!!sendToAccountsErrors.aadhar}
+                            errorMessage={sendToAccountsErrors.aadhar?.message}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-white p-4">
+                    <h3 className="mb-4 text-sm font-semibold text-gray-900">
+                      Bank Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Controller
+                        name="accountHolderName"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="A/C Holder Name"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendToAccountsErrors.accountHolderName}
+                            errorMessage={
+                              sendToAccountsErrors.accountHolderName?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="accountNumber"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="A/C Number"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendToAccountsErrors.accountNumber}
+                            errorMessage={
+                              sendToAccountsErrors.accountNumber?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="ifsc"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="IFSC"
+                            isRequired
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(e.target.value.toUpperCase())
+                            }
+                            isInvalid={!!sendToAccountsErrors.ifsc}
+                            errorMessage={sendToAccountsErrors.ifsc?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="swiftCode"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Swift Code"
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(e.target.value.toUpperCase())
+                            }
+                            isInvalid={!!sendToAccountsErrors.swiftCode}
+                            errorMessage={
+                              sendToAccountsErrors.swiftCode?.message
+                            }
+                          />
+                        )}
+                      />
+
+                      <div className="md:col-span-2">
+                        <Controller
+                          name="branchAddress"
+                          control={sendToAccountsControl}
+                          render={({ field }) => (
+                            <Input
+                              label="Branch Address"
+                              isRequired
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              isInvalid={!!sendToAccountsErrors.branchAddress}
+                              errorMessage={
+                                sendToAccountsErrors.branchAddress?.message
+                              }
+                            />
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-white p-4">
+                    <h3 className="mb-1 text-sm font-semibold text-gray-900">
+                      Mandatory Attachments
+                    </h3>
+                    <p className="mb-4 text-xs text-default-500">
+                      All documents in this section are required before sending
+                      to Accounts.
+                    </p>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <Controller
+                        name="gstDetailsUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="GST Details"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="vendorSetupFormUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Vendor Setup Form"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="cancelChequeUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Cancel Cheque"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="itrLastFinancialYearUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="ITR Last Financial Year"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="panDetailsUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="PAN Details"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="partnershipOrCoiUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Partnership / COI"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="deedOrMsmeUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            isRequired
+                            label="Deed / MSME"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-white p-4">
+                    <h3 className="mb-4 text-sm font-semibold text-gray-900">
+                      Optional Attachment & Remarks
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Controller
+                        name="balanceSheetUrl"
+                        control={sendToAccountsControl}
+                        render={({ field, fieldState: { error } }) => (
+                          <FileUploader
+                            label="Balance Sheet"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            errorMessage={error?.message}
+                            isInvalid={!!error}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="remarks"
+                        control={sendToAccountsControl}
+                        render={({ field }) => (
+                          <Input
+                            label="Remarks For Accounts"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isInvalid={!!sendToAccountsErrors.remarks}
+                            errorMessage={sendToAccountsErrors.remarks?.message}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
               </ModalBody>
 
               <ModalFooter className="border-t px-6 py-4">
