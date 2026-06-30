@@ -1309,8 +1309,7 @@ export const sendVendorDetailsToAccounts = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data ||
-          "Failed to Send Vendor Details to Accounts",
+        error?.response?.data || "Failed to Send Vendor Details to Accounts",
       );
     }
   },
@@ -1377,17 +1376,50 @@ export const getOperationChatMessages = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error?.response?.data?.message ||
-        error?.response?.data?.error ||
+          error?.response?.data?.error ||
           error?.message ||
           "Failed to fetch chat messages",
-        );
-      }
-    },
-  );
+      );
+    }
+  },
+);
 
-  
-  export const OperationSlice = createSlice({
-    name: "operation",
+export const closeOperationChat = createAsyncThunk(
+  "operation/closeOperationChat",
+  async ({ conversationId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/operationService/api/chats/${conversationId}/close?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || error?.message || "Failed to close chat",
+      );
+    }
+  },
+);
+
+export const reopenOperationChat = createAsyncThunk(
+  "operation/reopenOperationChat",
+  async ({ conversationId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/operationService/api/chats/${conversationId}/reopen?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || error?.message || "Failed to reopen chat",
+      );
+    }
+  },
+);
+
+export const OperationSlice = createSlice({
+  name: "operation",
   initialState: {
     loading: "",
     operationProjectList: [],

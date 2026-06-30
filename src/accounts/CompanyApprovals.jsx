@@ -149,7 +149,8 @@ const CompanyApprovals = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Company status updated successfully in leads !.",
+            title: "SUCCESS",
+            description: "Company status updated successfully in leads !.",
             color: "success",
           });
           dispatch(
@@ -165,28 +166,40 @@ const CompanyApprovals = () => {
             .then((res) => {
               if (res.meta.requestStatus === "fulfilled") {
                 addToast({
-                  title: "Company status updated successfully in accounts !.",
+                  title: "SUCCESS",
+                  description:
+                    "Company status updated successfully in accounts !.",
                   color: "success",
                 });
                 onClose();
                 dispatch(getAllCompaniesForApprovals(filteration));
               } else {
-                addToast({ title: res.payload.data.message, color: "danger" });
+                addToast({
+                  title: "ERROR",
+                  description: res.payload.data.message,
+                  color: "danger",
+                });
               }
             })
             .catch((err) => {
               addToast({
-                title: "Something went wrong in accounts",
+                title: "ERROR",
+                description: "Something went wrong in accounts",
                 color: "danger",
               });
             });
         } else {
-          addToast({ title: resp.payload.data.message, color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: resp.payload.data.message,
+            color: "danger",
+          });
         }
       })
       .catch(() => {
         addToast({
-          title: "Something went wrong in accounts",
+          title: "ERROR",
+          description: "Something went wrong in accounts",
           color: "danger",
         });
       });

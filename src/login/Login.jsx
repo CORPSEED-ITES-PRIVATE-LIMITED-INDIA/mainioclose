@@ -37,45 +37,54 @@ const Login = () => {
                       flag: true,
                     }),
                   );
+                  const department = response?.payload?.department
+                    ?.trim()
+                    ?.toLowerCase();
+
                   if (resp?.payload?.roles?.includes("ADMIN")) {
                     console.log("dsjkhgkjsgkjdghj 1111", response);
                     navigate(`/erp/${resp?.payload?.id}/dashboard`);
                   } else {
-                    if (response.payload?.department === "Sales") {
+                    if (department === "sales") {
                       console.log("dsjkhgkjsgkjdghj 2222", response);
                       navigate(`/erp/${resp?.payload?.id}/sales/dashboard`);
                       return;
                     }
-                    if (response.payload?.department === "Procurement") {
+
+                    if (department === "procurement") {
                       console.log("dsjkhgkjsgkjdghj 2222", response);
                       navigate(
                         `/erp/${resp?.payload?.id}/procurement/vendors-requests`,
                       );
                       return;
                     }
-                    if (response.payload?.department === "Human Resource") {
+
+                    if (department === "human resource") {
                       console.log("dsjkhgkjsgkjdghj 33333", response);
                       navigate(`/erp/${resp?.payload?.id}/hr/usersList`);
                       return;
                     }
-                    if (response.payload?.department === "Quality Team") {
+
+                    if (department === "quality team") {
                       console.log("dsjkhgkjsgkjdghj 2222", response);
                       navigate(`/erp/${resp?.payload?.id}/quality/dashboard`);
                       return;
                     }
-                    if (response.payload?.department === "Accounts") {
+
+                    if (department === "accounts") {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
                       navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
                       return;
                     }
+
                     if (
-                      response.payload?.department === "CRT" ||
-                      response.payload?.department === "Legal" ||
-                      response.payload?.department === "Technical" ||
-                      response.payload?.department === "Liaisoning" ||
-                      response.payload?.department === "CRT Test" ||
-                      response.payload?.department === "Operations" ||
-                      response.payload?.department === "Liasoning test"
+                      department === "crt" ||
+                      department === "legal" ||
+                      department === "technical" ||
+                      department === "liaisoning" ||
+                      department === "crt test" ||
+                      department === "operations" ||
+                      department === "liasoning test"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
                       navigate(`/erp/${resp?.payload?.id}/operation/projects`);
@@ -92,7 +101,8 @@ const Login = () => {
             } else {
               setLoading("ipRestricted");
               addToast({
-                title: "Ip address restricted !.",
+                title: "RESTRICTED",
+                description: "Ip address restricted !.",
                 color: "danger",
               });
             }
@@ -111,7 +121,8 @@ const Login = () => {
         .catch(() => {
           setLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "ERROR",
+            description: "Something went wrong !.",
             color: "danger",
           });
         });

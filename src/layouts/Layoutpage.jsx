@@ -32,22 +32,26 @@ import NotificationBell from "../components/NotificationBell";
 
 const getNavItemsByDepartment = (department, admin) => {
   if (admin) return navItems;
-  const trimmed = department.trim();
+
+  const trimmed = department?.trim()?.toLowerCase();
+
   const items = {
-    Sales: salesNavItems,
-    "Quality Team": qualityNavItems,
-    Accounts: accountNavItems,
-    Procurement: procurementItems,
-    "Human Resource": hrItems,
-    CRT: operationNavItems,
-    Legal: legalNavItems,
-    Technical: operationNavItems,
-    Liaisoning: operationNavItems,
-    Operations: operationEmpItems,
-    "Liasoning test": operationEmpItems,
-    "CRT Test": operationEmpItems,
-    // NA: navItems,
+    sales: salesNavItems,
+    "quality team": qualityNavItems,
+    accounts: accountNavItems,
+    procurement: procurementItems,
+    "human resource": hrItems,
+
+    crt: operationNavItems,
+    legal: legalNavItems,
+    technical: operationNavItems,
+    liaisoning: operationNavItems,
+
+    operations: operationEmpItems,
+    "liasoning test": operationEmpItems,
+    "crt test": operationEmpItems,
   };
+
   return items[trimmed];
 };
 

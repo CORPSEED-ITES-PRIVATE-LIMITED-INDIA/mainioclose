@@ -32,7 +32,7 @@ import {
   Select as HeroSelect,
   SelectItem,
 } from "@heroui/react";
-import { ConfigProvider, Form, Input, Select, theme } from "antd";
+import { ConfigProvider, Form, Input, notification, Select, theme } from "antd";
 import * as XLSX from "xlsx";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -340,7 +340,7 @@ const Company = () => {
   const [assigneeIds, setAssigneeIds] = useState([]);
   const [companyId, setCompanyId] = useState([]);
   const [companyUpdateLoading, setCompanyUpdateLoading] = useState(false);
-
+  const [api, contextHolder] = notification.useNotification();
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -429,9 +429,9 @@ const Company = () => {
       );
 
       if (response?.meta?.requestStatus === "fulfilled") {
-        addToast({
-          title: "Company updated successfully",
-          color: "success",
+        api.success({
+          title: "SUCCESS",
+          description: "Company updated successfully !.",
         });
 
         editCompanyModal.onClose();
@@ -444,19 +444,19 @@ const Company = () => {
         return;
       }
 
-      addToast({
-        title:
+      api.error({
+        title: "ERROR",
+        description:
           response?.payload?.data?.message ||
           response?.payload?.message ||
           "Something went wrong !.",
-        color: "danger",
       });
     } catch (error) {
       console.log("Update company error", error);
-
-      addToast({
-        title: error?.message || "Something went wrong while updating company",
-        color: "danger",
+      api.error({
+        title: "ERROR",
+        description:
+          error?.message || "Something went wrong while updating company !.",
       });
     } finally {
       setCompanyUpdateLoading(false);
@@ -957,6 +957,7 @@ const Company = () => {
 
   return (
     <>
+      {contextHolder}
       <h1 className="font-sans text-2xl font-medium mb-1">Company</h1>
 
       <Table

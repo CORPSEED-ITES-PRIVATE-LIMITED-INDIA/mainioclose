@@ -14,7 +14,7 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
-    allowedHosts: ["erp.corpseed.com"],
+    allowedHosts: ["erp.corpseed.com", "localhost"],
     proxy: {
       "/accountService": {
         target: "http://localhost:9002",
@@ -40,6 +40,12 @@ export default defineConfig({
         target: "http://localhost:9090",
         changeOrigin: true,
         secure: false,
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("origin");
+            proxyReq.removeHeader("referer");
+          });
+        },
       },
     },
   },

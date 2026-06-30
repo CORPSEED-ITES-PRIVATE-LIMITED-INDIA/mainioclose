@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   addToast,
   Button,
@@ -30,9 +36,12 @@ import {
   EllipsisVertical,
   Eye,
   ExternalLink,
+  File,
   FileText,
+  MessageCircle,
   Search,
   Send,
+  X,
   XCircle,
 } from "lucide-react";
 import dayjs from "dayjs";
@@ -41,6 +50,11 @@ import {
   agreementDecisionForVendorLegalRequest,
   getAllVendorQuotationLegalRequests,
   sendAgreementToProcurement,
+  startOperationChat,
+  sendOperationChatMessage,
+  getOperationChatMessages,
+  closeOperationChat,
+  reopenOperationChat,
 } from "../toolkit/slices/operationSlice.js";
 
 const columns = [
@@ -69,6 +83,121 @@ const normalizeList = (response) => {
   if (Array.isArray(response?.data?.content)) return response.data.content;
   if (Array.isArray(response?.response)) return response.response;
   return [];
+};
+
+const LEGAL_CHAT_CONTEXT_TYPE = "LEGAL_REQUEST";
+
+const normalizeChatMessages = (response) => {
+  const content = Array.isArray(response?.content)
+    ? response.content
+    : Array.isArray(response)
+      ? response
+      : [];
+
+  // Backend returns latest first. Chat UI needs oldest first.
+  return [...content].reverse();
+};
+
+const isChatClosedStatus = (status) => {
+  return ["CLOSED", "CLOSE"].includes(
+    String(status || "")
+      .trim()
+      .toUpperCase(),
+  );
+};
+
+const getResolvedUserId = (currentUser) => {
+  return (
+    currentUser?.id || currentUser?.userId || currentUser?.employeeId || ""
+  );
+};
+
+const getResolvedUserName = (currentUser) => {
+  return (
+    currentUser?.fullName ||
+    currentUser?.name ||
+    currentUser?.employeeName ||
+    "Corpseed"
+  );
+};
+
+const getFileNameFromUrl = (url = "") => {
+  try {
+    const cleanUrl = String(url).split("?")[0];
+    return decodeURIComponent(
+      cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1) || "attachment",
+    );
+  } catch {
+    return "attachment";
+  }
+};
+
+const getFileTypeFromNameOrUrl = (fileName = "", fileUrl = "") => {
+  const source = fileName || fileUrl || "";
+  const extension = source.split("?")[0].split(".").pop()?.toLowerCase();
+  return extension || "file";
+};
+
+const getChatAttachmentUrl = (file) => {
+  return (
+    file?.fileUrl ||
+    file?.filePath ||
+    file?.url ||
+    file?.path ||
+    file?.location ||
+    ""
+  );
+};
+
+const normalizeChatAttachmentPayload = (file) => {
+  if (!file) return null;
+
+  const fileUrl = getChatAttachmentUrl(file);
+
+  return {
+    fileUrl,
+    fileName: file?.fileName || file?.name || getFileNameFromUrl(fileUrl),
+    fileType:
+      file?.fileType ||
+      file?.contentType ||
+      file?.mimeType ||
+      file?.type ||
+      getFileTypeFromNameOrUrl(file?.fileName || "", fileUrl),
+    fileSize: Number(file?.fileSize || file?.size || 0),
+  };
+};
+
+const getChatReferenceId = (request) => {
+  return (
+    request?.id ||
+    request?.legalRequestId ||
+    request?.vendorLegalRequestId ||
+    ""
+  );
+};
+
+const getChatReceiverId = (request, currentUserId) => {
+  const candidates = [
+    request?.assignedToLegal,
+    request?.assignedToLegalId,
+    request?.legalUserId,
+    request?.createdBy,
+    request?.createdById,
+    request?.updatedBy,
+    request?.updatedById,
+  ];
+
+  const receiver = candidates.find((value) => {
+    const numericValue = Number(value);
+    return (
+      value !== undefined &&
+      value !== null &&
+      Number.isFinite(numericValue) &&
+      numericValue !== Number(currentUserId)
+    );
+  });
+
+  return receiver || "";
 };
 
 const getUploadedFileValue = (value) => {
@@ -192,7 +321,11 @@ const ProcurementVendors = () => {
   const viewModal = useDisclosure();
   const sendToProcurementModal = useDisclosure();
   const decisionModal = useDisclosure();
-
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
+  );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const admin = userRole.includes("ADMIN");
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [searchValue, setSearchValue] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -212,8 +345,57 @@ const ProcurementVendors = () => {
     remarks: "",
   });
 
-  const resolvedUserId =
-    currentUser?.id || currentUser?.userId || currentUser?.employeeId || "";
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [chatConversationId, setChatConversationId] = useState(null);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatAttachment, setChatAttachment] = useState(null);
+  const [selectedChatRequest, setSelectedChatRequest] = useState(null);
+  const [chatList, setChatList] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
+  const [chatActionLoading, setChatActionLoading] = useState(false);
+  const [chatClosed, setChatClosed] = useState(false);
+  const [chatAttachmentUploading, setChatAttachmentUploading] = useState(false);
+  const [chatUploaderKey, setChatUploaderKey] = useState(0);
+
+  const chatBodyRef = useRef(null);
+  const chatMessagesEndRef = useRef(null);
+
+  const resolvedUserId = getResolvedUserId(currentUser);
+
+  const selectedChatReferenceId = getChatReferenceId(selectedChatRequest);
+  const selectedChatReceiverId = getChatReceiverId(
+    selectedChatRequest,
+    resolvedUserId,
+  );
+
+  const scrollChatToBottom = useCallback((behavior = "auto") => {
+    requestAnimationFrame(() => {
+      if (chatMessagesEndRef.current) {
+        chatMessagesEndRef.current.scrollIntoView({
+          behavior,
+          block: "end",
+        });
+        return;
+      }
+
+      if (chatBodyRef.current) {
+        chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!chatDrawerOpen || !chatConversationId || chatLoading) return;
+
+    scrollChatToBottom("auto");
+  }, [
+    chatDrawerOpen,
+    chatConversationId,
+    chatList,
+    chatLoading,
+    scrollChatToBottom,
+  ]);
 
   const fetchLegalRequests = useCallback(() => {
     dispatch(getAllVendorQuotationLegalRequests());
@@ -420,6 +602,263 @@ const ProcurementVendors = () => {
     });
   };
 
+  const fetchChatMessages = useCallback(
+    async (conversationId) => {
+      if (!conversationId || !resolvedUserId) return;
+
+      try {
+        setChatLoading(true);
+
+        const resp = await dispatch(
+          getOperationChatMessages({
+            conversationId: Number(conversationId),
+            userId: Number(resolvedUserId),
+            page: 0,
+            size: 30,
+          }),
+        ).unwrap();
+
+        setChatList(normalizeChatMessages(resp));
+      } catch (error) {
+        addToast({
+          title: "Failed to fetch chat messages",
+          description: error?.message || error || "Please try again.",
+          color: "danger",
+        });
+      } finally {
+        setChatLoading(false);
+      }
+    },
+    [dispatch, resolvedUserId],
+  );
+
+  const handleOpenChatHistory = (rowData) => {
+    setSelectedChatRequest(rowData);
+    setChatConversationId(null);
+    setChatList([]);
+    setChatMessage("");
+    setChatAttachment(null);
+    setChatClosed(false);
+    setChatUploaderKey((prev) => prev + 1);
+    setChatDrawerOpen(true);
+  };
+
+  const handleStartLegalChat = async () => {
+    if (!resolvedUserId) {
+      addToast({
+        title: "Created by user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!selectedChatReferenceId) {
+      addToast({
+        title: "Legal request reference is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!selectedChatReceiverId) {
+      addToast({
+        title: "Receiver user is missing",
+        description:
+          "This legal request must have createdBy or assignedToLegal user id for chat.",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+
+      const resp = await dispatch(
+        startOperationChat({
+          contextType: LEGAL_CHAT_CONTEXT_TYPE,
+          referenceId: Number(selectedChatReferenceId),
+          createdBy: Number(resolvedUserId),
+          receiverId: Number(selectedChatReceiverId),
+        }),
+      ).unwrap();
+
+      const conversationId = resp?.id;
+
+      if (!conversationId) {
+        throw new Error("Conversation ID not received from start chat API");
+      }
+
+      setChatConversationId(conversationId);
+      setChatClosed(isChatClosedStatus(resp?.status || resp?.chatStatus));
+      await fetchChatMessages(conversationId);
+    } catch (error) {
+      addToast({
+        title: "Failed to start chat",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleCloseChat = async () => {
+    if (!chatConversationId || !resolvedUserId) {
+      addToast({
+        title: "Conversation or user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      setChatActionLoading(true);
+
+      await dispatch(
+        closeOperationChat({
+          conversationId: Number(chatConversationId),
+          userId: Number(resolvedUserId),
+        }),
+      ).unwrap();
+
+      setChatClosed(true);
+      addToast({
+        title: "Chat closed",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Failed to close chat",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatActionLoading(false);
+    }
+  };
+
+  const handleReopenChat = async () => {
+    if (!chatConversationId || !resolvedUserId) {
+      addToast({
+        title: "Conversation or user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      setChatActionLoading(true);
+
+      await dispatch(
+        reopenOperationChat({
+          conversationId: Number(chatConversationId),
+          userId: Number(resolvedUserId),
+        }),
+      ).unwrap();
+
+      setChatClosed(false);
+      addToast({
+        title: "Chat reopened",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Failed to reopen chat",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatActionLoading(false);
+    }
+  };
+
+  const handleSubmitChat = async () => {
+    const message = chatMessage.trim();
+
+    if (!message && !chatAttachment?.fileUrl) return;
+
+    if (chatClosed) {
+      addToast({
+        title: "Chat is closed",
+        description: "Please reopen the chat before sending a message.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (chatAttachmentUploading) {
+      addToast({
+        title: "Attachment is uploading",
+        description: "Please wait until the file upload is complete.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!chatConversationId) {
+      addToast({
+        title: "Please start chat first",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "Sender user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    const attachmentPayload = normalizeChatAttachmentPayload(chatAttachment);
+
+    if (chatAttachment && !attachmentPayload?.fileUrl) {
+      addToast({
+        title: "Please upload the file first",
+        description:
+          "Chat attachment API requires fileUrl. Use FileUploader/S3 URL before sending attachment.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      senderId: Number(resolvedUserId),
+      senderName: getResolvedUserName(currentUser),
+      messageType: "TEXT",
+      message,
+      replyToMessageId: 0,
+      attachments: attachmentPayload ? [attachmentPayload] : [],
+    };
+
+    try {
+      setChatSending(true);
+
+      await dispatch(
+        sendOperationChatMessage({
+          conversationId: Number(chatConversationId),
+          data: payload,
+        }),
+      ).unwrap();
+
+      setChatMessage("");
+      setChatAttachment(null);
+      setChatUploaderKey((prev) => prev + 1);
+
+      await fetchChatMessages(chatConversationId);
+      scrollChatToBottom("smooth");
+    } catch (error) {
+      addToast({
+        title: "Message sending failed",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatSending(false);
+    }
+  };
+
   const canSendToProcurement = (status) =>
     status === "SERVICE_AGREEMENT_REQUESTED" || status === "PENDING";
 
@@ -577,6 +1016,14 @@ const ProcurementVendors = () => {
                 </DropdownItem>
 
                 <DropdownItem
+                  key="chat"
+                  startContent={<MessageCircle size={15} />}
+                  onPress={() => handleOpenChatHistory(rowData)}
+                >
+                  Chat
+                </DropdownItem>
+
+                <DropdownItem
                   key="sendToProcurement"
                   startContent={<Send size={15} />}
                   onPress={() => handleOpenSendToProcurement(rowData)}
@@ -612,7 +1059,7 @@ const ProcurementVendors = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [handleOpenSendToProcurement, handleView],
+    [handleOpenSendToProcurement, handleView, handleOpenChatHistory],
   );
 
   const topContent = (
@@ -1007,6 +1454,308 @@ const ProcurementVendors = () => {
           </>
         </ModalContent>
       </Modal>
+
+      {chatDrawerOpen && (
+        <div className="fixed inset-0 z-[9999] flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setChatDrawerOpen(false)}
+          />
+
+          <div className="relative z-10 flex h-full w-full max-w-[620px] flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b bg-white px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Chat</h2>
+
+                <p className="text-xs text-gray-500">
+                  {chatConversationId
+                    ? `Conversation ID: ${chatConversationId}`
+                    : `Reference: ${LEGAL_CHAT_CONTEXT_TYPE}-${selectedChatReferenceId || "-"}`}
+                </p>
+
+                {selectedChatRequest && (
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Request: {selectedChatRequest?.legalRequestTitle || "-"}
+                  </p>
+                )}
+
+                {chatConversationId && (
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    color={chatClosed ? "danger" : "success"}
+                    className="mt-1"
+                  >
+                    {chatClosed ? "Closed" : "Open"}
+                  </Chip>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {chatConversationId && (
+                  <>
+                    {(department?.trim()?.toLowerCase() === "legal" ||
+                      admin) && (
+                      <Button
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        isLoading={chatActionLoading && !chatClosed}
+                        isDisabled={chatClosed || chatActionLoading}
+                        onPress={handleCloseChat}
+                      >
+                        Close Chat
+                      </Button>
+                    )}
+
+                    {(department?.trim()?.toLowerCase() === "procurement" ||
+                      admin) && (
+                      <Button
+                        size="sm"
+                        color="success"
+                        variant="flat"
+                        isLoading={chatActionLoading && chatClosed}
+                        isDisabled={!chatClosed || chatActionLoading}
+                        onPress={handleReopenChat}
+                      >
+                        Reopen Chat
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  onPress={() => setChatDrawerOpen(false)}
+                >
+                  <X size={18} />
+                </Button>
+              </div>
+            </div>
+
+            {!chatConversationId ? (
+              <div className="flex flex-1 items-center justify-center bg-gray-50 p-5">
+                <div className="w-full max-w-md rounded-2xl border bg-white p-5 shadow-sm">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    Start chat
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    This will start or reopen existing conversation for this
+                    legal request reference.
+                  </p>
+
+                  <div className="mt-4 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+                    <p>Context Type: {LEGAL_CHAT_CONTEXT_TYPE}</p>
+                    <p>Reference ID: {selectedChatReferenceId || "-"}</p>
+                    <p>Sender ID: {resolvedUserId || "-"}</p>
+                    <p>Receiver ID: {selectedChatReceiverId || "-"}</p>
+                  </div>
+
+                  <Button
+                    className="mt-4 w-full"
+                    color="primary"
+                    isLoading={chatLoading}
+                    onPress={handleStartLegalChat}
+                  >
+                    Start Chat
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  ref={chatBodyRef}
+                  className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4"
+                >
+                  {chatLoading ? (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      Loading messages...
+                    </div>
+                  ) : chatList.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      No messages yet. Start the conversation.
+                    </div>
+                  ) : (
+                    chatList.map((chat) => {
+                      const isMine =
+                        Number(chat.senderId) === Number(resolvedUserId);
+                      const attachments = Array.isArray(chat.attachments)
+                        ? chat.attachments
+                        : chat.attachment
+                          ? [chat.attachment]
+                          : [];
+
+                      return (
+                        <div
+                          key={chat.id}
+                          className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
+                              isMine
+                                ? "rounded-br-sm bg-primary text-white"
+                                : "rounded-bl-sm border bg-white text-gray-900"
+                            }`}
+                          >
+                            <p
+                              className={`mb-1 text-[11px] font-semibold ${
+                                isMine ? "text-white/80" : "text-gray-500"
+                              }`}
+                            >
+                              {chat.senderName || "-"}
+                            </p>
+
+                            {chat.message && (
+                              <p className="whitespace-pre-wrap text-sm leading-5">
+                                {chat.message}
+                              </p>
+                            )}
+
+                            {attachments.map((attachment, index) => {
+                              const fileUrl =
+                                attachment.fileUrl || attachment.url || "#";
+                              const fileName =
+                                attachment.fileName ||
+                                attachment.name ||
+                                `Attachment ${index + 1}`;
+
+                              return (
+                                <a
+                                  key={attachment.id || fileName}
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                                    isMine
+                                      ? "border-white/30 bg-white/10 text-white"
+                                      : "border-gray-200 bg-gray-50 text-gray-700"
+                                  }`}
+                                >
+                                  <File size={15} />
+                                  <span className="line-clamp-1">
+                                    {fileName}
+                                  </span>
+                                </a>
+                              );
+                            })}
+
+                            <p
+                              className={`mt-1 text-right text-[10px] ${
+                                isMine ? "text-white/70" : "text-gray-400"
+                              }`}
+                            >
+                              {chat.createdAt
+                                ? dayjs(chat.createdAt).format(
+                                    "DD MMM, hh:mm A",
+                                  )
+                                : "-"}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  <div ref={chatMessagesEndRef} />
+                </div>
+
+                <div className="border-t bg-white px-4 py-3">
+                  {chatClosed ? (
+                    <div className="rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger">
+                      This chat is closed. Use Reopen Chat from the header to
+                      send a new message.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <FileUploader
+                        key={chatUploaderKey}
+                        value={chatAttachment?.fileUrl || ""}
+                        label="Attachment"
+                        placeholder="Upload attachment. File URL will be sent in attachments[].fileUrl"
+                        uploadingType="single"
+                        onUploadingChange={setChatAttachmentUploading}
+                        onChange={(uploadedUrl) => {
+                          if (!uploadedUrl) {
+                            setChatAttachment(null);
+                            return;
+                          }
+
+                          setChatAttachment((prev) => ({
+                            ...(prev || {}),
+                            fileUrl: uploadedUrl,
+                            fileName:
+                              prev?.fileName || getFileNameFromUrl(uploadedUrl),
+                            fileType:
+                              prev?.fileType ||
+                              getFileTypeFromNameOrUrl("", uploadedUrl),
+                            fileSize: Number(prev?.fileSize || 0),
+                          }));
+                        }}
+                        onUploadSuccess={(fileMeta) => {
+                          const fileUrl = fileMeta?.filePath || "";
+
+                          if (!fileUrl) {
+                            setChatAttachment(null);
+                            return;
+                          }
+
+                          setChatAttachment({
+                            fileUrl,
+                            fileName:
+                              fileMeta?.fileName || getFileNameFromUrl(fileUrl),
+                            fileType:
+                              fileMeta?.contentType ||
+                              getFileTypeFromNameOrUrl(
+                                fileMeta?.fileName || "",
+                                fileUrl,
+                              ),
+                            fileSize: Number(fileMeta?.fileSize || 0),
+                          });
+                        }}
+                      />
+
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Message..."
+                          value={chatMessage}
+                          onValueChange={setChatMessage}
+                          className="min-w-0 flex-1"
+                          classNames={{
+                            inputWrapper: "h-11",
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmitChat();
+                            }
+                          }}
+                        />
+
+                        <Button
+                          isIconOnly
+                          color="primary"
+                          type="button"
+                          className="h-11 w-11 shrink-0"
+                          onPress={handleSubmitChat}
+                          isLoading={chatSending}
+                          isDisabled={
+                            chatAttachmentUploading ||
+                            (!chatMessage.trim() && !chatAttachment?.fileUrl)
+                          }
+                        >
+                          <Send size={19} />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };

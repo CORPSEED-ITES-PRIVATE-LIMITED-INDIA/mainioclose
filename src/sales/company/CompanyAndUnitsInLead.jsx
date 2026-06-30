@@ -736,17 +736,16 @@ const CompanyAndUnitsInLead = () => {
               }),
             ).then((linkRes) => {
               if (linkRes?.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Company and unit linked successfully.",
-                  color: "success",
+                api.success({
+                  title: "SUCCESS",
+                  description: "Company and unit linked successfully.",
                 });
               } else {
-                addToast({
+                api.error({
                   title: "ERROR",
                   description:
                     linkRes?.payload?.message ||
                     "Company and Units not linked to Lead !.",
-                  color: "danger",
                 });
               }
             });
@@ -758,7 +757,7 @@ const CompanyAndUnitsInLead = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          api.error({ title: "ERROR", description: "Something went wrong !." }),
         )
         .finally(() => setCompanyLoading(false));
     }
@@ -766,9 +765,9 @@ const CompanyAndUnitsInLead = () => {
 
   const onSubmitUnit = (values) => {
     if (!effectiveCompany?.id) {
-      addToast({
-        title: "Please select or create company first",
-        color: "warning",
+      api.warning({
+        title: "WARNING",
+        description: "Please select or create company first !.",
       });
       return;
     }
@@ -785,10 +784,9 @@ const CompanyAndUnitsInLead = () => {
       !isCountryNonIndia &&
       !allowedGstTypeNames.includes(selectedGstType.name)
     ) {
-      addToast({
+      api.error({
         title: "Invalid GST Type",
         description: `Allowed GST types are ${allowedGstTypeNames.join(", ")} only.`,
-        color: "danger",
       });
       return;
     }
@@ -823,9 +821,9 @@ const CompanyAndUnitsInLead = () => {
       )
         .then((resp) => {
           if (resp?.meta?.requestStatus === "fulfilled") {
-            addToast({
-              title: "Unit details updated successfully.",
-              color: "success",
+            api.success({
+              title: "SUCCESS",
+              description: "Unit details updated successfully.",
             });
 
             dispatch(
@@ -837,17 +835,16 @@ const CompanyAndUnitsInLead = () => {
               }),
             ).then((linkRes) => {
               if (linkRes?.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Company and unit linked successfully.",
-                  color: "success",
+                api.success({
+                  title: "SUCCESS",
+                  description: "Company and unit linked successfully.",
                 });
               } else {
-                addToast({
+                api.error({
                   title: "ERROR",
                   description:
                     linkRes?.payload?.message ||
                     "Company and Units not linked to Lead !.",
-                  color: "danger",
                 });
               }
             });
@@ -885,9 +882,9 @@ const CompanyAndUnitsInLead = () => {
       )
         .then((resp) => {
           if (resp?.meta?.requestStatus === "fulfilled") {
-            addToast({
-              title: "Unit details saved.",
-              color: "success",
+            api.success({
+              title: "SUCCESS",
+              description: "Unit details saved !.",
             });
             const newUnit = resp?.payload;
 
@@ -900,17 +897,16 @@ const CompanyAndUnitsInLead = () => {
               }),
             ).then((linkRes) => {
               if (linkRes?.meta.requestStatus === "fulfilled") {
-                addToast({
-                  title: "Company and unit linked successfully.",
-                  color: "success",
+                api.success({
+                  title: "SUCCESS",
+                  description: "Company and unit linked successfully.",
                 });
               } else {
-                addToast({
+                api.error({
                   title: "ERROR",
                   description:
                     linkRes?.payload?.message ||
                     "Company and Units not linked to Lead !.",
-                  color: "danger",
                 });
               }
             });
@@ -942,14 +938,14 @@ const CompanyAndUnitsInLead = () => {
             ).then((linkRes) => {
               if (linkRes?.meta?.requestStatus === "fulfilled") {
                 refreshLeadCompanyAndUnits();
-                addToast({
-                  title: "Company and unit linked successfully.",
-                  color: "success",
+                api.success({
+                  title: "SUCCESS",
+                  description: "Company and unit linked successfully.",
                 });
               } else {
-                addToast({
-                  title: "Something went wrong !.",
-                  color: "danger",
+                api.error({
+                  title: "ERROR",
+                  description: "Something went wrong !.",
                 });
               }
             });
@@ -1007,7 +1003,7 @@ const CompanyAndUnitsInLead = () => {
     dispatch(action)
       .then((resp) => {
         if (resp?.meta?.requestStatus === "fulfilled") {
-          addToast({
+          api.success({
             title: editingContact?.id
               ? "Contact details updated successfully."
               : "Contact details saved.",
@@ -1043,17 +1039,16 @@ const CompanyAndUnitsInLead = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        api.error({ title: "ERROR", description: "Something went wrong !." }),
       )
       .finally(() => setContactLoading(false));
   };
 
   const validateCompanySelected = () => {
     if (!effectiveCompany?.id && !selectedCompanyId) {
-      addToast({
+      api.warning({
         title: "Company not selected",
         description: "Please select or create a company first.",
-        color: "warning",
       });
       return false;
     }

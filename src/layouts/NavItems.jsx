@@ -120,14 +120,14 @@ export const navItems = [
         key: "taxation",
       },
       {
-        title: "Procurement PR",
-        url: "accounts/procurementPaymentRequests",
-        key: "procurementPaymentRequests",
-      },
-      {
         title: "Procurement PO",
         url: "accounts/procurementPurchaseOrders",
         key: "procurementPurchaseOrders",
+      },
+      {
+        title: "Procurement PR",
+        url: "accounts/procurementPaymentRequests",
+        key: "procurementPaymentRequests",
       },
       {
         title: "Vendor details",
@@ -135,7 +135,6 @@ export const navItems = [
         key: "vendorDetails",
         icon: "User",
       },
-
       // {
       //   title: "Estimate",
       //   url: "accounts/orgEstimate",
@@ -489,6 +488,12 @@ export const accountNavItems = [
     key: "taxation",
     icon: "FileText",
   },
+  {
+    title: "Procurement PO",
+    url: "accounts/procurementPurchaseOrders",
+    key: "procurementPurchaseOrders",
+    icon: "FileText",
+  },
 
   {
     title: "Procurement PR",
@@ -496,12 +501,7 @@ export const accountNavItems = [
     key: "procurementPaymentRequests",
     icon: "FileText",
   },
-  {
-    title: "Procurement PO",
-    url: "accounts/procurementPurchaseOrders",
-    key: "procurementPurchaseOrders",
-    icon: "FileText",
-  },
+
   {
     title: "Credit Note",
     url: "accounts/creditNote",
@@ -792,7 +792,7 @@ export const legalNavItems = [
   },
   {
     title: "Vendor",
-    icon: "User",
+    icon: "User2",
     url: "legal/vendors",
     key: "vendors",
   },

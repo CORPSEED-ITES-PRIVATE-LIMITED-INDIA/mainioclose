@@ -47,7 +47,6 @@ import {
   File,
   FilePlusIcon,
   FileText,
-  Paperclip,
   Plus,
   Search,
   Send,
@@ -76,6 +75,8 @@ import {
   startOperationChat,
   sendOperationChatMessage,
   getOperationChatMessages,
+  closeOperationChat,
+  reopenOperationChat,
 } from "../../toolkit/slices/operationSlice";
 import { getAllUsers } from "../../toolkit/slices/commonSlice";
 
@@ -386,6 +387,14 @@ const normalizeChatMessages = (response) => {
   return [...content].reverse();
 };
 
+const isChatClosedStatus = (status) => {
+  return ["CLOSED", "CLOSE"].includes(
+    String(status || "")
+      .trim()
+      .toUpperCase(),
+  );
+};
+
 const getResolvedUserId = (currentUser, routeUserId) => {
   return (
     currentUser?.id ||
@@ -453,7 +462,12 @@ const normalizeChatAttachmentPayload = (file) => {
   return {
     fileUrl,
     fileName: file?.fileName || file?.name || "attachment",
-    fileType: file?.fileType || file?.type || "file",
+    fileType:
+      file?.fileType ||
+      file?.contentType ||
+      file?.mimeType ||
+      file?.type ||
+      "file",
     fileSize: Number(file?.fileSize || file?.size || 0),
   };
 };
@@ -473,6 +487,11 @@ const Quote = () => {
   const vendorLegalRequestsResponse = useSelector(
     (state) => state.operation.vendorLegalRequests,
   );
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
+  );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const admin = userRole.includes("ADMIN");
 
   const quotationModal = useDisclosure();
   const viewModal = useDisclosure();
@@ -576,8 +595,6 @@ const Quote = () => {
     size: 10,
   });
 
-  const fileInputRef = useRef(null);
-
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [chatConversationId, setChatConversationId] = useState(null);
   const [chatMessage, setChatMessage] = useState("");
@@ -587,6 +604,41 @@ const Quote = () => {
   const [selectedChatPersonId, setSelectedChatPersonId] = useState("5");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatSending, setChatSending] = useState(false);
+  const [chatActionLoading, setChatActionLoading] = useState(false);
+  const [chatClosed, setChatClosed] = useState(false);
+  const [chatAttachmentUploading, setChatAttachmentUploading] = useState(false);
+  const [chatUploaderKey, setChatUploaderKey] = useState(0);
+
+  const chatBodyRef = useRef(null);
+  const chatMessagesEndRef = useRef(null);
+
+  const scrollChatToBottom = useCallback((behavior = "auto") => {
+    requestAnimationFrame(() => {
+      if (chatMessagesEndRef.current) {
+        chatMessagesEndRef.current.scrollIntoView({
+          behavior,
+          block: "end",
+        });
+        return;
+      }
+
+      if (chatBodyRef.current) {
+        chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!chatDrawerOpen || !chatConversationId || chatLoading) return;
+
+    scrollChatToBottom("auto");
+  }, [
+    chatDrawerOpen,
+    chatConversationId,
+    chatList,
+    chatLoading,
+    scrollChatToBottom,
+  ]);
 
   const legalChatUsers = useMemo(() => {
     const apiUsers = Array.isArray(legalDepartmentUsers)
@@ -679,7 +731,7 @@ const Quote = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(getUsersByDepartment({ id: 17 }));
+    dispatch(getUsersByDepartment({ id: 12 }));
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
@@ -1093,6 +1145,8 @@ const Quote = () => {
     setChatList([]);
     setChatMessage("");
     setChatAttachment(null);
+    setChatClosed(false);
+    setChatUploaderKey((prev) => prev + 1);
     setChatDrawerOpen(true);
   };
 
@@ -1135,6 +1189,7 @@ const Quote = () => {
       }
 
       setChatConversationId(conversationId);
+      setChatClosed(isChatClosedStatus(resp?.status || resp?.chatStatus));
       await fetchChatMessages(conversationId);
     } catch (error) {
       addToast({
@@ -1147,11 +1202,103 @@ const Quote = () => {
     }
   };
 
+  const handleCloseChat = async () => {
+    const resolvedUserId = getResolvedUserId(currentUser, userId);
+
+    if (!chatConversationId || !resolvedUserId) {
+      addToast({
+        title: "Conversation or user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      setChatActionLoading(true);
+
+      await dispatch(
+        closeOperationChat({
+          conversationId: Number(chatConversationId),
+          userId: Number(resolvedUserId),
+        }),
+      ).unwrap();
+
+      setChatClosed(true);
+      addToast({
+        title: "Chat closed",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Failed to close chat",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatActionLoading(false);
+    }
+  };
+
+  const handleReopenChat = async () => {
+    const resolvedUserId = getResolvedUserId(currentUser, userId);
+
+    if (!chatConversationId || !resolvedUserId) {
+      addToast({
+        title: "Conversation or user is missing",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      setChatActionLoading(true);
+
+      await dispatch(
+        reopenOperationChat({
+          conversationId: Number(chatConversationId),
+          userId: Number(resolvedUserId),
+        }),
+      ).unwrap();
+
+      setChatClosed(false);
+      addToast({
+        title: "Chat reopened",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Failed to reopen chat",
+        description: error?.message || error || "Please try again.",
+        color: "danger",
+      });
+    } finally {
+      setChatActionLoading(false);
+    }
+  };
+
   const handleSubmitChat = async () => {
     const message = chatMessage.trim();
     const resolvedUserId = getResolvedUserId(currentUser, userId);
 
-    if (!message && !chatAttachment) return;
+    if (!message && !chatAttachment?.fileUrl) return;
+
+    if (chatClosed) {
+      addToast({
+        title: "Chat is closed",
+        description: "Please reopen the chat before sending a message.",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (chatAttachmentUploading) {
+      addToast({
+        title: "Attachment is uploading",
+        description: "Please wait until the file upload is complete.",
+        color: "warning",
+      });
+      return;
+    }
 
     if (!chatConversationId) {
       addToast({
@@ -1184,7 +1331,7 @@ const Quote = () => {
     const payload = {
       senderId: Number(resolvedUserId),
       senderName: getResolvedUserName(currentUser),
-      messageType: attachmentPayload ? "TEXT_WITH_ATTACHMENT" : "TEXT",
+      messageType: "TEXT",
       message,
       replyToMessageId: 0,
       attachments: attachmentPayload ? [attachmentPayload] : [],
@@ -1202,12 +1349,10 @@ const Quote = () => {
 
       setChatMessage("");
       setChatAttachment(null);
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      setChatUploaderKey((prev) => prev + 1);
 
       await fetchChatMessages(chatConversationId);
+      scrollChatToBottom("smooth");
     } catch (error) {
       addToast({
         title: "Message sending failed",
@@ -4182,16 +4327,60 @@ const Quote = () => {
                     ? `Conversation ID: ${chatConversationId}`
                     : `Reference: ${LEGAL_CHAT_CONTEXT_TYPE}-${LEGAL_CHAT_REFERENCE_ID}`}
                 </p>
+
+                {chatConversationId && (
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    color={chatClosed ? "danger" : "success"}
+                    className="mt-1"
+                  >
+                    {chatClosed ? "Closed" : "Open"}
+                  </Chip>
+                )}
               </div>
 
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                onPress={() => setChatDrawerOpen(false)}
-              >
-                <X size={18} />
-              </Button>
+              <div className="flex items-center gap-2">
+                {chatConversationId && (
+                  <>
+                    {(department?.trim()?.toLowerCase() === "legal" ||
+                      admin) && (
+                      <Button
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        isLoading={chatActionLoading && !chatClosed}
+                        isDisabled={chatClosed || chatActionLoading}
+                        onPress={handleCloseChat}
+                      >
+                        Close Chat
+                      </Button>
+                    )}
+                    {(department?.trim()?.toLowerCase() === "procurement" ||
+                      admin) && (
+                      <Button
+                        size="sm"
+                        color="success"
+                        variant="flat"
+                        isLoading={chatActionLoading && chatClosed}
+                        isDisabled={!chatClosed || chatActionLoading}
+                        onPress={handleReopenChat}
+                      >
+                        Reopen Chat
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  onPress={() => setChatDrawerOpen(false)}
+                >
+                  <X size={18} />
+                </Button>
+              </div>
             </div>
 
             {!chatConversationId ? (
@@ -4246,7 +4435,10 @@ const Quote = () => {
               </div>
             ) : (
               <>
-                <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4">
+                <div
+                  ref={chatBodyRef}
+                  className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4"
+                >
                   {chatLoading ? (
                     <div className="flex h-full items-center justify-center text-sm text-gray-500">
                       Loading messages...
@@ -4339,101 +4531,99 @@ const Quote = () => {
                       );
                     })
                   )}
+
+                  <div ref={chatMessagesEndRef} />
                 </div>
 
-                {chatAttachment && (
-                  <div className="border-t bg-white px-4 py-2">
-                    <div className="flex items-center justify-between rounded-xl border bg-gray-50 px-3 py-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <File size={16} className="shrink-0 text-gray-500" />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-gray-800">
-                            {chatAttachment.fileName || chatAttachment.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {Number(
-                              chatAttachment.fileSize ||
-                                chatAttachment.size ||
-                                0,
-                            ) > 0
-                              ? `${(Number(chatAttachment.fileSize || chatAttachment.size) / 1024).toFixed(1)} KB`
-                              : "Attachment"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        onPress={() => {
-                          setChatAttachment(null);
-
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = "";
-                          }
-                        }}
-                      >
-                        <X size={15} />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="border-t bg-white px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
+                  {chatClosed ? (
+                    <div className="rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger">
+                      This chat is closed. Use Reopen Chat from the header to
+                      send a new message.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <FileUploader
+                        key={chatUploaderKey}
+                        value={chatAttachment?.fileUrl || ""}
+                        label="Attachment"
+                        placeholder="Upload attachment. File URL will be sent in attachments[].fileUrl"
+                        uploadingType="single"
+                        onUploadingChange={setChatAttachmentUploading}
+                        onChange={(uploadedUrl) => {
+                          if (!uploadedUrl) {
+                            setChatAttachment(null);
+                            return;
+                          }
 
-                        if (file) {
-                          setChatAttachment(file);
-                        }
-                      }}
-                    />
+                          setChatAttachment((prev) => ({
+                            ...(prev || {}),
+                            fileUrl: uploadedUrl,
+                            fileName:
+                              prev?.fileName || getFileNameFromUrl(uploadedUrl),
+                            fileType:
+                              prev?.fileType ||
+                              getFileTypeFromNameOrUrl("", uploadedUrl),
+                            fileSize: Number(prev?.fileSize || 0),
+                          }));
+                        }}
+                        onUploadSuccess={(fileMeta) => {
+                          const fileUrl = fileMeta?.filePath || "";
 
-                    <Button
-                      isIconOnly
-                      variant="flat"
-                      type="button"
-                      className="h-11 w-11 shrink-0"
-                      onPress={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip size={19} />
-                    </Button>
+                          if (!fileUrl) {
+                            setChatAttachment(null);
+                            return;
+                          }
 
-                    <Input
-                      placeholder={`Message ${selectedChatPerson?.fullName || "Legal"}...`}
-                      value={chatMessage}
-                      onValueChange={setChatMessage}
-                      className="min-w-0 flex-1"
-                      classNames={{
-                        inputWrapper: "h-11",
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmitChat();
-                        }
-                      }}
-                    />
+                          setChatAttachment({
+                            fileUrl,
+                            fileName:
+                              fileMeta?.fileName || getFileNameFromUrl(fileUrl),
+                            fileType:
+                              fileMeta?.contentType ||
+                              getFileTypeFromNameOrUrl(
+                                fileMeta?.fileName || "",
+                                fileUrl,
+                              ),
+                            fileSize: Number(fileMeta?.fileSize || 0),
+                          });
+                        }}
+                      />
 
-                    <Button
-                      isIconOnly
-                      color="primary"
-                      type="button"
-                      className="h-11 w-11 shrink-0"
-                      onPress={handleSubmitChat}
-                      isLoading={chatSending}
-                      isDisabled={!chatMessage.trim() && !chatAttachment}
-                    >
-                      <Send size={19} />
-                    </Button>
-                  </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder={`Message ${selectedChatPerson?.fullName || "Legal"}...`}
+                          value={chatMessage}
+                          onValueChange={setChatMessage}
+                          className="min-w-0 flex-1"
+                          classNames={{
+                            inputWrapper: "h-11",
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmitChat();
+                            }
+                          }}
+                        />
+
+                        <Button
+                          isIconOnly
+                          color="primary"
+                          type="button"
+                          className="h-11 w-11 shrink-0"
+                          onPress={handleSubmitChat}
+                          isLoading={chatSending}
+                          isDisabled={
+                            chatAttachmentUploading ||
+                            (!chatMessage.trim() && !chatAttachment?.fileUrl)
+                          }
+                        >
+                          <Send size={19} />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
