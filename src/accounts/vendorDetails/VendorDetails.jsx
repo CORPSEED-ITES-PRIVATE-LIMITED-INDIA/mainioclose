@@ -25,12 +25,15 @@ import {
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  CheckCircle,
   ChevronDown,
   EllipsisVertical,
   ExternalLink,
   Eye,
   FileText,
+  RefreshCw,
   Search,
+  XCircle,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -39,23 +42,32 @@ import { getAllVendorDetails } from "../../toolkit/slices/accountSlice";
 const columns = [
   { name: "VENDOR", uid: "vendor" },
   { name: "RFQ / QUOTATION", uid: "rfqQuotation" },
-  { name: "FINALIZED WORK", uid: "finalizedWork" },
-  { name: "AMOUNT", uid: "amount" },
-  { name: "ACCOUNTS STATUS", uid: "accountsStatus" },
-  { name: "ATTACHMENT", uid: "attachment" },
-  { name: "SENT DATE", uid: "sentDate" },
+  { name: "BANK DETAILS", uid: "bankDetails" },
+  { name: "DOCUMENTS", uid: "documents" },
+  { name: "STATUS", uid: "status" },
+  { name: "DATES", uid: "dates" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
   "vendor",
   "rfqQuotation",
-  "finalizedWork",
-  "amount",
-  "accountsStatus",
-  "attachment",
-  "sentDate",
+  "bankDetails",
+  "documents",
+  "status",
+  "dates",
   "actions",
+];
+
+const documentConfig = [
+  { key: "gstDetailsUrl", label: "GST Details", mandatory: true },
+  { key: "vendorSetupFormUrl", label: "Vendor Setup Form", mandatory: true },
+  { key: "cancelChequeUrl", label: "Cancel Cheque", mandatory: true },
+  { key: "itrLastFinancialYearUrl", label: "ITR Last FY", mandatory: true },
+  { key: "panDetailsUrl", label: "PAN Details", mandatory: true },
+  { key: "partnershipOrCoiUrl", label: "Partnership / COI", mandatory: true },
+  { key: "deedOrMsmeUrl", label: "Deed / MSME", mandatory: true },
+  { key: "balanceSheetUrl", label: "Balance Sheet", mandatory: false },
 ];
 
 const formatDateTime = (value) => {
@@ -65,24 +77,12 @@ const formatDateTime = (value) => {
     : "-";
 };
 
-const formatAmount = (value) => {
-  if (value === null || value === undefined || value === "") return "-";
-
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
-};
-
 const getStatusColor = (status) => {
   const value = String(status || "").toUpperCase();
 
-  if (value === "ONBOARDING_STARTED") return "primary";
-  if (value === "AGREEMENT_SENT_TO_VENDOR") return "success";
-  if (value === "COMPLETED") return "success";
-  if (value === "REJECTED" || value === "CANCELLED") return "danger";
-  if (value === "DRAFT") return "warning";
+  if (value === "APPROVED") return "success";
+  if (value === "REJECTED") return "danger";
+  if (value === "PENDING") return "warning";
 
   return "default";
 };
@@ -97,6 +97,8 @@ const normalizeList = (response) => {
   return [];
 };
 
+const isValidUrl = (value) => Boolean(String(value || "").trim());
+
 const DetailItem = ({ label, value }) => {
   return (
     <div className="rounded-xl border bg-white p-3">
@@ -105,6 +107,33 @@ const DetailItem = ({ label, value }) => {
         {value || "-"}
       </p>
     </div>
+  );
+};
+
+const DocumentLink = ({ label, url, mandatory = false }) => {
+  const hasUrl = isValidUrl(url);
+
+  if (!hasUrl) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed bg-gray-50 px-3 py-2 text-xs">
+        <span className="font-medium text-default-500">{label}</span>
+        <Chip size="sm" variant="flat" color={mandatory ? "danger" : "default"}>
+          {mandatory ? "Missing" : "Optional"}
+        </Chip>
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-primary hover:bg-primary-50"
+    >
+      <span className="line-clamp-1">{label}</span>
+      <ExternalLink size={13} className="shrink-0" />
+    </a>
   );
 };
 
@@ -148,16 +177,26 @@ const VendorDetails = () => {
 
       filtered = filtered.filter((item) =>
         [
+          item?.id,
+          item?.vendorFinalizationId,
+          item?.vendorId,
           item?.vendorName,
           item?.vendorEmail,
           item?.vendorMobile,
           item?.rfqNumber,
           item?.quotationNumber,
-          item?.quotationItemName,
-          item?.description,
+          item?.name,
+          item?.number,
+          item?.email,
+          item?.aadhar,
+          item?.accountHolderName,
+          item?.accountNumber,
+          item?.ifsc,
+          item?.swiftCode,
+          item?.branchAddress,
           item?.remarks,
-          item?.finalVendorRemarks,
           item?.status,
+          item?.accountsRemark,
         ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(search)),
@@ -204,6 +243,34 @@ const VendorDetails = () => {
     [viewModal],
   );
 
+  const handleApprove = useCallback((record) => {
+    addToast({
+      title: "Approve action ready",
+      description: `Integrate approve thunk with submissionId: ${record?.id}`,
+      color: "primary",
+    });
+
+    // Future Redux Toolkit integration:
+    // dispatch(approveVendorAccountsSubmission({
+    //   submissionId: record.id,
+    //   body: { userId: currentUserId, accountsRemark: "" },
+    // })).then(() => fetchVendorDetails());
+  }, []);
+
+  const handleReject = useCallback((record) => {
+    addToast({
+      title: "Reject action ready",
+      description: `Integrate reject thunk with submissionId: ${record?.id}`,
+      color: "warning",
+    });
+
+    // Future Redux Toolkit integration:
+    // dispatch(rejectVendorAccountsSubmission({
+    //   submissionId: record.id,
+    //   body: { userId: currentUserId, accountsRemark: "" },
+    // })).then(() => fetchVendorDetails());
+  }, []);
+
   const onSearchChange = useCallback((value) => {
     setFilterValue(value || "");
     setFilteration((prev) => ({
@@ -229,31 +296,40 @@ const VendorDetails = () => {
 
   const renderCell = useCallback(
     (rowData, columnKey) => {
+      const status = String(rowData?.status || "PENDING").toUpperCase();
+      const isPending = status === "PENDING";
+      const uploadedDocs = documentConfig.filter((doc) =>
+        isValidUrl(rowData?.[doc.key]),
+      );
+      const missingMandatoryDocs = documentConfig.filter(
+        (doc) => doc.mandatory && !isValidUrl(rowData?.[doc.key]),
+      );
+
       switch (columnKey) {
         case "vendor":
           return (
-            <div className="flex flex-col">
+            <div className="flex min-w-[220px] flex-col gap-1">
               <span className="text-sm font-semibold text-foreground">
-                {rowData?.vendorName || "-"}
+                {rowData?.vendorName || rowData?.name || "-"}
               </span>
 
               <span className="text-xs text-default-500">
-                ID: {rowData?.vendorId || "-"}
+                Vendor ID: {rowData?.vendorId || "-"}
+              </span>
+
+              <span className="line-clamp-1 text-xs text-default-500">
+                {rowData?.vendorEmail || rowData?.email || "-"}
               </span>
 
               <span className="text-xs text-default-500">
-                {rowData?.vendorEmail || "-"}
-              </span>
-
-              <span className="text-xs text-default-500">
-                {rowData?.vendorMobile || "-"}
+                {rowData?.vendorMobile || rowData?.number || "-"}
               </span>
             </div>
           );
 
         case "rfqQuotation":
           return (
-            <div className="flex flex-col gap-1">
+            <div className="flex min-w-[210px] flex-col gap-2">
               <div>
                 <p className="text-xs text-default-500">RFQ</p>
                 <p className="text-sm font-semibold">
@@ -267,121 +343,109 @@ const VendorDetails = () => {
                   {rowData?.quotationNumber || "-"}
                 </p>
               </div>
-            </div>
-          );
 
-        case "finalizedWork":
-          return (
-            <div className="max-w-[260px]">
-              <p
-                className="truncate text-sm font-semibold"
-                title={rowData?.quotationItemName}
-              >
-                {rowData?.quotationItemName || "-"}
-              </p>
-
-              <p
-                className="mt-1 line-clamp-2 text-xs text-default-500"
-                title={rowData?.description}
-              >
-                {rowData?.description || "-"}
-              </p>
-
-              <div className="mt-2 flex flex-wrap gap-1">
-                <Chip size="sm" variant="flat">
-                  Qty: {rowData?.finalizedQuantity ?? "-"}
-                </Chip>
-                <Chip size="sm" variant="flat">
-                  {rowData?.unit || "-"}
-                </Chip>
-              </div>
-            </div>
-          );
-
-        case "amount":
-          return (
-            <div className="flex flex-col gap-1 text-xs">
-              <span>
-                Rate:{" "}
-                <b className="text-foreground">
-                  {formatAmount(rowData?.finalizedUnitRate)}
-                </b>
+              <span className="text-xs text-default-500">
+                Finalization ID: {rowData?.vendorFinalizationId || "-"}
               </span>
-
-              <span>
-                Tax:{" "}
-                <b className="text-foreground">
-                  {formatAmount(rowData?.taxAmount)}
-                </b>
-              </span>
-
-              <Chip size="sm" color="success" variant="flat">
-                Total: {formatAmount(rowData?.totalFinalizedAmount)}
-              </Chip>
             </div>
           );
 
-        case "accountsStatus":
+        case "bankDetails":
           return (
-            <div className="flex flex-col gap-1">
+            <div className="flex min-w-[230px] flex-col gap-1 text-xs">
+              <span>
+                Holder: <b>{rowData?.accountHolderName || "-"}</b>
+              </span>
+              <span>
+                A/C: <b>{rowData?.accountNumber || "-"}</b>
+              </span>
+              <span>
+                IFSC: <b>{rowData?.ifsc || "-"}</b>
+              </span>
+              <span className="line-clamp-1 text-default-500">
+                Branch: {rowData?.branchAddress || "-"}
+              </span>
+            </div>
+          );
+
+        case "documents":
+          return (
+            <div className="flex min-w-[180px] flex-col gap-1">
               <Chip
                 size="sm"
-                color={rowData?.sentToAccounts ? "success" : "warning"}
+                color={missingMandatoryDocs.length ? "warning" : "success"}
                 variant="flat"
+                className="w-fit"
               >
-                {rowData?.sentToAccounts ? "Sent To Accounts" : "Pending"}
+                {uploadedDocs.length}/8 Uploaded
               </Chip>
 
-              {rowData?.status && (
-                <Chip
-                  size="sm"
-                  color={getStatusColor(rowData.status)}
-                  variant="flat"
-                >
-                  {rowData.status}
-                </Chip>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {documentConfig.slice(0, 4).map((doc) => (
+                  <Tooltip key={doc.key} content={doc.label}>
+                    <span>
+                      <Chip
+                        size="sm"
+                        color={
+                          isValidUrl(rowData?.[doc.key]) ? "success" : "default"
+                        }
+                        variant="flat"
+                      >
+                        {doc.label.split(" ")[0]}
+                      </Chip>
+                    </span>
+                  </Tooltip>
+                ))}
+              </div>
+
+              <Button
+                size="sm"
+                variant="light"
+                color="primary"
+                className="mt-1 w-fit px-0 text-xs"
+                onPress={() => handleView(rowData)}
+              >
+                View all documents
+              </Button>
+            </div>
+          );
+
+        case "status":
+          return (
+            <div className="flex min-w-[150px] flex-col gap-1">
+              <Chip
+                size="sm"
+                color={getStatusColor(rowData?.status)}
+                variant="flat"
+              >
+                {rowData?.status || "PENDING"}
+              </Chip>
+
+              {rowData?.accountsRemark && (
+                <Tooltip content={rowData.accountsRemark}>
+                  <span className="line-clamp-1 max-w-[160px] text-xs text-default-500">
+                    {rowData.accountsRemark}
+                  </span>
+                </Tooltip>
               )}
 
               <span className="text-xs text-default-500">
-                By: {rowData?.sentToAccountsBy || "-"}
+                Verified By: {rowData?.accountsVerifiedBy || "-"}
               </span>
             </div>
           );
 
-        case "attachment":
+        case "dates":
           return (
-            <div className="flex flex-col gap-1 text-xs">
-              {rowData?.finalVendorAttachmentUrl ? (
-                <a
-                  href={rowData.finalVendorAttachmentUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-semibold text-primary"
-                >
-                  Final Vendor Form <ExternalLink size={13} />
-                </a>
-              ) : (
-                <span className="text-default-400">No form attached</span>
-              )}
-
-              {rowData?.finalVendorRemarks ? (
-                <Tooltip content={rowData.finalVendorRemarks}>
-                  <span className="line-clamp-1 max-w-[220px] text-default-500">
-                    Remarks: {rowData.finalVendorRemarks}
-                  </span>
-                </Tooltip>
-              ) : (
-                <span className="text-default-400">Remarks: -</span>
-              )}
-            </div>
-          );
-
-        case "sentDate":
-          return (
-            <div className="flex flex-col text-xs">
-              <span>{formatDateTime(rowData?.sentToAccountsDate)}</span>
+            <div className="flex min-w-[180px] flex-col gap-1 text-xs">
+              <span>
+                Sent: <b>{formatDateTime(rowData?.sentToAccountsDate)}</b>
+              </span>
               <span className="text-default-500">
-                Finalized: {formatDateTime(rowData?.finalizedDate)}
+                Verified: {formatDateTime(rowData?.accountsVerifiedDate)}
+              </span>
+              <span className="text-default-500">
+                Created: {formatDateTime(rowData?.createdDate)}
               </span>
             </div>
           );
@@ -405,14 +469,34 @@ const VendorDetails = () => {
                     View Details
                   </DropdownItem>
 
-                  {rowData?.finalVendorAttachmentUrl && (
+                  <DropdownItem
+                    key="approve"
+                    startContent={<CheckCircle size={15} />}
+                    color="success"
+                    isDisabled={!isPending}
+                    onPress={() => handleApprove(rowData)}
+                  >
+                    Approve
+                  </DropdownItem>
+
+                  <DropdownItem
+                    key="reject"
+                    startContent={<XCircle size={15} />}
+                    color="danger"
+                    isDisabled={!isPending}
+                    onPress={() => handleReject(rowData)}
+                  >
+                    Reject
+                  </DropdownItem>
+
+                  {isValidUrl(rowData?.vendorSetupFormUrl) && (
                     <DropdownItem
-                      key="openForm"
+                      key="openVendorSetupForm"
                       startContent={<FileText size={15} />}
-                      href={rowData.finalVendorAttachmentUrl}
+                      href={rowData.vendorSetupFormUrl}
                       target="_blank"
                     >
-                      Open Final Form
+                      Open Vendor Setup Form
                     </DropdownItem>
                   )}
                 </DropdownMenu>
@@ -424,7 +508,7 @@ const VendorDetails = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [handleView],
+    [handleApprove, handleReject, handleView],
   );
 
   const topContent = useMemo(() => {
@@ -433,8 +517,8 @@ const VendorDetails = () => {
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <Input
             isClearable
-            className="w-full md:max-w-[35%]"
-            placeholder="Search vendor, RFQ, quotation..."
+            className="w-full md:max-w-[38%]"
+            placeholder="Search vendor, RFQ, bank, status..."
             startContent={<Search size={18} />}
             value={filterValue}
             onClear={onClear}
@@ -442,7 +526,11 @@ const VendorDetails = () => {
           />
 
           <div className="flex flex-wrap justify-end gap-3">
-            <Button variant="flat" onPress={fetchVendorDetails}>
+            <Button
+              variant="flat"
+              startContent={<RefreshCw size={16} />}
+              onPress={fetchVendorDetails}
+            >
               Refresh
             </Button>
 
@@ -473,7 +561,7 @@ const VendorDetails = () => {
 
         <div className="flex items-center justify-between">
           <span className="text-small text-default-400">
-            Total {filteredItems.length} sent to accounts
+            Total {filteredItems.length} vendor accounts submissions
           </span>
 
           <label className="flex items-center gap-2 text-small text-default-400">
@@ -532,16 +620,16 @@ const VendorDetails = () => {
       <div className="flex flex-col gap-4">
         <div>
           <h1 className="font-sans text-2xl font-medium">
-            Vendor Details For Accounts
+            Vendor Accounts Submissions
           </h1>
           <p className="mt-1 text-sm text-default-500">
-            Finalized vendor records sent to accounts, latest first.
+            KYC, bank and document details sent to accounts, latest first.
           </p>
         </div>
 
         <Table
           isHeaderSticky
-          aria-label="Vendor details sent to accounts table"
+          aria-label="Vendor accounts submissions table"
           bottomContent={bottomContent}
           bottomContentPlacement="outside"
           topContent={topContent}
@@ -567,7 +655,7 @@ const VendorDetails = () => {
             emptyContent={
               loading === "pending"
                 ? "Loading..."
-                : "No vendor details sent to accounts"
+                : "No vendor accounts submissions found"
             }
             items={paginatedItems}
           >
@@ -587,12 +675,12 @@ const VendorDetails = () => {
       <Modal
         isOpen={viewModal.isOpen}
         onOpenChange={viewModal.onOpenChange}
-        size="4xl"
+        size="5xl"
         scrollBehavior="inside"
       >
         <ModalContent>
           <ModalHeader className="border-b">
-            Vendor Accounts Details
+            Vendor Accounts Submission Details
           </ModalHeader>
 
           <ModalBody className="bg-gray-50 p-4">
@@ -602,29 +690,37 @@ const VendorDetails = () => {
                   <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        {selectedRecord?.vendorName || "-"}
+                        {selectedRecord?.vendorName ||
+                          selectedRecord?.name ||
+                          "-"}
                       </h2>
                       <p className="text-sm text-default-500">
-                        {selectedRecord?.vendorEmail || "-"}{" "}
-                        {selectedRecord?.vendorMobile
-                          ? `• ${selectedRecord.vendorMobile}`
+                        {selectedRecord?.vendorEmail ||
+                          selectedRecord?.email ||
+                          "-"}{" "}
+                        {selectedRecord?.vendorMobile || selectedRecord?.number
+                          ? `• ${selectedRecord?.vendorMobile || selectedRecord?.number}`
                           : ""}
                       </p>
                     </div>
 
                     <Chip
-                      color={
-                        selectedRecord?.sentToAccounts ? "success" : "warning"
-                      }
+                      color={getStatusColor(selectedRecord?.status)}
                       variant="flat"
                     >
-                      {selectedRecord?.sentToAccounts
-                        ? "Sent To Accounts"
-                        : "Pending"}
+                      {selectedRecord?.status || "PENDING"}
                     </Chip>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <DetailItem
+                      label="Submission ID"
+                      value={selectedRecord?.id}
+                    />
+                    <DetailItem
+                      label="Finalization ID"
+                      value={selectedRecord?.vendorFinalizationId}
+                    />
                     <DetailItem
                       label="Vendor ID"
                       value={selectedRecord?.vendorId}
@@ -637,134 +733,117 @@ const VendorDetails = () => {
                       label="Quotation Number"
                       value={selectedRecord?.quotationNumber}
                     />
+                    <DetailItem label="RFQ ID" value={selectedRecord?.rfqId} />
                     <DetailItem
-                      label="Quotation Item"
-                      value={selectedRecord?.quotationItemName}
+                      label="Quotation ID"
+                      value={selectedRecord?.quotationId}
+                    />
+                    <DetailItem
+                      label="Deleted"
+                      value={selectedRecord?.deleted ? "Yes" : "No"}
                     />
                   </div>
                 </div>
 
                 <div className="rounded-xl border bg-white p-4 shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                    Finalized Commercials
+                    Vendor KYC Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <DetailItem label="Name" value={selectedRecord?.name} />
+                    <DetailItem label="Number" value={selectedRecord?.number} />
+                    <DetailItem label="Email" value={selectedRecord?.email} />
+                    <DetailItem label="Aadhar" value={selectedRecord?.aadhar} />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-white p-4 shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                    Bank Details
                   </h3>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                     <DetailItem
-                      label="Finalized Quantity"
-                      value={selectedRecord?.finalizedQuantity}
-                    />
-                    <DetailItem label="Unit" value={selectedRecord?.unit} />
-                    <DetailItem
-                      label="Finalized Unit Rate"
-                      value={formatAmount(selectedRecord?.finalizedUnitRate)}
+                      label="A/C Holder Name"
+                      value={selectedRecord?.accountHolderName}
                     />
                     <DetailItem
-                      label="Finalized Amount"
-                      value={formatAmount(selectedRecord?.finalizedAmount)}
+                      label="A/C Number"
+                      value={selectedRecord?.accountNumber}
                     />
+                    <DetailItem label="IFSC" value={selectedRecord?.ifsc} />
                     <DetailItem
-                      label="Tax Percent"
-                      value={
-                        selectedRecord?.taxPercent !== undefined &&
-                        selectedRecord?.taxPercent !== null
-                          ? `${selectedRecord.taxPercent}%`
-                          : "-"
-                      }
+                      label="Swift Code"
+                      value={selectedRecord?.swiftCode}
                     />
-                    <DetailItem
-                      label="Tax Amount"
-                      value={formatAmount(selectedRecord?.taxAmount)}
-                    />
-                    <DetailItem
-                      label="Total Finalized Amount"
-                      value={formatAmount(selectedRecord?.totalFinalizedAmount)}
-                    />
-                    <DetailItem label="Status" value={selectedRecord?.status} />
+                    <div className="md:col-span-4">
+                      <DetailItem
+                        label="Branch Address"
+                        value={selectedRecord?.branchAddress}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      Documents
+                    </h3>
+                    <Chip size="sm" variant="flat">
+                      Mandatory + Optional
+                    </Chip>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    {documentConfig.map((doc) => (
+                      <DocumentLink
+                        key={doc.key}
+                        label={doc.label}
+                        url={selectedRecord?.[doc.key]}
+                        mandatory={doc.mandatory}
+                      />
+                    ))}
                   </div>
                 </div>
 
                 <div className="rounded-xl border bg-white p-4 shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                    Remarks & Documents
+                    Accounts Review
                   </h3>
 
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <DetailItem label="Status" value={selectedRecord?.status} />
                     <DetailItem
-                      label="Finalization Reason"
-                      value={selectedRecord?.finalizationReason}
+                      label="Sent To Accounts By"
+                      value={selectedRecord?.sentToAccountsBy}
+                    />
+                    <DetailItem
+                      label="Sent Date"
+                      value={formatDateTime(selectedRecord?.sentToAccountsDate)}
+                    />
+                    <DetailItem
+                      label="Accounts Verified By"
+                      value={selectedRecord?.accountsVerifiedBy}
+                    />
+                    <DetailItem
+                      label="Accounts Verified Date"
+                      value={formatDateTime(
+                        selectedRecord?.accountsVerifiedDate,
+                      )}
+                    />
+                    <DetailItem
+                      label="Accounts Remark"
+                      value={selectedRecord?.accountsRemark}
                     />
                     <DetailItem
                       label="Remarks"
                       value={selectedRecord?.remarks}
                     />
                     <DetailItem
-                      label="Final Vendor Remarks"
-                      value={selectedRecord?.finalVendorRemarks}
-                    />
-                    <DetailItem
-                      label="Sent To Accounts Date"
-                      value={formatDateTime(selectedRecord?.sentToAccountsDate)}
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    {selectedRecord?.finalVendorAttachmentUrl ? (
-                      <Button
-                        as="a"
-                        href={selectedRecord.finalVendorAttachmentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        color="primary"
-                        variant="flat"
-                        startContent={<FileText size={16} />}
-                        endContent={<ExternalLink size={14} />}
-                      >
-                        Open Final Vendor Form
-                      </Button>
-                    ) : (
-                      <Chip variant="flat">No final vendor form attached</Chip>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border bg-white p-4 shadow-sm">
-                  <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                    System Information
-                  </h3>
-
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                    <DetailItem
-                      label="Finalized By"
-                      value={selectedRecord?.finalizedBy}
-                    />
-                    <DetailItem
-                      label="Finalized Date"
-                      value={formatDateTime(selectedRecord?.finalizedDate)}
-                    />
-                    <DetailItem
-                      label="Sent To Accounts By"
-                      value={selectedRecord?.sentToAccountsBy}
-                    />
-                    <DetailItem
-                      label="Created Date"
-                      value={formatDateTime(selectedRecord?.createdDate)}
-                    />
-                    <DetailItem
-                      label="Created By"
-                      value={selectedRecord?.createdBy}
-                    />
-                    <DetailItem
-                      label="Updated By"
-                      value={selectedRecord?.updatedBy}
-                    />
-                    <DetailItem
                       label="Updated Date"
                       value={formatDateTime(selectedRecord?.updatedDate)}
-                    />
-                    <DetailItem
-                      label="Deleted"
-                      value={selectedRecord?.deleted ? "Yes" : "No"}
                     />
                   </div>
                 </div>
@@ -773,6 +852,27 @@ const VendorDetails = () => {
           </ModalBody>
 
           <ModalFooter className="border-t">
+            {String(selectedRecord?.status || "").toUpperCase() ===
+              "PENDING" && (
+              <>
+                <Button
+                  color="danger"
+                  variant="flat"
+                  startContent={<XCircle size={16} />}
+                  onPress={() => handleReject(selectedRecord)}
+                >
+                  Reject
+                </Button>
+                <Button
+                  color="success"
+                  startContent={<CheckCircle size={16} />}
+                  onPress={() => handleApprove(selectedRecord)}
+                >
+                  Approve
+                </Button>
+              </>
+            )}
+
             <Button
               variant="flat"
               onPress={() => {
