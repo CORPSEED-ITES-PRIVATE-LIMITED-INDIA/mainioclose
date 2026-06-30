@@ -139,6 +139,7 @@ const quotationStatusOptions = [
   "UNDER_COMPARISON",
   "AGREEMENT_SENT_TO_PROCUREMENT",
   "AGREEMENT_SENT_TO_VENDOR",
+  "REJECTED_BY_ACCOUNTS",
   "ACCEPTED",
   "PARTIALLY_ACCEPTED",
   "REJECTED",
@@ -315,7 +316,7 @@ const sendToAccountsSchema = z
       .refine((value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
         message: "Please enter valid authorized signatory email",
       }),
-    authorizedSignatoryAadhar: z.string().optional(),
+    authorizedSignatoryAadhar: z.any().optional(),
     accountHolderName: z.string().min(1, "Please enter account holder name"),
     accountNumber: z.string().min(1, "Please enter account number"),
     confirmAccountNumber: z.string().min(1, "Please re-enter account number"),
@@ -1877,7 +1878,12 @@ const Quote = () => {
         return;
       }
 
-      if (quotation?.status !== "AGREEMENT_SENT_TO_VENDOR") {
+      const accountsAllowedStatuses = [
+        "AGREEMENT_SENT_TO_VENDOR",
+        "REJECTED_BY_ACCOUNTS",
+      ];
+
+      if (!accountsAllowedStatuses.includes(quotation?.status)) {
         addToast({
           title: "ERROR",
           description:
@@ -2054,11 +2060,13 @@ const Quote = () => {
                       ? "primary"
                       : rowData.status === "AGREEMENT_SENT_TO_VENDOR"
                         ? "success"
-                        : rowData.status === "ACCEPTED"
-                          ? "success"
-                          : rowData.status === "REJECTED"
-                            ? "danger"
-                            : "default"
+                        : rowData.status === "REJECTED_BY_ACCOUNTS"
+                          ? "danger"
+                          : rowData.status === "ACCEPTED"
+                            ? "success"
+                            : rowData.status === "REJECTED"
+                              ? "danger"
+                              : "default"
                   }
                   className="mt-1 w-fit"
                 >
@@ -2187,7 +2195,9 @@ const Quote = () => {
           const onboardingStarted =
             finalization?.status === "ONBOARDING_STARTED";
           const canSendToAccounts =
-            rowData?.status === "AGREEMENT_SENT_TO_VENDOR" &&
+            ["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
+              rowData?.status,
+            ) &&
             finalization?.id &&
             !finalization?.sentToAccounts;
 
@@ -2216,7 +2226,10 @@ const Quote = () => {
                 </DropdownItem>
 
                 {rowData?.agreementFileUrl &&
-                  rowData?.status !== "AGREEMENT_SENT_TO_VENDOR" && (
+                  ![
+                    "AGREEMENT_SENT_TO_VENDOR",
+                    "REJECTED_BY_ACCOUNTS",
+                  ].includes(rowData?.status) && (
                     <DropdownItem
                       key="sendAgreementToVendor"
                       startContent={<FileText size={15} />}
@@ -2226,7 +2239,9 @@ const Quote = () => {
                     </DropdownItem>
                   )}
 
-                {rowData?.status === "AGREEMENT_SENT_TO_VENDOR" &&
+                {["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
+                  rowData?.status,
+                ) &&
                   finalization?.sentToAccounts && (
                     <DropdownItem
                       key="sentToAccounts"
