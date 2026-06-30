@@ -560,6 +560,44 @@ export const getAllVendorDetails = createAsyncThunk(
     return response.data;
   },
 );
+  export const rejectVendorSubmission = createAsyncThunk(
+    "rejectVendorSubmission",
+    async ({ submissionId, data }, { rejectWithValue }) => {
+      try {
+        const response = await api.post(
+          `/operationService/api/vendor-finalizations/accounts/${submissionId}/reject`,
+          data,
+        );
+        return response.data;
+      } catch (error) {
+        return rejectWithValue(
+          error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            "Failed to Reject Vendor Submission",
+        );
+      }
+    },
+  );
+  export const approveVendorSubmission = createAsyncThunk(
+    "approveVendorSubmission",
+    async ({ submissionId, data }, { rejectWithValue }) => {
+      try {
+        const response = await api.post(
+          `/operationService/api/vendor-finalizations/accounts/${submissionId}/approve`,
+          data,
+        );
+        return response.data;
+      } catch (error) {
+        return rejectWithValue(
+          error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            "Failed to Approve Vendor Submission",
+        );
+      }
+    },
+  );
 
 const AccountSlice = createSlice({
   name: "accounts",

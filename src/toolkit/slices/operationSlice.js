@@ -1377,16 +1377,17 @@ export const getOperationChatMessages = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error?.response?.data?.message ||
-          error?.response?.data?.error ||
+        error?.response?.data?.error ||
           error?.message ||
           "Failed to fetch chat messages",
-      );
-    }
-  },
-);
+        );
+      }
+    },
+  );
 
-export const OperationSlice = createSlice({
-  name: "operation",
+  
+  export const OperationSlice = createSlice({
+    name: "operation",
   initialState: {
     loading: "",
     operationProjectList: [],

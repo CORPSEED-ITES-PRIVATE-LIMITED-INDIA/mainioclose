@@ -20,10 +20,12 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
   Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import {
   CheckCircle,
   ChevronDown,
@@ -37,7 +39,11 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 
-import { getAllVendorDetails } from "../../toolkit/slices/accountSlice";
+import {
+  approveVendorSubmission,
+  getAllVendorDetails,
+  rejectVendorSubmission,
+} from "../../toolkit/slices/accountSlice";
 
 const columns = [
   { name: "VENDOR", uid: "vendor" },
@@ -72,6 +78,7 @@ const documentConfig = [
 
 const formatDateTime = (value) => {
   if (!value) return "-";
+
   return dayjs(value).isValid()
     ? dayjs(value).format("DD-MM-YYYY hh:mm A")
     : "-";
@@ -98,6 +105,16 @@ const normalizeList = (response) => {
 };
 
 const isValidUrl = (value) => Boolean(String(value || "").trim());
+
+const getResolvedUserId = (currentUser, routeUserId) => {
+  return (
+    currentUser?.id ||
+    currentUser?.userId ||
+    currentUser?.employeeId ||
+    routeUserId ||
+    ""
+  );
+};
 
 const DetailItem = ({ label, value }) => {
   return (
@@ -139,15 +156,22 @@ const DocumentLink = ({ label, url, mandatory = false }) => {
 
 const VendorDetails = () => {
   const dispatch = useDispatch();
+  const { userId } = useParams();
 
   const loading = useSelector((state) => state.account.loading);
   const vendorsDetailsResponse = useSelector(
     (state) => state.account.vendorsDetails,
   );
+  const currentUser = useSelector((state) => state.auth.currentUser);
 
   const viewModal = useDisclosure();
+  const decisionModal = useDisclosure();
 
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [decisionRecord, setDecisionRecord] = useState(null);
+  const [decisionType, setDecisionType] = useState("");
+  const [accountsRemark, setAccountsRemark] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
@@ -156,6 +180,11 @@ const VendorDetails = () => {
     page: 1,
     size: 10,
   });
+
+  const resolvedUserId = useMemo(
+    () => getResolvedUserId(currentUser, userId),
+    [currentUser, userId],
+  );
 
   const vendorDetails = useMemo(() => {
     return normalizeList(vendorsDetailsResponse);
@@ -243,33 +272,123 @@ const VendorDetails = () => {
     [viewModal],
   );
 
-  const handleApprove = useCallback((record) => {
-    addToast({
-      title: "Approve action ready",
-      description: `Integrate approve thunk with submissionId: ${record?.id}`,
-      color: "primary",
+  const handleOpenDecision = useCallback(
+    (record, type) => {
+      if (!record?.id) {
+        addToast({
+          title: "ERROR",
+          description: "Submission ID is missing.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!resolvedUserId) {
+        addToast({
+          title: "ERROR",
+          description: "User ID is missing. Please login again.",
+          color: "danger",
+        });
+        return;
+      }
+
+      setDecisionRecord(record);
+      setDecisionType(type);
+      setAccountsRemark("");
+      decisionModal.onOpen();
+    },
+    [decisionModal, resolvedUserId],
+  );
+
+  const closeDecisionModal = useCallback(() => {
+    decisionModal.onClose();
+    setDecisionRecord(null);
+    setDecisionType("");
+    setAccountsRemark("");
+  }, [decisionModal]);
+
+  const handleSubmitDecision = useCallback(() => {
+    if (!decisionRecord?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Submission ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "ERROR",
+        description: "User ID is missing. Please login again.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (decisionType === "REJECT" && !accountsRemark.trim()) {
+      addToast({
+        title: "ERROR",
+        description: "Please enter rejection remark.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      submissionId: Number(decisionRecord.id),
+      data: {
+        userId: Number(resolvedUserId),
+        accountsRemark: accountsRemark.trim(),
+      },
+    };
+
+    const action =
+      decisionType === "APPROVE"
+        ? approveVendorSubmission(payload)
+        : rejectVendorSubmission(payload);
+
+    setActionLoading(true);
+
+    dispatch(action).then((resp) => {
+      setActionLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description:
+            decisionType === "APPROVE"
+              ? "Vendor submission approved successfully."
+              : "Vendor submission rejected successfully.",
+          color: "success",
+        });
+
+        closeDecisionModal();
+        viewModal.onClose();
+        setSelectedRecord(null);
+        fetchVendorDetails();
+      } else {
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload?.data?.message ||
+            resp?.payload ||
+            `Failed to ${decisionType === "APPROVE" ? "approve" : "reject"} vendor submission.`,
+          color: "danger",
+        });
+      }
     });
-
-    // Future Redux Toolkit integration:
-    // dispatch(approveVendorAccountsSubmission({
-    //   submissionId: record.id,
-    //   body: { userId: currentUserId, accountsRemark: "" },
-    // })).then(() => fetchVendorDetails());
-  }, []);
-
-  const handleReject = useCallback((record) => {
-    addToast({
-      title: "Reject action ready",
-      description: `Integrate reject thunk with submissionId: ${record?.id}`,
-      color: "warning",
-    });
-
-    // Future Redux Toolkit integration:
-    // dispatch(rejectVendorAccountsSubmission({
-    //   submissionId: record.id,
-    //   body: { userId: currentUserId, accountsRemark: "" },
-    // })).then(() => fetchVendorDetails());
-  }, []);
+  }, [
+    accountsRemark,
+    closeDecisionModal,
+    decisionRecord,
+    decisionType,
+    dispatch,
+    fetchVendorDetails,
+    resolvedUserId,
+    viewModal,
+  ]);
 
   const onSearchChange = useCallback((value) => {
     setFilterValue(value || "");
@@ -473,8 +592,8 @@ const VendorDetails = () => {
                     key="approve"
                     startContent={<CheckCircle size={15} />}
                     color="success"
-                    isDisabled={!isPending}
-                    onPress={() => handleApprove(rowData)}
+                    isDisabled={!isPending || actionLoading}
+                    onPress={() => handleOpenDecision(rowData, "APPROVE")}
                   >
                     Approve
                   </DropdownItem>
@@ -483,8 +602,8 @@ const VendorDetails = () => {
                     key="reject"
                     startContent={<XCircle size={15} />}
                     color="danger"
-                    isDisabled={!isPending}
-                    onPress={() => handleReject(rowData)}
+                    isDisabled={!isPending || actionLoading}
+                    onPress={() => handleOpenDecision(rowData, "REJECT")}
                   >
                     Reject
                   </DropdownItem>
@@ -508,7 +627,7 @@ const VendorDetails = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [handleApprove, handleReject, handleView],
+    [actionLoading, handleOpenDecision, handleView],
   );
 
   const topContent = useMemo(() => {
@@ -859,14 +978,16 @@ const VendorDetails = () => {
                   color="danger"
                   variant="flat"
                   startContent={<XCircle size={16} />}
-                  onPress={() => handleReject(selectedRecord)}
+                  isDisabled={actionLoading}
+                  onPress={() => handleOpenDecision(selectedRecord, "REJECT")}
                 >
                   Reject
                 </Button>
                 <Button
                   color="success"
                   startContent={<CheckCircle size={16} />}
-                  onPress={() => handleApprove(selectedRecord)}
+                  isDisabled={actionLoading}
+                  onPress={() => handleOpenDecision(selectedRecord, "APPROVE")}
                 >
                   Approve
                 </Button>
@@ -881,6 +1002,83 @@ const VendorDetails = () => {
               }}
             >
               Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={decisionModal.isOpen}
+        onOpenChange={(open) => {
+          decisionModal.onOpenChange(open);
+          if (!open) {
+            setDecisionRecord(null);
+            setDecisionType("");
+            setAccountsRemark("");
+          }
+        }}
+        size="lg"
+        isDismissable={!actionLoading}
+      >
+        <ModalContent>
+          <ModalHeader className="border-b">
+            {decisionType === "APPROVE" ? "Approve" : "Reject"} Vendor
+            Submission
+          </ModalHeader>
+
+          <ModalBody className="space-y-4 p-4">
+            <div className="rounded-xl border bg-gray-50 p-3">
+              <p className="text-sm font-semibold text-gray-900">
+                {decisionRecord?.vendorName || decisionRecord?.name || "-"}
+              </p>
+              <p className="text-xs text-default-500">
+                Submission ID: {decisionRecord?.id || "-"} • RFQ:{" "}
+                {decisionRecord?.rfqNumber || "-"}
+              </p>
+            </div>
+
+            <Textarea
+              label="Accounts Remark"
+              placeholder={
+                decisionType === "APPROVE"
+                  ? "Enter approval remark if any"
+                  : "Enter rejection reason"
+              }
+              minRows={4}
+              value={accountsRemark}
+              onChange={(event) => setAccountsRemark(event.target.value)}
+              isRequired={decisionType === "REJECT"}
+            />
+
+            <div className="rounded-xl border bg-white p-3 text-xs text-default-500">
+              Payload sent:
+              <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 p-2 text-[11px] text-gray-700">
+                {JSON.stringify(
+                  {
+                    userId: Number(resolvedUserId || 0),
+                    accountsRemark: accountsRemark.trim(),
+                  },
+                  null,
+                  2,
+                )}
+              </pre>
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="border-t">
+            <Button
+              variant="flat"
+              isDisabled={actionLoading}
+              onPress={closeDecisionModal}
+            >
+              Cancel
+            </Button>
+            <Button
+              color={decisionType === "APPROVE" ? "success" : "danger"}
+              isLoading={actionLoading}
+              onPress={handleSubmitDecision}
+            >
+              {decisionType === "APPROVE" ? "Approve" : "Reject"}
             </Button>
           </ModalFooter>
         </ModalContent>
