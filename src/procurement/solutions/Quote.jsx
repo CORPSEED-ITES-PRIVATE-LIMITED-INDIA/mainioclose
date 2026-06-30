@@ -293,6 +293,7 @@ const sendToAccountsDefaultValues = {
   authorizedSignatoryAadhar: "",
   accountHolderName: "",
   accountNumber: "",
+  confirmAccountNumber: "",
   ifsc: "",
   swiftCode: "",
   branchAddress: "",
@@ -307,46 +308,58 @@ const sendToAccountsDefaultValues = {
   remarks: "",
 };
 
-const sendToAccountsSchema = z.object({
-  name: z.string().min(1, "Please enter vendor name"),
-  number: z.string().min(1, "Please enter vendor number"),
-  email: z
-    .string()
-    .min(1, "Please enter vendor email")
-    .email("Please enter valid email"),
-  aadhar: z.string().optional(),
-  authorizedSignatoryName: z.string().optional(),
-  authorizedSignatoryNumber: z.string().optional(),
-  authorizedSignatoryEmail: z
-    .string()
-    .optional()
-    .refine((value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
-      message: "Please enter valid authorized signatory email",
+const sendToAccountsSchema = z
+  .object({
+    name: z.string().optional(),
+    number: z.string().optional(),
+    email: z.string().optional(),
+    aadhar: z.string().optional(),
+    authorizedSignatoryName: z.string().optional(),
+    authorizedSignatoryNumber: z.string().optional(),
+    authorizedSignatoryEmail: z
+      .string()
+      .optional()
+      .refine((value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
+        message: "Please enter valid authorized signatory email",
+      }),
+    authorizedSignatoryAadhar: z.string().optional(),
+    accountHolderName: z.string().min(1, "Please enter account holder name"),
+    accountNumber: z.string().min(1, "Please enter account number"),
+    confirmAccountNumber: z.string().min(1, "Please re-enter account number"),
+    ifsc: z.string().min(1, "Please enter IFSC"),
+    swiftCode: z.string().optional(),
+    branchAddress: z.string().min(1, "Please enter branch address"),
+    gstDetailsUrl: z.any().refine((value) => Boolean(value), {
+      message: "Please upload GST details",
     }),
-  authorizedSignatoryAadhar: z.string().optional(),
-  accountHolderName: z.string().min(1, "Please enter account holder name"),
-  accountNumber: z.string().min(1, "Please enter account number"),
-  ifsc: z.string().min(1, "Please enter IFSC"),
-  swiftCode: z.string().optional(),
-  branchAddress: z.string().min(1, "Please enter branch address"),
-  gstDetailsUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload GST details",
-  }),
-  vendorSetupFormUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload vendor setup form",
-  }),
-  cancelChequeUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload cancel cheque",
-  }),
-  itrLastFinancialYearUrl: z.any().optional(),
-  panDetailsUrl: z.any().refine((value) => Boolean(value), {
-    message: "Please upload PAN details",
-  }),
-  partnershipOrCoiUrl: z.any().optional(),
-  deedOrMsmeUrl: z.any().optional(),
-  balanceSheetUrl: z.any().optional(),
-  remarks: z.string().optional(),
-});
+    vendorSetupFormUrl: z.any().refine((value) => Boolean(value), {
+      message: "Please upload vendor setup form",
+    }),
+    cancelChequeUrl: z.any().refine((value) => Boolean(value), {
+      message: "Please upload cancel cheque",
+    }),
+    itrLastFinancialYearUrl: z.any().optional(),
+    panDetailsUrl: z.any().refine((value) => Boolean(value), {
+      message: "Please upload PAN details",
+    }),
+    partnershipOrCoiUrl: z.any().optional(),
+    deedOrMsmeUrl: z.any().optional(),
+    balanceSheetUrl: z.any().optional(),
+    remarks: z.string().optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (
+      values.accountNumber &&
+      values.confirmAccountNumber &&
+      values.accountNumber !== values.confirmAccountNumber
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["confirmAccountNumber"],
+        message: "Account number and confirm account number must match",
+      });
+    }
+  });
 
 const normalizePageContent = (response) => {
   if (Array.isArray(response)) return response;
@@ -398,6 +411,35 @@ const getResolvedUserName = (currentUser) => {
     currentUser?.employeeName ||
     "Corpseed"
   );
+};
+
+const getVendorAccountsBaseDetails = (
+  finalization,
+  quotation,
+  rfqVendorDetails,
+) => {
+  return {
+    name:
+      finalization?.vendorName ||
+      quotation?.vendorName ||
+      rfqVendorDetails?.vendorName ||
+      "",
+    number:
+      finalization?.vendorMobile ||
+      quotation?.vendorMobile ||
+      rfqVendorDetails?.vendorMobile ||
+      "",
+    email:
+      finalization?.vendorEmail ||
+      quotation?.vendorEmail ||
+      rfqVendorDetails?.vendorEmail ||
+      "",
+    aadhar:
+      finalization?.vendorAadhar ||
+      quotation?.vendorAadhar ||
+      rfqVendorDetails?.vendorAadhar ||
+      "",
+  };
 };
 
 const getChatAttachmentUrl = (file) => {
@@ -1717,34 +1759,34 @@ const Quote = () => {
         return;
       }
 
+      const vendorBaseDetails = getVendorAccountsBaseDetails(
+        finalization,
+        quotation,
+        rfqVendorDetails,
+      );
+
       setSelectedQuotation(quotation);
       setSelectedVendorFinalization(finalization);
       resetSendToAccountsForm({
         ...sendToAccountsDefaultValues,
-        name:
-          finalization?.vendorName ||
-          quotation?.vendorName ||
-          rfqVendorDetails?.vendorName ||
-          "",
-        number:
-          finalization?.vendorMobile ||
-          quotation?.vendorMobile ||
-          rfqVendorDetails?.vendorMobile ||
-          "",
-        email:
-          finalization?.vendorEmail ||
-          quotation?.vendorEmail ||
-          rfqVendorDetails?.vendorEmail ||
-          "",
-        accountHolderName:
-          finalization?.vendorName ||
-          quotation?.vendorName ||
-          rfqVendorDetails?.vendorName ||
-          "",
+        name: vendorBaseDetails.name,
+        number: vendorBaseDetails.number,
+        email: vendorBaseDetails.email,
+        aadhar: vendorBaseDetails.aadhar,
+        authorizedSignatoryName: vendorBaseDetails.name,
+        authorizedSignatoryNumber: vendorBaseDetails.number,
+        authorizedSignatoryEmail: vendorBaseDetails.email,
+        authorizedSignatoryAadhar: vendorBaseDetails.aadhar,
+        accountHolderName: vendorBaseDetails.name,
       });
       sendToAccountsModal.onOpen();
     },
-    [getFinalizationForQuotation, resetSendToAccountsForm, sendToAccountsModal],
+    [
+      getFinalizationForQuotation,
+      resetSendToAccountsForm,
+      rfqVendorDetails,
+      sendToAccountsModal,
+    ],
   );
 
   const onSubmitSendToAccounts = (values) => {
@@ -1785,11 +1827,17 @@ const Quote = () => {
     const deedOrMsmeUrl = getUploadedFileValue(values.deedOrMsmeUrl);
     const balanceSheetUrl = getUploadedFileValue(values.balanceSheetUrl);
 
+    const vendorBaseDetails = getVendorAccountsBaseDetails(
+      selectedVendorFinalization,
+      selectedQuotation,
+      rfqVendorDetails,
+    );
+
     const body = {
-      name: values.name,
-      number: values.number,
-      email: values.email,
-      aadhar: values.aadhar || "",
+      name: values.name || vendorBaseDetails.name,
+      number: values.number || vendorBaseDetails.number,
+      email: values.email || vendorBaseDetails.email,
+      aadhar: values.aadhar || vendorBaseDetails.aadhar || "",
       authorizedSignatoryName: values.authorizedSignatoryName || "",
       authorizedSignatoryNumber: values.authorizedSignatoryNumber || "",
       authorizedSignatoryEmail: values.authorizedSignatoryEmail || "",
@@ -3411,8 +3459,8 @@ const Quote = () => {
                               Normal Details
                             </h3>
                             <p className="text-xs text-default-500">
-                              Vendor contact and bank information required by
-                              Accounts.
+                              Vendor contact details are auto-populated. Add
+                              bank information required by Accounts.
                             </p>
                           </div>
                           <Chip size="sm" color="primary" variant="flat">
@@ -3420,90 +3468,55 @@ const Quote = () => {
                           </Chip>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                          <Controller
-                            name="name"
-                            control={sendToAccountsControl}
-                            render={({ field }) => (
-                              <Input
-                                size="sm"
-                                label="Name"
-                                isRequired
-                                value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                isInvalid={!!sendToAccountsErrors.name}
-                                errorMessage={
-                                  sendToAccountsErrors.name?.message
-                                }
-                              />
-                            )}
-                          />
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                          {(() => {
+                            const vendorBaseDetails =
+                              getVendorAccountsBaseDetails(
+                                selectedVendorFinalization,
+                                selectedQuotation,
+                                rfqVendorDetails,
+                              );
 
-                          <Controller
-                            name="number"
-                            control={sendToAccountsControl}
-                            render={({ field }) => (
-                              <Input
-                                size="sm"
-                                label="Number"
-                                isRequired
-                                value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    e.target.value
-                                      .replace(/\D/g, "")
-                                      .slice(0, 15),
-                                  )
-                                }
-                                isInvalid={!!sendToAccountsErrors.number}
-                                errorMessage={
-                                  sendToAccountsErrors.number?.message
-                                }
-                              />
-                            )}
-                          />
+                            return (
+                              <>
+                                <div className="rounded-xl border bg-gray-50 px-3 py-2">
+                                  <p className="text-xs text-default-500">
+                                    Name
+                                  </p>
+                                  <p className="mt-1 break-words text-sm font-semibold text-gray-900">
+                                    {vendorBaseDetails.name || "-"}
+                                  </p>
+                                </div>
 
-                          <Controller
-                            name="email"
-                            control={sendToAccountsControl}
-                            render={({ field }) => (
-                              <Input
-                                size="sm"
-                                type="email"
-                                label="Email"
-                                isRequired
-                                value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                isInvalid={!!sendToAccountsErrors.email}
-                                errorMessage={
-                                  sendToAccountsErrors.email?.message
-                                }
-                              />
-                            )}
-                          />
+                                <div className="rounded-xl border bg-gray-50 px-3 py-2">
+                                  <p className="text-xs text-default-500">
+                                    Number
+                                  </p>
+                                  <p className="mt-1 break-words text-sm font-semibold text-gray-900">
+                                    {vendorBaseDetails.number || "-"}
+                                  </p>
+                                </div>
 
-                          <Controller
-                            name="aadhar"
-                            control={sendToAccountsControl}
-                            render={({ field }) => (
-                              <Input
-                                size="sm"
-                                label="Aadhar"
-                                value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    e.target.value
-                                      .replace(/\D/g, "")
-                                      .slice(0, 12),
-                                  )
-                                }
-                                isInvalid={!!sendToAccountsErrors.aadhar}
-                                errorMessage={
-                                  sendToAccountsErrors.aadhar?.message
-                                }
-                              />
-                            )}
-                          />
+                                <div className="rounded-xl border bg-gray-50 px-3 py-2">
+                                  <p className="text-xs text-default-500">
+                                    Email
+                                  </p>
+                                  <p className="mt-1 break-words text-sm font-semibold text-gray-900">
+                                    {vendorBaseDetails.email || "-"}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-xl border bg-gray-50 px-3 py-2">
+                                  <p className="text-xs text-default-500">
+                                    Aadhar
+                                  </p>
+                                  <p className="mt-1 break-words text-sm font-semibold text-gray-900">
+                                    {vendorBaseDetails.aadhar || "-"}
+                                  </p>
+                                </div>
+                              </>
+                            );
+                          })()}
 
                           <Controller
                             name="accountHolderName"
@@ -3543,6 +3556,31 @@ const Quote = () => {
                                 isInvalid={!!sendToAccountsErrors.accountNumber}
                                 errorMessage={
                                   sendToAccountsErrors.accountNumber?.message
+                                }
+                              />
+                            )}
+                          />
+
+                          <Controller
+                            name="confirmAccountNumber"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Input
+                                size="sm"
+                                label="Confirm A/C Number"
+                                isRequired
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.target.value.replace(/\s/g, ""),
+                                  )
+                                }
+                                isInvalid={
+                                  !!sendToAccountsErrors.confirmAccountNumber
+                                }
+                                errorMessage={
+                                  sendToAccountsErrors.confirmAccountNumber
+                                    ?.message
                                 }
                               />
                             )}
