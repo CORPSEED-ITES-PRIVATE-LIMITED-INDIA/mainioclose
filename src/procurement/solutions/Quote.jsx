@@ -3646,12 +3646,13 @@ const Quote = () => {
                               information.
                             </p>
                           </div>
+
                           <Chip size="sm" color="secondary" variant="flat">
                             Optional
                           </Chip>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                           <Controller
                             name="authorizedSignatoryName"
                             control={sendToAccountsControl}
@@ -3659,7 +3660,7 @@ const Quote = () => {
                               <Input
                                 size="sm"
                                 label="Signatory Name"
-                                value={field.value}
+                                value={field.value || ""}
                                 onChange={(e) => field.onChange(e.target.value)}
                                 isInvalid={
                                   !!sendToAccountsErrors.authorizedSignatoryName
@@ -3679,7 +3680,7 @@ const Quote = () => {
                               <Input
                                 size="sm"
                                 label="Signatory Number"
-                                value={field.value}
+                                value={field.value || ""}
                                 onChange={(e) =>
                                   field.onChange(
                                     e.target.value
@@ -3706,7 +3707,7 @@ const Quote = () => {
                                 size="sm"
                                 type="email"
                                 label="Signatory Email"
-                                value={field.value}
+                                value={field.value || ""}
                                 onChange={(e) => field.onChange(e.target.value)}
                                 isInvalid={
                                   !!sendToAccountsErrors.authorizedSignatoryEmail
@@ -3723,13 +3724,15 @@ const Quote = () => {
                             name="authorizedSignatoryAadhar"
                             control={sendToAccountsControl}
                             render={({ field, fieldState: { error } }) => (
-                              <FileUploader
-                                label="Signatory Aadhar Attachment"
-                                value={field.value}
-                                onChange={(value) => field.onChange(value)}
-                                errorMessage={error?.message}
-                                isInvalid={!!error}
-                              />
+                              <div className="min-h-[64px]">
+                                <FileUploader
+                                  label="Signatory Aadhar"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value)}
+                                  errorMessage={error?.message}
+                                  isInvalid={!!error}
+                                />
+                              </div>
                             )}
                           />
                         </div>
