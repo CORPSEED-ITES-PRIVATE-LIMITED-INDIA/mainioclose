@@ -1764,7 +1764,7 @@ const Quote = () => {
         authorizedSignatoryName: vendorBaseDetails.name,
         authorizedSignatoryNumber: vendorBaseDetails.number,
         authorizedSignatoryEmail: vendorBaseDetails.email,
-        authorizedSignatoryAadhar: vendorBaseDetails.aadhar,
+        authorizedSignatoryAadhar: "",
         accountHolderName: vendorBaseDetails.name,
       });
       sendToAccountsModal.onOpen();
@@ -1829,7 +1829,9 @@ const Quote = () => {
       authorizedSignatoryName: values.authorizedSignatoryName || "",
       authorizedSignatoryNumber: values.authorizedSignatoryNumber || "",
       authorizedSignatoryEmail: values.authorizedSignatoryEmail || "",
-      authorizedSignatoryAadhar: values.authorizedSignatoryAadhar || "",
+      authorizedSignatoryAadhar: getUploadedFileValue(
+        values.authorizedSignatoryAadhar,
+      ),
       accountHolderName: values.accountHolderName,
       accountNumber: values.accountNumber,
       ifsc: values.ifsc,
@@ -3444,7 +3446,7 @@ const Quote = () => {
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
                             <h3 className="text-sm font-semibold text-gray-900">
-                              Normal Details
+                              Banking Details
                             </h3>
                             <p className="text-xs text-default-500">
                               Vendor contact details are auto-populated. Add
@@ -3720,25 +3722,13 @@ const Quote = () => {
                           <Controller
                             name="authorizedSignatoryAadhar"
                             control={sendToAccountsControl}
-                            render={({ field }) => (
-                              <Input
-                                size="sm"
-                                label="Signatory Aadhar"
+                            render={({ field, fieldState: { error } }) => (
+                              <FileUploader
+                                label="Signatory Aadhar Attachment"
                                 value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    e.target.value
-                                      .replace(/\D/g, "")
-                                      .slice(0, 12),
-                                  )
-                                }
-                                isInvalid={
-                                  !!sendToAccountsErrors.authorizedSignatoryAadhar
-                                }
-                                errorMessage={
-                                  sendToAccountsErrors.authorizedSignatoryAadhar
-                                    ?.message
-                                }
+                                onChange={(value) => field.onChange(value)}
+                                errorMessage={error?.message}
+                                isInvalid={!!error}
                               />
                             )}
                           />
