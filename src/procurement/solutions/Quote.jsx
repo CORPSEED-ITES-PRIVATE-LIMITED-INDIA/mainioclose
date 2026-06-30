@@ -283,10 +283,6 @@ const vendorAgreementSchema = z.object({
 });
 
 const sendToAccountsDefaultValues = {
-  name: "",
-  number: "",
-  email: "",
-  aadhar: "",
   authorizedSignatoryName: "",
   authorizedSignatoryNumber: "",
   authorizedSignatoryEmail: "",
@@ -310,10 +306,6 @@ const sendToAccountsDefaultValues = {
 
 const sendToAccountsSchema = z
   .object({
-    name: z.string().optional(),
-    number: z.string().optional(),
-    email: z.string().optional(),
-    aadhar: z.string().optional(),
     authorizedSignatoryName: z.string().optional(),
     authorizedSignatoryNumber: z.string().optional(),
     authorizedSignatoryEmail: z
@@ -1769,10 +1761,6 @@ const Quote = () => {
       setSelectedVendorFinalization(finalization);
       resetSendToAccountsForm({
         ...sendToAccountsDefaultValues,
-        name: vendorBaseDetails.name,
-        number: vendorBaseDetails.number,
-        email: vendorBaseDetails.email,
-        aadhar: vendorBaseDetails.aadhar,
         authorizedSignatoryName: vendorBaseDetails.name,
         authorizedSignatoryNumber: vendorBaseDetails.number,
         authorizedSignatoryEmail: vendorBaseDetails.email,
@@ -1834,10 +1822,10 @@ const Quote = () => {
     );
 
     const body = {
-      name: values.name || vendorBaseDetails.name,
-      number: values.number || vendorBaseDetails.number,
-      email: values.email || vendorBaseDetails.email,
-      aadhar: values.aadhar || vendorBaseDetails.aadhar || "",
+      name: vendorBaseDetails.name,
+      number: vendorBaseDetails.number,
+      email: vendorBaseDetails.email,
+      aadhar: vendorBaseDetails.aadhar || "",
       authorizedSignatoryName: values.authorizedSignatoryName || "",
       authorizedSignatoryNumber: values.authorizedSignatoryNumber || "",
       authorizedSignatoryEmail: values.authorizedSignatoryEmail || "",
