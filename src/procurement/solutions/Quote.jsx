@@ -3467,7 +3467,7 @@ const Quote = () => {
 
                             return (
                               <>
-                                <div className="rounded-xl border bg-gray-50 px-3 py-2">
+                                {/* <div className="rounded-xl border bg-gray-50 px-3 py-2">
                                   <p className="text-xs text-default-500">
                                     Name
                                   </p>
@@ -3501,7 +3501,7 @@ const Quote = () => {
                                   <p className="mt-1 break-words text-sm font-semibold text-gray-900">
                                     {vendorBaseDetails.aadhar || "-"}
                                   </p>
-                                </div>
+                                </div> */}
                               </>
                             );
                           })()}
