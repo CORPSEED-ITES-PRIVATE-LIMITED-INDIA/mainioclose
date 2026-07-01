@@ -186,16 +186,16 @@ const VendorCard = ({ vendor, isSelected }) => {
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <Avatar
-              name={getInitials(vendor?.name)}
+              name={getInitials(vendor?.vendorName || vendor?.name)}
               className="bg-primary-100 text-primary"
             />
 
             <div>
               <p className="text-sm font-semibold text-foreground">
-                {vendor?.name || "-"}
+                {vendor?.vendorName || vendor?.name || "-"}
               </p>
               <p className="text-xs text-default-500">
-                Vendor ID: {vendor?.id || "-"}
+                Vendor ID: {vendor?.vendorId || vendor?.id || "-"}
               </p>
             </div>
           </div>
@@ -517,6 +517,15 @@ const ProjectDetails = () => {
 
   console.log("Vendor List Based on Service:", vendorList);
 
+  const normalizedVendorList = useMemo(() => {
+    if (Array.isArray(vendorList)) return vendorList;
+    if (Array.isArray(vendorList?.content)) return vendorList.content;
+    if (Array.isArray(vendorList?.data)) return vendorList.data;
+    if (Array.isArray(vendorList?.data?.content))
+      return vendorList.data.content;
+    return [];
+  }, [vendorList]);
+
   const vendorDetail = useSelector(
     (state) => state.vendors.vendorDetailInProject,
   );
@@ -527,12 +536,17 @@ const ProjectDetails = () => {
     if (!vendorDetail?.selectedVendorId) return null;
 
     return eligibleVendors.find(
-      (vendor) => Number(vendor.id) === Number(vendorDetail.selectedVendorId),
+      (vendor) =>
+        Number(vendor.vendorId || vendor.id) ===
+        Number(vendorDetail.selectedVendorId),
     );
   }, [eligibleVendors, vendorDetail?.selectedVendorId]);
 
   const selectedVendorId =
-    selectedVendor?.id || vendorDetail?.selectedVendorId || null;
+    selectedVendor?.vendorId ||
+    selectedVendor?.id ||
+    vendorDetail?.selectedVendorId ||
+    null;
 
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
@@ -5229,22 +5243,53 @@ const ProjectDetails = () => {
             >
               <ModalHeader>Map Vendor</ModalHeader>
               <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
-                <NewSelect
+                <Select
                   isRequired
-                  errorMessage={"please select vendor"}
-                  data={vendorList}
-                  label={"Select vendor"}
-                  name={"vendorId"}
-                  labelKey={"vendorName"}
-                  valueKey={"vendorId"}
-                  value={vendorMapData?.vendorId}
-                  onChange={(e) => {
+                  label="Select vendor"
+                  name="vendorId"
+                  placeholder={
+                    normalizedVendorList.length > 0
+                      ? "Select approved vendor"
+                      : "No approved vendors found"
+                  }
+                  selectedKeys={
+                    vendorMapData?.vendorId
+                      ? new Set([String(vendorMapData.vendorId)])
+                      : new Set([])
+                  }
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)?.[0] || "";
+
                     setVendorMapData((prev) => ({
                       ...prev,
-                      vendorId: e,
+                      vendorId: selected,
                     }));
                   }}
-                />
+                  isDisabled={normalizedVendorList.length === 0}
+                >
+                  {normalizedVendorList.map((vendor) => {
+                    const optionValue = String(vendor.vendorId || vendor.id);
+                    const optionLabel =
+                      vendor.vendorName || vendor.name || "Vendor";
+
+                    return (
+                      <SelectItem key={optionValue} textValue={optionLabel}>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium">
+                            {optionLabel}
+                          </span>
+                          <span className="text-xs text-default-500">
+                            {vendor.email || "-"}
+                            {vendor.priceLevel ? ` • ${vendor.priceLevel}` : ""}
+                            {vendor.totalFinalizedAmount
+                              ? ` • ${inrCurrency(vendor.totalFinalizedAmount)}`
+                              : ""}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </Select>
 
                 <Textarea
                   label="Remark"
@@ -5310,7 +5355,13 @@ const ProjectDetails = () => {
                       color="primary"
                       variant="flat"
                       onPress={() => {
+                        setVendorMapData((prev) => ({
+                          ...prev,
+                          vendorId: null,
+                        }));
+
                         vendorMapModal.onOpen();
+
                         dispatch(
                           getVendorsBasedOnService({
                             userId,
@@ -5443,17 +5494,25 @@ const ProjectDetails = () => {
                                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                   <div className="flex items-center gap-4">
                                     <Avatar
-                                      name={getInitials(selectedVendor?.name)}
+                                      name={getInitials(
+                                        selectedVendor?.vendorName ||
+                                          selectedVendor?.name,
+                                      )}
                                       className="h-14 w-14 bg-success-100 text-success"
                                     />
 
                                     <div>
                                       <h3 className="text-lg font-bold text-foreground">
-                                        {selectedVendor?.name || "-"}
+                                        {selectedVendor?.vendorName ||
+                                          selectedVendor?.name ||
+                                          "-"}
                                       </h3>
 
                                       <p className="text-sm text-default-500">
-                                        Vendor ID: {selectedVendor?.id || "-"}
+                                        Vendor ID:{" "}
+                                        {selectedVendor?.vendorId ||
+                                          selectedVendor?.id ||
+                                          "-"}
                                       </p>
                                     </div>
                                   </div>
