@@ -2229,39 +2229,36 @@ const Quote = () => {
                 >
                   View
                 </DropdownItem>
-                <DropdownItem
-                  key="history"
-                  startContent={<Clock size={15} />}
-                  onPress={() => handleOpenChatHistory(rowData)}
-                >
-                  Chat with Legal
-                </DropdownItem>
 
                 {rowData?.agreementFileUrl &&
                   ![
                     "AGREEMENT_SENT_TO_VENDOR",
                     "REJECTED_BY_ACCOUNTS",
                   ].includes(rowData?.status) && (
-                    <DropdownItem
-                      key="sendAgreementToVendor"
-                      startContent={<FileText size={15} />}
-                      onPress={() => handleOpenSendAgreementToVendor(rowData)}
-                    >
-                      Send Agreement To Vendor
-                    </DropdownItem>
+                    <>
+                      <DropdownItem
+                        key="sendAgreementToVendor"
+                        startContent={<FileText size={15} />}
+                        onPress={() => handleOpenSendAgreementToVendor(rowData)}
+                      >
+                        Send Agreement To Vendor
+                      </DropdownItem>
+                    </>
                   )}
 
                 {["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
                   rowData?.status,
                 ) &&
                   finalization?.sentToAccounts && (
-                    <DropdownItem
-                      key="sentToAccounts"
-                      startContent={<FileText size={15} />}
-                      isDisabled
-                    >
-                      Sent To Accounts
-                    </DropdownItem>
+                    <>
+                      <DropdownItem
+                        key="sentToAccounts"
+                        startContent={<FileText size={15} />}
+                        isDisabled
+                      >
+                        Sent To Accounts
+                      </DropdownItem>
+                    </>
                   )}
 
                 {canSendToAccounts && (
@@ -2284,13 +2281,23 @@ const Quote = () => {
                   </DropdownItem>
                 ) : onboardingStarted ? (
                   existingLegalRequest?.id ? (
-                    <DropdownItem
-                      key="legalRequestSent"
-                      startContent={<FileText size={15} />}
-                      isDisabled
-                    >
-                      Legal Request Sent
-                    </DropdownItem>
+                    <>
+                      <DropdownItem
+                        key="history"
+                        startContent={<Clock size={15} />}
+                        onPress={() => handleOpenChatHistory(rowData)}
+                      >
+                        Chat with Legal
+                      </DropdownItem>
+
+                      <DropdownItem
+                        key="legalRequestSent"
+                        startContent={<FileText size={15} />}
+                        isDisabled
+                      >
+                        Legal Request Sent
+                      </DropdownItem>
+                    </>
                   ) : (
                     <DropdownItem
                       key="legalRequest"
