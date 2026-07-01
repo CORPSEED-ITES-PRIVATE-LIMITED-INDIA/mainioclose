@@ -479,9 +479,7 @@ export const getRFQById = createAsyncThunk(
   "getRFQVendorsById",
   async (rfqId, { rejectWithValue }) => {
     try {
-      const response = await api.get(
-        `/operationService/api/rfq/${rfqId}`,
-      );
+      const response = await api.get(`/operationService/api/rfq/${rfqId}`);
 
       return response.data;
     } catch (error) {
@@ -495,7 +493,7 @@ export const getRFQById = createAsyncThunk(
 );
 export const getVendorsByVendorIdandRFQId = createAsyncThunk(
   "getVendorsByVendorIdandRFQId",
-  async ({vendorId,rfqId}, { rejectWithValue }) => {
+  async ({ vendorId, rfqId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
         `/operationService/api/rfq/${rfqId}/vendors/${vendorId}`,
@@ -517,7 +515,7 @@ export const createVendorFinalization = createAsyncThunk(
     try {
       const response = await api.post(
         `/operationService/api/vendor-finalizations`,
-        data
+        data,
       );
 
       return response.data;
@@ -532,11 +530,11 @@ export const createVendorFinalization = createAsyncThunk(
 );
 export const sendVendorOnboardingForm = createAsyncThunk(
   "sendVendorOnboardingForm",
-  async ({data,vendorFinalizationId}, { rejectWithValue }) => {
+  async ({ data, vendorFinalizationId }, { rejectWithValue }) => {
     try {
       const response = await api.post(
         `/operationService/api/vendor-onboarding/send-form/${vendorFinalizationId}`,
-        data
+        data,
       );
       return response.data;
     } catch (error) {
@@ -550,10 +548,10 @@ export const sendVendorOnboardingForm = createAsyncThunk(
 );
 export const getVendorFinalizationById = createAsyncThunk(
   "getVendorFinalizationById",
-  async ({data,vendorFinalizationId}, { rejectWithValue }) => {
+  async ({ data, vendorFinalizationId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/operationService/api/vendor-finalizations/${vendorFinalizationId}`
+        `/operationService/api/vendor-finalizations/${vendorFinalizationId}`,
       );
       return response.data;
     } catch (error) {
@@ -567,10 +565,10 @@ export const getVendorFinalizationById = createAsyncThunk(
 );
 export const getVendorFinalizationByRfqId = createAsyncThunk(
   "getVendorFinalizationByRfqId",
-  async ({data,rfqId}, { rejectWithValue }) => {
+  async ({ data, rfqId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/operationService/api/vendor-finalizations/rfq/${rfqId}`
+        `/operationService/api/vendor-finalizations/rfq/${rfqId}`,
       );
       return response.data;
     } catch (error) {
@@ -587,7 +585,8 @@ export const createLegalRequest = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/operationService/api/vendor-quotation-legal-requests`,data
+        `/operationService/api/vendor-quotation-legal-requests`,
+        data,
       );
       return response.data;
     } catch (error) {
@@ -601,10 +600,11 @@ export const createLegalRequest = createAsyncThunk(
 );
 export const updateRFQVendorMapping = createAsyncThunk(
   "updateRFQVendorMapping",
-  async ({rfqId,userId,data}, { rejectWithValue }) => {
+  async ({ rfqId, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/operationService/api/rfq/${rfqId}?userId=${userId}`,data
+        `/operationService/api/rfq/${rfqId}?userId=${userId}`,
+        data,
       );
       return response.data;
     } catch (error) {
@@ -617,7 +617,23 @@ export const updateRFQVendorMapping = createAsyncThunk(
   },
 );
 
-
+export const getVendorsBasedOnService = createAsyncThunk(
+  "getVendorsBasedOnService",
+  async ({ productId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/products/${productId}/vendors/list?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch vendors based on service",
+      );
+    }
+  },
+);
 
 const VendorsSlice = createSlice({
   name: "vendors",
@@ -642,6 +658,7 @@ const VendorsSlice = createSlice({
     rfqVendors: [],
     rfqVendorsLoading: false,
     rfqVendorsError: null,
+    vendorListBasedOnService: [],
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -846,22 +863,37 @@ const VendorsSlice = createSlice({
       state.vendorDetailInProject = {};
     });
 
-    builder
-      .addCase(getRFQVendorsByRfqId.pending, (state) => {
-        state.rfqVendorsLoading = true;
-        state.rfqVendorsError = null;
-      })
+    builder.addCase(getRFQVendorsByRfqId.pending, (state) => {
+      state.rfqVendorsLoading = true;
+      state.rfqVendorsError = null;
+    });
 
-      .addCase(getRFQVendorsByRfqId.fulfilled, (state, action) => {
-        state.rfqVendorsLoading = false;
-        state.rfqVendors = Array.isArray(action.payload) ? action.payload : [];
-      })
+    builder.addCase(getRFQVendorsByRfqId.fulfilled, (state, action) => {
+      state.rfqVendorsLoading = false;
+      state.rfqVendors = Array.isArray(action.payload) ? action.payload : [];
+    });
 
-      .addCase(getRFQVendorsByRfqId.rejected, (state, action) => {
-        state.rfqVendorsLoading = false;
-        state.rfqVendors = [];
-        state.rfqVendorsError = action.payload;
-      });
+    builder.addCase(getRFQVendorsByRfqId.rejected, (state, action) => {
+      state.rfqVendorsLoading = false;
+      state.rfqVendors = [];
+      state.rfqVendorsError = action.payload;
+    });
+
+    builder.addCase(getVendorsBasedOnService.pending, (state) => {
+      state.loading = "pending";
+    });
+
+    builder.addCase(getVendorsBasedOnService.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorListBasedOnService = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    });
+
+    builder.addCase(getVendorsBasedOnService.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.vendorListBasedOnService = [];
+    });
   },
 });
 

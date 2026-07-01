@@ -169,7 +169,7 @@ const normalizeChatAttachmentPayload = (file) => {
 
 const getChatReferenceId = (request) => {
   return (
-    request?.id ||
+    request?.vendorQuotationId ||
     request?.legalRequestId ||
     request?.vendorLegalRequestId ||
     ""

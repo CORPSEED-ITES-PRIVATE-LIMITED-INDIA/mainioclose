@@ -103,6 +103,7 @@ import {
 import {
   getAllVendors,
   getVendorDetailInProject,
+  getVendorsBasedOnService,
 } from "../../toolkit/slices/vendorsSlice";
 import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
 
@@ -510,7 +511,12 @@ const ProjectDetails = () => {
   const activities = useSelector(
     (state) => state.operation.activitiesByProjectId?.content || [],
   );
-  const vendorList = useSelector((state) => state.vendors.vendorList?.content);
+  const vendorList = useSelector(
+    (state) => state.vendors.vendorListBasedOnService,
+  );
+
+  console.log("Vendor List Based on Service:", vendorList);
+
   const vendorDetail = useSelector(
     (state) => state.vendors.vendorDetailInProject,
   );
@@ -5229,8 +5235,8 @@ const ProjectDetails = () => {
                   data={vendorList}
                   label={"Select vendor"}
                   name={"vendorId"}
-                  labelKey={"name"}
-                  valueKey={"id"}
+                  labelKey={"vendorName"}
+                  valueKey={"vendorId"}
                   value={vendorMapData?.vendorId}
                   onChange={(e) => {
                     setVendorMapData((prev) => ({
@@ -5305,13 +5311,10 @@ const ProjectDetails = () => {
                       variant="flat"
                       onPress={() => {
                         vendorMapModal.onOpen();
-
                         dispatch(
-                          getAllVendors({
+                          getVendorsBasedOnService({
                             userId,
-                            page: 1,
-                            size: 5000,
-                            search: "",
+                            productId: detailedData?.projectDetails?.productId,
                           }),
                         );
                       }}

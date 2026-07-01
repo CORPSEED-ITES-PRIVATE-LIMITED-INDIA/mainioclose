@@ -1177,7 +1177,7 @@ const Quote = () => {
       const resp = await dispatch(
         startOperationChat({
           contextType: LEGAL_CHAT_CONTEXT_TYPE,
-          referenceId: LEGAL_CHAT_REFERENCE_ID,
+          referenceId: selectedQuoteItem?.vendorQuotationId,
           createdBy: Number(resolvedUserId),
           receiverId: Number(receiverId),
         }),
