@@ -40,9 +40,11 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   createLedgerGroup,
   deleteLedgerGroup,
+  getAllLedgerGroupType,
   getLedgerGroups,
   updateLedgerGroup,
 } from "../../toolkit/slices/organizationSlice";
+import NewSelect from "../../components/NewSelect";
 
 const groupTypeOptions = [
   { label: "Sundry Debtors", value: "SUNDRY_DEBTORS" },
@@ -87,10 +89,6 @@ const emptyForm = {
   active: true,
 };
 
-const getGroupLabel = (value) => {
-  return groupTypeOptions.find((item) => item.value === value)?.label || value;
-};
-
 const Group = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -103,7 +101,14 @@ const Group = () => {
     createLedgerGroupLoading,
     updateLedgerGroupLoading,
     deleteLedgerGroupLoading,
+    ledgerGroupTypeList,
   } = useSelector((state) => state.organization);
+
+  const getGroupLabel = (value) => {
+    return (
+      ledgerGroupTypeList?.find((item) => item.value === value)?.label || value
+    );
+  };
 
   const [filterValue, setFilterValue] = useState("");
   const [groupTypeFilter, setGroupTypeFilter] = useState("");
@@ -140,6 +145,10 @@ const Group = () => {
   useEffect(() => {
     fetchLedgerGroups();
   }, [fetchLedgerGroups]);
+
+  useEffect(() => {
+    dispatch(getAllLedgerGroupType());
+  }, [dispatch]);
 
   const isLoading = ledgerGroupLoading === "pending";
   const isSaving =
@@ -382,6 +391,8 @@ const Group = () => {
     setPage(1);
   };
 
+  console.log("djkgkjdsgjk", ledgerGroupTypeList);
+
   const paginationTotal = Math.max(ledgerGroupTotalPages || 1, 1);
 
   const topContent = useMemo(() => {
@@ -399,33 +410,11 @@ const Group = () => {
             onValueChange={onSearchChange}
           />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              size="sm"
-              label="Group Type"
-              className="w-[210px]"
-              selectedKeys={
-                groupTypeFilter ? new Set([groupTypeFilter]) : new Set(["ALL"])
-              }
-              onSelectionChange={(keys) => {
-                const selectedValue = Array.from(keys)?.[0];
-
-                setGroupTypeFilter(
-                  selectedValue === "ALL" ? "" : selectedValue,
-                );
-                setPage(1);
-              }}
-            >
-              <SelectItem key="ALL">All</SelectItem>
-              {groupTypeOptions.map((item) => (
-                <SelectItem key={item.value}>{item.label}</SelectItem>
-              ))}
-            </Select>
-
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
             <Select
               size="sm"
               label="Active"
-              className="w-[140px]"
+              className="w-[120px] shrink-0"
               selectedKeys={
                 activeFilter ? new Set([activeFilter]) : new Set(["ALL"])
               }
@@ -441,12 +430,28 @@ const Group = () => {
               <SelectItem key="false">Inactive</SelectItem>
             </Select>
 
+            <div className="w-[220px] shrink-0">
+              <NewSelect
+                label="Group Type"
+                size="sm"
+                labelKey="label"
+                valueKey="value"
+                data={ledgerGroupTypeList}
+                value={groupTypeFilter ? groupTypeFilter : "ALL"}
+                onChange={(key) => {
+                  setGroupTypeFilter(key === "ALL" ? "" : key);
+                  setPage(1);
+                }}
+              />
+            </div>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
                   size="sm"
                   endContent={<ChevronDown size={16} />}
                   variant="flat"
+                  className="shrink-0"
                 >
                   Columns
                 </Button>
@@ -466,7 +471,12 @@ const Group = () => {
               </DropdownMenu>
             </Dropdown>
 
-            <Button size="sm" variant="flat" onPress={resetFilters}>
+            <Button
+              size="sm"
+              variant="flat"
+              onPress={resetFilters}
+              className="shrink-0"
+            >
               Reset
             </Button>
 
@@ -475,13 +485,14 @@ const Group = () => {
               variant="flat"
               startContent={<RefreshCw size={15} />}
               onPress={fetchLedgerGroups}
+              className="shrink-0"
             >
               Refresh
             </Button>
 
             <Button
               size="sm"
-              className="bg-emerald-700 font-semibold text-white"
+              className="shrink-0 whitespace-nowrap bg-emerald-700 px-4 font-semibold text-white"
               startContent={<Plus size={16} />}
               onPress={handleOpenCreate}
             >
@@ -520,6 +531,7 @@ const Group = () => {
     onSearchChange,
     onRowsPerPageChange,
     fetchLedgerGroups,
+    ledgerGroupTypeList,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -660,26 +672,20 @@ const Group = () => {
                     }
                   />
 
-                  <Select
-                    size="sm"
+                  <NewSelect
                     label="Group Type"
-                    isRequired
-                    selectedKeys={
-                      formData.groupType
-                        ? new Set([formData.groupType])
-                        : new Set([])
-                    }
-                    onSelectionChange={(keys) => {
+                    size="sm"
+                    data={ledgerGroupTypeList}
+                    labelKey={"label"}
+                    valueKey="value"
+                    value={formData?.groupType}
+                    onChange={(key) => {
                       setFormData((prev) => ({
                         ...prev,
-                        groupType: Array.from(keys)?.[0] || "",
+                        groupType: key || "",
                       }));
                     }}
-                  >
-                    {groupTypeOptions.map((item) => (
-                      <SelectItem key={item.value}>{item.label}</SelectItem>
-                    ))}
-                  </Select>
+                  />
 
                   <div className="md:col-span-2">
                     <Textarea

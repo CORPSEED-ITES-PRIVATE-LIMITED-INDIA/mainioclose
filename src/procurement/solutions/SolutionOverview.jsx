@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Card,
   CardBody,
@@ -22,6 +22,9 @@ import {
   ArrowUpRight,
   CircleCheckBig,
 } from "lucide-react";
+import { getVendorsDashboardSummaryByProductId } from "../../toolkit/slices/vendorsSlice";
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 const vendors = [
   {
@@ -324,6 +327,9 @@ const DonutChart = ({
 };
 
 const SolutionOverview = () => {
+  const { userId, solutionId } = useParams();
+  const dispatch = useDispatch();
+  const vendorSummary = useSelector((state) => state.vendors.vendorSummary);
   const sortedVendors = useMemo(() => {
     return [...vendors].sort((a, b) => a.quotedPrice - b.quotedPrice);
   }, []);
@@ -344,6 +350,10 @@ const SolutionOverview = () => {
 
   const maxPrice = Math.max(...vendors.map((vendor) => vendor.quotedPrice));
 
+  useEffect(() => {
+    dispatch(getVendorsDashboardSummaryByProductId(solutionId));
+  }, [dispatch, solutionId]);
+
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <div className="flex flex-col gap-4 p-4">
@@ -351,14 +361,14 @@ const SolutionOverview = () => {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-7">
           <KpiCard
             title="Vendors Data"
-            value={totalVendors}
+            value={vendorSummary?.totalVendorCount}
             icon={<Users className="h-5 w-5" />}
             iconClassName="bg-primary-50 text-primary"
           />
 
           <KpiCard
             title="Verified Vendors"
-            value={verifiedVendors}
+            value={vendorSummary?.verifiedVendorCount}
             icon={<CheckCircle2 className="h-5 w-5" />}
             iconClassName="bg-success-50 text-success"
           />
@@ -372,28 +382,28 @@ const SolutionOverview = () => {
 
           <KpiCard
             title="Active RFQs"
-            value="2"
+            value={vendorSummary?.activeRfqCount}
             icon={<ClipboardList className="h-5 w-5" />}
             iconClassName="bg-secondary-50 text-secondary"
           />
 
           <KpiCard
             title="Quotations Received"
-            value={quotationsReceived}
+            value={vendorSummary?.quotationReceivedCount}
             icon={<FileText className="h-5 w-5" />}
             iconClassName="bg-warning-50 text-warning"
           />
 
           <KpiCard
             title="L1 Vendor"
-            value={selectedVendor?.vendorName || "-"}
+            value={vendorSummary?.lowestFinalizedVendorName || "-"}
             icon={<Trophy className="h-5 w-5" />}
             iconClassName="bg-yellow-50 text-yellow-600"
           />
 
           <KpiCard
             title="Lowest Quote"
-            value={formatCurrency(lowestQuote)}
+            value={formatCurrency(vendorSummary?.lowestFinalizedPrice || 0)}
             icon={<BadgeIndianRupee className="h-5 w-5" />}
             iconClassName="bg-teal-50 text-teal-600"
           />

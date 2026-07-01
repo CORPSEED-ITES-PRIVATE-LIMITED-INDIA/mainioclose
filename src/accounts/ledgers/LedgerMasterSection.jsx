@@ -54,7 +54,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -73,11 +73,15 @@ import {
 
 const defaultValues = {
   name: "",
-  alias: "",
   ledgerType: "CUSTOMER",
   ledgerCategory: "CUSTOMER",
   partyType: "CUSTOMER",
   groupName: "",
+  bankName: "",
+  accountHolderName: "",
+  accountNumber: "",
+  ifscCode: "",
+  branchName: "",
   openingBalance: "0",
   openingBalanceType: "DR",
   currentBalance: "0",
@@ -219,7 +223,6 @@ const normalizeLedger = (ledger = {}) => {
     ...ledger,
     raw: ledger,
     name: ledger.ledgerName || "",
-    alias: ledger.alias || "",
     ledgerCategory,
     partyType,
     groupName:
@@ -411,7 +414,6 @@ const LedgerMasterSection = () => {
 
   const gstStatus = watch("gstStatus");
   const selectedGroupValue = watch("groupName");
-
   const normalizedLedgers = useMemo(() => {
     return Array.isArray(ledgers) ? ledgers.map(normalizeLedger) : [];
   }, [ledgers]);
@@ -517,11 +519,17 @@ const LedgerMasterSection = () => {
 
     reset({
       name: ledger.name || "",
-      alias: ledger.alias || "",
-      ledgerType: ledger.ledgerType || "CUSTOMER",
+      ledgerType: String(ledger.ledgerType || "CUSTOMER")
+        .trim()
+        .toUpperCase(),
       ledgerCategory: ledger.ledgerCategory || "COMPANY",
       partyType: ledger.partyType || "CUSTOMER",
       groupName: ledger.ledgerGroupId ? String(ledger.ledgerGroupId) : "",
+      bankName: ledger.raw?.bankName || "",
+      accountHolderName: ledger.raw?.accountHolderName || "",
+      accountNumber: ledger.raw?.accountNumber || "",
+      ifscCode: ledger.raw?.ifscCode || "",
+      branchName: ledger.raw?.branchName || "",
       openingBalance: String(ledger.openingBalance ?? 0),
       openingBalanceType: ledger.openingBalanceType || "DR",
       currentBalance: String(ledger.currentBalance ?? 0),
@@ -549,20 +557,30 @@ const LedgerMasterSection = () => {
     try {
       dispatch(clearLedgerError());
 
+      const ledgerType = String(values.ledgerType || "")
+        .trim()
+        .toUpperCase();
+
       const payload = {
         ledgerName: values.name?.trim(),
-        ledgerType: values.ledgerType,
+        ledgerType,
         ledgerGroupId: toNumber(values.groupName),
         companyId: toNumber(editData?.raw?.companyId),
         unitId: toNumber(editData?.raw?.unitId),
         contactId: toNumber(editData?.raw?.contactId),
         gstNo: values.gstin?.trim() || "",
         panNo: values.panNumber?.trim() || "",
-        bankName: editData?.raw?.bankName || "",
-        accountHolderName: editData?.raw?.accountHolderName || "",
-        accountNumber: editData?.raw?.accountNumber || "",
-        ifscCode: editData?.raw?.ifscCode || "",
-        branchName: editData?.raw?.branchName || "",
+        bankName: ledgerType === "BANK" ? values.bankName?.trim() || "" : "",
+        accountHolderName:
+          ledgerType === "BANK" ? values.accountHolderName?.trim() || "" : "",
+        accountNumber:
+          ledgerType === "BANK" ? values.accountNumber?.trim() || "" : "",
+        ifscCode:
+          ledgerType === "BANK"
+            ? values.ifscCode?.trim()?.toUpperCase() || ""
+            : "",
+        branchName:
+          ledgerType === "BANK" ? values.branchName?.trim() || "" : "",
         openingBalance: toNumber(values.openingBalance),
         openingBalanceType: toApiBalanceType(values.openingBalanceType),
         active: values.active === "true",
@@ -1116,6 +1134,17 @@ const LedgerModal = ({
   onSubmit,
   onCancel,
 }) => {
+  const selectedLedgerType = useWatch({
+    control,
+    name: "ledgerType",
+  });
+
+  const normalizedSelectedLedgerType = String(selectedLedgerType || "")
+    .trim()
+    .toUpperCase();
+
+  const isBankLedgerType = normalizedSelectedLedgerType === "BANK";
+
   return (
     <Modal
       size="4xl"
@@ -1162,8 +1191,6 @@ const LedgerModal = ({
                     isRequired
                   />
 
-                  <RHFInput name="alias" label="Alias" control={control} />
-
                   <RHFSelect
                     name="ledgerType"
                     label="Ledger Type"
@@ -1172,6 +1199,97 @@ const LedgerModal = ({
                     rules={{ required: "Ledger type is required" }}
                     isRequired
                   />
+
+                  {isBankLedgerType && (
+                    <>
+                      <div className="md:col-span-2 mt-2">
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-emerald-800">
+                            Bank Details
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-emerald-700">
+                            These fields are required because selected ledger
+                            type is BANK.
+                          </p>
+                        </div>
+                      </div>
+
+                      <RHFInput
+                        name="bankName"
+                        label="Bank Name"
+                        control={control}
+                        rules={{
+                          required: "Bank name is required",
+                          minLength: {
+                            value: 2,
+                            message: "Bank name must be at least 2 characters",
+                          },
+                        }}
+                        isRequired
+                      />
+
+                      <RHFInput
+                        name="accountHolderName"
+                        label="Account Holder Name"
+                        control={control}
+                        rules={{
+                          required: "Account holder name is required",
+                          minLength: {
+                            value: 2,
+                            message:
+                              "Account holder name must be at least 2 characters",
+                          },
+                        }}
+                        isRequired
+                      />
+
+                      <RHFInput
+                        name="accountNumber"
+                        label="Account Number"
+                        control={control}
+                        rules={{
+                          required: "Account number is required",
+                          pattern: {
+                            value: /^[0-9]{6,20}$/,
+                            message: "Account number must be 6 to 20 digits",
+                          },
+                        }}
+                        isRequired
+                      />
+
+                      <RHFInput
+                        name="ifscCode"
+                        label="IFSC Code"
+                        control={control}
+                        maxLength={11}
+                        rules={{
+                          required: "IFSC code is required",
+                          pattern: {
+                            value: /^[A-Z]{4}0[A-Z0-9]{6}$/i,
+                            message: "Enter a valid IFSC code",
+                          },
+                        }}
+                        isRequired
+                      />
+
+                      <div className="md:col-span-2">
+                        <RHFInput
+                          name="branchName"
+                          label="Branch Name"
+                          control={control}
+                          rules={{
+                            required: "Branch name is required",
+                            minLength: {
+                              value: 2,
+                              message:
+                                "Branch name must be at least 2 characters",
+                            },
+                          }}
+                          isRequired
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <RHFSelect
                     name="ledgerCategory"
@@ -1729,8 +1847,14 @@ const RHFSelect = ({
           size="sm"
           label={label}
           isRequired={isRequired}
-          selectedKeys={field.value ? [String(field.value)] : []}
-          onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
+          selectionMode="single"
+          selectedKeys={
+            field.value ? new Set([String(field.value)]) : new Set([])
+          }
+          onSelectionChange={(keys) => {
+            const selectedValue = Array.from(keys || [])?.[0] || "";
+            field.onChange(String(selectedValue));
+          }}
           isInvalid={!!fieldState.error}
           errorMessage={fieldState.error?.message}
         >

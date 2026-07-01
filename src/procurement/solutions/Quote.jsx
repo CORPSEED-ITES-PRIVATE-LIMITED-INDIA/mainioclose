@@ -731,7 +731,7 @@ const Quote = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(getUsersByDepartment({ id: 17 }));
+    dispatch(getUsersByDepartment({ id: 12 }));
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {

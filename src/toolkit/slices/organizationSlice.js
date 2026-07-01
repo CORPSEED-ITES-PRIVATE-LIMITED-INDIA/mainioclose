@@ -1015,6 +1015,16 @@ export const createAccountingVoucher = createAsyncThunk(
   },
 );
 
+export const getAllLedgerGroupType = createAsyncThunk(
+  "getAllLedgerGroupType",
+  async () => {
+    const response = await api.get(
+      `/accountService/api/v1/ledger-groups/group-types`,
+    );
+    return response.data;
+  },
+);
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
@@ -1109,6 +1119,8 @@ const OrganizationSlice = createSlice({
     accountingVoucherLoading: "",
     createAccountingVoucherLoading: "",
     accountingVoucherError: "",
+
+    ledgerGroupTypeList: [],
   },
   reducers: {
     setSelectedLedgerId: (state, action) => {
@@ -1920,6 +1932,22 @@ const OrganizationSlice = createSlice({
       state.createAccountingVoucherLoading = "failed";
       state.accountingVoucherError =
         action.payload || "Failed to create accounting voucher";
+    });
+
+    builder.addCase(getAllLedgerGroupType.pending, (state) => {
+      state.loading = "pending";
+    });
+
+    builder.addCase(getAllLedgerGroupType.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.ledgerGroupTypeList = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    });
+
+    builder.addCase(getAllLedgerGroupType.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.ledgerGroupTypeList = [];
     });
   },
 });

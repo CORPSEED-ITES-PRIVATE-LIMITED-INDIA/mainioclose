@@ -27,6 +27,7 @@ import {
   getAllEstimateByUserId,
   getTotalCountOfEstimate,
 } from "../../toolkit/slices/leadSlice";
+import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 
 const paymentTenureOptions = [
   { label: "NET 0", value: "NET 0", days: 0 },
@@ -70,8 +71,9 @@ const paymentRegisterSchema = z
     paymentDate: z.string().min(1, "Payment date is required"),
     paymentMode: z.string().min(1, "Payment mode is required"),
     transactionReference: z.string().optional(),
+    paymentProof: z.string().optional(),
     remarks: z.string().optional(),
-    bankName: z.string().optional(),
+    bankLedgerId: z.string().optional(),
 
     paymentTypeId: numberLike("Payment type").refine(
       (v) => v > 0,
@@ -165,16 +167,16 @@ const paymentRegisterSchema = z
       }
     }
 
-    if (
-      bankRequiredPaymentModes.includes(data.paymentMode) &&
-      !data.bankName?.trim()
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["bankName"],
-        message: "Bank name is required",
-      });
-    }
+    // if (
+    //   bankRequiredPaymentModes.includes(data.paymentMode) &&
+    //   !data.bankName?.trim()
+    // ) {
+    //   ctx.addIssue({
+    //     code: z.ZodIssueCode.custom,
+    //     path: ["bankName"],
+    //     message: "Bank name is required",
+    //   });
+    // }
   });
 
 const EstimatePaymentRegister = ({
@@ -191,6 +193,9 @@ const EstimatePaymentRegister = ({
   const { userId } = useParams();
   const dispatch = useDispatch();
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+  const paymentLegerList = useSelector(
+    (state) => state.account.paymentLegerList,
+  );
 
   useEffect(() => {
     dispatch(getAllPaymentType());
@@ -209,8 +214,9 @@ const EstimatePaymentRegister = ({
       amount: "",
       paymentDate: "",
       paymentMode: "",
-      bankName: "",
       transactionReference: "",
+      paymentProof: "",
+      bankLedgerId: "",
       remarks: "",
       paymentTypeId: "",
       paymentTerms: "",
@@ -253,6 +259,10 @@ const EstimatePaymentRegister = ({
 
   const shouldShowPaymentTenure =
     selectedPaymentTypeName === "Purchase Order Payment";
+
+  useEffect(() => {
+    dispatch(getActivePaymentLedgerForPaymentRegister());
+  }, []);
 
   useEffect(() => {
     if (!shouldShowBankName) {
@@ -351,8 +361,6 @@ const EstimatePaymentRegister = ({
         amount: Number(values.amount),
         paymentTypeId: Number(values.paymentTypeId),
         paymentDate: values.paymentDate,
-        bankName: shouldShowBankName ? values.bankName : null,
-
         paymentTerms: shouldShowPaymentTenure ? values.paymentTerms : null,
         paymentTermsDays: shouldShowPaymentTenure
           ? Number(selectedTenure?.days ?? values.paymentTermsDays ?? 0)
@@ -384,7 +392,8 @@ const EstimatePaymentRegister = ({
 
       if (res?.meta?.requestStatus === "fulfilled" || res?.ok === true) {
         addToast({
-          title: "Payment registered successfully!",
+          title: "SUCCESS",
+          description: "Payment registered successfully!",
           color: "success",
         });
         dispatch(
@@ -415,12 +424,17 @@ const EstimatePaymentRegister = ({
         onClose?.();
       } else {
         addToast({
-          title: res?.payload?.message || "Failed to register payment",
+          title: "ERROR",
+          description: res?.payload?.message || "Failed to register payment",
           color: "danger",
         });
       }
     } catch (e) {
-      addToast({ title: "Something went wrong!", color: "danger" });
+      addToast({
+        title: "ERROR",
+        description: "Something went wrong !",
+        color: "danger",
+      });
     }
   };
 
@@ -536,33 +550,25 @@ const EstimatePaymentRegister = ({
                     )}
                   />
 
-                  {shouldShowBankName && (
-                    <Controller
-                      name="bankName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Select
-                          label="Bank Name"
-                          placeholder="Select bank"
-                          isRequired
-                          selectedKeys={
-                            field.value ? new Set([field.value]) : new Set([])
-                          }
-                          onSelectionChange={(keys) => {
-                            field.onChange(Array.from(keys)?.[0] || "");
-                          }}
-                          isInvalid={!!error}
-                          errorMessage={error?.message}
-                        >
-                          {bankOptions.map((bank) => (
-                            <SelectItem key={bank.value}>
-                              {bank.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-                  )}
+                  <Controller
+                    name="bankLedgerId"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        isRequired
+                        label="Select Ledger"
+                        // errorMessage={error?.message}
+                        // isInvalid={!!error}
+                        data={paymentLegerList || []}
+                        labelKey="ledgerName"
+                        valueKey="id"
+                        value={field.value ?? ""}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                      />
+                    )}
+                  />
 
                   <Controller
                     name="paymentTypeId"
@@ -625,9 +631,27 @@ const EstimatePaymentRegister = ({
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <SingleFileUploader
-                        isRequired={true}
+                        // isRequired={true}
                         // errorMessage={"please attach the reference document"}
                         label="Payment document"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        // errorMessage={error?.message}
+                        // isInvalid={!!error}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="paymentProof"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <SingleFileUploader
+                        // isRequired={true}
+                        // errorMessage={"please attach the reference document"}
+                        label="Payment proof"
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);

@@ -544,10 +544,10 @@ export const getInvoicesByUnbilledId = createAsyncThunk(
 
 export const confirmEInvoice = createAsyncThunk(
   "confirmEInvoice",
-  async ({ invoiceId,data }) => {
+  async ({ invoiceId, data }) => {
     const response = await api.post(
-      `/accountService/api/v1/invoices/${invoiceId}/confirm-e-invoice`, 
-      data
+      `/accountService/api/v1/invoices/${invoiceId}/confirm-e-invoice`,
+      data,
     );
     return response.data;
   },
@@ -556,48 +556,57 @@ export const getAllVendorDetails = createAsyncThunk(
   "getAllVendorDetails",
   async () => {
     const response = await api.get(
-      `/operationService/api/vendor-finalizations/accounts`);
+      `/operationService/api/vendor-finalizations/accounts`,
+    );
     return response.data;
   },
 );
-  export const rejectVendorSubmission = createAsyncThunk(
-    "rejectVendorSubmission",
-    async ({ submissionId, data }, { rejectWithValue }) => {
-      try {
-        const response = await api.put(
-          `/operationService/api/vendor-finalizations/accounts/${submissionId}/reject`,
-          data,
-        );
-        return response.data;
-      } catch (error) {
-        return rejectWithValue(
-          error?.response?.data?.message ||
-            error?.response?.data?.error ||
-            error?.message ||
-            "Failed to Reject Vendor Submission",
-        );
-      }
-    },
-  );
-  export const approveVendorSubmission = createAsyncThunk(
-    "approveVendorSubmission",
-    async ({ submissionId, data }, { rejectWithValue }) => {
-      try {
-        const response = await api.put(
-          `/operationService/api/vendor-finalizations/accounts/${submissionId}/approve`,
-          data,
-        );
-        return response.data;
-      } catch (error) {
-        return rejectWithValue(
-          error?.response?.data?.message ||
-            error?.response?.data?.error ||
-            error?.message ||
-            "Failed to Approve Vendor Submission",
-        );
-      }
-    },
-  );
+export const rejectVendorSubmission = createAsyncThunk(
+  "rejectVendorSubmission",
+  async ({ submissionId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/vendor-finalizations/accounts/${submissionId}/reject`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to Reject Vendor Submission",
+      );
+    }
+  },
+);
+export const approveVendorSubmission = createAsyncThunk(
+  "approveVendorSubmission",
+  async ({ submissionId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/vendor-finalizations/accounts/${submissionId}/approve`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to Approve Vendor Submission",
+      );
+    }
+  },
+);
+
+export const getActivePaymentLedgerForPaymentRegister = createAsyncThunk(
+  "getActivePaymentLedgerForPaymentRegister",
+  async () => {
+    const response = await api.get(`/accountService/api/v1/ledgers/active`);
+    return response.data;
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -623,6 +632,7 @@ const AccountSlice = createSlice({
     procurementPaymentRequestList: [],
     invoicesByUnbilled: [],
     vendorsDetails: [],
+    paymentLegerList: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -875,6 +885,7 @@ const AccountSlice = createSlice({
       state.loading = "rejected";
       state.invoicesByUnbilled = [];
     });
+
     builder.addCase(getAllVendorDetails.pending, (state) => {
       state.loading = "pending";
     });
@@ -885,6 +896,26 @@ const AccountSlice = createSlice({
     builder.addCase(getAllVendorDetails.rejected, (state) => {
       state.loading = "rejected";
     });
+
+    builder.addCase(
+      getActivePaymentLedgerForPaymentRegister.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getActivePaymentLedgerForPaymentRegister.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.paymentLegerList = action.payload || [];
+      },
+    );
+    builder.addCase(
+      getActivePaymentLedgerForPaymentRegister.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
   },
 });
 

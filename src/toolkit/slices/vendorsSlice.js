@@ -635,6 +635,16 @@ export const getVendorsBasedOnService = createAsyncThunk(
   },
 );
 
+export const getVendorsDashboardSummaryByProductId = createAsyncThunk(
+  "getVendorsDashboardSummaryByProductId",
+  async (productId) => {
+    const response = await api.get(
+      `/operationService/api/product-vendor-dashboard/${productId}/summary`,
+    );
+    return response.data;
+  },
+);
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -659,6 +669,7 @@ const VendorsSlice = createSlice({
     rfqVendorsLoading: false,
     rfqVendorsError: null,
     vendorListBasedOnService: [],
+    vendorSummary: {},
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -894,6 +905,26 @@ const VendorsSlice = createSlice({
       state.loading = "rejected";
       state.vendorListBasedOnService = [];
     });
+
+    builder.addCase(getVendorsDashboardSummaryByProductId.pending, (state) => {
+      state.loading = "pending";
+    });
+
+    builder.addCase(
+      getVendorsDashboardSummaryByProductId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.vendorSummary = action.payload;
+      },
+    );
+
+    builder.addCase(
+      getVendorsDashboardSummaryByProductId.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.vendorSummary = {};
+      },
+    );
   },
 });
 
