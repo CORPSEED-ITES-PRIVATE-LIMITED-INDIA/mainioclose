@@ -374,7 +374,7 @@ const getTotalElements = (response, fallbackLength = 0) => {
   );
 };
 
-const LEGAL_CHAT_CONTEXT_TYPE = "VENDOR_QUOTATION_LEGAL_REQUEST";
+const LEGAL_CHAT_CONTEXT_TYPE = "LEGAL_REQUEST";
 
 const normalizeChatMessages = (response) => {
   const content = Array.isArray(response?.content)
@@ -731,7 +731,7 @@ const Quote = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(getUsersByDepartment({ id: 12 }));
+    dispatch(getUsersByDepartment({ id: 17 }));
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
