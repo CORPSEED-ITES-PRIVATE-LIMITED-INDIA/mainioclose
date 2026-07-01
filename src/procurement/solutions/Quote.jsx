@@ -374,8 +374,7 @@ const getTotalElements = (response, fallbackLength = 0) => {
   );
 };
 
-const LEGAL_CHAT_CONTEXT_TYPE = "LEGAL_REQUEST";
-const LEGAL_CHAT_REFERENCE_ID = 1; // for now, as required
+const LEGAL_CHAT_CONTEXT_TYPE = "VENDOR_QUOTATION_LEGAL_REQUEST";
 
 const normalizeChatMessages = (response) => {
   const content = Array.isArray(response?.content)
@@ -1154,6 +1153,9 @@ const Quote = () => {
   const handleStartLegalChat = async () => {
     const resolvedUserId = getResolvedUserId(currentUser, userId);
     const receiverId = selectedChatPersonId || selectedChatPerson?.id;
+    const vendorQuotationLegalRequestId =
+      selectedQuoteItem?.vendorQuotationLegalRequestId ||
+      getLegalRequestForQuotation(selectedQuoteItem)?.id;
 
     if (!resolvedUserId) {
       addToast({
@@ -1171,13 +1173,23 @@ const Quote = () => {
       return;
     }
 
+    if (!vendorQuotationLegalRequestId) {
+      addToast({
+        title: "Legal request is missing",
+        description:
+          "Please create service agreement legal request before starting chat.",
+        color: "warning",
+      });
+      return;
+    }
+
     try {
       setChatLoading(true);
 
       const resp = await dispatch(
         startOperationChat({
           contextType: LEGAL_CHAT_CONTEXT_TYPE,
-          referenceId: selectedQuoteItem?.vendorQuotationId,
+          referenceId: Number(vendorQuotationLegalRequestId),
           createdBy: Number(resolvedUserId),
           receiverId: Number(receiverId),
         }),
@@ -4434,7 +4446,12 @@ const Quote = () => {
 
                   <div className="mt-4 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
                     <p>Context Type: {LEGAL_CHAT_CONTEXT_TYPE}</p>
-                    <p>Reference ID: {LEGAL_CHAT_REFERENCE_ID}</p>
+                    <p>
+                      Reference ID:{" "}
+                      {selectedQuoteItem?.vendorQuotationLegalRequestId ||
+                        getLegalRequestForQuotation(selectedQuoteItem)?.id ||
+                        "-"}
+                    </p>
                     <p>Receiver ID: {selectedChatPersonId || "-"}</p>
                   </div>
 
