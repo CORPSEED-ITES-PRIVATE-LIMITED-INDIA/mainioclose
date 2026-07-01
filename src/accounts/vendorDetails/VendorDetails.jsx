@@ -767,8 +767,8 @@ const VendorDetails = () => {
           topContent={topContent}
           topContentPlacement="outside"
           classNames={{
-            wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
-            table: "w-full",
+            wrapper: "2xl:max-h-[62vh] md:max-h-[60vh]",
+            // table: "w-full",
           }}
         >
           <TableHeader columns={headerColumns}>

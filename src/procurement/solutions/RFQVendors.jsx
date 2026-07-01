@@ -447,7 +447,7 @@ const RFQVendors = () => {
           topContent={topContent}
           topContentPlacement="outside"
           classNames={{
-            wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+            wrapper: "2xl:max-h-[62vh] md:max-h-[60vh] w-full",
             table: "w-full",
           }}
         >

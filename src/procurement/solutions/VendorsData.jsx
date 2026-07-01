@@ -670,10 +670,7 @@ const VendorsData = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] w-full rounded-xl border border-default-200",
-          table: "min-w-full",
-          th: "bg-default-100 text-xs font-semibold uppercase text-default-600",
-          td: "py-3",
+          wrapper: "max-h-[62vh] w-full rounded-xl border border-default-200",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"
