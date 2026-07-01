@@ -4352,7 +4352,7 @@ const Quote = () => {
                 <p className="text-xs text-gray-500">
                   {chatConversationId
                     ? `Conversation ID: ${chatConversationId}`
-                    : `Reference: ${LEGAL_CHAT_CONTEXT_TYPE}-${LEGAL_CHAT_REFERENCE_ID}`}
+                    : `Reference: ${LEGAL_CHAT_CONTEXT_TYPE}-${selectedQuoteItem?.vendorQuotationLegalRequestId || getLegalRequestForQuotation(selectedQuoteItem)?.id || "-"}`}
                 </p>
 
                 {chatConversationId && (
