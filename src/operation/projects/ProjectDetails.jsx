@@ -5232,7 +5232,14 @@ const ProjectDetails = () => {
                 <NewSelect
                   isRequired
                   errorMessage={"please select vendor"}
-                  data={vendorList}
+                  data={
+                    vendorList?.length > 0
+                      ? vendorList?.map((vendor) => ({
+                          label: `${vendor.vendorName} - ${vendor?.priceLevel || ""}`,
+                          value: vendor.vendorId,
+                        }))
+                      : []
+                  }
                   label={"Select vendor"}
                   name={"vendorId"}
                   labelKey={"vendorName"}
