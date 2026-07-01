@@ -168,12 +168,7 @@ const normalizeChatAttachmentPayload = (file) => {
 };
 
 const getChatReferenceId = (request) => {
-  return (
-    request?.vendorQuotationId ||
-    request?.legalRequestId ||
-    request?.vendorLegalRequestId ||
-    ""
-  );
+  return request?.id || "";
 };
 
 const getChatReceiverId = (request, currentUserId) => {
