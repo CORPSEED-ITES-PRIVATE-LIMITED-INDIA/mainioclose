@@ -1110,7 +1110,7 @@ const RequestForQuotation = () => {
         }
         case "actions": {
           const rfqStatus = String(rowData?.status || "").toUpperCase();
-          const canOpenVendors = rfqStatus === "SENT";
+          const canOpenVendors = rfqStatus != "DRAFT";
 
           return (
             <div className="flex justify-center">
