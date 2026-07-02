@@ -813,4 +813,16 @@ export const legalNavItems = [
     url: "legal/vendors",
     key: "vendors",
   },
+  {
+    title: "Company Documents",
+    icon: "FileText",
+    url: "legal/companyDocuments",
+    key: "companyDocuments",
+  },
+  {
+    title: "Payment Verification",
+    icon: "BadgeCheck",
+    url: "legal/paymentVerification",
+    key: "paymentVerification",
+  },
 ];
