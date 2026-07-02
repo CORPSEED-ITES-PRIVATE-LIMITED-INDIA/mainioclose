@@ -873,6 +873,33 @@ export const deleteFileSystem = createAsyncThunk(
     }
   }
 );
+export const getAllCompanyLegalVerifications = createAsyncThunk(
+  "getAllCompanyLegalVerifications",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/company-legal-verification/pending?userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+export const reviewCompanyLegalVerifications = createAsyncThunk(
+  "reviewCompanyLegalVerifications",
+  async ({requestId,reviewedBy,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/company-legal-verification/${requestId}/review?reviewedBy=${reviewedBy}`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 
 export const LeadSlice = createSlice({
   name: "leads",
@@ -920,6 +947,7 @@ export const LeadSlice = createSlice({
     newEstimateByLeadId: {},
     childLeadList: [],
     proposalListByLeadId: [],
+    companyLegalVerificationList: [],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1432,6 +1460,17 @@ export const LeadSlice = createSlice({
     builder.addCase(getAllProposalByLeadId.rejected, (state) => {
       state.loading = "rejected";
       state.proposalListByLeadId = [];
+    });
+    builder.addCase(getAllCompanyLegalVerifications.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllCompanyLegalVerifications.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.companyLegalVerificationList = action?.payload;
+    });
+    builder.addCase(getAllCompanyLegalVerifications.rejected, (state) => {
+      state.loading = "rejected";
+      state.companyLegalVerificationList = [];
     });
   },
 });

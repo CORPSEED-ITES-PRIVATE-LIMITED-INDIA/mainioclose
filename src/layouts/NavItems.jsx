@@ -229,7 +229,7 @@ export const navItems = [
     key: "legal",
     children: [
       {
-        title: "Operation requests",
+        title: "Operation Requests",
         icon: "",
         url: "legal/operationsRequests",
         key: "operationsRequests",
@@ -238,6 +238,18 @@ export const navItems = [
         title: "Vendor",
         icon: "",
         url: "legal/vendors",
+        key: "vendors",
+      },
+      {
+        title: "Company Documents",
+        icon: "",
+        url: "legal/companyDocuments",
+        key: "vendors",
+      },
+      {
+        title: "Payment Verification",
+        icon: "",
+        url: "legal/paymentVerification",
         key: "vendors",
       },
     ],

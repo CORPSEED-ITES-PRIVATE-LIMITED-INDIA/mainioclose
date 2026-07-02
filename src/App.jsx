@@ -32,6 +32,8 @@ import { restoreSession } from "./toolkit/slices/authSlice";
 import UserMailConfig from "./users/UserMailConfig";
 import OperationsLegal from "./legal/OperationsLegal";
 import ProcurementVendors from "./legal/ProcurementVendors";
+import CompanyDocuments from "./legal/CompanyDocuments";
+import PaymentVerification from "./legal/PaymentVerification";
 
 function App() {
   const dispatch = useDispatch();
@@ -94,6 +96,14 @@ function App() {
               element={<OperationsLegal />}
             />
             <Route path="legal/vendors" element={<ProcurementVendors />} />
+            <Route
+              path="legal/companyDocuments"
+              element={<CompanyDocuments />}
+            />
+            <Route
+              path="legal/paymentVerification"
+              element={<PaymentVerification />}
+            />
           </Route>
         </Route>
 

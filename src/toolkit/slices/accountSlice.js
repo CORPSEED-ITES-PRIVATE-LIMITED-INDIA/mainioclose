@@ -607,6 +607,33 @@ export const getActivePaymentLedgerForPaymentRegister = createAsyncThunk(
     return response.data;
   },
 );
+export const getAllPendingPayment = createAsyncThunk(
+  "getAllPendingPayment",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/payment-legal-verification/pending?userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+export const reviewPendingPayment = createAsyncThunk(
+  "reviewPendingPayment",
+  async ({ reviewedBy, requestId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/payment-legal-verification/${requestId}/review?reviewedBy=${reviewedBy}`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -633,6 +660,7 @@ const AccountSlice = createSlice({
     invoicesByUnbilled: [],
     vendorsDetails: [],
     paymentLegerList: [],
+    paymentLegalVerification: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -912,6 +940,25 @@ const AccountSlice = createSlice({
     );
     builder.addCase(
       getActivePaymentLedgerForPaymentRegister.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      getAllPendingPayment.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getAllPendingPayment.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.paymentLegalVerification = action.payload || [];
+      },
+    );
+    builder.addCase(
+      getAllPendingPayment.rejected,
       (state) => {
         state.loading = "rejected";
       },

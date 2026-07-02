@@ -69,6 +69,7 @@ const getDefaultValues = () => ({
   paymentTerm: "",
   aggrementPresent: false,
   agreementFileUrl: "",
+  aggrementExpiryDate: "",
   ndaPresent: false,
   ndaFileUrl: "",
   primaryTitle: "",
@@ -100,6 +101,7 @@ const toOptions = (list = [], labelKey = "name", valueKey = "id") =>
   }));
 
 const requiredRule = (message = REQUIRED) => [{ required: true, message }];
+
 const requiredArrayRule = (message = REQUIRED) => [
   {
     validator: (_, value) =>
@@ -161,6 +163,7 @@ const FullCompanyDetailsForm = ({
                 </div>
               </div>
             </ModalHeader>
+
             <ModalBody>
               <div className="px-5 py-5">
                 <CompanyAndUnitsForm
@@ -195,18 +198,23 @@ export function CompanyAndUnitsForm({
   const gstTypeList = useSelector((state) => state.company.gstTypeList);
   const countryList = useSelector((state) => state.common.countriesList);
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
+
   const subIndustryListById = useSelector(
     (state) => state.common.subIndustryListByIndustryId,
   );
+
   const subSubIndustryListById = useSelector(
     (state) => state.common.subSubIndustryListBySubIndustryId,
   );
+
   const industryDataListById = useSelector(
     (state) => state.common.industryDataListBySubSubIndustryId,
   );
+
   const company = useSelector(
     (state) => state.company.companyDetailByCompanyIdAndUnitId,
   );
+
   const statesByCountry = useSelector((state) => state.common.statesByCountry);
   const citiesByState = useSelector((state) => state.common.citiesByState);
 
@@ -230,6 +238,7 @@ export function CompanyAndUnitsForm({
     const selectedGstType = gstTypeList?.find(
       (gst) => String(gst.id) === String(gstTypeId),
     );
+
     return selectedGstType?.name?.trim()?.toLowerCase() || "";
   };
 
@@ -258,7 +267,10 @@ export function CompanyAndUnitsForm({
 
   const handleCompanyStateChange = (stateName) => {
     form.setFieldsValue({ state: stateName, city: "" });
-    if (stateName) dispatch(getAllCitiesByStateName(stateName));
+
+    if (stateName) {
+      dispatch(getAllCitiesByStateName(stateName));
+    }
   };
 
   const handleUnitGstTypeChange = (index, value) => {
@@ -277,12 +289,14 @@ export function CompanyAndUnitsForm({
 
     if (isInternational) {
       const currentCountry = form.getFieldValue(getUnitPath(index, "country"));
+
       if (currentCountry?.trim()?.toLowerCase() === "india") {
         setUnitValue(index, "country", "");
         setUnitValue(index, "state", "");
         setUnitValue(index, "city", "");
         clearUnitErrors(index, ["country", "state", "city"]);
       }
+
       return;
     }
 
@@ -313,6 +327,7 @@ export function CompanyAndUnitsForm({
     const currentYear = new Date().getFullYear();
     const establishYear = currentYear - age;
     const date = new Date();
+
     date.setFullYear(establishYear);
 
     form.setFieldValue("establishDate", date.toISOString().split("T")[0]);
@@ -328,7 +343,9 @@ export function CompanyAndUnitsForm({
     let age = todayDate.getFullYear() - estDate.getFullYear();
     const m = todayDate.getMonth() - estDate.getMonth();
 
-    if (m < 0 || (m === 0 && todayDate.getDate() < estDate.getDate())) age--;
+    if (m < 0 || (m === 0 && todayDate.getDate() < estDate.getDate())) {
+      age--;
+    }
 
     form.setFieldValue("companyAge", age.toString());
   }, [establishDate, form]);
@@ -376,12 +393,17 @@ export function CompanyAndUnitsForm({
     );
     states.forEach((stateName) => dispatch(getAllCitiesByStateName(stateName)));
 
-    if (company?.industryId)
+    if (company?.industryId) {
       dispatch(getSubIndustryByIndustryId(company.industryId));
-    if (company?.subIndustryId)
+    }
+
+    if (company?.subIndustryId) {
       dispatch(getSubSubIndustryBySubIndustryId(company.subIndustryId));
-    if (company?.subSubIndustryId)
+    }
+
+    if (company?.subSubIndustryId) {
       dispatch(getIndustryDataBySubSubIndustryId(company.subSubIndustryId));
+    }
 
     const mappedUnits = (
       company?.units?.length ? company.units : [getEmptyUnit()]
@@ -431,8 +453,16 @@ export function CompanyAndUnitsForm({
       establishDate: company?.establishDate
         ? String(company.establishDate).slice(0, 10)
         : "",
+
       aggrementPresent: !!company?.aggrementPresent,
+      agreementFileUrl: company?.aggrement || "",
+      aggrementExpiryDate: company?.aggrementExpiryDate
+        ? String(company.aggrementExpiryDate).slice(0, 10)
+        : "",
+
       ndaPresent: !!company?.ndaPresent,
+      ndaFileUrl: company?.nda || "",
+
       units: mappedUnits,
     });
   }, [company, dispatch, form]);
@@ -440,10 +470,24 @@ export function CompanyAndUnitsForm({
   const onSubmit = (values) => {
     setStatusLoading("pending");
 
+    const { agreementFileUrl, ndaFileUrl, ...dtoValues } = values;
+
     const payload = {
-      ...values,
+      ...dtoValues,
+
+      aggrement: dtoValues.aggrementPresent
+        ? agreementFileUrl || company?.aggrement || ""
+        : "",
+
+      aggrementExpiryDate: dtoValues.aggrementPresent
+        ? dtoValues.aggrementExpiryDate || company?.aggrementExpiryDate || null
+        : null,
+
+      nda: dtoValues.ndaPresent ? ndaFileUrl || company?.nda || "" : "",
+
       leadCompanyId: company?.id,
-      units: (values.units || []).map((unit) => ({
+
+      units: (dtoValues.units || []).map((unit) => ({
         ...unit,
         id: unit?.id || 0,
         gstRegistrationTypeId: unit?.gstTypeId ? String(unit.gstTypeId) : "",
@@ -490,6 +534,7 @@ export function CompanyAndUnitsForm({
           );
         } else {
           setStatusLoading("rejected");
+
           addToast({
             title: "FAILED",
             description:
@@ -500,6 +545,7 @@ export function CompanyAndUnitsForm({
       })
       .catch(() => {
         setStatusLoading("rejected");
+
         addToast({
           title: "FAILED",
           description: "Something went wrong !.",
@@ -522,6 +568,7 @@ export function CompanyAndUnitsForm({
         <h2 className="m-0 text-base font-bold text-slate-900">{title}</h2>
         <p className="mt-1 mb-0 text-xs text-slate-500">{subtitle}</p>
       </div>
+
       <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600">
         {step}
       </span>
@@ -538,7 +585,6 @@ export function CompanyAndUnitsForm({
         size="large"
         initialValues={defaultValues}
         onFinish={onSubmit}
-        // requiredMark={false}
         className="mx-auto flex w-full max-w-[1600px] flex-col gap-5"
       >
         <Card
@@ -639,12 +685,14 @@ export function CompanyAndUnitsForm({
                 {
                   validator: (_, value) => {
                     if (!value) return Promise.resolve();
+
                     if (
                       String(value).length === 10 &&
                       !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)
                     ) {
                       return Promise.reject(new Error("Invalid PAN Number"));
                     }
+
                     return Promise.resolve();
                   },
                 },
@@ -671,13 +719,17 @@ export function CompanyAndUnitsForm({
                     subSubIndustryId: "",
                     industryDataId: [],
                   });
+
                   form.setFields([
                     { name: "industryId", errors: [] },
                     { name: "subIndustryId", errors: [] },
                     { name: "subSubIndustryId", errors: [] },
                     { name: "industryDataId", errors: [] },
                   ]);
-                  if (value) dispatch(getSubIndustryByIndustryId(value));
+
+                  if (value) {
+                    dispatch(getSubIndustryByIndustryId(value));
+                  }
                 }}
               />
             </Form.Item>
@@ -697,12 +749,16 @@ export function CompanyAndUnitsForm({
                     subSubIndustryId: "",
                     industryDataId: [],
                   });
+
                   form.setFields([
                     { name: "subIndustryId", errors: [] },
                     { name: "subSubIndustryId", errors: [] },
                     { name: "industryDataId", errors: [] },
                   ]);
-                  if (value) dispatch(getSubSubIndustryBySubIndustryId(value));
+
+                  if (value) {
+                    dispatch(getSubSubIndustryBySubIndustryId(value));
+                  }
                 }}
               />
             </Form.Item>
@@ -721,11 +777,15 @@ export function CompanyAndUnitsForm({
                     subSubIndustryId: value || "",
                     industryDataId: [],
                   });
+
                   form.setFields([
                     { name: "subSubIndustryId", errors: [] },
                     { name: "industryDataId", errors: [] },
                   ]);
-                  if (value) dispatch(getIndustryDataBySubSubIndustryId(value));
+
+                  if (value) {
+                    dispatch(getIndustryDataBySubSubIndustryId(value));
+                  }
                 }}
               />
             </Form.Item>
@@ -775,6 +835,30 @@ export function CompanyAndUnitsForm({
                 className={formItemClass}
               >
                 <SingleFileUploader />
+              </Form.Item>
+            )}
+
+            {aggrementPresent && (
+              <Form.Item
+                name="aggrementExpiryDate"
+                label="Agreement expiry date"
+                rules={requiredRule("please select agreement expiry date")}
+                className={formItemClass}
+                getValueProps={(value) => ({
+                  value:
+                    value && /^\d{4}-\d{2}-\d{2}$/.test(value)
+                      ? dayjs(value)
+                      : null,
+                })}
+                getValueFromEvent={(date) =>
+                  date ? date.format("YYYY-MM-DD") : ""
+                }
+              >
+                <DatePicker
+                  getPopupContainer={getAntdPopupContainer}
+                  format="YYYY-MM-DD"
+                  className="h-10 w-full rounded-lg"
+                />
               </Form.Item>
             )}
 
@@ -840,7 +924,10 @@ export function CompanyAndUnitsForm({
                     state: "",
                     city: "",
                   });
-                  if (value) dispatch(getAllStatesByCountryName(value));
+
+                  if (value) {
+                    dispatch(getAllStatesByCountryName(value));
+                  }
                 }}
               />
             </Form.Item>
@@ -899,16 +986,21 @@ export function CompanyAndUnitsForm({
                   const unitCountry = unit?.country;
                   const unitState = unit?.state;
                   const selectedGstTypeId = unit?.gstTypeId;
+
                   const isInternationalSelected =
                     isInternationalGstType(selectedGstTypeId);
+
                   const isNonInternationalGstSelected =
                     hasSelectedGstType(selectedGstTypeId) &&
                     !isInternationalSelected;
+
                   const unitCountryList = isInternationalSelected
                     ? removeIndiaFromCountryList(countryList || [])
                     : countryList || [];
+
                   const isRegisteredGstType =
                     getGstTypeNameById(selectedGstTypeId) === "registered";
+
                   const unitStatesList = statesByCountry?.[unitCountry] || [];
                   const unitCitiesList = citiesByState?.[unitState] || [];
 
@@ -920,21 +1012,26 @@ export function CompanyAndUnitsForm({
                       <Form.Item name={[field.name, "id"]} hidden>
                         <Input />
                       </Form.Item>
+
                       <Form.Item name={[field.name, "companyTypeId"]} hidden>
                         <Input />
                       </Form.Item>
+
                       <Form.Item
                         name={[field.name, "gstBusinessTypeId"]}
                         hidden
                       >
                         <Input />
                       </Form.Item>
+
                       <Form.Item name={[field.name, "gstTypePriceId"]} hidden>
                         <Input />
                       </Form.Item>
+
                       <Form.Item name={[field.name, "addressLine2"]} hidden>
                         <Input />
                       </Form.Item>
+
                       <Form.Item
                         name={[field.name, "consultantPresent"]}
                         hidden
@@ -947,6 +1044,7 @@ export function CompanyAndUnitsForm({
                           <p className="m-0 text-sm font-bold text-slate-900">
                             Unit #{index + 1}
                           </p>
+
                           <p className="mt-0.5 mb-0 text-[11px] font-medium text-slate-500">
                             Registration and address details
                           </p>
@@ -956,6 +1054,7 @@ export function CompanyAndUnitsForm({
                       <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="mb-4 flex items-center gap-2">
                           <span className="h-2 w-2 rounded-full bg-blue-600" />
+
                           <p className="m-0 text-xs font-bold uppercase tracking-wide text-slate-600">
                             Unit Registration
                           </p>
@@ -998,6 +1097,7 @@ export function CompanyAndUnitsForm({
                                 {
                                   validator: (_, value) => {
                                     if (!value) return Promise.resolve();
+
                                     if (
                                       !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(
                                         value,
@@ -1007,6 +1107,7 @@ export function CompanyAndUnitsForm({
                                         new Error("Invalid GST Number"),
                                       );
                                     }
+
                                     return Promise.resolve();
                                   },
                                 },
@@ -1048,6 +1149,7 @@ export function CompanyAndUnitsForm({
                       <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="mb-4 flex items-center gap-2">
                           <span className="h-2 w-2 rounded-full bg-blue-600" />
+
                           <p className="m-0 text-xs font-bold uppercase tracking-wide text-slate-600">
                             Unit Address
                           </p>
@@ -1081,8 +1183,10 @@ export function CompanyAndUnitsForm({
                                 setUnitValue(index, "country", value || "");
                                 setUnitValue(index, "state", "");
                                 setUnitValue(index, "city", "");
-                                if (value)
+
+                                if (value) {
                                   dispatch(getAllStatesByCountryName(value));
+                                }
                               }}
                             />
                           </Form.Item>
@@ -1103,8 +1207,10 @@ export function CompanyAndUnitsForm({
                               onChange={(value) => {
                                 setUnitValue(index, "state", value || "");
                                 setUnitValue(index, "city", "");
-                                if (value)
+
+                                if (value) {
                                   dispatch(getAllCitiesByStateName(value));
+                                }
                               }}
                             />
                           </Form.Item>
