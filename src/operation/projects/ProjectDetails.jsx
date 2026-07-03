@@ -711,6 +711,51 @@ const ProjectDetails = () => {
     };
   };
 
+  const getRatingBadgeClass = (rating) => {
+    const value = String(rating || "")
+      .trim()
+      .toLowerCase();
+
+    if (value === "gold") {
+      return "border border-yellow-200 bg-yellow-50 text-yellow-700";
+    }
+
+    if (value === "silver") {
+      return "border border-slate-200 bg-slate-50 text-slate-600";
+    }
+
+    if (value === "bronze") {
+      return "border border-orange-200 bg-orange-50 text-orange-700";
+    }
+
+    return "border border-slate-200 bg-slate-50 text-slate-500";
+  };
+
+  const getPriorityBadgeClass = (priority) => {
+    const value = String(priority || "")
+      .trim()
+      .toLowerCase();
+
+    if (value === "normal") {
+      return "border border-green-200 bg-green-50 text-green-700";
+    }
+
+    if (value === "high priority" || value === "high") {
+      return "border border-yellow-200 bg-yellow-50 text-yellow-700";
+    }
+
+    if (value === "critical") {
+      return "border border-red-200 bg-red-50 text-red-700";
+    }
+
+    return "border border-slate-200 bg-slate-50 text-slate-500";
+  };
+
+  const formatBadgeText = (value) => {
+    if (!value) return "";
+    return String(value).trim();
+  };
+
   const handleSelectedReworkAttachmentChange = (
     requiredDocumentId,
     uploadedFiles,
@@ -2535,17 +2580,39 @@ const ProjectDetails = () => {
                 <div className="flex items-center gap-2 text-default-600">
                   <Building className="h-4 w-4 text-default-400" />
                   <span className="text-default-400">Company:</span>
+
                   <span className="font-medium text-foreground">
                     {detailedData?.projectDetails?.companyName || "-"}
                   </span>
+
+                  {detailedData?.projectDetails?.rating && (
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase leading-4 ${getRatingBadgeClass(
+                        detailedData?.projectDetails?.rating,
+                      )}`}
+                    >
+                      {formatBadgeText(detailedData?.projectDetails?.rating)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-default-600">
                   <Building className="h-4 w-4 text-default-400" />
                   <span className="text-default-400">Company unit:</span>
+
                   <span className="font-medium text-foreground">
                     {detailedData?.projectDetails?.companyUnitName || "-"}
                   </span>
+
+                  {detailedData?.projectDetails?.priority && (
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase leading-4 ${getPriorityBadgeClass(
+                        detailedData?.projectDetails?.priority,
+                      )}`}
+                    >
+                      {formatBadgeText(detailedData?.projectDetails?.priority)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-default-600">

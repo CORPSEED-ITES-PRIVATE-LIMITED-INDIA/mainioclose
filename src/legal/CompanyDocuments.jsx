@@ -97,15 +97,15 @@ const getRatingBadgeClass = (rating) => {
     .trim()
     .toLowerCase();
 
-  if (value === "Gold") {
+  if (value === "gold") {
     return "border border-yellow-200 bg-yellow-50 text-yellow-700";
   }
 
-  if (value === "Silver") {
+  if (value === "silver") {
     return "border border-slate-200 bg-slate-50 text-slate-600";
   }
 
-  if (value === "Bronze") {
+  if (value === "bronze") {
     return "border border-orange-200 bg-orange-50 text-orange-700";
   }
 
