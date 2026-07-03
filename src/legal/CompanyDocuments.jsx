@@ -92,6 +92,26 @@ const getDocTypeColor = (documentType) => {
   return "default";
 };
 
+const getRatingBadgeClass = (rating) => {
+  const value = String(rating || "")
+    .trim()
+    .toLowerCase();
+
+  if (value === "Gold") {
+    return "border border-yellow-200 bg-yellow-50 text-yellow-700";
+  }
+
+  if (value === "Silver") {
+    return "border border-slate-200 bg-slate-50 text-slate-600";
+  }
+
+  if (value === "Bronze") {
+    return "border border-orange-200 bg-orange-50 text-orange-700";
+  }
+
+  return "border border-slate-200 bg-slate-50 text-slate-500";
+};
+
 const DocumentButton = ({ url, label }) => {
   if (!url) {
     return (
@@ -286,10 +306,23 @@ function CompanyDocuments() {
     switch (columnKey) {
       case "company":
         return (
-          <div className="max-w-[230px]">
-            <p className="m-0 truncate text-sm font-semibold text-slate-900">
-              {safeText(item?.companyName)}
-            </p>
+          <div className="max-w-[260px]">
+            <div className="flex items-center gap-2">
+              <p className="m-0 truncate text-sm font-semibold text-slate-900">
+                {safeText(item?.companyName)}
+              </p>
+
+              {item?.rating && (
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase leading-4 ${getRatingBadgeClass(
+                    item?.rating,
+                  )}`}
+                >
+                  {item.rating}
+                </span>
+              )}
+            </div>
+
             <p className="m-0 mt-1 text-xs font-medium text-slate-400">
               ID: {safeText(item?.companyId)}
             </p>
