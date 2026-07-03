@@ -3,6 +3,7 @@ import AdminDashboards from "../dashboards/AdminDashboards";
 import LeadDashboardDetail from "../dashboards/LeadDashboardDetail";
 import AccountsDashboard from "../dashboards/accounts/AccountsDashboard";
 import SalesDashboard from "../dashboards/sales/SalesDashboard";
+import OperationsDashboard from "../dashboards/operations/OperationsDashboard";
 
 const DashboardRouting = () => {
   return (
@@ -26,6 +27,7 @@ const DashboardRouting = () => {
 
       {/* Quality dashboard */}
       <Route path="quality/dashboard" element={<AdminDashboards />} />
+      <Route path="operation/dashboard" element={<OperationsDashboard />} />
     </>
   );
 };

@@ -781,6 +781,12 @@ export const operationNavItems = [
 
 export const operationEmpItems = [
   {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "operation/dashboard",
+    key: "dashboard",
+  },
+  {
     title: "Projects",
     icon: "GitCommitHorizontal",
     url: "operation/projects",

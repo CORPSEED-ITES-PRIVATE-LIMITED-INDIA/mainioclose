@@ -83,7 +83,7 @@ const getDefaultValues = () => ({
   state: "",
   city: "",
   primaryPinCode: "",
-  rating: "",
+  // rating: "",
   companyAge: "",
   establishDate: "",
   revenue: "",
@@ -470,7 +470,7 @@ export function CompanyAndUnitsForm({
   const onSubmit = (values) => {
     setStatusLoading("pending");
 
-    const { agreementFileUrl, ndaFileUrl, ...dtoValues } = values;
+    const { agreementFileUrl, ndaFileUrl, rating, ...dtoValues } = values;
 
     const payload = {
       ...dtoValues,
@@ -661,7 +661,7 @@ export function CompanyAndUnitsForm({
               <Input prefix={<IndianRupee className="h-4 w-4" />} />
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               name="rating"
               label="Rating"
               rules={requiredRule("please select rating")}
@@ -675,7 +675,7 @@ export function CompanyAndUnitsForm({
                   { label: "Bronze", value: "Bronze" },
                 ]}
               />
-            </Form.Item>
+            </Form.Item> */}
 
             <Form.Item
               name="panNo"
