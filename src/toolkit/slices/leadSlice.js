@@ -900,6 +900,35 @@ export const reviewCompanyLegalVerifications = createAsyncThunk(
     }
   },
 );
+export const approveDiscount = createAsyncThunk(
+  "approveDiscount",
+  async ({token,adminUserId}, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/proposals/discount/approve?token=${token}&adminUserId=${adminUserId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const rejectDiscount = createAsyncThunk(
+  "rejectDiscount",
+  async ({token,adminUserId,remarks}, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/proposals/discount/reject?token=${token}&adminUserId=${adminUserId}&remarks=${remarks}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+
 
 export const LeadSlice = createSlice({
   name: "leads",

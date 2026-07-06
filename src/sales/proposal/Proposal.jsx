@@ -57,8 +57,11 @@ const defaultValues = {
   emailSubject: "",
   paymentTerm: "",
   paymentTermDescription: "",
+  discountReason: "",
+  discountReasonAttachment: "",
   emailBody: "<p></p>",
   scopeOfWork: "<p></p>",
+  discountApplied: false,
 };
 
 const PAYMENT_TERM_OPTIONS = [
@@ -442,8 +445,11 @@ const Proposal = () => {
       emailSubject: proposal?.emailSubject || "",
       paymentTerm: proposal?.paymentTerm || "",
       paymentTermDescription: proposal?.paymentTermDescription || "",
+      discountReason: proposal?.discountReason || "",
       emailBody: finalMailBody,
       scopeOfWork: finalScopeOfWork,
+      discountReasonAttachment: proposal?.discountReasonAttachment || "",
+      discountApplied: Boolean(proposal?.discountApplied),
     });
   };
 
@@ -541,6 +547,9 @@ const Proposal = () => {
       paymentTermDescription: "",
       emailBody: apiMailBody,
       scopeOfWork: apiScopeOfWork,
+      discountApplied: false,
+      discountReason: "",
+      discountReasonAttachment: "",
     });
 
     proposalAntForm.setFields([
@@ -845,9 +854,21 @@ const Proposal = () => {
       companyUnitId: Number(company?.units?.[0]?.id),
       contactId: Number(company?.units?.[0]?.unitContacts?.[0]?.id),
       solutionId: Number(solutionDetail?.id),
+
       emailSubject: values?.emailSubject || "",
       paymentTerm: values?.paymentTerm || "",
       paymentTermDescription: values?.paymentTermDescription || "",
+
+      discountApplied: Boolean(
+        antValues?.discountApplied || values?.discountApplied,
+      ),
+
+      discountReason: antValues?.discountReason || values?.discountReason || "",
+      discountReasonAttachment:
+        antValues?.discountReasonAttachment ||
+        values?.discountReasonAttachment ||
+        "",
+
       emailBody: values?.emailBody || "<p></p>",
       scopeOfWork: values?.scopeOfWork || "<p></p>",
 

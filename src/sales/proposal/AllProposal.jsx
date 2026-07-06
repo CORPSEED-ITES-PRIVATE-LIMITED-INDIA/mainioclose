@@ -36,9 +36,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
+  approveDiscount,
   getAllProposalByUserIdForManager,
   getAllPropsalListCount,
   proposalApprovalByManager,
+  rejectDiscount,
 } from "../../toolkit/slices/leadSlice";
 import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +64,22 @@ const columns = [
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
+
+const normalizeStatus = (status = "") =>
+  String(status || "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toUpperCase();
+
+const isDiscountApprovalPendingStatus = (status) =>
+  normalizeStatus(status) === "DISCOUNT_APPROVAL_PENDING";
+
+const getDiscountApprovalToken = (proposal) =>
+  proposal?.discountApprovalToken ||
+  proposal?.discountToken ||
+  proposal?.approvalToken ||
+  proposal?.token ||
+  "";
 
 const ProposalPdfPreview = ({ pdfUrl, pdfFileName }) => {
   return (
@@ -301,8 +319,10 @@ const AllProposal = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const proposalDrawer = useDisclosure();
+
   const count = useSelector((state) => state.leads.proposalCount);
   const data = useSelector((state) => state.leads.proposalList);
+
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -324,12 +344,16 @@ const AllProposal = () => {
     userId,
     comment: "",
   });
-  const [proposalData, setProposalData] = useState("");
-  const [mailBody, setMailBody] = useState("");
   const [loading, setLoading] = useState("");
   const [confirmApproveModal, setConfirmApproveModal] = useState({
     isOpen: false,
     rowData: null,
+  });
+  const [discountActionModal, setDiscountActionModal] = useState({
+    isOpen: false,
+    action: null,
+    rowData: null,
+    remarks: "",
   });
   const [selectedProposalDetail, setSelectedProposalDetail] = useState(null);
 
@@ -338,7 +362,7 @@ const AllProposal = () => {
   useEffect(() => {
     dispatch(getAllProposalByUserIdForManager(filteration));
     dispatch(getAllPropsalListCount(userId));
-  }, [dispatch, filteration]);
+  }, [dispatch, filteration, userId]);
 
   const {
     control,
@@ -368,8 +392,9 @@ const AllProposal = () => {
         ),
       );
     }
+
     return filteredUsers;
-  }, [data, filterValue]);
+  }, [data, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
@@ -394,6 +419,16 @@ const AllProposal = () => {
     if (e === "view") {
       setSelectedProposalDetail(rowData);
       proposalDrawer.onOpen();
+      return;
+    }
+
+    if (e === "APPROVE_DISCOUNT" || e === "REJECT_DISCOUNT") {
+      setDiscountActionModal({
+        isOpen: true,
+        action: e,
+        rowData,
+        remarks: "",
+      });
       return;
     }
 
@@ -434,6 +469,7 @@ const AllProposal = () => {
 
   const handleChangeStatus = (values) => {
     setLoading("pending");
+
     dispatch(
       proposalApprovalByManager({
         ...updateStatusData,
@@ -443,19 +479,22 @@ const AllProposal = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(getAllProposalByUserIdForManager(filteration));
+          dispatch(getAllPropsalListCount(userId));
+
           if (updateStatusData.status === "APPROVED") {
             addToast({
-              title: `Success`,
+              title: "Success",
               description: "Proposal approved successfully and sent to client.",
               color: "success",
             });
           } else {
             addToast({
-              title: `Proposal disapproved successfully.`,
+              title: "Proposal disapproved successfully.",
               description: "Proposal disapproved successfully.",
               color: "success",
             });
           }
+
           setLoading("success");
           setUpdateStatusData({
             proposalId: null,
@@ -467,121 +506,246 @@ const AllProposal = () => {
           onClose();
         } else {
           setLoading("error");
-          addToast({ title: "Something went wrong", color: "danger" });
+          addToast({
+            title: "Something went wrong",
+            description:
+              resp?.payload?.data?.message || "Unable to update proposal.",
+            color: "danger",
+          });
         }
       })
-      .catch((err) => {
+      .catch(() => {
         setLoading("error");
-        addToast({ title: "Something went wrong", color: "danger" });
+        addToast({
+          title: "Something went wrong",
+          description: "Unable to update proposal.",
+          color: "danger",
+        });
       });
   };
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "solutionName":
-        return (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col">
-              <p className="font-normal">{rowData?.solution?.name || "-"}</p>
-            </div>
-          </div>
-        );
-      case "createdBy":
-        return (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col">
-              <p className="font-normal">{rowData?.createdByName || "-"}</p>
-            </div>
-          </div>
-        );
+  const handleDiscountActionSubmit = () => {
+    const selectedProposal = discountActionModal?.rowData;
+    const action = discountActionModal?.action;
+    const token = getDiscountApprovalToken(selectedProposal);
 
-      case "date":
-        return (
-          <p className="font-normal text-xs capitalize">
-            {dayjs(rowData?.createDate).format("YYYY-MM-DD") || "-"}
-          </p>
-        );
-      case "proposalNumber":
-        return (
-          <p className="font-normal text-xs capitalize">
-            {rowData?.proposalNumber || "-"}
-          </p>
-        );
-      case "mailTo":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData.mailTo?.join(" , ") || "-"}
-            </span>
-          </div>
-        );
-      case "createdByEmail":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData.createdByEmail || "-"}</span>
-          </div>
-        );
-      case "status":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal capitalize">
-              {rowData?.status === "CANCELLED" || rowData?.status === "REJECTED"
-                ? "REJECTED"
-                : rowData?.status || "-"}
-            </span>
-          </div>
-        );
-      case "brochures": {
-        const brochureCount = getAvailableBrochureCount(rowData);
-
-        return (
-          <Tooltip content="View brochures, email body and scope of work">
-            <Button
-              size="sm"
-              variant="flat"
-              color={brochureCount > 0 ? "primary" : "default"}
-              onPress={() => handleActionsClick("view", rowData)}
-              className="font-medium"
-            >
-              View {brochureCount > 0 ? `(${brochureCount})` : ""}
-            </Button>
-          </Tooltip>
-        );
-      }
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectionMode="single"
-                selectedKeys={[rowData?.status]}
-                onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
-                  handleActionsClick(key, rowData);
-                }}
-              >
-                <DropdownItem key="view">View</DropdownItem>
-
-                {rowData?.status === "INITIATED" ? (
-                  <DropdownItem key="APPROVED">APPROVED</DropdownItem>
-                ) : null}
-                {rowData?.status === "INITIATED" ? (
-                  <DropdownItem key="REJECTED">REJECTED</DropdownItem>
-                ) : null}
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-
-      default:
-        return rowData[columnKey] || "-";
+    if (!token) {
+      addToast({
+        title: "Missing token",
+        description: "Discount approval token is missing for this proposal.",
+        color: "danger",
+      });
+      return;
     }
-  }, []);
+
+    if (action === "REJECT_DISCOUNT" && !discountActionModal?.remarks?.trim()) {
+      addToast({
+        title: "Remarks required",
+        description: "Please enter remarks for discount rejection.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setLoading("pending");
+
+    const apiCall =
+      action === "APPROVE_DISCOUNT"
+        ? approveDiscount({
+            token,
+            adminUserId: userId,
+          })
+        : rejectDiscount({
+            token,
+            adminUserId: userId,
+            remarks: discountActionModal.remarks.trim(),
+          });
+
+    dispatch(apiCall)
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Success",
+            description:
+              action === "APPROVE_DISCOUNT"
+                ? "Discount approved successfully."
+                : "Discount rejected successfully.",
+            color: "success",
+          });
+
+          setDiscountActionModal({
+            isOpen: false,
+            action: null,
+            rowData: null,
+            remarks: "",
+          });
+
+          dispatch(getAllProposalByUserIdForManager(filteration));
+          dispatch(getAllPropsalListCount(userId));
+
+          setLoading("success");
+        } else {
+          setLoading("error");
+
+          addToast({
+            title: "Something went wrong",
+            description:
+              resp?.payload?.data?.message ||
+              "Unable to update discount approval status.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        setLoading("error");
+
+        addToast({
+          title: "Something went wrong",
+          description: "Unable to update discount approval status.",
+          color: "danger",
+        });
+      });
+  };
+
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "solutionName":
+          return (
+            <div className="flex items-start gap-2">
+              <div className="flex flex-col">
+                <p className="font-normal">{rowData?.solution?.name || "-"}</p>
+              </div>
+            </div>
+          );
+
+        case "createdBy":
+          return (
+            <div className="flex items-start gap-2">
+              <div className="flex flex-col">
+                <p className="font-normal">{rowData?.createdByName || "-"}</p>
+              </div>
+            </div>
+          );
+
+        case "date":
+          return (
+            <p className="font-normal text-xs capitalize">
+              {rowData?.createDate
+                ? dayjs(rowData.createDate).format("YYYY-MM-DD")
+                : "-"}
+            </p>
+          );
+
+        case "proposalNumber":
+          return (
+            <p className="font-normal text-xs capitalize">
+              {rowData?.proposalNumber || "-"}
+            </p>
+          );
+
+        case "mailTo":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">
+                {rowData.mailTo?.join(" , ") || "-"}
+              </span>
+            </div>
+          );
+
+        case "createdByEmail":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">
+                {rowData.createdByEmail || "-"}
+              </span>
+            </div>
+          );
+
+        case "status":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal capitalize">
+                {rowData?.status === "CANCELLED" ||
+                rowData?.status === "REJECTED"
+                  ? "REJECTED"
+                  : rowData?.status || "-"}
+              </span>
+            </div>
+          );
+
+        case "brochures": {
+          const brochureCount = getAvailableBrochureCount(rowData);
+
+          return (
+            <Tooltip content="View brochures, email body and scope of work">
+              <Button
+                size="sm"
+                variant="flat"
+                color={brochureCount > 0 ? "primary" : "default"}
+                onPress={() => handleActionsClick("view", rowData)}
+                className="font-medium"
+              >
+                View {brochureCount > 0 ? `(${brochureCount})` : ""}
+              </Button>
+            </Tooltip>
+          );
+        }
+
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <EllipsisVertical className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu
+                  selectionMode="single"
+                  selectedKeys={[rowData?.status]}
+                  onSelectionChange={(e) => {
+                    const key = Array.from(e)[0];
+                    handleActionsClick(key, rowData);
+                  }}
+                >
+                  <DropdownItem key="view">View</DropdownItem>
+
+                  {rowData?.status === "INITIATED" ? (
+                    <DropdownItem key="APPROVED">APPROVED</DropdownItem>
+                  ) : null}
+
+                  {rowData?.status === "INITIATED" ? (
+                    <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+                  ) : null}
+
+                  {isDiscountApprovalPendingStatus(rowData?.status) ? (
+                    <DropdownItem key="APPROVE_DISCOUNT">
+                      Approve Discount
+                    </DropdownItem>
+                  ) : null}
+
+                  {isDiscountApprovalPendingStatus(rowData?.status) ? (
+                    <DropdownItem
+                      key="REJECT_DISCOUNT"
+                      color="danger"
+                      className="text-danger"
+                    >
+                      Reject Discount
+                    </DropdownItem>
+                  ) : null}
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return rowData[columnKey] || "-";
+      }
+    },
+    [proposalDrawer],
+  );
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
@@ -630,6 +794,7 @@ const AllProposal = () => {
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
+
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
@@ -641,16 +806,19 @@ const AllProposal = () => {
                   {filteration?.status}
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
-                aria-label="Table Columns"
+                aria-label="Status Filter"
                 selectionMode="single"
                 selectedKeys={[filteration.status]}
                 onSelectionChange={(selectedKeys) => {
                   const selected = Array.from(selectedKeys)[0];
+
                   setFilteration((prev) => ({
                     ...prev,
                     status: selected || prev.status,
+                    page: 1,
                   }));
                 }}
               >
@@ -659,6 +827,10 @@ const AllProposal = () => {
                   { label: "INITIATED", uid: "initiated" },
                   { label: "APPROVED", uid: "approved" },
                   { label: "REJECTED", uid: "rejected" },
+                  {
+                    label: "Discount Approval Pending",
+                    uid: "Discount_Approval_Pending",
+                  },
                 ].map((status) => (
                   <DropdownItem key={status.uid} className="capitalize">
                     {capitalize(status.label)}
@@ -666,12 +838,14 @@ const AllProposal = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
                   Columns
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
@@ -689,10 +863,12 @@ const AllProposal = () => {
             </Dropdown>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             Total {count} proposal
           </span>
+
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -713,10 +889,10 @@ const AllProposal = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    data.length,
     onSearchChange,
-    hasSearchFilter,
+    onClear,
     filteration,
+    count,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -727,6 +903,7 @@ const AllProposal = () => {
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
         </span>
+
         <Pagination
           isCompact
           showControls
@@ -734,13 +911,11 @@ const AllProposal = () => {
           color="primary"
           page={filteration?.page}
           total={pages}
-          onChange={(e) => {
-            setFilteration((prev) => ({ ...prev, page: e }));
-            if (e > filteration?.page) {
-              dispatch(getAllNewCompanies({ ...filteration, page: e }));
-            }
+          onChange={(page) => {
+            setFilteration((prev) => ({ ...prev, page }));
           }}
         />
+
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
@@ -750,6 +925,7 @@ const AllProposal = () => {
           >
             Previous
           </Button>
+
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -761,32 +937,25 @@ const AllProposal = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
+  }, [selectedKeys, count, filteration, pages, onPreviousPage, onNextPage]);
 
   const selectedBrochures = getProposalBrochures(selectedProposalDetail);
 
   const selectedMailBody =
     selectedProposalDetail?.mailBody || selectedProposalDetail?.emailBody || "";
 
-  const selectedScopeOfWork =
-    selectedProposalDetail?.scopeOfWork ||
-    selectedProposalDetail?.template ||
-    "";
-
-  const selectedProposal =
-    selectedProposalDetail?.pdfUrl || selectedProposalDetail?.pdfUrl || "";
-  const selectedProposalName =
-    selectedProposalDetail?.pdfFileName ||
-    selectedProposalDetail?.pdfFileName ||
-    "";
+  const selectedProposal = selectedProposalDetail?.pdfUrl || "";
+  const selectedProposalName = selectedProposalDetail?.pdfFileName || "";
 
   return (
     <>
       {loading === "pending" && <LoadingSpinner />}
+
       <h1 className="font-sans text-2xl font-medium mb-1">All proposal</h1>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Proposal table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -794,7 +963,6 @@ const AllProposal = () => {
           table: "w-full",
         }}
         selectedKeys={selectedKeys}
-        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
@@ -812,7 +980,8 @@ const AllProposal = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+
+        <TableBody emptyContent="No data found" items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -822,6 +991,7 @@ const AllProposal = () => {
           )}
         </TableBody>
       </Table>
+
       <Modal
         isDismissable={false}
         isKeyboardDismissDisabled={true}
@@ -830,9 +1000,10 @@ const AllProposal = () => {
         placement="top-center"
       >
         <ModalContent>
-          {(onClose) => (
+          {(onCloseModal) => (
             <>
               <ModalHeader>Update status</ModalHeader>
+
               <ModalBody>
                 <form
                   onSubmit={handleSubmit(handleChangeStatus)}
@@ -848,7 +1019,9 @@ const AllProposal = () => {
                           isRequired
                           value={field.value}
                           onChange={field.onChange}
-                          errorMessage={"please enter comment"}
+                          errorMessage={
+                            errors.comment?.message || "Please enter comment"
+                          }
                           isInvalid={!!errors.comment}
                         />
                       )}
@@ -856,7 +1029,7 @@ const AllProposal = () => {
                   </div>
 
                   <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
+                    <Button onPress={onCloseModal}>Cancel</Button>
                     <Button color="primary" type="submit">
                       Submit
                     </Button>
@@ -867,6 +1040,7 @@ const AllProposal = () => {
           )}
         </ModalContent>
       </Modal>
+
       <Drawer
         size="5xl"
         placement="right"
@@ -884,7 +1058,7 @@ const AllProposal = () => {
         }}
       >
         <DrawerContent>
-          {(onClose) => (
+          {(onCloseDrawer) => (
             <>
               <DrawerHeader className="border-b border-gray-200 px-6 py-4">
                 <div className="flex w-full flex-col gap-1">
@@ -900,7 +1074,7 @@ const AllProposal = () => {
                       </p>
                     </div>
 
-                    <Button variant="flat" onPress={onClose}>
+                    <Button variant="flat" onPress={onCloseDrawer}>
                       Close
                     </Button>
                   </div>
@@ -992,13 +1166,6 @@ const AllProposal = () => {
                       emptyText="No email body found for this proposal."
                     />
 
-                    {/* <HtmlPreviewBlock
-                      title="Scope of Work"
-                      subtitle="This HTML content is coming from proposal scope of work."
-                      html={selectedScopeOfWork}
-                      emptyText="No scope of work found for this proposal."
-                    /> */}
-
                     <ProposalPdfPreview
                       pdfUrl={selectedProposal}
                       pdfFileName={selectedProposalName}
@@ -1026,13 +1193,13 @@ const AllProposal = () => {
         placement="top-center"
       >
         <ModalContent>
-          {(onClose) => (
+          {(onCloseModal) => (
             <>
               <ModalHeader>Confirm Approval</ModalHeader>
 
               <ModalBody>
                 <p className="text-sm text-default-600">
-                  This proposal is currently rejected . Are you sure you want to
+                  This proposal is currently rejected. Are you sure you want to
                   approve it?
                 </p>
               </ModalBody>
@@ -1045,7 +1212,7 @@ const AllProposal = () => {
                       isOpen: false,
                       rowData: null,
                     });
-                    onClose();
+                    onCloseModal();
                   }}
                 >
                   Cancel
@@ -1056,6 +1223,108 @@ const AllProposal = () => {
                   onPress={handleConfirmRejectedToApproved}
                 >
                   Yes, Approve
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={discountActionModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDiscountActionModal({
+              isOpen: false,
+              action: null,
+              rowData: null,
+              remarks: "",
+            });
+          }
+        }}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onCloseModal) => (
+            <>
+              <ModalHeader>
+                {discountActionModal.action === "APPROVE_DISCOUNT"
+                  ? "Approve Discount"
+                  : "Reject Discount"}
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-default-600">
+                    {discountActionModal.action === "APPROVE_DISCOUNT"
+                      ? "Are you sure you want to approve this discount?"
+                      : "Are you sure you want to reject this discount?"}
+                  </p>
+
+                  <div className="rounded-lg border border-default-200 bg-default-50 p-3 text-xs text-default-600">
+                    <p>
+                      <span className="font-semibold">Proposal No:</span>{" "}
+                      {discountActionModal?.rowData?.proposalNumber || "-"}
+                    </p>
+
+                    <p className="mt-1">
+                      <span className="font-semibold">Service:</span>{" "}
+                      {discountActionModal?.rowData?.solution?.name || "-"}
+                    </p>
+
+                    <p className="mt-1">
+                      <span className="font-semibold">Created By:</span>{" "}
+                      {discountActionModal?.rowData?.createdByName || "-"}
+                    </p>
+                  </div>
+
+                  {discountActionModal.action === "REJECT_DISCOUNT" ? (
+                    <Input
+                      label="Remarks"
+                      isRequired
+                      value={discountActionModal.remarks}
+                      onChange={(e) =>
+                        setDiscountActionModal((prev) => ({
+                          ...prev,
+                          remarks: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter rejection remarks"
+                    />
+                  ) : null}
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    setDiscountActionModal({
+                      isOpen: false,
+                      action: null,
+                      rowData: null,
+                      remarks: "",
+                    });
+                    onCloseModal();
+                  }}
+                >
+                  No, Cancel
+                </Button>
+
+                <Button
+                  color={
+                    discountActionModal.action === "APPROVE_DISCOUNT"
+                      ? "primary"
+                      : "danger"
+                  }
+                  isLoading={loading === "pending"}
+                  onPress={handleDiscountActionSubmit}
+                >
+                  {discountActionModal.action === "APPROVE_DISCOUNT"
+                    ? "Yes, Approve"
+                    : "Yes, Reject"}
                 </Button>
               </ModalFooter>
             </>

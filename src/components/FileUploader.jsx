@@ -233,6 +233,7 @@ const FileUploader = ({
         ref={fileInputRef}
         accept={allowedTypes.join(",")}
         className="hidden"
+        style={{ display: "none" }}
         onChange={handleFileInputChange}
         multiple={uploadingType === "multiple"}
       />
