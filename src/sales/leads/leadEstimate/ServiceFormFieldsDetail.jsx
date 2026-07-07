@@ -57,6 +57,17 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
     form.setFieldsValue({
       discountApplied: true,
     });
+
+    form.setFields(
+      (form.getFieldValue("lineItems") || []).map((_, index) => ({
+        name: ["lineItems", index, "unitPriceExGst"],
+        errors: [],
+      })),
+    );
+
+    setTimeout(() => {
+      form.validateFields(["lineItems"]);
+    }, 0);
   };
 
   const handleRemoveDiscount = () => {
@@ -169,16 +180,18 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                           return Promise.resolve();
                         }
 
-                        if (Number(value) < 0) {
+                        const enteredAmount = Number(value);
+
+                        if (enteredAmount < 0) {
                           return Promise.reject(
                             new Error("Amount cannot be negative"),
                           );
                         }
 
-                        if (!isEditing && Number(value) < originalAmount) {
+                        if (!isEditing && enteredAmount < originalAmount) {
                           return Promise.reject(
                             new Error(
-                              `Amount cannot be less than ₹${originalAmount}`,
+                              `Please click Apply Discount before decreasing below ₹${originalAmount}`,
                             ),
                           );
                         }
@@ -191,7 +204,7 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                   <Input
                     type="number"
                     placeholder="Amount"
-                    readOnly={!isEditing}
+                    readOnly={false}
                     prefix={<IndianRupee className="h-4 w-4" />}
                   />
                 </Form.Item>
